@@ -16,12 +16,7 @@ dependencies {
     implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
     implementation project(":publishing-sdk")
 
-    testImplementation 'junit:junit:4.13.1'
-
     // Importing for testing purposes, so that we can assert Kotlin standard library constructs.
     // e.g. https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-not-implemented-error/
     testImplementation 'org.jetbrains.kotlin:kotlin-stdlib'
-
-    androidTestImplementation 'androidx.test.ext:junit:1.1.2'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
 }

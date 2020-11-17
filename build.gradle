@@ -24,6 +24,7 @@ allprojects {
 subprojects {
     // We have to configure android in afterEvaluate because, otherwise, we get a Gradle error.
     // https://stackoverflow.com/a/21032272
+    // Same goes for testImplementation() method.
     afterEvaluate {
         android {
             compileSdkVersion 30
@@ -58,6 +59,13 @@ subprojects {
                     proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
                 }
             }
+        }
+
+        dependencies {
+            testImplementation 'junit:junit:4.13.1'
+
+            androidTestImplementation 'androidx.test.ext:junit:1.1.2'
+            androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
         }
     }
 }
