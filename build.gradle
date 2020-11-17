@@ -70,6 +70,10 @@ subprojects {
     }
 }
 
+ext {
+    kotlinJvmTarget = '1.8'
+}
+
 task clean(type: Delete) {
     delete rootProject.buildDir
 }
