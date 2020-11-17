@@ -22,9 +22,15 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    lintOptions {
+        warningsAsErrors true
+        disable 'AllowBackup'
     }
 }
 
@@ -35,7 +41,7 @@ dependencies {
     implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
     implementation project(":publishing-sdk")
 
-    testImplementation 'junit:junit:4.+'
+    testImplementation 'junit:junit:4.13.1'
 
     // Importing for testing purposes, so that we can assert Kotlin standard library constructs.
     // e.g. https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-not-implemented-error/
