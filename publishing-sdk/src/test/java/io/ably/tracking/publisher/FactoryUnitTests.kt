@@ -1,14 +1,11 @@
-package io.ably.tracking.example.publisher
+package io.ably.tracking.publisher
 
-import io.ably.tracking.publisher.AssetPublisher
 import org.junit.Test
 
 /**
- * Example local unit test, which will execute on the development machine (host).
- *
  * See [testing documentation](http://d.android.com/tools/testing).
  */
-class ExampleUnitTest {
+class FactoryUnitTests {
     @Test(expected = NotImplementedError::class)
     fun publishers_factory_to_be_implemented() {
         AssetPublisher.publishers()
