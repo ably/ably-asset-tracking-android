@@ -7,7 +7,7 @@ android {
     buildToolsVersion "30.0.2"
 
     defaultConfig {
-        applicationId "io.ably.tracking.example.javapublisher"
+        applicationId "com.ably.tracking.example.javapublisher"
         minSdkVersion 16
         targetSdkVersion 30
         versionCode 1
