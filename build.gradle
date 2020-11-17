@@ -48,9 +48,16 @@ subprojects {
 
             lintOptions {
                 warningsAsErrors true
+                checkTestSources true
 
-                disable 'GradleDependency',
-                        'AllowBackup'
+                // More accessible output, when run from command line and in CI/CD environments.
+                textReport true
+                textOutput 'stdout'
+                explainIssues false
+
+                // Lint rules which we might care about at some point, but need not fail the build.
+                informational 'GradleDependency',
+                              'AllowBackup'
             }
 
             buildTypes {
