@@ -1,0 +1,2 @@
+include ':publishing-example-app'
+rootProject.name = "Asset Tracking"
