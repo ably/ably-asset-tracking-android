@@ -1,4 +1,2 @@
 include ':publishing-sdk',
-        ':publishing-example-app',
-
-rootProject.name = "Asset Tracking"
+        ':publishing-example-app'
