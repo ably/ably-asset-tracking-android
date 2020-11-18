@@ -9,8 +9,8 @@ import org.junit.Test
  * See [testing documentation](http://d.android.com/tools/testing).
  */
 class ExampleUnitTest {
-    @Test(expected = NotImplementedError::class)
-    fun publishers_factory_to_be_implemented() {
+    @Test
+    fun publishers_factory_should_not_throw_error() {
         AssetPublisher.publishers()
     }
 }

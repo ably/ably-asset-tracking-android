@@ -13,8 +13,8 @@ import static org.junit.Assert.*;
  * @see <a href="http://d.android.com/tools/testing">Testing documentation</a>
  */
 public class ExampleUnitTest {
-    @Test(expected = NotImplementedError.class)
-    public void publishers_factory_to_be_implemented() {
+    @Test
+    public void publishers_factory_should_not_throw_error() {
         AssetPublisher.publishers();
     }
 }
