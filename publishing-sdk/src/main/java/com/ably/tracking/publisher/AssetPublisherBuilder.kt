@@ -14,7 +14,7 @@ internal data class AssetPublisherBuilder(
     val androidContext: Context? = null,
     val trackingId: String? = null,
     val destination: String? = null,
-    val vehicleType: String? = null,
+    val vehicleType: String? = null
 ) : AssetPublisher.Builder {
     override fun ablyConfig(configuration: AblyConfiguration): AssetPublisher.Builder {
         TODO("Not yet implemented")
