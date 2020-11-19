@@ -9,6 +9,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - run: ./gradlew check
+      - run: ./gradlew check --profile
         env:
           ORG_GRADLE_PROJECT_MAPBOX_DOWNLOADS_TOKEN: ${{ secrets.MAPBOX_DOWNLOADS_TOKEN }}
+      - uses: actions/upload-artifact@v2
+        with:
+          name: build-profile-report
+          path: build/reports/profile/
