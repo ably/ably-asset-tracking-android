@@ -48,6 +48,31 @@ internal data class AssetPublisherBuilder(
         this.copy(trackingId = trackingId, destination = destination, vehicleType = vehicleType)
 
     override fun start(): AssetPublisher {
-        TODO("Not yet implemented")
+        if (isMissingRequiredFields()) {
+            throw BuilderConfigurationIncompleteException()
+        }
+        // All below fields are required and above code checks if they are nulls, so using !! should be safe from NPE
+        return DefaultAssetPublisher(
+            ablyConfiguration!!,
+            mapConfiguration!!,
+            trackingId!!,
+            locationUpdatedListener!!,
+            androidContext!!
+        )
     }
+
+    // TODO - define which fields are required and which are optional (for now: all are required)
+    private fun isMissingRequiredFields(): Boolean =
+        ablyConfiguration == null
+                || mapConfiguration == null
+                || logConfiguration == null
+                || batteryConfiguration == null
+                || assetMetadataJson == null
+                || tripMetadataJson == null
+                || locationUpdatedListener == null
+                || androidContext == null
+                || trackingId == null
+                || destination == null
+                || vehicleType == null
+
 }
