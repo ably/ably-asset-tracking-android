@@ -2,7 +2,6 @@ package com.ably.tracking.publisher
 
 import android.content.Context
 import android.location.Location
-import io.ably.lib.realtime.ConnectionStateListener
 
 typealias LocationUpdatedListener = (Location) -> Unit
 
@@ -113,7 +112,5 @@ interface AssetPublisher {
          * @throws BuilderConfigurationIncompleteException If all required params aren't set
          */
         fun start(): AssetPublisher
-
     }
-
 }
