@@ -56,6 +56,8 @@ subprojects {
                 targetCompatibility JavaVersion.VERSION_1_8
             }
 
+            // https://developer.android.com/reference/tools/gradle-api/4.1/com/android/build/api/dsl/LintOptions
+            // http://tools.android.com/tips/lint-checks
             lintOptions {
                 warningsAsErrors true
                 checkTestSources true
@@ -67,7 +69,21 @@ subprojects {
 
                 // Lint rules which we might care about at some point, but need not fail the build.
                 informational 'GradleDependency',
-                              'AllowBackup'
+                              'NewerVersionAvailable',
+                              'AllowBackup',
+                              'StopShip'
+
+                // Lint rules which are disabled by default (see: lint --show), but which we would
+                // rather were enabled.
+                error 'MissingRegistered',
+                      'Registered',
+                      'WrongThreadInterprocedural',
+                      'MinSdkTooLow',
+                      'MangledCRLF',
+                      'EasterEgg',
+                      'UnpackedNativeCode',
+                      'LogConditional',
+                      'UnusedIds'
             }
 
             buildTypes {
