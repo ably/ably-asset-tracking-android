@@ -2,7 +2,6 @@ package com.ably.tracking.publisher
 
 import android.content.Context
 
-
 internal data class AssetPublisherBuilder(
     val ablyConfiguration: AblyConfiguration? = null,
     val mapConfiguration: MapConfiguration? = null,
@@ -59,5 +58,4 @@ internal data class AssetPublisherBuilder(
     override fun start(): AssetPublisher {
         TODO("Not yet implemented")
     }
-
 }
