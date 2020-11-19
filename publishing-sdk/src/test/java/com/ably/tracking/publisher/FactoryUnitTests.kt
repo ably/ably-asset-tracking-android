@@ -12,8 +12,10 @@ class FactoryUnitTests {
     @Test
     fun `publishers should return AssetPublisher Builder object`() {
         // given
+
         // when
         val builder = AssetPublisher.publishers()
+
         // then
         Assert.assertTrue(builder is AssetPublisher.Builder)
     }
@@ -22,8 +24,10 @@ class FactoryUnitTests {
     fun `setting Ably config updates builder field`() {
         // given
         val configuration = AblyConfiguration("")
+
         // when
         val builder = AssetPublisher.publishers().ablyConfig(configuration) as AssetPublisherBuilder
+
         // then
         Assert.assertEquals(configuration, builder.ablyConfiguration)
     }
@@ -33,8 +37,10 @@ class FactoryUnitTests {
         // given
         val configuration = AblyConfiguration("")
         val originalBuilder = AssetPublisher.publishers()
+
         // when
         val newBuilder = originalBuilder.ablyConfig(configuration)
+
         // then
         Assert.assertNotEquals(newBuilder, originalBuilder)
     }
@@ -43,8 +49,10 @@ class FactoryUnitTests {
     fun `setting map config updates builder field`() {
         // given
         val configuration = MapConfiguration("")
+
         // when
         val builder = AssetPublisher.publishers().mapConfig(configuration) as AssetPublisherBuilder
+
         // then
         Assert.assertEquals(configuration, builder.mapConfiguration)
     }
@@ -54,8 +62,10 @@ class FactoryUnitTests {
         // given
         val configuration = MapConfiguration("")
         val originalBuilder = AssetPublisher.publishers()
+
         // when
         val newBuilder = originalBuilder.mapConfig(configuration)
+
         // then
         Assert.assertNotEquals(newBuilder, originalBuilder)
     }
@@ -64,8 +74,10 @@ class FactoryUnitTests {
     fun `setting logging config updates builder field`() {
         // given
         val configuration = LogConfiguration(true)
+
         // when
         val builder = AssetPublisher.publishers().logConfig(configuration) as AssetPublisherBuilder
+
         // then
         Assert.assertEquals(configuration, builder.logConfiguration)
     }
@@ -75,8 +87,10 @@ class FactoryUnitTests {
         // given
         val configuration = LogConfiguration(true)
         val originalBuilder = AssetPublisher.publishers()
+
         // when
         val newBuilder = originalBuilder.logConfig(configuration)
+
         // then
         Assert.assertNotEquals(newBuilder, originalBuilder)
     }
@@ -85,9 +99,11 @@ class FactoryUnitTests {
     fun `setting battery config updates builder field`() {
         // given
         val configuration = BatteryConfiguration("")
+
         // when
         val builder =
             AssetPublisher.publishers().batteryConfig(configuration) as AssetPublisherBuilder
+
         // then
         Assert.assertEquals(configuration, builder.batteryConfiguration)
     }
@@ -97,8 +113,10 @@ class FactoryUnitTests {
         // given
         val configuration = BatteryConfiguration("")
         val originalBuilder = AssetPublisher.publishers()
+
         // when
         val newBuilder = originalBuilder.batteryConfig(configuration)
+
         // then
         Assert.assertNotEquals(newBuilder, originalBuilder)
     }
@@ -107,9 +125,11 @@ class FactoryUnitTests {
     fun `setting asset metadata JSON updates builder field`() {
         // given
         val metadata = ""
+
         // when
         val builder =
             AssetPublisher.publishers().assetMetadataJson(metadata) as AssetPublisherBuilder
+
         // then
         Assert.assertEquals(metadata, builder.assetMetadataJson)
     }
@@ -119,8 +139,10 @@ class FactoryUnitTests {
         // given
         val metadata = ""
         val originalBuilder = AssetPublisher.publishers()
+
         // when
         val newBuilder = originalBuilder.assetMetadataJson(metadata)
+
         // then
         Assert.assertNotEquals(newBuilder, originalBuilder)
     }
@@ -129,9 +151,11 @@ class FactoryUnitTests {
     fun `setting trip metadata JSON updates builder field`() {
         // given
         val metadata = ""
+
         // when
         val builder =
             AssetPublisher.publishers().tripMetadataJson(metadata) as AssetPublisherBuilder
+
         // then
         Assert.assertEquals(metadata, builder.tripMetadataJson)
     }
@@ -141,8 +165,10 @@ class FactoryUnitTests {
         // given
         val metadata = ""
         val originalBuilder = AssetPublisher.publishers()
+
         // when
         val newBuilder = originalBuilder.tripMetadataJson(metadata)
+
         // then
         Assert.assertNotEquals(newBuilder, originalBuilder)
     }
@@ -151,9 +177,11 @@ class FactoryUnitTests {
     fun `setting location updated listener updates builder field`() {
         // given
         val listener: LocationUpdatedListener = {}
+
         // when
         val builder =
             AssetPublisher.publishers().locationUpdatedListener(listener) as AssetPublisherBuilder
+
         // then
         Assert.assertEquals(listener, builder.locationUpdatedListener)
     }
@@ -163,8 +191,10 @@ class FactoryUnitTests {
         // given
         val listener: LocationUpdatedListener = {}
         val originalBuilder = AssetPublisher.publishers()
+
         // when
         val newBuilder = originalBuilder.locationUpdatedListener(listener)
+
         // then
         Assert.assertNotEquals(newBuilder, originalBuilder)
     }
@@ -173,9 +203,11 @@ class FactoryUnitTests {
     fun `setting android context updates builder field`() {
         // given
         val mockedContext = mockk<Context>()
+
         // when
         val builder =
             AssetPublisher.publishers().androidContext(mockedContext) as AssetPublisherBuilder
+
         // then
         Assert.assertEquals(mockedContext, builder.androidContext)
     }
@@ -185,8 +217,10 @@ class FactoryUnitTests {
         // given
         val mockedContext = mockk<Context>()
         val originalBuilder = AssetPublisher.publishers()
+
         // when
         val newBuilder = originalBuilder.androidContext(mockedContext)
+
         // then
         Assert.assertNotEquals(newBuilder, originalBuilder)
     }
@@ -197,9 +231,11 @@ class FactoryUnitTests {
         val trackingId = "abc"
         val destination = "London"
         val vehicleType = "car"
+
         // when
         val builder = AssetPublisher.publishers()
             .delivery(trackingId, destination, vehicleType) as AssetPublisherBuilder
+
         // then
         Assert.assertEquals(trackingId, builder.trackingId)
         Assert.assertEquals(destination, builder.destination)
@@ -213,8 +249,10 @@ class FactoryUnitTests {
         val destination = "London"
         val vehicleType = "car"
         val originalBuilder = AssetPublisher.publishers()
+
         // when
         val newBuilder = originalBuilder.delivery(trackingId, destination, vehicleType)
+
         // then
         Assert.assertNotEquals(newBuilder, originalBuilder)
     }
@@ -225,6 +263,7 @@ class FactoryUnitTests {
         val builder = AssetPublisher.publishers()
         assertAllBuilderFieldsAreNull(builder as AssetPublisherBuilder)
         val mockedContext = mockk<Context>()
+
         // when
         val updatedBuilder = builder
             .ablyConfig(AblyConfiguration(""))
@@ -236,6 +275,7 @@ class FactoryUnitTests {
             .locationUpdatedListener { }
             .androidContext(mockedContext)
             .delivery("", "", "")
+
         // then
         assertAllBuilderFieldsAreNotNull(updatedBuilder as AssetPublisherBuilder)
     }
