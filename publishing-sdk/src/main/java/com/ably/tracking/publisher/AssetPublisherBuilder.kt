@@ -15,45 +15,37 @@ internal data class AssetPublisherBuilder(
     val destination: String? = null,
     val vehicleType: String? = null
 ) : AssetPublisher.Builder {
-    override fun ablyConfig(configuration: AblyConfiguration): AssetPublisher.Builder {
-        TODO("Not yet implemented")
-    }
 
-    override fun mapConfig(configuration: MapConfiguration): AssetPublisher.Builder {
-        TODO("Not yet implemented")
-    }
+    override fun ablyConfig(configuration: AblyConfiguration): AssetPublisher.Builder =
+        this.copy(ablyConfiguration = configuration)
 
-    override fun logConfig(configuration: LogConfiguration): AssetPublisher.Builder {
-        TODO("Not yet implemented")
-    }
+    override fun mapConfig(configuration: MapConfiguration): AssetPublisher.Builder =
+        this.copy(mapConfiguration = configuration)
 
-    override fun batteryConfig(configuration: BatteryConfiguration): AssetPublisher.Builder {
-        TODO("Not yet implemented")
-    }
+    override fun logConfig(configuration: LogConfiguration): AssetPublisher.Builder =
+        this.copy(logConfiguration = configuration)
 
-    override fun assetMetadataJson(metadataJsonString: String): AssetPublisher.Builder {
-        TODO("Not yet implemented")
-    }
+    override fun batteryConfig(configuration: BatteryConfiguration): AssetPublisher.Builder =
+        this.copy(batteryConfiguration = configuration)
 
-    override fun tripMetadataJson(metadataJsonString: String): AssetPublisher.Builder {
-        TODO("Not yet implemented")
-    }
+    override fun assetMetadataJson(metadataJsonString: String): AssetPublisher.Builder =
+        this.copy(assetMetadataJson = metadataJsonString)
 
-    override fun locationUpdatedListener(listener: LocationUpdatedListener): AssetPublisher.Builder {
-        TODO("Not yet implemented")
-    }
+    override fun tripMetadataJson(metadataJsonString: String): AssetPublisher.Builder =
+        this.copy(tripMetadataJson = metadataJsonString)
 
-    override fun androidContext(context: Context): AssetPublisher.Builder {
-        TODO("Not yet implemented")
-    }
+    override fun locationUpdatedListener(listener: LocationUpdatedListener): AssetPublisher.Builder =
+        this.copy(locationUpdatedListener = listener)
+
+    override fun androidContext(context: Context): AssetPublisher.Builder =
+        this.copy(androidContext = context)
 
     override fun delivery(
         trackingId: String,
         destination: String,
         vehicleType: String
-    ): AssetPublisher.Builder {
-        TODO("Not yet implemented")
-    }
+    ): AssetPublisher.Builder =
+        this.copy(trackingId = trackingId, destination = destination, vehicleType = vehicleType)
 
     override fun start(): AssetPublisher {
         TODO("Not yet implemented")
