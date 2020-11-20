@@ -2,6 +2,7 @@ package com.ably.tracking.publisher
 
 import android.location.Location
 import com.google.gson.Gson
+import io.ably.lib.types.Message
 
 fun Location.toGeoJson(): GeoJsonMessage =
     GeoJsonMessage(
@@ -32,3 +33,6 @@ fun GeoJsonMessage.toLocation(): Location =
         speed = properties.speed
         time = (properties.time * MILLISECONDS_PER_SECOND).toLong()
     }
+
+fun Message.getGeoJsonMessages(gson: Gson): List<GeoJsonMessage> =
+    gson.fromJson(data as String, Array<GeoJsonMessage>::class.java).toList()

@@ -3,9 +3,9 @@ package com.ably.tracking.publisher
 import android.annotation.SuppressLint
 import android.content.Context
 import io.mockk.mockk
+import java.io.File
 import org.junit.Assert
 import org.junit.Test
-import java.io.File
 
 /**
  * See [testing documentation](http://d.android.com/tools/testing).

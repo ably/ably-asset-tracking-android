@@ -7,6 +7,7 @@ import android.content.Context
 import android.location.Location
 import android.os.Looper
 import androidx.annotation.RequiresPermission
+import com.ably.tracking.publisher.debug.AblySimulationLocationEngine
 import com.google.gson.Gson
 import com.mapbox.android.core.location.LocationEngineCallback
 import com.mapbox.android.core.location.LocationEngineRequest
@@ -17,6 +18,7 @@ import io.ably.lib.realtime.AblyRealtime
 import io.ably.lib.realtime.Channel
 import io.ably.lib.realtime.CompletionListener
 import io.ably.lib.types.AblyException
+import io.ably.lib.types.ClientOptions
 import io.ably.lib.types.ErrorInfo
 import timber.log.Timber
 
@@ -56,14 +58,25 @@ constructor(
 
         Timber.w("Started.")
 
+        var mapboxBuilder = MapboxNavigation.defaultNavigationOptionsBuilder(
+            context,
+            mapConfiguration.apiKey
+        )
+        debugConfiguration?.locationConfigurationAbly?.let { ablyDebugConfiguration ->
+            // use an Ably simulation engine with the configured simulation channel name
+            mapboxBuilder.locationEngine(
+                AblySimulationLocationEngine(
+                    ClientOptions(ablyConfiguration.apiKey),
+                    ablyDebugConfiguration.simulationChannelName
+                )
+            )
+        }
+
         debugConfiguration?.ablyStateChangeListener?.let { ablyStateChangeListener ->
             ably.connection.on { state -> ablyStateChangeListener(state) }
         }
 
-        mapboxNavigation = MapboxNavigation(
-            MapboxNavigation.defaultNavigationOptionsBuilder(context, mapConfiguration.apiKey)
-                .build()
-        )
+        mapboxNavigation = MapboxNavigation(mapboxBuilder.build())
         setupLocationUpdatesListener()
         startLocationUpdates()
     }
