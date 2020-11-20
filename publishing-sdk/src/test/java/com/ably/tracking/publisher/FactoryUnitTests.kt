@@ -1,5 +1,6 @@
 package com.ably.tracking.publisher
 
+import android.annotation.SuppressLint
 import android.content.Context
 import io.mockk.mockk
 import org.junit.Assert
@@ -280,6 +281,7 @@ class FactoryUnitTests {
         assertAllBuilderFieldsAreNotNull(updatedBuilder as AssetPublisherBuilder)
     }
 
+    @SuppressLint("MissingPermission")
     @Test(expected = BuilderConfigurationIncompleteException::class)
     fun `calling start with missing required fields should throw BuilderConfigurationIncompleteException`() {
         AssetPublisher.publishers().start()
