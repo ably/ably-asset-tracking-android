@@ -280,8 +280,8 @@ class FactoryUnitTests {
         assertAllBuilderFieldsAreNotNull(updatedBuilder as AssetPublisherBuilder)
     }
 
-    @Test(expected = NotImplementedError::class)
-    fun `calling start should throw NotImplementedError`() {
+    @Test(expected = BuilderConfigurationIncompleteException::class)
+    fun `calling start with missing required fields should throw BuilderConfigurationIncompleteException`() {
         AssetPublisher.publishers().start()
     }
 
