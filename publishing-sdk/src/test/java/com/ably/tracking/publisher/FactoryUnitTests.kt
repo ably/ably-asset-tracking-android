@@ -5,6 +5,7 @@ import android.content.Context
 import io.mockk.mockk
 import org.junit.Assert
 import org.junit.Test
+import java.io.File
 
 /**
  * See [testing documentation](http://d.android.com/tools/testing).
@@ -117,6 +118,36 @@ class FactoryUnitTests {
 
         // when
         val newBuilder = originalBuilder.batteryConfig(configuration)
+
+        // then
+        Assert.assertNotEquals(newBuilder, originalBuilder)
+    }
+
+    @Test
+    fun `setting debug config updates builder field`() {
+        // given
+        val configuration = DebugConfiguration(
+            {},
+            LocationConfigurationAbly(""),
+            LocationConfigurationS3("", File(""))
+        )
+
+        // when
+        val builder =
+            AssetPublisher.publishers().debugConfig(configuration) as AssetPublisherBuilder
+
+        // then
+        Assert.assertEquals(configuration, builder.debugConfiguration)
+    }
+
+    @Test
+    fun `setting debug config returns a new copy of builder`() {
+        // given
+        val configuration = DebugConfiguration()
+        val originalBuilder = AssetPublisher.publishers()
+
+        // when
+        val newBuilder = originalBuilder.debugConfig(configuration)
 
         // then
         Assert.assertNotEquals(newBuilder, originalBuilder)

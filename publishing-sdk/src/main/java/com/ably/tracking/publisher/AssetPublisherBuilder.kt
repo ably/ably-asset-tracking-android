@@ -10,6 +10,7 @@ internal data class AssetPublisherBuilder(
     val mapConfiguration: MapConfiguration? = null,
     val logConfiguration: LogConfiguration? = null,
     val batteryConfiguration: BatteryConfiguration? = null,
+    val debugConfiguration: DebugConfiguration? = null,
     val assetMetadataJson: String? = null,
     val tripMetadataJson: String? = null,
     val locationUpdatedListener: LocationUpdatedListener? = null,
@@ -30,6 +31,9 @@ internal data class AssetPublisherBuilder(
 
     override fun batteryConfig(configuration: BatteryConfiguration): AssetPublisher.Builder =
         this.copy(batteryConfiguration = configuration)
+
+    override fun debugConfig(configuration: DebugConfiguration?): AssetPublisher.Builder =
+        this.copy(debugConfiguration = configuration)
 
     override fun assetMetadataJson(metadataJsonString: String): AssetPublisher.Builder =
         this.copy(assetMetadataJson = metadataJsonString)
@@ -59,6 +63,7 @@ internal data class AssetPublisherBuilder(
         return DefaultAssetPublisher(
             ablyConfiguration!!,
             mapConfiguration!!,
+            debugConfiguration,
             trackingId!!,
             locationUpdatedListener!!,
             androidContext!!

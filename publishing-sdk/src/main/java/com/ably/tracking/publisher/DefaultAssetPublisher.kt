@@ -29,6 +29,7 @@ internal class DefaultAssetPublisher
 constructor(
     private val ablyConfiguration: AblyConfiguration,
     mapConfiguration: MapConfiguration,
+    private val debugConfiguration: DebugConfiguration?,
     trackingId: String,
     private val locationUpdatedListener: LocationUpdatedListener,
     context: Context

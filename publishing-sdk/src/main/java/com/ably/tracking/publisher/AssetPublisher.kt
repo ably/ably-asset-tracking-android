@@ -118,5 +118,14 @@ interface AssetPublisher {
          */
         @RequiresPermission(anyOf = [ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION])
         fun start(): AssetPublisher
+
+        /**
+         * Sets the debug configuration.
+         *
+         * @param configuration debug configuration object [DebugConfiguration]
+         * @return A new instance of the builder with debug configuration changed
+         */
+        // TODO - probably should be removed in the final version
+        fun debugConfig(configuration: DebugConfiguration?): Builder
     }
 }
