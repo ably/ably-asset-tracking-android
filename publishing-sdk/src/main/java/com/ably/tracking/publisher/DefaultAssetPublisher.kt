@@ -1,16 +1,14 @@
 package com.ably.tracking.publisher
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.location.Location
-import android.util.Log
 import com.google.gson.Gson
 import com.mapbox.navigation.core.MapboxNavigation
 import com.mapbox.navigation.core.trip.session.LocationObserver
 import io.ably.lib.realtime.AblyRealtime
 import io.ably.lib.realtime.Channel
+import timber.log.Timber
 
-@SuppressLint("LogConditional", "LogNotTimber")
 internal class DefaultAssetPublisher(
     ablyConfiguration: AblyConfiguration,
     mapConfiguration: MapConfiguration,
@@ -19,7 +17,6 @@ internal class DefaultAssetPublisher(
     context: Context
 ) :
     AssetPublisher {
-    private val TAG: String = DefaultAssetPublisher::class.java.simpleName
     private val gson: Gson = Gson()
     private val mapboxNavigation: MapboxNavigation
     private val ably: AblyRealtime
@@ -29,7 +26,7 @@ internal class DefaultAssetPublisher(
         ably = AblyRealtime(ablyConfiguration.apiKey)
         channel = ably.channels.get(trackingId)
 
-        Log.w(TAG, "AblyNav: started!")
+        Timber.w("Started.")
 
         mapboxNavigation = MapboxNavigation(
             MapboxNavigation.defaultNavigationOptionsBuilder(context, mapConfiguration.apiKey)
@@ -55,7 +52,7 @@ internal class DefaultAssetPublisher(
 
     private fun sendRawLocationMessage(rawLocation: Location) {
         val geoJsonMessage = rawLocation.toGeoJson()
-        Log.d(TAG, "onRawLocationChanged: publishing: ${geoJsonMessage.synopsis()}")
+        Timber.d("sendRawLocationMessage: publishing: ${geoJsonMessage.synopsis()}")
         channel.publish("raw", geoJsonMessage.toJsonArray(gson))
         locationUpdatedListener(rawLocation)
     }
@@ -64,7 +61,7 @@ internal class DefaultAssetPublisher(
         val locations = if (keyPoints.isEmpty()) listOf(enhancedLocation) else keyPoints
         val geoJsonMessages = locations.map { it.toGeoJson() }
         geoJsonMessages.forEach {
-            Log.d(TAG, "onEnhancedLocationChanged: publishing: ${it.synopsis()}")
+            Timber.d("sendEnhancedLocationMessage: publishing: ${it.synopsis()}")
         }
         channel.publish("enhanced", geoJsonMessages.toJsonArray(gson))
         locationUpdatedListener(enhancedLocation)
