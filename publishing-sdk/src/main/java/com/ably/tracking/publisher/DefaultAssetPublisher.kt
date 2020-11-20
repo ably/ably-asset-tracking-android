@@ -56,6 +56,10 @@ constructor(
 
         Timber.w("Started.")
 
+        debugConfiguration?.ablyStateChangeListener?.let { ablyStateChangeListener ->
+            ably.connection.on { state -> ablyStateChangeListener(state) }
+        }
+
         mapboxNavigation = MapboxNavigation(
             MapboxNavigation.defaultNavigationOptionsBuilder(context, mapConfiguration.apiKey)
                 .build()
