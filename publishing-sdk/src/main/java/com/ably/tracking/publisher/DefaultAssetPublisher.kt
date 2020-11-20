@@ -17,7 +17,6 @@ internal class DefaultAssetPublisher(
     context: Context
 ) :
     AssetPublisher {
-    private val TAG: String = DefaultAssetPublisher::class.java.simpleName
     private val gson: Gson = Gson()
     private val mapboxNavigation: MapboxNavigation
     private val ably: AblyRealtime
@@ -27,7 +26,7 @@ internal class DefaultAssetPublisher(
         ably = AblyRealtime(ablyConfiguration.apiKey)
         channel = ably.channels.get(trackingId)
 
-        Timber.w(TAG, "Started.")
+        Timber.w("Started.")
 
         mapboxNavigation = MapboxNavigation(
             MapboxNavigation.defaultNavigationOptionsBuilder(context, mapConfiguration.apiKey)
@@ -53,7 +52,7 @@ internal class DefaultAssetPublisher(
 
     private fun sendRawLocationMessage(rawLocation: Location) {
         val geoJsonMessage = rawLocation.toGeoJson()
-        Timber.d(TAG, "sendRawLocationMessage: publishing: ${geoJsonMessage.synopsis()}")
+        Timber.d("sendRawLocationMessage: publishing: ${geoJsonMessage.synopsis()}")
         channel.publish("raw", geoJsonMessage.toJsonArray(gson))
         locationUpdatedListener(rawLocation)
     }
@@ -62,7 +61,7 @@ internal class DefaultAssetPublisher(
         val locations = if (keyPoints.isEmpty()) listOf(enhancedLocation) else keyPoints
         val geoJsonMessages = locations.map { it.toGeoJson() }
         geoJsonMessages.forEach {
-            Timber.d(TAG, "sendEnhancedLocationMessage: publishing: ${it.synopsis()}")
+            Timber.d("sendEnhancedLocationMessage: publishing: ${it.synopsis()}")
         }
         channel.publish("enhanced", geoJsonMessages.toJsonArray(gson))
         locationUpdatedListener(enhancedLocation)
