@@ -23,7 +23,7 @@ class FactoryUnitTests {
     @Test
     fun `setting Ably config updates builder field`() {
         // given
-        val configuration = AblyConfiguration("")
+        val configuration = AblyConfiguration("", "")
 
         // when
         val builder = AssetPublisher.publishers().ablyConfig(configuration) as AssetPublisherBuilder
@@ -35,7 +35,7 @@ class FactoryUnitTests {
     @Test
     fun `setting Ably config returns a new copy of builder`() {
         // given
-        val configuration = AblyConfiguration("")
+        val configuration = AblyConfiguration("", "")
         val originalBuilder = AssetPublisher.publishers()
 
         // when
@@ -266,7 +266,7 @@ class FactoryUnitTests {
 
         // when
         val updatedBuilder = builder
-            .ablyConfig(AblyConfiguration(""))
+            .ablyConfig(AblyConfiguration("", ""))
             .mapConfig(MapConfiguration(""))
             .logConfig(LogConfiguration(true))
             .batteryConfig(BatteryConfiguration(""))
