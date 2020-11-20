@@ -285,29 +285,6 @@ class FactoryUnitTests {
         AssetPublisher.publishers().start()
     }
 
-    @Test
-    fun `setting all required data and calling start should create new AssetPublisher`() {
-        // given
-        val builder = AssetPublisher.publishers()
-        val mockedContext = mockk<Context>()
-
-        // when
-        val assetPublisher = builder
-            .ablyConfig(AblyConfiguration(""))
-            .mapConfig(MapConfiguration(""))
-            .logConfig(LogConfiguration(true))
-            .batteryConfig(BatteryConfiguration(""))
-            .assetMetadataJson("")
-            .tripMetadataJson("")
-            .locationUpdatedListener { }
-            .androidContext(mockedContext)
-            .delivery("", "", "")
-            .start()
-
-        // then
-        Assert.assertTrue(assetPublisher is AssetPublisher)
-    }
-
     private fun assertAllBuilderFieldsAreNull(builder: AssetPublisherBuilder) {
         Assert.assertNull(builder.ablyConfiguration)
         Assert.assertNull(builder.mapConfiguration)
