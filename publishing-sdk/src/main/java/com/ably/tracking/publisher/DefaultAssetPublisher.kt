@@ -1,5 +1,6 @@
 package com.ably.tracking.publisher
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.location.Location
 import android.util.Log
@@ -9,6 +10,7 @@ import com.mapbox.navigation.core.trip.session.LocationObserver
 import io.ably.lib.realtime.AblyRealtime
 import io.ably.lib.realtime.Channel
 
+@SuppressLint("LogConditional", "LogNotTimber")
 internal class DefaultAssetPublisher(
     ablyConfiguration: AblyConfiguration,
     mapConfiguration: MapConfiguration,

@@ -63,16 +63,15 @@ internal data class AssetPublisherBuilder(
 
     // TODO - define which fields are required and which are optional (for now: all are required)
     private fun isMissingRequiredFields(): Boolean =
-        ablyConfiguration == null
-                || mapConfiguration == null
-                || logConfiguration == null
-                || batteryConfiguration == null
-                || assetMetadataJson == null
-                || tripMetadataJson == null
-                || locationUpdatedListener == null
-                || androidContext == null
-                || trackingId == null
-                || destination == null
-                || vehicleType == null
-
+        ablyConfiguration == null ||
+            mapConfiguration == null ||
+            logConfiguration == null ||
+            batteryConfiguration == null ||
+            assetMetadataJson == null ||
+            tripMetadataJson == null ||
+            locationUpdatedListener == null ||
+            androidContext == null ||
+            trackingId == null ||
+            destination == null ||
+            vehicleType == null
 }

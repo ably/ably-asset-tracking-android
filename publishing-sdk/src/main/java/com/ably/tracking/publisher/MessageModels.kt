@@ -17,7 +17,6 @@ data class GeoJsonMessage(
 
     fun synopsis(): String =
         "[time:${properties.time}; lon:${geometry.coordinates[LONG_INDEX]} lat:${geometry.coordinates[LAT_INDEX]}; brg:${properties.bearing}]"
-
 }
 
 data class GeoJsonGeometry(val type: String, val coordinates: List<Double>)
