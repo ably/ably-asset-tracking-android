@@ -1,3 +1,4 @@
 include ':publishing-sdk',
         ':publishing-example-app',
-        ':publishing-example-java-app'
+        ':publishing-example-java-app',
+        ':subscribing-sdk'
