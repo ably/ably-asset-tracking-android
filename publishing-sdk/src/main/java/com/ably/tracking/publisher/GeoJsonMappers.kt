@@ -7,7 +7,13 @@ fun Location.toGeoJson(): GeoJsonMessage =
     GeoJsonMessage(
         GeoJsonTypes.FEATURE,
         GeoJsonGeometry(GeoJsonTypes.POINT, listOf(longitude, latitude)),
-        GeoJsonProperties(accuracy, altitude, bearing, speed, time.toDouble() / 1000)
+        GeoJsonProperties(
+            accuracy,
+            altitude,
+            bearing,
+            speed,
+            time.toDouble() / MILLISECONDS_PER_SECOND
+        )
     )
 
 fun GeoJsonMessage.toJsonArray(gson: Gson): String =
