@@ -29,7 +29,7 @@ internal class DefaultAssetPublisher(
         ably = AblyRealtime(ablyConfiguration.apiKey)
         channel = ably.channels.get(trackingId)
 
-        Log.w(TAG, "AblyNav: started!!! ")
+        Log.w(TAG, "AblyNav: started!")
 
         mapboxNavigation = MapboxNavigation(
             MapboxNavigation.defaultNavigationOptionsBuilder(context, mapConfiguration.apiKey)
@@ -71,6 +71,6 @@ internal class DefaultAssetPublisher(
     }
 
     override fun stop() {
-        TODO("Not yet implemented")
+        TODO()
     }
 }

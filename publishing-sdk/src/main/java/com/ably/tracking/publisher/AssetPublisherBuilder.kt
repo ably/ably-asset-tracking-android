@@ -62,7 +62,7 @@ internal data class AssetPublisherBuilder(
     }
 
     // TODO - define which fields are required and which are optional (for now: all are required)
-    private fun isMissingRequiredFields(): Boolean =
+    private fun isMissingRequiredFields() =
         ablyConfiguration == null ||
             mapConfiguration == null ||
             logConfiguration == null ||
