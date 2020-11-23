@@ -144,21 +144,26 @@ constructor(
 
                         override fun onError(reason: ErrorInfo?) {
                             // TODO - handle error
+                            // https://github.com/ably/ably-asset-tracking-android/issues/17
                             Timber.e("Unable to enter presence")
                         }
                     }
                 )
             } catch (e: AblyException) {
                 // TODO - handle exception
+                // https://github.com/ably/ably-asset-tracking-android/issues/17
                 e.printStackTrace()
             }
 
             Timber.e("startLocationUpdates")
 
-            mapboxNavigation.toggleHistory(true)
-            mapboxNavigation.startTripSession()
+            mapboxNavigation.apply {
+                toggleHistory(true)
+                startTripSession()
+            }
 
             // TODO: this is involves the main thread, needs to be checked for running in the background
+            // https://github.com/ably/ably-asset-tracking-android/issues/18
             mapboxNavigation.navigationOptions.locationEngine.requestLocationUpdates(
                 LocationEngineRequest.Builder(DEFAULT_INTERVAL_IN_MILLISECONDS)
                     .setPriority(LocationEngineRequest.PRIORITY_NO_POWER)
@@ -186,12 +191,14 @@ constructor(
 
                         override fun onError(reason: ErrorInfo?) {
                             // TODO - handle error
+                            // https://github.com/ably/ably-asset-tracking-android/issues/17
                             Timber.e("Unable to leave presence")
                         }
                     }
                 )
             } catch (e: AblyException) {
                 // TODO - handle exception
+                // https://github.com/ably/ably-asset-tracking-android/issues/17
                 e.printStackTrace()
             }
             isTracking = false
@@ -200,8 +207,10 @@ constructor(
             )
             mapboxReplayer?.finish()
             debugConfiguration?.locationHistoryReadyListener?.invoke(mapboxNavigation.retrieveHistory())
-            mapboxNavigation.toggleHistory(false)
-            mapboxNavigation.toggleHistory(true)
+            mapboxNavigation.apply {
+                toggleHistory(false)
+                toggleHistory(true)
+            }
         }
     }
 }
