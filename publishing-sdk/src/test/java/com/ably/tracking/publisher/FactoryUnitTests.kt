@@ -125,7 +125,7 @@ class FactoryUnitTests {
     @Test
     fun `setting debug config updates builder field`() {
         // given
-        val configuration = DebugConfiguration({}, LocationConfigurationAbly(""))
+        val configuration = DebugConfiguration({}, LocationSourceAbly(""))
 
         // when
         val builder =

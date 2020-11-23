@@ -13,6 +13,9 @@ import com.mapbox.android.core.location.LocationEngineCallback
 import com.mapbox.android.core.location.LocationEngineRequest
 import com.mapbox.android.core.location.LocationEngineResult
 import com.mapbox.navigation.core.MapboxNavigation
+import com.mapbox.navigation.core.replay.MapboxReplayer
+import com.mapbox.navigation.core.replay.ReplayLocationEngine
+import com.mapbox.navigation.core.replay.history.ReplayHistoryMapper
 import com.mapbox.navigation.core.trip.session.LocationObserver
 import io.ably.lib.realtime.AblyRealtime
 import io.ably.lib.realtime.Channel
@@ -51,6 +54,7 @@ constructor(
         }
     }
     private var isTracking: Boolean = false
+    private var mapboxReplayer: MapboxReplayer? = null
 
     init {
         ably = AblyRealtime(ablyConfiguration.apiKey)
@@ -58,22 +62,30 @@ constructor(
 
         Timber.w("Started.")
 
-        var mapboxBuilder = MapboxNavigation.defaultNavigationOptionsBuilder(
+        val mapboxBuilder = MapboxNavigation.defaultNavigationOptionsBuilder(
             context,
             mapConfiguration.apiKey
         )
-        debugConfiguration?.locationConfiguration?.let {
-            when (it) {
-                is LocationConfigurationAbly -> {
+        debugConfiguration?.locationSource?.let { locationSource ->
+            when (locationSource) {
+                is LocationSourceAbly -> {
                     // use an Ably simulation engine with the configured simulation channel name
                     mapboxBuilder.locationEngine(
                         AblySimulationLocationEngine(
                             ClientOptions(ablyConfiguration.apiKey),
-                            it.simulationChannelName
+                            locationSource.simulationChannelName
                         )
                     )
                 }
-                is LocationConfigurationS3 -> TODO()
+                is LocationSourceRaw -> {
+                    // use a Mapbox replayer with events from a history data string
+                    mapboxReplayer = MapboxReplayer().apply {
+                        mapboxBuilder.locationEngine(ReplayLocationEngine(this))
+                        this.clearEvents()
+                        this.pushEvents(ReplayHistoryMapper().mapToReplayEvents(locationSource.historyData))
+                        this.play()
+                    }
+                }
             }
         }
 
@@ -186,6 +198,7 @@ constructor(
             mapboxNavigation.navigationOptions.locationEngine.removeLocationUpdates(
                 locationEngingeCallback
             )
+            mapboxReplayer?.finish()
             mapboxNavigation.toggleHistory(false)
             mapboxNavigation.toggleHistory(true)
         }

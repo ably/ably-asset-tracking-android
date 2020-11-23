@@ -1,7 +1,6 @@
 package com.ably.tracking.publisher
 
 import io.ably.lib.realtime.ConnectionStateListener
-import java.io.File
 
 data class AblyConfiguration(val apiKey: String, val clientId: String)
 
@@ -14,12 +13,9 @@ data class BatteryConfiguration(val placeholder: String) // TODO - specify confi
 // TODO - probably should be removed in the final version
 data class DebugConfiguration(
     val ablyStateChangeListener: ((ConnectionStateListener.ConnectionStateChange) -> Unit)? = null,
-    val locationConfiguration: LocationConfiguration? = null
+    val locationSource: LocationSource? = null
 )
 
-sealed class LocationConfiguration
-
-data class LocationConfigurationAbly(val simulationChannelName: String) : LocationConfiguration()
-
-data class LocationConfigurationS3(val s3FileName: String, val downloadDir: File) :
-    LocationConfiguration()
+sealed class LocationSource
+data class LocationSourceAbly(val simulationChannelName: String) : LocationSource()
+data class LocationSourceRaw(val historyData: String) : LocationSource()
