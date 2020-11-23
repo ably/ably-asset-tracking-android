@@ -126,6 +126,7 @@ interface AssetPublisher {
          * @return A new instance of the builder with debug configuration changed
          */
         // TODO - probably should be removed in the final version
+        // https://github.com/ably/ably-asset-tracking-android/issues/19
         fun debugConfig(configuration: DebugConfiguration?): Builder
     }
 }

@@ -11,6 +11,7 @@ data class LogConfiguration(val enabled: Boolean) // TODO - specify config
 data class BatteryConfiguration(val placeholder: String) // TODO - specify config
 
 // TODO - probably should be removed in the final version
+// https://github.com/ably/ably-asset-tracking-android/issues/19
 data class DebugConfiguration(
     val ablyStateChangeListener: ((ConnectionStateListener.ConnectionStateChange) -> Unit)? = null,
     val locationSource: LocationSource? = null,
