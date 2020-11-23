@@ -3,6 +3,7 @@ package com.ably.tracking.publisher.debug
 import android.app.PendingIntent
 import android.os.Looper
 import android.os.SystemClock
+import com.ably.tracking.publisher.EventNames
 import com.ably.tracking.publisher.getGeoJsonMessages
 import com.ably.tracking.publisher.toLocation
 import com.google.gson.Gson
@@ -29,7 +30,7 @@ class AblySimulationLocationEngine(ablyOptions: ClientOptions, simulationTrackin
         ably.connection.on { Timber.i("Ably connection state change: $it") }
         simulationChannel.on { Timber.i("Ably channel state change: $it") }
 
-        simulationChannel.subscribe("raw") { message ->
+        simulationChannel.subscribe(EventNames.RAW) { message ->
             Timber.i("Ably channel message: $message")
             message.getGeoJsonMessages(gson).forEach {
                 Timber.d("Received raw location: ${it.synopsis()}")

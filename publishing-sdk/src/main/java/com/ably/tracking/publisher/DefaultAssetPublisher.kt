@@ -116,7 +116,7 @@ constructor(
     private fun sendRawLocationMessage(rawLocation: Location) {
         val geoJsonMessage = rawLocation.toGeoJson()
         Timber.d("sendRawLocationMessage: publishing: ${geoJsonMessage.synopsis()}")
-        channel.publish("raw", geoJsonMessage.toJsonArray(gson))
+        channel.publish(EventNames.RAW, geoJsonMessage.toJsonArray(gson))
         locationUpdatedListener(rawLocation)
     }
 
@@ -126,7 +126,7 @@ constructor(
         geoJsonMessages.forEach {
             Timber.d("sendEnhancedLocationMessage: publishing: ${it.synopsis()}")
         }
-        channel.publish("enhanced", geoJsonMessages.toJsonArray(gson))
+        channel.publish(EventNames.ENHANCED, geoJsonMessages.toJsonArray(gson))
         locationUpdatedListener(enhancedLocation)
     }
 
