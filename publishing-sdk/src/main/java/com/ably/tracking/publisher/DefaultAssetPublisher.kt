@@ -6,7 +6,6 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.location.Location
 import android.os.Looper
-import android.util.Log
 import androidx.annotation.RequiresPermission
 import com.google.gson.Gson
 import com.mapbox.android.core.location.LocationEngineCallback
@@ -16,15 +15,15 @@ import com.mapbox.navigation.core.MapboxNavigation
 import com.mapbox.navigation.core.trip.session.LocationObserver
 import io.ably.lib.realtime.AblyRealtime
 import io.ably.lib.realtime.Channel
-import timber.log.Timber
 import io.ably.lib.realtime.CompletionListener
 import io.ably.lib.types.AblyException
 import io.ably.lib.types.ErrorInfo
+import timber.log.Timber
 
 private const val DEFAULT_INTERVAL_IN_MILLISECONDS = 500L
 private const val DEFAULT_MAX_WAIT_TIME = DEFAULT_INTERVAL_IN_MILLISECONDS * 10
 
-@SuppressLint("LogConditional", "LogNotTimber")
+@SuppressLint("LogConditional")
 internal class DefaultAssetPublisher
 @RequiresPermission(anyOf = [ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION])
 constructor(
@@ -41,11 +40,11 @@ constructor(
     private val channel: Channel
     private val locationEngingeCallback = object : LocationEngineCallback<LocationEngineResult> {
         override fun onSuccess(result: LocationEngineResult?) {
-            Log.w("TestLocation", result!!.lastLocation!!.latitude.toString())
+            Timber.w("TestLocation ${result!!.lastLocation!!.latitude}")
         }
 
         override fun onFailure(exception: java.lang.Exception) {
-            Log.e("MapboxException", exception.toString())
+            Timber.e(exception)
         }
     }
     private var isTracking: Boolean = false
@@ -110,7 +109,7 @@ constructor(
 
                         override fun onError(reason: ErrorInfo?) {
                             // TODO - handle error
-                            Log.e(TAG, "Unable to enter presence")
+                            Timber.e("Unable to enter presence")
                         }
                     }
                 )
@@ -119,7 +118,7 @@ constructor(
                 e.printStackTrace()
             }
 
-            Log.e(TAG, "startLocationUpdates")
+            Timber.e("startLocationUpdates")
 
             mapboxNavigation.toggleHistory(true)
             mapboxNavigation.startTripSession()
@@ -152,7 +151,7 @@ constructor(
 
                         override fun onError(reason: ErrorInfo?) {
                             // TODO - handle error
-                            Log.e(TAG, "Unable to leave presence")
+                            Timber.e("Unable to leave presence")
                         }
                     }
                 )
