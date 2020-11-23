@@ -3,7 +3,6 @@ package com.ably.tracking.publisher
 import android.annotation.SuppressLint
 import android.content.Context
 import io.mockk.mockk
-import java.io.File
 import org.junit.Assert
 import org.junit.Test
 
@@ -126,11 +125,7 @@ class FactoryUnitTests {
     @Test
     fun `setting debug config updates builder field`() {
         // given
-        val configuration = DebugConfiguration(
-            {},
-            LocationConfigurationAbly(""),
-            LocationConfigurationS3("", File(""))
-        )
+        val configuration = DebugConfiguration({}, LocationConfigurationAbly(""))
 
         // when
         val builder =

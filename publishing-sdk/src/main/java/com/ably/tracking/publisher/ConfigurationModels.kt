@@ -14,10 +14,12 @@ data class BatteryConfiguration(val placeholder: String) // TODO - specify confi
 // TODO - probably should be removed in the final version
 data class DebugConfiguration(
     val ablyStateChangeListener: ((ConnectionStateListener.ConnectionStateChange) -> Unit)? = null,
-    val locationConfigurationAbly: LocationConfigurationAbly? = null,
-    val locationConfigurationS3: LocationConfigurationS3? = null
+    val locationConfiguration: LocationConfiguration? = null
 )
 
-data class LocationConfigurationAbly(val simulationChannelName: String)
+sealed class LocationConfiguration
 
-data class LocationConfigurationS3(val s3FileName: String, val downloadDir: File)
+data class LocationConfigurationAbly(val simulationChannelName: String) : LocationConfiguration()
+
+data class LocationConfigurationS3(val s3FileName: String, val downloadDir: File) :
+    LocationConfiguration()

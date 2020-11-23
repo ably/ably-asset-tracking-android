@@ -62,14 +62,19 @@ constructor(
             context,
             mapConfiguration.apiKey
         )
-        debugConfiguration?.locationConfigurationAbly?.let { ablyDebugConfiguration ->
-            // use an Ably simulation engine with the configured simulation channel name
-            mapboxBuilder.locationEngine(
-                AblySimulationLocationEngine(
-                    ClientOptions(ablyConfiguration.apiKey),
-                    ablyDebugConfiguration.simulationChannelName
-                )
-            )
+        debugConfiguration?.locationConfiguration?.let {
+            when (it) {
+                is LocationConfigurationAbly -> {
+                    // use an Ably simulation engine with the configured simulation channel name
+                    mapboxBuilder.locationEngine(
+                        AblySimulationLocationEngine(
+                            ClientOptions(ablyConfiguration.apiKey),
+                            it.simulationChannelName
+                        )
+                    )
+                }
+                is LocationConfigurationS3 -> TODO()
+            }
         }
 
         debugConfiguration?.ablyStateChangeListener?.let { ablyStateChangeListener ->
