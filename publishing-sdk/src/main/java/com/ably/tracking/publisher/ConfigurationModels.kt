@@ -13,7 +13,8 @@ data class BatteryConfiguration(val placeholder: String) // TODO - specify confi
 // TODO - probably should be removed in the final version
 data class DebugConfiguration(
     val ablyStateChangeListener: ((ConnectionStateListener.ConnectionStateChange) -> Unit)? = null,
-    val locationSource: LocationSource? = null
+    val locationSource: LocationSource? = null,
+    val locationHistoryReadyListener: ((String) -> Unit)? = null
 )
 
 sealed class LocationSource

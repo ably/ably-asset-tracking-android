@@ -199,6 +199,7 @@ constructor(
                 locationEngingeCallback
             )
             mapboxReplayer?.finish()
+            debugConfiguration?.locationHistoryReadyListener?.invoke(mapboxNavigation.retrieveHistory())
             mapboxNavigation.toggleHistory(false)
             mapboxNavigation.toggleHistory(true)
         }
