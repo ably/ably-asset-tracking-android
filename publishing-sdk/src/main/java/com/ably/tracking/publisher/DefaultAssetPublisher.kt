@@ -12,6 +12,7 @@ import com.google.gson.Gson
 import com.mapbox.android.core.location.LocationEngineCallback
 import com.mapbox.android.core.location.LocationEngineRequest
 import com.mapbox.android.core.location.LocationEngineResult
+import com.mapbox.navigation.base.options.NavigationOptions
 import com.mapbox.navigation.core.MapboxNavigation
 import com.mapbox.navigation.core.replay.MapboxReplayer
 import com.mapbox.navigation.core.replay.ReplayLocationEngine
@@ -69,22 +70,10 @@ constructor(
         debugConfiguration?.locationSource?.let { locationSource ->
             when (locationSource) {
                 is LocationSourceAbly -> {
-                    // use an Ably simulation engine with the configured simulation channel name
-                    mapboxBuilder.locationEngine(
-                        AblySimulationLocationEngine(
-                            ClientOptions(ablyConfiguration.apiKey),
-                            locationSource.simulationChannelName
-                        )
-                    )
+                    useAblySimulationLocationEngine(mapboxBuilder, locationSource)
                 }
                 is LocationSourceRaw -> {
-                    // use a Mapbox replayer with events from a history data string
-                    mapboxReplayer = MapboxReplayer().apply {
-                        mapboxBuilder.locationEngine(ReplayLocationEngine(this))
-                        this.clearEvents()
-                        this.pushEvents(ReplayHistoryMapper().mapToReplayEvents(locationSource.historyData))
-                        this.play()
-                    }
+                    useHistoryDataReplayerLocationEngine(mapboxBuilder, locationSource)
                 }
             }
         }
@@ -96,6 +85,30 @@ constructor(
         mapboxNavigation = MapboxNavigation(mapboxBuilder.build())
         setupLocationUpdatesListener()
         startLocationUpdates()
+    }
+
+    private fun useAblySimulationLocationEngine(
+        mapboxBuilder: NavigationOptions.Builder,
+        locationSource: LocationSourceAbly
+    ) {
+        mapboxBuilder.locationEngine(
+            AblySimulationLocationEngine(
+                ClientOptions(ablyConfiguration.apiKey),
+                locationSource.simulationChannelName
+            )
+        )
+    }
+
+    private fun useHistoryDataReplayerLocationEngine(
+        mapboxBuilder: NavigationOptions.Builder,
+        locationSource: LocationSourceRaw
+    ) {
+        mapboxReplayer = MapboxReplayer().apply {
+            mapboxBuilder.locationEngine(ReplayLocationEngine(this))
+            this.clearEvents()
+            this.pushEvents(ReplayHistoryMapper().mapToReplayEvents(locationSource.historyData))
+            this.play()
+        }
     }
 
     private fun setupLocationUpdatesListener() {
