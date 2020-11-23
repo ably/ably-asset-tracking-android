@@ -24,7 +24,7 @@ fun List<GeoJsonMessage>.toJsonArray(gson: Gson): String =
     gson.toJson(this)
 
 fun GeoJsonMessage.toLocation(): Location =
-    Location("fused").apply {
+    Location(LOCATION_TYPE_FUSED).apply {
         longitude = geometry.coordinates[GEOMETRY_LONG_INDEX]
         latitude = geometry.coordinates[GEOMETRY_LAT_INDEX]
         accuracy = properties.accuracyHorizontal
