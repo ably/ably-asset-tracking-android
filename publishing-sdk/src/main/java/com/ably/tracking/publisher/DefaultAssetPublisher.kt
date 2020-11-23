@@ -122,8 +122,10 @@ constructor(
 
             Timber.e("startLocationUpdates")
 
-            mapboxNavigation.toggleHistory(true)
-            mapboxNavigation.startTripSession()
+            mapboxNavigation.apply {
+                toggleHistory(true)
+                startTripSession()
+            }
 
             // TODO: this is involves the main thread, needs to be checked for running in the background
             // https://github.com/ably/ably-asset-tracking-android/issues/18
@@ -165,11 +167,11 @@ constructor(
                 e.printStackTrace()
             }
             isTracking = false
-            mapboxNavigation.navigationOptions.locationEngine.removeLocationUpdates(
-                locationEngingeCallback
-            )
-            mapboxNavigation.toggleHistory(false)
-            mapboxNavigation.toggleHistory(true)
+            mapboxNavigation.apply {
+                navigationOptions.locationEngine.removeLocationUpdates(locationEngingeCallback)
+                toggleHistory(false)
+                toggleHistory(true)
+            }
         }
     }
 }
