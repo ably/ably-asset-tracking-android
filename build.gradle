@@ -94,6 +94,8 @@ subprojects {
                 informational 'GradleDependency',
                               'NewerVersionAvailable',
                               'AllowBackup',
+                              'VectorPath',
+                              'ContentDescription',
                               'StopShip'
 
                 // Lint rules which are disabled by default (see: lint --show), but which we would
