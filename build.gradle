@@ -46,6 +46,8 @@ subprojects {
         final evaluatedSubProjectIsKotlin = evaluatedSubProject.pluginManager.hasPlugin('kotlin-android')
 
         android {
+            println("ANDROID BLOCK IS: ${it.getClass()}")
+
             compileSdkVersion 30
             buildToolsVersion "30.0.2"
 
