@@ -112,6 +112,7 @@ subprojects {
                       'UnusedIds'
             }
 
+            // TODO check that this should be in Android block
             buildTypes {
                 release {
                     minifyEnabled false
