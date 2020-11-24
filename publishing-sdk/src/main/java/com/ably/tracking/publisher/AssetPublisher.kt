@@ -1,7 +1,10 @@
 package com.ably.tracking.publisher
 
+import android.Manifest.permission.ACCESS_COARSE_LOCATION
+import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.content.Context
 import android.location.Location
+import androidx.annotation.RequiresPermission
 
 typealias LocationUpdatedListener = (Location) -> Unit
 
@@ -21,6 +24,8 @@ interface AssetPublisher {
 
     /**
      * Stops asset publisher from publishing asset location
+     *
+     * It is strongly suggested to call this method from the main thread.
      */
     fun stop()
 
@@ -108,9 +113,13 @@ interface AssetPublisher {
         /**
          * Creates a [AssetPublisher] and starts publishing asset location
          *
+         * In order to detect device's location ACCESS_COARSE_LOCATION or ACCESS_FINE_LOCATION permission must be granted.
+         * It is strongly suggested to call this method from the main thread.
+         *
          * @return A new instance of [AssetPublisher]
          * @throws BuilderConfigurationIncompleteException If all required params aren't set
          */
+        @RequiresPermission(anyOf = [ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION])
         fun start(): AssetPublisher
     }
 }

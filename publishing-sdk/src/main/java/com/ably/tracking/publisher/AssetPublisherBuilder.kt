@@ -1,6 +1,9 @@
 package com.ably.tracking.publisher
 
+import android.Manifest.permission.ACCESS_COARSE_LOCATION
+import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.content.Context
+import androidx.annotation.RequiresPermission
 
 internal data class AssetPublisherBuilder(
     val ablyConfiguration: AblyConfiguration? = null,
@@ -47,6 +50,7 @@ internal data class AssetPublisherBuilder(
     ): AssetPublisher.Builder =
         this.copy(trackingId = trackingId, destination = destination, vehicleType = vehicleType)
 
+    @RequiresPermission(anyOf = [ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION])
     override fun start(): AssetPublisher {
         if (isMissingRequiredFields()) {
             throw BuilderConfigurationIncompleteException()
