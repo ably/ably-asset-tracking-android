@@ -110,14 +110,14 @@ constructor(
                         override fun onError(reason: ErrorInfo?) {
                             // TODO - handle error
                             // https://github.com/ably/ably-asset-tracking-android/issues/17
-                            Timber.e("Unable to enter presence")
+                            Timber.e("Unable to enter presence: ${reason?.message}")
                         }
                     }
                 )
-            } catch (e: AblyException) {
+            } catch (ablyException: AblyException) {
                 // TODO - handle exception
                 // https://github.com/ably/ably-asset-tracking-android/issues/17
-                e.printStackTrace()
+                Timber.e(ablyException)
             }
 
             Timber.e("startLocationUpdates")
@@ -157,14 +157,14 @@ constructor(
                         override fun onError(reason: ErrorInfo?) {
                             // TODO - handle error
                             // https://github.com/ably/ably-asset-tracking-android/issues/17
-                            Timber.e("Unable to leave presence")
+                            Timber.e("Unable to leave presence: ${reason?.message}")
                         }
                     }
                 )
-            } catch (e: AblyException) {
+            } catch (ablyException: AblyException) {
                 // TODO - handle exception
                 // https://github.com/ably/ably-asset-tracking-android/issues/17
-                e.printStackTrace()
+                Timber.e(ablyException)
             }
             isTracking = false
             mapboxNavigation.apply {
