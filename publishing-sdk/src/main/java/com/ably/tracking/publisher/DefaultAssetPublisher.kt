@@ -95,9 +95,9 @@ constructor(
         locationUpdatedListener(enhancedLocation)
     }
 
+    // TODO define threading strategy: https://github.com/ably/ably-asset-tracking-android/issues/22
     @RequiresPermission(anyOf = [ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION])
     @Synchronized
-    // https://github.com/ably/ably-asset-tracking-android/issues/22
     private fun startLocationUpdates() {
         if (!isTracking) {
             isTracking = true
@@ -146,8 +146,8 @@ constructor(
         ably.close()
     }
 
+    // TODO define threading strategy: https://github.com/ably/ably-asset-tracking-android/issues/22
     @Synchronized
-    // https://github.com/ably/ably-asset-tracking-android/issues/22
     private fun stopLocationUpdates() {
         if (isTracking) {
             try {
