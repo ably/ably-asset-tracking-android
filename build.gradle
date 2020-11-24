@@ -109,20 +109,20 @@ subprojects {
                       'UnusedIds'
             }
 
-            // https://github.com/jlleitschuh/ktlint-gradle#configuration
-            ktlint {
-                version = '0.39.0'
-                verbose = true
-                android = true
-                outputToConsole = true
-            }
-
             buildTypes {
                 release {
                     minifyEnabled false
                     proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
                 }
             }
+        }
+
+        // https://github.com/jlleitschuh/ktlint-gradle#configuration
+        ktlint {
+            version = '0.39.0' // override because v.9.4.1 of org.jlleitschuh.gradle.ktlint plugin is at 0.38.1 which has issues
+            verbose = true // shows rule name that failed
+            android = true
+            outputColorName = 'RED' // easier to spot failures in console output
         }
 
         dependencies {
