@@ -123,6 +123,32 @@ class FactoryUnitTests {
     }
 
     @Test
+    fun `setting debug config updates builder field`() {
+        // given
+        val configuration = DebugConfiguration({}, LocationSourceAbly(""))
+
+        // when
+        val builder =
+            AssetPublisher.publishers().debugConfig(configuration) as AssetPublisherBuilder
+
+        // then
+        Assert.assertEquals(configuration, builder.debugConfiguration)
+    }
+
+    @Test
+    fun `setting debug config returns a new copy of builder`() {
+        // given
+        val configuration = DebugConfiguration()
+        val originalBuilder = AssetPublisher.publishers()
+
+        // when
+        val newBuilder = originalBuilder.debugConfig(configuration)
+
+        // then
+        Assert.assertNotEquals(newBuilder, originalBuilder)
+    }
+
+    @Test
     fun `setting asset metadata JSON updates builder field`() {
         // given
         val metadata = ""

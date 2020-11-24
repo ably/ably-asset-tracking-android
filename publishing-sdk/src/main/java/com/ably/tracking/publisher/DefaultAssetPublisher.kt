@@ -7,16 +7,22 @@ import android.content.Context
 import android.location.Location
 import android.os.Looper
 import androidx.annotation.RequiresPermission
+import com.ably.tracking.publisher.debug.AblySimulationLocationEngine
 import com.google.gson.Gson
 import com.mapbox.android.core.location.LocationEngineCallback
 import com.mapbox.android.core.location.LocationEngineRequest
 import com.mapbox.android.core.location.LocationEngineResult
+import com.mapbox.navigation.base.options.NavigationOptions
 import com.mapbox.navigation.core.MapboxNavigation
+import com.mapbox.navigation.core.replay.MapboxReplayer
+import com.mapbox.navigation.core.replay.ReplayLocationEngine
+import com.mapbox.navigation.core.replay.history.ReplayHistoryMapper
 import com.mapbox.navigation.core.trip.session.LocationObserver
 import io.ably.lib.realtime.AblyRealtime
 import io.ably.lib.realtime.Channel
 import io.ably.lib.realtime.CompletionListener
 import io.ably.lib.types.AblyException
+import io.ably.lib.types.ClientOptions
 import io.ably.lib.types.ErrorInfo
 import timber.log.Timber
 
@@ -29,6 +35,7 @@ internal class DefaultAssetPublisher
 constructor(
     private val ablyConfiguration: AblyConfiguration,
     mapConfiguration: MapConfiguration,
+    private val debugConfiguration: DebugConfiguration?,
     trackingId: String,
     private val locationUpdatedListener: LocationUpdatedListener,
     context: Context
@@ -48,6 +55,7 @@ constructor(
         }
     }
     private var isTracking: Boolean = false
+    private var mapboxReplayer: MapboxReplayer? = null
 
     init {
         ably = AblyRealtime(ablyConfiguration.apiKey)
@@ -55,12 +63,52 @@ constructor(
 
         Timber.w("Started.")
 
-        mapboxNavigation = MapboxNavigation(
-            MapboxNavigation.defaultNavigationOptionsBuilder(context, mapConfiguration.apiKey)
-                .build()
+        val mapboxBuilder = MapboxNavigation.defaultNavigationOptionsBuilder(
+            context,
+            mapConfiguration.apiKey
         )
+        debugConfiguration?.locationSource?.let { locationSource ->
+            when (locationSource) {
+                is LocationSourceAbly -> {
+                    useAblySimulationLocationEngine(mapboxBuilder, locationSource)
+                }
+                is LocationSourceRaw -> {
+                    useHistoryDataReplayerLocationEngine(mapboxBuilder, locationSource)
+                }
+            }
+        }
+
+        debugConfiguration?.ablyStateChangeListener?.let { ablyStateChangeListener ->
+            ably.connection.on { state -> ablyStateChangeListener(state) }
+        }
+
+        mapboxNavigation = MapboxNavigation(mapboxBuilder.build())
         setupLocationUpdatesListener()
         startLocationUpdates()
+    }
+
+    private fun useAblySimulationLocationEngine(
+        mapboxBuilder: NavigationOptions.Builder,
+        locationSource: LocationSourceAbly
+    ) {
+        mapboxBuilder.locationEngine(
+            AblySimulationLocationEngine(
+                ClientOptions(ablyConfiguration.apiKey),
+                locationSource.simulationChannelName
+            )
+        )
+    }
+
+    private fun useHistoryDataReplayerLocationEngine(
+        mapboxBuilder: NavigationOptions.Builder,
+        locationSource: LocationSourceRaw
+    ) {
+        mapboxReplayer = MapboxReplayer().apply {
+            mapboxBuilder.locationEngine(ReplayLocationEngine(this))
+            this.clearEvents()
+            this.pushEvents(ReplayHistoryMapper().mapToReplayEvents(locationSource.historyData))
+            this.play()
+        }
     }
 
     private fun setupLocationUpdatesListener() {
@@ -81,7 +129,7 @@ constructor(
     private fun sendRawLocationMessage(rawLocation: Location) {
         val geoJsonMessage = rawLocation.toGeoJson()
         Timber.d("sendRawLocationMessage: publishing: ${geoJsonMessage.synopsis()}")
-        channel.publish("raw", geoJsonMessage.toJsonArray(gson))
+        channel.publish(EventNames.RAW, geoJsonMessage.toJsonArray(gson))
         locationUpdatedListener(rawLocation)
     }
 
@@ -91,7 +139,7 @@ constructor(
         geoJsonMessages.forEach {
             Timber.d("sendEnhancedLocationMessage: publishing: ${it.synopsis()}")
         }
-        channel.publish("enhanced", geoJsonMessages.toJsonArray(gson))
+        channel.publish(EventNames.ENHANCED, geoJsonMessages.toJsonArray(gson))
         locationUpdatedListener(enhancedLocation)
     }
 
@@ -169,8 +217,12 @@ constructor(
                 Timber.e(ablyException)
             }
             isTracking = false
+            mapboxNavigation.navigationOptions.locationEngine.removeLocationUpdates(
+                locationEngingeCallback
+            )
+            mapboxReplayer?.finish()
+            debugConfiguration?.locationHistoryReadyListener?.invoke(mapboxNavigation.retrieveHistory())
             mapboxNavigation.apply {
-                navigationOptions.locationEngine.removeLocationUpdates(locationEngingeCallback)
                 toggleHistory(false)
                 toggleHistory(true)
             }

@@ -5,8 +5,8 @@ object GeoJsonTypes {
     const val POINT = "Point"
 }
 
-private const val LONG_INDEX = 0
-private const val LAT_INDEX = 1
+const val GEOMETRY_LONG_INDEX = 0
+const val GEOMETRY_LAT_INDEX = 1
 
 data class GeoJsonMessage(
     val type: String,
@@ -16,7 +16,7 @@ data class GeoJsonMessage(
     // WARNING: Don't add fields to this class because they will be serialized and present in JSON
 
     fun synopsis(): String =
-        "[time:${properties.time}; lon:${geometry.coordinates[LONG_INDEX]} lat:${geometry.coordinates[LAT_INDEX]}; brg:${properties.bearing}]"
+        "[time:${properties.time}; lon:${geometry.coordinates[GEOMETRY_LONG_INDEX]} lat:${geometry.coordinates[GEOMETRY_LAT_INDEX]}; brg:${properties.bearing}]"
 }
 
 data class GeoJsonGeometry(val type: String, val coordinates: List<Double>)
