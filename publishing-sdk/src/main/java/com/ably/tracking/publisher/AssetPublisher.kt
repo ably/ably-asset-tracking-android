@@ -24,6 +24,8 @@ interface AssetPublisher {
 
     /**
      * Stops asset publisher from publishing asset location
+     *
+     * It is strongly suggested to call this method from the main thread.
      */
     fun stop()
 
@@ -112,6 +114,7 @@ interface AssetPublisher {
          * Creates a [AssetPublisher] and starts publishing asset location
          *
          * In order to detect device's location ACCESS_COARSE_LOCATION or ACCESS_FINE_LOCATION permission must be granted.
+         * It is strongly suggested to call this method from the main thread.
          *
          * @return A new instance of [AssetPublisher]
          * @throws BuilderConfigurationIncompleteException If all required params aren't set

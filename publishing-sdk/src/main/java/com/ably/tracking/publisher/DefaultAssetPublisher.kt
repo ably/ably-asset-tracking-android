@@ -97,6 +97,7 @@ constructor(
 
     @RequiresPermission(anyOf = [ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION])
     @Synchronized
+    // https://github.com/ably/ably-asset-tracking-android/issues/22
     private fun startLocationUpdates() {
         if (!isTracking) {
             isTracking = true
@@ -146,6 +147,7 @@ constructor(
     }
 
     @Synchronized
+    // https://github.com/ably/ably-asset-tracking-android/issues/22
     private fun stopLocationUpdates() {
         if (isTracking) {
             try {
