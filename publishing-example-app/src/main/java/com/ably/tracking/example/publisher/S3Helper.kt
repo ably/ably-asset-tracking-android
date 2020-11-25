@@ -5,7 +5,11 @@ import com.amplifyframework.auth.cognito.AWSCognitoAuthPlugin
 import com.amplifyframework.core.Amplify
 import com.amplifyframework.storage.s3.AWSS3StoragePlugin
 import timber.log.Timber
+import java.io.File
 import java.text.DecimalFormat
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import kotlin.math.log10
 import kotlin.math.pow
 
@@ -38,5 +42,31 @@ object S3Helper {
         val units = listOf("B", "kB", "MB", "GB", "TB")
         val digitGroups = (log10(size.toDouble()) / log10(1024.0)).toInt()
         return "${DecimalFormat("#,##0.#").format(size / 1024.0.pow(digitGroups.toDouble()))} ${units[digitGroups]}"
+    }
+
+    fun downloadHistoryData(
+        context: Context,
+        filename: String,
+        onHistoryDataDownloaded: (historyData: String) -> Unit
+    ) {
+        Amplify.Storage.downloadFile(
+            filename,
+            File(context.getExternalFilesDir(null), filename),
+            { result -> onHistoryDataDownloaded(result.file.readText()) },
+            { error -> Timber.e(error, "Error when downloading S3 file") }
+        )
+    }
+
+    fun uploadHistoryData(context: Context, historyData: String) {
+        val filename = SimpleDateFormat("yyyy-MM-dd_HH:mm:ss", Locale.US).format(Date())
+        File(context.getExternalFilesDir(null), filename).let { fileToUpload ->
+            fileToUpload.writeText(historyData)
+            Amplify.Storage.uploadFile(
+                filename,
+                fileToUpload,
+                { result -> Timber.i("Uploaded history data to S3: ${result.key}") },
+                { error -> Timber.e(error, "Error when downloading S3 file") }
+            )
+        }
     }
 }

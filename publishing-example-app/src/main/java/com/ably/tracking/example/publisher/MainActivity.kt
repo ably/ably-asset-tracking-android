@@ -15,6 +15,7 @@ import com.ably.tracking.publisher.AblyConfiguration
 import com.ably.tracking.publisher.AssetPublisher
 import com.ably.tracking.publisher.DebugConfiguration
 import com.ably.tracking.publisher.LocationSourceAbly
+import com.ably.tracking.publisher.LocationSourceRaw
 import com.ably.tracking.publisher.MapConfiguration
 import io.ably.lib.realtime.ConnectionState
 import io.ably.lib.realtime.ConnectionStateListener
@@ -86,9 +87,11 @@ class MainActivity : AppCompatActivity() {
         if (hasFineOrCoarseLocationPermissionGranted(this)) {
             trackingIdEditText.text.toString().trim().let { trackingId ->
                 if (trackingId.isNotEmpty()) {
-                    clearLocationInfo()
-                    createAndStartAssetPublisher(trackingId)
-                    changeNavigationButtonState(true)
+                    if (getLocationSourceType() == LocationSourceType.S3) {
+                        downloadLocationHistoryData { createAndStartAssetPublisher(trackingId, it) }
+                    } else {
+                        createAndStartAssetPublisher(trackingId)
+                    }
                 } else {
                     Toast.makeText(this, "Insert tracking ID", Toast.LENGTH_SHORT).show()
                 }
@@ -99,26 +102,41 @@ class MainActivity : AppCompatActivity() {
     }
 
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
-    private fun createAndStartAssetPublisher(trackingId: String) {
+    private fun createAndStartAssetPublisher(trackingId: String, historyData: String? = null) {
+        clearLocationInfo()
         assetPublisher = AssetPublisher.publishers()
             .ablyConfig(AblyConfiguration(ABLY_KEY, CLIENT_ID))
             .mapConfig(MapConfiguration(MAP_KEY))
-            .debugConfig(createDebugConfiguration())
+            .debugConfig(createDebugConfiguration(historyData))
             .delivery(trackingId)
             .locationUpdatedListener { updateLocationInfo(it) }
             .androidContext(this)
             .start()
+        changeNavigationButtonState(true)
     }
 
-    private fun createDebugConfiguration(): DebugConfiguration {
+    private fun downloadLocationHistoryData(onHistoryDataDownloaded: (historyData: String) -> Unit) {
+        S3Helper.downloadHistoryData(this, appPreferences.getS3File()) {
+            onHistoryDataDownloaded(it)
+        }
+    }
+
+    private fun createDebugConfiguration(historyData: String? = null): DebugConfiguration {
         return DebugConfiguration(
             ablyStateChangeListener = { updateAblyStateInfo(it) },
-            locationSource = when (appPreferences.getLocationSource()) {
-                getString(R.string.location_source_ably) -> LocationSourceAbly(appPreferences.getSimulationChannel())
-                getString(R.string.location_source_s3) -> TODO("Add support for S3")
-                else -> null
-            }
+            locationSource = when (getLocationSourceType()) {
+                LocationSourceType.ABLY -> LocationSourceAbly(appPreferences.getSimulationChannel())
+                LocationSourceType.S3 -> LocationSourceRaw(historyData!!)
+                LocationSourceType.PHONE -> null
+            },
+            locationHistoryReadyListener = { uploadLocationHistoryData(it) }
         )
+    }
+
+    private fun uploadLocationHistoryData(historyData: String) {
+        if (getLocationSourceType() == LocationSourceType.PHONE) {
+            S3Helper.uploadHistoryData(this, historyData)
+        }
     }
 
     private fun stopTracking() {
@@ -187,4 +205,13 @@ class MainActivity : AppCompatActivity() {
         // Forward results to EasyPermissions
         EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this)
     }
+
+    enum class LocationSourceType { PHONE, ABLY, S3 }
+
+    private fun getLocationSourceType() =
+        when (appPreferences.getLocationSource()) {
+            getString(R.string.location_source_ably) -> LocationSourceType.ABLY
+            getString(R.string.location_source_s3) -> LocationSourceType.S3
+            else -> LocationSourceType.PHONE
+        }
 }
