@@ -45,6 +45,8 @@ subprojects {
         final evaluatedSubProjectIsAnApp = evaluatedSubProject.pluginManager.hasPlugin('com.android.application')
         final evaluatedSubProjectIsKotlin = evaluatedSubProject.pluginManager.hasPlugin('kotlin-android')
 
+        // for -app projects: com.android.build.gradle.internal.dsl.BaseAppModuleExtension_Decorated
+        // for -sdk projects: com.android.build.gradle.LibraryExtension_Decorated
         android {
             println("ANDROID BLOCK IS: ${it.getClass()}")
 
