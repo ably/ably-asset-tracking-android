@@ -112,8 +112,9 @@ subprojects {
                       'UnusedIds'
             }
 
-            // TODO check that this should be in Android block
             buildTypes {
+                // The Build Type Configuration for Release builds.
+                // https://developer.android.com/reference/tools/gradle-api/4.1/com/android/build/api/dsl/BuildType
                 release {
                     minifyEnabled false
                     proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
