@@ -94,6 +94,8 @@ subprojects {
                 informational 'GradleDependency',
                               'NewerVersionAvailable',
                               'AllowBackup',
+                              'VectorPath',
+                              'ContentDescription',
                               'StopShip'
 
                 // Lint rules which are disabled by default (see: lint --show), but which we would
@@ -144,6 +146,7 @@ subprojects {
             if (evaluatedSubProjectIsAnApp) {
                 implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
                 implementation 'androidx.multidex:multidex:2.0.1'
+                implementation 'pub.devrel:easypermissions:2.0.1'
             }
 
             testImplementation 'junit:junit:4.13.1'

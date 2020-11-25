@@ -54,6 +54,18 @@ constructor(
             Timber.e(exception)
         }
     }
+    private val locationObserver = object : LocationObserver {
+        override fun onRawLocationChanged(rawLocation: Location) {
+            sendRawLocationMessage(rawLocation)
+        }
+
+        override fun onEnhancedLocationChanged(
+            enhancedLocation: Location,
+            keyPoints: List<Location>
+        ) {
+            sendEnhancedLocationMessage(enhancedLocation, keyPoints)
+        }
+    }
     private var isTracking: Boolean = false
     private var mapboxReplayer: MapboxReplayer? = null
 
@@ -83,7 +95,7 @@ constructor(
         }
 
         mapboxNavigation = MapboxNavigation(mapboxBuilder.build())
-        setupLocationUpdatesListener()
+        mapboxNavigation.registerLocationObserver(locationObserver)
         startLocationUpdates()
     }
 
@@ -109,21 +121,6 @@ constructor(
             this.pushEvents(ReplayHistoryMapper().mapToReplayEvents(locationSource.historyData))
             this.play()
         }
-    }
-
-    private fun setupLocationUpdatesListener() {
-        mapboxNavigation.registerLocationObserver(object : LocationObserver {
-            override fun onRawLocationChanged(rawLocation: Location) {
-                sendRawLocationMessage(rawLocation)
-            }
-
-            override fun onEnhancedLocationChanged(
-                enhancedLocation: Location,
-                keyPoints: List<Location>
-            ) {
-                sendEnhancedLocationMessage(enhancedLocation, keyPoints)
-            }
-        })
     }
 
     private fun sendRawLocationMessage(rawLocation: Location) {
@@ -198,6 +195,7 @@ constructor(
     @Synchronized
     private fun stopLocationUpdates() {
         if (isTracking) {
+            mapboxNavigation.unregisterLocationObserver(locationObserver)
             try {
                 channel.presence.leaveClient(
                     ablyConfiguration.clientId, "",

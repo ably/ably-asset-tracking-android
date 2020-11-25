@@ -1,15 +1,19 @@
 plugins {
     id 'com.android.application'
     id 'kotlin-android'
+    id 'kotlin-android-extensions'
     id 'org.jlleitschuh.gradle.ktlint'
 }
 
 android {
     defaultConfig {
+        vectorDrawables.useSupportLibrary = true
         applicationId "com.ably.tracking.demo"
     }
 }
 
 dependencies {
     implementation project(":publishing-sdk")
+    implementation 'io.ably:ably-android:1.2.2'
+    implementation 'androidx.preference:preference:1.1.1'
 }
