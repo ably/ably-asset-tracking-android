@@ -1,0 +1,20 @@
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: ./gradlew check --profile
+        env:
+          ORG_GRADLE_PROJECT_MAPBOX_DOWNLOADS_TOKEN: ${{ secrets.MAPBOX_DOWNLOADS_TOKEN }}
+      
+      # TODO upload AAR and APK artifacts somewhere for ease of access
+      - run: ls -l publishing-sdk/build/outputs/aar/
+      - run: ls -l subscribing-sdk/build/outputs/aar/
+      - run: ls -lR publishing-example-app/build/outputs/apk/
+      - run: ls -lR publishing-example-java-app/build/outputs/apk/
