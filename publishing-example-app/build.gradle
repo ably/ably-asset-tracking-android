@@ -14,4 +14,6 @@ android {
 
 dependencies {
     implementation project(":publishing-sdk")
+    implementation 'io.ably:ably-android:1.2.2'
+    implementation 'androidx.preference:preference:1.1.1'
 }

@@ -12,4 +12,13 @@
   <string name="tracking_id">Tracking ID</string>
   <string name="offline">OFFLINE</string>
   <string name="online">ONLINE</string>
+
+  <string name="preferences_location_source_key">location_source</string>
+  <string name="location_source_phone">PHONE</string>
+  <string name="location_source_ably">ABLY_CHANNEL</string>
+  <string name="location_source_s3">S3_FILE</string>
+  <string name="default_location_source">@string/location_source_phone</string>
+  <string name="preferences_simulation_channel_name_key">simulation_channel_name</string>
+  <string name="default_simulation_channel">simulation_test</string>
+  <string name="preferences_s3_file_key">s3_file</string>
 </resources>
