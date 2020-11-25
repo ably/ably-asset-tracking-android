@@ -3,6 +3,7 @@ package com.ably.tracking.example.publisher
 import android.content.Context
 import com.amplifyframework.auth.cognito.AWSCognitoAuthPlugin
 import com.amplifyframework.core.Amplify
+import com.amplifyframework.core.AmplifyConfiguration
 import com.amplifyframework.storage.s3.AWSS3StoragePlugin
 import timber.log.Timber
 import java.io.File
@@ -18,7 +19,10 @@ object S3Helper {
     fun init(context: Context) {
         Amplify.addPlugin(AWSCognitoAuthPlugin())
         Amplify.addPlugin(AWSS3StoragePlugin())
-        Amplify.configure(context)
+        Amplify.configure(
+            AmplifyConfiguration.builder(context).devMenuEnabled(false).build(),
+            context
+        )
     }
 
     fun fetchLocationHistoryFilenames(onListLoaded: (filenamesWithSizes: List<CharSequence>, filenames: List<CharSequence>) -> Unit) {
