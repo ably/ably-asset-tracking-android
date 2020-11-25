@@ -70,17 +70,11 @@ internal data class AssetPublisherBuilder(
         )
     }
 
-    // TODO - define which fields are required and which are optional (for now: all are required)
+    // TODO - define which fields are required and which are optional (for now: only fields needed to create AssetPublisher)
     private fun isMissingRequiredFields() =
         ablyConfiguration == null ||
             mapConfiguration == null ||
-            logConfiguration == null ||
-            batteryConfiguration == null ||
-            assetMetadataJson == null ||
-            tripMetadataJson == null ||
             locationUpdatedListener == null ||
             androidContext == null ||
-            trackingId == null ||
-            destination == null ||
-            vehicleType == null
+            trackingId == null
 }
