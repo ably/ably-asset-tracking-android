@@ -2,6 +2,7 @@ package com.ably.tracking.example.publisher
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.content.res.ColorStateList
 import android.location.Location
 import android.os.Bundle
@@ -42,7 +43,7 @@ class MainActivity : AppCompatActivity() {
         requestLocationPermission()
 
         settingsFab.setOnClickListener {
-            TODO("Show settings screen")
+            startActivity(Intent(this, SettingsActivity::class.java))
         }
 
         startNavigationButton.setOnClickListener {

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent">
+
+  <PreferenceCategory android:title="@string/preferences_general_category_title">
+
+    <ListPreference
+      android:defaultValue="@string/default_location_source"
+      android:entries="@array/location_source_entries"
+      android:entryValues="@array/location_source_values"
+      android:key="@string/preferences_location_source_key"
+      android:title="@string/preferences_location_source_label"
+      app:useSimpleSummaryProvider="true" />
+
+    <EditTextPreference
+      android:defaultValue="@string/default_simulation_channel"
+      android:dialogMessage="@string/preferences_update_simulation_channel_name_message"
+      android:dialogTitle="@string/preferences_update_simulation_channel_name_label"
+      android:inputType="text"
+      android:key="@string/preferences_simulation_channel_name_key"
+      android:persistent="true"
+      android:title="@string/preferences_update_simulation_channel_name_label"
+      app:useSimpleSummaryProvider="true" />
+
+    <ListPreference
+      android:key="@string/preferences_s3_file_key"
+      android:title="@string/preferences_s3_file_label"
+      app:useSimpleSummaryProvider="true" />
+
+  </PreferenceCategory>
+
+</PreferenceScreen>
