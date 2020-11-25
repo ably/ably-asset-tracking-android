@@ -2,6 +2,7 @@ package com.ably.tracking.example.publisher
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.preference.ListPreference
 import androidx.preference.PreferenceFragmentCompat
 
 class SettingsActivity : AppCompatActivity() {
@@ -17,6 +18,11 @@ class SettingsActivity : AppCompatActivity() {
 class SettingsFragment : PreferenceFragmentCompat() {
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         addPreferencesFromResource(R.xml.settings_preferences)
-        // TODO - fetch files with history data from S3
+        (findPreference(getString(R.string.preferences_s3_file_key)) as ListPreference?)?.let { s3Preference ->
+            S3Helper.fetchLocationHistoryFilenames { filenamesWithSizes, filenames ->
+                s3Preference.entries = filenamesWithSizes.toTypedArray()
+                s3Preference.entryValues = filenames.toTypedArray()
+            }
+        }
     }
 }
