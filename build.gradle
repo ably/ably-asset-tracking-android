@@ -96,6 +96,8 @@ subprojects {
                               'AllowBackup',
                               'VectorPath',
                               'ContentDescription',
+                              'UnusedResources',
+                              'UnpackedNativeCode',
                               'StopShip'
 
                 // Lint rules which are disabled by default (see: lint --show), but which we would
@@ -106,7 +108,6 @@ subprojects {
                       'MinSdkTooLow',
                       'MangledCRLF',
                       'EasterEgg',
-                      'UnpackedNativeCode',
                       'LogConditional',
                       'UnusedIds'
             }
@@ -125,6 +126,7 @@ subprojects {
             verbose = true // shows rule name that failed
             android = true
             outputColorName = 'RED' // easier to spot failures in console output
+            disabledRules = ["import-ordering"] // according to a Github issue comment this issue could be resolved with Kotlin 1.4
         }
 
         dependencies {
