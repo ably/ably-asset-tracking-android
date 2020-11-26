@@ -15,6 +15,7 @@ import com.ably.tracking.publisher.AblyConfiguration
 import com.ably.tracking.publisher.AssetPublisher
 import com.ably.tracking.publisher.DebugConfiguration
 import com.ably.tracking.publisher.LocationSourceAbly
+import com.ably.tracking.publisher.LocationSourceRaw
 import com.ably.tracking.publisher.MapConfiguration
 import io.ably.lib.realtime.ConnectionState
 import io.ably.lib.realtime.ConnectionStateListener
@@ -77,7 +78,7 @@ class MainActivity : AppCompatActivity() {
 
     @AfterPermissionGranted(REQUEST_LOCATION_PERMISSION)
     fun onLocationPermissionGranted() {
-        Toast.makeText(this, "Permission granted", Toast.LENGTH_SHORT).show()
+        showToast("Permission granted")
     }
 
     // Lint doesn't detect that we're checking for required permissions in a separate function
@@ -86,11 +87,13 @@ class MainActivity : AppCompatActivity() {
         if (hasFineOrCoarseLocationPermissionGranted(this)) {
             trackingIdEditText.text.toString().trim().let { trackingId ->
                 if (trackingId.isNotEmpty()) {
-                    clearLocationInfo()
-                    createAndStartAssetPublisher(trackingId)
-                    changeNavigationButtonState(true)
+                    if (getLocationSourceType() == LocationSourceType.S3) {
+                        downloadLocationHistoryData { createAndStartAssetPublisher(trackingId, it) }
+                    } else {
+                        createAndStartAssetPublisher(trackingId)
+                    }
                 } else {
-                    Toast.makeText(this, "Insert tracking ID", Toast.LENGTH_SHORT).show()
+                    showToast("Insert tracking ID")
                 }
             }
         } else {
@@ -99,26 +102,47 @@ class MainActivity : AppCompatActivity() {
     }
 
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
-    private fun createAndStartAssetPublisher(trackingId: String) {
+    private fun createAndStartAssetPublisher(trackingId: String, historyData: String? = null) {
+        clearLocationInfo()
         assetPublisher = AssetPublisher.publishers()
             .ablyConfig(AblyConfiguration(ABLY_API_KEY, CLIENT_ID))
             .mapConfig(MapConfiguration(MAPBOX_ACCESS_TOKEN))
-            .debugConfig(createDebugConfiguration())
+            .debugConfig(createDebugConfiguration(historyData))
             .delivery(trackingId)
             .locationUpdatedListener { updateLocationInfo(it) }
             .androidContext(this)
             .start()
+        changeNavigationButtonState(true)
     }
 
-    private fun createDebugConfiguration(): DebugConfiguration {
+    private fun downloadLocationHistoryData(onHistoryDataDownloaded: (historyData: String) -> Unit) {
+        S3Helper.downloadHistoryData(
+            this,
+            appPreferences.getS3File(),
+            onHistoryDataDownloaded = { onHistoryDataDownloaded(it) },
+            onUninitialized = { showToast("S3 not initialized - cannot download history data") }
+        )
+    }
+
+    private fun createDebugConfiguration(historyData: String? = null): DebugConfiguration {
         return DebugConfiguration(
             ablyStateChangeListener = { updateAblyStateInfo(it) },
-            locationSource = when (appPreferences.getLocationSource()) {
-                getString(R.string.location_source_ably) -> LocationSourceAbly(appPreferences.getSimulationChannel())
-                getString(R.string.location_source_s3) -> TODO("Add support for S3")
-                else -> null
-            }
+            locationSource = when (getLocationSourceType()) {
+                LocationSourceType.ABLY -> LocationSourceAbly(appPreferences.getSimulationChannel())
+                LocationSourceType.S3 -> LocationSourceRaw(historyData!!)
+                LocationSourceType.PHONE -> null
+            },
+            locationHistoryReadyListener = { uploadLocationHistoryData(it) }
         )
+    }
+
+    private fun uploadLocationHistoryData(historyData: String) {
+        if (getLocationSourceType() == LocationSourceType.PHONE) {
+            S3Helper.uploadHistoryData(
+                this,
+                historyData
+            ) { showToast("S3 not initialized - cannot upload history data") }
+        }
     }
 
     private fun stopTracking() {
@@ -182,5 +206,18 @@ class MainActivity : AppCompatActivity() {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         // Forward results to EasyPermissions
         EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this)
+    }
+
+    enum class LocationSourceType { PHONE, ABLY, S3 }
+
+    private fun getLocationSourceType() =
+        when (appPreferences.getLocationSource()) {
+            getString(R.string.location_source_ably) -> LocationSourceType.ABLY
+            getString(R.string.location_source_s3) -> LocationSourceType.S3
+            else -> LocationSourceType.PHONE
+        }
+
+    private fun showToast(message: String) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 }
