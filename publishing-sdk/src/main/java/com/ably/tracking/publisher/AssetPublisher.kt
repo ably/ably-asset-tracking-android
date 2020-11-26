@@ -106,8 +106,8 @@ interface AssetPublisher {
          */
         fun delivery(
             trackingId: String,
-            destination: String = "",
-            vehicleType: String = "car"
+            destination: String? = "",
+            vehicleType: String? = "car"
         ): Builder
 
         /**

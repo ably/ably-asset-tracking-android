@@ -270,6 +270,36 @@ class FactoryUnitTests {
     }
 
     @Test
+    fun `passing nulls as optional params of delivery data should set default values for those fields`() {
+        // given
+        val trackingId = "abc"
+
+        // when
+        val builder = AssetPublisher.publishers()
+            .delivery(trackingId, null, null) as AssetPublisherBuilder
+
+        // then
+        Assert.assertEquals(trackingId, builder.trackingId)
+        Assert.assertEquals("", builder.destination)
+        Assert.assertEquals("car", builder.vehicleType)
+    }
+
+    @Test
+    fun `setting only the required params of delivery data should set default values for optional fields`() {
+        // given
+        val trackingId = "abc"
+
+        // when
+        val builder = AssetPublisher.publishers()
+            .delivery(trackingId) as AssetPublisherBuilder
+
+        // then
+        Assert.assertEquals(trackingId, builder.trackingId)
+        Assert.assertEquals("", builder.destination)
+        Assert.assertEquals("car", builder.vehicleType)
+    }
+
+    @Test
     fun `setting delivery data returns a new copy of builder`() {
         // given
         val trackingId = "abc"
