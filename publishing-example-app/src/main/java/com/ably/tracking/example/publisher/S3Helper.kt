@@ -16,29 +16,44 @@ import kotlin.math.pow
 
 object S3Helper {
 
+    private var isInitialized = false
+
     fun init(context: Context) {
-        Amplify.addPlugin(AWSCognitoAuthPlugin())
-        Amplify.addPlugin(AWSS3StoragePlugin())
-        Amplify.configure(
-            AmplifyConfiguration.builder(context).devMenuEnabled(false).build(),
-            context
-        )
+        if (isConfigFileProvided(context)) {
+            Amplify.addPlugin(AWSCognitoAuthPlugin())
+            Amplify.addPlugin(AWSS3StoragePlugin())
+            Amplify.configure(
+                AmplifyConfiguration.builder(context).devMenuEnabled(false).build(),
+                context
+            )
+            isInitialized = true
+        }
     }
 
-    fun fetchLocationHistoryFilenames(onListLoaded: (filenamesWithSizes: List<CharSequence>, filenames: List<CharSequence>) -> Unit) {
-        Amplify.Storage.list(
-            "",
-            { result ->
-                val filenamesWithSizes = mutableListOf<String>()
-                val filenames = mutableListOf<String>()
-                result.items.forEach { item ->
-                    filenamesWithSizes.add("${item.key} (${formatFileSize(item.size)})")
-                    filenames.add(item.key)
-                }
-                onListLoaded(filenamesWithSizes, filenames)
-            },
-            { error -> Timber.e(error, "Error when listing S3 files") }
-        )
+    private fun isConfigFileProvided(context: Context) =
+        context.resources.getIdentifier("amplifyconfiguration", "raw", context.packageName) != 0
+
+    fun fetchLocationHistoryFilenames(
+        onListLoaded: (filenamesWithSizes: List<CharSequence>, filenames: List<CharSequence>) -> Unit,
+        onUninitialized: (() -> Unit)? = null
+    ) {
+        if (isInitialized) {
+            Amplify.Storage.list(
+                "",
+                { result ->
+                    val filenamesWithSizes = mutableListOf<String>()
+                    val filenames = mutableListOf<String>()
+                    result.items.forEach { item ->
+                        filenamesWithSizes.add("${item.key} (${formatFileSize(item.size)})")
+                        filenames.add(item.key)
+                    }
+                    onListLoaded(filenamesWithSizes, filenames)
+                },
+                { error -> Timber.e(error, "Error when listing S3 files") }
+            )
+        } else {
+            onUninitialized?.invoke()
+        }
     }
 
     private fun formatFileSize(size: Long): String? {
@@ -51,26 +66,39 @@ object S3Helper {
     fun downloadHistoryData(
         context: Context,
         filename: String,
-        onHistoryDataDownloaded: (historyData: String) -> Unit
+        onHistoryDataDownloaded: (historyData: String) -> Unit,
+        onUninitialized: (() -> Unit)? = null
     ) {
-        Amplify.Storage.downloadFile(
-            filename,
-            File(context.getExternalFilesDir(null), filename),
-            { result -> onHistoryDataDownloaded(result.file.readText()) },
-            { error -> Timber.e(error, "Error when downloading S3 file") }
-        )
-    }
-
-    fun uploadHistoryData(context: Context, historyData: String) {
-        val filename = SimpleDateFormat("yyyy-MM-dd_HH:mm:ss", Locale.US).format(Date())
-        File(context.getExternalFilesDir(null), filename).let { fileToUpload ->
-            fileToUpload.writeText(historyData)
-            Amplify.Storage.uploadFile(
+        if (isInitialized) {
+            Amplify.Storage.downloadFile(
                 filename,
-                fileToUpload,
-                { result -> Timber.i("Uploaded history data to S3: ${result.key}") },
+                File(context.getExternalFilesDir(null), filename),
+                { result -> onHistoryDataDownloaded(result.file.readText()) },
                 { error -> Timber.e(error, "Error when downloading S3 file") }
             )
+        } else {
+            onUninitialized?.invoke()
+        }
+    }
+
+    fun uploadHistoryData(
+        context: Context,
+        historyData: String,
+        onUninitialized: (() -> Unit)? = null
+    ) {
+        if (isInitialized) {
+            val filename = SimpleDateFormat("yyyy-MM-dd_HH:mm:ss", Locale.US).format(Date())
+            File(context.getExternalFilesDir(null), filename).let { fileToUpload ->
+                fileToUpload.writeText(historyData)
+                Amplify.Storage.uploadFile(
+                    filename,
+                    fileToUpload,
+                    { result -> Timber.i("Uploaded history data to S3: ${result.key}") },
+                    { error -> Timber.e(error, "Error when downloading S3 file") }
+                )
+            }
+        } else {
+            onUninitialized?.invoke()
         }
     }
 }

@@ -78,7 +78,7 @@ class MainActivity : AppCompatActivity() {
 
     @AfterPermissionGranted(REQUEST_LOCATION_PERMISSION)
     fun onLocationPermissionGranted() {
-        Toast.makeText(this, "Permission granted", Toast.LENGTH_SHORT).show()
+        showToast("Permission granted")
     }
 
     // Lint doesn't detect that we're checking for required permissions in a separate function
@@ -93,7 +93,7 @@ class MainActivity : AppCompatActivity() {
                         createAndStartAssetPublisher(trackingId)
                     }
                 } else {
-                    Toast.makeText(this, "Insert tracking ID", Toast.LENGTH_SHORT).show()
+                    showToast("Insert tracking ID")
                 }
             }
         } else {
@@ -116,9 +116,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun downloadLocationHistoryData(onHistoryDataDownloaded: (historyData: String) -> Unit) {
-        S3Helper.downloadHistoryData(this, appPreferences.getS3File()) {
-            onHistoryDataDownloaded(it)
-        }
+        S3Helper.downloadHistoryData(
+            this,
+            appPreferences.getS3File(),
+            onHistoryDataDownloaded = { onHistoryDataDownloaded(it) },
+            onUninitialized = { showToast("S3 not initialized - cannot download history data") }
+        )
     }
 
     private fun createDebugConfiguration(historyData: String? = null): DebugConfiguration {
@@ -135,7 +138,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun uploadLocationHistoryData(historyData: String) {
         if (getLocationSourceType() == LocationSourceType.PHONE) {
-            S3Helper.uploadHistoryData(this, historyData)
+            S3Helper.uploadHistoryData(
+                this,
+                historyData
+            ) { showToast("S3 not initialized - cannot upload history data") }
         }
     }
 
@@ -214,4 +220,8 @@ class MainActivity : AppCompatActivity() {
             getString(R.string.location_source_s3) -> LocationSourceType.S3
             else -> LocationSourceType.PHONE
         }
+
+    private fun showToast(message: String) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+    }
 }
