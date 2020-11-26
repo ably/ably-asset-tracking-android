@@ -4,7 +4,7 @@ import android.location.Location
 import com.google.gson.Gson
 import io.ably.lib.types.Message
 
-fun Location.toGeoJson(): GeoJsonMessage =
+internal fun Location.toGeoJson(): GeoJsonMessage =
     GeoJsonMessage(
         GeoJsonTypes.FEATURE,
         GeoJsonGeometry(GeoJsonTypes.POINT, listOf(longitude, latitude)),
@@ -17,13 +17,13 @@ fun Location.toGeoJson(): GeoJsonMessage =
         )
     )
 
-fun GeoJsonMessage.toJsonArray(gson: Gson): String =
+internal fun GeoJsonMessage.toJsonArray(gson: Gson): String =
     gson.toJson(listOf(this))
 
-fun List<GeoJsonMessage>.toJsonArray(gson: Gson): String =
+internal fun List<GeoJsonMessage>.toJsonArray(gson: Gson): String =
     gson.toJson(this)
 
-fun GeoJsonMessage.toLocation(): Location =
+internal fun GeoJsonMessage.toLocation(): Location =
     Location(LOCATION_TYPE_FUSED).apply {
         longitude = geometry.coordinates[GEOMETRY_LONG_INDEX]
         latitude = geometry.coordinates[GEOMETRY_LAT_INDEX]
@@ -34,5 +34,5 @@ fun GeoJsonMessage.toLocation(): Location =
         time = (properties.time * MILLISECONDS_PER_SECOND).toLong()
     }
 
-fun Message.getGeoJsonMessages(gson: Gson): List<GeoJsonMessage> =
+internal fun Message.getGeoJsonMessages(gson: Gson): List<GeoJsonMessage> =
     gson.fromJson(data as String, Array<GeoJsonMessage>::class.java).toList()

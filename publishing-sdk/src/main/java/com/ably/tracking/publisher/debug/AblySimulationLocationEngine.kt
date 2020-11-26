@@ -15,7 +15,7 @@ import io.ably.lib.realtime.AblyRealtime
 import io.ably.lib.types.ClientOptions
 import timber.log.Timber
 
-class AblySimulationLocationEngine(ablyOptions: ClientOptions, simulationTrackingId: String) :
+internal class AblySimulationLocationEngine(ablyOptions: ClientOptions, simulationTrackingId: String) :
     LocationEngine {
     private val gson = Gson()
     private var lastLocationResult: LocationEngineResult? = null
