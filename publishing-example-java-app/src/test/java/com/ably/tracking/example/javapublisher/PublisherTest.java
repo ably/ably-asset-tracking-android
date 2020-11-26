@@ -1,17 +1,17 @@
 package com.ably.tracking.example.javapublisher;
 
-import com.ably.tracking.publisher.AssetPublisher;
+import com.ably.tracking.publisher.Publisher;
 
 import org.junit.Test;
 
-public class AssetPublisherTest {
+public class PublisherTest {
     @Test
     public void publishersFactoryShouldNotThrowError() {
-        AssetPublisher.publishers();
+        Publisher.publishers();
     }
 
     @Test
     public void publishersShouldAllowToSetDeliveryDataWithOptionalParams() {
-        AssetPublisher.publishers().delivery("some_id", null, null);
+        Publisher.publishers().delivery("some_id", null, null);
     }
 }

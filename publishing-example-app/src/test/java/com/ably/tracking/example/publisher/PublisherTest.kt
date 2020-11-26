@@ -1,16 +1,16 @@
 package com.ably.tracking.example.publisher
 
-import com.ably.tracking.publisher.AssetPublisher
+import com.ably.tracking.publisher.Publisher
 import org.junit.Test
 
-class AssetPublisherTest {
+class PublisherTest {
     @Test
     fun `publishers factory should not throw error`() {
-        AssetPublisher.publishers()
+        Publisher.publishers()
     }
 
     @Test
     fun `publishers should allow to set delivery data with optional params`() {
-        AssetPublisher.publishers().delivery("some_id")
+        Publisher.publishers().delivery("some_id")
     }
 }

@@ -8,7 +8,7 @@ import androidx.annotation.RequiresPermission
 
 typealias LocationUpdatedListener = (Location) -> Unit
 
-interface AssetPublisher {
+interface Publisher {
     companion object Factory {
         /**
          * Returns the default builder of Publisher instances.
@@ -18,7 +18,7 @@ interface AssetPublisher {
             // TODO ensure this can be called from Java - may need @JvmStatic annotation
             // https://kotlinlang.org/docs/tutorials/kotlin-for-py/objects-and-companion-objects.html#companion-objects
             // TODO - keep a builder with default config and return it here instead of creating an empty new one
-            return AssetPublisherBuilder()
+            return PublisherBuilder()
         }
     }
 
@@ -111,16 +111,16 @@ interface AssetPublisher {
         ): Builder
 
         /**
-         * Creates a [AssetPublisher] and starts publishing asset location
+         * Creates a [Publisher] and starts publishing asset location
          *
          * In order to detect device's location ACCESS_COARSE_LOCATION or ACCESS_FINE_LOCATION permission must be granted.
          * It is strongly suggested to call this method from the main thread.
          *
-         * @return A new instance of [AssetPublisher]
+         * @return A new instance of [Publisher]
          * @throws BuilderConfigurationIncompleteException If all required params aren't set
          */
         @RequiresPermission(anyOf = [ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION])
-        fun start(): AssetPublisher
+        fun start(): Publisher
 
         /**
          * Sets the debug configuration.

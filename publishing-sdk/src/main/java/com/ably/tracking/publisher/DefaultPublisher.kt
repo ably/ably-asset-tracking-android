@@ -31,7 +31,7 @@ private const val DEFAULT_INTERVAL_IN_MILLISECONDS = 500L
 private const val DEFAULT_MAX_WAIT_TIME = DEFAULT_INTERVAL_IN_MILLISECONDS * 10
 
 @SuppressLint("LogConditional")
-internal class DefaultAssetPublisher
+internal class DefaultPublisher
 @RequiresPermission(anyOf = [ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION])
 constructor(
     private val ablyConfiguration: AblyConfiguration,
@@ -41,7 +41,7 @@ constructor(
     private val locationUpdatedListener: LocationUpdatedListener,
     context: Context
 ) :
-    AssetPublisher {
+    Publisher {
     private val gson: Gson = Gson()
     private val mapboxNavigation: MapboxNavigation
     private val ably: AblyRealtime

@@ -11,14 +11,14 @@ import org.junit.Test
  */
 class FactoryUnitTests {
     @Test
-    fun `publishers should return AssetPublisher Builder object`() {
+    fun `publishers should return Publisher Builder object`() {
         // given
 
         // when
-        val builder = AssetPublisher.publishers()
+        val builder = Publisher.publishers()
 
         // then
-        Assert.assertTrue(builder is AssetPublisher.Builder)
+        Assert.assertTrue(builder is Publisher.Builder)
     }
 
     @Test
@@ -27,7 +27,7 @@ class FactoryUnitTests {
         val configuration = AblyConfiguration("", "")
 
         // when
-        val builder = AssetPublisher.publishers().ablyConfig(configuration) as AssetPublisherBuilder
+        val builder = Publisher.publishers().ablyConfig(configuration) as PublisherBuilder
 
         // then
         Assert.assertEquals(configuration, builder.ablyConfiguration)
@@ -37,7 +37,7 @@ class FactoryUnitTests {
     fun `setting Ably config returns a new copy of builder`() {
         // given
         val configuration = AblyConfiguration("", "")
-        val originalBuilder = AssetPublisher.publishers()
+        val originalBuilder = Publisher.publishers()
 
         // when
         val newBuilder = originalBuilder.ablyConfig(configuration)
@@ -52,7 +52,7 @@ class FactoryUnitTests {
         val configuration = MapConfiguration("")
 
         // when
-        val builder = AssetPublisher.publishers().mapConfig(configuration) as AssetPublisherBuilder
+        val builder = Publisher.publishers().mapConfig(configuration) as PublisherBuilder
 
         // then
         Assert.assertEquals(configuration, builder.mapConfiguration)
@@ -62,7 +62,7 @@ class FactoryUnitTests {
     fun `setting map config returns a new copy of builder`() {
         // given
         val configuration = MapConfiguration("")
-        val originalBuilder = AssetPublisher.publishers()
+        val originalBuilder = Publisher.publishers()
 
         // when
         val newBuilder = originalBuilder.mapConfig(configuration)
@@ -77,7 +77,7 @@ class FactoryUnitTests {
         val configuration = LogConfiguration(true)
 
         // when
-        val builder = AssetPublisher.publishers().logConfig(configuration) as AssetPublisherBuilder
+        val builder = Publisher.publishers().logConfig(configuration) as PublisherBuilder
 
         // then
         Assert.assertEquals(configuration, builder.logConfiguration)
@@ -87,7 +87,7 @@ class FactoryUnitTests {
     fun `setting logging config returns a new copy of builder`() {
         // given
         val configuration = LogConfiguration(true)
-        val originalBuilder = AssetPublisher.publishers()
+        val originalBuilder = Publisher.publishers()
 
         // when
         val newBuilder = originalBuilder.logConfig(configuration)
@@ -103,7 +103,7 @@ class FactoryUnitTests {
 
         // when
         val builder =
-            AssetPublisher.publishers().batteryConfig(configuration) as AssetPublisherBuilder
+            Publisher.publishers().batteryConfig(configuration) as PublisherBuilder
 
         // then
         Assert.assertEquals(configuration, builder.batteryConfiguration)
@@ -113,7 +113,7 @@ class FactoryUnitTests {
     fun `setting battery config returns a new copy of builder`() {
         // given
         val configuration = BatteryConfiguration("")
-        val originalBuilder = AssetPublisher.publishers()
+        val originalBuilder = Publisher.publishers()
 
         // when
         val newBuilder = originalBuilder.batteryConfig(configuration)
@@ -129,7 +129,7 @@ class FactoryUnitTests {
 
         // when
         val builder =
-            AssetPublisher.publishers().debugConfig(configuration) as AssetPublisherBuilder
+            Publisher.publishers().debugConfig(configuration) as PublisherBuilder
 
         // then
         Assert.assertEquals(configuration, builder.debugConfiguration)
@@ -139,7 +139,7 @@ class FactoryUnitTests {
     fun `setting debug config returns a new copy of builder`() {
         // given
         val configuration = DebugConfiguration()
-        val originalBuilder = AssetPublisher.publishers()
+        val originalBuilder = Publisher.publishers()
 
         // when
         val newBuilder = originalBuilder.debugConfig(configuration)
@@ -155,7 +155,7 @@ class FactoryUnitTests {
 
         // when
         val builder =
-            AssetPublisher.publishers().assetMetadataJson(metadata) as AssetPublisherBuilder
+            Publisher.publishers().assetMetadataJson(metadata) as PublisherBuilder
 
         // then
         Assert.assertEquals(metadata, builder.assetMetadataJson)
@@ -165,7 +165,7 @@ class FactoryUnitTests {
     fun `setting asset metadata JSON returns a new copy of builder`() {
         // given
         val metadata = ""
-        val originalBuilder = AssetPublisher.publishers()
+        val originalBuilder = Publisher.publishers()
 
         // when
         val newBuilder = originalBuilder.assetMetadataJson(metadata)
@@ -181,7 +181,7 @@ class FactoryUnitTests {
 
         // when
         val builder =
-            AssetPublisher.publishers().tripMetadataJson(metadata) as AssetPublisherBuilder
+            Publisher.publishers().tripMetadataJson(metadata) as PublisherBuilder
 
         // then
         Assert.assertEquals(metadata, builder.tripMetadataJson)
@@ -191,7 +191,7 @@ class FactoryUnitTests {
     fun `setting trip metadata JSON returns a new copy of builder`() {
         // given
         val metadata = ""
-        val originalBuilder = AssetPublisher.publishers()
+        val originalBuilder = Publisher.publishers()
 
         // when
         val newBuilder = originalBuilder.tripMetadataJson(metadata)
@@ -207,7 +207,7 @@ class FactoryUnitTests {
 
         // when
         val builder =
-            AssetPublisher.publishers().locationUpdatedListener(listener) as AssetPublisherBuilder
+            Publisher.publishers().locationUpdatedListener(listener) as PublisherBuilder
 
         // then
         Assert.assertEquals(listener, builder.locationUpdatedListener)
@@ -217,7 +217,7 @@ class FactoryUnitTests {
     fun `setting location updated listener returns a new copy of builder`() {
         // given
         val listener: LocationUpdatedListener = {}
-        val originalBuilder = AssetPublisher.publishers()
+        val originalBuilder = Publisher.publishers()
 
         // when
         val newBuilder = originalBuilder.locationUpdatedListener(listener)
@@ -233,7 +233,7 @@ class FactoryUnitTests {
 
         // when
         val builder =
-            AssetPublisher.publishers().androidContext(mockedContext) as AssetPublisherBuilder
+            Publisher.publishers().androidContext(mockedContext) as PublisherBuilder
 
         // then
         Assert.assertEquals(mockedContext, builder.androidContext)
@@ -243,7 +243,7 @@ class FactoryUnitTests {
     fun `setting android context returns a new copy of builder`() {
         // given
         val mockedContext = mockk<Context>()
-        val originalBuilder = AssetPublisher.publishers()
+        val originalBuilder = Publisher.publishers()
 
         // when
         val newBuilder = originalBuilder.androidContext(mockedContext)
@@ -260,8 +260,8 @@ class FactoryUnitTests {
         val vehicleType = "car"
 
         // when
-        val builder = AssetPublisher.publishers()
-            .delivery(trackingId, destination, vehicleType) as AssetPublisherBuilder
+        val builder = Publisher.publishers()
+            .delivery(trackingId, destination, vehicleType) as PublisherBuilder
 
         // then
         Assert.assertEquals(trackingId, builder.trackingId)
@@ -275,8 +275,8 @@ class FactoryUnitTests {
         val trackingId = "abc"
 
         // when
-        val builder = AssetPublisher.publishers()
-            .delivery(trackingId, null, null) as AssetPublisherBuilder
+        val builder = Publisher.publishers()
+            .delivery(trackingId, null, null) as PublisherBuilder
 
         // then
         Assert.assertEquals(trackingId, builder.trackingId)
@@ -290,8 +290,8 @@ class FactoryUnitTests {
         val trackingId = "abc"
 
         // when
-        val builder = AssetPublisher.publishers()
-            .delivery(trackingId) as AssetPublisherBuilder
+        val builder = Publisher.publishers()
+            .delivery(trackingId) as PublisherBuilder
 
         // then
         Assert.assertEquals(trackingId, builder.trackingId)
@@ -305,7 +305,7 @@ class FactoryUnitTests {
         val trackingId = "abc"
         val destination = "London"
         val vehicleType = "car"
-        val originalBuilder = AssetPublisher.publishers()
+        val originalBuilder = Publisher.publishers()
 
         // when
         val newBuilder = originalBuilder.delivery(trackingId, destination, vehicleType)
@@ -317,8 +317,8 @@ class FactoryUnitTests {
     @Test
     fun `setting all data should update all builder fields`() {
         // given
-        val builder = AssetPublisher.publishers()
-        assertAllBuilderFieldsAreNull(builder as AssetPublisherBuilder)
+        val builder = Publisher.publishers()
+        assertAllBuilderFieldsAreNull(builder as PublisherBuilder)
         val mockedContext = mockk<Context>()
 
         // when
@@ -334,16 +334,16 @@ class FactoryUnitTests {
             .delivery("", "", "")
 
         // then
-        assertAllBuilderFieldsAreNotNull(updatedBuilder as AssetPublisherBuilder)
+        assertAllBuilderFieldsAreNotNull(updatedBuilder as PublisherBuilder)
     }
 
     @SuppressLint("MissingPermission")
     @Test(expected = BuilderConfigurationIncompleteException::class)
     fun `calling start with missing required fields should throw BuilderConfigurationIncompleteException`() {
-        AssetPublisher.publishers().start()
+        Publisher.publishers().start()
     }
 
-    private fun assertAllBuilderFieldsAreNull(builder: AssetPublisherBuilder) {
+    private fun assertAllBuilderFieldsAreNull(builder: PublisherBuilder) {
         Assert.assertNull(builder.ablyConfiguration)
         Assert.assertNull(builder.mapConfiguration)
         Assert.assertNull(builder.logConfiguration)
@@ -357,7 +357,7 @@ class FactoryUnitTests {
         Assert.assertNull(builder.vehicleType)
     }
 
-    private fun assertAllBuilderFieldsAreNotNull(builder: AssetPublisherBuilder) {
+    private fun assertAllBuilderFieldsAreNotNull(builder: PublisherBuilder) {
         Assert.assertNotNull(builder.ablyConfiguration)
         Assert.assertNotNull(builder.mapConfiguration)
         Assert.assertNotNull(builder.logConfiguration)

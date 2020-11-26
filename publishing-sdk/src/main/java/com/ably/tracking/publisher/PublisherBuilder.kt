@@ -5,7 +5,7 @@ import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.content.Context
 import androidx.annotation.RequiresPermission
 
-internal data class AssetPublisherBuilder(
+internal data class PublisherBuilder(
     val ablyConfiguration: AblyConfiguration? = null,
     val mapConfiguration: MapConfiguration? = null,
     val logConfiguration: LogConfiguration? = null,
@@ -18,40 +18,40 @@ internal data class AssetPublisherBuilder(
     val trackingId: String? = null,
     val destination: String? = null,
     val vehicleType: String? = null
-) : AssetPublisher.Builder {
+) : Publisher.Builder {
 
-    override fun ablyConfig(configuration: AblyConfiguration): AssetPublisher.Builder =
+    override fun ablyConfig(configuration: AblyConfiguration): Publisher.Builder =
         this.copy(ablyConfiguration = configuration)
 
-    override fun mapConfig(configuration: MapConfiguration): AssetPublisher.Builder =
+    override fun mapConfig(configuration: MapConfiguration): Publisher.Builder =
         this.copy(mapConfiguration = configuration)
 
-    override fun logConfig(configuration: LogConfiguration): AssetPublisher.Builder =
+    override fun logConfig(configuration: LogConfiguration): Publisher.Builder =
         this.copy(logConfiguration = configuration)
 
-    override fun batteryConfig(configuration: BatteryConfiguration): AssetPublisher.Builder =
+    override fun batteryConfig(configuration: BatteryConfiguration): Publisher.Builder =
         this.copy(batteryConfiguration = configuration)
 
-    override fun debugConfig(configuration: DebugConfiguration?): AssetPublisher.Builder =
+    override fun debugConfig(configuration: DebugConfiguration?): Publisher.Builder =
         this.copy(debugConfiguration = configuration)
 
-    override fun assetMetadataJson(metadataJsonString: String): AssetPublisher.Builder =
+    override fun assetMetadataJson(metadataJsonString: String): Publisher.Builder =
         this.copy(assetMetadataJson = metadataJsonString)
 
-    override fun tripMetadataJson(metadataJsonString: String): AssetPublisher.Builder =
+    override fun tripMetadataJson(metadataJsonString: String): Publisher.Builder =
         this.copy(tripMetadataJson = metadataJsonString)
 
-    override fun locationUpdatedListener(listener: LocationUpdatedListener): AssetPublisher.Builder =
+    override fun locationUpdatedListener(listener: LocationUpdatedListener): Publisher.Builder =
         this.copy(locationUpdatedListener = listener)
 
-    override fun androidContext(context: Context): AssetPublisher.Builder =
+    override fun androidContext(context: Context): Publisher.Builder =
         this.copy(androidContext = context)
 
     override fun delivery(
         trackingId: String,
         destination: String?,
         vehicleType: String?
-    ): AssetPublisher.Builder =
+    ): Publisher.Builder =
         this.copy(
             trackingId = trackingId,
             destination = destination ?: "",
@@ -59,12 +59,12 @@ internal data class AssetPublisherBuilder(
         )
 
     @RequiresPermission(anyOf = [ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION])
-    override fun start(): AssetPublisher {
+    override fun start(): Publisher {
         if (isMissingRequiredFields()) {
             throw BuilderConfigurationIncompleteException()
         }
         // All below fields are required and above code checks if they are nulls, so using !! should be safe from NPE
-        return DefaultAssetPublisher(
+        return DefaultPublisher(
             ablyConfiguration!!,
             mapConfiguration!!,
             debugConfiguration,
@@ -74,7 +74,7 @@ internal data class AssetPublisherBuilder(
         )
     }
 
-    // TODO - define which fields are required and which are optional (for now: only fields needed to create AssetPublisher)
+    // TODO - define which fields are required and which are optional (for now: only fields needed to create Publisher)
     private fun isMissingRequiredFields() =
         ablyConfiguration == null ||
             mapConfiguration == null ||
