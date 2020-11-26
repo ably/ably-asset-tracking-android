@@ -34,7 +34,7 @@ interface AssetSubscriber {
         fun ablyConfig(configuration: AblyConfiguration): Builder
 
         /**
-         *  Sets the logging configuration.
+         * Sets the logging configuration.
          *
          * @param configuration Logging configuration object [LogConfiguration]
          * @return A new instance of the builder with logging configuration changed
@@ -42,7 +42,7 @@ interface AssetSubscriber {
         fun logConfig(configuration: LogConfiguration): Builder
 
         /**
-         *  Sets listener that notifies about raw location updates
+         * Sets listener that notifies about raw location updates
          *
          * @param listener Listener function that takes updated [Location] and returns nothing
          * @return A new instance of the builder with raw location updates listener changed
@@ -50,7 +50,7 @@ interface AssetSubscriber {
         fun rawLocationUpdatedListener(listener: LocationUpdatedListener): Builder
 
         /**
-         *  Sets listener that notifies about enhanced location updates
+         * Sets listener that notifies about enhanced location updates
          *
          * @param listener Listener function that takes updated [Location] and returns nothing
          * @return A new instance of the builder with enhanced location updates listener changed
@@ -58,7 +58,7 @@ interface AssetSubscriber {
         fun enhancedLocationUpdatedListener(listener: LocationUpdatedListener): Builder
 
         /**
-         *  Sets resolution of updates from the publisher
+         * Sets resolution of updates from the publisher
          *
          * @param resolution resolution of updates from the publisher
          * @return A new instance of the builder with resolution changed
@@ -66,7 +66,7 @@ interface AssetSubscriber {
         fun resolution(resolution: Double): Builder
 
         /**
-         *  Sets tracking ID of the tracked asset
+         * Sets tracking ID of the tracked asset
          *
          * @param trackingId ID of the tracked asset
          * @return A new instance of the builder with tracking ID changed
