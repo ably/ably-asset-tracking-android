@@ -26,9 +26,9 @@ import timber.log.Timber
 
 private val REQUIRED_PERMISSIONS = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
 private const val REQUEST_LOCATION_PERMISSION = 1
-private const val MAP_KEY = "<INSERT_MAP_KEY_HERE>"
+private const val MAPBOX_ACCESS_TOKEN = BuildConfig.MAPBOX_ACCESS_TOKEN
 private const val CLIENT_ID = "<INSERT_CLIENT_ID_HERE>"
-private const val ABLY_KEY = "<INSERT_ABLY_KEY_HERE>"
+private const val ABLY_API_KEY = BuildConfig.ABLY_API_KEY
 
 class MainActivity : AppCompatActivity() {
     private var assetPublisher: AssetPublisher? = null
@@ -105,8 +105,8 @@ class MainActivity : AppCompatActivity() {
     private fun createAndStartAssetPublisher(trackingId: String, historyData: String? = null) {
         clearLocationInfo()
         assetPublisher = AssetPublisher.publishers()
-            .ablyConfig(AblyConfiguration(ABLY_KEY, CLIENT_ID))
-            .mapConfig(MapConfiguration(MAP_KEY))
+            .ablyConfig(AblyConfiguration(ABLY_API_KEY, CLIENT_ID))
+            .mapConfig(MapConfiguration(MAPBOX_ACCESS_TOKEN))
             .debugConfig(createDebugConfiguration(historyData))
             .delivery(trackingId)
             .locationUpdatedListener { updateLocationInfo(it) }
@@ -168,12 +168,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateAblyStateInfo(state: ConnectionStateListener.ConnectionStateChange) {
-        // TODO - Change Ably listener thread to main thread in the SDK
-        // https://github.com/ably/ably-asset-tracking-android/issues/22
-        runOnUiThread {
-            val isAblyConnected = state.current == ConnectionState.connected
-            changeAblyStatusInfo(isAblyConnected)
-        }
+        val isAblyConnected = state.current == ConnectionState.connected
+        changeAblyStatusInfo(isAblyConnected)
     }
 
     private fun changeAblyStatusInfo(isConnected: Boolean) {
