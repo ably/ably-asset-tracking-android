@@ -94,7 +94,7 @@ object S3Helper {
                     filename,
                     fileToUpload,
                     { result -> Timber.i("Uploaded history data to S3: ${result.key}") },
-                    { error -> Timber.e(error, "Error when downloading S3 file") }
+                    { error -> Timber.e(error, "Error when uploading S3 file") }
                 )
             }
         } else {
