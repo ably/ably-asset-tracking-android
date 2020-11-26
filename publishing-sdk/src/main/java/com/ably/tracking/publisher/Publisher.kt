@@ -55,14 +55,6 @@ interface Publisher {
         fun logConfig(configuration: LogConfiguration): Builder
 
         /**
-         * Sets the battery configuration.
-         *
-         * @param configuration Battery configuration object [BatteryConfiguration]
-         * @return A new instance of the builder with battery configuration changed
-         */
-        fun batteryConfig(configuration: BatteryConfiguration): Builder
-
-        /**
          * Sets the asset metadata
          *
          * @param metadataJsonString Asset metadata as a JSON string

@@ -97,32 +97,6 @@ class FactoryUnitTests {
     }
 
     @Test
-    fun `setting battery config updates builder field`() {
-        // given
-        val configuration = BatteryConfiguration("")
-
-        // when
-        val builder =
-            Publisher.publishers().batteryConfig(configuration) as PublisherBuilder
-
-        // then
-        Assert.assertEquals(configuration, builder.batteryConfiguration)
-    }
-
-    @Test
-    fun `setting battery config returns a new copy of builder`() {
-        // given
-        val configuration = BatteryConfiguration("")
-        val originalBuilder = Publisher.publishers()
-
-        // when
-        val newBuilder = originalBuilder.batteryConfig(configuration)
-
-        // then
-        Assert.assertNotEquals(newBuilder, originalBuilder)
-    }
-
-    @Test
     fun `setting debug config updates builder field`() {
         // given
         val configuration = DebugConfiguration({}, LocationSourceAbly(""))
@@ -326,7 +300,6 @@ class FactoryUnitTests {
             .ablyConfig(AblyConfiguration("", ""))
             .mapConfig(MapConfiguration(""))
             .logConfig(LogConfiguration(true))
-            .batteryConfig(BatteryConfiguration(""))
             .assetMetadataJson("")
             .tripMetadataJson("")
             .locationUpdatedListener { }
@@ -347,7 +320,6 @@ class FactoryUnitTests {
         Assert.assertNull(builder.ablyConfiguration)
         Assert.assertNull(builder.mapConfiguration)
         Assert.assertNull(builder.logConfiguration)
-        Assert.assertNull(builder.batteryConfiguration)
         Assert.assertNull(builder.assetMetadataJson)
         Assert.assertNull(builder.tripMetadataJson)
         Assert.assertNull(builder.locationUpdatedListener)
@@ -361,7 +333,6 @@ class FactoryUnitTests {
         Assert.assertNotNull(builder.ablyConfiguration)
         Assert.assertNotNull(builder.mapConfiguration)
         Assert.assertNotNull(builder.logConfiguration)
-        Assert.assertNotNull(builder.batteryConfiguration)
         Assert.assertNotNull(builder.assetMetadataJson)
         Assert.assertNotNull(builder.tripMetadataJson)
         Assert.assertNotNull(builder.locationUpdatedListener)

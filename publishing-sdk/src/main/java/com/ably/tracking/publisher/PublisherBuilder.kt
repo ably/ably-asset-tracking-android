@@ -9,7 +9,6 @@ internal data class PublisherBuilder(
     val ablyConfiguration: AblyConfiguration? = null,
     val mapConfiguration: MapConfiguration? = null,
     val logConfiguration: LogConfiguration? = null,
-    val batteryConfiguration: BatteryConfiguration? = null,
     val debugConfiguration: DebugConfiguration? = null,
     val assetMetadataJson: String? = null,
     val tripMetadataJson: String? = null,
@@ -28,9 +27,6 @@ internal data class PublisherBuilder(
 
     override fun logConfig(configuration: LogConfiguration): Publisher.Builder =
         this.copy(logConfiguration = configuration)
-
-    override fun batteryConfig(configuration: BatteryConfiguration): Publisher.Builder =
-        this.copy(batteryConfiguration = configuration)
 
     override fun debugConfig(configuration: DebugConfiguration?): Publisher.Builder =
         this.copy(debugConfiguration = configuration)
