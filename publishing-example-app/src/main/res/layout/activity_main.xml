@@ -20,7 +20,7 @@
 
   <ImageView
     android:id="@+id/ablyConnectionStatusImageView"
-    android:layout_width="117dp"
+    android:layout_width="100dp"
     android:layout_height="44dp"
     android:layout_marginTop="16dp"
     android:layout_marginEnd="50dp"
