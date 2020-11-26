@@ -13,7 +13,7 @@ interface AssetSubscriber {
         fun subscribers(): Builder {
             // TODO ensure this can be called from Java - may need @JvmStatic annotation
             // https://kotlinlang.org/docs/tutorials/kotlin-for-py/objects-and-companion-objects.html#companion-objects
-            TODO()
+            return AssetSubscriberBuilder()
         }
     }
 
