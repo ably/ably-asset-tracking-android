@@ -36,7 +36,7 @@ interface Publisher {
          * @param configuration Ably library configuration object [AblyConfiguration]
          * @return A new instance of the builder with Ably configuration changed
          */
-        fun ablyConfig(configuration: AblyConfiguration): Builder
+        fun ably(configuration: AblyConfiguration): Builder
 
         /**
          * Sets the maps configuration.
@@ -44,7 +44,7 @@ interface Publisher {
          * @param configuration Map library configuration object [MapConfiguration]
          * @return A new instance of the builder with map library configuration changed
          */
-        fun mapConfig(configuration: MapConfiguration): Builder
+        fun map(configuration: MapConfiguration): Builder
 
         /**
          * Sets the logging configuration.
@@ -52,7 +52,7 @@ interface Publisher {
          * @param configuration Logging configuration object [LogConfiguration]
          * @return A new instance of the builder with logging configuration changed
          */
-        fun logConfig(configuration: LogConfiguration): Builder
+        fun log(configuration: LogConfiguration): Builder
 
         /**
          * Sets the asset metadata
@@ -122,6 +122,6 @@ interface Publisher {
          */
         // TODO - probably should be removed in the final version
         // https://github.com/ably/ably-asset-tracking-android/issues/19
-        fun debugConfig(configuration: DebugConfiguration?): Builder
+        fun debug(configuration: DebugConfiguration?): Builder
     }
 }

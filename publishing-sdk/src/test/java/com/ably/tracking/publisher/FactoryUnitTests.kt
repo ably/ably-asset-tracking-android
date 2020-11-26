@@ -27,7 +27,7 @@ class FactoryUnitTests {
         val configuration = AblyConfiguration("", "")
 
         // when
-        val builder = Publisher.publishers().ablyConfig(configuration) as PublisherBuilder
+        val builder = Publisher.publishers().ably(configuration) as PublisherBuilder
 
         // then
         Assert.assertEquals(configuration, builder.ablyConfiguration)
@@ -40,7 +40,7 @@ class FactoryUnitTests {
         val originalBuilder = Publisher.publishers()
 
         // when
-        val newBuilder = originalBuilder.ablyConfig(configuration)
+        val newBuilder = originalBuilder.ably(configuration)
 
         // then
         Assert.assertNotEquals(newBuilder, originalBuilder)
@@ -52,7 +52,7 @@ class FactoryUnitTests {
         val configuration = MapConfiguration("")
 
         // when
-        val builder = Publisher.publishers().mapConfig(configuration) as PublisherBuilder
+        val builder = Publisher.publishers().map(configuration) as PublisherBuilder
 
         // then
         Assert.assertEquals(configuration, builder.mapConfiguration)
@@ -65,7 +65,7 @@ class FactoryUnitTests {
         val originalBuilder = Publisher.publishers()
 
         // when
-        val newBuilder = originalBuilder.mapConfig(configuration)
+        val newBuilder = originalBuilder.map(configuration)
 
         // then
         Assert.assertNotEquals(newBuilder, originalBuilder)
@@ -77,7 +77,7 @@ class FactoryUnitTests {
         val configuration = LogConfiguration(true)
 
         // when
-        val builder = Publisher.publishers().logConfig(configuration) as PublisherBuilder
+        val builder = Publisher.publishers().log(configuration) as PublisherBuilder
 
         // then
         Assert.assertEquals(configuration, builder.logConfiguration)
@@ -90,7 +90,7 @@ class FactoryUnitTests {
         val originalBuilder = Publisher.publishers()
 
         // when
-        val newBuilder = originalBuilder.logConfig(configuration)
+        val newBuilder = originalBuilder.log(configuration)
 
         // then
         Assert.assertNotEquals(newBuilder, originalBuilder)
@@ -103,7 +103,7 @@ class FactoryUnitTests {
 
         // when
         val builder =
-            Publisher.publishers().debugConfig(configuration) as PublisherBuilder
+            Publisher.publishers().debug(configuration) as PublisherBuilder
 
         // then
         Assert.assertEquals(configuration, builder.debugConfiguration)
@@ -116,7 +116,7 @@ class FactoryUnitTests {
         val originalBuilder = Publisher.publishers()
 
         // when
-        val newBuilder = originalBuilder.debugConfig(configuration)
+        val newBuilder = originalBuilder.debug(configuration)
 
         // then
         Assert.assertNotEquals(newBuilder, originalBuilder)
@@ -297,9 +297,9 @@ class FactoryUnitTests {
 
         // when
         val updatedBuilder = builder
-            .ablyConfig(AblyConfiguration("", ""))
-            .mapConfig(MapConfiguration(""))
-            .logConfig(LogConfiguration(true))
+            .ably(AblyConfiguration("", ""))
+            .map(MapConfiguration(""))
+            .log(LogConfiguration(true))
             .assetMetadataJson("")
             .tripMetadataJson("")
             .locationUpdatedListener { }

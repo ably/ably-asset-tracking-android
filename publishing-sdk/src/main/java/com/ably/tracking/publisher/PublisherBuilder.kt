@@ -19,16 +19,16 @@ internal data class PublisherBuilder(
     val vehicleType: String? = null
 ) : Publisher.Builder {
 
-    override fun ablyConfig(configuration: AblyConfiguration): Publisher.Builder =
+    override fun ably(configuration: AblyConfiguration): Publisher.Builder =
         this.copy(ablyConfiguration = configuration)
 
-    override fun mapConfig(configuration: MapConfiguration): Publisher.Builder =
+    override fun map(configuration: MapConfiguration): Publisher.Builder =
         this.copy(mapConfiguration = configuration)
 
-    override fun logConfig(configuration: LogConfiguration): Publisher.Builder =
+    override fun log(configuration: LogConfiguration): Publisher.Builder =
         this.copy(logConfiguration = configuration)
 
-    override fun debugConfig(configuration: DebugConfiguration?): Publisher.Builder =
+    override fun debug(configuration: DebugConfiguration?): Publisher.Builder =
         this.copy(debugConfiguration = configuration)
 
     override fun assetMetadataJson(metadataJsonString: String): Publisher.Builder =

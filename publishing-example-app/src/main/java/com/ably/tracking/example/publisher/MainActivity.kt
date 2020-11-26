@@ -105,9 +105,9 @@ class MainActivity : AppCompatActivity() {
     private fun createAndStartAssetPublisher(trackingId: String, historyData: String? = null) {
         clearLocationInfo()
         publisher = Publisher.publishers()
-            .ablyConfig(AblyConfiguration(ABLY_API_KEY, CLIENT_ID))
-            .mapConfig(MapConfiguration(MAPBOX_ACCESS_TOKEN))
-            .debugConfig(createDebugConfiguration(historyData))
+            .ably(AblyConfiguration(ABLY_API_KEY, CLIENT_ID))
+            .map(MapConfiguration(MAPBOX_ACCESS_TOKEN))
+            .debug(createDebugConfiguration(historyData))
             .delivery(trackingId)
             .locationUpdatedListener { updateLocationInfo(it) }
             .androidContext(this)
