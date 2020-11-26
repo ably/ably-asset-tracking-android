@@ -39,7 +39,7 @@ interface AssetPublisher {
         fun ablyConfig(configuration: AblyConfiguration): Builder
 
         /**
-         *  Sets the maps configuration.
+         * Sets the maps configuration.
          *
          * @param configuration Map library configuration object [MapConfiguration]
          * @return A new instance of the builder with map library configuration changed
@@ -47,7 +47,7 @@ interface AssetPublisher {
         fun mapConfig(configuration: MapConfiguration): Builder
 
         /**
-         *  Sets the logging configuration.
+         * Sets the logging configuration.
          *
          * @param configuration Logging configuration object [LogConfiguration]
          * @return A new instance of the builder with logging configuration changed
@@ -55,7 +55,7 @@ interface AssetPublisher {
         fun logConfig(configuration: LogConfiguration): Builder
 
         /**
-         *  Sets the battery configuration.
+         * Sets the battery configuration.
          *
          * @param configuration Battery configuration object [BatteryConfiguration]
          * @return A new instance of the builder with battery configuration changed
@@ -63,7 +63,7 @@ interface AssetPublisher {
         fun batteryConfig(configuration: BatteryConfiguration): Builder
 
         /**
-         *  Sets the asset metadata
+         * Sets the asset metadata
          *
          * @param metadataJsonString Asset metadata as a JSON string
          * @return A new instance of the builder with asset metadata changed
@@ -71,7 +71,7 @@ interface AssetPublisher {
         fun assetMetadataJson(metadataJsonString: String): Builder
 
         /**
-         *  Sets the trip metadata
+         * Sets the trip metadata
          *
          * @param metadataJsonString Trip metadata as a JSON string
          * @return A new instance of the builder with trip metadata changed
@@ -79,9 +79,9 @@ interface AssetPublisher {
         fun tripMetadataJson(metadataJsonString: String): Builder
 
         /**
-         *  Sets listener that notifies about location updates
+         * Sets listener that notifies about location updates
          *
-         *  This should probably be removed in the final version.
+         * This should probably be removed in the final version.
          *
          * @param listener Listener function that takes updated [Location] and returns nothing
          * @return A new instance of the builder with location updates listener changed
@@ -89,7 +89,7 @@ interface AssetPublisher {
         fun locationUpdatedListener(listener: LocationUpdatedListener): Builder
 
         /**
-         *  Sets Android app context
+         * Sets Android app context
          *
          * @param context App context
          * @return A new instance of the builder with android context changed
@@ -97,11 +97,11 @@ interface AssetPublisher {
         fun androidContext(context: Context): Builder
 
         /**
-         *  Sets the travel destination and trackingId of the asset
+         * Sets the travel destination and trackingId of the asset
          *
-         *  @param trackingId Id of the tracked asset
-         *  @param destination Travel destination, default empty string
-         *  @param vehicleType Type of the vehicle, default "car"
+         * @param trackingId Id of the tracked asset
+         * @param destination Travel destination, default empty string
+         * @param vehicleType Type of the vehicle, default "car"
          * @return A new instance of the builder with all above params updated
          */
         fun delivery(
