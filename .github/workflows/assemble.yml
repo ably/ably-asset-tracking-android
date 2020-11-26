@@ -12,6 +12,8 @@ jobs:
       - run: ./gradlew assemble
         env:
           ORG_GRADLE_PROJECT_MAPBOX_DOWNLOADS_TOKEN: ${{ secrets.MAPBOX_DOWNLOADS_TOKEN }}
+          ORG_GRADLE_PROJECT_MAPBOX_ACCESS_TOKEN: ${{ secrets.MAPBOX_ACCESS_TOKEN }}
+          ORG_GRADLE_PROJECT_ABLY_API_KEY: ${{ secrets.ABLY_API_KEY }}
       
       # TODO upload AAR and APK artifacts somewhere for ease of access
       - run: ls -l publishing-sdk/build/outputs/aar/

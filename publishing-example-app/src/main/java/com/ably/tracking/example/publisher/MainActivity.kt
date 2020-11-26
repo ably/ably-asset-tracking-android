@@ -25,9 +25,9 @@ import timber.log.Timber
 
 private val REQUIRED_PERMISSIONS = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
 private const val REQUEST_LOCATION_PERMISSION = 1
-private const val MAP_KEY = "<INSERT_MAP_KEY_HERE>"
+private const val MAPBOX_ACCESS_TOKEN = BuildConfig.MAPBOX_ACCESS_TOKEN
 private const val CLIENT_ID = "<INSERT_CLIENT_ID_HERE>"
-private const val ABLY_KEY = "<INSERT_ABLY_KEY_HERE>"
+private const val ABLY_API_KEY = BuildConfig.ABLY_API_KEY
 
 class MainActivity : AppCompatActivity() {
     private var assetPublisher: AssetPublisher? = null
@@ -101,8 +101,8 @@ class MainActivity : AppCompatActivity() {
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
     private fun createAndStartAssetPublisher(trackingId: String) {
         assetPublisher = AssetPublisher.publishers()
-            .ablyConfig(AblyConfiguration(ABLY_KEY, CLIENT_ID))
-            .mapConfig(MapConfiguration(MAP_KEY))
+            .ablyConfig(AblyConfiguration(ABLY_API_KEY, CLIENT_ID))
+            .mapConfig(MapConfiguration(MAPBOX_ACCESS_TOKEN))
             .debugConfig(createDebugConfiguration())
             .delivery(trackingId)
             .locationUpdatedListener { updateLocationInfo(it) }

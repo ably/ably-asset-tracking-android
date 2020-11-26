@@ -12,6 +12,8 @@ jobs:
       - run: ./gradlew check --profile
         env:
           ORG_GRADLE_PROJECT_MAPBOX_DOWNLOADS_TOKEN: ${{ secrets.MAPBOX_DOWNLOADS_TOKEN }}
+          ORG_GRADLE_PROJECT_MAPBOX_ACCESS_TOKEN: ${{ secrets.MAPBOX_ACCESS_TOKEN }}
+          ORG_GRADLE_PROJECT_ABLY_API_KEY: ${{ secrets.ABLY_API_KEY }}
       - uses: actions/upload-artifact@v2
         with:
           name: build-profile-report
