@@ -123,58 +123,6 @@ class FactoryUnitTests {
     }
 
     @Test
-    fun `setting asset metadata JSON updates builder field`() {
-        // given
-        val metadata = ""
-
-        // when
-        val builder =
-            Publisher.publishers().assetMetadataJson(metadata) as PublisherBuilder
-
-        // then
-        Assert.assertEquals(metadata, builder.assetMetadataJson)
-    }
-
-    @Test
-    fun `setting asset metadata JSON returns a new copy of builder`() {
-        // given
-        val metadata = ""
-        val originalBuilder = Publisher.publishers()
-
-        // when
-        val newBuilder = originalBuilder.assetMetadataJson(metadata)
-
-        // then
-        Assert.assertNotEquals(newBuilder, originalBuilder)
-    }
-
-    @Test
-    fun `setting trip metadata JSON updates builder field`() {
-        // given
-        val metadata = ""
-
-        // when
-        val builder =
-            Publisher.publishers().tripMetadataJson(metadata) as PublisherBuilder
-
-        // then
-        Assert.assertEquals(metadata, builder.tripMetadataJson)
-    }
-
-    @Test
-    fun `setting trip metadata JSON returns a new copy of builder`() {
-        // given
-        val metadata = ""
-        val originalBuilder = Publisher.publishers()
-
-        // when
-        val newBuilder = originalBuilder.tripMetadataJson(metadata)
-
-        // then
-        Assert.assertNotEquals(newBuilder, originalBuilder)
-    }
-
-    @Test
     fun `setting location updated listener updates builder field`() {
         // given
         val listener: LocationUpdatedListener = {}
@@ -300,8 +248,6 @@ class FactoryUnitTests {
             .ably(AblyConfiguration("", ""))
             .map(MapConfiguration(""))
             .log(LogConfiguration(true))
-            .assetMetadataJson("")
-            .tripMetadataJson("")
             .locationUpdatedListener { }
             .androidContext(mockedContext)
             .delivery("", "", "")
@@ -320,8 +266,6 @@ class FactoryUnitTests {
         Assert.assertNull(builder.ablyConfiguration)
         Assert.assertNull(builder.mapConfiguration)
         Assert.assertNull(builder.logConfiguration)
-        Assert.assertNull(builder.assetMetadataJson)
-        Assert.assertNull(builder.tripMetadataJson)
         Assert.assertNull(builder.locationUpdatedListener)
         Assert.assertNull(builder.androidContext)
         Assert.assertNull(builder.trackingId)
@@ -333,8 +277,6 @@ class FactoryUnitTests {
         Assert.assertNotNull(builder.ablyConfiguration)
         Assert.assertNotNull(builder.mapConfiguration)
         Assert.assertNotNull(builder.logConfiguration)
-        Assert.assertNotNull(builder.assetMetadataJson)
-        Assert.assertNotNull(builder.tripMetadataJson)
         Assert.assertNotNull(builder.locationUpdatedListener)
         Assert.assertNotNull(builder.androidContext)
         Assert.assertNotNull(builder.trackingId)

@@ -10,8 +10,6 @@ internal data class PublisherBuilder(
     val mapConfiguration: MapConfiguration? = null,
     val logConfiguration: LogConfiguration? = null,
     val debugConfiguration: DebugConfiguration? = null,
-    val assetMetadataJson: String? = null,
-    val tripMetadataJson: String? = null,
     val locationUpdatedListener: LocationUpdatedListener? = null,
     val androidContext: Context? = null,
     val trackingId: String? = null,
@@ -30,12 +28,6 @@ internal data class PublisherBuilder(
 
     override fun debug(configuration: DebugConfiguration?): Publisher.Builder =
         this.copy(debugConfiguration = configuration)
-
-    override fun assetMetadataJson(metadataJsonString: String): Publisher.Builder =
-        this.copy(assetMetadataJson = metadataJsonString)
-
-    override fun tripMetadataJson(metadataJsonString: String): Publisher.Builder =
-        this.copy(tripMetadataJson = metadataJsonString)
 
     override fun locationUpdatedListener(listener: LocationUpdatedListener): Publisher.Builder =
         this.copy(locationUpdatedListener = listener)

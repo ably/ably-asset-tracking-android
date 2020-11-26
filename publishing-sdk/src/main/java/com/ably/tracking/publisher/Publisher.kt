@@ -55,22 +55,6 @@ interface Publisher {
         fun log(configuration: LogConfiguration): Builder
 
         /**
-         * Sets the asset metadata
-         *
-         * @param metadataJsonString Asset metadata as a JSON string
-         * @return A new instance of the builder with asset metadata changed
-         */
-        fun assetMetadataJson(metadataJsonString: String): Builder
-
-        /**
-         * Sets the trip metadata
-         *
-         * @param metadataJsonString Trip metadata as a JSON string
-         * @return A new instance of the builder with trip metadata changed
-         */
-        fun tripMetadataJson(metadataJsonString: String): Builder
-
-        /**
          * Sets listener that notifies about location updates
          *
          * This should probably be removed in the final version.
