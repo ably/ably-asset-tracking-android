@@ -1,4 +1,4 @@
-package com.ably.tracking.subscriber
+package com.ably.tracking.example.subscriber
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -17,6 +17,6 @@ class ExampleInstrumentedTest {
     fun useAppContext() {
         // Context of the app under test.
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-        assertEquals("com.ably.tracking.subscriber.test", appContext.packageName)
+        assertEquals("com.ably.tracking.example.subscriber", appContext.packageName)
     }
 }
