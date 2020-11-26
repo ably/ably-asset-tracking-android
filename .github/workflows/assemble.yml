@@ -20,3 +20,5 @@ jobs:
       - run: ls -l subscribing-sdk/build/outputs/aar/
       - run: ls -lR publishing-example-app/build/outputs/apk/
       - run: ls -lR publishing-example-java-app/build/outputs/apk/
+      - run: ls -lR subscribing-example-app/build/outputs/apk/
+      - run: ls -lR subscribing-example-java-app/build/outputs/apk/
