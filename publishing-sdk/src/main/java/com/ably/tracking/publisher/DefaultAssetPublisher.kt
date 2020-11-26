@@ -5,6 +5,7 @@ import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.annotation.SuppressLint
 import android.content.Context
 import android.location.Location
+import android.os.Handler
 import android.os.Looper
 import androidx.annotation.RequiresPermission
 import com.ably.tracking.publisher.debug.AblySimulationLocationEngine
@@ -91,7 +92,7 @@ constructor(
         }
 
         debugConfiguration?.ablyStateChangeListener?.let { ablyStateChangeListener ->
-            ably.connection.on { state -> ablyStateChangeListener(state) }
+            ably.connection.on { state -> postToMainThread { ablyStateChangeListener(state) } }
         }
 
         mapboxNavigation = MapboxNavigation(mapboxBuilder.build())
@@ -173,16 +174,16 @@ constructor(
                 startTripSession()
             }
 
-            // TODO: this is involves the main thread, needs to be checked for running in the background
-            // https://github.com/ably/ably-asset-tracking-android/issues/18
-            mapboxNavigation.navigationOptions.locationEngine.requestLocationUpdates(
-                LocationEngineRequest.Builder(DEFAULT_INTERVAL_IN_MILLISECONDS)
-                    .setPriority(LocationEngineRequest.PRIORITY_NO_POWER)
-                    .setMaxWaitTime(DEFAULT_MAX_WAIT_TIME)
-                    .build(),
-                locationEngingeCallback,
-                Looper.getMainLooper()
-            )
+            postToMainThread {
+                mapboxNavigation.navigationOptions.locationEngine.requestLocationUpdates(
+                    LocationEngineRequest.Builder(DEFAULT_INTERVAL_IN_MILLISECONDS)
+                        .setPriority(LocationEngineRequest.PRIORITY_NO_POWER)
+                        .setMaxWaitTime(DEFAULT_MAX_WAIT_TIME)
+                        .build(),
+                    locationEngingeCallback,
+                    getLooperForMainThread()
+                )
+            }
         }
     }
 
@@ -226,4 +227,10 @@ constructor(
             }
         }
     }
+
+    private fun postToMainThread(operation: () -> Unit) {
+        Handler(getLooperForMainThread()).post(operation)
+    }
+
+    private fun getLooperForMainThread() = Looper.getMainLooper()
 }

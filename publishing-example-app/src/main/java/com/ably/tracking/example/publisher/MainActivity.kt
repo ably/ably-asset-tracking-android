@@ -144,12 +144,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateAblyStateInfo(state: ConnectionStateListener.ConnectionStateChange) {
-        // TODO - Change Ably listener thread to main thread in the SDK
-        // https://github.com/ably/ably-asset-tracking-android/issues/22
-        runOnUiThread {
-            val isAblyConnected = state.current == ConnectionState.connected
-            changeAblyStatusInfo(isAblyConnected)
-        }
+        val isAblyConnected = state.current == ConnectionState.connected
+        changeAblyStatusInfo(isAblyConnected)
     }
 
     private fun changeAblyStatusInfo(isConnected: Boolean) {
