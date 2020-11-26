@@ -1,0 +1,16 @@
+plugins {
+    id 'com.android.application'
+    id 'kotlin-android'
+    id 'kotlin-android-extensions'
+    id 'org.jlleitschuh.gradle.ktlint'
+}
+
+android {
+    defaultConfig {
+        applicationId "io.ably.tracking.example.subscriber"
+    }
+}
+
+dependencies {
+    implementation project(":subscribing-sdk")
+}
