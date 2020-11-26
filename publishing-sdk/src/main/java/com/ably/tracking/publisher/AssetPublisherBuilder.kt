@@ -49,10 +49,14 @@ internal data class AssetPublisherBuilder(
 
     override fun delivery(
         trackingId: String,
-        destination: String,
-        vehicleType: String
+        destination: String?,
+        vehicleType: String?
     ): AssetPublisher.Builder =
-        this.copy(trackingId = trackingId, destination = destination, vehicleType = vehicleType)
+        this.copy(
+            trackingId = trackingId,
+            destination = destination ?: "",
+            vehicleType = vehicleType ?: "car"
+        )
 
     @RequiresPermission(anyOf = [ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION])
     override fun start(): AssetPublisher {

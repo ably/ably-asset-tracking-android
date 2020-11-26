@@ -270,6 +270,21 @@ class FactoryUnitTests {
     }
 
     @Test
+    fun `setting only a part of delivery data should set default values for remaining fields`() {
+        // given
+        val trackingId = "abc"
+
+        // when
+        val builder = AssetPublisher.publishers()
+            .delivery(trackingId, null, null) as AssetPublisherBuilder
+
+        // then
+        Assert.assertEquals(trackingId, builder.trackingId)
+        Assert.assertEquals("", builder.destination)
+        Assert.assertEquals("car", builder.vehicleType)
+    }
+
+    @Test
     fun `setting delivery data returns a new copy of builder`() {
         // given
         val trackingId = "abc"

@@ -104,11 +104,7 @@ interface AssetPublisher {
          *  @param vehicleType Type of the vehicle, default "car"
          * @return A new instance of the builder with all above params updated
          */
-        fun delivery(
-            trackingId: String,
-            destination: String = "",
-            vehicleType: String = "car"
-        ): Builder
+        fun delivery(trackingId: String, destination: String?, vehicleType: String?): Builder
 
         /**
          * Creates a [AssetPublisher] and starts publishing asset location

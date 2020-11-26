@@ -104,7 +104,7 @@ class MainActivity : AppCompatActivity() {
             .ablyConfig(AblyConfiguration(ABLY_KEY, CLIENT_ID))
             .mapConfig(MapConfiguration(MAP_KEY))
             .debugConfig(createDebugConfiguration())
-            .delivery(trackingId)
+            .delivery(trackingId, null, null)
             .locationUpdatedListener { updateLocationInfo(it) }
             .androidContext(this)
             .start()
