@@ -7,7 +7,7 @@ plugins {
 
 android {
     defaultConfig {
-        applicationId "io.ably.tracking.example.subscriber"
+        applicationId "com.ably.tracking.example.subscriber"
     }
 }
 
