@@ -70,7 +70,7 @@ interface Publisher {
          * @param context App context
          * @return A new instance of the builder with android context changed
          */
-        fun androidContext(context: Context): Builder
+        fun android(context: Context): Builder
 
         /**
          * Sets the travel destination and trackingId of the asset

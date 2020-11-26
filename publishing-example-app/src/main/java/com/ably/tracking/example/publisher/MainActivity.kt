@@ -110,7 +110,7 @@ class MainActivity : AppCompatActivity() {
             .debug(createDebugConfiguration(historyData))
             .delivery(trackingId)
             .locationUpdatedListener { updateLocationInfo(it) }
-            .androidContext(this)
+            .android(this)
             .start()
         changeNavigationButtonState(true)
     }

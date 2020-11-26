@@ -155,7 +155,7 @@ class FactoryUnitTests {
 
         // when
         val builder =
-            Publisher.publishers().androidContext(mockedContext) as PublisherBuilder
+            Publisher.publishers().android(mockedContext) as PublisherBuilder
 
         // then
         Assert.assertEquals(mockedContext, builder.androidContext)
@@ -168,7 +168,7 @@ class FactoryUnitTests {
         val originalBuilder = Publisher.publishers()
 
         // when
-        val newBuilder = originalBuilder.androidContext(mockedContext)
+        val newBuilder = originalBuilder.android(mockedContext)
 
         // then
         Assert.assertNotEquals(newBuilder, originalBuilder)
@@ -249,7 +249,7 @@ class FactoryUnitTests {
             .map(MapConfiguration(""))
             .log(LogConfiguration(true))
             .locationUpdatedListener { }
-            .androidContext(mockedContext)
+            .android(mockedContext)
             .delivery("", "", "")
 
         // then
