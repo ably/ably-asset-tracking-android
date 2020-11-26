@@ -92,7 +92,7 @@ constructor(
         }
 
         debugConfiguration?.ablyStateChangeListener?.let { ablyStateChangeListener ->
-            ably.connection.on { state -> runOnMainThread { ablyStateChangeListener(state) } }
+            ably.connection.on { state -> postToMainThread { ablyStateChangeListener(state) } }
         }
 
         mapboxNavigation = MapboxNavigation(mapboxBuilder.build())
@@ -174,14 +174,14 @@ constructor(
                 startTripSession()
             }
 
-            runOnMainThread {
+            postToMainThread {
                 mapboxNavigation.navigationOptions.locationEngine.requestLocationUpdates(
                     LocationEngineRequest.Builder(DEFAULT_INTERVAL_IN_MILLISECONDS)
                         .setPriority(LocationEngineRequest.PRIORITY_NO_POWER)
                         .setMaxWaitTime(DEFAULT_MAX_WAIT_TIME)
                         .build(),
                     locationEngingeCallback,
-                    Looper.getMainLooper()
+                    getLooperForMainThread()
                 )
             }
         }
@@ -228,7 +228,9 @@ constructor(
         }
     }
 
-    private fun runOnMainThread(operation: () -> Unit) {
-        Handler(Looper.getMainLooper()).post(operation)
+    private fun postToMainThread(operation: () -> Unit) {
+        Handler(getLooperForMainThread()).post(operation)
     }
+
+    private fun getLooperForMainThread() = Looper.getMainLooper()
 }
