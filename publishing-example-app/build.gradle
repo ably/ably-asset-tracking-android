@@ -8,7 +8,7 @@ plugins {
 android {
     defaultConfig {
         vectorDrawables.useSupportLibrary = true
-        applicationId "com.ably.tracking.demo"
+        applicationId "com.ably.tracking.example.publisher"
     }
 }
 
