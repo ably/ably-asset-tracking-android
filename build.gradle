@@ -99,6 +99,7 @@ subprojects {
                               'UnusedResources',
                               'UnpackedNativeCode',
                               'LockedOrientationActivity',
+                              'IconLocation',
                               'StopShip'
 
                 // Lint rules which are disabled by default (see: lint --show), but which we would
