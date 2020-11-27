@@ -111,7 +111,7 @@ class MainActivity : AppCompatActivity() {
             .debug(createDebugConfiguration(historyData))
             .transport(Trackable(trackingId, null))
             .locationUpdatedListener { updateLocationInfo(it) }
-            .android(this)
+            .androidContext(this)
             .start()
         changeNavigationButtonState(true)
     }

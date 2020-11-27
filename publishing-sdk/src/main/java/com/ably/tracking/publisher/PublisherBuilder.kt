@@ -31,7 +31,7 @@ internal data class PublisherBuilder(
     override fun locationUpdatedListener(listener: LocationUpdatedListener): Publisher.Builder =
         this.copy(locationUpdatedListener = listener)
 
-    override fun android(context: Context): Publisher.Builder =
+    override fun androidContext(context: Context): Publisher.Builder =
         this.copy(androidContext = context)
 
     override fun transport(transport: Trackable): Publisher.Builder =

@@ -117,7 +117,7 @@ interface Publisher {
          * @param context App context
          * @return A new instance of the builder with android context changed
          */
-        fun android(context: Context): Builder
+        fun androidContext(context: Context): Builder
 
         /**
          * Sets the transport to be associated for the lifespan of this publisher.
