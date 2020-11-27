@@ -12,11 +12,12 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.widget.ImageViewCompat
 import com.ably.tracking.publisher.AblyConfiguration
-import com.ably.tracking.publisher.AssetPublisher
+import com.ably.tracking.publisher.Publisher
 import com.ably.tracking.publisher.DebugConfiguration
 import com.ably.tracking.publisher.LocationSourceAbly
 import com.ably.tracking.publisher.LocationSourceRaw
 import com.ably.tracking.publisher.MapConfiguration
+import com.ably.tracking.publisher.Trackable
 import io.ably.lib.realtime.ConnectionState
 import io.ably.lib.realtime.ConnectionStateListener
 import kotlinx.android.synthetic.main.activity_main.*
@@ -31,7 +32,7 @@ private const val CLIENT_ID = "<INSERT_CLIENT_ID_HERE>"
 private const val ABLY_API_KEY = BuildConfig.ABLY_API_KEY
 
 class MainActivity : AppCompatActivity() {
-    private var assetPublisher: AssetPublisher? = null
+    private var publisher: Publisher? = null
     private lateinit var appPreferences: AppPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -48,7 +49,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         startNavigationButton.setOnClickListener {
-            if (assetPublisher == null) {
+            if (publisher == null) {
                 startTracking()
             } else {
                 stopTracking()
@@ -104,14 +105,17 @@ class MainActivity : AppCompatActivity() {
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
     private fun createAndStartAssetPublisher(trackingId: String, historyData: String? = null) {
         clearLocationInfo()
-        assetPublisher = AssetPublisher.publishers()
-            .ablyConfig(AblyConfiguration(ABLY_API_KEY, CLIENT_ID))
-            .mapConfig(MapConfiguration(MAPBOX_ACCESS_TOKEN))
-            .debugConfig(createDebugConfiguration(historyData))
-            .delivery(trackingId)
+        publisher = Publisher.publishers()
+            .ably(AblyConfiguration(ABLY_API_KEY, CLIENT_ID))
+            .map(MapConfiguration(MAPBOX_ACCESS_TOKEN))
+            .debug(createDebugConfiguration(historyData))
+            .courier(Trackable("courier_id", null))
             .locationUpdatedListener { updateLocationInfo(it) }
             .androidContext(this)
             .start()
+            .apply {
+                trackDelivery(Trackable(trackingId, null))
+            }
         changeNavigationButtonState(true)
     }
 
@@ -146,8 +150,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun stopTracking() {
-        assetPublisher?.stop()
-        assetPublisher = null
+        publisher?.stop()
+        publisher = null
 
         changeNavigationButtonState(false)
     }
