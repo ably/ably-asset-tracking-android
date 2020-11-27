@@ -1,6 +1,8 @@
 package com.ably.tracking.subscriber
 
 import android.location.Location
+import android.os.Handler
+import android.os.Looper
 import com.google.gson.Gson
 import io.ably.lib.realtime.AblyRealtime
 import io.ably.lib.realtime.Channel
@@ -39,7 +41,7 @@ internal class DefaultAssetSubscriber(
             Timber.i("Ably channel message (raw): $message")
             message.getGeoJsonMessages(gson).forEach {
                 Timber.d("Received raw location: ${it.synopsis()}")
-                rawLocationUpdatedListener(it.toLocation())
+                postToMainThread { rawLocationUpdatedListener(it.toLocation()) }
             }
         }
     }
@@ -49,7 +51,7 @@ internal class DefaultAssetSubscriber(
             Timber.i("Ably channel message (enhanced): $message")
             message.getGeoJsonMessages(gson).forEach {
                 Timber.d("Received enhanced location: ${it.synopsis()}")
-                enhancedLocationUpdatedListener(it.toLocation())
+                postToMainThread { enhancedLocationUpdatedListener(it.toLocation()) }
             }
         }
     }
@@ -100,5 +102,9 @@ internal class DefaultAssetSubscriber(
             // https://github.com/ably/ably-asset-tracking-android/issues/17
             Timber.e(ablyException)
         }
+    }
+
+    private fun postToMainThread(operation: () -> Unit) {
+        Handler(Looper.getMainLooper()).post(operation)
     }
 }

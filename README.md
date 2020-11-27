@@ -33,3 +33,4 @@ The following secrets need configuring in a similar manner to that described abo
 
 - `ABLY_API_KEY`
 - `MAPBOX_ACCESS_TOKEN`
+- `GOOGLE_MAPS_API_KEY`
