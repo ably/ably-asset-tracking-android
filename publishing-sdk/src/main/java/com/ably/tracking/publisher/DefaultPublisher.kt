@@ -175,28 +175,26 @@ constructor(
             throw IllegalStateException("For this preview version of the SDK, this method may only be called once for any given instance of this class.")
         }
 
-        val channel = ably.channels.get(delivery.id)
+        channel = ably.channels.get(delivery.id).apply {
+            try {
+                presence.enterClient(
+                    ablyConfiguration.clientId, "",
+                    object : CompletionListener {
+                        override fun onSuccess() = Unit
 
-        try {
-            channel.presence.enterClient(
-                ablyConfiguration.clientId, "",
-                object : CompletionListener {
-                    override fun onSuccess() = Unit
-
-                    override fun onError(reason: ErrorInfo?) {
-                        // TODO - handle error
-                        // https://github.com/ably/ably-asset-tracking-android/issues/17
-                        Timber.e("Unable to enter presence: ${reason?.message}")
+                        override fun onError(reason: ErrorInfo?) {
+                            // TODO - handle error
+                            // https://github.com/ably/ably-asset-tracking-android/issues/17
+                            Timber.e("Unable to enter presence: ${reason?.message}")
+                        }
                     }
-                }
-            )
-        } catch (ablyException: AblyException) {
-            // TODO - handle exception
-            // https://github.com/ably/ably-asset-tracking-android/issues/17
-            Timber.e(ablyException)
+                )
+            } catch (ablyException: AblyException) {
+                // TODO - handle exception
+                // https://github.com/ably/ably-asset-tracking-android/issues/17
+                Timber.e(ablyException)
+            }
         }
-
-        this.channel = channel
     }
 
     override fun addDelivery(delivery: Trackable) {
