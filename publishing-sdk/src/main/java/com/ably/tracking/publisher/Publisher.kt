@@ -9,8 +9,8 @@ import androidx.annotation.RequiresPermission
 typealias LocationUpdatedListener = (Location) -> Unit
 
 /**
- * Represents a publisher, with associated [Trackable]. Publishers maintain the Ably connection, making use of
- * navigation resources as required to track [deliveries] as well as, [optionally][trackTransport], the transport
+ * Represents a publisher, with associated [Trackable] courier. Publishers maintain the Ably connection, making use of
+ * navigation resources as required to track [deliveries] as well as, [optionally][trackCourier], the courier
  * itself.
  */
 interface Publisher {
@@ -30,9 +30,9 @@ interface Publisher {
     /**
      * Whether this publisher should track its associated [Trackable], regardless of whether it has any [deliveries].
      *
-     * The default state of this field can be set using [Builder.trackTransport].
+     * The default state of this field can be set using [Builder.trackCourier].
      */
-    var trackTransport: Boolean
+    var trackCourier: Boolean
 
     /**
      * Adds a delivery and makes it the actively tracked delivery, meaning that the state of the [trackedDelivery] field
@@ -124,24 +124,24 @@ interface Publisher {
         fun androidContext(context: Context): Builder
 
         /**
-         * Sets the transport to be associated for the lifespan of this publisher.
+         * Sets the courier to be associated for the lifespan of this publisher.
          *
-         * Whether this transport is tracked from the outset of the publisher's existence can be controlled using the
-         * [trackTransport] method.
+         * Whether this courier is tracked from the outset of the publisher's existence can be controlled using the
+         * [trackCourier] method.
          *
-         * @param transport The transport to be associated with publishers started from this builder.
+         * @param courier The courier to be associated with publishers started from this builder.
          * @return A new instance of the builder with this property changed.
          */
-        fun transport(transport: Trackable): Builder
+        fun courier(courier: Trackable): Builder
 
         /**
-         * Sets the default state of [Publisher.trackTransport] field.
+         * Sets the default state of [Publisher.trackCourier] field.
          *
-         * @param track Whether the publisher should track its associated transport, regardless of whether it has any
+         * @param track Whether the publisher should track its associated [Trackable], regardless of whether it has any
          * deliveries, or a [Publisher.trackedDelivery].
          * @return A new instance of the builder with this property changed.
          */
-        fun trackTransport(track: Boolean): Builder
+        fun trackCourier(track: Boolean): Builder
 
         /**
          * Creates a [Publisher] and starts publishing asset location

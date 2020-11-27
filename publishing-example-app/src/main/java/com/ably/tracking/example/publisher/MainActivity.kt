@@ -109,7 +109,7 @@ class MainActivity : AppCompatActivity() {
             .ably(AblyConfiguration(ABLY_API_KEY, CLIENT_ID))
             .map(MapConfiguration(MAPBOX_ACCESS_TOKEN))
             .debug(createDebugConfiguration(historyData))
-            .transport(Trackable(trackingId, null))
+            .courier(Trackable(trackingId, null))
             .locationUpdatedListener { updateLocationInfo(it) }
             .androidContext(this)
             .start()
