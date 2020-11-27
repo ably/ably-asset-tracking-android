@@ -105,7 +105,7 @@ class MainActivity : AppCompatActivity() {
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
     private fun createAndStartAssetPublisher(trackingId: String, historyData: String? = null) {
         clearLocationInfo()
-        val publisher = Publisher.publishers()
+        publisher = Publisher.publishers()
             .ably(AblyConfiguration(ABLY_API_KEY, CLIENT_ID))
             .map(MapConfiguration(MAPBOX_ACCESS_TOKEN))
             .debug(createDebugConfiguration(historyData))
@@ -113,8 +113,9 @@ class MainActivity : AppCompatActivity() {
             .locationUpdatedListener { updateLocationInfo(it) }
             .androidContext(this)
             .start()
-        publisher.trackDelivery(Trackable(trackingId, null))
-        this.publisher = publisher
+            .apply {
+                trackDelivery(Trackable(trackingId, null))
+            }
         changeNavigationButtonState(true)
     }
 
