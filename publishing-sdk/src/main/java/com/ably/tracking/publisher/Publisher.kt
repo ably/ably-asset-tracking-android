@@ -76,7 +76,7 @@ interface Publisher {
     val trackedDelivery: Trackable?
 
     /**
-     * Stops asset publisher from publishing asset location
+     * Stops asset publisher from publishing asset location.
      *
      * It is strongly suggested to call this method from the main thread.
      */
@@ -86,42 +86,40 @@ interface Publisher {
         /**
          * Sets the Ably configuration.
          *
-         * @param configuration Ably library configuration object [AblyConfiguration]
-         * @return A new instance of the builder with Ably configuration changed
+         * @param configuration The configuration to be used for Ably.
+         * @return A new instance of the builder with this property changed.
          */
         fun ably(configuration: AblyConfiguration): Builder
 
         /**
          * Sets the maps configuration.
          *
-         * @param configuration Map library configuration object [MapConfiguration]
-         * @return A new instance of the builder with map library configuration changed
+         * @param configuration The configuration to be used for maps.
+         * @return A new instance of the builder with this property changed.
          */
         fun map(configuration: MapConfiguration): Builder
 
         /**
          * Sets the logging configuration.
          *
-         * @param configuration Logging configuration object [LogConfiguration]
-         * @return A new instance of the builder with logging configuration changed
+         * @param configuration The configuration to be used for logging.
+         * @return A new instance of the builder with this property changed.
          */
         fun log(configuration: LogConfiguration): Builder
 
         /**
-         * Sets listener that notifies about location updates
+         * Sets a listener to be notified about location updates.
          *
-         * This should probably be removed in the final version.
-         *
-         * @param listener Listener function that takes updated [Location] and returns nothing
-         * @return A new instance of the builder with location updates listener changed
+         * @param listener The function, which will be called once per [Location] update.
+         * @return A new instance of the builder with this property changed.
          */
         fun locationUpdatedListener(listener: LocationUpdatedListener): Builder
 
         /**
-         * Sets Android app context
+         * Sets the Android Context.
          *
-         * @param context App context
-         * @return A new instance of the builder with android context changed
+         * @param context The context of the application.
+         * @return A new instance of the builder with this property changed.
          */
         fun androidContext(context: Context): Builder
 
@@ -132,7 +130,7 @@ interface Publisher {
          * [trackTransport] method.
          *
          * @param transport The transport to be associated with publishers started from this builder.
-         * @return A new instance of the builder with the associated transport changed.
+         * @return A new instance of the builder with this property changed.
          */
         fun transport(transport: Trackable): Builder
 
@@ -141,7 +139,7 @@ interface Publisher {
          *
          * @param track Whether the publisher should track its associated transport, regardless of whether it has any
          * deliveries, or a [Publisher.trackedDelivery].
-         * @return A new instance of the builder with this property changed
+         * @return A new instance of the builder with this property changed.
          */
         fun trackTransport(track: Boolean): Builder
 
@@ -161,7 +159,7 @@ interface Publisher {
          * Sets the debug configuration.
          *
          * @param configuration debug configuration object [DebugConfiguration]
-         * @return A new instance of the builder with debug configuration changed
+         * @return A new instance of the builder with this property changed.
          */
         // TODO - probably should be removed in the final version
         // https://github.com/ably/ably-asset-tracking-android/issues/19
