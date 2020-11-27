@@ -12,7 +12,7 @@ internal data class PublisherBuilder(
     val debugConfiguration: DebugConfiguration? = null,
     val locationUpdatedListener: LocationUpdatedListener? = null,
     val androidContext: Context? = null,
-    val courier: Trackable? = null,
+    val courier: Courier? = null,
     val trackCourier: Boolean = false
 ) : Publisher.Builder {
 
@@ -34,7 +34,7 @@ internal data class PublisherBuilder(
     override fun androidContext(context: Context): Publisher.Builder =
         this.copy(androidContext = context)
 
-    override fun courier(courier: Trackable): Publisher.Builder =
+    override fun courier(courier: Courier): Publisher.Builder =
         this.copy(courier = courier)
 
     override fun trackCourier(track: Boolean): Publisher.Builder =

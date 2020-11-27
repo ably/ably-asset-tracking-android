@@ -8,7 +8,26 @@ data class MapConfiguration(val apiKey: String)
 
 data class LogConfiguration(val enabled: Boolean) // TODO - specify config
 
-data class Trackable(val id: String, val metadata: String?)
+interface Trackable {
+    val id: String
+    val metadata: String?
+}
+
+data class Destination(
+    val latitude: Double,
+    val longitude: Double
+)
+
+data class Delivery(
+    override val id: String,
+    override val metadata: String?,
+    val destination: Destination
+) : Trackable
+
+data class Courier(
+    override val id: String,
+    override val metadata: String?
+) : Trackable
 
 // TODO - probably should be removed in the final version
 // https://github.com/ably/ably-asset-tracking-android/issues/19

@@ -170,7 +170,7 @@ constructor(
         get() = TODO("Not yet implemented")
         set(value) {}
 
-    override fun trackDelivery(delivery: Trackable) {
+    override fun trackDelivery(delivery: Delivery) {
         if (this.channel != null) {
             throw IllegalStateException("For this preview version of the SDK, this method may only be called once for any given instance of this class.")
         }
@@ -197,15 +197,15 @@ constructor(
         }
     }
 
-    override fun addDelivery(delivery: Trackable) {
+    override fun addDelivery(delivery: Delivery) {
         TODO("Not yet implemented")
     }
 
-    override fun removeDelivery(delivery: Trackable): Boolean {
+    override fun removeDelivery(delivery: Delivery): Boolean {
         TODO("Not yet implemented")
     }
 
-    override val trackedDelivery: Trackable?
+    override val trackedDelivery: Delivery?
         get() = TODO("Not yet implemented")
 
     override fun stop() {

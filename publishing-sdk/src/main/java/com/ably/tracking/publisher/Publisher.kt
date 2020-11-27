@@ -9,7 +9,7 @@ import androidx.annotation.RequiresPermission
 typealias LocationUpdatedListener = (Location) -> Unit
 
 /**
- * Represents a publisher, with associated [Trackable] courier. Publishers maintain the Ably connection, making use of
+ * Represents a publisher, with associated [Courier]. Publishers maintain the Ably connection, making use of
  * navigation resources as required to track [deliveries] as well as, [optionally][trackCourier], the courier
  * itself.
  */
@@ -28,7 +28,7 @@ interface Publisher {
     }
 
     /**
-     * Whether this publisher should track its associated [Trackable], regardless of whether it has any [deliveries].
+     * Whether this publisher should track its associated [Courier], regardless of whether it has any [deliveries].
      *
      * The default state of this field can be set using [Builder.trackCourier].
      */
@@ -44,7 +44,7 @@ interface Publisher {
      * @param delivery The delivery to be added to this publisher's set, if it's not already there, and to be made the
      * actively tracked delivery.
      */
-    fun trackDelivery(delivery: Trackable)
+    fun trackDelivery(delivery: Delivery)
 
     /**
      * Adds a delivery, but does not make it the actively tracked delivery, meaning that the state of the
@@ -54,7 +54,7 @@ interface Publisher {
      *
      * @param delivery The delivery to be added to this publisher's set, if it's not already there.
      */
-    fun addDelivery(delivery: Trackable)
+    fun addDelivery(delivery: Delivery)
 
     /**
      * Removes the delivery if it is known to this publisher, otherwise does nothing and returns false.
@@ -66,14 +66,14 @@ interface Publisher {
      * @param delivery The delivery to be removed from this publisher's set, it it's there.
      * @return true if the delivery was known to this publisher.
      */
-    fun removeDelivery(delivery: Trackable): Boolean
+    fun removeDelivery(delivery: Delivery): Boolean
 
     /**
      * The actively tracked delivery, being the delivery whose destination is being used for navigation normalisation.
      *
      * This state can be changed by calling the [trackDelivery] method.
      */
-    val trackedDelivery: Trackable?
+    val trackedDelivery: Delivery?
 
     /**
      * Stops asset publisher from publishing asset location.
@@ -132,12 +132,12 @@ interface Publisher {
          * @param courier The courier to be associated with publishers started from this builder.
          * @return A new instance of the builder with this property changed.
          */
-        fun courier(courier: Trackable): Builder
+        fun courier(courier: Courier): Builder
 
         /**
          * Sets the default state of [Publisher.trackCourier] field.
          *
-         * @param track Whether the publisher should track its associated [Trackable], regardless of whether it has any
+         * @param track Whether the publisher should track its associated [Courier], regardless of whether it has any
          * deliveries, or a [Publisher.trackedDelivery].
          * @return A new instance of the builder with this property changed.
          */
