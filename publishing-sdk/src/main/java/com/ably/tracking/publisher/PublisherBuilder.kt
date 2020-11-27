@@ -51,9 +51,7 @@ internal data class PublisherBuilder(
             mapConfiguration!!,
             debugConfiguration,
             locationUpdatedListener!!,
-            androidContext!!,
-            courier!!,
-            trackCourier
+            androidContext!!
         )
     }
 
