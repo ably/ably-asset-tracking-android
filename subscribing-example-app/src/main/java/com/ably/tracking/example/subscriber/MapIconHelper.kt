@@ -4,7 +4,6 @@ import kotlin.math.roundToInt
 
 fun getMarkerResourceIdByBearing(bearing: Float): Int {
     return when (bearing.roundToInt()) {
-        in 0..23, in 337..361 -> R.drawable.driver_n
         in 23..67 -> R.drawable.driver_ne
         in 67..113 -> R.drawable.driver_e
         in 113..158 -> R.drawable.driver_se
