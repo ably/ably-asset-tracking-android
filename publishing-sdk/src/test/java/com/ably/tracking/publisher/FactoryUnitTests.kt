@@ -175,68 +175,6 @@ class FactoryUnitTests {
     }
 
     @Test
-    fun `setting delivery data should update builder fields`() {
-        // given
-        val trackingId = "abc"
-        val destination = "London"
-        val vehicleType = "car"
-
-        // when
-        val builder = Publisher.publishers()
-            .delivery(trackingId, destination, vehicleType) as PublisherBuilder
-
-        // then
-        Assert.assertEquals(trackingId, builder.trackingId)
-        Assert.assertEquals(destination, builder.destination)
-        Assert.assertEquals(vehicleType, builder.vehicleType)
-    }
-
-    @Test
-    fun `passing nulls as optional params of delivery data should set default values for those fields`() {
-        // given
-        val trackingId = "abc"
-
-        // when
-        val builder = Publisher.publishers()
-            .delivery(trackingId, null, null) as PublisherBuilder
-
-        // then
-        Assert.assertEquals(trackingId, builder.trackingId)
-        Assert.assertEquals("", builder.destination)
-        Assert.assertEquals("car", builder.vehicleType)
-    }
-
-    @Test
-    fun `setting only the required params of delivery data should set default values for optional fields`() {
-        // given
-        val trackingId = "abc"
-
-        // when
-        val builder = Publisher.publishers()
-            .delivery(trackingId) as PublisherBuilder
-
-        // then
-        Assert.assertEquals(trackingId, builder.trackingId)
-        Assert.assertEquals("", builder.destination)
-        Assert.assertEquals("car", builder.vehicleType)
-    }
-
-    @Test
-    fun `setting delivery data returns a new copy of builder`() {
-        // given
-        val trackingId = "abc"
-        val destination = "London"
-        val vehicleType = "car"
-        val originalBuilder = Publisher.publishers()
-
-        // when
-        val newBuilder = originalBuilder.delivery(trackingId, destination, vehicleType)
-
-        // then
-        Assert.assertNotEquals(newBuilder, originalBuilder)
-    }
-
-    @Test
     fun `setting all data should update all builder fields`() {
         // given
         val builder = Publisher.publishers()
@@ -250,7 +188,6 @@ class FactoryUnitTests {
             .log(LogConfiguration(true))
             .locationUpdatedListener { }
             .android(mockedContext)
-            .delivery("", "", "")
 
         // then
         assertAllBuilderFieldsAreNotNull(updatedBuilder as PublisherBuilder)
@@ -268,9 +205,6 @@ class FactoryUnitTests {
         Assert.assertNull(builder.logConfiguration)
         Assert.assertNull(builder.locationUpdatedListener)
         Assert.assertNull(builder.androidContext)
-        Assert.assertNull(builder.trackingId)
-        Assert.assertNull(builder.destination)
-        Assert.assertNull(builder.vehicleType)
     }
 
     private fun assertAllBuilderFieldsAreNotNull(builder: PublisherBuilder) {
@@ -279,8 +213,5 @@ class FactoryUnitTests {
         Assert.assertNotNull(builder.logConfiguration)
         Assert.assertNotNull(builder.locationUpdatedListener)
         Assert.assertNotNull(builder.androidContext)
-        Assert.assertNotNull(builder.trackingId)
-        Assert.assertNotNull(builder.destination)
-        Assert.assertNotNull(builder.vehicleType)
     }
 }

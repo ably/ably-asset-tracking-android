@@ -17,6 +17,7 @@ import com.ably.tracking.publisher.DebugConfiguration
 import com.ably.tracking.publisher.LocationSourceAbly
 import com.ably.tracking.publisher.LocationSourceRaw
 import com.ably.tracking.publisher.MapConfiguration
+import com.ably.tracking.publisher.Trackable
 import io.ably.lib.realtime.ConnectionState
 import io.ably.lib.realtime.ConnectionStateListener
 import kotlinx.android.synthetic.main.activity_main.*
@@ -108,7 +109,7 @@ class MainActivity : AppCompatActivity() {
             .ably(AblyConfiguration(ABLY_API_KEY, CLIENT_ID))
             .map(MapConfiguration(MAPBOX_ACCESS_TOKEN))
             .debug(createDebugConfiguration(historyData))
-            .delivery(trackingId)
+            .transport(Trackable(trackingId, null))
             .locationUpdatedListener { updateLocationInfo(it) }
             .android(this)
             .start()

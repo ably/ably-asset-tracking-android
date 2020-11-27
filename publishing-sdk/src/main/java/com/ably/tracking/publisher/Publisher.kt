@@ -8,6 +8,11 @@ import androidx.annotation.RequiresPermission
 
 typealias LocationUpdatedListener = (Location) -> Unit
 
+/**
+ * Represents a publisher, with associated [Trackable]. Publishers maintain the Ably connection, making use of
+ * navigation resources as required to track [deliveries] as well as, [optionally][trackTransport], the transport
+ * itself.
+ */
 interface Publisher {
     companion object Factory {
         /**
@@ -21,6 +26,48 @@ interface Publisher {
             return PublisherBuilder()
         }
     }
+
+    /**
+     * Whether this publisher should track its associated [Trackable], regardless of whether it has any [deliveries].
+     *
+     * The default state of this field can be set using [Builder.trackTransport].
+     */
+    var trackTransport: Boolean
+
+    /**
+     * Adds a delivery and makes it the actively tracked delivery, meaning that the state of the [trackedDelivery] field
+     * will be updated to this delivery, if that wasn't already the case.
+     *
+     * If this delivery was already in this publisher's delivery set then this method only serves to change the actively
+     * tracked delivery.
+     */
+    fun trackDelivery(delivery: Trackable)
+
+    /**
+     * Adds a delivery, but does not make it the actively tracked delivery, meaning that the state of the
+     * [trackedDelivery] field will not change.
+     *
+     * If this delivery was already in this publisher's delivery set then this method does nothing.
+     */
+    fun addDelivery(delivery: Trackable)
+
+    /**
+     * Removes the delivery if it is known to this publisher, otherwise does nothing and returns false.
+     *
+     * If the removed delivery is the current [trackedDelivery] then that state will be cleared, meaning that for
+     * another delivery to become the actively tracked delivery then the [trackDelivery] method must be subsequently
+     * called.
+     *
+     * @return true if the delivery was known to this publisher.
+     */
+    fun removeDelivery(delivery: Trackable): Boolean
+
+    /**
+     * The actively tracked delivery, being the delivery whose destination is being used for navigation normalisation.
+     *
+     * This state can be changed by calling the [trackDelivery] method.
+     */
+    val trackedDelivery: Trackable?
 
     /**
      * Stops asset publisher from publishing asset location
@@ -73,18 +120,21 @@ interface Publisher {
         fun android(context: Context): Builder
 
         /**
-         * Sets the travel destination and trackingId of the asset
+         * Sets the transport to be associated for the lifespan of this publisher.
          *
-         * @param trackingId Id of the tracked asset
-         * @param destination Travel destination, default empty string
-         * @param vehicleType Type of the vehicle, default "car"
-         * @return A new instance of the builder with all above params updated
+         * Whether this transport is tracked from the outset of the publisher's existence can be controlled using the
+         * [trackTransport] method.
          */
-        fun delivery(
-            trackingId: String,
-            destination: String? = "",
-            vehicleType: String? = "car"
-        ): Builder
+        fun transport(transport: Trackable): Builder
+
+        /**
+         * Sets the default state of [Publisher.trackTransport] field.
+         *
+         * @param track Whether the publisher should track its associated transport, regardless of whether it has any
+         * deliveries, or a [Publisher.trackedDelivery].
+         * @return A new instance of the builder with this property changed
+         */
+        fun trackTransport(track: Boolean): Builder
 
         /**
          * Creates a [Publisher] and starts publishing asset location

@@ -9,9 +9,4 @@ public class PublisherTest {
     public void publishersFactoryShouldNotThrowError() {
         Publisher.publishers();
     }
-
-    @Test
-    public void publishersShouldAllowToSetDeliveryDataWithOptionalParams() {
-        Publisher.publishers().delivery("some_id", null, null);
-    }
 }

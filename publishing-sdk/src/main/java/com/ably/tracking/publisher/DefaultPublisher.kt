@@ -37,9 +37,10 @@ constructor(
     private val ablyConfiguration: AblyConfiguration,
     mapConfiguration: MapConfiguration,
     private val debugConfiguration: DebugConfiguration?,
-    trackingId: String,
     private val locationUpdatedListener: LocationUpdatedListener,
-    context: Context
+    context: Context,
+    private val transport: Trackable,
+    trackTransportFromOutset: Boolean
 ) :
     Publisher {
     private val gson: Gson = Gson()
@@ -72,7 +73,7 @@ constructor(
 
     init {
         ably = AblyRealtime(ablyConfiguration.apiKey)
-        channel = ably.channels.get(trackingId)
+        channel = ably.channels.get(transport.id)
 
         Timber.w("Started.")
 
@@ -186,6 +187,25 @@ constructor(
             }
         }
     }
+
+    override var trackTransport: Boolean
+        get() = TODO("Not yet implemented")
+        set(value) {}
+
+    override fun trackDelivery(delivery: Trackable) {
+        TODO("Not yet implemented")
+    }
+
+    override fun addDelivery(delivery: Trackable) {
+        TODO("Not yet implemented")
+    }
+
+    override fun removeDelivery(delivery: Trackable): Boolean {
+        TODO("Not yet implemented")
+    }
+
+    override val trackedDelivery: Trackable?
+        get() = TODO("Not yet implemented")
 
     override fun stop() {
         stopLocationUpdates()
