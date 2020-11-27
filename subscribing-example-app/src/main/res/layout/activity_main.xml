@@ -1,18 +1,60 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".MainActivity">
+  xmlns:app="http://schemas.android.com/apk/res-auto"
+  xmlns:tools="http://schemas.android.com/tools"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  tools:context=".MainActivity">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Hello World!"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+  <TextView
+    android:id="@+id/appTitleTextView"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:paddingTop="24dp"
+    android:paddingBottom="24dp"
+    android:text="@string/ably_asset_tracking"
+    android:textColor="#DE7C31"
+    android:textSize="30sp"
+    android:textStyle="bold"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintTop_toTopOf="parent" />
+
+  <TextView
+    android:id="@+id/trackingIdLabel"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:paddingTop="10dp"
+    android:text="@string/tracking_id"
+    app:layout_constraintBottom_toTopOf="@+id/trackingIdEditText"
+    app:layout_constraintStart_toStartOf="@+id/trackingIdEditText" />
+
+  <androidx.appcompat.widget.AppCompatEditText
+    android:id="@+id/trackingIdEditText"
+    android:layout_width="0dp"
+    android:layout_height="50dp"
+    app:layout_constraintBottom_toTopOf="@id/startButton"
+    app:layout_constraintEnd_toEndOf="@id/startButton"
+    app:layout_constraintStart_toStartOf="@id/startButton" />
+
+  <androidx.appcompat.widget.AppCompatButton
+    android:id="@+id/startButton"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="30dp"
+    android:layout_marginEnd="30dp"
+    android:layout_marginBottom="10dp"
+    android:background="@drawable/rounded_ready"
+    android:text="@string/start_button_ready"
+    android:textColor="@color/white"
+    app:layout_constraintBottom_toBottomOf="parent" />
+
+  <fragment
+    android:id="@+id/mapFragment"
+    android:name="com.google.android.gms.maps.SupportMapFragment"
+    android:layout_width="match_parent"
+    android:layout_height="0dp"
+    app:layout_constraintBottom_toTopOf="@id/trackingIdLabel"
+    app:layout_constraintTop_toBottomOf="@id/appTitleTextView" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
