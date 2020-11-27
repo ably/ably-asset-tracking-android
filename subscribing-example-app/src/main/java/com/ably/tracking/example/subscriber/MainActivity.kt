@@ -9,6 +9,7 @@ import com.ably.tracking.subscriber.AssetSubscriber
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import kotlinx.android.synthetic.main.activity_main.*
@@ -72,7 +73,15 @@ class MainActivity : AppCompatActivity() {
         googleMap?.apply {
             LatLng(location.latitude, location.longitude).let {
                 clear()
-                addMarker(MarkerOptions().position(it))
+                addMarker(
+                    MarkerOptions()
+                        .position(it)
+                        .icon(
+                            BitmapDescriptorFactory.fromResource(
+                                getMarkerResourceIdByBearing(location.bearing)
+                            )
+                        )
+                )
                 moveCamera(CameraUpdateFactory.newLatLngZoom(it, ZOOM_LEVEL_STREETS))
             }
         }
