@@ -40,6 +40,9 @@ interface Publisher {
      *
      * If this delivery was already in this publisher's delivery set then this method only serves to change the actively
      * tracked delivery.
+     *
+     * @param delivery The delivery to be added to this publisher's set, if it's not already there, and to be made the
+     * actively tracked delivery.
      */
     fun trackDelivery(delivery: Trackable)
 
@@ -48,6 +51,8 @@ interface Publisher {
      * [trackedDelivery] field will not change.
      *
      * If this delivery was already in this publisher's delivery set then this method does nothing.
+     *
+     * @param delivery The delivery to be added to this publisher's set, if it's not already there.
      */
     fun addDelivery(delivery: Trackable)
 
@@ -58,6 +63,7 @@ interface Publisher {
      * another delivery to become the actively tracked delivery then the [trackDelivery] method must be subsequently
      * called.
      *
+     * @param delivery The delivery to be removed from this publisher's set, it it's there.
      * @return true if the delivery was known to this publisher.
      */
     fun removeDelivery(delivery: Trackable): Boolean
@@ -124,6 +130,9 @@ interface Publisher {
          *
          * Whether this transport is tracked from the outset of the publisher's existence can be controlled using the
          * [trackTransport] method.
+         *
+         * @param transport The transport to be associated with publishers started from this builder.
+         * @return A new instance of the builder with the associated transport changed.
          */
         fun transport(transport: Trackable): Builder
 
