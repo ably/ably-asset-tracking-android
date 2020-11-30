@@ -2,32 +2,27 @@ package com.ably.tracking.publisher
 
 import io.ably.lib.realtime.ConnectionStateListener
 
+// TODO: data class will be interface, with default implementations as data class for convenience
+// TODO: make sure all this works from Java user perspective
+
 data class AblyConfiguration(val apiKey: String, val clientId: String)
 
 data class MapConfiguration(val apiKey: String)
 
 data class LogConfiguration(val enabled: Boolean) // TODO - specify config
 
-interface Trackable {
-    val id: String
-    val metadata: String?
-}
-
 data class Destination(
     val latitude: Double,
     val longitude: Double
 )
 
-data class Delivery(
-    override val id: String,
-    override val metadata: String?,
-    val destination: Destination
-) : Trackable
+data class Trackable(
+    val id: String,
+    val metadata: String?,
+    val destination: Destination?
+)
 
-data class Courier(
-    override val id: String,
-    override val metadata: String?
-) : Trackable
+data class TransportationMode(val TBC: String)
 
 // TODO - probably should be removed in the final version
 // https://github.com/ably/ably-asset-tracking-android/issues/19

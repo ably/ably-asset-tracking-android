@@ -12,14 +12,13 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.widget.ImageViewCompat
 import com.ably.tracking.publisher.AblyConfiguration
-import com.ably.tracking.publisher.Courier
 import com.ably.tracking.publisher.Publisher
 import com.ably.tracking.publisher.DebugConfiguration
-import com.ably.tracking.publisher.Delivery
-import com.ably.tracking.publisher.Destination
 import com.ably.tracking.publisher.LocationSourceAbly
 import com.ably.tracking.publisher.LocationSourceRaw
 import com.ably.tracking.publisher.MapConfiguration
+import com.ably.tracking.publisher.Trackable
+import com.ably.tracking.publisher.TransportationMode
 import io.ably.lib.realtime.ConnectionState
 import io.ably.lib.realtime.ConnectionStateListener
 import kotlinx.android.synthetic.main.activity_main.*
@@ -111,12 +110,12 @@ class MainActivity : AppCompatActivity() {
             .ably(AblyConfiguration(ABLY_API_KEY, CLIENT_ID))
             .map(MapConfiguration(MAPBOX_ACCESS_TOKEN))
             .debug(createDebugConfiguration(historyData))
-            .courier(Courier("", null))
             .locationUpdatedListener { updateLocationInfo(it) }
             .androidContext(this)
+            .mode(TransportationMode("TBC"))
             .start()
             .apply {
-                trackDelivery(Delivery(trackingId, null, Destination(0.0, 0.0)))
+                track(Trackable(trackingId, null, null))
             }
         changeNavigationButtonState(true)
     }

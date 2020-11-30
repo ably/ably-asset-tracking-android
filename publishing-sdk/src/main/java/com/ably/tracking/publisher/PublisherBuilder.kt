@@ -12,8 +12,7 @@ internal data class PublisherBuilder(
     val debugConfiguration: DebugConfiguration? = null,
     val locationUpdatedListener: LocationUpdatedListener? = null,
     val androidContext: Context? = null,
-    val courier: Courier? = null,
-    val trackCourier: Boolean = false
+    val transportationMode: TransportationMode? = null
 ) : Publisher.Builder {
 
     override fun ably(configuration: AblyConfiguration): Publisher.Builder =
@@ -34,11 +33,8 @@ internal data class PublisherBuilder(
     override fun androidContext(context: Context): Publisher.Builder =
         this.copy(androidContext = context)
 
-    override fun courier(courier: Courier): Publisher.Builder =
-        this.copy(courier = courier)
-
-    override fun trackCourier(track: Boolean): Publisher.Builder =
-        this.copy(trackCourier = track)
+    override fun mode(mode: TransportationMode): Publisher.Builder =
+        this.copy(transportationMode = mode)
 
     @RequiresPermission(anyOf = [ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION])
     override fun start(): Publisher {
@@ -61,5 +57,5 @@ internal data class PublisherBuilder(
             mapConfiguration == null ||
             locationUpdatedListener == null ||
             androidContext == null ||
-            courier == null
+            transportationMode == null
 }
