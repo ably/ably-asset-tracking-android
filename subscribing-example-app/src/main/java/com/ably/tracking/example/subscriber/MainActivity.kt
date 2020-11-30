@@ -85,7 +85,11 @@ class MainActivity : AppCompatActivity() {
                     moveCamera(CameraUpdateFactory.newLatLngZoom(it, ZOOM_LEVEL_STREETS))
                 } else {
                     marker!!.setIcon(getMarkerIcon(location.bearing))
-                    animateMarkerMovement(marker!!, it)
+                    if (animationSwitch.isChecked) {
+                        animateMarkerMovement(marker!!, it)
+                    } else {
+                        marker!!.position = it
+                    }
                 }
             }
         }
