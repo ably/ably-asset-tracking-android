@@ -25,6 +25,7 @@ fun animateMarkerMovement(marker: Marker, finalPosition: LatLng) {
     val interpolator = AccelerateDecelerateInterpolator()
     val startTimeInMillis = SystemClock.uptimeMillis()
     val animationDurationInMillis = 1000f // this should probably match events update rate
+    val nextCalculationDelayInMillis = 16L
     val handler = Handler()
 
     handler.post(object : Runnable {
@@ -39,7 +40,7 @@ fun animateMarkerMovement(marker: Marker, finalPosition: LatLng) {
                 interpolateLinear(distanceProgressPercentage, startPosition, finalPosition)
 
             if (timeProgressPercentage < 1) {
-                handler.postDelayed(this, 16) // Post again 16ms later.
+                handler.postDelayed(this, nextCalculationDelayInMillis)
             }
         }
     })
