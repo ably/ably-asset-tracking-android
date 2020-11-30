@@ -115,7 +115,7 @@ class MainActivity : AppCompatActivity() {
             .mode(TransportationMode("TBC"))
             .start()
             .apply {
-                track(Trackable(trackingId, null, null))
+                track(Trackable(trackingId))
             }
         changeNavigationButtonState(true)
     }

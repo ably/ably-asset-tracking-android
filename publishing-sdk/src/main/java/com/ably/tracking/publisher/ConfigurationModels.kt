@@ -18,8 +18,8 @@ data class Destination(
 
 data class Trackable(
     val id: String,
-    val metadata: String?,
-    val destination: Destination?
+    val metadata: String? = null,
+    val destination: Destination? = null
 )
 
 data class TransportationMode(val TBC: String)
