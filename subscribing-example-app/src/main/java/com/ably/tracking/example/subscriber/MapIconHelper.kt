@@ -1,5 +1,10 @@
 package com.ably.tracking.example.subscriber
 
+import android.os.Handler
+import android.os.SystemClock
+import android.view.animation.AccelerateDecelerateInterpolator
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.Marker
 import kotlin.math.roundToInt
 
 fun getMarkerResourceIdByBearing(bearing: Float): Int {
@@ -13,4 +18,35 @@ fun getMarkerResourceIdByBearing(bearing: Float): Int {
         in 292..337 -> R.drawable.driver_nw
         else -> R.drawable.driver_n
     }
+}
+
+fun animateMarkerMovement(marker: Marker, finalPosition: LatLng) {
+    val startPosition = marker.position
+    val interpolator = AccelerateDecelerateInterpolator()
+    val startTimeMs = SystemClock.uptimeMillis()
+    val animationDurationInMs = 1000f // this should probably match events update rate
+    val handler = Handler()
+
+    handler.post(object : Runnable {
+        var timeElapsedFromStartInMs = 0L
+        var timeProgressPercentage = 0f
+        var distanceProgressPercentage = 0f
+        override fun run() {
+            timeElapsedFromStartInMs = SystemClock.uptimeMillis() - startTimeMs
+            timeProgressPercentage = timeElapsedFromStartInMs / animationDurationInMs
+            distanceProgressPercentage = interpolator.getInterpolation(timeProgressPercentage)
+            marker.position =
+                interpolateLinear(distanceProgressPercentage, startPosition, finalPosition)
+
+            if (timeProgressPercentage < 1) {
+                handler.postDelayed(this, 16) // Post again 16ms later.
+            }
+        }
+    })
+}
+
+private fun interpolateLinear(fraction: Float, a: LatLng, b: LatLng): LatLng {
+    val lat = (b.latitude - a.latitude) * fraction + a.latitude
+    val lng = (b.longitude - a.longitude) * fraction + a.longitude
+    return LatLng(lat, lng)
 }
