@@ -75,20 +75,22 @@ class MainActivity : AppCompatActivity() {
 
     private fun showMarkerOnMap(location: Location) {
         googleMap?.apply {
-            LatLng(location.latitude, location.longitude).let {
-                if (marker == null) {
-                    marker = addMarker(
-                        MarkerOptions()
-                            .position(it)
-                            .icon(getMarkerIcon(location.bearing))
-                    )
-                    moveCamera(CameraUpdateFactory.newLatLngZoom(it, ZOOM_LEVEL_STREETS))
-                } else {
-                    marker!!.setIcon(getMarkerIcon(location.bearing))
-                    if (animationSwitch.isChecked) {
-                        animateMarkerMovement(marker!!, it)
+            LatLng(location.latitude, location.longitude).let { position ->
+                marker.let { currentMarker ->
+                    if (currentMarker == null) {
+                        marker = addMarker(
+                            MarkerOptions()
+                                .position(position)
+                                .icon(getMarkerIcon(location.bearing))
+                        )
+                        moveCamera(CameraUpdateFactory.newLatLngZoom(position, ZOOM_LEVEL_STREETS))
                     } else {
-                        marker!!.position = it
+                        currentMarker.setIcon(getMarkerIcon(location.bearing))
+                        if (animationSwitch.isChecked) {
+                            animateMarkerMovement(currentMarker, position)
+                        } else {
+                            currentMarker.position = position
+                        }
                     }
                 }
             }
