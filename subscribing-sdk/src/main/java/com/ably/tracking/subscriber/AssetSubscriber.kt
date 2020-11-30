@@ -3,6 +3,7 @@ package com.ably.tracking.subscriber
 import android.location.Location
 
 typealias LocationUpdatedListener = (Location) -> Unit
+typealias StatusListener = (Boolean) -> Unit
 
 interface AssetSubscriber {
     companion object {
@@ -72,6 +73,14 @@ interface AssetSubscriber {
          * @return A new instance of the builder with tracking ID changed
          */
         fun trackingId(trackingId: String): Builder
+
+        /**
+         * Sets asset status listener for checking if asset is online
+         *
+         * @param listener Listener function that takes [Boolean] that's true when asset is online
+         * @return A new instance of the builder with this field changed
+         */
+        fun assetStatusListener(listener: StatusListener): Builder
 
         /**
          * Creates an [AssetSubscriber] and starts subscribing to the asset location

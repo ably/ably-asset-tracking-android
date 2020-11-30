@@ -23,3 +23,5 @@ internal data class GeoJsonProperties(
     val speed: Float,
     val time: Double
 )
+
+internal data class PresenceData(val type: String)

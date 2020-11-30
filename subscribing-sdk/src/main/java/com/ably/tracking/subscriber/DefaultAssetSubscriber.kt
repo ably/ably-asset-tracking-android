@@ -10,17 +10,20 @@ import io.ably.lib.realtime.CompletionListener
 import io.ably.lib.types.AblyException
 import io.ably.lib.types.ChannelOptions
 import io.ably.lib.types.ErrorInfo
+import io.ably.lib.types.PresenceMessage
 import timber.log.Timber
 
 internal class DefaultAssetSubscriber(
     private val ablyConfiguration: AblyConfiguration,
     rawLocationUpdatedListener: LocationUpdatedListener,
     enhancedLocationUpdatedListener: LocationUpdatedListener,
-    trackingId: String
+    trackingId: String,
+    private val assetStatusListener: StatusListener?
 ) : AssetSubscriber {
     private val ably: AblyRealtime
     private val channel: Channel
     private val gson = Gson()
+    private val presenceData = PresenceData(ClientTypes.SUBSCRIBER)
 
     init {
         ably = AblyRealtime(ablyConfiguration.apiKey)
@@ -64,8 +67,11 @@ internal class DefaultAssetSubscriber(
 
     private fun joinChannelPresence() {
         try {
+            notifyAssetIsOffline()
+            channel.presence.subscribe { onPresenceMessage(it) }
             channel.presence.enterClient(
-                ablyConfiguration.clientId, "",
+                ablyConfiguration.clientId,
+                gson.toJson(presenceData),
                 object : CompletionListener {
                     override fun onSuccess() = Unit
 
@@ -85,8 +91,11 @@ internal class DefaultAssetSubscriber(
 
     private fun leaveChannelPresence() {
         try {
+            channel.presence.unsubscribe()
+            notifyAssetIsOffline()
             channel.presence.leaveClient(
-                ablyConfiguration.clientId, "",
+                ablyConfiguration.clientId,
+                gson.toJson(presenceData),
                 object : CompletionListener {
                     override fun onSuccess() = Unit
 
@@ -102,6 +111,32 @@ internal class DefaultAssetSubscriber(
             // https://github.com/ably/ably-asset-tracking-android/issues/17
             Timber.e(ablyException)
         }
+    }
+
+    private fun onPresenceMessage(presenceMessage: PresenceMessage) {
+        when (presenceMessage.action) {
+            PresenceMessage.Action.present, PresenceMessage.Action.enter -> {
+                val data = presenceMessage.getData(gson)
+                if (data.type == ClientTypes.PUBLISHER) {
+                    notifyAssetIsOnline()
+                }
+            }
+            PresenceMessage.Action.leave -> {
+                val data = presenceMessage.getData(gson)
+                if (data.type == ClientTypes.PUBLISHER) {
+                    notifyAssetIsOffline()
+                }
+            }
+            else -> Unit
+        }
+    }
+
+    private fun notifyAssetIsOnline() {
+        assetStatusListener?.invoke(true)
+    }
+
+    private fun notifyAssetIsOffline() {
+        assetStatusListener?.invoke(false)
     }
 
     private fun postToMainThread(operation: () -> Unit) {
