@@ -4,7 +4,7 @@ import android.location.Location
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import com.ably.tracking.subscriber.AblyConfiguration
+import com.ably.tracking.AblyConfiguration
 import com.ably.tracking.subscriber.AssetSubscriber
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap

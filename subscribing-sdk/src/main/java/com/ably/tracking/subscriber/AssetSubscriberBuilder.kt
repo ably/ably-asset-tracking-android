@@ -1,5 +1,8 @@
 package com.ably.tracking.subscriber
 
+import com.ably.tracking.AblyConfiguration
+import com.ably.tracking.LogConfiguration
+
 internal data class AssetSubscriberBuilder(
     val ablyConfiguration: AblyConfiguration? = null,
     val logConfiguration: LogConfiguration? = null,

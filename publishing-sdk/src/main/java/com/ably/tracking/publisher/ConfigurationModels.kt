@@ -5,11 +5,7 @@ import io.ably.lib.realtime.ConnectionStateListener
 // TODO: data class will be interface, with default implementations as data class for convenience
 // TODO: make sure all this works from Java user perspective
 
-data class AblyConfiguration(val apiKey: String, val clientId: String)
-
 data class MapConfiguration(val apiKey: String)
-
-data class LogConfiguration(val enabled: Boolean) // TODO - specify config
 
 data class Destination(
     val latitude: Double,

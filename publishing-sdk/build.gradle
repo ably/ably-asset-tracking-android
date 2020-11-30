@@ -5,6 +5,8 @@ plugins {
 }
 
 dependencies {
+    api project(':core-sdk')
+
     // TODO work out if these are the right dependencies to be importing for MapBox
     implementation "com.mapbox.navigation:ui:1.1.0"
     implementation 'com.mapbox.mapboxsdk:mapbox-android-sdk:9.5.0'
