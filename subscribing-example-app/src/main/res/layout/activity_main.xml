@@ -21,6 +21,23 @@
     app:layout_constraintTop_toTopOf="parent" />
 
   <TextView
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginEnd="10dp"
+    android:text="@string/animation"
+    app:layout_constraintBottom_toBottomOf="@id/animationSwitch"
+    app:layout_constraintEnd_toStartOf="@id/animationSwitch"
+    app:layout_constraintTop_toTopOf="@id/animationSwitch" />
+
+  <androidx.appcompat.widget.SwitchCompat
+    android:id="@+id/animationSwitch"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:checked="true"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintTop_toBottomOf="@id/appTitleTextView" />
+
+  <TextView
     android:id="@+id/trackingIdLabel"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
@@ -55,6 +72,6 @@
     android:layout_width="match_parent"
     android:layout_height="0dp"
     app:layout_constraintBottom_toTopOf="@id/trackingIdLabel"
-    app:layout_constraintTop_toBottomOf="@id/appTitleTextView" />
+    app:layout_constraintTop_toBottomOf="@id/animationSwitch" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

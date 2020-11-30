@@ -11,6 +11,7 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import kotlinx.android.synthetic.main.activity_main.*
 
@@ -21,6 +22,7 @@ private const val ZOOM_LEVEL_STREETS = 15F
 class MainActivity : AppCompatActivity() {
     private var assetSubscriber: AssetSubscriber? = null
     private var googleMap: GoogleMap? = null
+    private var marker: Marker? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -46,6 +48,7 @@ class MainActivity : AppCompatActivity() {
     private fun startSubscribing() {
         trackingIdEditText.text.toString().trim().let { trackingId ->
             if (trackingId.isNotEmpty()) {
+                googleMap?.clear()
                 createAndStartAssetSubscriber(trackingId)
                 changeStartButtonState(true)
             } else {
@@ -67,25 +70,35 @@ class MainActivity : AppCompatActivity() {
         assetSubscriber?.stop()
         assetSubscriber = null
         changeStartButtonState(false)
+        marker = null
     }
 
     private fun showMarkerOnMap(location: Location) {
         googleMap?.apply {
-            LatLng(location.latitude, location.longitude).let {
-                clear()
-                addMarker(
-                    MarkerOptions()
-                        .position(it)
-                        .icon(
-                            BitmapDescriptorFactory.fromResource(
-                                getMarkerResourceIdByBearing(location.bearing)
-                            )
+            LatLng(location.latitude, location.longitude).let { position ->
+                marker.let { currentMarker ->
+                    if (currentMarker == null) {
+                        marker = addMarker(
+                            MarkerOptions()
+                                .position(position)
+                                .icon(getMarkerIcon(location.bearing))
                         )
-                )
-                moveCamera(CameraUpdateFactory.newLatLngZoom(it, ZOOM_LEVEL_STREETS))
+                        moveCamera(CameraUpdateFactory.newLatLngZoom(position, ZOOM_LEVEL_STREETS))
+                    } else {
+                        currentMarker.setIcon(getMarkerIcon(location.bearing))
+                        if (animationSwitch.isChecked) {
+                            animateMarkerMovement(currentMarker, position)
+                        } else {
+                            currentMarker.position = position
+                        }
+                    }
+                }
             }
         }
     }
+
+    private fun getMarkerIcon(bearing: Float) =
+        BitmapDescriptorFactory.fromResource(getMarkerResourceIdByBearing(bearing))
 
     private fun changeStartButtonState(isSubscribing: Boolean) {
         if (isSubscribing) {
