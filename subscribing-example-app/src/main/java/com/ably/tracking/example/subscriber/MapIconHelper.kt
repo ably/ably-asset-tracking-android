@@ -23,17 +23,17 @@ fun getMarkerResourceIdByBearing(bearing: Float): Int {
 fun animateMarkerMovement(marker: Marker, finalPosition: LatLng) {
     val startPosition = marker.position
     val interpolator = AccelerateDecelerateInterpolator()
-    val startTimeMs = SystemClock.uptimeMillis()
-    val animationDurationInMs = 1000f // this should probably match events update rate
+    val startTimeInMillis = SystemClock.uptimeMillis()
+    val animationDurationInMillis = 1000f // this should probably match events update rate
     val handler = Handler()
 
     handler.post(object : Runnable {
-        var timeElapsedFromStartInMs = 0L
+        var timeElapsedFromStartInMillis = 0L
         var timeProgressPercentage = 0f
         var distanceProgressPercentage = 0f
         override fun run() {
-            timeElapsedFromStartInMs = SystemClock.uptimeMillis() - startTimeMs
-            timeProgressPercentage = timeElapsedFromStartInMs / animationDurationInMs
+            timeElapsedFromStartInMillis = SystemClock.uptimeMillis() - startTimeInMillis
+            timeProgressPercentage = timeElapsedFromStartInMillis / animationDurationInMillis
             distanceProgressPercentage = interpolator.getInterpolation(timeProgressPercentage)
             marker.position =
                 interpolateLinear(distanceProgressPercentage, startPosition, finalPosition)
