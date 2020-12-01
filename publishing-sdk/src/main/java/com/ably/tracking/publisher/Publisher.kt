@@ -131,7 +131,8 @@ interface Publisher {
         /**
          * Creates a [Publisher] and starts publishing.
          *
-         * The [track][Publisher.track] method will need to subsequently be called on the returned instance.
+         * The returned publisher instance does not start in a state whereby it is actively tracking anything. If
+         * tracking is required from the outset then the [track][Publisher.track] method must be subsequently called.
          *
          * In order to detect device's location ACCESS_COARSE_LOCATION or ACCESS_FINE_LOCATION permission must be granted.
          * It is strongly suggested to call this method from the main thread.
