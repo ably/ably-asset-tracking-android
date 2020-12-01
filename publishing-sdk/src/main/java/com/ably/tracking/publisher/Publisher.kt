@@ -60,8 +60,8 @@ interface Publisher {
     fun remove(trackable: Trackable): Boolean
 
     /**
-     * The actively tracked object, being the [Trackable] object whose destination will be used for navigation
-     * normalisation, if available.
+     * The actively tracked object, being the [Trackable] object whose destination will be used for location
+     * enhancement, if available.
      *
      * This state can be changed by calling the [track] method.
      */
