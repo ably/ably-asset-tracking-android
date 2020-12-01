@@ -11,6 +11,7 @@ import io.ably.lib.types.AblyException
 import io.ably.lib.types.ChannelOptions
 import io.ably.lib.types.ErrorInfo
 import io.ably.lib.types.PresenceMessage
+import com.ably.tracking.AblyConfiguration
 import timber.log.Timber
 
 internal class DefaultAssetSubscriber(

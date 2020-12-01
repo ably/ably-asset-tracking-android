@@ -11,7 +11,6 @@ import androidx.annotation.RequiresPermission
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.widget.ImageViewCompat
-import com.ably.tracking.publisher.AblyConfiguration
 import com.ably.tracking.publisher.Publisher
 import com.ably.tracking.publisher.DebugConfiguration
 import com.ably.tracking.publisher.LocationSourceAbly
@@ -21,6 +20,7 @@ import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.TransportationMode
 import io.ably.lib.realtime.ConnectionState
 import io.ably.lib.realtime.ConnectionStateListener
+import com.ably.tracking.AblyConfiguration
 import kotlinx.android.synthetic.main.activity_main.*
 import pub.devrel.easypermissions.AfterPermissionGranted
 import pub.devrel.easypermissions.EasyPermissions

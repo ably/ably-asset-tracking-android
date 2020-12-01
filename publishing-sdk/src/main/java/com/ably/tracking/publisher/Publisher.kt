@@ -5,6 +5,8 @@ import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.content.Context
 import android.location.Location
 import androidx.annotation.RequiresPermission
+import com.ably.tracking.AblyConfiguration
+import com.ably.tracking.LogConfiguration
 
 typealias LocationUpdatedListener = (Location) -> Unit
 

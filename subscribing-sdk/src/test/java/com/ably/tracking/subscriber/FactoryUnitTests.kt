@@ -2,6 +2,8 @@ package com.ably.tracking.subscriber
 
 import android.annotation.SuppressLint
 import android.content.Context
+import com.ably.tracking.AblyConfiguration
+import com.ably.tracking.LogConfiguration
 import io.mockk.mockk
 import org.junit.Assert
 import org.junit.Test
