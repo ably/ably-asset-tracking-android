@@ -130,6 +130,8 @@ interface Publisher {
          */
         fun mode(mode: TransportationMode): Builder
 
+        fun resolutionPolicy(policy: ResolutionPolicy): Builder
+
         /**
          * Creates a [Publisher] and starts publishing.
          *

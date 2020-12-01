@@ -14,7 +14,8 @@ internal data class PublisherBuilder(
     val debugConfiguration: DebugConfiguration? = null,
     val locationUpdatedListener: LocationUpdatedListener? = null,
     val androidContext: Context? = null,
-    val transportationMode: TransportationMode? = null
+    val transportationMode: TransportationMode? = null,
+    val resolutionPolicy: ResolutionPolicy? = null
 ) : Publisher.Builder {
 
     override fun ably(configuration: AblyConfiguration): Publisher.Builder =
@@ -37,6 +38,9 @@ internal data class PublisherBuilder(
 
     override fun mode(mode: TransportationMode): Publisher.Builder =
         this.copy(transportationMode = mode)
+
+    override fun resolutionPolicy(policy: ResolutionPolicy): Publisher.Builder =
+        this.copy(resolutionPolicy = policy)
 
     @RequiresPermission(anyOf = [ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION])
     override fun start(): Publisher {

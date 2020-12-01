@@ -1,11 +1,16 @@
 package com.ably.tracking.publisher
 
+import com.ably.tracking.Resolution
 import io.ably.lib.realtime.ConnectionStateListener
 
 // TODO: data class will be interface, with default implementations as data class for convenience
 // TODO: make sure all this works from Java user perspective
 
 data class MapConfiguration(val apiKey: String)
+
+interface ResolutionPolicy {
+    fun resolve(resolutions: Set<Resolution>): Resolution
+}
 
 data class Destination(
     val latitude: Double,
@@ -15,7 +20,8 @@ data class Destination(
 data class Trackable(
     val id: String,
     val metadata: String? = null,
-    val destination: Destination? = null
+    val destination: Destination? = null,
+    val targetResolution: Resolution? = null
 )
 
 data class TransportationMode(val TBC: String)
