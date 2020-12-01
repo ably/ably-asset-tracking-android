@@ -27,7 +27,7 @@ interface Publisher {
     }
 
     /**
-     * Adds a [Trackable] object and makes it the actively tracked object, meaning that the state of the [tracked] field
+     * Adds a [Trackable] object and makes it the actively tracked object, meaning that the state of the [active] field
      * will be updated to this object, if that wasn't already the case.
      *
      * If this object was already in this publisher's tracked set then this method only serves to change the actively
@@ -40,7 +40,7 @@ interface Publisher {
 
     /**
      * Adds a [Trackable] object, but does not make it the actively tracked object, meaning that the state of the
-     * [tracked] field will not change.
+     * [active] field will not change.
      *
      * If this object was already in this publisher's tracked set then this method does nothing.
      *
@@ -51,7 +51,7 @@ interface Publisher {
     /**
      * Removes a [Trackable] object if it is known to this publisher, otherwise does nothing and returns false.
      *
-     * If the removed object is the current actively [tracked] object then that state will be cleared, meaning that for
+     * If the removed object is the current actively [active] object then that state will be cleared, meaning that for
      * another object to become the actively tracked delivery then the [track] method must be subsequently called.
      *
      * @param trackable The object to be removed from this publisher's tracked set, it it's there.
@@ -65,7 +65,7 @@ interface Publisher {
      *
      * This state can be changed by calling the [track] method.
      */
-    val tracked: Trackable?
+    val active: Trackable?
 
     /**
      * The active means of transport for this publisher.

@@ -201,7 +201,7 @@ constructor(
         TODO("Not yet implemented")
     }
 
-    override val tracked: Trackable?
+    override val active: Trackable?
         get() = TODO("Not yet implemented")
 
     override var transportationMode: TransportationMode
