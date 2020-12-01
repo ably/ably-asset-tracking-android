@@ -167,16 +167,12 @@ constructor(
         }
     }
 
-    override var trackCourier: Boolean
-        get() = TODO("Not yet implemented")
-        set(value) {}
-
-    override fun trackDelivery(delivery: Trackable) {
+    override fun track(trackable: Trackable) {
         if (this.channel != null) {
             throw IllegalStateException("For this preview version of the SDK, this method may only be called once for any given instance of this class.")
         }
 
-        channel = ably.channels.get(delivery.id).apply {
+        channel = ably.channels.get(trackable.id).apply {
             try {
                 presence.enterClient(
                     ablyConfiguration.clientId,
@@ -199,16 +195,22 @@ constructor(
         }
     }
 
-    override fun addDelivery(delivery: Trackable) {
+    override fun add(trackable: Trackable) {
         TODO("Not yet implemented")
     }
 
-    override fun removeDelivery(delivery: Trackable): Boolean {
+    override fun remove(trackable: Trackable): Boolean {
         TODO("Not yet implemented")
     }
 
-    override val trackedDelivery: Trackable?
+    override val active: Trackable?
         get() = TODO("Not yet implemented")
+
+    override var transportationMode: TransportationMode
+        get() = TODO("Not yet implemented")
+        set(value) {
+            TODO("Not yet implemented")
+        }
 
     override fun stop() {
         stopLocationUpdates()

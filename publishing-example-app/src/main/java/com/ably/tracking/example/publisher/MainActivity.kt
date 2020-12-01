@@ -18,6 +18,7 @@ import com.ably.tracking.publisher.LocationSourceAbly
 import com.ably.tracking.publisher.LocationSourceRaw
 import com.ably.tracking.publisher.MapConfiguration
 import com.ably.tracking.publisher.Trackable
+import com.ably.tracking.publisher.TransportationMode
 import io.ably.lib.realtime.ConnectionState
 import io.ably.lib.realtime.ConnectionStateListener
 import kotlinx.android.synthetic.main.activity_main.*
@@ -109,12 +110,12 @@ class MainActivity : AppCompatActivity() {
             .ably(AblyConfiguration(ABLY_API_KEY, CLIENT_ID))
             .map(MapConfiguration(MAPBOX_ACCESS_TOKEN))
             .debug(createDebugConfiguration(historyData))
-            .courier(Trackable("courier_id", null))
             .locationUpdatedListener { updateLocationInfo(it) }
             .androidContext(this)
+            .mode(TransportationMode("TBC"))
             .start()
             .apply {
-                trackDelivery(Trackable(trackingId, null))
+                track(Trackable(trackingId))
             }
         changeNavigationButtonState(true)
     }

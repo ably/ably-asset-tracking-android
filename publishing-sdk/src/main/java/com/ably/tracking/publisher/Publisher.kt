@@ -9,9 +9,8 @@ import androidx.annotation.RequiresPermission
 typealias LocationUpdatedListener = (Location) -> Unit
 
 /**
- * Represents a publisher, with associated [Trackable] courier. Publishers maintain the Ably connection, making use of
- * navigation resources as required to track [deliveries] as well as, [optionally][trackCourier], the courier
- * itself.
+ * Represents a publisher. Publishers maintain the Ably connection, making use of navigation resources as required to
+ * track [Trackable] objects.
  */
 interface Publisher {
     companion object Factory {
@@ -28,55 +27,53 @@ interface Publisher {
     }
 
     /**
-     * Whether this publisher should track its associated [Trackable], regardless of whether it has any [deliveries].
+     * Adds a [Trackable] object and makes it the actively tracked object, meaning that the state of the [active] field
+     * will be updated to this object, if that wasn't already the case.
      *
-     * The default state of this field can be set using [Builder.trackCourier].
+     * If this object was already in this publisher's tracked set then this method only serves to change the actively
+     * tracked object.
+     *
+     * @param trackable The object to be added to this publisher's tracked set, if it's not already there, and to be
+     * made the actively tracked object.
      */
-    var trackCourier: Boolean
+    fun track(trackable: Trackable)
 
     /**
-     * Adds a delivery and makes it the actively tracked delivery, meaning that the state of the [trackedDelivery] field
-     * will be updated to this delivery, if that wasn't already the case.
+     * Adds a [Trackable] object, but does not make it the actively tracked object, meaning that the state of the
+     * [active] field will not change.
      *
-     * If this delivery was already in this publisher's delivery set then this method only serves to change the actively
-     * tracked delivery.
+     * If this object was already in this publisher's tracked set then this method does nothing.
      *
-     * @param delivery The delivery to be added to this publisher's set, if it's not already there, and to be made the
-     * actively tracked delivery.
+     * @param trackable The object to be added to this publisher's tracked set, if it's not already there.
      */
-    fun trackDelivery(delivery: Trackable)
+    fun add(trackable: Trackable)
 
     /**
-     * Adds a delivery, but does not make it the actively tracked delivery, meaning that the state of the
-     * [trackedDelivery] field will not change.
+     * Removes a [Trackable] object if it is known to this publisher, otherwise does nothing and returns false.
      *
-     * If this delivery was already in this publisher's delivery set then this method does nothing.
+     * If the removed object is the current actively [active] object then that state will be cleared, meaning that for
+     * another object to become the actively tracked delivery then the [track] method must be subsequently called.
      *
-     * @param delivery The delivery to be added to this publisher's set, if it's not already there.
+     * @param trackable The object to be removed from this publisher's tracked set, it it's there.
+     * @return true if the object was known to this publisher, being that it was in the tracked set.
      */
-    fun addDelivery(delivery: Trackable)
+    fun remove(trackable: Trackable): Boolean
 
     /**
-     * Removes the delivery if it is known to this publisher, otherwise does nothing and returns false.
+     * The actively tracked object, being the [Trackable] object whose destination will be used for location
+     * enhancement, if available.
      *
-     * If the removed delivery is the current [trackedDelivery] then that state will be cleared, meaning that for
-     * another delivery to become the actively tracked delivery then the [trackDelivery] method must be subsequently
-     * called.
-     *
-     * @param delivery The delivery to be removed from this publisher's set, it it's there.
-     * @return true if the delivery was known to this publisher.
+     * This state can be changed by calling the [track] method.
      */
-    fun removeDelivery(delivery: Trackable): Boolean
+    val active: Trackable?
 
     /**
-     * The actively tracked delivery, being the delivery whose destination is being used for navigation normalisation.
-     *
-     * This state can be changed by calling the [trackDelivery] method.
+     * The active means of transport for this publisher.
      */
-    val trackedDelivery: Trackable?
+    var transportationMode: TransportationMode
 
     /**
-     * Stops asset publisher from publishing asset location.
+     * Stops this publisher from publishing locations. Once a publisher has been stopped, it cannot be restarted.
      *
      * It is strongly suggested to call this method from the main thread.
      */
@@ -124,32 +121,23 @@ interface Publisher {
         fun androidContext(context: Context): Builder
 
         /**
-         * Sets the courier to be associated for the lifespan of this publisher.
+         * Set the means of transport being used for the initial state of publishers created from this builder.
          *
-         * Whether this courier is tracked from the outset of the publisher's existence can be controlled using the
-         * [trackCourier] method.
-         *
-         * @param courier The courier to be associated with publishers started from this builder.
+         * @param mode The means of transport.
          * @return A new instance of the builder with this property changed.
          */
-        fun courier(courier: Trackable): Builder
+        fun mode(mode: TransportationMode): Builder
 
         /**
-         * Sets the default state of [Publisher.trackCourier] field.
+         * Creates a [Publisher] and starts publishing.
          *
-         * @param track Whether the publisher should track its associated [Trackable], regardless of whether it has any
-         * deliveries, or a [Publisher.trackedDelivery].
-         * @return A new instance of the builder with this property changed.
-         */
-        fun trackCourier(track: Boolean): Builder
-
-        /**
-         * Creates a [Publisher] and starts publishing asset location
+         * The returned publisher instance does not start in a state whereby it is actively tracking anything. If
+         * tracking is required from the outset then the [track][Publisher.track] method must be subsequently called.
          *
          * In order to detect device's location ACCESS_COARSE_LOCATION or ACCESS_FINE_LOCATION permission must be granted.
          * It is strongly suggested to call this method from the main thread.
          *
-         * @return A new instance of [Publisher]
+         * @return A new publisher instance.
          * @throws BuilderConfigurationIncompleteException If all required params aren't set
          */
         @RequiresPermission(anyOf = [ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION])
