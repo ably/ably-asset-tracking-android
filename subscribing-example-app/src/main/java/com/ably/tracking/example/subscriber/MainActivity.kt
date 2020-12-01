@@ -63,7 +63,13 @@ class MainActivity : AppCompatActivity() {
             .rawLocationUpdatedListener {} // if you prefer to display raw location call showMarkerOnMap() here
             .enhancedLocationUpdatedListener { showMarkerOnMap(it) }
             .trackingId(trackingId)
+            .assetStatusListener { updateAssetStatusInfo(it) }
             .start()
+    }
+
+    private fun updateAssetStatusInfo(isOnline: Boolean) {
+        assetStatusTextView.text =
+            getString(if (isOnline) R.string.asset_status_online else R.string.asset_status_offline)
     }
 
     private fun stopSubscribing() {

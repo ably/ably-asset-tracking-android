@@ -8,3 +8,8 @@ internal object EventNames {
     const val RAW = "raw"
     const val ENHANCED = "enhanced"
 }
+
+internal object ClientTypes {
+    const val SUBSCRIBER = "subscriber"
+    const val PUBLISHER = "publisher"
+}

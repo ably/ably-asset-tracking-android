@@ -66,6 +66,7 @@ constructor(
             sendEnhancedLocationMessage(enhancedLocation, keyPoints)
         }
     }
+    private val presenceData = PresenceData(ClientTypes.PUBLISHER)
     private var isTracking: Boolean = false
     private var mapboxReplayer: MapboxReplayer? = null
 
@@ -178,7 +179,8 @@ constructor(
         channel = ably.channels.get(delivery.id).apply {
             try {
                 presence.enterClient(
-                    ablyConfiguration.clientId, "",
+                    ablyConfiguration.clientId,
+                    gson.toJson(presenceData),
                     object : CompletionListener {
                         override fun onSuccess() = Unit
 
@@ -222,7 +224,8 @@ constructor(
                 channel = null
                 try {
                     it.presence.leaveClient(
-                        ablyConfiguration.clientId, "",
+                        ablyConfiguration.clientId,
+                        gson.toJson(presenceData),
                         object : CompletionListener {
                             override fun onSuccess() = Unit
 

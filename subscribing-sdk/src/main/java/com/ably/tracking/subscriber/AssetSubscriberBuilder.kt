@@ -6,7 +6,8 @@ internal data class AssetSubscriberBuilder(
     val rawLocationUpdatedListener: LocationUpdatedListener? = null,
     val enhancedLocationUpdatedListener: LocationUpdatedListener? = null,
     val resolution: Double? = null,
-    val trackingId: String? = null
+    val trackingId: String? = null,
+    val assetStatusListener: StatusListener? = null
 ) : AssetSubscriber.Builder {
 
     override fun ablyConfig(configuration: AblyConfiguration): AssetSubscriber.Builder =
@@ -27,6 +28,9 @@ internal data class AssetSubscriberBuilder(
     override fun trackingId(trackingId: String): AssetSubscriber.Builder =
         this.copy(trackingId = trackingId)
 
+    override fun assetStatusListener(listener: (Boolean) -> Unit): AssetSubscriber.Builder =
+        this.copy(assetStatusListener = listener)
+
     override fun start(): AssetSubscriber {
         if (isMissingRequiredFields()) {
             throw BuilderConfigurationIncompleteException()
@@ -36,7 +40,8 @@ internal data class AssetSubscriberBuilder(
             ablyConfiguration!!,
             rawLocationUpdatedListener!!,
             enhancedLocationUpdatedListener!!,
-            trackingId!!
+            trackingId!!,
+            assetStatusListener
         )
     }
 

@@ -175,6 +175,32 @@ class FactoryUnitTests {
     }
 
     @Test
+    fun `setting asset status listener updates builder field`() {
+        // given
+        val listener: StatusListener = {}
+
+        // when
+        val builder =
+            AssetSubscriber.subscribers().assetStatusListener(listener) as AssetSubscriberBuilder
+
+        // then
+        Assert.assertEquals(listener, builder.assetStatusListener)
+    }
+
+    @Test
+    fun `setting asset status listener returns a new copy of builder`() {
+        // given
+        val listener: StatusListener = {}
+        val originalBuilder = AssetSubscriber.subscribers()
+
+        // when
+        val newBuilder = originalBuilder.assetStatusListener(listener)
+
+        // then
+        Assert.assertNotEquals(newBuilder, originalBuilder)
+    }
+
+    @Test
     fun `setting all data should update all builder fields`() {
         // given
         val builder = AssetSubscriber.subscribers()
