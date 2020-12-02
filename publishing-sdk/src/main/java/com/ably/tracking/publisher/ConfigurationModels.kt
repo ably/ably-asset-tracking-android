@@ -30,7 +30,7 @@ data class Trackable(
     val id: String,
     val metadata: String? = null,
     val destination: Destination? = null,
-    val targetResolution: Resolution? = null
+    val resolution: Resolution? = null
 )
 
 data class TransportationMode(val TBC: String)
