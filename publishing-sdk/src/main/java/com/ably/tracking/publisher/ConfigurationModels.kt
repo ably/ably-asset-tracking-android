@@ -9,7 +9,7 @@ import io.ably.lib.realtime.ConnectionStateListener
 data class MapConfiguration(val apiKey: String)
 
 /**
- * Defines the strategy by which the various [Resolution] requests and preferences are translated by [Publisher]
+ * Defines the strategy by which the various [ResolutionRequest]s and preferences are translated by [Publisher]
  * instances into a target [Resolution].
  */
 interface ResolutionPolicy {
@@ -18,7 +18,42 @@ interface ResolutionPolicy {
      *
      * The set of requested resolutions may be empty.
      */
-    fun resolve(resolutions: Set<Resolution>): Resolution
+    fun resolve(requests: Set<ResolutionRequest>): Resolution
+}
+
+/**
+ * A request for a tracking [Resolution] for a [Trackable] object, where the request [Origin] is known.
+ */
+interface ResolutionRequest {
+    /**
+     * The source of a [resolution] request for a [trackable] object.
+     */
+    enum class Origin {
+        /**
+         * Configured by the local application.
+         */
+        LOCAL,
+
+        /**
+         * Received from a remote application, where that remote application is a subscriber.
+         */
+        SUBSCRIBER,
+    }
+
+    /**
+     * The resolution being requested.
+     */
+    val resolution: Resolution
+
+    /**
+     * The object being tracked.
+     */
+    val trackable: Trackable
+
+    /**
+     * The source of the request.
+     */
+    val origin: Origin
 }
 
 data class Destination(
