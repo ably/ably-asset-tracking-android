@@ -213,6 +213,10 @@ constructor(
             TODO("Not yet implemented")
         }
 
+    override fun invalidateResolution() {
+        TODO("Not yet implemented")
+    }
+
     override fun stop() {
         stopLocationUpdates()
         ably.close()

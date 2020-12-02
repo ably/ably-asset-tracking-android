@@ -75,6 +75,14 @@ interface Publisher {
     var transportationMode: TransportationMode
 
     /**
+     * Causes the current tracking [Resolution] to be evaluated again.
+     *
+     * If this publisher was started with a [resolution policy][Builder.resolutionPolicy] then that policy will be
+     * consulted again as soon as possible after this method returns.
+     */
+    fun invalidateResolution()
+
+    /**
      * Stops this publisher from publishing locations. Once a publisher has been stopped, it cannot be restarted.
      *
      * It is strongly suggested to call this method from the main thread.
