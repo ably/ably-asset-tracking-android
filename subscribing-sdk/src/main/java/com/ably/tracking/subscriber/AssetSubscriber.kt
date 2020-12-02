@@ -90,7 +90,7 @@ interface AssetSubscriber {
          * It is strongly suggested to call this method from the main thread.
          *
          * @return A new instance of [AssetSubscriber]
-         * @throws BuilderConfigurationIncompleteException If all required params aren't set
+         * @throws com.ably.tracking.BuilderConfigurationIncompleteException If all required params aren't set
          */
         fun start(): AssetSubscriber
     }

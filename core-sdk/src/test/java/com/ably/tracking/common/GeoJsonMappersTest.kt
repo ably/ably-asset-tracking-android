@@ -1,4 +1,4 @@
-package com.ably.tracking.publisher
+package com.ably.tracking.common
 
 import com.google.gson.Gson
 import org.junit.Assert

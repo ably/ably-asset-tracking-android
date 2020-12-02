@@ -3,6 +3,12 @@ package com.ably.tracking.subscriber
 import android.location.Location
 import android.os.Handler
 import android.os.Looper
+import com.ably.tracking.AblyConfiguration
+import com.ably.tracking.common.ClientTypes
+import com.ably.tracking.common.EventNames
+import com.ably.tracking.common.PresenceData
+import com.ably.tracking.common.getGeoJsonMessages
+import com.ably.tracking.common.toLocation
 import com.google.gson.Gson
 import io.ably.lib.realtime.AblyRealtime
 import io.ably.lib.realtime.Channel
@@ -11,7 +17,6 @@ import io.ably.lib.types.AblyException
 import io.ably.lib.types.ChannelOptions
 import io.ably.lib.types.ErrorInfo
 import io.ably.lib.types.PresenceMessage
-import com.ably.tracking.AblyConfiguration
 import timber.log.Timber
 
 internal class DefaultAssetSubscriber(

@@ -3,9 +3,9 @@ package com.ably.tracking.publisher.debug
 import android.app.PendingIntent
 import android.os.Looper
 import android.os.SystemClock
-import com.ably.tracking.publisher.EventNames
-import com.ably.tracking.publisher.getGeoJsonMessages
-import com.ably.tracking.publisher.toLocation
+import com.ably.tracking.common.EventNames
+import com.ably.tracking.common.getGeoJsonMessages
+import com.ably.tracking.common.toLocation
 import com.google.gson.Gson
 import com.mapbox.android.core.location.LocationEngine
 import com.mapbox.android.core.location.LocationEngineCallback

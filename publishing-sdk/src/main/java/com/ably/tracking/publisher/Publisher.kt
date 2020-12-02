@@ -140,7 +140,7 @@ interface Publisher {
          * It is strongly suggested to call this method from the main thread.
          *
          * @return A new publisher instance.
-         * @throws BuilderConfigurationIncompleteException If all required params aren't set
+         * @throws com.ably.tracking.BuilderConfigurationIncompleteException If all required params aren't set
          */
         @RequiresPermission(anyOf = [ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION])
         fun start(): Publisher

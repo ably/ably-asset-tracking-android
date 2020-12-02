@@ -1,5 +1,6 @@
 package com.ably.tracking.subscriber
 
+import com.ably.tracking.common.PresenceData
 import com.google.gson.Gson
 import io.ably.lib.types.PresenceMessage
 
