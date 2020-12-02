@@ -8,7 +8,16 @@ import io.ably.lib.realtime.ConnectionStateListener
 
 data class MapConfiguration(val apiKey: String)
 
+/**
+ * Defines the strategy by which the various [Resolution] requests and preferences are translated by [Publisher]
+ * instances into a target [Resolution].
+ */
 interface ResolutionPolicy {
+    /**
+     * Determine a target resolution from a set of requested resolutions.
+     *
+     * The set of requested resolutions may be empty.
+     */
     fun resolve(resolutions: Set<Resolution>): Resolution
 }
 

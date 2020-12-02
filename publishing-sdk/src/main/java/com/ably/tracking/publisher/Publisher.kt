@@ -130,6 +130,13 @@ interface Publisher {
          */
         fun mode(mode: TransportationMode): Builder
 
+        /**
+         * Sets the policy to be used to define the target resolution for publishers created from this builder.
+         *
+         * @param policy The policy, methods on which will be called multiple times during the lifetime of the
+         * publisher.
+         * @return A new instance of the builder with this property changed.
+         */
         fun resolutionPolicy(policy: ResolutionPolicy): Builder
 
         /**
