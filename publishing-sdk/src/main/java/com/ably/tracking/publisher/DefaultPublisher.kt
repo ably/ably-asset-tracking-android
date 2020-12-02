@@ -8,6 +8,12 @@ import android.location.Location
 import android.os.Handler
 import android.os.Looper
 import androidx.annotation.RequiresPermission
+import com.ably.tracking.AblyConfiguration
+import com.ably.tracking.common.ClientTypes
+import com.ably.tracking.common.EventNames
+import com.ably.tracking.common.PresenceData
+import com.ably.tracking.common.toGeoJson
+import com.ably.tracking.common.toJsonArray
 import com.ably.tracking.publisher.debug.AblySimulationLocationEngine
 import com.google.gson.Gson
 import com.mapbox.android.core.location.LocationEngineCallback
@@ -25,7 +31,6 @@ import io.ably.lib.realtime.CompletionListener
 import io.ably.lib.types.AblyException
 import io.ably.lib.types.ClientOptions
 import io.ably.lib.types.ErrorInfo
-import com.ably.tracking.AblyConfiguration
 import timber.log.Timber
 
 private const val DEFAULT_INTERVAL_IN_MILLISECONDS = 500L

@@ -1,9 +1,14 @@
-package com.ably.tracking.subscriber
+package com.ably.tracking.common
 
-internal const val GEOMETRY_LONG_INDEX = 0
-internal const val GEOMETRY_LAT_INDEX = 1
+object GeoJsonTypes {
+    const val FEATURE = "Feature"
+    const val POINT = "Point"
+}
 
-internal data class GeoJsonMessage(
+const val GEOMETRY_LONG_INDEX = 0
+const val GEOMETRY_LAT_INDEX = 1
+
+data class GeoJsonMessage(
     val type: String,
     val geometry: GeoJsonGeometry,
     val properties: GeoJsonProperties
@@ -14,9 +19,9 @@ internal data class GeoJsonMessage(
         "[time:${properties.time}; lon:${geometry.coordinates[GEOMETRY_LONG_INDEX]} lat:${geometry.coordinates[GEOMETRY_LAT_INDEX]}; brg:${properties.bearing}]"
 }
 
-internal data class GeoJsonGeometry(val type: String, val coordinates: List<Double>)
+data class GeoJsonGeometry(val type: String, val coordinates: List<Double>)
 
-internal data class GeoJsonProperties(
+data class GeoJsonProperties(
     val accuracyHorizontal: Float,
     val altitude: Double,
     val bearing: Float,
@@ -24,4 +29,4 @@ internal data class GeoJsonProperties(
     val time: Double
 )
 
-internal data class PresenceData(val type: String)
+data class PresenceData(val type: String)

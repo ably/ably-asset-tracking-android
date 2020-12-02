@@ -3,6 +3,7 @@ package com.ably.tracking.publisher
 import android.annotation.SuppressLint
 import android.content.Context
 import com.ably.tracking.AblyConfiguration
+import com.ably.tracking.BuilderConfigurationIncompleteException
 import com.ably.tracking.LogConfiguration
 import io.mockk.mockk
 import org.junit.Assert

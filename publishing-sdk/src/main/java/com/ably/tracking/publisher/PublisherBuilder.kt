@@ -5,6 +5,7 @@ import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.content.Context
 import androidx.annotation.RequiresPermission
 import com.ably.tracking.AblyConfiguration
+import com.ably.tracking.BuilderConfigurationIncompleteException
 import com.ably.tracking.LogConfiguration
 
 internal data class PublisherBuilder(

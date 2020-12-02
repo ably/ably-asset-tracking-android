@@ -1,6 +1,7 @@
 package com.ably.tracking.subscriber
 
 import com.ably.tracking.AblyConfiguration
+import com.ably.tracking.BuilderConfigurationIncompleteException
 import com.ably.tracking.LogConfiguration
 
 internal data class AssetSubscriberBuilder(
