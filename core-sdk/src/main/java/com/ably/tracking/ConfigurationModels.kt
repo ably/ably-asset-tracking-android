@@ -11,7 +11,6 @@ data class LogConfiguration(val enabled: Boolean) // TODO - specify config
  */
 enum class Accuracy {
     /**
-     *
      * - Android: [PRIORITY_NO_POWER](https://developers.google.com/android/reference/com/google/android/gms/location/LocationRequest#PRIORITY_NO_POWER)
      *   (best possible with zero additional power consumption)
      * - Apple: [kCLLocationAccuracyReduced](https://developer.apple.com/documentation/corelocation/kcllocationaccuracyreduced)
