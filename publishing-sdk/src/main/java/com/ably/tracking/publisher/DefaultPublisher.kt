@@ -19,6 +19,9 @@ import com.google.gson.Gson
 import com.mapbox.android.core.location.LocationEngineCallback
 import com.mapbox.android.core.location.LocationEngineRequest
 import com.mapbox.android.core.location.LocationEngineResult
+import com.mapbox.api.directions.v5.models.RouteOptions
+import com.mapbox.geojson.Point
+import com.mapbox.navigation.base.internal.extensions.applyDefaultParams
 import com.mapbox.navigation.base.options.NavigationOptions
 import com.mapbox.navigation.core.MapboxNavigation
 import com.mapbox.navigation.core.replay.MapboxReplayer
@@ -41,7 +44,7 @@ internal class DefaultPublisher
 @RequiresPermission(anyOf = [ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION])
 constructor(
     private val ablyConfiguration: AblyConfiguration,
-    mapConfiguration: MapConfiguration,
+    private val mapConfiguration: MapConfiguration,
     private val debugConfiguration: DebugConfiguration?,
     private val locationUpdatedListener: LocationUpdatedListener,
     context: Context
@@ -75,6 +78,8 @@ constructor(
     private val presenceData = PresenceData(ClientTypes.PUBLISHER)
     private var isTracking: Boolean = false
     private var mapboxReplayer: MapboxReplayer? = null
+    private var lastKnownLocation: Location? = null
+    private var destinationToSet: Destination? = null
 
     init {
         ably = AblyRealtime(ablyConfiguration.apiKey)
@@ -130,6 +135,8 @@ constructor(
     }
 
     private fun sendRawLocationMessage(rawLocation: Location) {
+        lastKnownLocation = rawLocation
+        destinationToSet?.let { setDestination(it) }
         val geoJsonMessage = rawLocation.toGeoJson()
         Timber.d("sendRawLocationMessage: publishing: ${geoJsonMessage.synopsis()}")
         channel?.publish(EventNames.RAW, geoJsonMessage.toJsonArray(gson))
@@ -199,6 +206,7 @@ constructor(
                 Timber.e(ablyException)
             }
         }
+        trackable.destination?.let { setDestination(it) }
     }
 
     override fun add(trackable: Trackable) {
@@ -206,6 +214,9 @@ constructor(
     }
 
     override fun remove(trackable: Trackable): Boolean {
+        if (trackable == active) {
+            removeCurrentDestination()
+        }
         TODO("Not yet implemented")
     }
 
@@ -265,6 +276,36 @@ constructor(
                 toggleHistory(true)
             }
         }
+    }
+
+    // TODO define threading strategy: https://github.com/ably/ably-asset-tracking-android/issues/22
+    private fun setDestination(destination: Destination) {
+        lastKnownLocation.let { currentLocation ->
+            if (currentLocation != null) {
+                destinationToSet = null
+                mapboxNavigation.requestRoutes(
+                    RouteOptions.builder()
+                        .applyDefaultParams()
+                        .accessToken(mapConfiguration.apiKey)
+                        .coordinates(getRouteCoordinates(currentLocation, destination))
+                        .build()
+                )
+            } else {
+                destinationToSet = destination
+            }
+        }
+    }
+
+    private fun getRouteCoordinates(
+        startingLocation: Location,
+        destination: Destination
+    ): List<Point> = listOf(
+        Point.fromLngLat(startingLocation.longitude, startingLocation.latitude),
+        Point.fromLngLat(destination.longitude, destination.latitude)
+    )
+
+    private fun removeCurrentDestination() {
+        mapboxNavigation.setRoutes(emptyList())
     }
 
     private fun postToMainThread(operation: () -> Unit) {
