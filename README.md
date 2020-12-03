@@ -24,7 +24,7 @@ In this repository there are two SDKs for Android devices:
 
 The Asset Publishing SDK is used to get the location of the assets that need to be tracked. 
 
-Here is an example of how Asset Publishing SDK can be used: 
+Here is an example of how the Asset Publishing SDK can be used: 
 
 ```kotlin
 // Initialise the Publisher
