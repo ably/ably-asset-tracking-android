@@ -38,8 +38,8 @@ Here is an example of how Asset Subscribing SDK can be used:
 ```kotlin
 assetSubscriber = AssetSubscriber.subscribers() // Get an AssetSubscriber
   .ablyConfig(AblyConfiguration(ABLY_API_KEY, CLIENT_ID)) // provide Ably configuration with credentials
-  .rawLocationUpdatedListener {} // provide a function to be called when raw location updates are recieved
-  .enhancedLocationUpdatedListener {} // provide a function to be called when enhanced location updates are recieved
+  .rawLocationUpdatedListener {} // provide a function to be called when raw location updates are received
+  .enhancedLocationUpdatedListener {} // provide a function to be called when enhanced location updates are received
   .trackingId(trackingId) // provide a Trackable ID for the asset that needs to be tracked
   .assetStatusListener { updateAssetStatusInfo(it) } // provide a function to be called when asset changes online/offline status
   .start() // start listening to updates
