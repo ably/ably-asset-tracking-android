@@ -57,8 +57,6 @@ assetSubscriber = AssetSubscriber.subscribers() // Get an AssetSubscriber
 
 This repository is structured as a Gradle [Multi-Project Build](https://docs.gradle.org/current/userguide/multi_project_builds.html).
 
-We'll add more content here as the development evolves. For the time being this content will be focussed on those developing the code within this repository. Eventually it'll move elsewhere so that we can replace this root readme with something public facing.
-
 ### Coding Conventions and Style Guide
 
 - Use best, current practice wherever possible.
