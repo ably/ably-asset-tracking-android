@@ -60,8 +60,8 @@ data class Resolution(
      * positional accuracy.
      *
      * The highest positional accuracy will be achieved by specifying [Accuracy.MAXIMUM], but at the expense of
-     * significantly increased power usage. Conversely, the lowest power usage will be achieved by specifying [MINIMUM],
-     * but at the expense of significantly decreased positional accuracy.
+     * significantly increased power usage. Conversely, the lowest power usage will be achieved by specifying
+     * [Accuracy.MINIMUM] but at the expense of significantly decreased positional accuracy.
      */
     val accuracy: Accuracy,
 
