@@ -41,7 +41,7 @@ assetSubscriber = AssetSubscriber.subscribers() // Get an AssetSubscriber
   .rawLocationUpdatedListener {} // provide a function to be called when raw location updates are received
   .enhancedLocationUpdatedListener {} // provide a function to be called when enhanced location updates are received
   .trackingId(trackingId) // provide a Trackable ID for the asset that needs to be tracked
-  .assetStatusListener { updateAssetStatusInfo(it) } // provide a function to be called when asset changes online/offline status
+  .assetStatusListener { } // provide a function to be called when asset changes online/offline status
   .start() // start listening to updates
 ```
 
