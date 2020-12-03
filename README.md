@@ -53,6 +53,16 @@ assetSubscriber = AssetSubscriber.subscribers() // Get an AssetSubscriber
   .start() // start listening to updates
 ```
 
+### Example Apps
+
+This repository also contains example apps that showcase how Ably Asset Tracking SDKs can be used:
+
+- the [Asset Publishing example app](publishing-example-app/)
+- the [Asset Subscribing example app](subscribing-example-app/)
+
+To build the apps you will need to specify [credentials](#api-keys-and-access-tokens) in Gradle properties.
+
+
 ### Development
 
 This repository is structured as a Gradle [Multi-Project Build](https://docs.gradle.org/current/userguide/multi_project_builds.html).
