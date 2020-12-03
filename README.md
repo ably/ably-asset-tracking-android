@@ -39,7 +39,6 @@ publisher = Publisher.publishers() // get a Publisher
 publisher.track(Trackable(trackingId)) // provide a tracking ID of the asset
 ```
 
-
 Asset Subscribing SDK is used to receive the location of the required assets. 
 
 Here is an example of how Asset Subscribing SDK can be used: 
