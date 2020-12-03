@@ -7,10 +7,15 @@
 
 Ably Asset Tracking SDKs provide an easy way to track multiple assets with realtime location updates powered by [Ably](https://ably.io/) realtime network and Mapbox [Navigation SDK](https://docs.mapbox.com/android/navigation/overview/) with location enhancement.
 
-Ably Asset Tracking is: 
-- easy to integrate - one Asset Publishing SDK, and one Asset Subscribing SDK, both with simple and easy to use APIs
-- extensible - as Ably is used as underlying transport you have direct access to your data and can use Ably integrations to get it into any 3rd party system
-- built for purpose - API and the functionality are designed specifically to help customers with the asset tracking problem
+Ably Asset Tracking is:
+
+- **easy to integrate** - comprising two complementary SDKs with easy to use APIs, available for multiple platforms:
+    - Asset Publishing SDK, for embedding in apps running on the courier's device
+    - Asset Subscribing SDK, for embedding in apps runnong on the customer's observing device
+- **extensible** - as Ably is used as the underlying transport, you have direct access to your data and can use Ably integrations for a wide range of applications in addition to direct realtime subscriptions - examples include:
+    - passing to a 3rd party system
+    - persistence for later retrieval
+- **built for purpose** - the APIs and underlying functionality are designed specifically to meet the requirements of a range of common asset tracking use-cases
 
 There are 2 SDKs: Asset Publishing SDK, and Asset Subscribing SDK. 
 
