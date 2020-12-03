@@ -80,7 +80,7 @@ interface Publisher {
      * If this publisher was started with a [resolution policy][Builder.resolutionPolicy] then that policy will be
      * consulted again as soon as possible after this method returns.
      */
-    fun invalidateResolution()
+    fun refreshResolution()
 
     /**
      * Stops this publisher from publishing locations. Once a publisher has been stopped, it cannot be restarted.

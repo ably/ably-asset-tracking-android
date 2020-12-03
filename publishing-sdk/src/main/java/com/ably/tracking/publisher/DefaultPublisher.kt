@@ -213,7 +213,7 @@ constructor(
             TODO("Not yet implemented")
         }
 
-    override fun invalidateResolution() {
+    override fun refreshResolution() {
         TODO("Not yet implemented")
     }
 
