@@ -22,7 +22,7 @@ In this repository there are two SDKs for Android devices:
 - the [Asset Publishing SDK](publishing-sdk/)
 - the [Asset Subscribing SDK](subscribing-sdk/)
 
-Asset Publishing SDK is used to get the location of the assets that need to be tracked. 
+The Asset Publishing SDK is used to get the location of the assets that need to be tracked. 
 
 Here is an example of how Asset Publishing SDK can be used: 
 
