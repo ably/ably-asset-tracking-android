@@ -1,6 +1,51 @@
-## Asset Tracking
+## Ably Asset Tracking SDKs for Android
 
 ![.github/workflows/check.yml](https://github.com/ably/ably-asset-tracking-android/workflows/.github/workflows/check.yml/badge.svg)
+
+### Overview
+
+Ably Asset Tracking SDK provides an easy way to track multiple assets with realtime location updates powered by [Ably](https://ably.io/) realtime network and Mapbox location enhancement.
+
+Ably Asset Tracking is: 
+- easy to integrate - one Asset Publisher SDK, and one Asset Subscribing SDK, both with simple and easy to use APIs
+- extensible - as Ably is used as underlying transport you have direct access to your data and can use Ably integrations to get it into any 3rd party system
+- built for purpose - API and the functionality are designed specifically to help customers with the asset tracking problem
+
+There are 2 SDKs: Asset Publishing SDK, and Asset Subscribing SDK. 
+
+Asset Publishing SDK is used to get the location of the assets that need to be tracked. 
+
+Here is an example of how Asset Publishing SDK can be used: 
+
+```kotlin
+// Initialise the Publisher
+publisher = Publisher.publishers() // get a Publisher
+  .ably(AblyConfiguration(ABLY_API_KEY, CLIENT_ID)) // provide Ably configuration with credentials
+  .map(MapConfiguration(MAPBOX_ACCESS_TOKEN)) // provide Mapbox configuration with credentials
+  .androidContext(this) // provide context
+  .mode(TransportationMode("bike")) //provide mode of transportation for better location enhancements
+  .start() 
+  
+// Start tracking asset
+publisher.track(Trackable(trackingId)) // provide a tracking ID of the asset
+```
+
+
+Asset Tracking SDK is used to receive the location of the required assets. 
+
+Here is an example of how Asset Subscribing SDK can be used: 
+
+```kotlin
+assetSubscriber = AssetSubscriber.subscribers() // Get an AssetSubscriber
+  .ablyConfig(AblyConfiguration(ABLY_API_KEY, CLIENT_ID)) // provide Ably configuration with credentials
+  .rawLocationUpdatedListener {} // provide a function to be called when raw location updates are recieved
+  .enhancedLocationUpdatedListener {} // provide a function to be called when enhanced location updates are recieved
+  .trackingId(trackingId) // provide a Trackable ID for the asset that needs to be tracked
+  .assetStatusListener { updateAssetStatusInfo(it) } // provide a function to be called when asset changes online/offline status
+  .start() // start listening to updates
+```
+
+### Development
 
 This repository is structured as a Gradle [Multi-Project Build](https://docs.gradle.org/current/userguide/multi_project_builds.html).
 
