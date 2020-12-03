@@ -17,7 +17,10 @@ Ably Asset Tracking is:
     - persistence for later retrieval
 - **built for purpose** - the APIs and underlying functionality are designed specifically to meet the requirements of a range of common asset tracking use-cases
 
-There are 2 SDKs: Asset Publishing SDK, and Asset Subscribing SDK. 
+In this repository there are two SDKs for Android devices:
+
+- the [Asset Publishing SDK](publishing-sdk/)
+- the [Asset Subscribing SDK](subscribing-sdk/)
 
 Asset Publishing SDK is used to get the location of the assets that need to be tracked. 
 
