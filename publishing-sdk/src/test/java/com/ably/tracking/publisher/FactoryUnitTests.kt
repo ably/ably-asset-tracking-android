@@ -2,8 +2,8 @@ package com.ably.tracking.publisher
 
 import android.annotation.SuppressLint
 import android.content.Context
-import com.ably.tracking.AblyConfiguration
 import com.ably.tracking.BuilderConfigurationIncompleteException
+import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.LogConfiguration
 import io.mockk.mockk
 import org.junit.Assert
@@ -25,25 +25,25 @@ class FactoryUnitTests {
     }
 
     @Test
-    fun `setting Ably config updates builder field`() {
+    fun `setting Ably connection config updates builder field`() {
         // given
-        val configuration = AblyConfiguration("", "")
+        val configuration = ConnectionConfiguration("", "")
 
         // when
-        val builder = Publisher.publishers().ably(configuration) as PublisherBuilder
+        val builder = Publisher.publishers().connection(configuration) as PublisherBuilder
 
         // then
-        Assert.assertEquals(configuration, builder.ablyConfiguration)
+        Assert.assertEquals(configuration, builder.connectionConfiguration)
     }
 
     @Test
-    fun `setting Ably config returns a new copy of builder`() {
+    fun `setting Ably connection config returns a new copy of builder`() {
         // given
-        val configuration = AblyConfiguration("", "")
+        val configuration = ConnectionConfiguration("", "")
         val originalBuilder = Publisher.publishers()
 
         // when
-        val newBuilder = originalBuilder.ably(configuration)
+        val newBuilder = originalBuilder.connection(configuration)
 
         // then
         Assert.assertNotEquals(newBuilder, originalBuilder)
@@ -186,7 +186,7 @@ class FactoryUnitTests {
 
         // when
         val updatedBuilder = builder
-            .ably(AblyConfiguration("", ""))
+            .connection(ConnectionConfiguration("", ""))
             .map(MapConfiguration(""))
             .log(LogConfiguration(true))
             .locationUpdatedListener { }
@@ -203,7 +203,7 @@ class FactoryUnitTests {
     }
 
     private fun assertAllBuilderFieldsAreNull(builder: PublisherBuilder) {
-        Assert.assertNull(builder.ablyConfiguration)
+        Assert.assertNull(builder.connectionConfiguration)
         Assert.assertNull(builder.mapConfiguration)
         Assert.assertNull(builder.logConfiguration)
         Assert.assertNull(builder.locationUpdatedListener)
@@ -211,7 +211,7 @@ class FactoryUnitTests {
     }
 
     private fun assertAllBuilderFieldsAreNotNull(builder: PublisherBuilder) {
-        Assert.assertNotNull(builder.ablyConfiguration)
+        Assert.assertNotNull(builder.connectionConfiguration)
         Assert.assertNotNull(builder.mapConfiguration)
         Assert.assertNotNull(builder.logConfiguration)
         Assert.assertNotNull(builder.locationUpdatedListener)
