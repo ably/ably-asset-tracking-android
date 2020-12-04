@@ -14,10 +14,10 @@ internal data class SubscriberBuilder(
     val assetStatusListener: StatusListener? = null
 ) : Subscriber.Builder {
 
-    override fun ablyConfig(configuration: AblyConfiguration): Subscriber.Builder =
+    override fun ably(configuration: AblyConfiguration): Subscriber.Builder =
         this.copy(ablyConfiguration = configuration)
 
-    override fun logConfig(configuration: LogConfiguration): Subscriber.Builder =
+    override fun log(configuration: LogConfiguration): Subscriber.Builder =
         this.copy(logConfiguration = configuration)
 
     override fun rawLocationUpdatedListener(listener: LocationUpdatedListener): Subscriber.Builder =

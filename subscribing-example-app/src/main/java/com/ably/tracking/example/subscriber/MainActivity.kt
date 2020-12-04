@@ -59,7 +59,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun createAndStartAssetSubscriber(trackingId: String) {
         subscriber = Subscriber.subscribers()
-            .ablyConfig(AblyConfiguration(ABLY_API_KEY, CLIENT_ID))
+            .ably(AblyConfiguration(ABLY_API_KEY, CLIENT_ID))
             .rawLocationUpdatedListener {} // if you prefer to display raw location call showMarkerOnMap() here
             .enhancedLocationUpdatedListener { showMarkerOnMap(it) }
             .trackingId(trackingId)

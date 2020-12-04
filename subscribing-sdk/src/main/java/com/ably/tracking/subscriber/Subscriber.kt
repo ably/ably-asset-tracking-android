@@ -34,7 +34,7 @@ interface Subscriber {
          * @param configuration Ably library configuration object [AblyConfiguration]
          * @return A new instance of the builder with Ably configuration changed
          */
-        fun ablyConfig(configuration: AblyConfiguration): Builder
+        fun ably(configuration: AblyConfiguration): Builder
 
         /**
          * Sets the logging configuration.
@@ -42,7 +42,7 @@ interface Subscriber {
          * @param configuration Logging configuration object [LogConfiguration]
          * @return A new instance of the builder with logging configuration changed
          */
-        fun logConfig(configuration: LogConfiguration): Builder
+        fun log(configuration: LogConfiguration): Builder
 
         /**
          * Sets listener that notifies about raw location updates

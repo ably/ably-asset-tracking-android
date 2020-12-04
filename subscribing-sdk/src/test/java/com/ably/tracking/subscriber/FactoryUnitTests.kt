@@ -28,7 +28,7 @@ class FactoryUnitTests {
 
         // when
         val builder =
-            Subscriber.subscribers().ablyConfig(configuration) as SubscriberBuilder
+            Subscriber.subscribers().ably(configuration) as SubscriberBuilder
 
         // then
         Assert.assertEquals(configuration, builder.ablyConfiguration)
@@ -41,7 +41,7 @@ class FactoryUnitTests {
         val originalBuilder = Subscriber.subscribers()
 
         // when
-        val newBuilder = originalBuilder.ablyConfig(configuration)
+        val newBuilder = originalBuilder.ably(configuration)
 
         // then
         Assert.assertNotEquals(newBuilder, originalBuilder)
@@ -54,7 +54,7 @@ class FactoryUnitTests {
 
         // when
         val builder =
-            Subscriber.subscribers().logConfig(configuration) as SubscriberBuilder
+            Subscriber.subscribers().log(configuration) as SubscriberBuilder
 
         // then
         Assert.assertEquals(configuration, builder.logConfiguration)
@@ -67,7 +67,7 @@ class FactoryUnitTests {
         val originalBuilder = Subscriber.subscribers()
 
         // when
-        val newBuilder = originalBuilder.logConfig(configuration)
+        val newBuilder = originalBuilder.log(configuration)
 
         // then
         Assert.assertNotEquals(newBuilder, originalBuilder)
@@ -212,8 +212,8 @@ class FactoryUnitTests {
 
         // when
         val updatedBuilder = builder
-            .ablyConfig(AblyConfiguration("", ""))
-            .logConfig(LogConfiguration(true))
+            .ably(AblyConfiguration("", ""))
+            .log(LogConfiguration(true))
             .rawLocationUpdatedListener { }
             .enhancedLocationUpdatedListener { }
             .resolution(1.0)
