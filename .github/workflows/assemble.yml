@@ -16,10 +16,55 @@ jobs:
           ORG_GRADLE_PROJECT_ABLY_API_KEY: ${{ secrets.ABLY_API_KEY }}
           ORG_GRADLE_PROJECT_GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
 
-      # TODO upload AAR and APK artifacts somewhere for ease of access
-      - run: ls -l publishing-sdk/build/outputs/aar/
-      - run: ls -l subscribing-sdk/build/outputs/aar/
-      - run: ls -lR publishing-example-app/build/outputs/apk/
+      - uses: actions/upload-artifact@v2
+        with:
+          name: publishing-sdk-debug
+          path: publishing-sdk/build/outputs/aar/publishing-sdk-debug.aar
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: publishing-sdk-release
+          path: publishing-sdk/build/outputs/aar/publishing-sdk-release.aar
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: subscribing-sdk-debug
+          path: subscribing-sdk/build/outputs/aar/subscribing-sdk-debug.aar
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: subscribing-sdk-release
+          path: subscribing-sdk/build/outputs/aar/subscribing-sdk-release.aar
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: subscribing-example-app-debug
+          path: subscribing-example-app/build/outputs/apk/debug/subscribing-example-app-debug.apk
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: subscribing-example-app-release-unsigned
+          path: subscribing-example-app/build/outputs/apk/release/subscribing-example-app-release-unsigned.apk
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: publishing-example-app-debug
+          path: publishing-example-app/build/outputs/apk/debug/publishing-example-app-debug.apk
+          if-no-files-found: error
+ 
+      - uses: actions/upload-artifact@v2
+        with:
+          name: publishing-example-app-release-unsigned
+          path: publishing-example-app/build/outputs/apk/release/publishing-example-app-release-unsigned.apk
+          if-no-files-found: error
+
+      # The Java app variants are not functional as they are just used to validate build and run tests.
+      # So just validate that something got assembled for them.
       - run: ls -lR publishing-example-java-app/build/outputs/apk/
-      - run: ls -lR subscribing-example-app/build/outputs/apk/
       - run: ls -lR subscribing-example-java-app/build/outputs/apk/
