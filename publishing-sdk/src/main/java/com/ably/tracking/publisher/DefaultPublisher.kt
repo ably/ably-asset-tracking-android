@@ -177,47 +177,80 @@ constructor(
         }
     }
 
-    override fun track(trackable: Trackable) {
+    override fun track(trackable: Trackable, onSuccess: () -> Unit, onError: () -> Unit) {
         if (this.active != null) {
             throw IllegalStateException("For this preview version of the SDK, this method may only be called once for any given instance of this class.")
         }
 
-        add(trackable)
-        active = trackable
+        add(
+            trackable,
+            {
+                active = trackable
+                onSuccess()
+            },
+            onError
+        )
     }
 
-    override fun add(trackable: Trackable) {
+    override fun add(trackable: Trackable, onSuccess: () -> Unit, onError: () -> Unit) {
         if (!channelMap.contains(trackable.id)) {
-            channelMap[trackable.id] = createChannelAndJoinPresence(trackable)
+            createChannelAndJoinPresence(
+                trackable,
+                {
+                    channelMap[trackable.id] = it
+                    onSuccess()
+                },
+                onError
+            )
+        } else {
+            onSuccess()
         }
     }
 
-    override fun remove(trackable: Trackable): Boolean {
+    override fun remove(
+        trackable: Trackable,
+        onSuccess: (wasPresent: Boolean) -> Unit,
+        onError: () -> Unit
+    ) {
         val removedChannel = channelMap.remove(trackable.id)
-        removedChannel?.let {
-            leaveChannelPresence(removedChannel)
-            if (active == trackable) {
-                active = null
-            }
+        if (removedChannel != null) {
+            leaveChannelPresence(
+                removedChannel,
+                {
+                    if (active == trackable) {
+                        active = null
+                    }
+                    onSuccess(true)
+                },
+                onError
+            )
+        } else {
+            onSuccess(false)
         }
-        return removedChannel != null
     }
 
     override var active: Trackable? = null
 
-    private fun createChannelAndJoinPresence(trackable: Trackable): Channel {
-        return ably.channels.get(trackable.id).apply {
+    private fun createChannelAndJoinPresence(
+        trackable: Trackable,
+        onSuccess: (Channel) -> Unit,
+        onError: () -> Unit
+    ) {
+        ably.channels.get(trackable.id).apply {
             try {
                 presence.enterClient(
                     ablyConfiguration.clientId,
                     gson.toJson(presenceData),
                     object : CompletionListener {
-                        override fun onSuccess() = Unit
+                        override fun onSuccess() {
+                            onSuccess(this@apply)
+                        }
 
                         override fun onError(reason: ErrorInfo?) {
                             // TODO - handle error
                             // https://github.com/ably/ably-asset-tracking-android/issues/17
                             Timber.e("Unable to enter presence: ${reason?.message}")
+                            onError()
                         }
                     }
                 )
@@ -225,22 +258,30 @@ constructor(
                 // TODO - handle exception
                 // https://github.com/ably/ably-asset-tracking-android/issues/17
                 Timber.e(ablyException)
+                onError()
             }
         }
     }
 
-    private fun leaveChannelPresence(channel: Channel) {
+    private fun leaveChannelPresence(
+        channel: Channel,
+        onSuccess: () -> Unit = {},
+        onError: () -> Unit = {}
+    ) {
         try {
             channel.presence.leaveClient(
                 ablyConfiguration.clientId,
                 gson.toJson(presenceData),
                 object : CompletionListener {
-                    override fun onSuccess() = Unit
+                    override fun onSuccess() {
+                        onSuccess()
+                    }
 
                     override fun onError(reason: ErrorInfo?) {
                         // TODO - handle error
                         // https://github.com/ably/ably-asset-tracking-android/issues/17
                         Timber.e("Unable to leave presence: ${reason?.message}")
+                        onError()
                     }
                 }
             )
@@ -248,6 +289,7 @@ constructor(
             // TODO - handle exception
             // https://github.com/ably/ably-asset-tracking-android/issues/17
             Timber.e(ablyException)
+            onError()
         }
     }
 
