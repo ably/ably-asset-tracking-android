@@ -15,10 +15,10 @@ class FactoryUnitTests {
         // given
 
         // when
-        val builder = AssetSubscriber.subscribers()
+        val builder = Subscriber.subscribers()
 
         // then
-        Assert.assertTrue(builder is AssetSubscriber.Builder)
+        Assert.assertTrue(builder is Subscriber.Builder)
     }
 
     @Test
@@ -28,7 +28,7 @@ class FactoryUnitTests {
 
         // when
         val builder =
-            AssetSubscriber.subscribers().ablyConfig(configuration) as AssetSubscriberBuilder
+            Subscriber.subscribers().ablyConfig(configuration) as SubscriberBuilder
 
         // then
         Assert.assertEquals(configuration, builder.ablyConfiguration)
@@ -38,7 +38,7 @@ class FactoryUnitTests {
     fun `setting Ably config returns a new copy of builder`() {
         // given
         val configuration = AblyConfiguration("", "")
-        val originalBuilder = AssetSubscriber.subscribers()
+        val originalBuilder = Subscriber.subscribers()
 
         // when
         val newBuilder = originalBuilder.ablyConfig(configuration)
@@ -54,7 +54,7 @@ class FactoryUnitTests {
 
         // when
         val builder =
-            AssetSubscriber.subscribers().logConfig(configuration) as AssetSubscriberBuilder
+            Subscriber.subscribers().logConfig(configuration) as SubscriberBuilder
 
         // then
         Assert.assertEquals(configuration, builder.logConfiguration)
@@ -64,7 +64,7 @@ class FactoryUnitTests {
     fun `setting logging config returns a new copy of builder`() {
         // given
         val configuration = LogConfiguration(true)
-        val originalBuilder = AssetSubscriber.subscribers()
+        val originalBuilder = Subscriber.subscribers()
 
         // when
         val newBuilder = originalBuilder.logConfig(configuration)
@@ -80,8 +80,8 @@ class FactoryUnitTests {
 
         // when
         val builder =
-            AssetSubscriber.subscribers()
-                .rawLocationUpdatedListener(listener) as AssetSubscriberBuilder
+            Subscriber.subscribers()
+                .rawLocationUpdatedListener(listener) as SubscriberBuilder
 
         // then
         Assert.assertEquals(listener, builder.rawLocationUpdatedListener)
@@ -91,7 +91,7 @@ class FactoryUnitTests {
     fun `setting raw location updated listener returns a new copy of builder`() {
         // given
         val listener: LocationUpdatedListener = {}
-        val originalBuilder = AssetSubscriber.subscribers()
+        val originalBuilder = Subscriber.subscribers()
 
         // when
         val newBuilder = originalBuilder.rawLocationUpdatedListener(listener)
@@ -107,8 +107,8 @@ class FactoryUnitTests {
 
         // when
         val builder =
-            AssetSubscriber.subscribers()
-                .enhancedLocationUpdatedListener(listener) as AssetSubscriberBuilder
+            Subscriber.subscribers()
+                .enhancedLocationUpdatedListener(listener) as SubscriberBuilder
 
         // then
         Assert.assertEquals(listener, builder.enhancedLocationUpdatedListener)
@@ -118,7 +118,7 @@ class FactoryUnitTests {
     fun `setting enhanced location updated listener returns a new copy of builder`() {
         // given
         val listener: LocationUpdatedListener = {}
-        val originalBuilder = AssetSubscriber.subscribers()
+        val originalBuilder = Subscriber.subscribers()
 
         // when
         val newBuilder = originalBuilder.enhancedLocationUpdatedListener(listener)
@@ -133,7 +133,7 @@ class FactoryUnitTests {
         val resolution = 1.0
 
         // when
-        val builder = AssetSubscriber.subscribers().resolution(resolution) as AssetSubscriberBuilder
+        val builder = Subscriber.subscribers().resolution(resolution) as SubscriberBuilder
 
         // then
         Assert.assertEquals(resolution, builder.resolution)
@@ -143,7 +143,7 @@ class FactoryUnitTests {
     fun `setting resolution returns a new copy of builder`() {
         // given
         val resolution = 1.0
-        val originalBuilder = AssetSubscriber.subscribers()
+        val originalBuilder = Subscriber.subscribers()
 
         // when
         val newBuilder = originalBuilder.resolution(resolution)
@@ -158,7 +158,7 @@ class FactoryUnitTests {
         val trackingId = "abc"
 
         // when
-        val builder = AssetSubscriber.subscribers().trackingId(trackingId) as AssetSubscriberBuilder
+        val builder = Subscriber.subscribers().trackingId(trackingId) as SubscriberBuilder
 
         // then
         Assert.assertEquals(trackingId, builder.trackingId)
@@ -168,7 +168,7 @@ class FactoryUnitTests {
     fun `setting tracking ID returns a new copy of builder`() {
         // given
         val trackingId = "abc"
-        val originalBuilder = AssetSubscriber.subscribers()
+        val originalBuilder = Subscriber.subscribers()
 
         // when
         val newBuilder = originalBuilder.trackingId(trackingId)
@@ -184,7 +184,7 @@ class FactoryUnitTests {
 
         // when
         val builder =
-            AssetSubscriber.subscribers().assetStatusListener(listener) as AssetSubscriberBuilder
+            Subscriber.subscribers().assetStatusListener(listener) as SubscriberBuilder
 
         // then
         Assert.assertEquals(listener, builder.assetStatusListener)
@@ -194,7 +194,7 @@ class FactoryUnitTests {
     fun `setting asset status listener returns a new copy of builder`() {
         // given
         val listener: StatusListener = {}
-        val originalBuilder = AssetSubscriber.subscribers()
+        val originalBuilder = Subscriber.subscribers()
 
         // when
         val newBuilder = originalBuilder.assetStatusListener(listener)
@@ -206,8 +206,8 @@ class FactoryUnitTests {
     @Test
     fun `setting all data should update all builder fields`() {
         // given
-        val builder = AssetSubscriber.subscribers()
-        assertAllBuilderFieldsAreNull(builder as AssetSubscriberBuilder)
+        val builder = Subscriber.subscribers()
+        assertAllBuilderFieldsAreNull(builder as SubscriberBuilder)
         val mockedContext = mockk<Context>()
 
         // when
@@ -220,16 +220,16 @@ class FactoryUnitTests {
             .trackingId("")
 
         // then
-        assertAllBuilderFieldsAreNotNull(updatedBuilder as AssetSubscriberBuilder)
+        assertAllBuilderFieldsAreNotNull(updatedBuilder as SubscriberBuilder)
     }
 
     @SuppressLint("MissingPermission")
     @Test(expected = BuilderConfigurationIncompleteException::class)
     fun `calling start with missing required fields should throw BuilderConfigurationIncompleteException`() {
-        AssetSubscriber.subscribers().start()
+        Subscriber.subscribers().start()
     }
 
-    private fun assertAllBuilderFieldsAreNull(builder: AssetSubscriberBuilder) {
+    private fun assertAllBuilderFieldsAreNull(builder: SubscriberBuilder) {
         Assert.assertNull(builder.ablyConfiguration)
         Assert.assertNull(builder.logConfiguration)
         Assert.assertNull(builder.rawLocationUpdatedListener)
@@ -238,7 +238,7 @@ class FactoryUnitTests {
         Assert.assertNull(builder.trackingId)
     }
 
-    private fun assertAllBuilderFieldsAreNotNull(builder: AssetSubscriberBuilder) {
+    private fun assertAllBuilderFieldsAreNotNull(builder: SubscriberBuilder) {
         Assert.assertNotNull(builder.ablyConfiguration)
         Assert.assertNotNull(builder.logConfiguration)
         Assert.assertNotNull(builder.rawLocationUpdatedListener)

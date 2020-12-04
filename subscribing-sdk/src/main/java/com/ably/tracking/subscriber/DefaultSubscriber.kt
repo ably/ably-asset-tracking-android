@@ -19,13 +19,13 @@ import io.ably.lib.types.ErrorInfo
 import io.ably.lib.types.PresenceMessage
 import timber.log.Timber
 
-internal class DefaultAssetSubscriber(
+internal class DefaultSubscriber(
     private val ablyConfiguration: AblyConfiguration,
     rawLocationUpdatedListener: LocationUpdatedListener,
     enhancedLocationUpdatedListener: LocationUpdatedListener,
     trackingId: String,
     private val assetStatusListener: StatusListener?
-) : AssetSubscriber {
+) : Subscriber {
     private val ably: AblyRealtime
     private val channel: Channel
     private val gson = Gson()

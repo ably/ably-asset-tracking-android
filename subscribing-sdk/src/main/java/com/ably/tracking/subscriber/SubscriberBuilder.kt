@@ -4,7 +4,7 @@ import com.ably.tracking.AblyConfiguration
 import com.ably.tracking.BuilderConfigurationIncompleteException
 import com.ably.tracking.LogConfiguration
 
-internal data class AssetSubscriberBuilder(
+internal data class SubscriberBuilder(
     val ablyConfiguration: AblyConfiguration? = null,
     val logConfiguration: LogConfiguration? = null,
     val rawLocationUpdatedListener: LocationUpdatedListener? = null,
@@ -12,35 +12,35 @@ internal data class AssetSubscriberBuilder(
     val resolution: Double? = null,
     val trackingId: String? = null,
     val assetStatusListener: StatusListener? = null
-) : AssetSubscriber.Builder {
+) : Subscriber.Builder {
 
-    override fun ablyConfig(configuration: AblyConfiguration): AssetSubscriber.Builder =
+    override fun ablyConfig(configuration: AblyConfiguration): Subscriber.Builder =
         this.copy(ablyConfiguration = configuration)
 
-    override fun logConfig(configuration: LogConfiguration): AssetSubscriber.Builder =
+    override fun logConfig(configuration: LogConfiguration): Subscriber.Builder =
         this.copy(logConfiguration = configuration)
 
-    override fun rawLocationUpdatedListener(listener: LocationUpdatedListener): AssetSubscriber.Builder =
+    override fun rawLocationUpdatedListener(listener: LocationUpdatedListener): Subscriber.Builder =
         this.copy(rawLocationUpdatedListener = listener)
 
-    override fun enhancedLocationUpdatedListener(listener: LocationUpdatedListener): AssetSubscriber.Builder =
+    override fun enhancedLocationUpdatedListener(listener: LocationUpdatedListener): Subscriber.Builder =
         this.copy(enhancedLocationUpdatedListener = listener)
 
-    override fun resolution(resolution: Double): AssetSubscriber.Builder =
+    override fun resolution(resolution: Double): Subscriber.Builder =
         this.copy(resolution = resolution)
 
-    override fun trackingId(trackingId: String): AssetSubscriber.Builder =
+    override fun trackingId(trackingId: String): Subscriber.Builder =
         this.copy(trackingId = trackingId)
 
-    override fun assetStatusListener(listener: (Boolean) -> Unit): AssetSubscriber.Builder =
+    override fun assetStatusListener(listener: (Boolean) -> Unit): Subscriber.Builder =
         this.copy(assetStatusListener = listener)
 
-    override fun start(): AssetSubscriber {
+    override fun start(): Subscriber {
         if (isMissingRequiredFields()) {
             throw BuilderConfigurationIncompleteException()
         }
         // All below fields are required and above code checks if they are nulls, so using !! should be safe from NPE
-        return DefaultAssetSubscriber(
+        return DefaultSubscriber(
             ablyConfiguration!!,
             rawLocationUpdatedListener!!,
             enhancedLocationUpdatedListener!!,
