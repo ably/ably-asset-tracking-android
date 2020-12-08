@@ -4,22 +4,23 @@ import android.Manifest.permission.ACCESS_COARSE_LOCATION
 import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.content.Context
 import androidx.annotation.RequiresPermission
-import com.ably.tracking.AblyConfiguration
 import com.ably.tracking.BuilderConfigurationIncompleteException
+import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.LogConfiguration
 
 internal data class PublisherBuilder(
-    val ablyConfiguration: AblyConfiguration? = null,
+    val connectionConfiguration: ConnectionConfiguration? = null,
     val mapConfiguration: MapConfiguration? = null,
     val logConfiguration: LogConfiguration? = null,
     val debugConfiguration: DebugConfiguration? = null,
     val locationUpdatedListener: LocationUpdatedListener? = null,
     val androidContext: Context? = null,
-    val transportationMode: TransportationMode? = null
+    val transportationMode: TransportationMode? = null,
+    val resolutionPolicy: ResolutionPolicy? = null
 ) : Publisher.Builder {
 
-    override fun ably(configuration: AblyConfiguration): Publisher.Builder =
-        this.copy(ablyConfiguration = configuration)
+    override fun connection(configuration: ConnectionConfiguration): Publisher.Builder =
+        this.copy(connectionConfiguration = configuration)
 
     override fun map(configuration: MapConfiguration): Publisher.Builder =
         this.copy(mapConfiguration = configuration)
@@ -39,6 +40,9 @@ internal data class PublisherBuilder(
     override fun mode(mode: TransportationMode): Publisher.Builder =
         this.copy(transportationMode = mode)
 
+    override fun resolutionPolicy(policy: ResolutionPolicy): Publisher.Builder =
+        this.copy(resolutionPolicy = policy)
+
     @RequiresPermission(anyOf = [ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION])
     override fun start(): Publisher {
         if (isMissingRequiredFields()) {
@@ -46,7 +50,7 @@ internal data class PublisherBuilder(
         }
         // All below fields are required and above code checks if they are nulls, so using !! should be safe from NPE
         return DefaultPublisher(
-            ablyConfiguration!!,
+            connectionConfiguration!!,
             mapConfiguration!!,
             debugConfiguration,
             locationUpdatedListener!!,
@@ -56,7 +60,7 @@ internal data class PublisherBuilder(
 
     // TODO - define which fields are required and which are optional (for now: only fields needed to create Publisher)
     private fun isMissingRequiredFields() =
-        ablyConfiguration == null ||
+        connectionConfiguration == null ||
             mapConfiguration == null ||
             locationUpdatedListener == null ||
             androidContext == null ||

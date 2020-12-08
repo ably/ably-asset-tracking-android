@@ -5,7 +5,7 @@ import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.content.Context
 import android.location.Location
 import androidx.annotation.RequiresPermission
-import com.ably.tracking.AblyConfiguration
+import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.LogConfiguration
 
 typealias LocationUpdatedListener = (Location) -> Unit
@@ -81,6 +81,14 @@ interface Publisher {
     var transportationMode: TransportationMode
 
     /**
+     * Causes the current tracking [Resolution] to be evaluated again.
+     *
+     * If this publisher was started with a [resolution policy][Builder.resolutionPolicy] then that policy will be
+     * consulted again as soon as possible after this method returns.
+     */
+    fun refreshResolution()
+
+    /**
      * Stops this publisher from publishing locations. Once a publisher has been stopped, it cannot be restarted.
      *
      * It is strongly suggested to call this method from the main thread.
@@ -89,12 +97,12 @@ interface Publisher {
 
     interface Builder {
         /**
-         * Sets the Ably configuration.
+         * Sets the Ably connection configuration.
          *
-         * @param configuration The configuration to be used for Ably.
+         * @param configuration The configuration to be used for Ably connection.
          * @return A new instance of the builder with this property changed.
          */
-        fun ably(configuration: AblyConfiguration): Builder
+        fun connection(configuration: ConnectionConfiguration): Builder
 
         /**
          * Sets the maps configuration.
@@ -135,6 +143,15 @@ interface Publisher {
          * @return A new instance of the builder with this property changed.
          */
         fun mode(mode: TransportationMode): Builder
+
+        /**
+         * Sets the policy to be used to define the target resolution for publishers created from this builder.
+         *
+         * @param policy The policy, methods on which will be called multiple times during the lifetime of the
+         * publisher.
+         * @return A new instance of the builder with this property changed.
+         */
+        fun resolutionPolicy(policy: ResolutionPolicy): Builder
 
         /**
          * Creates a [Publisher] and starts publishing.

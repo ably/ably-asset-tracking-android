@@ -11,7 +11,6 @@ import androidx.annotation.RequiresPermission
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.widget.ImageViewCompat
-import com.ably.tracking.AblyConfiguration
 import com.ably.tracking.publisher.DebugConfiguration
 import com.ably.tracking.publisher.LocationSourceAbly
 import com.ably.tracking.publisher.LocationSourceRaw
@@ -21,6 +20,7 @@ import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.TransportationMode
 import io.ably.lib.realtime.ConnectionState
 import io.ably.lib.realtime.ConnectionStateListener
+import com.ably.tracking.ConnectionConfiguration
 import kotlinx.android.synthetic.main.activity_main.*
 import pub.devrel.easypermissions.AfterPermissionGranted
 import pub.devrel.easypermissions.EasyPermissions
@@ -107,7 +107,7 @@ class MainActivity : AppCompatActivity() {
     private fun createAndStartAssetPublisher(trackingId: String, historyData: String? = null) {
         clearLocationInfo()
         publisher = Publisher.publishers()
-            .ably(AblyConfiguration(ABLY_API_KEY, CLIENT_ID))
+            .connection(ConnectionConfiguration(ABLY_API_KEY, CLIENT_ID))
             .map(MapConfiguration(MAPBOX_ACCESS_TOKEN))
             .debug(createDebugConfiguration(historyData))
             .locationUpdatedListener { updateLocationInfo(it) }
