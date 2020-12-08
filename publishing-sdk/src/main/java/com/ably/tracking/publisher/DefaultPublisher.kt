@@ -79,6 +79,11 @@ constructor(
     private var isTracking: Boolean = false
     private var mapboxReplayer: MapboxReplayer? = null
     private var lastKnownLocation: Location? = null
+
+    /**
+     * This field will be set only when trying to set a tracking destination before receiving any [lastKnownLocation].
+     * After successfully setting the tracking destination this field will be set to NULL.
+     **/
     private var destinationToSet: Destination? = null
 
     init {
