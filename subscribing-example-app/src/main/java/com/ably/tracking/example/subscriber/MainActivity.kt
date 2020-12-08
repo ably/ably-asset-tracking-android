@@ -5,7 +5,7 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.ably.tracking.AblyConfiguration
-import com.ably.tracking.subscriber.AssetSubscriber
+import com.ably.tracking.subscriber.Subscriber
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.SupportMapFragment
@@ -20,7 +20,7 @@ private const val ABLY_API_KEY = BuildConfig.ABLY_API_KEY
 private const val ZOOM_LEVEL_STREETS = 15F
 
 class MainActivity : AppCompatActivity() {
-    private var assetSubscriber: AssetSubscriber? = null
+    private var subscriber: Subscriber? = null
     private var googleMap: GoogleMap? = null
     private var marker: Marker? = null
 
@@ -31,7 +31,7 @@ class MainActivity : AppCompatActivity() {
         prepareMap()
 
         startButton.setOnClickListener {
-            if (assetSubscriber == null) {
+            if (subscriber == null) {
                 startSubscribing()
             } else {
                 stopSubscribing()
@@ -58,8 +58,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun createAndStartAssetSubscriber(trackingId: String) {
-        assetSubscriber = AssetSubscriber.subscribers()
-            .ablyConfig(AblyConfiguration(ABLY_API_KEY, CLIENT_ID))
+        subscriber = Subscriber.subscribers()
+            .ably(AblyConfiguration(ABLY_API_KEY, CLIENT_ID))
             .rawLocationUpdatedListener {} // if you prefer to display raw location call showMarkerOnMap() here
             .enhancedLocationUpdatedListener { showMarkerOnMap(it) }
             .trackingId(trackingId)
@@ -73,8 +73,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun stopSubscribing() {
-        assetSubscriber?.stop()
-        assetSubscriber = null
+        subscriber?.stop()
+        subscriber = null
         changeStartButtonState(false)
         marker = null
     }

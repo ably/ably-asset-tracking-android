@@ -7,7 +7,7 @@ import com.ably.tracking.LogConfiguration
 typealias LocationUpdatedListener = (Location) -> Unit
 typealias StatusListener = (Boolean) -> Unit
 
-interface AssetSubscriber {
+interface Subscriber {
     companion object {
         /**
          * Returns the default builder of Subscriber instances.
@@ -16,7 +16,7 @@ interface AssetSubscriber {
         fun subscribers(): Builder {
             // TODO ensure this can be called from Java - may need @JvmStatic annotation
             // https://kotlinlang.org/docs/tutorials/kotlin-for-py/objects-and-companion-objects.html#companion-objects
-            return AssetSubscriberBuilder()
+            return SubscriberBuilder()
         }
     }
 
@@ -34,7 +34,7 @@ interface AssetSubscriber {
          * @param configuration Ably library configuration object [AblyConfiguration]
          * @return A new instance of the builder with Ably configuration changed
          */
-        fun ablyConfig(configuration: AblyConfiguration): Builder
+        fun ably(configuration: AblyConfiguration): Builder
 
         /**
          * Sets the logging configuration.
@@ -42,7 +42,7 @@ interface AssetSubscriber {
          * @param configuration Logging configuration object [LogConfiguration]
          * @return A new instance of the builder with logging configuration changed
          */
-        fun logConfig(configuration: LogConfiguration): Builder
+        fun log(configuration: LogConfiguration): Builder
 
         /**
          * Sets listener that notifies about raw location updates
@@ -85,13 +85,13 @@ interface AssetSubscriber {
         fun assetStatusListener(listener: StatusListener): Builder
 
         /**
-         * Creates an [AssetSubscriber] and starts subscribing to the asset location
+         * Creates an [Subscriber] and starts subscribing to the asset location
          *
          * It is strongly suggested to call this method from the main thread.
          *
-         * @return A new instance of [AssetSubscriber]
+         * @return A new instance of [Subscriber]
          * @throws com.ably.tracking.BuilderConfigurationIncompleteException If all required params aren't set
          */
-        fun start(): AssetSubscriber
+        fun start(): Subscriber
     }
 }
