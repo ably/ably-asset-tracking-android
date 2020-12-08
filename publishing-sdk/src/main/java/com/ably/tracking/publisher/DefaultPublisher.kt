@@ -196,17 +196,19 @@ constructor(
     }
 
     override fun add(trackable: Trackable, onSuccess: () -> Unit, onError: (Exception) -> Unit) {
-        if (!channelMap.contains(trackable.id)) {
-            createChannelAndJoinPresence(
-                trackable,
-                {
-                    channelMap[trackable.id] = it
-                    onSuccess()
-                },
-                onError
-            )
+        sendEvent(AddTrackableEvent(trackable, onSuccess, onError))
+    }
+
+    private suspend fun addTrackable(event: AddTrackableEvent) {
+        if (!channelMap.contains(event.trackable.id)) {
+            try {
+                channelMap[event.trackable.id] = createChannelAndJoinPresence(event.trackable)
+                launchInMainThread { event.onSuccess() }
+            } catch (e: Exception) {
+                launchInMainThread { event.onError(e) }
+            }
         } else {
-            onSuccess()
+            launchInMainThread { event.onSuccess() }
         }
     }
 
@@ -235,30 +237,28 @@ constructor(
 
     override var active: Trackable? = null
 
-    private fun createChannelAndJoinPresence(
-        trackable: Trackable,
-        onSuccess: (Channel) -> Unit,
-        onError: (Exception) -> Unit
-    ) {
-        ably.channels.get(trackable.id).apply {
-            try {
-                presence.enterClient(
-                    connectionConfiguration.clientId,
-                    gson.toJson(presenceData),
-                    object : CompletionListener {
-                        override fun onSuccess() {
-                            onSuccess(this@apply)
-                        }
+    private suspend fun createChannelAndJoinPresence(trackable: Trackable): Channel {
+        return suspendCoroutine { continuation ->
+            ably.channels.get(trackable.id).apply {
+                try {
+                    presence.enterClient(
+                        connectionConfiguration.clientId,
+                        gson.toJson(presenceData),
+                        object : CompletionListener {
+                            override fun onSuccess() {
+                                continuation.resume(this@apply)
+                            }
 
-                        override fun onError(reason: ErrorInfo?) {
-                            Timber.e("Unable to enter presence: ${reason?.message}")
-                            onError(Exception("Unable to enter presence: ${reason?.message}"))
+                            override fun onError(reason: ErrorInfo?) {
+                                Timber.e("Unable to enter presence: ${reason?.message}")
+                                continuation.resumeWithException(Exception("Unable to enter presence: ${reason?.message}"))
+                            }
                         }
-                    }
-                )
-            } catch (ablyException: AblyException) {
-                Timber.e(ablyException)
-                onError(ablyException)
+                    )
+                } catch (ablyException: AblyException) {
+                    Timber.e(ablyException)
+                    continuation.resumeWithException(ablyException)
+                }
             }
         }
     }
@@ -356,6 +356,7 @@ constructor(
             for (event in channel) {
                 scope.launch {
                     when (event) {
+                        is AddTrackableEvent -> addTrackable(event)
                         is TrackTrackableEvent -> trackTrackable(event)
                     }
                 }
