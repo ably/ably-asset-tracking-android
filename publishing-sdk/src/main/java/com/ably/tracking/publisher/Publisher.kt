@@ -5,7 +5,7 @@ import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.content.Context
 import android.location.Location
 import androidx.annotation.RequiresPermission
-import com.ably.tracking.AblyConfiguration
+import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.LogConfiguration
 
 typealias LocationUpdatedListener = (Location) -> Unit
@@ -91,12 +91,12 @@ interface Publisher {
 
     interface Builder {
         /**
-         * Sets the Ably configuration.
+         * Sets the Ably connection configuration.
          *
-         * @param configuration The configuration to be used for Ably.
+         * @param configuration The configuration to be used for Ably connection.
          * @return A new instance of the builder with this property changed.
          */
-        fun ably(configuration: AblyConfiguration): Builder
+        fun connection(configuration: ConnectionConfiguration): Builder
 
         /**
          * Sets the maps configuration.

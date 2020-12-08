@@ -8,7 +8,7 @@ import android.location.Location
 import android.os.Handler
 import android.os.Looper
 import androidx.annotation.RequiresPermission
-import com.ably.tracking.AblyConfiguration
+import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.common.ClientTypes
 import com.ably.tracking.common.EventNames
 import com.ably.tracking.common.PresenceData
@@ -43,7 +43,7 @@ private const val DEFAULT_MAX_WAIT_TIME = DEFAULT_INTERVAL_IN_MILLISECONDS * 10
 internal class DefaultPublisher
 @RequiresPermission(anyOf = [ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION])
 constructor(
-    private val ablyConfiguration: AblyConfiguration,
+    private val connectionConfiguration: ConnectionConfiguration,
     private val mapConfiguration: MapConfiguration,
     private val debugConfiguration: DebugConfiguration?,
     private val locationUpdatedListener: LocationUpdatedListener,
@@ -82,7 +82,7 @@ constructor(
     private var destinationToSet: Destination? = null
 
     init {
-        ably = AblyRealtime(ablyConfiguration.apiKey)
+        ably = AblyRealtime(connectionConfiguration.apiKey)
 
         Timber.w("Started.")
 
@@ -116,7 +116,7 @@ constructor(
     ) {
         mapboxBuilder.locationEngine(
             AblySimulationLocationEngine(
-                ClientOptions(ablyConfiguration.apiKey),
+                ClientOptions(connectionConfiguration.apiKey),
                 locationSource.simulationChannelName
             )
         )
@@ -188,7 +188,7 @@ constructor(
         channel = ably.channels.get(trackable.id).apply {
             try {
                 presence.enterClient(
-                    ablyConfiguration.clientId,
+                    connectionConfiguration.clientId,
                     gson.toJson(presenceData),
                     object : CompletionListener {
                         override fun onSuccess() = Unit
@@ -247,7 +247,7 @@ constructor(
                 channel = null
                 try {
                     it.presence.leaveClient(
-                        ablyConfiguration.clientId,
+                        connectionConfiguration.clientId,
                         gson.toJson(presenceData),
                         object : CompletionListener {
                             override fun onSuccess() = Unit
