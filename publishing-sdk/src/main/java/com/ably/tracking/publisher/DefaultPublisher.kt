@@ -177,7 +177,7 @@ constructor(
         }
     }
 
-    override fun track(trackable: Trackable, onSuccess: () -> Unit, onError: () -> Unit) {
+    override fun track(trackable: Trackable, onSuccess: () -> Unit, onError: (Exception) -> Unit) {
         if (this.active != null) {
             throw IllegalStateException("For this preview version of the SDK, this method may only be called once for any given instance of this class.")
         }
@@ -192,7 +192,7 @@ constructor(
         )
     }
 
-    override fun add(trackable: Trackable, onSuccess: () -> Unit, onError: () -> Unit) {
+    override fun add(trackable: Trackable, onSuccess: () -> Unit, onError: (Exception) -> Unit) {
         if (!channelMap.contains(trackable.id)) {
             createChannelAndJoinPresence(
                 trackable,
@@ -210,7 +210,7 @@ constructor(
     override fun remove(
         trackable: Trackable,
         onSuccess: (wasPresent: Boolean) -> Unit,
-        onError: () -> Unit
+        onError: (Exception) -> Unit
     ) {
         val removedChannel = channelMap.remove(trackable.id)
         if (removedChannel != null) {
@@ -234,7 +234,7 @@ constructor(
     private fun createChannelAndJoinPresence(
         trackable: Trackable,
         onSuccess: (Channel) -> Unit,
-        onError: () -> Unit
+        onError: (Exception) -> Unit
     ) {
         ably.channels.get(trackable.id).apply {
             try {
@@ -247,18 +247,14 @@ constructor(
                         }
 
                         override fun onError(reason: ErrorInfo?) {
-                            // TODO - handle error
-                            // https://github.com/ably/ably-asset-tracking-android/issues/17
                             Timber.e("Unable to enter presence: ${reason?.message}")
-                            onError()
+                            onError(Exception("Unable to enter presence: ${reason?.message}"))
                         }
                     }
                 )
             } catch (ablyException: AblyException) {
-                // TODO - handle exception
-                // https://github.com/ably/ably-asset-tracking-android/issues/17
                 Timber.e(ablyException)
-                onError()
+                onError(ablyException)
             }
         }
     }
@@ -266,7 +262,7 @@ constructor(
     private fun leaveChannelPresence(
         channel: Channel,
         onSuccess: () -> Unit = {},
-        onError: () -> Unit = {}
+        onError: (Exception) -> Unit = {}
     ) {
         try {
             channel.presence.leaveClient(
@@ -278,18 +274,14 @@ constructor(
                     }
 
                     override fun onError(reason: ErrorInfo?) {
-                        // TODO - handle error
-                        // https://github.com/ably/ably-asset-tracking-android/issues/17
                         Timber.e("Unable to leave presence: ${reason?.message}")
-                        onError()
+                        onError(Exception("Unable to leave presence: ${reason?.message}"))
                     }
                 }
             )
         } catch (ablyException: AblyException) {
-            // TODO - handle exception
-            // https://github.com/ably/ably-asset-tracking-android/issues/17
             Timber.e(ablyException)
-            onError()
+            onError(ablyException)
         }
     }
 

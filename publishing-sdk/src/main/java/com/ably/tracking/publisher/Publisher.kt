@@ -40,7 +40,7 @@ interface Publisher {
      * @param onSuccess Called when the trackable is successfully added and make the actively tracked object
      * @param onError Called when an error occurs
      */
-    fun track(trackable: Trackable, onSuccess: () -> Unit, onError: () -> Unit)
+    fun track(trackable: Trackable, onSuccess: () -> Unit, onError: (Exception) -> Unit)
 
     /**
      * Adds a [Trackable] object, but does not make it the actively tracked object, meaning that the state of the
@@ -52,7 +52,7 @@ interface Publisher {
      * @param onSuccess Called when the trackable is successfully added
      * @param onError Called when an error occurs
      */
-    fun add(trackable: Trackable, onSuccess: () -> Unit, onError: () -> Unit)
+    fun add(trackable: Trackable, onSuccess: () -> Unit, onError: (Exception) -> Unit)
 
     /**
      * Removes a [Trackable] object if it is known to this publisher, otherwise does nothing and returns false.
@@ -65,7 +65,7 @@ interface Publisher {
      * wasPresent is true when the object was known to this publisher, being that it was in the tracked set.
      * @param onError Called when an error occurs
      */
-    fun remove(trackable: Trackable, onSuccess: (wasPresent: Boolean) -> Unit, onError: () -> Unit)
+    fun remove(trackable: Trackable, onSuccess: (wasPresent: Boolean) -> Unit, onError: (Exception) -> Unit)
 
     /**
      * The actively tracked object, being the [Trackable] object whose destination will be used for location
