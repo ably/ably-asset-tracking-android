@@ -16,8 +16,22 @@ interface ResolutionPolicy {
      * Defines the methods which can be called by a resolution policy at any time.
      */
     interface Methods {
+        /**
+         * Defines the methods to be implemented by proximity handlers.
+         */
         interface ProximityHandler {
-            fun onProximityReached(proximity: Proximity)
+            /**
+             * The desired proximity has been reached.
+             *
+             * @param threshold The threshold which was supplied when this handler was registered.
+             */
+            fun onProximityReached(threshold: Proximity)
+
+            /**
+             * This handler has been cancelled, either explicitly using [cancelProximityThreshold], or implicitly
+             * because a new handler has taken its place for the associated [Publisher].
+             */
+            fun onProximityCancelled()
         }
 
         /**
@@ -32,10 +46,26 @@ interface ResolutionPolicy {
          * Registers a handler to be called when a given proximity to the destination of the active [Trackable] object
          * has been reached.
          *
-         * A [Publisher] instance can only have one proximity threshold handler active at any one time.
+         * Proximity is considered reached when it is at or nearer the destination than the [threshold] specifies.
+         *
+         * A [Publisher] instance can only have one proximity threshold handler active at any one time. If there is
+         * already a registered proximity handler then it will be cancelled and replaced.
+         *
+         * The supplied [handler] will only be called once, either:
+         * - with [onProximityReached][ProximityHandler.onProximityReached] when proximity has been reached;
+         * - or with [onProximityCancelled][ProximityHandler.onProximityCancelled] when cancelled (either
+         * [explicitly][cancelProximityThreshold] or implicitly because it was replaced by a subsequent call to this
+         * method)
+         *
+         * @param threshold The threshold at which to call the handler.
+         * @param handler The handler whose [onProximityReached][ProximityHandler.onProximityReached] method is to be
+         * called when this threshold proximity has been reached.
          */
         fun setProximityThreshold(threshold: Proximity, handler: ProximityHandler)
 
+        /**
+         * Removes the currently registered proximity handler, if there is one. Otherwise does nothing.
+         */
         fun cancelProximityThreshold()
     }
 
@@ -46,19 +76,77 @@ interface ResolutionPolicy {
      * [createResolutionPolicy][Factory.createResolutionPolicy].
      */
     interface Hooks {
+        /**
+         * A handler of events relating to the addition, removal and activation of [Trackable] objects for a
+         * [Publisher] instance.
+         */
         interface TrackableSetListener {
+            /**
+             * A [Trackable] object has been added to the [Publisher]'s set of tracked objects.
+             *
+             * If the operation adding [trackable] is also making it the [actively][Publisher.active] tracked object
+             * then [onActiveTrackableChanged] will subsequently be called.
+             *
+             * @param trackable The object which has been added to the tracked set.
+             */
             fun onTrackableAdded(trackable: Trackable)
+
+            /**
+             * A [Trackable] object has been removed from the [Publisher]'s set of tracked objects.
+             *
+             * If [trackable] was the [actively][Publisher.active] tracked object then [onActiveTrackableChanged] will
+             * subsequently be called.
+             *
+             * @param trackable The object which has been removed from the tracked set.
+             */
             fun onTrackableRemoved(trackable: Trackable)
+
+            /**
+             * The [actively][Publisher.active] tracked object has changed.
+             *
+             * @param trackable The object, from the tracked set, which has been activated - or no value if there is
+             * no longer an actively tracked object.
+             */
             fun onActiveTrackableChanged(trackable: Trackable?)
         }
 
+        /**
+         * A handler of events relating to the addition or removal of remote [Subscriber]s to a [Publisher] instance.
+         */
         interface SubscriberSetListener {
+            /**
+             * A [Subscriber] has subscribed to receive updates for one or more [Trackable] objects from the
+             * [Publisher]'s set of tracked objects.
+             *
+             * @param subscriber The remote entity that subscribed.
+             */
             fun onSubscriberAdded(subscriber: Subscriber)
+
+            /**
+             * A [Subscriber] has unsubscribed from updates for one or more [Trackable] objects from the [Publisher]'s
+             * set of tracked objects.
+             *
+             * @param subscriber The remote entity that unsubscribed.
+             */
             fun onSubscriberRemoved(subscriber: Subscriber)
         }
 
+        /**
+         * Register a handler for the addition, removal and activation of [Trackable] objects for the [Publisher]
+         * instance whose [creation][Publisher.Builder.start] caused
+         * [createResolutionPolicy][Factory.createResolutionPolicy] to be called.
+         *
+         * @param listener The handler, which may be called multiple times during the lifespan of the publisher.
+         */
         fun trackables(listener: TrackableSetListener)
 
+        /**
+         * Register a handler for the addition and removal of remote [Subscriber]s to the [Publisher] instance whose
+         * [creation][Publisher.Builder.start] caused [createResolutionPolicy][Factory.createResolutionPolicy] to be
+         * called.
+         *
+         * @param listener The handler, which may be called multiple times during the lifespan of the publisher.
+         */
         fun subscribers(listener: SubscriberSetListener)
     }
 
