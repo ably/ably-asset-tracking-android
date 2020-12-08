@@ -81,7 +81,7 @@ From the dialog presented by `File` > `Open...` / `Open an Existing Project`, se
 
 #### Supported Android SDK version
 
-This SDK works for Android SDK 21 and newer.
+This SDK requires Android SDK 21 or later.
 
 #### Coding Conventions and Style Guide
 
