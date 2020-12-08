@@ -30,6 +30,12 @@ import io.ably.lib.realtime.CompletionListener
 import io.ably.lib.types.AblyException
 import io.ably.lib.types.ClientOptions
 import io.ably.lib.types.ErrorInfo
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.channels.actor
+import kotlinx.coroutines.launch
 import timber.log.Timber
 
 @SuppressLint("LogConditional")
@@ -60,6 +66,8 @@ constructor(
         }
     }
     private val presenceData = PresenceData(ClientTypes.PUBLISHER)
+    private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+    private val threadingEventsChannel: SendChannel<ThreadingEvent>
     private var isTracking: Boolean = false
     private var mapboxReplayer: MapboxReplayer? = null
     private var lastKnownLocation: Location? = null
@@ -71,6 +79,7 @@ constructor(
     private var destinationToSet: Destination? = null
 
     init {
+        threadingEventsChannel = createThreadingEventsChannel(scope)
         ably = AblyRealtime(connectionConfiguration.apiKey)
 
         Timber.w("Started.")
@@ -163,18 +172,26 @@ constructor(
     }
 
     override fun track(trackable: Trackable, onSuccess: () -> Unit, onError: (Exception) -> Unit) {
+        sendEvent(TrackTrackableEvent(trackable, onSuccess, onError))
+    }
+
+    private suspend fun trackTrackable(event: TrackTrackableEvent) {
         if (this.active != null) {
-            throw IllegalStateException("For this preview version of the SDK, this method may only be called once for any given instance of this class.")
+            event.onError(IllegalStateException("For this preview version of the SDK, this method may only be called once for any given instance of this class."))
         }
 
         add(
-            trackable,
+            event.trackable,
             {
-                active = trackable
-                trackable.destination?.let { setDestination(it) }
-                onSuccess()
+                scope.launch {
+                    active = event.trackable
+                    event.trackable.destination?.let { setDestination(it) }
+                    launchInMainThread { event.onSuccess() }
+                }
             },
-            onError
+            {
+                launchInMainThread { event.onError(it) }
+            }
         )
     }
 
@@ -333,4 +350,23 @@ constructor(
     }
 
     private fun getLooperForMainThread() = Looper.getMainLooper()
+
+    private fun createThreadingEventsChannel(scope: CoroutineScope) =
+        scope.actor<ThreadingEvent> {
+            for (event in channel) {
+                scope.launch {
+                    when (event) {
+                        is TrackTrackableEvent -> trackTrackable(event)
+                    }
+                }
+            }
+        }
+
+    private fun launchInMainThread(action: () -> Unit) {
+        scope.launch(Dispatchers.Main) { action() }
+    }
+
+    private fun sendEvent(event: ThreadingEvent) {
+        scope.launch { threadingEventsChannel.send(event) }
+    }
 }
