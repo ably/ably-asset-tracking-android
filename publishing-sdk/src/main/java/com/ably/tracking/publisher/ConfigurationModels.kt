@@ -13,6 +13,69 @@ data class MapConfiguration(val apiKey: String)
  */
 interface ResolutionPolicy {
     /**
+     * Defines the methods which can be called by a resolution policy at any time.
+     */
+    interface Methods {
+        interface ProximityHandler {
+            fun onProximityReached(proximity: Proximity)
+        }
+
+        /**
+         * Causes the current tracking [Resolution] to be evaluated again by its associated [Publisher] instance.
+         *
+         * The [ResolutionPolicy] instance which was provided with these [Methods] will be consulted again as soon as
+         * possible after this method returns.
+         */
+        fun refresh()
+
+        /**
+         * Registers a handler to be called when a given proximity to the destination of the active [Trackable] object
+         * has been reached.
+         *
+         * A [Publisher] instance can only have one proximity threshold handler active at any one time.
+         */
+        fun setProximityThreshold(threshold: Proximity, handler: ProximityHandler)
+
+        fun cancelProximityThreshold()
+    }
+
+    /**
+     * Defines the methods which can be called by a resolution policy when it is created.
+     *
+     * Methods on this interface may only be called from within implementations of
+     * [createResolutionPolicy][Factory.createResolutionPolicy].
+     */
+    interface Hooks {
+        interface TrackableSetListener {
+            fun onTrackableAdded(trackable: Trackable)
+            fun onTrackableRemoved(trackable: Trackable)
+            fun onActiveTrackableChanged(trackable: Trackable?)
+        }
+
+        interface SubscriberSetListener {
+            fun onSubscriberAdded(subscriber: Subscriber)
+            fun onSubscriberRemoved(subscriber: Subscriber)
+        }
+
+        fun trackables(listener: TrackableSetListener)
+
+        fun subscribers(listener: SubscriberSetListener)
+    }
+
+    /**
+     * Defines the methods to be implemented by resolution policy factories, whose responsibility it is to create
+     * a new [ResolutionPolicy] instance when a [Publisher] is started.
+     */
+    interface Factory {
+        /**
+         * Calling methods on [hooks] after this method has returned will throw an exception.
+         *
+         * Calling methods on [methods] after this method has returned is allowed and expected.
+         */
+        fun createResolutionPolicy(hooks: Hooks, methods: Methods): ResolutionPolicy
+    }
+
+    /**
      * Determine a target resolution from a set of requested resolutions.
      *
      * The set of requested resolutions may be empty.
@@ -66,6 +129,12 @@ data class Trackable(
     val destination: Destination? = null,
     val resolution: Resolution? = null
 )
+
+data class Subscriber(val id: String)
+
+sealed class Proximity
+data class SpatialProximity(val distance: Double) : Proximity()
+data class TemporalProximity(val time: Long) : Proximity()
 
 data class TransportationMode(val TBC: String)
 

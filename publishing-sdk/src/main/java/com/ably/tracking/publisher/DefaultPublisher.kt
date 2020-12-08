@@ -218,10 +218,6 @@ constructor(
             TODO("Not yet implemented")
         }
 
-    override fun refreshResolution() {
-        TODO("Not yet implemented")
-    }
-
     override fun stop() {
         stopLocationUpdates()
         ably.close()
