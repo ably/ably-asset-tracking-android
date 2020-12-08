@@ -79,6 +79,10 @@ These are the same Gradle tasks that we [run in CI](.github/workflows).
 The recommended IDE for working on this project is [Android Studio](https://developer.android.com/studio).
 From the dialog presented by `File` > `Open...` / `Open an Existing Project`, select the repository root folder and Studio's built-in support for Gradle projects will do the rest.
 
+#### Android Runtime Requirements
+
+These SDKs require a minimum of Android API Level 21 at runtime.
+
 #### Coding Conventions and Style Guide
 
 - Use best, current practice wherever possible.
