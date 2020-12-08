@@ -17,7 +17,8 @@ typealias LocationUpdatedListener = (Location) -> Unit
 interface Publisher {
     companion object Factory {
         /**
-         * Returns the default builder of Publisher instances.
+         * Returns the default state of the publisher [Builder], which is incapable of starting of [Publisher]
+         * instances until it has been configured fully.
          */
         @JvmStatic
         fun publishers(): Builder {
@@ -81,6 +82,14 @@ interface Publisher {
      */
     fun stop()
 
+    /**
+     * The methods implemented by builders capable of starting [Publisher] instances.
+     *
+     * All methods except [start] return a new [Builder] instance, being a copy of this instance but with the
+     * relevant property mutated.
+     *
+     * The starting point is always the default builder state, returned by the static [publishers] method.
+     */
     interface Builder {
         /**
          * Sets the Ably connection configuration.
