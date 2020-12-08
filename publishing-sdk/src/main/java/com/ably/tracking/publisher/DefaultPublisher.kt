@@ -144,7 +144,7 @@ constructor(
         channelMap.values.forEach {
             it.publish(EventNames.RAW, geoJsonMessage.toJsonArray(gson))
         }
-        locationUpdatedListener(rawLocation)
+        launchInMainThread { locationUpdatedListener(rawLocation) }
     }
 
     private fun sendEnhancedLocationMessage(enhancedLocation: Location, keyPoints: List<Location>) {
@@ -156,7 +156,7 @@ constructor(
         channelMap.values.forEach {
             it.publish(EventNames.ENHANCED, geoJsonMessages.toJsonArray(gson))
         }
-        locationUpdatedListener(enhancedLocation)
+        launchInMainThread { locationUpdatedListener(enhancedLocation) }
     }
 
     private fun startLocationUpdates() {
