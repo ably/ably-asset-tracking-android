@@ -1,11 +1,11 @@
 package com.ably.tracking.subscriber
 
-import com.ably.tracking.AblyConfiguration
+import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.BuilderConfigurationIncompleteException
 import com.ably.tracking.LogConfiguration
 
 internal data class SubscriberBuilder(
-    val ablyConfiguration: AblyConfiguration? = null,
+    val connectionConfiguration: ConnectionConfiguration? = null,
     val logConfiguration: LogConfiguration? = null,
     val rawLocationUpdatedListener: LocationUpdatedListener? = null,
     val enhancedLocationUpdatedListener: LocationUpdatedListener? = null,
@@ -14,8 +14,8 @@ internal data class SubscriberBuilder(
     val assetStatusListener: StatusListener? = null
 ) : Subscriber.Builder {
 
-    override fun ably(configuration: AblyConfiguration): Subscriber.Builder =
-        this.copy(ablyConfiguration = configuration)
+    override fun connection(configuration: ConnectionConfiguration): Subscriber.Builder =
+        this.copy(connectionConfiguration = configuration)
 
     override fun log(configuration: LogConfiguration): Subscriber.Builder =
         this.copy(logConfiguration = configuration)
@@ -41,7 +41,7 @@ internal data class SubscriberBuilder(
         }
         // All below fields are required and above code checks if they are nulls, so using !! should be safe from NPE
         return DefaultSubscriber(
-            ablyConfiguration!!,
+            connectionConfiguration!!,
             rawLocationUpdatedListener!!,
             enhancedLocationUpdatedListener!!,
             trackingId!!,
@@ -51,7 +51,7 @@ internal data class SubscriberBuilder(
 
     // TODO - define which fields are required and which are optional (for now: only fields needed to create AssetSubscriber)
     private fun isMissingRequiredFields() =
-        ablyConfiguration == null ||
+        connectionConfiguration == null ||
             rawLocationUpdatedListener == null ||
             enhancedLocationUpdatedListener == null ||
             trackingId == null

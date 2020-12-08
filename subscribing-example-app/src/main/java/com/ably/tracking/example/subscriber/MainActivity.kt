@@ -4,7 +4,7 @@ import android.location.Location
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import com.ably.tracking.AblyConfiguration
+import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.subscriber.Subscriber
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -59,7 +59,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun createAndStartAssetSubscriber(trackingId: String) {
         subscriber = Subscriber.subscribers()
-            .ably(AblyConfiguration(ABLY_API_KEY, CLIENT_ID))
+            .connection(ConnectionConfiguration(ABLY_API_KEY, CLIENT_ID))
             .rawLocationUpdatedListener {} // if you prefer to display raw location call showMarkerOnMap() here
             .enhancedLocationUpdatedListener { showMarkerOnMap(it) }
             .trackingId(trackingId)

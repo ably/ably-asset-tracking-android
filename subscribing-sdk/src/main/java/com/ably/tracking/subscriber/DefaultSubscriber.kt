@@ -3,7 +3,7 @@ package com.ably.tracking.subscriber
 import android.location.Location
 import android.os.Handler
 import android.os.Looper
-import com.ably.tracking.AblyConfiguration
+import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.common.ClientTypes
 import com.ably.tracking.common.EventNames
 import com.ably.tracking.common.PresenceData
@@ -20,7 +20,7 @@ import io.ably.lib.types.PresenceMessage
 import timber.log.Timber
 
 internal class DefaultSubscriber(
-    private val ablyConfiguration: AblyConfiguration,
+    private val connectionConfiguration: ConnectionConfiguration,
     rawLocationUpdatedListener: LocationUpdatedListener,
     enhancedLocationUpdatedListener: LocationUpdatedListener,
     trackingId: String,
@@ -32,7 +32,7 @@ internal class DefaultSubscriber(
     private val presenceData = PresenceData(ClientTypes.SUBSCRIBER)
 
     init {
-        ably = AblyRealtime(ablyConfiguration.apiKey)
+        ably = AblyRealtime(connectionConfiguration.apiKey)
         channel = ably.channels.get(
             trackingId,
             ChannelOptions().apply { params = mapOf("rewind" to "1") }
@@ -76,7 +76,7 @@ internal class DefaultSubscriber(
             notifyAssetIsOffline()
             channel.presence.subscribe { onPresenceMessage(it) }
             channel.presence.enterClient(
-                ablyConfiguration.clientId,
+                connectionConfiguration.clientId,
                 gson.toJson(presenceData),
                 object : CompletionListener {
                     override fun onSuccess() = Unit
@@ -100,7 +100,7 @@ internal class DefaultSubscriber(
             channel.presence.unsubscribe()
             notifyAssetIsOffline()
             channel.presence.leaveClient(
-                ablyConfiguration.clientId,
+                connectionConfiguration.clientId,
                 gson.toJson(presenceData),
                 object : CompletionListener {
                     override fun onSuccess() = Unit

@@ -1,7 +1,7 @@
 package com.ably.tracking.subscriber
 
 import android.location.Location
-import com.ably.tracking.AblyConfiguration
+import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.LogConfiguration
 
 typealias LocationUpdatedListener = (Location) -> Unit
@@ -29,12 +29,12 @@ interface Subscriber {
 
     interface Builder {
         /**
-         * Sets the Ably configuration.
+         * Sets the Ably connection configuration.
          *
-         * @param configuration Ably library configuration object [AblyConfiguration]
-         * @return A new instance of the builder with Ably configuration changed
+         * @param configuration The configuration to be used for Ably connection.
+         * @return A new instance of the builder with this property changed.
          */
-        fun ably(configuration: AblyConfiguration): Builder
+        fun connection(configuration: ConnectionConfiguration): Builder
 
         /**
          * Sets the logging configuration.
