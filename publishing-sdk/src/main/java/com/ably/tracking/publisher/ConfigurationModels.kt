@@ -3,7 +3,6 @@ package com.ably.tracking.publisher
 import com.ably.tracking.Resolution
 import io.ably.lib.realtime.ConnectionStateListener
 
-// TODO: data class will be interface, with default implementations as data class for convenience
 // TODO: make sure all this works from Java user perspective
 
 data class MapConfiguration(val apiKey: String)
