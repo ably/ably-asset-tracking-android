@@ -317,10 +317,12 @@ constructor(
     private suspend fun stopLocationUpdates() {
         if (isTracking) {
             mapboxNavigation.unregisterLocationObserver(locationObserver)
-            channelMap.apply {
-                values.forEach { leaveChannelPresence(it) }
-                clear()
+            // makes code wait until all jobs in the scope are finished
+            supervisorScope {
+                // run closing channels in parallel, if there is an error when closing - ignore it
+                channelMap.values.forEach { scope.launch { leaveChannelPresence(it) } }
             }
+            channelMap.clear()
             isTracking = false
             mapboxReplayer?.finish()
             debugConfiguration?.locationHistoryReadyListener?.invoke(mapboxNavigation.retrieveHistory())
