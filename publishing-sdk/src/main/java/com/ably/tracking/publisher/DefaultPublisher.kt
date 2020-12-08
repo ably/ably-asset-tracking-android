@@ -33,10 +33,14 @@ import io.ably.lib.types.ErrorInfo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.actor
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.coroutines.suspendCoroutine
 
 @SuppressLint("LogConditional")
 internal class DefaultPublisher
@@ -217,21 +221,24 @@ constructor(
         onSuccess: (wasPresent: Boolean) -> Unit,
         onError: (Exception) -> Unit
     ) {
-        val removedChannel = channelMap.remove(trackable.id)
+        sendEvent(RemoveTrackableEvent(trackable, onSuccess, onError))
+    }
+
+    private suspend fun removeTrackable(event: RemoveTrackableEvent) {
+        val removedChannel = channelMap.remove(event.trackable.id)
         if (removedChannel != null) {
-            leaveChannelPresence(
-                removedChannel,
-                {
-                    if (active == trackable) {
-                        removeCurrentDestination()
-                        active = null
-                    }
-                    onSuccess(true)
-                },
-                onError
-            )
+            try {
+                leaveChannelPresence(removedChannel)
+                if (active == event.trackable) {
+                    removeCurrentDestination()
+                    active = null
+                }
+                launchInMainThread { event.onSuccess(true) }
+            } catch (e: Exception) {
+                launchInMainThread { event.onError(e) }
+            }
         } else {
-            onSuccess(false)
+            launchInMainThread { event.onSuccess(false) }
         }
     }
 
@@ -263,29 +270,27 @@ constructor(
         }
     }
 
-    private fun leaveChannelPresence(
-        channel: Channel,
-        onSuccess: () -> Unit = {},
-        onError: (Exception) -> Unit = {}
-    ) {
-        try {
-            channel.presence.leaveClient(
-                connectionConfiguration.clientId,
-                gson.toJson(presenceData),
-                object : CompletionListener {
-                    override fun onSuccess() {
-                        onSuccess()
-                    }
+    private suspend fun leaveChannelPresence(channel: Channel) {
+        suspendCoroutine<Unit> { continuation ->
+            try {
+                channel.presence.leaveClient(
+                    connectionConfiguration.clientId,
+                    gson.toJson(presenceData),
+                    object : CompletionListener {
+                        override fun onSuccess() {
+                            continuation.resume(Unit)
+                        }
 
-                    override fun onError(reason: ErrorInfo?) {
-                        Timber.e("Unable to leave presence: ${reason?.message}")
-                        onError(Exception("Unable to leave presence: ${reason?.message}"))
+                        override fun onError(reason: ErrorInfo?) {
+                            Timber.e("Unable to leave presence: ${reason?.message}")
+                            continuation.resumeWithException(Exception("Unable to leave presence: ${reason?.message}"))
+                        }
                     }
-                }
-            )
-        } catch (ablyException: AblyException) {
-            Timber.e(ablyException)
-            onError(ablyException)
+                )
+            } catch (ablyException: AblyException) {
+                Timber.e(ablyException)
+                continuation.resumeWithException(ablyException)
+            }
         }
     }
 
@@ -300,13 +305,16 @@ constructor(
     }
 
     override fun stop() {
-        stopLocationUpdates()
-        ably.close()
+        sendEvent(StopEvent())
     }
 
-    // TODO define threading strategy: https://github.com/ably/ably-asset-tracking-android/issues/22
-    @Synchronized
-    private fun stopLocationUpdates() {
+    private suspend fun stopPublisher() {
+        stopLocationUpdates()
+        ably.close()
+        scope.cancel()
+    }
+
+    private suspend fun stopLocationUpdates() {
         if (isTracking) {
             mapboxNavigation.unregisterLocationObserver(locationObserver)
             channelMap.apply {
@@ -358,6 +366,8 @@ constructor(
                     when (event) {
                         is AddTrackableEvent -> addTrackable(event)
                         is TrackTrackableEvent -> trackTrackable(event)
+                        is RemoveTrackableEvent -> removeTrackable(event)
+                        is StopEvent -> stopPublisher()
                     }
                 }
             }
