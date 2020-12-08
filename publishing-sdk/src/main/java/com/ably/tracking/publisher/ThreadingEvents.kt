@@ -4,6 +4,8 @@ internal sealed class ThreadingEvent
 
 internal class StopEvent : ThreadingEvent()
 
+internal class StartEvent : ThreadingEvent()
+
 internal data class AddTrackableEvent(
     val trackable: Trackable,
     val onSuccess: () -> Unit,

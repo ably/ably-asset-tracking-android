@@ -159,10 +159,12 @@ constructor(
         locationUpdatedListener(enhancedLocation)
     }
 
-    // TODO define threading strategy: https://github.com/ably/ably-asset-tracking-android/issues/22
-    @RequiresPermission(anyOf = [ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION])
-    @Synchronized
     private fun startLocationUpdates() {
+        sendEvent(StartEvent())
+    }
+
+    @RequiresPermission(anyOf = [ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION])
+    private suspend fun startPublisher() {
         if (!isTracking) {
             isTracking = true
 
@@ -361,6 +363,7 @@ constructor(
 
     private fun getLooperForMainThread() = Looper.getMainLooper()
 
+    @RequiresPermission(anyOf = [ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION])
     private fun createThreadingEventsChannel(scope: CoroutineScope) =
         scope.actor<ThreadingEvent> {
             for (event in channel) {
@@ -370,6 +373,7 @@ constructor(
                         is TrackTrackableEvent -> trackTrackable(event)
                         is RemoveTrackableEvent -> removeTrackable(event)
                         is StopEvent -> stopPublisher()
+                        is StartEvent -> startPublisher()
                     }
                 }
             }
