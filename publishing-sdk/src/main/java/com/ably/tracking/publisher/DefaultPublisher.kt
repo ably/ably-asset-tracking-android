@@ -50,7 +50,7 @@ constructor(
     private val gson: Gson = Gson()
     private val mapboxNavigation: MapboxNavigation
     private val ably: AblyRealtime
-    private var channel: Channel? = null
+    private val channelMap: MutableMap<String, Channel> = mutableMapOf()
     private val locationEngingeCallback = object : LocationEngineCallback<LocationEngineResult> {
         override fun onSuccess(result: LocationEngineResult?) {
             Timber.w("TestLocation ${result!!.lastLocation!!.latitude}")
@@ -132,7 +132,9 @@ constructor(
     private fun sendRawLocationMessage(rawLocation: Location) {
         val geoJsonMessage = rawLocation.toGeoJson()
         Timber.d("sendRawLocationMessage: publishing: ${geoJsonMessage.synopsis()}")
-        channel?.publish(EventNames.RAW, geoJsonMessage.toJsonArray(gson))
+        channelMap.values.forEach {
+            it.publish(EventNames.RAW, geoJsonMessage.toJsonArray(gson))
+        }
         locationUpdatedListener(rawLocation)
     }
 
@@ -142,7 +144,9 @@ constructor(
         geoJsonMessages.forEach {
             Timber.d("sendEnhancedLocationMessage: publishing: ${it.synopsis()}")
         }
-        channel?.publish(EventNames.ENHANCED, geoJsonMessages.toJsonArray(gson))
+        channelMap.values.forEach {
+            it.publish(EventNames.ENHANCED, geoJsonMessages.toJsonArray(gson))
+        }
         locationUpdatedListener(enhancedLocation)
     }
 
@@ -173,44 +177,113 @@ constructor(
         }
     }
 
-    override fun track(trackable: Trackable) {
-        if (this.channel != null) {
+    override fun track(trackable: Trackable, onSuccess: () -> Unit, onError: (Exception) -> Unit) {
+        if (this.active != null) {
             throw IllegalStateException("For this preview version of the SDK, this method may only be called once for any given instance of this class.")
         }
 
-        channel = ably.channels.get(trackable.id).apply {
+        add(
+            trackable,
+            {
+                active = trackable
+                onSuccess()
+            },
+            onError
+        )
+    }
+
+    override fun add(trackable: Trackable, onSuccess: () -> Unit, onError: (Exception) -> Unit) {
+        if (!channelMap.contains(trackable.id)) {
+            createChannelAndJoinPresence(
+                trackable,
+                {
+                    channelMap[trackable.id] = it
+                    onSuccess()
+                },
+                onError
+            )
+        } else {
+            onSuccess()
+        }
+    }
+
+    override fun remove(
+        trackable: Trackable,
+        onSuccess: (wasPresent: Boolean) -> Unit,
+        onError: (Exception) -> Unit
+    ) {
+        val removedChannel = channelMap.remove(trackable.id)
+        if (removedChannel != null) {
+            leaveChannelPresence(
+                removedChannel,
+                {
+                    if (active == trackable) {
+                        active = null
+                    }
+                    onSuccess(true)
+                },
+                onError
+            )
+        } else {
+            onSuccess(false)
+        }
+    }
+
+    override var active: Trackable? = null
+
+    private fun createChannelAndJoinPresence(
+        trackable: Trackable,
+        onSuccess: (Channel) -> Unit,
+        onError: (Exception) -> Unit
+    ) {
+        ably.channels.get(trackable.id).apply {
             try {
                 presence.enterClient(
                     connectionConfiguration.clientId,
                     gson.toJson(presenceData),
                     object : CompletionListener {
-                        override fun onSuccess() = Unit
+                        override fun onSuccess() {
+                            onSuccess(this@apply)
+                        }
 
                         override fun onError(reason: ErrorInfo?) {
-                            // TODO - handle error
-                            // https://github.com/ably/ably-asset-tracking-android/issues/17
                             Timber.e("Unable to enter presence: ${reason?.message}")
+                            onError(Exception("Unable to enter presence: ${reason?.message}"))
                         }
                     }
                 )
             } catch (ablyException: AblyException) {
-                // TODO - handle exception
-                // https://github.com/ably/ably-asset-tracking-android/issues/17
                 Timber.e(ablyException)
+                onError(ablyException)
             }
         }
     }
 
-    override fun add(trackable: Trackable) {
-        TODO("Not yet implemented")
-    }
+    private fun leaveChannelPresence(
+        channel: Channel,
+        onSuccess: () -> Unit = {},
+        onError: (Exception) -> Unit = {}
+    ) {
+        try {
+            channel.presence.leaveClient(
+                connectionConfiguration.clientId,
+                gson.toJson(presenceData),
+                object : CompletionListener {
+                    override fun onSuccess() {
+                        onSuccess()
+                    }
 
-    override fun remove(trackable: Trackable): Boolean {
-        TODO("Not yet implemented")
+                    override fun onError(reason: ErrorInfo?) {
+                        Timber.e("Unable to leave presence: ${reason?.message}")
+                        onError(Exception("Unable to leave presence: ${reason?.message}"))
+                    }
+                }
+            )
+        } catch (ablyException: AblyException) {
+            Timber.e(ablyException)
+            onError(ablyException)
+        }
     }
-
-    override val active: Trackable?
-        get() = TODO("Not yet implemented")
 
     override var transportationMode: TransportationMode
         get() = TODO("Not yet implemented")
@@ -232,27 +305,9 @@ constructor(
     private fun stopLocationUpdates() {
         if (isTracking) {
             mapboxNavigation.unregisterLocationObserver(locationObserver)
-            channel?.let {
-                channel = null
-                try {
-                    it.presence.leaveClient(
-                        connectionConfiguration.clientId,
-                        gson.toJson(presenceData),
-                        object : CompletionListener {
-                            override fun onSuccess() = Unit
-
-                            override fun onError(reason: ErrorInfo?) {
-                                // TODO - handle error
-                                // https://github.com/ably/ably-asset-tracking-android/issues/17
-                                Timber.e("Unable to leave presence: ${reason?.message}")
-                            }
-                        }
-                    )
-                } catch (ablyException: AblyException) {
-                    // TODO - handle exception
-                    // https://github.com/ably/ably-asset-tracking-android/issues/17
-                    Timber.e(ablyException)
-                }
+            channelMap.apply {
+                values.forEach { leaveChannelPresence(it) }
+                clear()
             }
             isTracking = false
             mapboxNavigation.navigationOptions.locationEngine.removeLocationUpdates(
