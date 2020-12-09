@@ -1,5 +1,5 @@
 fun main() {
-    println("Hello World")
+    TODO()
 }
 
 enum class BatteryThresholdState {
@@ -96,18 +96,12 @@ fun computeResolution(trackable: Trackable, deviceBatteryLevel: BatteryLevel, de
         }
         Triple(BatteryThresholdState.ABOVE, ProximityThresholdState.ABOVE, SubscribersPresenceState.ONE) -> {
             val requestedResolution = trackable.subscribers().last().requestedResolution
-            intermediateResolution = if (requestedResolution != null)
-                requestedResolution
-            else
-                trackable.resolutionParameters[currentState]
+            intermediateResolution = requestedResolution ?: trackable.resolutionParameters[currentState]
         }
         Triple(BatteryThresholdState.ABOVE, ProximityThresholdState.ABOVE, SubscribersPresenceState.MULTIPLE) -> {
             val requestedResolutions = trackable.subscribers().map { it.requestedResolution }
             val requestedResolution = lowestResolution(requestedResolutions)
-            intermediateResolution = if (requestedResolution != null)
-                requestedResolution
-            else
-                trackable.resolutionParameters[currentState]
+            intermediateResolution = requestedResolution ?: trackable.resolutionParameters[currentState]
         }
         Triple(BatteryThresholdState.ABOVE, ProximityThresholdState.BELOW, SubscribersPresenceState.NONE) -> {
             intermediateResolution = trackable.resolutionParameters[currentState]
@@ -117,19 +111,16 @@ fun computeResolution(trackable: Trackable, deviceBatteryLevel: BatteryLevel, de
             intermediateResolution = lowestResolution(listOf(requestedResolution, trackable.resolutionParameters[currentState]))
         }
         Triple(BatteryThresholdState.ABOVE, ProximityThresholdState.BELOW, SubscribersPresenceState.MULTIPLE) -> {
-            var requestedResolutions = trackable.subscribers().map { it.requestedResolution } .toMutableList()
+            val requestedResolutions = trackable.subscribers().map { it.requestedResolution } .toMutableList()
             requestedResolutions.add(trackable.resolutionParameters[currentState])
             intermediateResolution = lowestResolution(requestedResolutions)
         }
     }
 
-    intermediateResolution =  if (intermediateResolution != null)
-        intermediateResolution!!
-    else
-        defaultResolution
+    intermediateResolution = intermediateResolution ?: defaultResolution
 
     return if (batteryState == BatteryThresholdState.BELOW)
-        applyBatteryMultiplier(trackable.batteryMultiplier, intermediateResolution!!)
+        applyBatteryMultiplier(trackable.batteryMultiplier, intermediateResolution)
     else
         intermediateResolution
 }
