@@ -37,6 +37,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.actor
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 import timber.log.Timber
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -186,19 +187,14 @@ constructor(
             event.onError(IllegalStateException("For this preview version of the SDK, this method may only be called once for any given instance of this class."))
         }
 
-        add(
-            event.trackable,
-            {
-                scope.launch {
-                    active = event.trackable
-                    event.trackable.destination?.let { setDestination(it) }
-                    launchInMainThread { event.onSuccess() }
-                }
-            },
-            {
-                launchInMainThread { event.onError(it) }
-            }
-        )
+        try {
+            createChannelForTrackableIfNotExisits(event.trackable)
+            active = event.trackable
+            event.trackable.destination?.let { setDestination(it) }
+            launchInMainThread { event.onSuccess() }
+        } catch (e: Exception) {
+            launchInMainThread { event.onError(e) }
+        }
     }
 
     override fun add(trackable: Trackable, onSuccess: () -> Unit, onError: (Exception) -> Unit) {
@@ -206,15 +202,22 @@ constructor(
     }
 
     private suspend fun addTrackable(event: AddTrackableEvent) {
-        if (!channelMap.contains(event.trackable.id)) {
-            try {
-                channelMap[event.trackable.id] = createChannelAndJoinPresence(event.trackable)
-                launchInMainThread { event.onSuccess() }
-            } catch (e: Exception) {
-                launchInMainThread { event.onError(e) }
-            }
-        } else {
+        try {
+            createChannelForTrackableIfNotExisits(event.trackable)
             launchInMainThread { event.onSuccess() }
+        } catch (e: Exception) {
+            launchInMainThread { event.onError(e) }
+        }
+    }
+
+    /**
+     * Creates a [Channel] for the [Trackable], joins the channel's presence and adds it to the [channelMap].
+     * If a [Channel] for the given [Trackable] exists then it just returns.
+     * If during channel creation and joining presence an error occurs then it throws an exception.
+     */
+    private suspend fun createChannelForTrackableIfNotExisits(trackable: Trackable) {
+        if (!channelMap.contains(trackable.id)) {
+            channelMap[trackable.id] = createChannelAndJoinPresence(trackable)
         }
     }
 
@@ -246,6 +249,11 @@ constructor(
 
     override var active: Trackable? = null
 
+    /**
+     * Suspends thread and creates a [Channel] for the [Trackable] and joins the channel's presence.
+     * If successfully enters presence then resumes the thread with the created [Channel].
+     * If an error occurs during that process then it resumes the thread and throws an exception.
+     */
     private suspend fun createChannelAndJoinPresence(trackable: Trackable): Channel {
         return suspendCoroutine { continuation ->
             ably.channels.get(trackable.id).apply {
@@ -272,6 +280,11 @@ constructor(
         }
     }
 
+    /**
+     * Suspends thread and leaves the given [Channel]'s presence.
+     * If successfully leaves presence then resumes the thread.
+     * If an error occurs during that process then it resumes the thread and throws an exception.
+     */
     private suspend fun leaveChannelPresence(channel: Channel) {
         suspendCoroutine<Unit> { continuation ->
             try {
