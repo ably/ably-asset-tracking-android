@@ -56,7 +56,13 @@ class ProximityBasedResolutionPolicyFactory(
 
             private inner class Handler : ResolutionPolicy.Methods.ProximityHandler {
                 override fun onProximityReached(threshold: Proximity) {
+                    // modify state for my parent Policy instance
                     thresholdReached = true
+
+                    // ask the Publisher to re-resolve the tracking Resolution, which will result in my parent Policy
+                    // instance's implementation of ResolutionPolicy's resolve(Set<ResolutionRequest>) being called
+                    // asynchronously at some point in the near future.
+                    methods.refresh()
                 }
 
                 override fun onProximityCancelled() {
