@@ -54,6 +54,10 @@ fun lowestResolution(resolutions: List<Resolution?>): Resolution? {
     TODO()
 }
 
+fun applyBatteryMultiplier(batteryMultiplier: Float, resolution: Resolution): Resolution {
+    TODO()
+}
+
 
 
 fun computeResolution(trackable: Trackable, deviceBatteryLevel: BatteryLevel, defaultResolution: Resolution): Resolution {
@@ -82,7 +86,7 @@ fun computeResolution(trackable: Trackable, deviceBatteryLevel: BatteryLevel, de
 
     val currentState = Triple(batteryState, proximityState, subscribersPresenceState)
 
-    val intermediateResolution: Resolution?
+    var intermediateResolution: Resolution? = null
 
     // Probably really bad design for production code as creates throwaway objects, but I think it will be good for
     // explaining the idea
@@ -117,30 +121,15 @@ fun computeResolution(trackable: Trackable, deviceBatteryLevel: BatteryLevel, de
             requestedResolutions.add(trackable.resolutionParameters[currentState])
             intermediateResolution = lowestResolution(requestedResolutions)
         }
-        Triple(BatteryThresholdState.BELOW, ProximityThresholdState.ABOVE, SubscribersPresenceState.NONE) -> {
-
-        }
-        Triple(BatteryThresholdState.BELOW, ProximityThresholdState.ABOVE, SubscribersPresenceState.ONE) -> {
-
-        }
-        Triple(BatteryThresholdState.BELOW, ProximityThresholdState.ABOVE, SubscribersPresenceState.MULTIPLE) -> {
-
-        }
-        Triple(BatteryThresholdState.BELOW, ProximityThresholdState.BELOW, SubscribersPresenceState.NONE) -> {
-
-        }
-        Triple(BatteryThresholdState.BELOW, ProximityThresholdState.BELOW, SubscribersPresenceState.ONE) -> {
-
-        }
-        Triple(BatteryThresholdState.BELOW, ProximityThresholdState.BELOW, SubscribersPresenceState.MULTIPLE) -> {
-
-        }
     }
 
-    return if (intermediateResolution != null)
+    intermediateResolution =  if (intermediateResolution != null)
         intermediateResolution!!
     else
         defaultResolution
+
+    if (batteryState == BatteryThresholdState.BELOW)
+        return applyBatteryMultiplier(trackable.batteryMultiplier, intermediateResolution!!)
 }
 
 /*
