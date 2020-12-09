@@ -367,14 +367,12 @@ constructor(
     private fun createThreadingEventsChannel(scope: CoroutineScope) =
         scope.actor<ThreadingEvent> {
             for (event in channel) {
-                scope.launch {
-                    when (event) {
-                        is AddTrackableEvent -> addTrackable(event)
-                        is TrackTrackableEvent -> trackTrackable(event)
-                        is RemoveTrackableEvent -> removeTrackable(event)
-                        is StopEvent -> stopPublisher()
-                        is StartEvent -> startPublisher()
-                    }
+                when (event) {
+                    is AddTrackableEvent -> addTrackable(event)
+                    is TrackTrackableEvent -> trackTrackable(event)
+                    is RemoveTrackableEvent -> removeTrackable(event)
+                    is StopEvent -> stopPublisher()
+                    is StartEvent -> startPublisher()
                 }
             }
         }
