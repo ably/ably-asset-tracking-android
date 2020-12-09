@@ -16,9 +16,6 @@ import com.ably.tracking.common.toGeoJson
 import com.ably.tracking.common.toJsonArray
 import com.ably.tracking.publisher.debug.AblySimulationLocationEngine
 import com.google.gson.Gson
-import com.mapbox.android.core.location.LocationEngineCallback
-import com.mapbox.android.core.location.LocationEngineRequest
-import com.mapbox.android.core.location.LocationEngineResult
 import com.mapbox.navigation.base.options.NavigationOptions
 import com.mapbox.navigation.core.MapboxNavigation
 import com.mapbox.navigation.core.replay.MapboxReplayer
@@ -32,9 +29,6 @@ import io.ably.lib.types.AblyException
 import io.ably.lib.types.ClientOptions
 import io.ably.lib.types.ErrorInfo
 import timber.log.Timber
-
-private const val DEFAULT_INTERVAL_IN_MILLISECONDS = 500L
-private const val DEFAULT_MAX_WAIT_TIME = DEFAULT_INTERVAL_IN_MILLISECONDS * 10
 
 @SuppressLint("LogConditional")
 internal class DefaultPublisher
@@ -51,15 +45,6 @@ constructor(
     private val mapboxNavigation: MapboxNavigation
     private val ably: AblyRealtime
     private val channelMap: MutableMap<String, Channel> = mutableMapOf()
-    private val locationEngingeCallback = object : LocationEngineCallback<LocationEngineResult> {
-        override fun onSuccess(result: LocationEngineResult?) {
-            Timber.w("TestLocation ${result!!.lastLocation!!.latitude}")
-        }
-
-        override fun onFailure(exception: java.lang.Exception) {
-            Timber.e(exception)
-        }
-    }
     private val locationObserver = object : LocationObserver {
         override fun onRawLocationChanged(rawLocation: Location) {
             sendRawLocationMessage(rawLocation)
@@ -162,17 +147,6 @@ constructor(
             mapboxNavigation.apply {
                 toggleHistory(true)
                 startTripSession()
-            }
-
-            postToMainThread {
-                mapboxNavigation.navigationOptions.locationEngine.requestLocationUpdates(
-                    LocationEngineRequest.Builder(DEFAULT_INTERVAL_IN_MILLISECONDS)
-                        .setPriority(LocationEngineRequest.PRIORITY_NO_POWER)
-                        .setMaxWaitTime(DEFAULT_MAX_WAIT_TIME)
-                        .build(),
-                    locationEngingeCallback,
-                    getLooperForMainThread()
-                )
             }
         }
     }
@@ -310,9 +284,6 @@ constructor(
                 clear()
             }
             isTracking = false
-            mapboxNavigation.navigationOptions.locationEngine.removeLocationUpdates(
-                locationEngingeCallback
-            )
             mapboxReplayer?.finish()
             debugConfiguration?.locationHistoryReadyListener?.invoke(mapboxNavigation.retrieveHistory())
             mapboxNavigation.apply {
