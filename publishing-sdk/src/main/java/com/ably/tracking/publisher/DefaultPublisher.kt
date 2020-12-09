@@ -20,7 +20,6 @@ import com.mapbox.android.core.location.LocationEngineCallback
 import com.mapbox.android.core.location.LocationEngineRequest
 import com.mapbox.android.core.location.LocationEngineResult
 import com.mapbox.api.directions.v5.models.RouteOptions
-import com.mapbox.geojson.Point
 import com.mapbox.navigation.base.internal.extensions.applyDefaultParams
 import com.mapbox.navigation.base.options.NavigationOptions
 import com.mapbox.navigation.core.MapboxNavigation
@@ -353,14 +352,6 @@ constructor(
             }
         }
     }
-
-    private fun getRouteCoordinates(
-        startingLocation: Location,
-        destination: Destination
-    ): List<Point> = listOf(
-        Point.fromLngLat(startingLocation.longitude, startingLocation.latitude),
-        Point.fromLngLat(destination.longitude, destination.latitude)
-    )
 
     private fun removeCurrentDestination() {
         mapboxNavigation.setRoutes(emptyList())
