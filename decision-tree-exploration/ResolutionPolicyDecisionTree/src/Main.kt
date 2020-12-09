@@ -8,9 +8,8 @@ enum class BatteryThresholdState {
 }
 
 enum class SubscribersPresenceState {
-    NONE,
-    ONE,
-    MULTIPLE
+    NOT_PRESENT,
+    PRESENT
 }
 
 enum class ProximityThresholdState {
@@ -62,59 +61,32 @@ fun applyBatteryMultiplier(batteryMultiplier: Float, resolution: Resolution): Re
 
 fun computeResolution(trackable: Trackable, deviceBatteryLevel: BatteryLevel, defaultResolution: Resolution): Resolution {
     // identify the current state
-    val batteryState: BatteryThresholdState
-    val proximityState: ProximityThresholdState
-    val subscribersPresenceState: SubscribersPresenceState
-
-    batteryState = if (deviceBatteryLevel < trackable.batteryThreshold)
+    val batteryState: BatteryThresholdState = if (deviceBatteryLevel < trackable.batteryThreshold)
         BatteryThresholdState.BELOW
     else
         BatteryThresholdState.ABOVE
 
-    proximityState = if (trackable.proximityToDestination() < trackable.proximityTreshold)
+    val proximityState: ProximityThresholdState = if (trackable.proximityToDestination() < trackable.proximityTreshold)
         ProximityThresholdState.BELOW
     else
         ProximityThresholdState.ABOVE
 
-
     val subscribers = trackable.subscribers()
-    subscribersPresenceState = when (subscribers.size) {
-        0 -> SubscribersPresenceState.NONE
-        1 -> SubscribersPresenceState.ONE
-        else -> SubscribersPresenceState.MULTIPLE
-    }
+    val subscribersPresenceState = if (subscribers.isEmpty())
+            SubscribersPresenceState.NOT_PRESENT
+        else
+            SubscribersPresenceState.PRESENT
 
     val currentState = Triple(batteryState, proximityState, subscribersPresenceState)
 
     var intermediateResolution: Resolution? = null
 
-    // Probably really bad design for production code as creates throwaway objects, but I think it will be good for
-    // explaining the idea
-    when (currentState) {
-        Triple(BatteryThresholdState.ABOVE, ProximityThresholdState.ABOVE, SubscribersPresenceState.NONE) -> {
-            intermediateResolution = trackable.resolutionParameters[currentState]
-        }
-        Triple(BatteryThresholdState.ABOVE, ProximityThresholdState.ABOVE, SubscribersPresenceState.ONE) -> {
-            val requestedResolution = trackable.subscribers().last().requestedResolution
-            intermediateResolution = requestedResolution ?: trackable.resolutionParameters[currentState]
-        }
-        Triple(BatteryThresholdState.ABOVE, ProximityThresholdState.ABOVE, SubscribersPresenceState.MULTIPLE) -> {
-            val requestedResolutions = trackable.subscribers().map { it.requestedResolution }
-            val requestedResolution = lowestResolution(requestedResolutions)
-            intermediateResolution = requestedResolution ?: trackable.resolutionParameters[currentState]
-        }
-        Triple(BatteryThresholdState.ABOVE, ProximityThresholdState.BELOW, SubscribersPresenceState.NONE) -> {
-            intermediateResolution = trackable.resolutionParameters[currentState]
-        }
-        Triple(BatteryThresholdState.ABOVE, ProximityThresholdState.BELOW, SubscribersPresenceState.ONE) -> {
-            val requestedResolution = trackable.subscribers().last().requestedResolution
-            intermediateResolution = lowestResolution(listOf(requestedResolution, trackable.resolutionParameters[currentState]))
-        }
-        Triple(BatteryThresholdState.ABOVE, ProximityThresholdState.BELOW, SubscribersPresenceState.MULTIPLE) -> {
-            val requestedResolutions = trackable.subscribers().map { it.requestedResolution } .toMutableList()
-            requestedResolutions.add(trackable.resolutionParameters[currentState])
-            intermediateResolution = lowestResolution(requestedResolutions)
-        }
+    if (subscribersPresenceState == SubscribersPresenceState.NOT_PRESENT) {
+        intermediateResolution = trackable.resolutionParameters[currentState]
+    } else {
+        val requestedResolutions = trackable.subscribers().map { it.requestedResolution }.toMutableList()
+        requestedResolutions.add(trackable.resolutionParameters[currentState])
+        intermediateResolution = lowestResolution(requestedResolutions)
     }
 
     intermediateResolution = intermediateResolution ?: defaultResolution
@@ -130,6 +102,8 @@ Assumptions made:
 * user supplies parameters for all states
 * some subscribers may not request specific resolution
 * if there is conflicting resolution request from subscribers and proximity threshold resolution supplied by user - lower resolution wins
-* right now the logic above assumes that user provides separate Resolution parameters for having one and multiple subscribers, we probably will not need that
 * the fallback logic right now is extremely simple - it is always to "defaultResolution", but should be "smarter"
+
+Assumptions addressed and removed from above:
+* right now the logic above assumes that user provides separate Resolution parameters for having one and multiple subscribers, we probably will not need that
  */
