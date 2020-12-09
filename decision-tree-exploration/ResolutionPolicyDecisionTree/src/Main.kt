@@ -128,8 +128,10 @@ fun computeResolution(trackable: Trackable, deviceBatteryLevel: BatteryLevel, de
     else
         defaultResolution
 
-    if (batteryState == BatteryThresholdState.BELOW)
-        return applyBatteryMultiplier(trackable.batteryMultiplier, intermediateResolution!!)
+    return if (batteryState == BatteryThresholdState.BELOW)
+        applyBatteryMultiplier(trackable.batteryMultiplier, intermediateResolution!!)
+    else
+        intermediateResolution
 }
 
 /*
