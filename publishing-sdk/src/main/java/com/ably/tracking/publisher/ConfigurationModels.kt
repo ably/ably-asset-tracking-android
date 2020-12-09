@@ -136,6 +136,9 @@ interface ResolutionPolicy {
          * instance whose [creation][Publisher.Builder.start] caused
          * [createResolutionPolicy][Factory.createResolutionPolicy] to be called.
          *
+         * This method should only be called once within the scope of creation of a single publisher's resolution
+         * policy. Subsequent calls to this method will replace the previous handler.
+         *
          * @param listener The handler, which may be called multiple times during the lifespan of the publisher.
          */
         fun trackables(listener: TrackableSetListener)
@@ -144,6 +147,9 @@ interface ResolutionPolicy {
          * Register a handler for the addition and removal of remote [Subscriber]s to the [Publisher] instance whose
          * [creation][Publisher.Builder.start] caused [createResolutionPolicy][Factory.createResolutionPolicy] to be
          * called.
+         * 
+         * This method should only be called once within the scope of creation of a single publisher's resolution
+         * policy. Subsequent calls to this method will replace the previous handler.
          *
          * @param listener The handler, which may be called multiple times during the lifespan of the publisher.
          */
