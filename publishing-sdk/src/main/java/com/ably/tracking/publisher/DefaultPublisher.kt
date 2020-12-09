@@ -198,6 +198,7 @@ constructor(
             trackable,
             {
                 active = trackable
+                trackable.destination?.let { setDestination(it) }
                 onSuccess()
             },
             onError
@@ -270,7 +271,6 @@ constructor(
                 onError(ablyException)
             }
         }
-        trackable.destination?.let { setDestination(it) }
     }
 
     private fun leaveChannelPresence(
