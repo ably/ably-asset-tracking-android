@@ -228,7 +228,7 @@ data class Trackable(
     val id: String,
     val metadata: String? = null,
     val destination: Destination? = null,
-    val resolution: Resolution? = null
+    val constraints: ResolutionConstraints? = null
 )
 
 data class Subscriber(val id: String)
@@ -236,6 +236,9 @@ data class Subscriber(val id: String)
 sealed class Proximity
 data class SpatialProximity(val distance: Double) : Proximity()
 data class TemporalProximity(val time: Long) : Proximity()
+
+sealed class ResolutionConstraints
+// TODO define a concrete data class encapsulating constraints required for our initial concrete ResolutionPolicy implementation
 
 data class TransportationMode(val TBC: String)
 

@@ -6,6 +6,7 @@ import com.ably.tracking.publisher.ResolutionPolicy
 import com.ably.tracking.publisher.ResolutionRequest
 import com.ably.tracking.publisher.Trackable
 
+// TODO give this a better name and provide vending method for ResolutionConstraint instances that can be attached to Trackable instances
 class ProximityBasedResolutionPolicyFactory(
     private val preResolution: Resolution,
     private val postResolution: Resolution,
