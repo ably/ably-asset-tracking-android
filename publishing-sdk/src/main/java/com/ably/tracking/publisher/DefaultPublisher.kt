@@ -134,26 +134,33 @@ constructor(
     }
 
     private fun sendRawLocationMessage(rawLocation: Location) {
-        lastKnownLocation = rawLocation
+        enqueue(RawLocationChangedEvent(rawLocation, rawLocation.toGeoJson()))
+    }
+
+    private fun performRawLocationChanged(event: RawLocationChangedEvent) {
+        lastKnownLocation = event.location
         destinationToSet?.let { setDestination(it) }
-        val geoJsonMessage = rawLocation.toGeoJson()
-        Timber.d("sendRawLocationMessage: publishing: ${geoJsonMessage.synopsis()}")
+        Timber.d("sendRawLocationMessage: publishing: ${event.geoJsonMessage.synopsis()}")
         channelMap.values.forEach {
-            it.publish(EventNames.RAW, geoJsonMessage.toJsonArray(gson))
+            it.publish(EventNames.RAW, event.geoJsonMessage.toJsonArray(gson))
         }
-        callback { locationUpdatedListener(rawLocation) }
+        enqueue(SuccessEvent { locationUpdatedListener(event.location) })
     }
 
     private fun sendEnhancedLocationMessage(enhancedLocation: Location, keyPoints: List<Location>) {
         val locations = if (keyPoints.isEmpty()) listOf(enhancedLocation) else keyPoints
         val geoJsonMessages = locations.map { it.toGeoJson() }
-        geoJsonMessages.forEach {
+        enqueue(EnhancedLocationChangedEvent(enhancedLocation, geoJsonMessages))
+    }
+
+    private fun performEnhancedLocationChanged(event: EnhancedLocationChangedEvent) {
+        event.geoJsonMessages.forEach {
             Timber.d("sendEnhancedLocationMessage: publishing: ${it.synopsis()}")
         }
         channelMap.values.forEach {
-            it.publish(EventNames.ENHANCED, geoJsonMessages.toJsonArray(gson))
+            it.publish(EventNames.ENHANCED, event.geoJsonMessages.toJsonArray(gson))
         }
-        callback { locationUpdatedListener(enhancedLocation) }
+        enqueue(SuccessEvent { locationUpdatedListener(event.location) })
     }
 
     private fun startLocationUpdates() {
@@ -429,6 +436,8 @@ constructor(
                     is SuccessEvent -> performEventSuccess(event)
                     is ErrorEvent -> performEventError(event)
                     is ClearActiveTrackableEvent -> performClearActiveTrackable(event)
+                    is RawLocationChangedEvent -> performRawLocationChanged(event)
+                    is EnhancedLocationChangedEvent -> performEnhancedLocationChanged(event)
                 }
             }
         }
