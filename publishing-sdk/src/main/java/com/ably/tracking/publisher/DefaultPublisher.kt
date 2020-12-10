@@ -393,8 +393,11 @@ constructor(
         }
     }
 
-    // TODO define threading strategy: https://github.com/ably/ably-asset-tracking-android/issues/22
     private fun setDestination(destination: Destination) {
+        enqueue(SetDestinationEvent(destination))
+    }
+
+    private fun performSetDestination(event: SetDestinationEvent) {
         lastKnownLocation.let { currentLocation ->
             if (currentLocation != null) {
                 destinationToSet = null
@@ -402,11 +405,11 @@ constructor(
                     RouteOptions.builder()
                         .applyDefaultParams()
                         .accessToken(mapConfiguration.apiKey)
-                        .coordinates(getRouteCoordinates(currentLocation, destination))
+                        .coordinates(getRouteCoordinates(currentLocation, event.destination))
                         .build()
                 )
             } else {
-                destinationToSet = destination
+                destinationToSet = event.destination
             }
         }
     }
@@ -438,6 +441,7 @@ constructor(
                     is ClearActiveTrackableEvent -> performClearActiveTrackable(event)
                     is RawLocationChangedEvent -> performRawLocationChanged(event)
                     is EnhancedLocationChangedEvent -> performEnhancedLocationChanged(event)
+                    is SetDestinationEvent -> performSetDestination(event)
                 }
             }
         }

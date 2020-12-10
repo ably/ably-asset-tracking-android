@@ -62,3 +62,7 @@ internal data class EnhancedLocationChangedEvent(
     val location: Location,
     val geoJsonMessages: List<GeoJsonMessage>
 ) : PublisherEvent()
+
+internal data class SetDestinationEvent(
+    val destination: Destination
+) : PublisherEvent()
