@@ -182,45 +182,59 @@ constructor(
         enqueue(TrackTrackableEvent(trackable, onSuccess, onError))
     }
 
-    private suspend fun performTrackTrackable(event: TrackTrackableEvent) {
+    private fun performTrackTrackable(event: TrackTrackableEvent) {
         if (this.active != null) {
-            callback {
-                event.onError(IllegalStateException("For this preview version of the SDK, this method may only be called once for any given instance of this class."))
-            }
+            enqueue(
+                ErrorEvent(
+                    IllegalStateException("For this preview version of the SDK, this method may only be called once for any given instance of this class."),
+                    event.onError
+                )
+            )
         }
 
-        try {
-            createChannelForTrackableIfNotExisits(event.trackable)
+        createChannelForTrackableIfNotExisits(
+            event.trackable,
+            { enqueue(TrackableReadyToTrackEvent(event.trackable, event.onSuccess)) },
+            event.onError
+        )
+    }
+
+    private fun performTrackableReadyToTrack(event: TrackableReadyToTrackEvent) {
+        if (active != event.trackable) {
             active = event.trackable
             event.trackable.destination?.let { setDestination(it) }
-            callback { event.onSuccess() }
-        } catch (e: Exception) {
-            callback { event.onError(e) }
         }
+        enqueue(SuccessEvent(event.onSuccess))
     }
 
     override fun add(trackable: Trackable, onSuccess: () -> Unit, onError: (Exception) -> Unit) {
         enqueue(AddTrackableEvent(trackable, onSuccess, onError))
     }
 
-    private suspend fun performAddTrackable(event: AddTrackableEvent) {
-        try {
-            createChannelForTrackableIfNotExisits(event.trackable)
-            callback { event.onSuccess() }
-        } catch (e: Exception) {
-            callback { event.onError(e) }
-        }
+    private fun performAddTrackable(event: AddTrackableEvent) {
+        createChannelForTrackableIfNotExisits(event.trackable, event.onSuccess, event.onError)
     }
 
     /**
-     * Creates a [Channel] for the [Trackable], joins the channel's presence and adds it to the [channelMap].
-     * If a [Channel] for the given [Trackable] exists then it just returns.
-     * If during channel creation and joining presence an error occurs then it throws an exception.
+     * Creates a [Channel] for the [Trackable], joins the channel's presence and enqueues [SuccessEvent].
+     * If a [Channel] for the given [Trackable] exists then it just enqueues [SuccessEvent].
+     * If during channel creation and joining presence an error occurs then it enqueues [ErrorEvent] with the exception.
      */
-    private suspend fun createChannelForTrackableIfNotExisits(trackable: Trackable) {
+    private fun createChannelForTrackableIfNotExisits(
+        trackable: Trackable,
+        onSuccess: () -> Unit,
+        onError: (Exception) -> Unit
+    ) {
         if (!channelMap.contains(trackable.id)) {
-            channelMap[trackable.id] = createChannelAndJoinPresence(trackable)
+            createChannelAndJoinPresence(trackable, onSuccess, onError)
+        } else {
+            enqueue(SuccessEvent(onSuccess))
         }
+    }
+
+    private fun performJoinPresenceSuccess(event: JoinPresenceSuccessEvent) {
+        channelMap[event.trackable.id] = event.channel
+        enqueue(SuccessEvent(event.onSuccess))
     }
 
     override fun remove(
@@ -253,31 +267,34 @@ constructor(
 
     /**
      * Creates a [Channel] for the [Trackable] and joins the channel's presence.
-     * If successfully enters presence then it returns the created [Channel].
-     * If an error occurs during that process then it throws an exception.
+     * If successfully enters presence then it enqueues [JoinPresenceSuccessEvent] with the created [Channel].
+     * If an error occurs during that process then it enqueues [ErrorEvent] with the exception.
      */
-    private suspend fun createChannelAndJoinPresence(trackable: Trackable): Channel {
-        return suspendCoroutine { continuation ->
-            ably.channels.get(trackable.id).apply {
-                try {
-                    presence.enterClient(
-                        connectionConfiguration.clientId,
-                        gson.toJson(presenceData),
-                        object : CompletionListener {
-                            override fun onSuccess() {
-                                continuation.resume(this@apply)
-                            }
-
-                            override fun onError(reason: ErrorInfo?) {
-                                Timber.e("Unable to enter presence: ${reason?.message}")
-                                continuation.resumeWithException(Exception("Unable to enter presence: ${reason?.message}"))
-                            }
+    private fun createChannelAndJoinPresence(
+        trackable: Trackable,
+        onSuccess: () -> Unit,
+        onError: (Exception) -> Unit
+    ) {
+        ably.channels.get(trackable.id).apply {
+            try {
+                presence.enterClient(
+                    connectionConfiguration.clientId,
+                    gson.toJson(presenceData),
+                    object : CompletionListener {
+                        override fun onSuccess() {
+                            enqueue(JoinPresenceSuccessEvent(trackable, this@apply, onSuccess))
                         }
-                    )
-                } catch (ablyException: AblyException) {
-                    Timber.e(ablyException)
-                    continuation.resumeWithException(ablyException)
-                }
+
+                        override fun onError(reason: ErrorInfo?) {
+                            val errorMessage = "Unable to enter presence: ${reason?.message}"
+                            Timber.e(errorMessage)
+                            enqueue(ErrorEvent(Exception(errorMessage), onError))
+                        }
+                    }
+                )
+            } catch (ablyException: AblyException) {
+                Timber.e(ablyException)
+                enqueue(ErrorEvent(Exception(ablyException), onError))
             }
         }
     }
@@ -396,9 +413,21 @@ constructor(
                     is RemoveTrackableEvent -> performRemoveTrackable(event)
                     is StopPublisherEvent -> performStopPublisher()
                     is StartPublisherEvent -> performStartPublisher()
+                    is JoinPresenceSuccessEvent -> performJoinPresenceSuccess(event)
+                    is TrackableReadyToTrackEvent -> performTrackableReadyToTrack(event)
+                    is SuccessEvent -> performEventSuccess(event)
+                    is ErrorEvent -> performEventError(event)
                 }
             }
         }
+
+    private fun performEventSuccess(event: SuccessEvent) {
+        callback { event.onSuccess() }
+    }
+
+    private fun performEventError(event: ErrorEvent) {
+        callback { event.onError(event.exception) }
+    }
 
     private fun callback(action: () -> Unit) {
         scope.launch(Dispatchers.Main) { action() }
