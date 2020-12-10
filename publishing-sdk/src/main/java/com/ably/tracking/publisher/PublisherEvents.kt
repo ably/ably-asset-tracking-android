@@ -1,5 +1,7 @@
 package com.ably.tracking.publisher
 
+import android.location.Location
+import com.ably.tracking.common.GeoJsonMessage
 import io.ably.lib.realtime.Channel
 
 internal sealed class PublisherEvent
@@ -49,4 +51,18 @@ internal data class TrackableReadyToTrackEvent(
 internal data class ClearActiveTrackableEvent(
     val trackable: Trackable,
     val onSuccess: () -> Unit
+) : PublisherEvent()
+
+internal data class RawLocationChangedEvent(
+    val location: Location,
+    val geoJsonMessage: GeoJsonMessage
+) : PublisherEvent()
+
+internal data class EnhancedLocationChangedEvent(
+    val location: Location,
+    val geoJsonMessages: List<GeoJsonMessage>
+) : PublisherEvent()
+
+internal data class SetDestinationEvent(
+    val destination: Destination
 ) : PublisherEvent()
