@@ -30,6 +30,13 @@ import io.ably.lib.realtime.CompletionListener
 import io.ably.lib.types.AblyException
 import io.ably.lib.types.ClientOptions
 import io.ably.lib.types.ErrorInfo
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.channels.actor
+import kotlinx.coroutines.launch
 import timber.log.Timber
 
 @SuppressLint("LogConditional")
@@ -60,6 +67,8 @@ constructor(
         }
     }
     private val presenceData = PresenceData(ClientTypes.PUBLISHER)
+    private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+    private val eventsChannel: SendChannel<PublisherEvent>
     private var isTracking: Boolean = false
     private var mapboxReplayer: MapboxReplayer? = null
     private var lastKnownLocation: Location? = null
@@ -71,6 +80,7 @@ constructor(
     private var destinationToSet: Destination? = null
 
     init {
+        eventsChannel = createEventsChannel(scope)
         ably = AblyRealtime(connectionConfiguration.apiKey)
 
         Timber.w("Started.")
@@ -131,7 +141,7 @@ constructor(
         channelMap.values.forEach {
             it.publish(EventNames.RAW, geoJsonMessage.toJsonArray(gson))
         }
-        locationUpdatedListener(rawLocation)
+        callback { locationUpdatedListener(rawLocation) }
     }
 
     private fun sendEnhancedLocationMessage(enhancedLocation: Location, keyPoints: List<Location>) {
@@ -143,13 +153,15 @@ constructor(
         channelMap.values.forEach {
             it.publish(EventNames.ENHANCED, geoJsonMessages.toJsonArray(gson))
         }
-        locationUpdatedListener(enhancedLocation)
+        callback { locationUpdatedListener(enhancedLocation) }
     }
 
-    // TODO define threading strategy: https://github.com/ably/ably-asset-tracking-android/issues/22
-    @RequiresPermission(anyOf = [ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION])
-    @Synchronized
     private fun startLocationUpdates() {
+        enqueue(StartPublisherEvent())
+    }
+
+    @RequiresPermission(anyOf = [ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION])
+    private fun performStartPublisher() {
         if (!isTracking) {
             isTracking = true
 
@@ -163,34 +175,62 @@ constructor(
     }
 
     override fun track(trackable: Trackable, onSuccess: () -> Unit, onError: (Exception) -> Unit) {
+        enqueue(TrackTrackableEvent(trackable, onSuccess, onError))
+    }
+
+    private fun performTrackTrackable(event: TrackTrackableEvent) {
         if (this.active != null) {
-            throw IllegalStateException("For this preview version of the SDK, this method may only be called once for any given instance of this class.")
+            enqueue(
+                ErrorEvent(
+                    IllegalStateException("For this preview version of the SDK, this method may only be called once for any given instance of this class."),
+                    event.onError
+                )
+            )
         }
 
-        add(
-            trackable,
-            {
-                active = trackable
-                trackable.destination?.let { setDestination(it) }
-                onSuccess()
-            },
-            onError
+        createChannelForTrackableIfNotExisits(
+            event.trackable,
+            { enqueue(TrackableReadyToTrackEvent(event.trackable, event.onSuccess)) },
+            event.onError
         )
     }
 
-    override fun add(trackable: Trackable, onSuccess: () -> Unit, onError: (Exception) -> Unit) {
-        if (!channelMap.contains(trackable.id)) {
-            createChannelAndJoinPresence(
-                trackable,
-                {
-                    channelMap[trackable.id] = it
-                    onSuccess()
-                },
-                onError
-            )
-        } else {
-            onSuccess()
+    private fun performTrackableReadyToTrack(event: TrackableReadyToTrackEvent) {
+        if (active != event.trackable) {
+            active = event.trackable
+            event.trackable.destination?.let { setDestination(it) }
         }
+        enqueue(SuccessEvent(event.onSuccess))
+    }
+
+    override fun add(trackable: Trackable, onSuccess: () -> Unit, onError: (Exception) -> Unit) {
+        enqueue(AddTrackableEvent(trackable, onSuccess, onError))
+    }
+
+    private fun performAddTrackable(event: AddTrackableEvent) {
+        createChannelForTrackableIfNotExisits(event.trackable, event.onSuccess, event.onError)
+    }
+
+    /**
+     * Creates a [Channel] for the [Trackable], joins the channel's presence and enqueues [SuccessEvent].
+     * If a [Channel] for the given [Trackable] exists then it just enqueues [SuccessEvent].
+     * If during channel creation and joining presence an error occurs then it enqueues [ErrorEvent] with the exception.
+     */
+    private fun createChannelForTrackableIfNotExisits(
+        trackable: Trackable,
+        onSuccess: () -> Unit,
+        onError: (Exception) -> Unit
+    ) {
+        if (!channelMap.contains(trackable.id)) {
+            createChannelAndJoinPresence(trackable, onSuccess, onError)
+        } else {
+            enqueue(SuccessEvent(onSuccess))
+        }
+    }
+
+    private fun performJoinPresenceSuccess(event: JoinPresenceSuccessEvent) {
+        channelMap[event.trackable.id] = event.channel
+        enqueue(SuccessEvent(event.onSuccess))
     }
 
     override fun remove(
@@ -198,29 +238,40 @@ constructor(
         onSuccess: (wasPresent: Boolean) -> Unit,
         onError: (Exception) -> Unit
     ) {
-        val removedChannel = channelMap.remove(trackable.id)
+        enqueue(RemoveTrackableEvent(trackable, onSuccess, onError))
+    }
+
+    private fun performRemoveTrackable(event: RemoveTrackableEvent) {
+        val removedChannel = channelMap.remove(event.trackable.id)
         if (removedChannel != null) {
             leaveChannelPresence(
                 removedChannel,
-                {
-                    if (active == trackable) {
-                        removeCurrentDestination()
-                        active = null
-                    }
-                    onSuccess(true)
-                },
-                onError
+                { enqueue(ClearActiveTrackableEvent(event.trackable) { event.onSuccess(true) }) },
+                event.onError
             )
         } else {
-            onSuccess(false)
+            enqueue(SuccessEvent { event.onSuccess(false) })
         }
+    }
+
+    private fun performClearActiveTrackable(event: ClearActiveTrackableEvent) {
+        if (active == event.trackable) {
+            removeCurrentDestination()
+            active = null
+        }
+        enqueue(SuccessEvent(event.onSuccess))
     }
 
     override var active: Trackable? = null
 
+    /**
+     * Creates a [Channel] for the [Trackable] and joins the channel's presence.
+     * If successfully enters presence then it enqueues [JoinPresenceSuccessEvent] with the created [Channel].
+     * If an error occurs during that process then it enqueues [ErrorEvent] with the exception.
+     */
     private fun createChannelAndJoinPresence(
         trackable: Trackable,
-        onSuccess: (Channel) -> Unit,
+        onSuccess: () -> Unit,
         onError: (Exception) -> Unit
     ) {
         ably.channels.get(trackable.id).apply {
@@ -230,26 +281,49 @@ constructor(
                     gson.toJson(presenceData),
                     object : CompletionListener {
                         override fun onSuccess() {
-                            onSuccess(this@apply)
+                            enqueue(JoinPresenceSuccessEvent(trackable, this@apply, onSuccess))
                         }
 
                         override fun onError(reason: ErrorInfo?) {
-                            Timber.e("Unable to enter presence: ${reason?.message}")
-                            onError(Exception("Unable to enter presence: ${reason?.message}"))
+                            val errorMessage = "Unable to enter presence: ${reason?.message}"
+                            Timber.e(errorMessage)
+                            enqueue(ErrorEvent(Exception(errorMessage), onError))
                         }
                     }
                 )
             } catch (ablyException: AblyException) {
                 Timber.e(ablyException)
-                onError(ablyException)
+                enqueue(ErrorEvent(Exception(ablyException), onError))
             }
         }
     }
 
+    /**
+     * Leaves the given [Channel]'s presence.
+     * If successfully leaves presence then it enqueues [SuccessEvent].
+     * If an error occurs during that process then it enqueues [ErrorEvent] with the exception.
+     */
     private fun leaveChannelPresence(
         channel: Channel,
-        onSuccess: () -> Unit = {},
-        onError: (Exception) -> Unit = {}
+        onSuccess: () -> Unit,
+        onError: (Exception) -> Unit
+    ) {
+        leaveChannelPresenceOmittingQueue(
+            channel,
+            { enqueue(SuccessEvent(onSuccess)) },
+            { enqueue(ErrorEvent(it, onError)) }
+        )
+    }
+
+    /**
+     * Leaves the given [Channel]'s presence without enqueueing any events.
+     * If successfully leaves presence then it calls [onSuccess].
+     * If an error occurs during that process then it calls [onError] with the exception.
+     */
+    private fun leaveChannelPresenceOmittingQueue(
+        channel: Channel,
+        onSuccess: () -> Unit,
+        onError: (Exception) -> Unit
     ) {
         try {
             channel.presence.leaveClient(
@@ -261,8 +335,9 @@ constructor(
                     }
 
                     override fun onError(reason: ErrorInfo?) {
-                        Timber.e("Unable to leave presence: ${reason?.message}")
-                        onError(Exception("Unable to leave presence: ${reason?.message}"))
+                        val errorMessage = "Unable to leave presence: ${reason?.message}"
+                        Timber.e(errorMessage)
+                        onError(Exception(errorMessage))
                     }
                 }
             )
@@ -283,20 +358,25 @@ constructor(
     }
 
     override fun stop() {
-        stopLocationUpdates()
-        ably.close()
+        enqueue(StopPublisherEvent())
     }
 
-    // TODO define threading strategy: https://github.com/ably/ably-asset-tracking-android/issues/22
-    @Synchronized
+    private fun performStopPublisher() {
+        stopLocationUpdates()
+        ably.close()
+        scope.cancel()
+    }
+
     private fun stopLocationUpdates() {
         if (isTracking) {
+            isTracking = false
             mapboxNavigation.unregisterLocationObserver(locationObserver)
             channelMap.apply {
-                values.forEach { leaveChannelPresence(it) }
+                values.forEach {
+                    leaveChannelPresenceOmittingQueue(it, {}, { error -> Timber.e(error) })
+                }
                 clear()
             }
-            isTracking = false
             mapboxReplayer?.finish()
             debugConfiguration?.locationHistoryReadyListener?.invoke(mapboxNavigation.retrieveHistory())
             mapboxNavigation.apply {
@@ -333,4 +413,39 @@ constructor(
     }
 
     private fun getLooperForMainThread() = Looper.getMainLooper()
+
+    @RequiresPermission(anyOf = [ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION])
+    private fun createEventsChannel(scope: CoroutineScope) =
+        scope.actor<PublisherEvent> {
+            for (event in channel) {
+                when (event) {
+                    is AddTrackableEvent -> performAddTrackable(event)
+                    is TrackTrackableEvent -> performTrackTrackable(event)
+                    is RemoveTrackableEvent -> performRemoveTrackable(event)
+                    is StopPublisherEvent -> performStopPublisher()
+                    is StartPublisherEvent -> performStartPublisher()
+                    is JoinPresenceSuccessEvent -> performJoinPresenceSuccess(event)
+                    is TrackableReadyToTrackEvent -> performTrackableReadyToTrack(event)
+                    is SuccessEvent -> performEventSuccess(event)
+                    is ErrorEvent -> performEventError(event)
+                    is ClearActiveTrackableEvent -> performClearActiveTrackable(event)
+                }
+            }
+        }
+
+    private fun performEventSuccess(event: SuccessEvent) {
+        callback { event.onSuccess() }
+    }
+
+    private fun performEventError(event: ErrorEvent) {
+        callback { event.onError(event.exception) }
+    }
+
+    private fun callback(action: () -> Unit) {
+        scope.launch(Dispatchers.Main) { action() }
+    }
+
+    private fun enqueue(event: PublisherEvent) {
+        scope.launch { eventsChannel.send(event) }
+    }
 }
