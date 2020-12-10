@@ -237,8 +237,74 @@ sealed class Proximity
 data class SpatialProximity(val distance: Double) : Proximity()
 data class TemporalProximity(val time: Long) : Proximity()
 
+/**
+ * The set of resolutions which must be defined in order to specify [DefaultResolutionConstraints], which are required
+ * to use the default [ResolutionPolicy], as created by instances of the [DefaultResolutionPolicyFactory] class.
+ */
+data class DefaultResolutionSet(
+    /**
+     * The default resolution, if none of the other resolutions defined in this set can be resolved.
+     */
+    val default: Resolution,
+
+    /**
+     * The resolution to select if above the [proximityThreshold][DefaultResolutionConstraints.proximityThreshold],
+     * with no subscribers.
+     */
+    val farWithoutSubscriber: Resolution,
+
+    /**
+     * The resolution to select if above the [proximityThreshold][DefaultResolutionConstraints.proximityThreshold],
+     * with one or more subscribers.
+     */
+    val farWithSubscriber: Resolution,
+
+    /**
+     * The resolution to select if below the [proximityThreshold][DefaultResolutionConstraints.proximityThreshold],
+     * with no subscribers.
+     */
+    val nearWithoutSubscriber: Resolution,
+
+    /**
+     * The resolution to select if below the [proximityThreshold][DefaultResolutionConstraints.proximityThreshold],
+     * with one or more subscribers.
+     */
+    val nearWithSubscriber: Resolution
+)
+
+/**
+ * Specifies factors which contribute towards deciding the tracking [Resolution] for a [Trackable].
+ */
 sealed class ResolutionConstraints
-// TODO define a concrete data class encapsulating constraints required for our initial concrete ResolutionPolicy implementation
+
+/**
+ * Specifies the thresholds and corresponding logical mappings for tracking [Resolution]s that are required by the
+ * default [ResolutionPolicy], which can adopted by [Publisher] instances using the [Builder][Publisher.Builder]'s
+ * [resolutionPolicy][Publisher.Builder.resolutionPolicy] method, providing it with an instance of the
+ * [DefaultResolutionPolicyFactory] class.
+ */
+data class DefaultResolutionConstraints(
+    /**
+     * Tracking [Resolution] specifications which are to be used according to thresholds.
+     */
+    val resolutions: DefaultResolutionSet,
+
+    /**
+     * The boundary differentiating between "near" and "far" in [resolutions].
+     */
+    val proximityThreshold: Proximity,
+
+    /**
+     * In the range 0.0f (no battery) to 100.0f (full battery).
+     */
+    val batteryLevelThreshold: Float,
+
+    /**
+     * The multipler to be applied to the [interval][Resolution.desiredInterval] when the battery level is below
+     * [batteryLevelThreshold].
+     */
+    val lowBatteryMultiplier: Float
+) : ResolutionConstraints()
 
 data class TransportationMode(val TBC: String)
 
