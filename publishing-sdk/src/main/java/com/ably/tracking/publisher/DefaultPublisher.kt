@@ -72,7 +72,7 @@ constructor(
     }
     private val presenceData = PresenceData(ClientTypes.PUBLISHER)
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
-    private val threadingEventsChannel: SendChannel<ThreadingEvent>
+    private val eventsChannel: SendChannel<PublisherEvent>
     private var isTracking: Boolean = false
     private var mapboxReplayer: MapboxReplayer? = null
     private var lastKnownLocation: Location? = null
@@ -84,7 +84,7 @@ constructor(
     private var destinationToSet: Destination? = null
 
     init {
-        threadingEventsChannel = createThreadingEventsChannel(scope)
+        eventsChannel = createEventsChannel(scope)
         ably = AblyRealtime(connectionConfiguration.apiKey)
 
         Timber.w("Started.")
@@ -145,7 +145,7 @@ constructor(
         channelMap.values.forEach {
             it.publish(EventNames.RAW, geoJsonMessage.toJsonArray(gson))
         }
-        launchInMainThread { locationUpdatedListener(rawLocation) }
+        callback { locationUpdatedListener(rawLocation) }
     }
 
     private fun sendEnhancedLocationMessage(enhancedLocation: Location, keyPoints: List<Location>) {
@@ -157,15 +157,15 @@ constructor(
         channelMap.values.forEach {
             it.publish(EventNames.ENHANCED, geoJsonMessages.toJsonArray(gson))
         }
-        launchInMainThread { locationUpdatedListener(enhancedLocation) }
+        callback { locationUpdatedListener(enhancedLocation) }
     }
 
     private fun startLocationUpdates() {
-        sendEvent(StartEvent())
+        enqueue(StartPublisherEvent())
     }
 
     @RequiresPermission(anyOf = [ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION])
-    private suspend fun startPublisher() {
+    private suspend fun performStartPublisher() {
         if (!isTracking) {
             isTracking = true
 
@@ -179,12 +179,12 @@ constructor(
     }
 
     override fun track(trackable: Trackable, onSuccess: () -> Unit, onError: (Exception) -> Unit) {
-        sendEvent(TrackTrackableEvent(trackable, onSuccess, onError))
+        enqueue(TrackTrackableEvent(trackable, onSuccess, onError))
     }
 
-    private suspend fun trackTrackable(event: TrackTrackableEvent) {
+    private suspend fun performTrackTrackable(event: TrackTrackableEvent) {
         if (this.active != null) {
-            launchInMainThread {
+            callback {
                 event.onError(IllegalStateException("For this preview version of the SDK, this method may only be called once for any given instance of this class."))
             }
         }
@@ -193,22 +193,22 @@ constructor(
             createChannelForTrackableIfNotExisits(event.trackable)
             active = event.trackable
             event.trackable.destination?.let { setDestination(it) }
-            launchInMainThread { event.onSuccess() }
+            callback { event.onSuccess() }
         } catch (e: Exception) {
-            launchInMainThread { event.onError(e) }
+            callback { event.onError(e) }
         }
     }
 
     override fun add(trackable: Trackable, onSuccess: () -> Unit, onError: (Exception) -> Unit) {
-        sendEvent(AddTrackableEvent(trackable, onSuccess, onError))
+        enqueue(AddTrackableEvent(trackable, onSuccess, onError))
     }
 
-    private suspend fun addTrackable(event: AddTrackableEvent) {
+    private suspend fun performAddTrackable(event: AddTrackableEvent) {
         try {
             createChannelForTrackableIfNotExisits(event.trackable)
-            launchInMainThread { event.onSuccess() }
+            callback { event.onSuccess() }
         } catch (e: Exception) {
-            launchInMainThread { event.onError(e) }
+            callback { event.onError(e) }
         }
     }
 
@@ -228,10 +228,10 @@ constructor(
         onSuccess: (wasPresent: Boolean) -> Unit,
         onError: (Exception) -> Unit
     ) {
-        sendEvent(RemoveTrackableEvent(trackable, onSuccess, onError))
+        enqueue(RemoveTrackableEvent(trackable, onSuccess, onError))
     }
 
-    private suspend fun removeTrackable(event: RemoveTrackableEvent) {
+    private suspend fun performRemoveTrackable(event: RemoveTrackableEvent) {
         val removedChannel = channelMap.remove(event.trackable.id)
         if (removedChannel != null) {
             try {
@@ -240,12 +240,12 @@ constructor(
                     removeCurrentDestination()
                     active = null
                 }
-                launchInMainThread { event.onSuccess(true) }
+                callback { event.onSuccess(true) }
             } catch (e: Exception) {
-                launchInMainThread { event.onError(e) }
+                callback { event.onError(e) }
             }
         } else {
-            launchInMainThread { event.onSuccess(false) }
+            callback { event.onSuccess(false) }
         }
     }
 
@@ -322,10 +322,10 @@ constructor(
     }
 
     override fun stop() {
-        sendEvent(StopEvent())
+        enqueue(StopPublisherEvent())
     }
 
-    private suspend fun stopPublisher() {
+    private suspend fun performStopPublisher() {
         stopLocationUpdates()
         ably.close()
         scope.cancel()
@@ -379,24 +379,24 @@ constructor(
     private fun getLooperForMainThread() = Looper.getMainLooper()
 
     @RequiresPermission(anyOf = [ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION])
-    private fun createThreadingEventsChannel(scope: CoroutineScope) =
-        scope.actor<ThreadingEvent> {
+    private fun createEventsChannel(scope: CoroutineScope) =
+        scope.actor<PublisherEvent> {
             for (event in channel) {
                 when (event) {
-                    is AddTrackableEvent -> addTrackable(event)
-                    is TrackTrackableEvent -> trackTrackable(event)
-                    is RemoveTrackableEvent -> removeTrackable(event)
-                    is StopEvent -> stopPublisher()
-                    is StartEvent -> startPublisher()
+                    is AddTrackableEvent -> performAddTrackable(event)
+                    is TrackTrackableEvent -> performTrackTrackable(event)
+                    is RemoveTrackableEvent -> performRemoveTrackable(event)
+                    is StopPublisherEvent -> performStopPublisher()
+                    is StartPublisherEvent -> performStartPublisher()
                 }
             }
         }
 
-    private fun launchInMainThread(action: () -> Unit) {
+    private fun callback(action: () -> Unit) {
         scope.launch(Dispatchers.Main) { action() }
     }
 
-    private fun sendEvent(event: ThreadingEvent) {
-        scope.launch { threadingEventsChannel.send(event) }
+    private fun enqueue(event: PublisherEvent) {
+        scope.launch { eventsChannel.send(event) }
     }
 }
