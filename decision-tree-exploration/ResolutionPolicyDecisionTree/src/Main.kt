@@ -38,6 +38,14 @@ data class Subscriber (
     var requestedResolution: Resolution?
 )
 
+fun winningResolution(resolutions: List<Resolution>): Resolution {
+    TODO()
+}
+
+fun applyBatteryMultiplier(batteryMultiplier: Float, resolution: Resolution): Resolution {
+    TODO()
+}
+
 // How application developer can supply a set of parameters to trackable. This set of parameters, for example, can be obtained from a remote location (i.e. server)
 data class Trackable(
     val defaultResolution: Resolution,
@@ -55,14 +63,6 @@ data class Trackable(
     fun subscribers(): List<Subscriber> {
         TODO()
     }
-}
-
-fun winningResolution(resolutions: List<Resolution>): Resolution {
-    TODO()
-}
-
-fun applyBatteryMultiplier(batteryMultiplier: Float, resolution: Resolution): Resolution {
-    TODO()
 }
 
 
@@ -90,15 +90,13 @@ fun computeNetworkingResolution(trackable: Trackable, deviceBatteryLevel: Batter
     var intermediateResolution: Resolution
 
     // First lets asses proximity, and update `intermediateResolution` with candidate for final resolution
-    if (proximityState == ProximityThresholdState.ABOVE)
-        intermediateResolution =
-            trackable.resolutionParameters[state] ?:
-                trackable.defaultResolution
+    intermediateResolution = if (proximityState == ProximityThresholdState.ABOVE)
+        trackable.resolutionParameters[state] ?:
+        trackable.defaultResolution
     else {
-        intermediateResolution =
-            trackable.resolutionParameters[state] ?:
-                trackable.resolutionParameters[ResolutionsParametersState(ProximityThresholdState.ABOVE, SubscribersPresenceState.NOT_PRESENT)] ?:
-                trackable.defaultResolution
+        trackable.resolutionParameters[state] ?:
+        trackable.resolutionParameters[ResolutionsParametersState(ProximityThresholdState.ABOVE, SubscribersPresenceState.NOT_PRESENT)] ?:
+        trackable.defaultResolution
     }
 
     // If there are subscribers, find the lowest resolutions among the requested ones and the candidate we have identified
@@ -106,7 +104,7 @@ fun computeNetworkingResolution(trackable: Trackable, deviceBatteryLevel: Batter
         val requestedResolutions = trackable.subscribers().map { it.requestedResolution }.toMutableList()
         requestedResolutions.add(intermediateResolution)
         intermediateResolution = winningResolution(requestedResolutions.filterNotNull()) // as I am adding Resolution above
-    }f
+    }
 
     // Apply low battery multiplier
     return if (batteryState == BatteryThresholdState.BELOW)
