@@ -66,7 +66,7 @@ data class Resolution(
     val accuracy: Accuracy,
 
     /**
-     * Maximum time between updates, in milliseconds. Lowering this value increases the temporal resolution.
+     * Desired time between updates, in milliseconds. Lowering this value increases the temporal resolution.
      *
      * Location updates whose timestamp differs from the last captured update timestamp by less that this value are to
      * be filtered out.
@@ -74,7 +74,7 @@ data class Resolution(
      * Used to govern the frequency of updates requested from the underlying location provider, as well as the frequency
      * of messages broadcast to subscribers.
      */
-    val interval: Long,
+    val desiredInterval: Long,
 
     /**
      * Minimum positional granularity required, in metres. Lowering this value increases the spatial resolution.
@@ -84,5 +84,5 @@ data class Resolution(
      *
      * Used to configure the underlying location provider, as well as to filter the broadcast of updates to subscribers.
      */
-    val displacement: Double
+    val minimumDisplacement: Double
 )
