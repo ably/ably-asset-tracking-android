@@ -252,9 +252,9 @@ constructor(
     override var active: Trackable? = null
 
     /**
-     * Suspends thread and creates a [Channel] for the [Trackable] and joins the channel's presence.
-     * If successfully enters presence then resumes the thread with the created [Channel].
-     * If an error occurs during that process then it resumes the thread and throws an exception.
+     * Creates a [Channel] for the [Trackable] and joins the channel's presence.
+     * If successfully enters presence then it returns the created [Channel].
+     * If an error occurs during that process then it throws an exception.
      */
     private suspend fun createChannelAndJoinPresence(trackable: Trackable): Channel {
         return suspendCoroutine { continuation ->
@@ -283,9 +283,9 @@ constructor(
     }
 
     /**
-     * Suspends thread and leaves the given [Channel]'s presence.
-     * If successfully leaves presence then resumes the thread.
-     * If an error occurs during that process then it resumes the thread and throws an exception.
+     * Leaves the given [Channel]'s presence.
+     * If successfully leaves presence then it returns.
+     * If an error occurs during that process then it throws an exception.
      */
     private suspend fun leaveChannelPresence(channel: Channel) {
         suspendCoroutine<Unit> { continuation ->
