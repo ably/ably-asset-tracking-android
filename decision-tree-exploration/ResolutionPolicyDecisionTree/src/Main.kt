@@ -93,8 +93,9 @@ fun computeNetworkingResolution(trackable: Trackable, deviceBatteryLevel: Batter
         trackable.resolutionParameters[state] ?:
         trackable.defaultResolution
     else {
+        val fallbackState = ResolutionsParametersState(ProximityThresholdState.ABOVE, SubscribersPresenceState.NOT_PRESENT)
         trackable.resolutionParameters[state] ?:
-        trackable.resolutionParameters[ResolutionsParametersState(ProximityThresholdState.ABOVE, SubscribersPresenceState.NOT_PRESENT)] ?:
+        trackable.resolutionParameters[fallbackState] ?:
         trackable.defaultResolution
     }
 
