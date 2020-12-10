@@ -37,7 +37,6 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.actor
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.supervisorScope
 import timber.log.Timber
 
 @SuppressLint("LogConditional")
@@ -162,7 +161,7 @@ constructor(
     }
 
     @RequiresPermission(anyOf = [ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION])
-    private suspend fun performStartPublisher() {
+    private fun performStartPublisher() {
         if (!isTracking) {
             isTracking = true
 
@@ -309,25 +308,42 @@ constructor(
         onSuccess: () -> Unit,
         onError: (Exception) -> Unit
     ) {
+        leaveChannelPresenceOmittingQueue(
+            channel,
+            { enqueue(SuccessEvent(onSuccess)) },
+            { enqueue(ErrorEvent(it, onError)) }
+        )
+    }
+
+    /**
+     * Leaves the given [Channel]'s presence without enqueueing any events.
+     * If successfully leaves presence then it calls [onSuccess].
+     * If an error occurs during that process then it calls [onError] with the exception.
+     */
+    private fun leaveChannelPresenceOmittingQueue(
+        channel: Channel,
+        onSuccess: () -> Unit,
+        onError: (Exception) -> Unit
+    ) {
         try {
             channel.presence.leaveClient(
                 connectionConfiguration.clientId,
                 gson.toJson(presenceData),
                 object : CompletionListener {
                     override fun onSuccess() {
-                        enqueue(SuccessEvent(onSuccess))
+                        onSuccess()
                     }
 
                     override fun onError(reason: ErrorInfo?) {
                         val errorMessage = "Unable to leave presence: ${reason?.message}"
                         Timber.e(errorMessage)
-                        enqueue(ErrorEvent(Exception(errorMessage), onError))
+                        onError(Exception(errorMessage))
                     }
                 }
             )
         } catch (ablyException: AblyException) {
             Timber.e(ablyException)
-            enqueue(ErrorEvent(ablyException, onError))
+            onError(ablyException)
         }
     }
 
@@ -345,26 +361,22 @@ constructor(
         enqueue(StopPublisherEvent())
     }
 
-    private suspend fun performStopPublisher() {
+    private fun performStopPublisher() {
         stopLocationUpdates()
         ably.close()
         scope.cancel()
     }
 
-    private suspend fun stopLocationUpdates() {
+    private fun stopLocationUpdates() {
         if (isTracking) {
-            mapboxNavigation.unregisterLocationObserver(locationObserver)
-            // makes code wait until all jobs in the scope are finished
-            supervisorScope {
-                // run closing channels in parallel
-                channelMap.values.forEach {
-                    scope.launch {
-                        leaveChannelPresence(it, {}, { Timber.e(it) })
-                    }
-                }
-            }
-            channelMap.clear()
             isTracking = false
+            mapboxNavigation.unregisterLocationObserver(locationObserver)
+            channelMap.apply {
+                values.forEach {
+                    leaveChannelPresenceOmittingQueue(it, {}, { error -> Timber.e(error) })
+                }
+                clear()
+            }
             mapboxReplayer?.finish()
             debugConfiguration?.locationHistoryReadyListener?.invoke(mapboxNavigation.retrieveHistory())
             mapboxNavigation.apply {
