@@ -39,9 +39,6 @@ import kotlinx.coroutines.channels.actor
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import timber.log.Timber
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
-import kotlin.coroutines.suspendCoroutine
 
 @SuppressLint("LogConditional")
 internal class DefaultPublisher
@@ -245,22 +242,25 @@ constructor(
         enqueue(RemoveTrackableEvent(trackable, onSuccess, onError))
     }
 
-    private suspend fun performRemoveTrackable(event: RemoveTrackableEvent) {
+    private fun performRemoveTrackable(event: RemoveTrackableEvent) {
         val removedChannel = channelMap.remove(event.trackable.id)
         if (removedChannel != null) {
-            try {
-                leaveChannelPresence(removedChannel)
-                if (active == event.trackable) {
-                    removeCurrentDestination()
-                    active = null
-                }
-                callback { event.onSuccess(true) }
-            } catch (e: Exception) {
-                callback { event.onError(e) }
-            }
+            leaveChannelPresence(
+                removedChannel,
+                { enqueue(ClearActiveTrackableEvent(event.trackable) { event.onSuccess(true) }) },
+                event.onError
+            )
         } else {
-            callback { event.onSuccess(false) }
+            enqueue(SuccessEvent { event.onSuccess(false) })
         }
+    }
+
+    private fun performClearActiveTrackable(event: ClearActiveTrackableEvent) {
+        if (active == event.trackable) {
+            removeCurrentDestination()
+            active = null
+        }
+        enqueue(SuccessEvent(event.onSuccess))
     }
 
     override var active: Trackable? = null
@@ -301,30 +301,33 @@ constructor(
 
     /**
      * Leaves the given [Channel]'s presence.
-     * If successfully leaves presence then it returns.
-     * If an error occurs during that process then it throws an exception.
+     * If successfully leaves presence then it enqueues [SuccessEvent].
+     * If an error occurs during that process then it enqueues [ErrorEvent] with the exception.
      */
-    private suspend fun leaveChannelPresence(channel: Channel) {
-        suspendCoroutine<Unit> { continuation ->
-            try {
-                channel.presence.leaveClient(
-                    connectionConfiguration.clientId,
-                    gson.toJson(presenceData),
-                    object : CompletionListener {
-                        override fun onSuccess() {
-                            continuation.resume(Unit)
-                        }
-
-                        override fun onError(reason: ErrorInfo?) {
-                            Timber.e("Unable to leave presence: ${reason?.message}")
-                            continuation.resumeWithException(Exception("Unable to leave presence: ${reason?.message}"))
-                        }
+    private fun leaveChannelPresence(
+        channel: Channel,
+        onSuccess: () -> Unit,
+        onError: (Exception) -> Unit
+    ) {
+        try {
+            channel.presence.leaveClient(
+                connectionConfiguration.clientId,
+                gson.toJson(presenceData),
+                object : CompletionListener {
+                    override fun onSuccess() {
+                        enqueue(SuccessEvent(onSuccess))
                     }
-                )
-            } catch (ablyException: AblyException) {
-                Timber.e(ablyException)
-                continuation.resumeWithException(ablyException)
-            }
+
+                    override fun onError(reason: ErrorInfo?) {
+                        val errorMessage = "Unable to leave presence: ${reason?.message}"
+                        Timber.e(errorMessage)
+                        enqueue(ErrorEvent(Exception(errorMessage), onError))
+                    }
+                }
+            )
+        } catch (ablyException: AblyException) {
+            Timber.e(ablyException)
+            enqueue(ErrorEvent(ablyException, onError))
         }
     }
 
@@ -356,11 +359,7 @@ constructor(
                 // run closing channels in parallel
                 channelMap.values.forEach {
                     scope.launch {
-                        try {
-                            leaveChannelPresence(it)
-                        } catch (exception: Exception) {
-                            Timber.e(exception)
-                        }
+                        leaveChannelPresence(it, {}, { Timber.e(it) })
                     }
                 }
             }
@@ -417,6 +416,7 @@ constructor(
                     is TrackableReadyToTrackEvent -> performTrackableReadyToTrack(event)
                     is SuccessEvent -> performEventSuccess(event)
                     is ErrorEvent -> performEventError(event)
+                    is ClearActiveTrackableEvent -> performClearActiveTrackable(event)
                 }
             }
         }

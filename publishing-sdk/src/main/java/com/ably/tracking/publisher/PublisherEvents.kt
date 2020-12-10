@@ -45,3 +45,8 @@ internal data class TrackableReadyToTrackEvent(
     val trackable: Trackable,
     val onSuccess: () -> Unit
 ) : PublisherEvent()
+
+internal data class ClearActiveTrackableEvent(
+    val trackable: Trackable,
+    val onSuccess: () -> Unit
+) : PublisherEvent()
