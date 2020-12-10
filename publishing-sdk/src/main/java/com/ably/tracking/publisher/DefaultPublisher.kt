@@ -184,7 +184,9 @@ constructor(
 
     private suspend fun trackTrackable(event: TrackTrackableEvent) {
         if (this.active != null) {
-            event.onError(IllegalStateException("For this preview version of the SDK, this method may only be called once for any given instance of this class."))
+            launchInMainThread {
+                event.onError(IllegalStateException("For this preview version of the SDK, this method may only be called once for any given instance of this class."))
+            }
         }
 
         try {
