@@ -336,8 +336,16 @@ constructor(
             mapboxNavigation.unregisterLocationObserver(locationObserver)
             // makes code wait until all jobs in the scope are finished
             supervisorScope {
-                // run closing channels in parallel, if there is an error when closing - ignore it
-                channelMap.values.forEach { scope.launch { leaveChannelPresence(it) } }
+                // run closing channels in parallel
+                channelMap.values.forEach {
+                    scope.launch {
+                        try {
+                            leaveChannelPresence(it)
+                        } catch (exception: Exception) {
+                            Timber.e(exception)
+                        }
+                    }
+                }
             }
             channelMap.clear()
             isTracking = false
