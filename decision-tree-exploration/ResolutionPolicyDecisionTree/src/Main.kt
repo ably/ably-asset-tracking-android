@@ -68,7 +68,6 @@ data class Trackable(
 
 fun computeNetworkingResolution(trackable: Trackable, deviceBatteryLevel: BatteryLevel): Resolution {
     // identify the current state
-
     val proximityState: ProximityThresholdState = if (trackable.proximityToDestination() < trackable.proximityTreshold)
         ProximityThresholdState.BELOW
     else
@@ -89,7 +88,7 @@ fun computeNetworkingResolution(trackable: Trackable, deviceBatteryLevel: Batter
 
     var intermediateResolution: Resolution
 
-    // First lets asses proximity, and update `intermediateResolution` with candidate for final resolution
+    // First lets assess proximity, and update `intermediateResolution` with candidate for final resolution
     intermediateResolution = if (proximityState == ProximityThresholdState.ABOVE)
         trackable.resolutionParameters[state] ?:
         trackable.defaultResolution
