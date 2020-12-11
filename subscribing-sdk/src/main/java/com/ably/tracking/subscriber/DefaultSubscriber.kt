@@ -19,6 +19,13 @@ import io.ably.lib.types.AblyException
 import io.ably.lib.types.ChannelOptions
 import io.ably.lib.types.ErrorInfo
 import io.ably.lib.types.PresenceMessage
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.channels.actor
+import kotlinx.coroutines.launch
 import timber.log.Timber
 
 internal class DefaultSubscriber(
@@ -33,8 +40,11 @@ internal class DefaultSubscriber(
     private val channel: Channel
     private val gson = Gson()
     private var presenceData = PresenceData(ClientTypes.SUBSCRIBER, resolution)
+    private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+    private val eventsChannel: SendChannel<SubscriberEvent>
 
     init {
+        eventsChannel = createEventsChannel(scope)
         ably = AblyRealtime(connectionConfiguration.apiKey)
         channel = ably.channels.get(
             trackingId,
@@ -88,6 +98,7 @@ internal class DefaultSubscriber(
         channel.unsubscribe()
         leaveChannelPresence()
         ably.close()
+        scope.cancel()
     }
 
     private fun joinChannelPresence() {
@@ -166,5 +177,22 @@ internal class DefaultSubscriber(
 
     private fun postToMainThread(operation: () -> Unit) {
         Handler(Looper.getMainLooper()).post(operation)
+    }
+
+    private fun createEventsChannel(scope: CoroutineScope) =
+        scope.actor<SubscriberEvent> {
+            for (event in channel) {
+                when (event) {
+                    is StopSubscriberEvent -> TODO()
+                }
+            }
+        }
+
+    private fun callback(action: () -> Unit) {
+        scope.launch(Dispatchers.Main) { action() }
+    }
+
+    private fun enqueue(event: SubscriberEvent) {
+        scope.launch { eventsChannel.send(event) }
     }
 }
