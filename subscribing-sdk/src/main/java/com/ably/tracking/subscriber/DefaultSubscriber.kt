@@ -113,7 +113,7 @@ internal class DefaultSubscriber(
     private fun joinChannelPresence() {
         try {
             notifyAssetIsOffline()
-            channel.presence.subscribe { onPresenceMessage(it) }
+            channel.presence.subscribe { enqueue(PresenceMessageEvent(it)) }
             channel.presence.enterClient(
                 connectionConfiguration.clientId,
                 gson.toJson(presenceData),
@@ -158,8 +158,8 @@ internal class DefaultSubscriber(
         }
     }
 
-    private fun onPresenceMessage(presenceMessage: PresenceMessage) {
-        when (presenceMessage.action) {
+    private fun performPresenceMessage(event: PresenceMessageEvent) {
+        when (event.presenceMessage.action) {
             PresenceMessage.Action.present, PresenceMessage.Action.enter -> {
                 val data = presenceMessage.getPresenceData(gson)
                 if (data.type == ClientTypes.PUBLISHER) {
@@ -191,6 +191,7 @@ internal class DefaultSubscriber(
                     is StopSubscriberEvent -> performStopSubscriber()
                     is RawLocationReceivedEvent -> performRawLocationReceived(event)
                     is EnhancedLocationReceivedEvent -> performEnhancedLocationReceived(event)
+                    is PresenceMessageEvent -> performPresenceMessage(event)
                 }
             }
         }
