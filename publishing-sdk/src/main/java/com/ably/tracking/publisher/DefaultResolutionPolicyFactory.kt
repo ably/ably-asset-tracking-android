@@ -3,9 +3,7 @@ package com.ably.tracking.publisher
 import com.ably.tracking.Resolution
 
 class DefaultResolutionPolicyFactory(
-    private val preResolution: Resolution,
-    private val postResolution: Resolution,
-    private val threshold: Proximity
+    private val defaultResolution: Resolution
 ) : ResolutionPolicy.Factory {
     override fun createResolutionPolicy(
         hooks: ResolutionPolicy.Hooks,
@@ -24,11 +22,12 @@ class DefaultResolutionPolicyFactory(
             hooks.trackables(Listener())
         }
 
-        override fun resolve(requests: Set<ResolutionRequest>): Resolution {
-            // We are ignoring the set of resolution requests, and simply returning
-            // one of two resolutions depending on whether the proximity threshold
-            // has been reached or not.
-            return if (thresholdReached) postResolution else preResolution
+        override fun resolve(request: TrackableResolutionRequest): Resolution {
+            TODO("Not yet implemented")
+        }
+
+        override fun resolve(resolutions: Set<Resolution>): Resolution {
+            TODO("Not yet implemented")
         }
 
         private inner class Listener : ResolutionPolicy.Hooks.TrackableSetListener {
@@ -46,7 +45,9 @@ class DefaultResolutionPolicyFactory(
                 if (null == trackable) {
                     methods.cancelProximityThreshold()
                 } else {
-                    methods.setProximityThreshold(threshold, handler)
+                    // TODO Illustrative but will need work!
+                    val constraints = trackable.constraints as DefaultResolutionConstraints
+                    methods.setProximityThreshold(constraints.proximityThreshold, handler)
                 }
             }
 

@@ -177,46 +177,33 @@ interface ResolutionPolicy {
     }
 
     /**
-     * Determine a target resolution from a set of requested resolutions.
-     *
-     * The set of requested resolutions may be empty.
+     * Determine a target [Resolution] for a [Trackable] object.
      */
-    fun resolve(requests: Set<ResolutionRequest>): Resolution
+    fun resolve(request: TrackableResolutionRequest): Resolution
+
+    /**
+     * Determine a target [Resolution] from a set of resolutions.
+     *
+     * This set may be empty.
+     */
+    fun resolve(resolutions: Set<Resolution>): Resolution
 }
 
 /**
  * A request for a tracking [Resolution] for a [Trackable] object, where the request [Origin] is known.
  */
-interface ResolutionRequest {
+interface TrackableResolutionRequest {
     /**
-     * The source of a [resolution] request for a [trackable] object.
+     * The constraints, if defined, for the [Trackable] object.
      */
-    enum class Origin {
-        /**
-         * Configured by the local application.
-         */
-        LOCAL,
-
-        /**
-         * Received from a remote application, where that remote application is a subscriber.
-         */
-        SUBSCRIBER,
-    }
+    val constraints: ResolutionConstraints?
 
     /**
-     * The resolution being requested.
+     * Remote [Resolution] requests for the [Trackable] object.
+     *
+     * This set may be empty.
      */
-    val resolution: Resolution
-
-    /**
-     * The object being tracked.
-     */
-    val trackable: Trackable
-
-    /**
-     * The source of the request.
-     */
-    val origin: Origin
+    val remoteRequests: Set<Resolution>
 }
 
 data class Destination(
@@ -243,11 +230,6 @@ data class TemporalProximity(val time: Long) : Proximity()
  */
 data class DefaultResolutionSet(
     /**
-     * The default resolution, if none of the other resolutions defined in this set can be resolved.
-     */
-    val default: Resolution,
-
-    /**
      * The resolution to select if above the [proximityThreshold][DefaultResolutionConstraints.proximityThreshold],
      * with no subscribers.
      */
@@ -270,7 +252,14 @@ data class DefaultResolutionSet(
      * with one or more subscribers.
      */
     val nearWithSubscriber: Resolution
-)
+) {
+    /**
+     * Creates an instance of this class, using a single [Resolution] for all states.
+     *
+     * @param resolution The resolution to be used to populate all fields.
+     */
+    constructor(resolution: Resolution) : this(resolution, resolution, resolution, resolution)
+}
 
 /**
  * Specifies factors which contribute towards deciding the tracking [Resolution] for a [Trackable].
