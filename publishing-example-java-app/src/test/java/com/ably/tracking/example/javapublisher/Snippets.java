@@ -5,7 +5,6 @@ import androidx.annotation.Nullable;
 import com.ably.tracking.Accuracy;
 import com.ably.tracking.Resolution;
 import com.ably.tracking.publisher.ResolutionPolicy;
-import com.ably.tracking.publisher.ResolutionRequest;
 import com.ably.tracking.publisher.Trackable;
 
 import org.jetbrains.annotations.NotNull;
@@ -18,7 +17,6 @@ import java.util.Set;
 public class Snippets {
     /**
      * A contrived snippet to prove that we can implement a resolution policy in Java.
-     */
     @Test
     public void implementingResolutionPolicy() {
         // Implement the ResolutionPolicy interface.
@@ -59,10 +57,8 @@ public class Snippets {
         Assert.assertEquals(-999, resolved.getMinimumDisplacement(), 0.1);
     }
 
-    /**
      * Returns a Java implementation of the ResolutionRequest interface.
      * The returned object has sensible, type-aware implementations of both the hashCode() and equals(Object) methods.
-     */
     private ResolutionRequest resolutionRequest(final Resolution resolution, final Trackable trackable, final ResolutionRequest.Origin origin) {
         return new ResolutionRequest() {
             @NotNull @Override
@@ -98,4 +94,5 @@ public class Snippets {
             }
         };
     }
+    */
 }
