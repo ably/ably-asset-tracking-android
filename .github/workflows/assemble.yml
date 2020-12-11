@@ -9,6 +9,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+
+      - name: Populate AWS Amplify Configuration file from Secrets
+        run: |
+          mkdir publishing-example-app/src/main/res/raw
+          echo "$AMPLIFY_CONFIGURATION" > publishing-example-app/src/main/res/raw/amplifyconfiguration.json
+        env:
+          AMPLIFY_CONFIGURATION: ${{ secrets.AMPLIFY_CONFIGURATION }}
+
       - run: ./gradlew assemble
         env:
           ORG_GRADLE_PROJECT_MAPBOX_DOWNLOADS_TOKEN: ${{ secrets.MAPBOX_DOWNLOADS_TOKEN }}
