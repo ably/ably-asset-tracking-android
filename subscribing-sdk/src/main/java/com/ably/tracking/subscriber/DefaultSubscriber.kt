@@ -1,8 +1,5 @@
 package com.ably.tracking.subscriber
 
-import android.location.Location
-import android.os.Handler
-import android.os.Looper
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.Resolution
 import com.ably.tracking.common.ClientTypes
@@ -30,8 +27,8 @@ import timber.log.Timber
 
 internal class DefaultSubscriber(
     private val connectionConfiguration: ConnectionConfiguration,
-    rawLocationUpdatedListener: LocationUpdatedListener,
-    enhancedLocationUpdatedListener: LocationUpdatedListener,
+    private val rawLocationUpdatedListener: LocationUpdatedListener,
+    private val enhancedLocationUpdatedListener: LocationUpdatedListener,
     trackingId: String,
     private val assetStatusListener: StatusListener?,
     resolution: Resolution?
@@ -54,28 +51,36 @@ internal class DefaultSubscriber(
         Timber.w("Started.")
 
         joinChannelPresence()
-        subscribeForRawEvents(rawLocationUpdatedListener)
-        subscribeForEnhancedEvents(enhancedLocationUpdatedListener)
+        subscribeForRawEvents()
+        subscribeForEnhancedEvents()
     }
 
-    private fun subscribeForRawEvents(rawLocationUpdatedListener: (Location) -> Unit) {
+    private fun subscribeForRawEvents() {
         channel.subscribe(EventNames.RAW) { message ->
             Timber.i("Ably channel message (raw): $message")
             message.getGeoJsonMessages(gson).forEach {
                 Timber.d("Received raw location: ${it.synopsis()}")
-                postToMainThread { rawLocationUpdatedListener(it.toLocation()) }
+                enqueue(RawLocationReceivedEvent(it.toLocation()))
             }
         }
     }
 
-    private fun subscribeForEnhancedEvents(enhancedLocationUpdatedListener: (Location) -> Unit) {
+    private fun performRawLocationReceived(event: RawLocationReceivedEvent) {
+        callback { rawLocationUpdatedListener(event.location) }
+    }
+
+    private fun subscribeForEnhancedEvents() {
         channel.subscribe(EventNames.ENHANCED) { message ->
             Timber.i("Ably channel message (enhanced): $message")
             message.getGeoJsonMessages(gson).forEach {
                 Timber.d("Received enhanced location: ${it.synopsis()}")
-                postToMainThread { enhancedLocationUpdatedListener(it.toLocation()) }
+                enqueue(EnhancedLocationReceivedEvent(it.toLocation()))
             }
         }
+    }
+
+    private fun performEnhancedLocationReceived(event: EnhancedLocationReceivedEvent) {
+        callback { enhancedLocationUpdatedListener(event.location) }
     }
 
     override fun sendChangeRequest(resolution: Resolution, onSuccess: () -> Unit, onError: (Exception) -> Unit) {
@@ -179,15 +184,13 @@ internal class DefaultSubscriber(
         assetStatusListener?.let { callback { it(false) } }
     }
 
-    private fun postToMainThread(operation: () -> Unit) {
-        Handler(Looper.getMainLooper()).post(operation)
-    }
-
     private fun createEventsChannel(scope: CoroutineScope) =
         scope.actor<SubscriberEvent> {
             for (event in channel) {
                 when (event) {
                     is StopSubscriberEvent -> performStopSubscriber()
+                    is RawLocationReceivedEvent -> performRawLocationReceived(event)
+                    is EnhancedLocationReceivedEvent -> performEnhancedLocationReceived(event)
                 }
             }
         }
