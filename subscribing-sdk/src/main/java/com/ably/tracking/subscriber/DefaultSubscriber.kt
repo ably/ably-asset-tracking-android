@@ -95,6 +95,10 @@ internal class DefaultSubscriber(
     }
 
     override fun stop() {
+        enqueue(StopSubscriberEvent())
+    }
+
+    private fun performStopSubscriber() {
         channel.unsubscribe()
         leaveChannelPresence()
         ably.close()
@@ -168,11 +172,11 @@ internal class DefaultSubscriber(
     }
 
     private fun notifyAssetIsOnline() {
-        assetStatusListener?.invoke(true)
+        assetStatusListener?.let { callback { it(true) } }
     }
 
     private fun notifyAssetIsOffline() {
-        assetStatusListener?.invoke(false)
+        assetStatusListener?.let { callback { it(false) } }
     }
 
     private fun postToMainThread(operation: () -> Unit) {
@@ -183,7 +187,7 @@ internal class DefaultSubscriber(
         scope.actor<SubscriberEvent> {
             for (event in channel) {
                 when (event) {
-                    is StopSubscriberEvent -> TODO()
+                    is StopSubscriberEvent -> performStopSubscriber()
                 }
             }
         }
