@@ -55,8 +55,8 @@ public class Snippets {
 
         // Validate that our policy returned what we told it to above.
         Assert.assertEquals(Accuracy.MINIMUM, resolved.getAccuracy());
-        Assert.assertEquals(-666, resolved.getInterval());
-        Assert.assertEquals(-999, resolved.getDisplacement(), 0.1);
+        Assert.assertEquals(-666, resolved.getDesiredInterval());
+        Assert.assertEquals(-999, resolved.getMinimumDisplacement(), 0.1);
     }
 
     /**

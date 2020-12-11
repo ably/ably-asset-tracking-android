@@ -16,7 +16,7 @@ internal data class PublisherBuilder(
     val locationUpdatedListener: LocationUpdatedListener? = null,
     val androidContext: Context? = null,
     val transportationMode: TransportationMode? = null,
-    val resolutionPolicy: ResolutionPolicy? = null
+    val resolutionPolicyFactory: ResolutionPolicy.Factory? = null
 ) : Publisher.Builder {
 
     override fun connection(configuration: ConnectionConfiguration): Publisher.Builder =
@@ -40,8 +40,8 @@ internal data class PublisherBuilder(
     override fun mode(mode: TransportationMode): Publisher.Builder =
         this.copy(transportationMode = mode)
 
-    override fun resolutionPolicy(policy: ResolutionPolicy): Publisher.Builder =
-        this.copy(resolutionPolicy = policy)
+    override fun resolutionPolicy(factory: ResolutionPolicy.Factory): Publisher.Builder =
+        this.copy(resolutionPolicyFactory = factory)
 
     @RequiresPermission(anyOf = [ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION])
     override fun start(): Publisher {

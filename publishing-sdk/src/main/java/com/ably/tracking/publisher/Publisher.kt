@@ -17,7 +17,8 @@ typealias LocationUpdatedListener = (Location) -> Unit
 interface Publisher {
     companion object Factory {
         /**
-         * Returns the default builder of Publisher instances.
+         * Returns the default state of the publisher [Builder], which is incapable of starting of [Publisher]
+         * instances until it has been configured fully.
          */
         @JvmStatic
         fun publishers(): Builder {
@@ -81,20 +82,20 @@ interface Publisher {
     var transportationMode: TransportationMode
 
     /**
-     * Causes the current tracking [Resolution] to be evaluated again.
-     *
-     * If this publisher was started with a [resolution policy][Builder.resolutionPolicy] then that policy will be
-     * consulted again as soon as possible after this method returns.
-     */
-    fun refreshResolution()
-
-    /**
      * Stops this publisher from publishing locations. Once a publisher has been stopped, it cannot be restarted.
      *
      * It is strongly suggested to call this method from the main thread.
      */
     fun stop()
 
+    /**
+     * The methods implemented by builders capable of starting [Publisher] instances.
+     *
+     * All methods except [start] return a new [Builder] instance, being a copy of this instance but with the
+     * relevant property mutated.
+     *
+     * The starting point is always the default builder state, returned by the static [publishers] method.
+     */
     interface Builder {
         /**
          * Sets the Ably connection configuration.
@@ -145,13 +146,13 @@ interface Publisher {
         fun mode(mode: TransportationMode): Builder
 
         /**
-         * Sets the policy to be used to define the target resolution for publishers created from this builder.
+         * Sets the policy factory to be used to define the target resolution for publishers created from this builder.
          *
-         * @param policy The policy, methods on which will be called multiple times during the lifetime of the
-         * publisher.
+         * @param factory The factory, whose [createResolutionPolicy][ResolutionPolicy.Factory.createResolutionPolicy]
+         * method will be called exactly once when [start] is called.
          * @return A new instance of the builder with this property changed.
          */
-        fun resolutionPolicy(policy: ResolutionPolicy): Builder
+        fun resolutionPolicy(factory: ResolutionPolicy.Factory): Builder
 
         /**
          * Creates a [Publisher] and starts publishing.
