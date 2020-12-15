@@ -66,11 +66,9 @@ internal class DefaultSubscriber(
         }
     }
 
-    override var resolution: Resolution?
-        get() = TODO()
-        set(value) {
-            TODO()
-        }
+    override fun changeResolution(resolution: Resolution, onSuccess: () -> Unit, onError: (Exception) -> Unit) {
+        TODO()
+    }
 
     override fun stop() {
         channel.unsubscribe()
