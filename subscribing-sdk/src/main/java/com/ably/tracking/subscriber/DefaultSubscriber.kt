@@ -7,6 +7,7 @@ import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.common.ClientTypes
 import com.ably.tracking.common.EventNames
 import com.ably.tracking.common.PresenceData
+import com.ably.tracking.common.getData
 import com.ably.tracking.common.getGeoJsonMessages
 import com.ably.tracking.common.toLocation
 import com.google.gson.Gson
