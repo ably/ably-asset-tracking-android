@@ -19,6 +19,7 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -48,19 +49,7 @@ public class Snippets {
 
         // Call the policy in the same manner that the Kotlin-based pubisher would.
         final Resolution resolutionsResult = policy.resolve(new HashSet<Resolution>());
-        final Resolution requestsResult = policy.resolve(new TrackableResolutionRequest() {
-            @org.jetbrains.annotations.Nullable
-            @Override
-            public ResolutionConstraints getConstraints() {
-                return null;
-            }
-
-            @NotNull
-            @Override
-            public Set<Resolution> getRemoteRequests() {
-                return null;
-            }
-        });
+        final Resolution requestsResult = policy.resolve(new TrackableResolutionRequest(null, Collections.emptySet()));
 
         // Validate that our policy returned what we told it to above.
         Assert.assertEquals(Accuracy.MINIMUM, resolutionsResult.getAccuracy());

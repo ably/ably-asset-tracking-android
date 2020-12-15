@@ -190,21 +190,20 @@ interface ResolutionPolicy {
 }
 
 /**
- * A request for a tracking [Resolution] for a [Trackable] object, where the request [Origin] is known.
+ * A request for a tracking [Resolution] for a [Trackable] object.
  */
-interface TrackableResolutionRequest {
+data class TrackableResolutionRequest(
     /**
      * The constraints, if defined, for the [Trackable] object.
      */
-    val constraints: ResolutionConstraints?
-
+    val constraints: ResolutionConstraints?,
     /**
      * Remote [Resolution] requests for the [Trackable] object.
      *
      * This set may be empty.
      */
     val remoteRequests: Set<Resolution>
-}
+)
 
 data class Destination(
     val latitude: Double,
