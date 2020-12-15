@@ -8,15 +8,21 @@ import com.ably.tracking.Resolution
 typealias LocationUpdatedListener = (Location) -> Unit
 typealias StatusListener = (Boolean) -> Unit
 
+/**
+ * Represents a subscriber. Subscribers maintain the Ably connection, relaying location updates for a tracked item back
+ * to the local application as they are received from the remote publisher.
+ */
 interface Subscriber {
     companion object {
         /**
-         * Returns the default builder of Subscriber instances.
+         * Returns the default state of the subscriber [Builder], which is incapable of starting of [Subscriber]
+         * instances until it has been configured fully.
          */
         @JvmStatic
         fun subscribers(): Builder {
             // TODO ensure this can be called from Java - may need @JvmStatic annotation
             // https://kotlinlang.org/docs/tutorials/kotlin-for-py/objects-and-companion-objects.html#companion-objects
+            // TODO return a static singleton in default state instead of creating an "empty" new one every time
             return SubscriberBuilder()
         }
     }
@@ -35,12 +41,21 @@ interface Subscriber {
     var resolution: Resolution?
 
     /**
-     * Stops asset subscriber from listening for asset location
+     * Stops this subscriber from listening to published locations. Once a subscriber has been stopped, it cannot be
+     * restarted.
      *
      * It is strongly suggested to call this method from the main thread.
      */
     fun stop()
 
+    /**
+     * The methods implemented by builders capable of starting [Subscriber] instances.
+     *
+     * All methods except [start] return a new [Builder] instance, being a copy of this instance but with the
+     * relevant property mutated.
+     *
+     * The starting point is always the default builder state, returned by the static [subscribers] method.
+     */
     interface Builder {
         /**
          * Sets the Ably connection configuration.
@@ -54,23 +69,23 @@ interface Subscriber {
          * Sets the logging configuration.
          *
          * @param configuration Logging configuration object [LogConfiguration]
-         * @return A new instance of the builder with logging configuration changed
+         * @return A new instance of the builder with this property changed.
          */
         fun log(configuration: LogConfiguration): Builder
 
         /**
-         * Sets listener that notifies about raw location updates
+         * Sets the listener to be notified when a raw location update is available.
          *
-         * @param listener Listener function that takes updated [Location] and returns nothing
-         * @return A new instance of the builder with raw location updates listener changed
+         * @param listener The listening function to be notified.
+         * @return A new instance of the builder with this property changed.
          */
         fun rawLocationUpdatedListener(listener: LocationUpdatedListener): Builder
 
         /**
-         * Sets listener that notifies about enhanced location updates
+         * Sets the listener to be notified when an enhanced location update is available.
          *
-         * @param listener Listener function that takes updated [Location] and returns nothing
-         * @return A new instance of the builder with enhanced location updates listener changed
+         * @param listener The listening function to be notified.
+         * @return A new instance of the builder with this property changed.
          */
         fun enhancedLocationUpdatedListener(listener: LocationUpdatedListener): Builder
 
@@ -79,32 +94,32 @@ interface Subscriber {
          *
          * @param resolution An indication of how often to this subscriber would like the publisher to sample locations,
          * at what level of positional accuracy, and how often to send them back.
-         * @return A new instance of the builder with resolution changed
+         * @return A new instance of the builder with this property changed.
          */
         fun resolution(resolution: Resolution): Builder
 
         /**
-         * Sets tracking ID of the tracked asset
+         * Sets the asset to be tracked, using its unique tracking identifier.
          *
-         * @param trackingId ID of the tracked asset
-         * @return A new instance of the builder with tracking ID changed
+         * @param trackingId The unique tracking identifier for the asset.
+         * @return A new instance of the builder with this property changed.
          */
         fun trackingId(trackingId: String): Builder
 
         /**
-         * Sets asset status listener for checking if asset is online
+         * Sets the listener to be notified when the online status of the asset changes.
          *
-         * @param listener Listener function that takes [Boolean] that's true when asset is online
-         * @return A new instance of the builder with this field changed
+         * @param listener the listening function to be notified.
+         * @return A new instance of the builder with this property changed.
          */
         fun assetStatusListener(listener: StatusListener): Builder
 
         /**
-         * Creates an [Subscriber] and starts subscribing to the asset location
+         * Creates a [Subscriber] and starts listening for location updates.
          *
          * It is strongly suggested to call this method from the main thread.
          *
-         * @return A new instance of [Subscriber]
+         * @return A new subscriber instance.
          * @throws com.ably.tracking.BuilderConfigurationIncompleteException If all required params aren't set
          */
         fun start(): Subscriber
