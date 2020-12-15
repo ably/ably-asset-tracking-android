@@ -12,17 +12,16 @@ internal interface BatteryDataProvider {
      *
      * @return Current battery value in the range 0.0f to 100.0f
      */
-    fun getCurrentBattery(): Float
+    fun getCurrentBatteryPercentage(): Float?
 }
 
 /**
  * Based on https://developer.android.com/training/monitoring-device-state/battery-monitoring
  */
 internal class DefaultBatteryDataProvider(private val context: Context) : BatteryDataProvider {
-    private val BATTERY_PERCENTAGE_FALLBACK_VALUE = 100F
 
-    override fun getCurrentBattery(): Float =
-        getCurrentBatteryPercentage(context) ?: BATTERY_PERCENTAGE_FALLBACK_VALUE
+    override fun getCurrentBatteryPercentage(): Float? =
+        getCurrentBatteryPercentage(context)
 
     private fun getCurrentBatteryPercentage(context: Context): Float? =
         getCurrentBatteryStatusIntent(context)?.let { intent ->

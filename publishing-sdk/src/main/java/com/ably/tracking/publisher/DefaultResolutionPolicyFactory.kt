@@ -70,11 +70,13 @@ private class DefaultResolutionPolicy(
         resolution: Resolution,
         constraints: DefaultResolutionConstraints
     ): Resolution =
-        if (constraints.batteryLevelThreshold < batteryDataProvider.getCurrentBattery()) {
-            val newInterval = resolution.desiredInterval * constraints.lowBatteryMultiplier
-            resolution.copy(desiredInterval = newInterval.toLong())
-        } else {
-            resolution
+        batteryDataProvider.getCurrentBatteryPercentage().let { batteryPercentage ->
+            if (batteryPercentage != null && batteryPercentage < constraints.batteryLevelThreshold) {
+                val newInterval = resolution.desiredInterval * constraints.lowBatteryMultiplier
+                resolution.copy(desiredInterval = newInterval.toLong())
+            } else {
+                resolution
+            }
         }
 
     private fun createFinalResolution(resolutions: Set<Resolution>): Resolution {
