@@ -82,7 +82,7 @@ constructor(
     private val resolutionPolicyMethods = DefaultMethods()
     private val resolutionRequestsMap = mutableMapOf<Trackable, MutableSet<Resolution>>()
     private val subscribersMap = mutableMapOf<Trackable, MutableSet<Subscriber>>()
-    private var activeResolution: Resolution
+    private val resolutionMap = mutableMapOf<Trackable, Resolution>()
     private var isTracking: Boolean = false
     private var mapboxReplayer: MapboxReplayer? = null
     private var lastSentRawLocation: Location? = null
@@ -101,7 +101,6 @@ constructor(
             resolutionPolicyHooks,
             resolutionPolicyMethods
         )
-        activeResolution = resolutionPolicy.resolve(emptySet())
         ably = AblyRealtime(connectionConfiguration.apiKey)
 
         Timber.w("Started.")
@@ -160,14 +159,14 @@ constructor(
 
     private fun performRawLocationChanged(event: RawLocationChangedEvent) {
         Timber.d("sendRawLocationMessage: publishing: ${event.geoJsonMessage.synopsis()}")
-        if (shouldSentLocation(event.location, lastSentRawLocation ?: event.location)) {
-            channelMap.values.forEach {
-                it.publish(EventNames.RAW, event.geoJsonMessage.toJsonArray(gson))
+        for ((trackable, channel) in channelMap) {
+            if (shouldSendLocation(event.location, lastSentRawLocation ?: event.location, trackable)) {
+                channel.publish(EventNames.RAW, event.geoJsonMessage.toJsonArray(gson))
             }
-            lastSentRawLocation = event.location
-            destinationToSet?.let { setDestination(it) }
-            enqueue(SuccessEvent { locationUpdatedListener(event.location) })
         }
+        lastSentRawLocation = event.location
+        destinationToSet?.let { setDestination(it) }
+        enqueue(SuccessEvent { locationUpdatedListener(event.location) })
         checkThreshold(event.location)
     }
 
@@ -181,21 +180,27 @@ constructor(
         event.geoJsonMessages.forEach {
             Timber.d("sendEnhancedLocationMessage: publishing: ${it.synopsis()}")
         }
-        if (shouldSentLocation(event.location, lastSentEnhancedLocation ?: event.location)) {
-            channelMap.values.forEach {
-                it.publish(EventNames.ENHANCED, event.geoJsonMessages.toJsonArray(gson))
+        for ((trackable, channel) in channelMap) {
+            if (shouldSendLocation(event.location, lastSentEnhancedLocation ?: event.location, trackable)) {
+                channel.publish(EventNames.ENHANCED, event.geoJsonMessages.toJsonArray(gson))
             }
-            lastSentEnhancedLocation = event.location
-            enqueue(SuccessEvent { locationUpdatedListener(event.location) })
         }
+        lastSentEnhancedLocation = event.location
+        enqueue(SuccessEvent { locationUpdatedListener(event.location) })
         checkThreshold(event.location)
     }
 
-    private fun shouldSentLocation(currentLocation: Location, lastSentLocation: Location): Boolean {
-        val timeSinceLastSentLocation = currentLocation.timeFrom(lastSentLocation)
-        val distanceFromLastSentLocation = currentLocation.distanceInMetersFrom(lastSentLocation)
-        return distanceFromLastSentLocation >= activeResolution.minimumDisplacement &&
-            timeSinceLastSentLocation >= activeResolution.desiredInterval
+    private fun shouldSendLocation(
+        currentLocation: Location,
+        lastSentLocation: Location,
+        trackable: Trackable
+    ): Boolean {
+        return resolutionMap[trackable]?.let { resolution ->
+            val timeSinceLastSentLocation = currentLocation.timeFrom(lastSentLocation)
+            val distanceFromLastSentLocation = currentLocation.distanceInMetersFrom(lastSentLocation)
+            return distanceFromLastSentLocation >= resolution.minimumDisplacement &&
+                timeSinceLastSentLocation >= resolution.desiredInterval
+        } ?: true
     }
 
     private fun checkThreshold(currentLocation: Location) {
@@ -297,6 +302,7 @@ constructor(
 
     private fun performJoinPresenceSuccess(event: JoinPresenceSuccessEvent) {
         channelMap[event.trackable] = event.channel
+        resolutionMap[event.trackable] = resolutionPolicy.resolve(emptySet())
         resolutionPolicyHooks.trackables?.onTrackableAdded(event.trackable)
         enqueue(SuccessEvent(event.onSuccess))
     }
@@ -549,10 +555,12 @@ constructor(
     }
 
     private fun performRefreshResolutionPolicy() {
-        val resolutionRequests: Set<Resolution> = resolutionRequestsMap[active] ?: emptySet()
-        activeResolution = resolutionPolicy.resolve(
-            TrackableResolutionRequest(active?.constraints, resolutionRequests)
-        )
+        channelMap.keys.forEach { trackable ->
+            val resolutionRequests: Set<Resolution> = resolutionRequestsMap[trackable] ?: emptySet()
+            resolutionMap[trackable] = resolutionPolicy.resolve(
+                TrackableResolutionRequest(trackable.constraints, resolutionRequests)
+            )
+        }
     }
 
     private fun postToMainThread(operation: () -> Unit) {
