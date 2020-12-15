@@ -47,7 +47,8 @@ constructor(
     private val mapConfiguration: MapConfiguration,
     private val debugConfiguration: DebugConfiguration?,
     private val locationUpdatedListener: LocationUpdatedListener,
-    context: Context
+    context: Context,
+    resolutionPolicyFactory: ResolutionPolicy.Factory
 ) :
     Publisher {
     private val gson: Gson = Gson()
