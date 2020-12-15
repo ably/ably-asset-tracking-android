@@ -13,17 +13,6 @@ import org.junit.Test
 
 class FactoryUnitTests {
     @Test
-    fun `subscribers should return AssetSubscriber Builder object`() {
-        // given
-
-        // when
-        val builder = Subscriber.subscribers()
-
-        // then
-        Assert.assertTrue(builder is Subscriber.Builder)
-    }
-
-    @Test
     fun `setting Ably connection config updates builder field`() {
         // given
         val configuration = ConnectionConfiguration("", "")
