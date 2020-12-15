@@ -16,4 +16,8 @@ dependencies {
     // https://docs.mapbox.com/android/maps/overview/
     // https://docs.mapbox.com/android/core/overview/
     implementation 'com.mapbox.mapboxsdk:mapbox-android-core:3.1.0'
+
+    // Advanced geospatial analysis - used i.e. for calculating distance between points.
+    // https://docs.mapbox.com/android/java/guides/turf/
+    implementation 'com.mapbox.mapboxsdk:mapbox-sdk-turf:5.7.0'
 }
