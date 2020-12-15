@@ -28,7 +28,7 @@ interface Subscriber {
      * on the [Builder] instance used to [start][Builder.start] it, in which case this property will return that value
      * until changed here.
      *
-     * Changes to this property will take time to propogate back to the publisher, however the value returned by this
+     * Changes to this property will take time to propagate back to the publisher, however the value returned by this
      * property will always be the most recently requested value, even if it's yet to be sent to or actioned by the
      * remote publisher.
      */
