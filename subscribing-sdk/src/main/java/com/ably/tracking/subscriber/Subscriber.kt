@@ -22,6 +22,19 @@ interface Subscriber {
     }
 
     /**
+     * The desired resolution of updates, to be requested from the remote publisher.
+     *
+     * May be defined from the outset of a [Subscriber]'s lifespan by using the [resolution][Builder.resolution] method
+     * on the [Builder] instance used to [start][Builder.start] it, in which case this property will return that value
+     * until changed here.
+     *
+     * Changes to this property will take time to propogate back to the publisher, however the value returned by this
+     * property will always be the most recently requested value, even if it's yet to be sent to or actioned by the
+     * remote publisher.
+     */
+    var resolution: Resolution?
+
+    /**
      * Stops asset subscriber from listening for asset location
      *
      * It is strongly suggested to call this method from the main thread.

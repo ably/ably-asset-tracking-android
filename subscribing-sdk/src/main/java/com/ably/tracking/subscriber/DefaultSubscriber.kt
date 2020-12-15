@@ -4,6 +4,7 @@ import android.location.Location
 import android.os.Handler
 import android.os.Looper
 import com.ably.tracking.ConnectionConfiguration
+import com.ably.tracking.Resolution
 import com.ably.tracking.common.ClientTypes
 import com.ably.tracking.common.EventNames
 import com.ably.tracking.common.PresenceData
@@ -64,6 +65,12 @@ internal class DefaultSubscriber(
             }
         }
     }
+
+    override var resolution: Resolution?
+        get() = TODO()
+        set(value) {
+            TODO()
+        }
 
     override fun stop() {
         channel.unsubscribe()
