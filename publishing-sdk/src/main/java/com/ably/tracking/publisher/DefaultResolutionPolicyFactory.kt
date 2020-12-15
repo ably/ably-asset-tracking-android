@@ -1,71 +1,151 @@
 package com.ably.tracking.publisher
 
+import android.content.Context
+import com.ably.tracking.Accuracy
 import com.ably.tracking.Resolution
+import com.ably.tracking.getLevel
+import kotlin.math.min
 
 class DefaultResolutionPolicyFactory(
-    private val defaultResolution: Resolution
+    private val defaultResolution: Resolution,
+    private val context: Context
 ) : ResolutionPolicy.Factory {
     override fun createResolutionPolicy(
         hooks: ResolutionPolicy.Hooks,
         methods: ResolutionPolicy.Methods
     ): ResolutionPolicy {
-        return Policy(hooks, methods)
+        return DefaultResolutionPolicy(hooks, methods, defaultResolution, DefaultBatteryDataProvider(context))
+    }
+}
+
+private class DefaultResolutionPolicy(
+    hooks: ResolutionPolicy.Hooks,
+    methods: ResolutionPolicy.Methods,
+    private val defaultResolution: Resolution,
+    private val batteryDataProvider: BatteryDataProvider
+) : ResolutionPolicy {
+    private val proximityHandler =
+        DefaultProximityHandler(methods, { proximityThresholdReached = true }, { proximityThresholdReached = false })
+    private val subscriberSetListener = DefaultSubscriberSetListener()
+    private var proximityThresholdReached = false
+
+    init {
+        hooks.trackables(DefaultTrackableSetListener(methods, proximityHandler))
+        hooks.subscribers(subscriberSetListener)
     }
 
-    private inner class Policy(
-        hooks: ResolutionPolicy.Hooks,
-        private val methods: ResolutionPolicy.Methods
-    ) : ResolutionPolicy {
-        private var thresholdReached = false
+    override fun resolve(resolutions: Set<Resolution>): Resolution =
+        resolve(TrackableResolutionRequest(null, resolutions))
 
-        init {
-            hooks.trackables(Listener())
+    override fun resolve(request: TrackableResolutionRequest): Resolution =
+        if (request.constraints != null) {
+            when (request.constraints) {
+                is DefaultResolutionConstraints -> resolveWithDefaultResolutionConstraints(request)
+            }
+        } else {
+            resolveWithoutConstraints(request)
         }
 
-        override fun resolve(request: TrackableResolutionRequest): Resolution {
-            TODO("Not yet implemented")
+    private fun resolveWithoutConstraints(request: TrackableResolutionRequest): Resolution =
+        if (request.remoteRequests.isEmpty()) defaultResolution else createFinalResolution(request.remoteRequests)
+
+    /**
+     * We're expecting that [ResolutionConstraints] from [request] is not null and is of type [DefaultResolutionConstraints].
+     */
+    private fun resolveWithDefaultResolutionConstraints(request: TrackableResolutionRequest): Resolution {
+        val trackableConstraints = request.constraints as DefaultResolutionConstraints
+        val resolutionFromTrackable = trackableConstraints.resolutions.getResolution(
+            proximityThresholdReached,
+            subscriberSetListener.hasSubscribers()
+        )
+        val allResolutions = mutableSetOf<Resolution>().apply {
+            add(resolutionFromTrackable)
+            request.remoteRequests.let { if (it.isNotEmpty()) addAll(it) }
+        }
+        val finalResolution = if (allResolutions.isEmpty()) defaultResolution else createFinalResolution(allResolutions)
+        return adjustResolutionToBatteryLevel(finalResolution, trackableConstraints)
+    }
+
+    private fun adjustResolutionToBatteryLevel(
+        resolution: Resolution,
+        constraints: DefaultResolutionConstraints
+    ): Resolution =
+        if (constraints.batteryLevelThreshold < batteryDataProvider.getCurrentBattery()) {
+            val newInterval = resolution.desiredInterval * constraints.lowBatteryMultiplier
+            resolution.copy(desiredInterval = newInterval.toLong())
+        } else {
+            resolution
         }
 
-        override fun resolve(resolutions: Set<Resolution>): Resolution {
-            TODO("Not yet implemented")
+    private fun createFinalResolution(resolutions: Set<Resolution>): Resolution {
+        var accuracy = Accuracy.MINIMUM
+        var desiredInterval = Long.MAX_VALUE
+        var minimumDisplacement = Double.MAX_VALUE
+        resolutions.forEach {
+            accuracy = higher(accuracy, it.accuracy)
+            desiredInterval = min(desiredInterval, it.desiredInterval)
+            minimumDisplacement = min(minimumDisplacement, it.minimumDisplacement)
         }
+        return Resolution(accuracy, desiredInterval, minimumDisplacement)
+    }
 
-        private inner class Listener : ResolutionPolicy.Hooks.TrackableSetListener {
-            private val handler = Handler()
+    private fun higher(a: Accuracy, b: Accuracy): Accuracy = if (a.getLevel() > b.getLevel()) a else b
+}
 
-            override fun onTrackableAdded(trackable: Trackable) {
-                // Implementation intentionally empty. We are not interested in this event.
-            }
+private class DefaultSubscriberSetListener : ResolutionPolicy.Hooks.SubscriberSetListener {
+    private val subscriberSet = mutableSetOf<Subscriber>()
+    override fun onSubscriberAdded(subscriber: Subscriber) {
+        subscriberSet.add(subscriber)
+    }
 
-            override fun onTrackableRemoved(trackable: Trackable) {
-                // Implementation intentionally empty. We are not interested in this event.
-            }
+    override fun onSubscriberRemoved(subscriber: Subscriber) {
+        subscriberSet.remove(subscriber)
+    }
 
-            override fun onActiveTrackableChanged(trackable: Trackable?) {
-                if (null == trackable) {
-                    methods.cancelProximityThreshold()
-                } else {
-                    // TODO Illustrative but will need work!
-                    val constraints = trackable.constraints as DefaultResolutionConstraints
-                    methods.setProximityThreshold(constraints.proximityThreshold, handler)
-                }
-            }
+    fun hasSubscribers() = subscriberSet.isNotEmpty()
+}
 
-            private inner class Handler : ResolutionPolicy.Methods.ProximityHandler {
-                override fun onProximityReached(threshold: Proximity) {
-                    // modify state for my parent Policy instance
-                    thresholdReached = true
+private class DefaultTrackableSetListener(
+    private val methods: ResolutionPolicy.Methods,
+    private val proximityHandler: DefaultProximityHandler
+) :
+    ResolutionPolicy.Hooks.TrackableSetListener {
+    private val trackableSet = mutableSetOf<Trackable>()
+    private var activeTrackable: Trackable? = null
+    override fun onTrackableAdded(trackable: Trackable) {
+        trackableSet.add(trackable)
+    }
 
-                    // ask the Publisher to re-resolve the tracking Resolution, which will result in my parent Policy
-                    // instance's implementation of ResolutionPolicy's resolve(Set<ResolutionRequest>) being called
-                    // asynchronously at some point in the near future.
-                    methods.refresh()
-                }
+    override fun onTrackableRemoved(trackable: Trackable) {
+        trackableSet.remove(trackable)
+    }
 
-                override fun onProximityCancelled() {
-                    // Implementation intentionally empty. We are not interested in this event.
-                }
+    override fun onActiveTrackableChanged(trackable: Trackable?) {
+        if (trackable == null) {
+            activeTrackable = null
+            methods.cancelProximityThreshold()
+        } else {
+            activeTrackable = trackable
+            trackable.constraints?.let {
+                val constraints = it as DefaultResolutionConstraints
+                methods.setProximityThreshold(constraints.proximityThreshold, proximityHandler)
             }
         }
+    }
+}
+
+private class DefaultProximityHandler(
+    private val methods: ResolutionPolicy.Methods,
+    private val proximityReachedCallback: () -> Unit,
+    private val proximityCancelledCallback: () -> Unit
+) :
+    ResolutionPolicy.Methods.ProximityHandler {
+    override fun onProximityReached(threshold: Proximity) {
+        proximityReachedCallback()
+        methods.refresh()
+    }
+
+    override fun onProximityCancelled() {
+        proximityCancelledCallback()
     }
 }
