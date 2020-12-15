@@ -225,8 +225,7 @@ sealed class Proximity
 /**
  * A proximity where there is the capability to specify both temporal and spatial elements.
  *
- * At least one of [temporal] or [spatial] **must** be provided. If both are provided then the temporal element takes
- * precedence, with the spatial element acting as a fallback in the case that the temporal proximity is not known.
+ * At least one of [temporal] or [spatial] **must** be provided.
  */
 data class DefaultProximity(
     /**
