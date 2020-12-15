@@ -61,7 +61,7 @@ constructor(
     private val gson: Gson = Gson()
     private val mapboxNavigation: MapboxNavigation
     private val ably: AblyRealtime
-    private val channelMap: MutableMap<String, Channel> = mutableMapOf()
+    private val channelMap: MutableMap<Trackable, Channel> = mutableMapOf()
     private val locationObserver = object : LocationObserver {
         override fun onRawLocationChanged(rawLocation: Location) {
             sendRawLocationMessage(rawLocation)
@@ -288,7 +288,7 @@ constructor(
         onSuccess: () -> Unit,
         onError: (Exception) -> Unit
     ) {
-        if (!channelMap.contains(trackable.id)) {
+        if (!channelMap.contains(trackable)) {
             createChannelAndJoinPresence(trackable, onSuccess, onError)
         } else {
             enqueue(SuccessEvent(onSuccess))
@@ -296,7 +296,7 @@ constructor(
     }
 
     private fun performJoinPresenceSuccess(event: JoinPresenceSuccessEvent) {
-        channelMap[event.trackable.id] = event.channel
+        channelMap[event.trackable] = event.channel
         resolutionPolicyHooks.trackables?.onTrackableAdded(event.trackable)
         enqueue(SuccessEvent(event.onSuccess))
     }
@@ -310,7 +310,7 @@ constructor(
     }
 
     private fun performRemoveTrackable(event: RemoveTrackableEvent) {
-        val removedChannel = channelMap.remove(event.trackable.id)
+        val removedChannel = channelMap.remove(event.trackable)
         if (removedChannel != null) {
             resolutionPolicyHooks.trackables?.onTrackableRemoved(event.trackable)
             removeAllSubscribers(event.trackable)
