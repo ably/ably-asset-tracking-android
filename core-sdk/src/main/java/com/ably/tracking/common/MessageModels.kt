@@ -1,5 +1,7 @@
 package com.ably.tracking.common
 
+import com.ably.tracking.Resolution
+
 object GeoJsonTypes {
     const val FEATURE = "Feature"
     const val POINT = "Point"
@@ -29,4 +31,4 @@ data class GeoJsonProperties(
     val time: Double
 )
 
-data class PresenceData(val type: String)
+data class PresenceData(val type: String, val resolution: Resolution? = null)
