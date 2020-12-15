@@ -292,6 +292,13 @@ data class DefaultResolutionSet(
      * @param resolution The resolution to be used to populate all fields.
      */
     constructor(resolution: Resolution) : this(resolution, resolution, resolution, resolution)
+
+    fun getResolution(isNear: Boolean, hasSubscriber: Boolean): Resolution = when {
+        isNear && hasSubscriber -> nearWithSubscriber
+        isNear && !hasSubscriber -> nearWithoutSubscriber
+        !isNear && hasSubscriber -> farWithSubscriber
+        else -> farWithoutSubscriber
+    }
 }
 
 /**
