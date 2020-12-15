@@ -4,13 +4,12 @@ import androidx.annotation.Nullable;
 
 import com.ably.tracking.Accuracy;
 import com.ably.tracking.Resolution;
+import com.ably.tracking.publisher.DefaultProximity;
 import com.ably.tracking.publisher.DefaultResolutionConstraints;
 import com.ably.tracking.publisher.DefaultResolutionSet;
 import com.ably.tracking.publisher.Proximity;
 import com.ably.tracking.publisher.ResolutionConstraints;
 import com.ably.tracking.publisher.ResolutionPolicy;
-import com.ably.tracking.publisher.SpatialProximity;
-import com.ably.tracking.publisher.TemporalProximity;
 import com.ably.tracking.publisher.Trackable;
 import com.ably.tracking.publisher.TrackableResolutionRequest;
 
@@ -88,7 +87,7 @@ public class Snippets {
         final long twoMinutes = 2 * 60 * 1000;
         final DefaultResolutionConstraints constraints = new DefaultResolutionConstraints(
             resolutions,
-            new TemporalProximity(twoMinutes),
+            new DefaultProximity(twoMinutes),
             20.0f,
             3.0f
         );
@@ -100,8 +99,8 @@ public class Snippets {
         Assert.assertTrue(trackable.getConstraints() instanceof DefaultResolutionConstraints);
         final DefaultResolutionConstraints returnedConstraints = (DefaultResolutionConstraints)trackable.getConstraints();
 
-        final TemporalProximity returnedProximity = (TemporalProximity)returnedConstraints.getProximityThreshold();
-        Assert.assertEquals(twoMinutes, returnedProximity.getTime());
+        final DefaultProximity returnedProximity = (DefaultProximity)returnedConstraints.getProximityThreshold();
+        Assert.assertEquals(twoMinutes, returnedProximity.getTemporal().longValue());
 
         Assert.assertEquals(20.0f, returnedConstraints.getBatteryLevelThreshold(), 0.1f);
         Assert.assertEquals(3.0f, returnedConstraints.getLowBatteryMultiplier(), 0.1f);
@@ -135,9 +134,9 @@ public class Snippets {
             @Override
             public void onProximityReached(@NotNull Proximity threshold) {
                 log.add("reached");
-                Assert.assertTrue(threshold instanceof SpatialProximity);
-                final SpatialProximity spatial = (SpatialProximity)threshold;
-                Assert.assertEquals(333.0, spatial.getDistance(), 0.1);
+                Assert.assertTrue(threshold instanceof DefaultProximity);
+                final DefaultProximity dp = (DefaultProximity)threshold;
+                Assert.assertEquals(333.0, dp.getSpatial(), 0.1);
             }
 
             @Override
@@ -147,7 +146,7 @@ public class Snippets {
         };
 
         // Call the handler in the same manner that a Kotlin-based publisher would.
-        handler.onProximityReached(new SpatialProximity(333.0));
+        handler.onProximityReached(new DefaultProximity(333.0));
         handler.onProximityCancelled();
 
         // FWIW, validate the handled received in the called order.

@@ -221,8 +221,42 @@ data class Trackable(
 data class Subscriber(val id: String)
 
 sealed class Proximity
-data class SpatialProximity(val distance: Double) : Proximity()
-data class TemporalProximity(val time: Long) : Proximity()
+
+/**
+ * A proximity where there is the capability to specify both temporal and spatial elements.
+ *
+ * At least one of [temporal] or [spatial] **must** be provided. If both are provided then the temporal element takes
+ * precedence, with the spatial element acting as a fallback in the case that the temporal proximity is not known.
+ */
+data class DefaultProximity(
+    /**
+     * Estimated time remaining to arrive at the destination, in milliseconds.
+     */
+    val temporal: Long?,
+
+    /**
+     * Distance from the destination, in metres.
+     */
+    val spatial: Double?
+) : Proximity() {
+    init {
+        if (null == temporal && null == spatial) {
+            throw NullPointerException("Both temporal and spatial may not be null. At least one must be specified.")
+        }
+    }
+
+    /**
+     * Create a proximity where only the temporal element is specified.
+     * @param temporal Distance from the destination, in metres.
+     */
+    constructor(temporal: Long) : this(temporal, null)
+
+    /**
+     * Create a proximity where only the spatial element is specified.
+     * @param spatial Estimated time remaining to arrive at the destination, in milliseconds.
+     */
+    constructor(spatial: Double) : this(null, spatial)
+}
 
 /**
  * The set of resolutions which must be defined in order to specify [DefaultResolutionConstraints], which are required
