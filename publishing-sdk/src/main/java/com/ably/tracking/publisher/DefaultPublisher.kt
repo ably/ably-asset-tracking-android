@@ -302,7 +302,7 @@ constructor(
 
     private fun performJoinPresenceSuccess(event: JoinPresenceSuccessEvent) {
         channelMap[event.trackable] = event.channel
-        resolutionMap[event.trackable] = resolutionPolicy.resolve(emptySet())
+        resolveResolution(event.trackable)
         resolutionPolicyHooks.trackables?.onTrackableAdded(event.trackable)
         enqueue(SuccessEvent(event.onSuccess))
     }
@@ -320,6 +320,7 @@ constructor(
         if (removedChannel != null) {
             resolutionPolicyHooks.trackables?.onTrackableRemoved(event.trackable)
             removeAllSubscribers(event.trackable)
+            resolutionMap.remove(event.trackable)
             leaveChannelPresence(
                 removedChannel,
                 { enqueue(ClearActiveTrackableEvent(event.trackable) { event.onSuccess(true) }) },
@@ -458,6 +459,7 @@ constructor(
         }
         subscribersMap[trackable]?.add(subscriber)
         resolutionPolicyHooks.subscribers?.onSubscriberAdded(subscriber)
+        resolveResolution(trackable)
     }
 
     private fun removeSubscriber(id: String, trackable: Trackable) {
@@ -465,6 +467,7 @@ constructor(
             subscribers.find { it.id == id }?.let { subscriber ->
                 subscribers.remove(subscriber)
                 resolutionPolicyHooks.subscribers?.onSubscriberRemoved(subscriber)
+                resolveResolution(trackable)
             }
         }
     }
@@ -551,12 +554,14 @@ constructor(
     }
 
     private fun performRefreshResolutionPolicy() {
-        channelMap.keys.forEach { trackable ->
-            val resolutionRequests: Set<Resolution> = resolutionRequestsMap[trackable] ?: emptySet()
-            resolutionMap[trackable] = resolutionPolicy.resolve(
-                TrackableResolutionRequest(trackable.constraints, resolutionRequests)
-            )
-        }
+        channelMap.keys.forEach { resolveResolution(it) }
+    }
+
+    private fun resolveResolution(trackable: Trackable) {
+        val resolutionRequests: Set<Resolution> = resolutionRequestsMap[trackable] ?: emptySet()
+        resolutionMap[trackable] = resolutionPolicy.resolve(
+            TrackableResolutionRequest(trackable, resolutionRequests)
+        )
     }
 
     private fun postToMainThread(operation: () -> Unit) {
