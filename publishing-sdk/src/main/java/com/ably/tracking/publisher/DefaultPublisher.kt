@@ -313,7 +313,7 @@ constructor(
         val removedChannel = channelMap.remove(event.trackable.id)
         if (removedChannel != null) {
             resolutionPolicyHooks.trackables?.onTrackableRemoved(event.trackable)
-            removeAllSubscribersFromHooks(event.trackable)
+            removeAllSubscribers(event.trackable)
             leaveChannelPresence(
                 removedChannel,
                 { enqueue(ClearActiveTrackableEvent(event.trackable) { event.onSuccess(true) }) },
@@ -324,8 +324,11 @@ constructor(
         }
     }
 
-    private fun removeAllSubscribersFromHooks(trackable: Trackable) {
-        // TODO remove all subscribers from resolutionPolicyHooks.subscribers that are connected to the trackable
+    private fun removeAllSubscribers(trackable: Trackable) {
+        subscribersMap[trackable]?.let { subscribers ->
+            subscribers.forEach { resolutionPolicyHooks.subscribers?.onSubscriberRemoved(it) }
+            subscribers.clear()
+        }
     }
 
     private fun performClearActiveTrackable(event: ClearActiveTrackableEvent) {
