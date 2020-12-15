@@ -78,10 +78,11 @@ constructor(
     private var activeResolution: Resolution
     private var isTracking: Boolean = false
     private var mapboxReplayer: MapboxReplayer? = null
-    private var lastKnownLocation: Location? = null
+    private var lastSentRawLocation: Location? = null
+    private var lastSentEnhancedLocation: Location? = null
 
     /**
-     * This field will be set only when trying to set a tracking destination before receiving any [lastKnownLocation].
+     * This field will be set only when trying to set a tracking destination before receiving any [lastSentRawLocation].
      * After successfully setting the tracking destination this field will be set to NULL.
      **/
     private var destinationToSet: Destination? = null
@@ -150,13 +151,15 @@ constructor(
     }
 
     private fun performRawLocationChanged(event: RawLocationChangedEvent) {
-        lastKnownLocation = event.location
-        destinationToSet?.let { setDestination(it) }
         Timber.d("sendRawLocationMessage: publishing: ${event.geoJsonMessage.synopsis()}")
-        channelMap.values.forEach {
-            it.publish(EventNames.RAW, event.geoJsonMessage.toJsonArray(gson))
+        if (shouldSentLocation(event.location, lastSentRawLocation ?: event.location)) {
+            channelMap.values.forEach {
+                it.publish(EventNames.RAW, event.geoJsonMessage.toJsonArray(gson))
+            }
+            lastSentRawLocation = event.location
+            destinationToSet?.let { setDestination(it) }
+            enqueue(SuccessEvent { locationUpdatedListener(event.location) })
         }
-        enqueue(SuccessEvent { locationUpdatedListener(event.location) })
     }
 
     private fun sendEnhancedLocationMessage(enhancedLocation: Location, keyPoints: List<Location>) {
@@ -169,10 +172,20 @@ constructor(
         event.geoJsonMessages.forEach {
             Timber.d("sendEnhancedLocationMessage: publishing: ${it.synopsis()}")
         }
-        channelMap.values.forEach {
-            it.publish(EventNames.ENHANCED, event.geoJsonMessages.toJsonArray(gson))
+        if (shouldSentLocation(event.location, lastSentEnhancedLocation ?: event.location)) {
+            channelMap.values.forEach {
+                it.publish(EventNames.ENHANCED, event.geoJsonMessages.toJsonArray(gson))
+            }
+            lastSentEnhancedLocation = event.location
+            enqueue(SuccessEvent { locationUpdatedListener(event.location) })
         }
-        enqueue(SuccessEvent { locationUpdatedListener(event.location) })
+    }
+
+    private fun shouldSentLocation(currentLocation: Location, lastSentLocation: Location): Boolean {
+        val timeSinceLastSentLocation = currentLocation.timeFrom(lastSentLocation)
+        val distanceFromLastSentLocation = currentLocation.distanceInMetersFrom(lastSentLocation)
+        return distanceFromLastSentLocation >= activeResolution.minimumDisplacement &&
+            timeSinceLastSentLocation >= activeResolution.desiredInterval
     }
 
     private fun startLocationUpdates() {
@@ -410,7 +423,7 @@ constructor(
     }
 
     private fun performSetDestination(event: SetDestinationEvent) {
-        lastKnownLocation.let { currentLocation ->
+        lastSentRawLocation.let { currentLocation ->
             if (currentLocation != null) {
                 destinationToSet = null
                 mapboxNavigation.requestRoutes(
