@@ -26,12 +26,13 @@ internal class DefaultSubscriber(
     rawLocationUpdatedListener: LocationUpdatedListener,
     enhancedLocationUpdatedListener: LocationUpdatedListener,
     trackingId: String,
-    private val assetStatusListener: StatusListener?
+    private val assetStatusListener: StatusListener?,
+    resolution: Resolution?
 ) : Subscriber {
     private val ably: AblyRealtime
     private val channel: Channel
     private val gson = Gson()
-    private val presenceData = PresenceData(ClientTypes.SUBSCRIBER)
+    private var presenceData = PresenceData(ClientTypes.SUBSCRIBER, resolution)
 
     init {
         ably = AblyRealtime(connectionConfiguration.apiKey)
@@ -68,7 +69,19 @@ internal class DefaultSubscriber(
     }
 
     override fun sendChangeRequest(resolution: Resolution, onSuccess: () -> Unit, onError: (Exception) -> Unit) {
-        TODO()
+        presenceData = presenceData.copy(resolution = resolution)
+        channel.presence.update(
+            gson.toJson(presenceData),
+            object : CompletionListener {
+                override fun onSuccess() {
+                    onSuccess()
+                }
+
+                override fun onError(reason: ErrorInfo?) {
+                    onError(Exception("Unable to change resolution: ${reason?.message}"))
+                }
+            }
+        )
     }
 
     override fun stop() {

@@ -46,7 +46,8 @@ internal data class SubscriberBuilder(
             rawLocationUpdatedListener!!,
             enhancedLocationUpdatedListener!!,
             trackingId!!,
-            assetStatusListener
+            assetStatusListener,
+            resolution
         )
     }
 
