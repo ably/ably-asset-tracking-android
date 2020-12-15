@@ -217,6 +217,7 @@ constructor(
     private fun performTrackableReadyToTrack(event: TrackableReadyToTrackEvent) {
         if (active != event.trackable) {
             active = event.trackable
+            resolutionPolicyHooks.trackables?.onActiveTrackableChanged(event.trackable)
             event.trackable.destination?.let { setDestination(it) }
         }
         enqueue(SuccessEvent(event.onSuccess))
@@ -249,6 +250,7 @@ constructor(
 
     private fun performJoinPresenceSuccess(event: JoinPresenceSuccessEvent) {
         channelMap[event.trackable.id] = event.channel
+        resolutionPolicyHooks.trackables?.onTrackableAdded(event.trackable)
         enqueue(SuccessEvent(event.onSuccess))
     }
 
@@ -263,6 +265,7 @@ constructor(
     private fun performRemoveTrackable(event: RemoveTrackableEvent) {
         val removedChannel = channelMap.remove(event.trackable.id)
         if (removedChannel != null) {
+            resolutionPolicyHooks.trackables?.onTrackableRemoved(event.trackable)
             leaveChannelPresence(
                 removedChannel,
                 { enqueue(ClearActiveTrackableEvent(event.trackable) { event.onSuccess(true) }) },
@@ -277,6 +280,7 @@ constructor(
         if (active == event.trackable) {
             removeCurrentDestination()
             active = null
+            resolutionPolicyHooks.trackables?.onActiveTrackableChanged(null)
         }
         enqueue(SuccessEvent(event.onSuccess))
     }
