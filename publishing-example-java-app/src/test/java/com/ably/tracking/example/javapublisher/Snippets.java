@@ -4,8 +4,13 @@ import androidx.annotation.Nullable;
 
 import com.ably.tracking.Accuracy;
 import com.ably.tracking.Resolution;
+import com.ably.tracking.publisher.DefaultResolutionConstraints;
+import com.ably.tracking.publisher.DefaultResolutionSet;
+import com.ably.tracking.publisher.ResolutionConstraints;
 import com.ably.tracking.publisher.ResolutionPolicy;
+import com.ably.tracking.publisher.TemporalProximity;
 import com.ably.tracking.publisher.Trackable;
+import com.ably.tracking.publisher.TrackableResolutionRequest;
 
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
@@ -17,82 +22,99 @@ import java.util.Set;
 public class Snippets {
     /**
      * A contrived snippet to prove that we can implement a resolution policy in Java.
+     */
     @Test
     public void implementingResolutionPolicy() {
         // Implement the ResolutionPolicy interface.
         final ResolutionPolicy policy = new ResolutionPolicy() {
             @NotNull
             @Override
-            public Resolution resolve(@NotNull final Set<? extends ResolutionRequest> requests) {
-                Assert.assertEquals(2, requests.size());
-
+            public Resolution resolve(@NotNull Set<Resolution> resolutions) {
                 // Return nonsense values, so we can validate them at the end of this test.
                 return new Resolution(Accuracy.MINIMUM, -666, -999);
             }
-        };
 
-        // Create a set of resolution requests.
-        final Set<ResolutionRequest> resolutionRequests = new HashSet<>();
-        resolutionRequests.add(
-            resolutionRequest(
-                new Resolution(Accuracy.BALANCED, 1000, 10),
-                new Trackable("1", null, null, null),
-                ResolutionRequest.Origin.LOCAL
-            )
-        );
-        resolutionRequests.add(
-            resolutionRequest(
-                new Resolution(Accuracy.MAXIMUM, 200, 2),
-                new Trackable("2", null, null, null),
-                ResolutionRequest.Origin.SUBSCRIBER
-            )
-        );
+            @NotNull
+            @Override
+            public Resolution resolve(@NotNull TrackableResolutionRequest request) {
+                // Return nonsense values, so we can validate them at the end of this test.
+                return new Resolution(Accuracy.MAXIMUM, -1666, -1999);
+            }
+        };
 
         // Call the policy in the same manner that the Kotlin-based pubisher would.
-        final Resolution resolved = policy.resolve(resolutionRequests);
+        final Resolution resolutionsResult = policy.resolve(new HashSet<Resolution>());
+        final Resolution requestsResult = policy.resolve(new TrackableResolutionRequest() {
+            @org.jetbrains.annotations.Nullable
+            @Override
+            public ResolutionConstraints getConstraints() {
+                return null;
+            }
+
+            @NotNull
+            @Override
+            public Set<Resolution> getRemoteRequests() {
+                return null;
+            }
+        });
 
         // Validate that our policy returned what we told it to above.
-        Assert.assertEquals(Accuracy.MINIMUM, resolved.getAccuracy());
-        Assert.assertEquals(-666, resolved.getDesiredInterval());
-        Assert.assertEquals(-999, resolved.getMinimumDisplacement(), 0.1);
+        Assert.assertEquals(Accuracy.MINIMUM, resolutionsResult.getAccuracy());
+        Assert.assertEquals(-666, resolutionsResult.getDesiredInterval());
+        Assert.assertEquals(-999, resolutionsResult.getMinimumDisplacement(), 0.1);
+        Assert.assertEquals(Accuracy.MAXIMUM, requestsResult.getAccuracy());
+        Assert.assertEquals(-1666, requestsResult.getDesiredInterval());
+        Assert.assertEquals(-1999, requestsResult.getMinimumDisplacement(), 0.1);
     }
 
-     * Returns a Java implementation of the ResolutionRequest interface.
-     * The returned object has sensible, type-aware implementations of both the hashCode() and equals(Object) methods.
-    private ResolutionRequest resolutionRequest(final Resolution resolution, final Trackable trackable, final ResolutionRequest.Origin origin) {
-        return new ResolutionRequest() {
-            @NotNull @Override
-            public Resolution getResolution() {
-                return resolution;
-            }
+    /**
+     * Validates that we can construct a set of default resolution constraints in Java and apply them to a new
+     * Trackable item.
+     */
+    @Test
+    public void creatingDefaultResolutionConstraints() {
+        final DefaultResolutionSet resolutions = new DefaultResolutionSet(
+            new Resolution(Accuracy.LOW, 10000, 100),
+            new Resolution(Accuracy.BALANCED, 5000, 50),
+            new Resolution(Accuracy.BALANCED, 2000, 20),
+            new Resolution(Accuracy.HIGH, 1000, 10)
+        );
 
-            @NotNull @Override
-            public Trackable getTrackable() {
-                return trackable;
-            }
+        final long twoMinutes = 2 * 60 * 1000;
+        final DefaultResolutionConstraints constraints = new DefaultResolutionConstraints(
+            resolutions,
+            new TemporalProximity(twoMinutes),
+            20.0f,
+            3.0f
+        );
 
-            @NotNull @Override
-            public Origin getOrigin() {
-                return origin;
-            }
+        final Trackable trackable = new Trackable("Foo", null, null, constraints);
 
-            @Override
-            public int hashCode() {
-                return getResolution().hashCode() ^ getTrackable().hashCode() ^ getOrigin().hashCode();
-            }
+        Assert.assertEquals("Foo", trackable.getId());
 
-            @Override
-            public boolean equals(@Nullable final Object obj) {
-                if (!(obj instanceof ResolutionRequest)) {
-                    return false;
-                }
+        Assert.assertTrue(trackable.getConstraints() instanceof DefaultResolutionConstraints);
+        final DefaultResolutionConstraints returnedConstraints = (DefaultResolutionConstraints)trackable.getConstraints();
 
-                final ResolutionRequest other = (ResolutionRequest)obj;
-                return getResolution().equals(other.getResolution()) &&
-                    getTrackable().equals(other.getTrackable()) &&
-                    getOrigin().equals(other.getOrigin());
-            }
-        };
+        final TemporalProximity returnedProximity = (TemporalProximity)returnedConstraints.getProximityThreshold();
+        Assert.assertEquals(twoMinutes, returnedProximity.getTime());
+
+        Assert.assertEquals(20.0f, returnedConstraints.getBatteryLevelThreshold(), 0.1f);
+        Assert.assertEquals(3.0f, returnedConstraints.getLowBatteryMultiplier(), 0.1f);
+
+        Assert.assertEquals(Accuracy.LOW, returnedConstraints.getResolutions().getFarWithoutSubscriber().getAccuracy());
+        Assert.assertEquals(10000, returnedConstraints.getResolutions().getFarWithoutSubscriber().getDesiredInterval());
+        Assert.assertEquals(100, returnedConstraints.getResolutions().getFarWithoutSubscriber().getMinimumDisplacement(), 0.1);
+
+        Assert.assertEquals(Accuracy.BALANCED, returnedConstraints.getResolutions().getFarWithSubscriber().getAccuracy());
+        Assert.assertEquals(5000, returnedConstraints.getResolutions().getFarWithSubscriber().getDesiredInterval());
+        Assert.assertEquals(50, returnedConstraints.getResolutions().getFarWithSubscriber().getMinimumDisplacement(), 0.1);
+
+        Assert.assertEquals(Accuracy.BALANCED, returnedConstraints.getResolutions().getNearWithoutSubscriber().getAccuracy());
+        Assert.assertEquals(2000, returnedConstraints.getResolutions().getNearWithoutSubscriber().getDesiredInterval());
+        Assert.assertEquals(20, returnedConstraints.getResolutions().getNearWithoutSubscriber().getMinimumDisplacement(), 0.1);
+
+        Assert.assertEquals(Accuracy.HIGH, returnedConstraints.getResolutions().getNearWithSubscriber().getAccuracy());
+        Assert.assertEquals(1000, returnedConstraints.getResolutions().getNearWithSubscriber().getDesiredInterval());
+        Assert.assertEquals(10, returnedConstraints.getResolutions().getNearWithSubscriber().getMinimumDisplacement(), 0.1);
     }
-    */
 }
