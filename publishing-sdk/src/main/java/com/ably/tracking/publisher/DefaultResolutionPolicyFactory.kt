@@ -56,7 +56,7 @@ private class DefaultResolutionPolicy(
         val trackableConstraints = request.trackable.constraints as DefaultResolutionConstraints
         val resolutionFromTrackable = trackableConstraints.resolutions.getResolution(
             proximityThresholdReached,
-            subscriberSetListener.hasSubscribers()
+            subscriberSetListener.hasSubscribers(request.trackable)
         )
         val allResolutions = mutableSetOf<Resolution>().apply {
             add(resolutionFromTrackable)
@@ -104,7 +104,7 @@ private class DefaultSubscriberSetListener : ResolutionPolicy.Hooks.SubscriberSe
         subscriberSet.remove(subscriber)
     }
 
-    fun hasSubscribers() = subscriberSet.isNotEmpty()
+    fun hasSubscribers(trackable: Trackable) = subscriberSet.any { it.trackable == trackable }
 }
 
 private class DefaultTrackableSetListener(
