@@ -443,7 +443,7 @@ constructor(
     }
 
     private fun addSubscriber(id: String, trackable: Trackable) {
-        val subscriber = Subscriber(id)
+        val subscriber = Subscriber(id, trackable)
         if (subscribersMap[trackable] == null) {
             subscribersMap[trackable] = mutableSetOf()
         }

@@ -217,7 +217,7 @@ data class Trackable(
     val constraints: ResolutionConstraints? = null
 )
 
-data class Subscriber(val id: String)
+data class Subscriber(val id: String, val trackable: Trackable)
 
 sealed class Proximity
 
