@@ -2,9 +2,11 @@ package com.ably.tracking.subscriber
 
 import android.annotation.SuppressLint
 import android.content.Context
+import com.ably.tracking.Accuracy
 import com.ably.tracking.BuilderConfigurationIncompleteException
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.LogConfiguration
+import com.ably.tracking.Resolution
 import io.mockk.mockk
 import org.junit.Assert
 import org.junit.Test
@@ -130,7 +132,7 @@ class FactoryUnitTests {
     @Test
     fun `setting resolution updates builder field`() {
         // given
-        val resolution = 1.0
+        val resolution = Resolution(Accuracy.BALANCED, 333, 666.6)
 
         // when
         val builder = Subscriber.subscribers().resolution(resolution) as SubscriberBuilder
@@ -142,7 +144,7 @@ class FactoryUnitTests {
     @Test
     fun `setting resolution returns a new copy of builder`() {
         // given
-        val resolution = 1.0
+        val resolution = Resolution(Accuracy.BALANCED, 333, 666.6)
         val originalBuilder = Subscriber.subscribers()
 
         // when
@@ -216,7 +218,7 @@ class FactoryUnitTests {
             .log(LogConfiguration(true))
             .rawLocationUpdatedListener { }
             .enhancedLocationUpdatedListener { }
-            .resolution(1.0)
+            .resolution(Resolution(Accuracy.BALANCED, 333, 666.6))
             .trackingId("")
 
         // then

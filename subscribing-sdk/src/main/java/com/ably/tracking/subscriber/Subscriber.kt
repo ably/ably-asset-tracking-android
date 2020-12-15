@@ -3,6 +3,7 @@ package com.ably.tracking.subscriber
 import android.location.Location
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.LogConfiguration
+import com.ably.tracking.Resolution
 
 typealias LocationUpdatedListener = (Location) -> Unit
 typealias StatusListener = (Boolean) -> Unit
@@ -19,6 +20,24 @@ interface Subscriber {
             return SubscriberBuilder()
         }
     }
+
+    /**
+     * Sends the desired resolution for updates, to be requested from the remote publisher.
+     *
+     * An initial resolution may be defined from the outset of a [Subscriber]'s lifespan by using the
+     * [resolution][Builder.resolution] method on the [Builder] instance used to [start][Builder.start] it.
+     *
+     * Requests sent using this method will take time to propagate back to the publisher.
+     *
+     * The [onSuccess] callback will be called once the request has been successfully registered with the server,
+     * however this does not necessarily mean that the request has been received and actioned by the publisher.
+     *
+     * @param resolution The resolution to request.
+     * @param onSuccess Function to be called if the request was successfully registered with the server.
+     * @param onError Function to be called if the request could not be sent or it was not possible to confirm that the
+     * server had processed the request.
+     */
+    fun sendChangeRequest(resolution: Resolution, onSuccess: () -> Unit, onError: (Exception) -> Unit)
 
     /**
      * Stops asset subscriber from listening for asset location
@@ -61,12 +80,13 @@ interface Subscriber {
         fun enhancedLocationUpdatedListener(listener: LocationUpdatedListener): Builder
 
         /**
-         * Sets resolution of updates from the publisher
+         * Sets the desired resolution of updates, to be requested from the remote publisher.
          *
-         * @param resolution resolution of updates from the publisher
+         * @param resolution An indication of how often to this subscriber would like the publisher to sample locations,
+         * at what level of positional accuracy, and how often to send them back.
          * @return A new instance of the builder with resolution changed
          */
-        fun resolution(resolution: Double): Builder
+        fun resolution(resolution: Resolution): Builder
 
         /**
          * Sets tracking ID of the tracked asset
