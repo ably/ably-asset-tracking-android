@@ -3,6 +3,7 @@ package com.ably.tracking.publisher
 import android.location.Location
 import com.ably.tracking.common.GeoJsonMessage
 import io.ably.lib.realtime.Channel
+import io.ably.lib.types.PresenceMessage
 
 internal sealed class PublisherEvent
 
@@ -71,4 +72,9 @@ internal class RefreshResolutionPolicyEvent : PublisherEvent()
 
 internal data class SetDestinationSuccessEvent(
     val routeDurationInMilliseconds: Long
+) : PublisherEvent()
+
+internal data class PresenceMessageEvent(
+    val trackable: Trackable,
+    val presenceMessage: PresenceMessage
 ) : PublisherEvent()

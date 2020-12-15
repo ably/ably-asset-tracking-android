@@ -14,6 +14,7 @@ import com.ably.tracking.common.ClientTypes
 import com.ably.tracking.common.EventNames
 import com.ably.tracking.common.MILLISECONDS_PER_SECOND
 import com.ably.tracking.common.PresenceData
+import com.ably.tracking.common.getData
 import com.ably.tracking.common.getTimeInMilliseconds
 import com.ably.tracking.common.toGeoJson
 import com.ably.tracking.common.toJsonArray
@@ -35,6 +36,7 @@ import io.ably.lib.realtime.CompletionListener
 import io.ably.lib.types.AblyException
 import io.ably.lib.types.ClientOptions
 import io.ably.lib.types.ErrorInfo
+import io.ably.lib.types.PresenceMessage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -78,7 +80,8 @@ constructor(
     private val resolutionPolicy: ResolutionPolicy
     private val resolutionPolicyHooks = DefaultHooks()
     private val resolutionPolicyMethods = DefaultMethods()
-    private val resolutionRequestsMap = mutableMapOf<Trackable, Set<Resolution>>()
+    private val resolutionRequestsMap = mutableMapOf<Trackable, MutableSet<Resolution>>()
+    private val subscribersMap = mutableMapOf<Trackable, MutableSet<Subscriber>>()
     private var activeResolution: Resolution
     private var isTracking: Boolean = false
     private var mapboxReplayer: MapboxReplayer? = null
@@ -310,6 +313,7 @@ constructor(
         val removedChannel = channelMap.remove(event.trackable.id)
         if (removedChannel != null) {
             resolutionPolicyHooks.trackables?.onTrackableRemoved(event.trackable)
+            removeAllSubscribersFromHooks(event.trackable)
             leaveChannelPresence(
                 removedChannel,
                 { enqueue(ClearActiveTrackableEvent(event.trackable) { event.onSuccess(true) }) },
@@ -318,6 +322,10 @@ constructor(
         } else {
             enqueue(SuccessEvent { event.onSuccess(false) })
         }
+    }
+
+    private fun removeAllSubscribersFromHooks(trackable: Trackable) {
+        // TODO remove all subscribers from resolutionPolicyHooks.subscribers that are connected to the trackable
     }
 
     private fun performClearActiveTrackable(event: ClearActiveTrackableEvent) {
@@ -343,6 +351,7 @@ constructor(
     ) {
         ably.channels.get(trackable.id).apply {
             try {
+                presence.subscribe { enqueue(PresenceMessageEvent(trackable, it)) }
                 presence.enterClient(
                     connectionConfiguration.clientId,
                     gson.toJson(presenceData),
@@ -393,6 +402,7 @@ constructor(
         onError: (Exception) -> Unit
     ) {
         try {
+            channel.presence.unsubscribe()
             channel.presence.leaveClient(
                 connectionConfiguration.clientId,
                 gson.toJson(presenceData),
@@ -411,6 +421,46 @@ constructor(
         } catch (ablyException: AblyException) {
             Timber.e(ablyException)
             onError(ablyException)
+        }
+    }
+
+    private fun performPresenceMessage(event: PresenceMessageEvent) {
+        when (event.presenceMessage.action) {
+            PresenceMessage.Action.present, PresenceMessage.Action.enter -> {
+                val data = event.presenceMessage.getData(gson)
+                if (data.type == ClientTypes.SUBSCRIBER) {
+                    addSubscriber(event.presenceMessage.clientId, event.trackable)
+                }
+            }
+            PresenceMessage.Action.leave -> {
+                val data = event.presenceMessage.getData(gson)
+                if (data.type == ClientTypes.SUBSCRIBER) {
+                    removeSubscriber(event.presenceMessage.clientId, event.trackable)
+                }
+            }
+            else -> Unit
+        }
+    }
+
+    private fun addSubscriber(id: String, trackable: Trackable) {
+        val subscriber = Subscriber(id)
+        if (subscribersMap[trackable] == null) {
+            subscribersMap[trackable] = mutableSetOf()
+        }
+        subscribersMap[trackable]?.add(subscriber)
+        if (active == trackable) {
+            resolutionPolicyHooks.subscribers?.onSubscriberAdded(subscriber)
+        }
+    }
+
+    private fun removeSubscriber(id: String, trackable: Trackable) {
+        subscribersMap[trackable]?.let { subscribers ->
+            subscribers.find { it.id == id }?.let { subscriber ->
+                subscribers.remove(subscriber)
+                if (active == trackable) {
+                    resolutionPolicyHooks.subscribers?.onSubscriberRemoved(subscriber)
+                }
+            }
         }
     }
 
@@ -528,6 +578,7 @@ constructor(
                     is SetDestinationEvent -> performSetDestination(event)
                     is RefreshResolutionPolicyEvent -> performRefreshResolutionPolicy()
                     is SetDestinationSuccessEvent -> performSetDestinationSuccess(event)
+                    is PresenceMessageEvent -> performPresenceMessage(event)
                 }
             }
         }
