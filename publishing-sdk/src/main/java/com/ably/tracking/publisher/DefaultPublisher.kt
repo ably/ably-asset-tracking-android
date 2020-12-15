@@ -439,6 +439,12 @@ constructor(
                     removeSubscriber(event.presenceMessage.clientId, event.trackable)
                 }
             }
+            PresenceMessage.Action.update -> {
+                val data = event.presenceMessage.getData(gson)
+                if (data.type == ClientTypes.SUBSCRIBER) {
+                    updateSubscriber(event.presenceMessage.clientId, event.trackable, data)
+                }
+            }
             else -> Unit
         }
     }
@@ -457,6 +463,24 @@ constructor(
         }
         hooks.subscribers?.onSubscriberAdded(subscriber)
         resolveResolution(trackable)
+    }
+
+    private fun updateSubscriber(id: String, trackable: Trackable, data: PresenceData) {
+        subscribersMap[trackable]?.let { subscribers ->
+            subscribers.find { it.id == id }?.let { subscriber ->
+                data.resolution.let { resolution ->
+                    if (resolution != null) {
+                        if (resolutionRequestsMap[trackable] == null) {
+                            resolutionRequestsMap[trackable] = mutableMapOf()
+                        }
+                        resolutionRequestsMap[trackable]?.put(subscriber, resolution)
+                    } else {
+                        resolutionRequestsMap[trackable]?.remove(subscriber)
+                    }
+                    resolveResolution(trackable)
+                }
+            }
+        }
     }
 
     private fun removeSubscriber(id: String, trackable: Trackable) {
