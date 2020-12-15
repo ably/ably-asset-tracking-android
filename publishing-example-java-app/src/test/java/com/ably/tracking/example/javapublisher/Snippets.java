@@ -6,8 +6,10 @@ import com.ably.tracking.Accuracy;
 import com.ably.tracking.Resolution;
 import com.ably.tracking.publisher.DefaultResolutionConstraints;
 import com.ably.tracking.publisher.DefaultResolutionSet;
+import com.ably.tracking.publisher.Proximity;
 import com.ably.tracking.publisher.ResolutionConstraints;
 import com.ably.tracking.publisher.ResolutionPolicy;
+import com.ably.tracking.publisher.SpatialProximity;
 import com.ably.tracking.publisher.TemporalProximity;
 import com.ably.tracking.publisher.Trackable;
 import com.ably.tracking.publisher.TrackableResolutionRequest;
@@ -16,7 +18,10 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 public class Snippets {
@@ -116,5 +121,36 @@ public class Snippets {
         Assert.assertEquals(Accuracy.HIGH, returnedConstraints.getResolutions().getNearWithSubscriber().getAccuracy());
         Assert.assertEquals(1000, returnedConstraints.getResolutions().getNearWithSubscriber().getDesiredInterval());
         Assert.assertEquals(10, returnedConstraints.getResolutions().getNearWithSubscriber().getMinimumDisplacement(), 0.1);
+    }
+
+    /**
+     * A contrived snippet to prove that we can implement a proximity handler in Java.
+     */
+    @Test
+    public void implementingProximityHandler() {
+        final List<String> log = new ArrayList<>();
+
+        // Implement the ProximityHandler interface.
+        final ResolutionPolicy.Methods.ProximityHandler handler = new ResolutionPolicy.Methods.ProximityHandler() {
+            @Override
+            public void onProximityReached(@NotNull Proximity threshold) {
+                log.add("reached");
+                Assert.assertTrue(threshold instanceof SpatialProximity);
+                final SpatialProximity spatial = (SpatialProximity)threshold;
+                Assert.assertEquals(333.0, spatial.getDistance(), 0.1);
+            }
+
+            @Override
+            public void onProximityCancelled() {
+                log.add("cancelled");
+            }
+        };
+
+        // Call the handler in the same manner that a Kotlin-based publisher would.
+        handler.onProximityReached(new SpatialProximity(333.0));
+        handler.onProximityCancelled();
+
+        // FWIW, validate the handled received in the called order.
+        Assert.assertEquals(Arrays.asList("reached", "cancelled"), log);
     }
 }
