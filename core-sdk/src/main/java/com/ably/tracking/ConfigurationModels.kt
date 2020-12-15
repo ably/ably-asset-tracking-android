@@ -51,6 +51,17 @@ enum class Accuracy {
 }
 
 /**
+ * Return an [Int] that represents the level of a given [Accuracy]. The higher the [Accuracy] the higher the level value. Useful when comparing accuracies.
+ */
+fun Accuracy.getLevel(): Int = when (this) {
+    Accuracy.MINIMUM -> 1
+    Accuracy.LOW -> 2
+    Accuracy.BALANCED -> 3
+    Accuracy.HIGH -> 4
+    Accuracy.MAXIMUM -> 5
+}
+
+/**
  * Governs how often to sample locations, at what level of positional accuracy, and how often to send them to
  * subscribers.
  */
