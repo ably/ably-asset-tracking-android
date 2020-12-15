@@ -66,3 +66,5 @@ internal data class EnhancedLocationChangedEvent(
 internal data class SetDestinationEvent(
     val destination: Destination
 ) : PublisherEvent()
+
+internal class RefreshResolutionPolicyEvent : PublisherEvent()

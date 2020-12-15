@@ -70,6 +70,9 @@ constructor(
     private val presenceData = PresenceData(ClientTypes.PUBLISHER)
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private val eventsChannel: SendChannel<PublisherEvent>
+    private val resolutionPolicy: ResolutionPolicy
+    private val resolutionPolicyHooks = DefaultHooks()
+    private val resolutionPolicyMethods = DefaultMethods()
     private var isTracking: Boolean = false
     private var mapboxReplayer: MapboxReplayer? = null
     private var lastKnownLocation: Location? = null
@@ -82,6 +85,10 @@ constructor(
 
     init {
         eventsChannel = createEventsChannel(scope)
+        resolutionPolicy = resolutionPolicyFactory.createResolutionPolicy(
+            resolutionPolicyHooks,
+            resolutionPolicyMethods
+        )
         ably = AblyRealtime(connectionConfiguration.apiKey)
 
         Timber.w("Started.")
@@ -415,6 +422,9 @@ constructor(
         mapboxNavigation.setRoutes(emptyList())
     }
 
+    private fun performRefreshResolutionPolicy() {
+    }
+
     private fun postToMainThread(operation: () -> Unit) {
         Handler(getLooperForMainThread()).post(operation)
     }
@@ -439,6 +449,7 @@ constructor(
                     is RawLocationChangedEvent -> performRawLocationChanged(event)
                     is EnhancedLocationChangedEvent -> performEnhancedLocationChanged(event)
                     is SetDestinationEvent -> performSetDestination(event)
+                    is RefreshResolutionPolicyEvent -> performRefreshResolutionPolicy()
                 }
             }
         }
@@ -457,5 +468,42 @@ constructor(
 
     private fun enqueue(event: PublisherEvent) {
         scope.launch { eventsChannel.send(event) }
+    }
+
+    private inner class DefaultHooks : ResolutionPolicy.Hooks {
+        var trackables: ResolutionPolicy.Hooks.TrackableSetListener? = null
+        var subscribers: ResolutionPolicy.Hooks.SubscriberSetListener? = null
+
+        override fun trackables(listener: ResolutionPolicy.Hooks.TrackableSetListener) {
+            trackables = listener
+        }
+
+        override fun subscribers(listener: ResolutionPolicy.Hooks.SubscriberSetListener) {
+            subscribers = listener
+        }
+    }
+
+    private inner class DefaultMethods : ResolutionPolicy.Methods {
+        var proximityHandler: ResolutionPolicy.Methods.ProximityHandler? = null
+        var threshold: Proximity? = null
+        override fun refresh() {
+            enqueue(RefreshResolutionPolicyEvent())
+        }
+
+        override fun setProximityThreshold(
+            threshold: Proximity,
+            handler: ResolutionPolicy.Methods.ProximityHandler
+        ) {
+            this.proximityHandler = handler
+            this.threshold = threshold
+        }
+
+        override fun cancelProximityThreshold() {
+            proximityHandler?.onProximityCancelled()
+        }
+
+        fun onProximityReached() {
+            threshold?.let { proximityHandler?.onProximityReached(it) }
+        }
     }
 }
