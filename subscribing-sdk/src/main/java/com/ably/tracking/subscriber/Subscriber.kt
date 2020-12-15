@@ -3,6 +3,7 @@ package com.ably.tracking.subscriber
 import android.location.Location
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.LogConfiguration
+import com.ably.tracking.Resolution
 
 typealias LocationUpdatedListener = (Location) -> Unit
 typealias StatusListener = (Boolean) -> Unit
@@ -61,12 +62,13 @@ interface Subscriber {
         fun enhancedLocationUpdatedListener(listener: LocationUpdatedListener): Builder
 
         /**
-         * Sets resolution of updates from the publisher
+         * Sets the desired resolution of updates, to be requested from the remote publisher.
          *
-         * @param resolution resolution of updates from the publisher
+         * @param resolution An indication of how often to this subscriber would like the publisher to sample locations,
+         * at what level of positional accuracy, and how often to send them back.
          * @return A new instance of the builder with resolution changed
          */
-        fun resolution(resolution: Double): Builder
+        fun resolution(resolution: Resolution): Builder
 
         /**
          * Sets tracking ID of the tracked asset
