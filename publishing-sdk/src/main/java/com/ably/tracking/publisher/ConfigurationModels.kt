@@ -194,9 +194,9 @@ interface ResolutionPolicy {
  */
 data class TrackableResolutionRequest(
     /**
-     * The constraints, if defined, for the [Trackable] object.
+     * The [Trackable] object that holds optional constraints.
      */
-    val constraints: ResolutionConstraints?,
+    val trackable: Trackable,
     /**
      * Remote [Resolution] requests for the [Trackable] object.
      *

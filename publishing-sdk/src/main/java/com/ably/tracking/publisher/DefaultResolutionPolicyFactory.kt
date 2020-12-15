@@ -35,25 +35,25 @@ private class DefaultResolutionPolicy(
     }
 
     override fun resolve(resolutions: Set<Resolution>): Resolution =
-        resolve(TrackableResolutionRequest(null, resolutions))
+        resolveFromRequests(resolutions)
 
     override fun resolve(request: TrackableResolutionRequest): Resolution =
-        if (request.constraints != null) {
-            when (request.constraints) {
+        if (request.trackable.constraints != null) {
+            when (request.trackable.constraints) {
                 is DefaultResolutionConstraints -> resolveWithDefaultResolutionConstraints(request)
             }
         } else {
-            resolveWithoutConstraints(request)
+            resolveFromRequests(request.remoteRequests)
         }
 
-    private fun resolveWithoutConstraints(request: TrackableResolutionRequest): Resolution =
-        if (request.remoteRequests.isEmpty()) defaultResolution else createFinalResolution(request.remoteRequests)
+    private fun resolveFromRequests(requests: Set<Resolution>): Resolution =
+        if (requests.isEmpty()) defaultResolution else createFinalResolution(requests)
 
     /**
-     * We're expecting that [ResolutionConstraints] from [request] is not null and is of type [DefaultResolutionConstraints].
+     * We're expecting that [ResolutionConstraints] from [Trackable] from [request] is not null and is of type [DefaultResolutionConstraints].
      */
     private fun resolveWithDefaultResolutionConstraints(request: TrackableResolutionRequest): Resolution {
-        val trackableConstraints = request.constraints as DefaultResolutionConstraints
+        val trackableConstraints = request.trackable.constraints as DefaultResolutionConstraints
         val resolutionFromTrackable = trackableConstraints.resolutions.getResolution(
             proximityThresholdReached,
             subscriberSetListener.hasSubscribers()
