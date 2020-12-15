@@ -457,18 +457,14 @@ constructor(
             subscribersMap[trackable] = mutableSetOf()
         }
         subscribersMap[trackable]?.add(subscriber)
-        if (active == trackable) {
-            resolutionPolicyHooks.subscribers?.onSubscriberAdded(subscriber)
-        }
+        resolutionPolicyHooks.subscribers?.onSubscriberAdded(subscriber)
     }
 
     private fun removeSubscriber(id: String, trackable: Trackable) {
         subscribersMap[trackable]?.let { subscribers ->
             subscribers.find { it.id == id }?.let { subscriber ->
                 subscribers.remove(subscriber)
-                if (active == trackable) {
-                    resolutionPolicyHooks.subscribers?.onSubscriberRemoved(subscriber)
-                }
+                resolutionPolicyHooks.subscribers?.onSubscriberRemoved(subscriber)
             }
         }
     }
