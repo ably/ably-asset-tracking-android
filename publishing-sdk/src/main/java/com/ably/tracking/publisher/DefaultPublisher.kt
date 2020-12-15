@@ -38,6 +38,7 @@ import io.ably.lib.types.ErrorInfo
 import io.ably.lib.types.PresenceMessage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.SendChannel
@@ -496,7 +497,7 @@ constructor(
 
     override var transportationMode: TransportationMode
         get() = TODO("Not yet implemented")
-        set(value) {
+        set(@Suppress("UNUSED_PARAMETER") value) {
             TODO("Not yet implemented")
         }
 
@@ -592,6 +593,7 @@ constructor(
 
     private fun getLooperForMainThread() = Looper.getMainLooper()
 
+    @OptIn(ObsoleteCoroutinesApi::class)
     @RequiresPermission(anyOf = [ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION])
     private fun createEventsChannel(scope: CoroutineScope) =
         scope.actor<PublisherEvent> {

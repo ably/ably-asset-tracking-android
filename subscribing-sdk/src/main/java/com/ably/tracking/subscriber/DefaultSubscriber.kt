@@ -18,6 +18,7 @@ import io.ably.lib.types.ErrorInfo
 import io.ably.lib.types.PresenceMessage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.SendChannel
@@ -188,6 +189,7 @@ internal class DefaultSubscriber(
         assetStatusListener?.let { callback { it(false) } }
     }
 
+    @OptIn(ObsoleteCoroutinesApi::class)
     private fun createEventsChannel(scope: CoroutineScope) =
         scope.actor<SubscriberEvent> {
             for (event in channel) {

@@ -1,6 +1,7 @@
 package com.ably.tracking.example.subscriber
 
 import android.os.Handler
+import android.os.Looper
 import android.os.SystemClock
 import android.view.animation.AccelerateDecelerateInterpolator
 import com.google.android.gms.maps.model.LatLng
@@ -26,7 +27,7 @@ fun animateMarkerMovement(marker: Marker, finalPosition: LatLng) {
     val startTimeInMillis = SystemClock.uptimeMillis()
     val animationDurationInMillis = 1000f // this should probably match events update rate
     val nextCalculationDelayInMillis = 16L
-    val handler = Handler()
+    val handler = Handler(Looper.getMainLooper())
 
     handler.post(object : Runnable {
         var timeElapsedFromStartInMillis = 0L
