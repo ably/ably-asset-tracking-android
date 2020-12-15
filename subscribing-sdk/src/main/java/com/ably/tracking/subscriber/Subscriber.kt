@@ -22,7 +22,7 @@ interface Subscriber {
     }
 
     /**
-     * Changes the desired resolution for updates, to be requested from the remote publisher.
+     * Sends the desired resolution for updates, to be requested from the remote publisher.
      *
      * An initial resolution may be defined from the outset of a [Subscriber]'s lifespan by using the
      * [resolution][Builder.resolution] method on the [Builder] instance used to [start][Builder.start] it.
@@ -37,7 +37,7 @@ interface Subscriber {
      * @param onError Function to be called if the request could not be sent or it was not possible to confirm that the
      * server had processed the request.
      */
-    fun changeResolution(resolution: Resolution, onSuccess: () -> Unit, onError: (Exception) -> Unit)
+    fun sendChangeRequest(resolution: Resolution, onSuccess: () -> Unit, onError: (Exception) -> Unit)
 
     /**
      * Stops asset subscriber from listening for asset location

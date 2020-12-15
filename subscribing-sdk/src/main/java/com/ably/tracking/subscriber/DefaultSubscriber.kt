@@ -66,7 +66,7 @@ internal class DefaultSubscriber(
         }
     }
 
-    override fun changeResolution(resolution: Resolution, onSuccess: () -> Unit, onError: (Exception) -> Unit) {
+    override fun sendChangeRequest(resolution: Resolution, onSuccess: () -> Unit, onError: (Exception) -> Unit) {
         TODO()
     }
 
