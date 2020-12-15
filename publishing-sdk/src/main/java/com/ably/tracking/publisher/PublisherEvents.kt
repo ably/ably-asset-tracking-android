@@ -68,3 +68,7 @@ internal data class SetDestinationEvent(
 ) : PublisherEvent()
 
 internal class RefreshResolutionPolicyEvent : PublisherEvent()
+
+internal data class SetDestinationSuccessEvent(
+    val routeDurationInMilliseconds: Long
+) : PublisherEvent()

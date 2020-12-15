@@ -12,15 +12,19 @@ import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.Resolution
 import com.ably.tracking.common.ClientTypes
 import com.ably.tracking.common.EventNames
+import com.ably.tracking.common.MILLISECONDS_PER_SECOND
 import com.ably.tracking.common.PresenceData
+import com.ably.tracking.common.getTimeInMilliseconds
 import com.ably.tracking.common.toGeoJson
 import com.ably.tracking.common.toJsonArray
 import com.ably.tracking.publisher.debug.AblySimulationLocationEngine
 import com.google.gson.Gson
+import com.mapbox.api.directions.v5.models.DirectionsRoute
 import com.mapbox.api.directions.v5.models.RouteOptions
 import com.mapbox.navigation.base.internal.extensions.applyDefaultParams
 import com.mapbox.navigation.base.options.NavigationOptions
 import com.mapbox.navigation.core.MapboxNavigation
+import com.mapbox.navigation.core.directions.session.RoutesRequestCallback
 import com.mapbox.navigation.core.replay.MapboxReplayer
 import com.mapbox.navigation.core.replay.ReplayLocationEngine
 import com.mapbox.navigation.core.replay.history.ReplayHistoryMapper
@@ -80,6 +84,7 @@ constructor(
     private var mapboxReplayer: MapboxReplayer? = null
     private var lastSentRawLocation: Location? = null
     private var lastSentEnhancedLocation: Location? = null
+    private var estimatedArrivalTimeInMilliseconds: Long? = null
 
     /**
      * This field will be set only when trying to set a tracking destination before receiving any [lastSentRawLocation].
@@ -200,7 +205,11 @@ constructor(
                         }
                     } ?: false
 
-                    val temporalProximityReached: Boolean = false // TODO this is a WIP
+                    val temporalProximityReached: Boolean = threshold.temporal?.let { thresholdTime ->
+                        estimatedArrivalTimeInMilliseconds?.let { arrivalTime ->
+                            arrivalTime - getTimeInMilliseconds() < thresholdTime
+                        }
+                    } ?: false
 
                     if (spatialProximityReached || temporalProximityReached) {
                         resolutionPolicyMethods.onProximityReached()
@@ -448,12 +457,28 @@ constructor(
         lastSentRawLocation.let { currentLocation ->
             if (currentLocation != null) {
                 destinationToSet = null
+                removeCurrentDestination()
                 mapboxNavigation.requestRoutes(
                     RouteOptions.builder()
                         .applyDefaultParams()
                         .accessToken(mapConfiguration.apiKey)
                         .coordinates(getRouteCoordinates(currentLocation, event.destination))
-                        .build()
+                        .build(),
+                    object : RoutesRequestCallback {
+                        override fun onRoutesReady(routes: List<DirectionsRoute>) {
+                            routes.firstOrNull()?.let {
+                                val routeDurationInMilliseconds =
+                                    (it.durationTypical() ?: it.duration()) * MILLISECONDS_PER_SECOND
+                                enqueue(SetDestinationSuccessEvent(routeDurationInMilliseconds.toLong()))
+                            }
+                        }
+
+                        override fun onRoutesRequestCanceled(routeOptions: RouteOptions) = Unit
+
+                        override fun onRoutesRequestFailure(throwable: Throwable, routeOptions: RouteOptions) {
+                            enqueue(ErrorEvent(Exception(throwable)) { Timber.e(it) })
+                        }
+                    }
                 )
             } else {
                 destinationToSet = event.destination
@@ -461,8 +486,13 @@ constructor(
         }
     }
 
+    private fun performSetDestinationSuccess(event: SetDestinationSuccessEvent) {
+        estimatedArrivalTimeInMilliseconds = getTimeInMilliseconds() + event.routeDurationInMilliseconds
+    }
+
     private fun removeCurrentDestination() {
         mapboxNavigation.setRoutes(emptyList())
+        estimatedArrivalTimeInMilliseconds = null
     }
 
     private fun performRefreshResolutionPolicy() {
@@ -497,6 +527,7 @@ constructor(
                     is EnhancedLocationChangedEvent -> performEnhancedLocationChanged(event)
                     is SetDestinationEvent -> performSetDestination(event)
                     is RefreshResolutionPolicyEvent -> performRefreshResolutionPolicy()
+                    is SetDestinationSuccessEvent -> performSetDestinationSuccess(event)
                 }
             }
         }
