@@ -160,6 +160,7 @@ constructor(
             destinationToSet?.let { setDestination(it) }
             enqueue(SuccessEvent { locationUpdatedListener(event.location) })
         }
+        checkThreshold(event.location)
     }
 
     private fun sendEnhancedLocationMessage(enhancedLocation: Location, keyPoints: List<Location>) {
@@ -179,6 +180,7 @@ constructor(
             lastSentEnhancedLocation = event.location
             enqueue(SuccessEvent { locationUpdatedListener(event.location) })
         }
+        checkThreshold(event.location)
     }
 
     private fun shouldSentLocation(currentLocation: Location, lastSentLocation: Location): Boolean {
@@ -186,6 +188,26 @@ constructor(
         val distanceFromLastSentLocation = currentLocation.distanceInMetersFrom(lastSentLocation)
         return distanceFromLastSentLocation >= activeResolution.minimumDisplacement &&
             timeSinceLastSentLocation >= activeResolution.desiredInterval
+    }
+
+    private fun checkThreshold(currentLocation: Location) {
+        resolutionPolicyMethods.threshold?.let { threshold ->
+            when (threshold) {
+                is DefaultProximity -> {
+                    val spatialProximityReached: Boolean = threshold.spatial?.let { thresholdDistance ->
+                        active?.destination?.let { destination ->
+                            currentLocation.distanceInMetersFrom(destination) < thresholdDistance
+                        }
+                    } ?: false
+
+                    val temporalProximityReached: Boolean = false // TODO this is a WIP
+
+                    if (spatialProximityReached || temporalProximityReached) {
+                        resolutionPolicyMethods.onProximityReached()
+                    }
+                }
+            }
+        }
     }
 
     private fun startLocationUpdates() {
