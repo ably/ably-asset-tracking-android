@@ -9,6 +9,7 @@ import android.os.Handler
 import android.os.Looper
 import androidx.annotation.RequiresPermission
 import com.ably.tracking.ConnectionConfiguration
+import com.ably.tracking.Resolution
 import com.ably.tracking.common.ClientTypes
 import com.ably.tracking.common.EventNames
 import com.ably.tracking.common.PresenceData
@@ -73,6 +74,8 @@ constructor(
     private val resolutionPolicy: ResolutionPolicy
     private val resolutionPolicyHooks = DefaultHooks()
     private val resolutionPolicyMethods = DefaultMethods()
+    private val resolutionRequestsMap = mutableMapOf<Trackable, Set<Resolution>>()
+    private var activeResolution: Resolution
     private var isTracking: Boolean = false
     private var mapboxReplayer: MapboxReplayer? = null
     private var lastKnownLocation: Location? = null
@@ -89,6 +92,7 @@ constructor(
             resolutionPolicyHooks,
             resolutionPolicyMethods
         )
+        activeResolution = resolutionPolicy.resolve(emptySet())
         ably = AblyRealtime(connectionConfiguration.apiKey)
 
         Timber.w("Started.")
@@ -423,6 +427,10 @@ constructor(
     }
 
     private fun performRefreshResolutionPolicy() {
+        val resolutionRequests: Set<Resolution> = resolutionRequestsMap[active] ?: emptySet()
+        activeResolution = resolutionPolicy.resolve(
+            TrackableResolutionRequest(active?.constraints, resolutionRequests)
+        )
     }
 
     private fun postToMainThread(operation: () -> Unit) {
