@@ -185,5 +185,4 @@ For a greater flexibility it is possible to  provide a custom implementation of 
 to different parameters provided by application developer, and how resolution will be determined
 based on the parameters and requests from subscribers.
 
-Please see `DefaultResolutionPolicy` [implementation](ably-asset-tracking-android/publishing-sdk/src/main/java/com/ably/tracking/publisher/DefaultResolutionPolicyFactory.kt) for an example.
-
+Please see `DefaultResolutionPolicy` [implementation](publishing-sdk/src/main/java/com/ably/tracking/publisher/DefaultResolutionPolicyFactory.kt) for an example.
