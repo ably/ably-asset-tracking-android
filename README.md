@@ -121,3 +121,39 @@ used to determine the frequency of updates:
 - Implementing custom `ResolutionPolicy` - this will provide greatest flexibility
 - Parameters on the `DefaultResolutionPolicy` - allows to flexibly assign parameters to the built-in
 implementation of the `ResolutionPolicy`
+
+
+#### Parameters for the `DefaultResolutionPolicy`
+
+The simplest way to control the frequency of updates is by providing parameters in the form of `ResolutionConstraints`:
+
+```kotlin
+val exampleConstraints = DefaultResolutionConstraints(
+    DefaultResolutionSet(
+        Resolution(
+            accuracy = Accuracy.BALANCED,
+            desiredInterval = 1000L,
+            minimumDisplacement = 1.0
+            )
+        ),
+        proximityThreshold = DefaultProximity(spatial = 1.0),
+        batteryLevelThreshold = 10.0f,
+        lowBatteryMultiplier = 2.0f
+)
+```
+
+This values are then used in the `DefaultResolutionPolicy` which uses a simple
+decision algorithm which checks if resolution for certain state (relative to
+proximity threshold, battery threshold and subscribers presence) has been provided
+by user or taking the default, and then between this and resolutions requested by
+subscribers (if any) it uses the one that satisfies all requirements.
+
+#### Providing custom `ResolutionPolicy` implementation
+
+For a greater flexibility it is possible to  provide a custom implementation of the
+`ResolutionPolicy` interface. In this implementation user can define which logic will be applied
+to different parameters provided by application developer, and how resolution will be determined
+based on the parameters and requests from subscribers.
+
+Please see `DefaultResolutionPolicy` [implementation](ably-asset-tracking-android/publishing-sdk/src/main/java/com/ably/tracking/publisher/DefaultResolutionPolicyFactory.kt) for an example.
+
