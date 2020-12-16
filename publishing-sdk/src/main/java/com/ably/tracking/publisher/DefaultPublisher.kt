@@ -81,8 +81,8 @@ constructor(
     private val hooks = Hooks()
     private val methods = Methods()
     private val requests = mutableMapOf<Trackable, MutableMap<Subscriber, Resolution>>()
-    private val subscribersMap = mutableMapOf<Trackable, MutableSet<Subscriber>>()
-    private val resolutionMap = mutableMapOf<Trackable, Resolution>()
+    private val subscribers = mutableMapOf<Trackable, MutableSet<Subscriber>>()
+    private val resolutions = mutableMapOf<Trackable, Resolution>()
     private var isTracking: Boolean = false
     private var mapboxReplayer: MapboxReplayer? = null
     private var lastSentRaw: Location? = null
@@ -195,7 +195,7 @@ constructor(
         lastSentLocation: Location,
         trackable: Trackable
     ): Boolean {
-        return resolutionMap[trackable]?.let { resolution ->
+        return resolutions[trackable]?.let { resolution ->
             val timeSinceLastSentLocation = currentLocation.timeFrom(lastSentLocation)
             val distanceFromLastSentLocation = currentLocation.distanceInMetersFrom(lastSentLocation)
             return distanceFromLastSentLocation >= resolution.minimumDisplacement &&
@@ -310,7 +310,7 @@ constructor(
         if (removedChannel != null) {
             hooks.trackables?.onTrackableRemoved(event.trackable)
             removeAllSubscribers(event.trackable)
-            resolutionMap.remove(event.trackable)
+            resolutions.remove(event.trackable)
             requests.remove(event.trackable)
             leaveChannelPresence(
                 removedChannel,
@@ -323,7 +323,7 @@ constructor(
     }
 
     private fun removeAllSubscribers(trackable: Trackable) {
-        subscribersMap[trackable]?.let { subscribers ->
+        subscribers[trackable]?.let { subscribers ->
             subscribers.forEach { hooks.subscribers?.onSubscriberRemoved(it) }
             subscribers.clear()
         }
@@ -451,10 +451,10 @@ constructor(
 
     private fun addSubscriber(id: String, trackable: Trackable, data: PresenceData) {
         val subscriber = Subscriber(id, trackable)
-        if (subscribersMap[trackable] == null) {
-            subscribersMap[trackable] = mutableSetOf()
+        if (subscribers[trackable] == null) {
+            subscribers[trackable] = mutableSetOf()
         }
-        subscribersMap[trackable]?.add(subscriber)
+        subscribers[trackable]?.add(subscriber)
         data.resolution?.let {
             if (requests[trackable] == null) {
                 requests[trackable] = mutableMapOf()
@@ -466,7 +466,7 @@ constructor(
     }
 
     private fun updateSubscriber(id: String, trackable: Trackable, data: PresenceData) {
-        subscribersMap[trackable]?.let { subscribers ->
+        subscribers[trackable]?.let { subscribers ->
             subscribers.find { it.id == id }?.let { subscriber ->
                 data.resolution.let { resolution ->
                     if (resolution != null) {
@@ -484,7 +484,7 @@ constructor(
     }
 
     private fun removeSubscriber(id: String, trackable: Trackable) {
-        subscribersMap[trackable]?.let { subscribers ->
+        subscribers[trackable]?.let { subscribers ->
             subscribers.find { it.id == id }?.let { subscriber ->
                 subscribers.remove(subscriber)
                 requests[trackable]?.remove(subscriber)
@@ -581,7 +581,7 @@ constructor(
 
     private fun resolveResolution(trackable: Trackable) {
         val resolutionRequests: Set<Resolution> = requests[trackable]?.values?.toSet() ?: emptySet()
-        resolutionMap[trackable] = policy.resolve(
+        resolutions[trackable] = policy.resolve(
             TrackableResolutionRequest(trackable, resolutionRequests)
         )
     }
