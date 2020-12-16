@@ -111,3 +111,13 @@ The following secrets need configuring in a similar manner to that described abo
 - `ABLY_API_KEY`
 - `MAPBOX_ACCESS_TOKEN`
 - `GOOGLE_MAPS_API_KEY`
+
+### `ResolutionPolicy` interface and its default implementation
+
+In order to provide SDK users flexibility in choosing balance between higher frequency of updates
+and optimal battery usage, the SDK provides several ways application developer can define the logic
+used to determine the frequency of updates:
+
+- Implementing custom `ResolutionPolicy` - this will provide greatest flexibility
+- Parameters on the `DefaultResolutionPolicy` - allows to flexibly assign parameters to the built-in
+implementation of the `ResolutionPolicy`
