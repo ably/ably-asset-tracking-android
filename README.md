@@ -31,7 +31,7 @@ Here is an example of how the Asset Publishing SDK can be used:
 ```kotlin
 // Prepare Resolution Constraints for the Resolution Policy
 val exampleConstraints = DefaultResolutionConstraints(
-    DefaultResolutionSet(                               //provide one Resolution for all states
+    DefaultResolutionSet( // this constructor provides one Resolution for all states
         Resolution(
             accuracy = Accuracy.BALANCED,
             desiredInterval = 1000L,
@@ -43,19 +43,19 @@ val exampleConstraints = DefaultResolutionConstraints(
         lowBatteryMultiplier = 2.0f
 )
 
-// Initialise the Publisher
-publisher = Publisher.publishers()                  // get a Publisher
+// Initialise and Start the Publisher
+val publisher = Publisher.publishers() // get the Publisher builder in default state
   .ably(AblyConfiguration(ABLY_API_KEY, CLIENT_ID)) // provide Ably configuration with credentials
-  .map(MapConfiguration(MAPBOX_ACCESS_TOKEN))       // provide Mapbox configuration with credentials
-  .androidContext(this)                             // provide context
-  .mode(TransportationMode("bike"))                 //provide mode of transportation for better location enhancements
+  .map(MapConfiguration(MAPBOX_ACCESS_TOKEN)) // provide Mapbox configuration with credentials
+  .androidContext(this) // provide Android runtime context
+  .mode(TransportationMode("bike")) // provide mode of transportation for better location enhancements
   .start()
 
-// Start tracking asset
+// Start tracking an asset
 publisher.track(
     Trackable(
-        trackingId,                         // provide a tracking ID of the asset
-        constraints = exampleConstraints    // provide a set of Resolution Constraints
+        trackingId, // provide a tracking identifier for the asset
+        constraints = exampleConstraints // provide a set of Resolution constraints
     ),
     onSuccess = {},
     onError = {}
@@ -67,16 +67,16 @@ Asset Subscribing SDK is used to receive the location of the required assets.
 Here is an example of how Asset Subscribing SDK can be used:
 
 ```kotlin
-assetSubscriber = AssetSubscriber.subscribers() // Get an AssetSubscriber
+val assetSubscriber = AssetSubscriber.subscribers() // Get an AssetSubscriber
   .ablyConfig(AblyConfiguration(ABLY_API_KEY, CLIENT_ID)) // provide Ably configuration with credentials
   .rawLocationUpdatedListener {} // provide a function to be called when raw location updates are received
   .enhancedLocationUpdatedListener {} // provide a function to be called when enhanced location updates are received
-  .resolution(
+  .resolution( // request a specific resolution to be considered by the publisher
     Resolution(Accuracy.MAXIMUM, desiredInterval = 1000L, minimumDisplacement = 1.0)
-  ) // request a specific resolution to be considered by the publisher
-  .trackingId(trackingId) // provide a Trackable ID for the asset that needs to be tracked
-  .assetStatusListener { } // provide a function to be called when asset changes online/offline status
-  .start() // start listening to updates
+  )
+  .trackingId(trackingId) // provide the tracking identifier for the asset that needs to be tracked
+  .assetStatusListener { } // provide a function to be called when the asset changes online/offline status
+  .start() // start listening for updates
 
 assetSubscriber.sendChangeRequest( // request a different resolution when needed
     Resolution(Accuracy.MAXIMUM, desiredInterval = 100L, minimumDisplacement = 2.0),
@@ -159,16 +159,16 @@ The simplest way to control the frequency of updates is by providing parameters 
 
 ```kotlin
 val exampleConstraints = DefaultResolutionConstraints(
-    DefaultResolutionSet(
-        Resolution(
-            accuracy = Accuracy.BALANCED,
-            desiredInterval = 1000L,
-            minimumDisplacement = 1.0
-            )
-        ),
-        proximityThreshold = DefaultProximity(spatial = 1.0),
-        batteryLevelThreshold = 10.0f,
-        lowBatteryMultiplier = 2.0f
+  DefaultResolutionSet(
+    Resolution(
+      accuracy = Accuracy.BALANCED,
+      desiredInterval = 1000L, // milliseconds
+      minimumDisplacement = 1.0 // metres
+    )
+  ),
+  proximityThreshold = DefaultProximity(spatial = 1.0), // metres
+  batteryLevelThreshold = 10.0f, // percent
+  lowBatteryMultiplier = 2.0f
 )
 ```
 
