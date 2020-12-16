@@ -112,6 +112,18 @@ class MainActivity : AppCompatActivity() {
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
     private fun createAndStartAssetPublisher(trackingId: String, historyData: String? = null) {
         clearLocationInfo()
+        val exampleConstraints = DefaultResolutionConstraints(
+            DefaultResolutionSet(
+                Resolution(
+                    accuracy = Accuracy.BALANCED,
+                    desiredInterval = 1000L,
+                    minimumDisplacement = 1.0
+                )
+            ),
+            proximityThreshold = DefaultProximity(spatial = 1.0),
+            batteryLevelThreshold = 10.0f,
+            lowBatteryMultiplier = 2.0f
+        )
         publisher = Publisher.publishers()
             .connection(ConnectionConfiguration(ABLY_API_KEY, CLIENT_ID))
             .map(MapConfiguration(MAPBOX_ACCESS_TOKEN))
@@ -125,18 +137,7 @@ class MainActivity : AppCompatActivity() {
                 track(
                     Trackable(
                         trackingId,
-                        constraints = DefaultResolutionConstraints(
-                            DefaultResolutionSet(
-                                Resolution(
-                                    Accuracy.BALANCED,
-                                    desiredInterval = 1000L,
-                                    minimumDisplacement = 1.0
-                                )
-                            ),
-                            DefaultProximity(spatial = 1.0),
-                            batteryLevelThreshold = 10.0f,
-                            lowBatteryMultiplier = 2.0f
-                        )
+                        constraints = exampleConstraints
                     ),
                     onSuccess = {},
                     onError = {
