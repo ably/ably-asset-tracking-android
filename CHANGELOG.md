@@ -15,6 +15,9 @@
 
 **Merged pull requests:**
 
+- Add resolution examples to subscriber and publisher example apps [\#105](https://github.com/ably/ably-asset-tracking-android/pull/105) ([KacperKluka](https://github.com/KacperKluka))
+- Broadcast desired resolution from the Subscribers [\#100](https://github.com/ably/ably-asset-tracking-android/pull/100) ([KacperKluka](https://github.com/KacperKluka))
+- Default resolution policy implementation [\#97](https://github.com/ably/ably-asset-tracking-android/pull/97) ([KacperKluka](https://github.com/KacperKluka))
 - Remove misleading commentary from default Proximity API [\#96](https://github.com/ably/ably-asset-tracking-android/pull/96) ([QuintinWillison](https://github.com/QuintinWillison))
 - Refine Proximity API [\#95](https://github.com/ably/ably-asset-tracking-android/pull/95) ([QuintinWillison](https://github.com/QuintinWillison))
 - Conform subscriber API commentary [\#94](https://github.com/ably/ably-asset-tracking-android/pull/94) ([QuintinWillison](https://github.com/QuintinWillison))
