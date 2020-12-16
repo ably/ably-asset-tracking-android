@@ -3,7 +3,6 @@ package com.ably.tracking.publisher
 import android.content.Context
 import com.ably.tracking.Accuracy
 import com.ably.tracking.Resolution
-import com.ably.tracking.getLevel
 import kotlin.math.min
 
 class DefaultResolutionPolicyFactory(
@@ -92,7 +91,7 @@ private class DefaultResolutionPolicy(
         return Resolution(accuracy, desiredInterval, minimumDisplacement)
     }
 
-    private fun higher(a: Accuracy, b: Accuracy): Accuracy = if (a.getLevel() > b.getLevel()) a else b
+    private fun higher(a: Accuracy, b: Accuracy): Accuracy = if (a.level > b.level) a else b
 }
 
 private class DefaultSubscriberSetListener : ResolutionPolicy.Hooks.SubscriberSetListener {
