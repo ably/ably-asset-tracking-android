@@ -178,6 +178,8 @@ interface ResolutionPolicy {
 
     /**
      * Determine a target [Resolution] for a [Trackable] object.
+     *
+     * The intention is for the resulting [Resolution] to impact networking per [Trackable].
      */
     fun resolve(request: TrackableResolutionRequest): Resolution
 
@@ -185,6 +187,10 @@ interface ResolutionPolicy {
      * Determine a target [Resolution] from a set of resolutions.
      *
      * This set may be empty.
+     *
+     * The intention use for this method is to be applied to Resolutions returned by first overload
+     * of [resolve] and to determine out of different resolutions per [Trackable] which [Resolution]
+     * should be used for setting the location engine updates frequency.
      */
     fun resolve(resolutions: Set<Resolution>): Resolution
 }
