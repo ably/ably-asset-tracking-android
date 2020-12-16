@@ -8,6 +8,7 @@ import com.ably.tracking.Resolution
 import com.ably.tracking.common.ClientTypes
 import com.ably.tracking.common.EventNames
 import com.ably.tracking.common.PresenceData
+import com.ably.tracking.common.getPresenceData
 import com.ably.tracking.common.getGeoJsonMessages
 import com.ably.tracking.common.toLocation
 import com.google.gson.Gson
@@ -127,13 +128,13 @@ internal class DefaultSubscriber(
     private fun onPresenceMessage(presenceMessage: PresenceMessage) {
         when (presenceMessage.action) {
             PresenceMessage.Action.present, PresenceMessage.Action.enter -> {
-                val data = presenceMessage.getData(gson)
+                val data = presenceMessage.getPresenceData(gson)
                 if (data.type == ClientTypes.PUBLISHER) {
                     notifyAssetIsOnline()
                 }
             }
             PresenceMessage.Action.leave -> {
-                val data = presenceMessage.getData(gson)
+                val data = presenceMessage.getPresenceData(gson)
                 if (data.type == ClientTypes.PUBLISHER) {
                     notifyAssetIsOffline()
                 }

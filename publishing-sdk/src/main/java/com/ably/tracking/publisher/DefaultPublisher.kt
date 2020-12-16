@@ -9,17 +9,22 @@ import android.os.Handler
 import android.os.Looper
 import androidx.annotation.RequiresPermission
 import com.ably.tracking.ConnectionConfiguration
+import com.ably.tracking.Resolution
 import com.ably.tracking.common.ClientTypes
 import com.ably.tracking.common.EventNames
+import com.ably.tracking.common.MILLISECONDS_PER_SECOND
 import com.ably.tracking.common.PresenceData
+import com.ably.tracking.common.getPresenceData
 import com.ably.tracking.common.toGeoJson
 import com.ably.tracking.common.toJsonArray
 import com.ably.tracking.publisher.debug.AblySimulationLocationEngine
 import com.google.gson.Gson
+import com.mapbox.api.directions.v5.models.DirectionsRoute
 import com.mapbox.api.directions.v5.models.RouteOptions
 import com.mapbox.navigation.base.internal.extensions.applyDefaultParams
 import com.mapbox.navigation.base.options.NavigationOptions
 import com.mapbox.navigation.core.MapboxNavigation
+import com.mapbox.navigation.core.directions.session.RoutesRequestCallback
 import com.mapbox.navigation.core.replay.MapboxReplayer
 import com.mapbox.navigation.core.replay.ReplayLocationEngine
 import com.mapbox.navigation.core.replay.history.ReplayHistoryMapper
@@ -30,6 +35,7 @@ import io.ably.lib.realtime.CompletionListener
 import io.ably.lib.types.AblyException
 import io.ably.lib.types.ClientOptions
 import io.ably.lib.types.ErrorInfo
+import io.ably.lib.types.PresenceMessage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -47,13 +53,15 @@ constructor(
     private val mapConfiguration: MapConfiguration,
     private val debugConfiguration: DebugConfiguration?,
     private val locationUpdatedListener: LocationUpdatedListener,
-    context: Context
+    context: Context,
+    resolutionPolicyFactory: ResolutionPolicy.Factory
 ) :
     Publisher {
     private val gson: Gson = Gson()
     private val mapboxNavigation: MapboxNavigation
     private val ably: AblyRealtime
-    private val channelMap: MutableMap<String, Channel> = mutableMapOf()
+    private val thresholdChecker = ThresholdChecker()
+    private val channels: MutableMap<Trackable, Channel> = mutableMapOf()
     private val locationObserver = object : LocationObserver {
         override fun onRawLocationChanged(rawLocation: Location) {
             sendRawLocationMessage(rawLocation)
@@ -69,18 +77,30 @@ constructor(
     private val presenceData = PresenceData(ClientTypes.PUBLISHER)
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private val eventsChannel: SendChannel<PublisherEvent>
+    private val policy: ResolutionPolicy
+    private val hooks = Hooks()
+    private val methods = Methods()
+    private val requests = mutableMapOf<Trackable, MutableSet<Resolution>>()
+    private val subscribersMap = mutableMapOf<Trackable, MutableSet<Subscriber>>()
+    private val resolutionMap = mutableMapOf<Trackable, Resolution>()
     private var isTracking: Boolean = false
     private var mapboxReplayer: MapboxReplayer? = null
-    private var lastKnownLocation: Location? = null
+    private var lastSentRaw: Location? = null
+    private var lastSentEnhanced: Location? = null
+    private var estimatedArrivalTimeInMilliseconds: Long? = null
 
     /**
-     * This field will be set only when trying to set a tracking destination before receiving any [lastKnownLocation].
+     * This field will be set only when trying to set a tracking destination before receiving any [lastSentRaw].
      * After successfully setting the tracking destination this field will be set to NULL.
      **/
     private var destinationToSet: Destination? = null
 
     init {
         eventsChannel = createEventsChannel(scope)
+        policy = resolutionPolicyFactory.createResolutionPolicy(
+            hooks,
+            methods
+        )
         ably = AblyRealtime(connectionConfiguration.apiKey)
 
         Timber.w("Started.")
@@ -138,13 +158,16 @@ constructor(
     }
 
     private fun performRawLocationChanged(event: RawLocationChangedEvent) {
-        lastKnownLocation = event.location
-        destinationToSet?.let { setDestination(it) }
         Timber.d("sendRawLocationMessage: publishing: ${event.geoJsonMessage.synopsis()}")
-        channelMap.values.forEach {
-            it.publish(EventNames.RAW, event.geoJsonMessage.toJsonArray(gson))
+        for ((trackable, channel) in channels) {
+            if (shouldSendLocation(event.location, lastSentRaw ?: event.location, trackable)) {
+                channel.publish(EventNames.RAW, event.geoJsonMessage.toJsonArray(gson))
+            }
         }
+        lastSentRaw = event.location
+        destinationToSet?.let { setDestination(it) }
         enqueue(SuccessEvent { locationUpdatedListener(event.location) })
+        checkThreshold(event.location)
     }
 
     private fun sendEnhancedLocationMessage(enhancedLocation: Location, keyPoints: List<Location>) {
@@ -157,10 +180,41 @@ constructor(
         event.geoJsonMessages.forEach {
             Timber.d("sendEnhancedLocationMessage: publishing: ${it.synopsis()}")
         }
-        channelMap.values.forEach {
-            it.publish(EventNames.ENHANCED, event.geoJsonMessages.toJsonArray(gson))
+        for ((trackable, channel) in channels) {
+            if (shouldSendLocation(event.location, lastSentEnhanced ?: event.location, trackable)) {
+                channel.publish(EventNames.ENHANCED, event.geoJsonMessages.toJsonArray(gson))
+            }
         }
+        lastSentEnhanced = event.location
         enqueue(SuccessEvent { locationUpdatedListener(event.location) })
+        checkThreshold(event.location)
+    }
+
+    private fun shouldSendLocation(
+        currentLocation: Location,
+        lastSentLocation: Location,
+        trackable: Trackable
+    ): Boolean {
+        return resolutionMap[trackable]?.let { resolution ->
+            val timeSinceLastSentLocation = currentLocation.timeFrom(lastSentLocation)
+            val distanceFromLastSentLocation = currentLocation.distanceInMetersFrom(lastSentLocation)
+            return distanceFromLastSentLocation >= resolution.minimumDisplacement &&
+                timeSinceLastSentLocation >= resolution.desiredInterval
+        } ?: true
+    }
+
+    private fun checkThreshold(currentLocation: Location) {
+        methods.threshold?.let { threshold ->
+            if (thresholdChecker.isThresholdReached(
+                    threshold,
+                    currentLocation,
+                    active?.destination,
+                    estimatedArrivalTimeInMilliseconds
+                )
+            ) {
+                methods.onProximityReached()
+            }
+        }
     }
 
     private fun startLocationUpdates() {
@@ -205,6 +259,7 @@ constructor(
     private fun performTrackableReadyToTrack(event: TrackableReadyToTrackEvent) {
         if (active != event.trackable) {
             active = event.trackable
+            hooks.trackables?.onActiveTrackableChanged(event.trackable)
             event.trackable.destination?.let { setDestination(it) }
         }
         enqueue(SuccessEvent(event.onSuccess))
@@ -228,7 +283,7 @@ constructor(
         onSuccess: () -> Unit,
         onError: (Exception) -> Unit
     ) {
-        if (!channelMap.contains(trackable.id)) {
+        if (!channels.contains(trackable)) {
             createChannelAndJoinPresence(trackable, onSuccess, onError)
         } else {
             enqueue(SuccessEvent(onSuccess))
@@ -236,7 +291,9 @@ constructor(
     }
 
     private fun performJoinPresenceSuccess(event: JoinPresenceSuccessEvent) {
-        channelMap[event.trackable.id] = event.channel
+        channels[event.trackable] = event.channel
+        resolveResolution(event.trackable)
+        hooks.trackables?.onTrackableAdded(event.trackable)
         enqueue(SuccessEvent(event.onSuccess))
     }
 
@@ -249,8 +306,11 @@ constructor(
     }
 
     private fun performRemoveTrackable(event: RemoveTrackableEvent) {
-        val removedChannel = channelMap.remove(event.trackable.id)
+        val removedChannel = channels.remove(event.trackable)
         if (removedChannel != null) {
+            hooks.trackables?.onTrackableRemoved(event.trackable)
+            removeAllSubscribers(event.trackable)
+            resolutionMap.remove(event.trackable)
             leaveChannelPresence(
                 removedChannel,
                 { enqueue(ClearActiveTrackableEvent(event.trackable) { event.onSuccess(true) }) },
@@ -261,10 +321,18 @@ constructor(
         }
     }
 
+    private fun removeAllSubscribers(trackable: Trackable) {
+        subscribersMap[trackable]?.let { subscribers ->
+            subscribers.forEach { hooks.subscribers?.onSubscriberRemoved(it) }
+            subscribers.clear()
+        }
+    }
+
     private fun performClearActiveTrackable(event: ClearActiveTrackableEvent) {
         if (active == event.trackable) {
             removeCurrentDestination()
             active = null
+            hooks.trackables?.onActiveTrackableChanged(null)
         }
         enqueue(SuccessEvent(event.onSuccess))
     }
@@ -283,6 +351,7 @@ constructor(
     ) {
         ably.channels.get(trackable.id).apply {
             try {
+                presence.subscribe { enqueue(PresenceMessageEvent(trackable, it)) }
                 presence.enterClient(
                     connectionConfiguration.clientId,
                     gson.toJson(presenceData),
@@ -333,6 +402,7 @@ constructor(
         onError: (Exception) -> Unit
     ) {
         try {
+            channel.presence.unsubscribe()
             channel.presence.leaveClient(
                 connectionConfiguration.clientId,
                 gson.toJson(presenceData),
@@ -351,6 +421,44 @@ constructor(
         } catch (ablyException: AblyException) {
             Timber.e(ablyException)
             onError(ablyException)
+        }
+    }
+
+    private fun performPresenceMessage(event: PresenceMessageEvent) {
+        when (event.presenceMessage.action) {
+            PresenceMessage.Action.present, PresenceMessage.Action.enter -> {
+                val data = event.presenceMessage.getPresenceData(gson)
+                if (data.type == ClientTypes.SUBSCRIBER) {
+                    addSubscriber(event.presenceMessage.clientId, event.trackable)
+                }
+            }
+            PresenceMessage.Action.leave -> {
+                val data = event.presenceMessage.getPresenceData(gson)
+                if (data.type == ClientTypes.SUBSCRIBER) {
+                    removeSubscriber(event.presenceMessage.clientId, event.trackable)
+                }
+            }
+            else -> Unit
+        }
+    }
+
+    private fun addSubscriber(id: String, trackable: Trackable) {
+        val subscriber = Subscriber(id, trackable)
+        if (subscribersMap[trackable] == null) {
+            subscribersMap[trackable] = mutableSetOf()
+        }
+        subscribersMap[trackable]?.add(subscriber)
+        hooks.subscribers?.onSubscriberAdded(subscriber)
+        resolveResolution(trackable)
+    }
+
+    private fun removeSubscriber(id: String, trackable: Trackable) {
+        subscribersMap[trackable]?.let { subscribers ->
+            subscribers.find { it.id == id }?.let { subscriber ->
+                subscribers.remove(subscriber)
+                hooks.subscribers?.onSubscriberRemoved(subscriber)
+                resolveResolution(trackable)
+            }
         }
     }
 
@@ -374,7 +482,7 @@ constructor(
         if (isTracking) {
             isTracking = false
             mapboxNavigation.unregisterLocationObserver(locationObserver)
-            channelMap.apply {
+            channels.apply {
                 values.forEach {
                     leaveChannelPresenceOmittingQueue(it, {}, { error -> Timber.e(error) })
                 }
@@ -394,15 +502,31 @@ constructor(
     }
 
     private fun performSetDestination(event: SetDestinationEvent) {
-        lastKnownLocation.let { currentLocation ->
+        lastSentRaw.let { currentLocation ->
             if (currentLocation != null) {
                 destinationToSet = null
+                removeCurrentDestination()
                 mapboxNavigation.requestRoutes(
                     RouteOptions.builder()
                         .applyDefaultParams()
                         .accessToken(mapConfiguration.apiKey)
                         .coordinates(getRouteCoordinates(currentLocation, event.destination))
-                        .build()
+                        .build(),
+                    object : RoutesRequestCallback {
+                        override fun onRoutesReady(routes: List<DirectionsRoute>) {
+                            routes.firstOrNull()?.let {
+                                val routeDurationInMilliseconds =
+                                    (it.durationTypical() ?: it.duration()) * MILLISECONDS_PER_SECOND
+                                enqueue(SetDestinationSuccessEvent(routeDurationInMilliseconds.toLong()))
+                            }
+                        }
+
+                        override fun onRoutesRequestCanceled(routeOptions: RouteOptions) = Unit
+
+                        override fun onRoutesRequestFailure(throwable: Throwable, routeOptions: RouteOptions) {
+                            enqueue(ErrorEvent(Exception(throwable)) { Timber.e(it) })
+                        }
+                    }
                 )
             } else {
                 destinationToSet = event.destination
@@ -410,8 +534,24 @@ constructor(
         }
     }
 
+    private fun performSetDestinationSuccess(event: SetDestinationSuccessEvent) {
+        estimatedArrivalTimeInMilliseconds = System.currentTimeMillis() + event.routeDurationInMilliseconds
+    }
+
     private fun removeCurrentDestination() {
         mapboxNavigation.setRoutes(emptyList())
+        estimatedArrivalTimeInMilliseconds = null
+    }
+
+    private fun performRefreshResolutionPolicy() {
+        channels.keys.forEach { resolveResolution(it) }
+    }
+
+    private fun resolveResolution(trackable: Trackable) {
+        val resolutionRequests: Set<Resolution> = requests[trackable] ?: emptySet()
+        resolutionMap[trackable] = policy.resolve(
+            TrackableResolutionRequest(trackable, resolutionRequests)
+        )
     }
 
     private fun postToMainThread(operation: () -> Unit) {
@@ -438,6 +578,9 @@ constructor(
                     is RawLocationChangedEvent -> performRawLocationChanged(event)
                     is EnhancedLocationChangedEvent -> performEnhancedLocationChanged(event)
                     is SetDestinationEvent -> performSetDestination(event)
+                    is RefreshResolutionPolicyEvent -> performRefreshResolutionPolicy()
+                    is SetDestinationSuccessEvent -> performSetDestinationSuccess(event)
+                    is PresenceMessageEvent -> performPresenceMessage(event)
                 }
             }
         }
@@ -456,5 +599,42 @@ constructor(
 
     private fun enqueue(event: PublisherEvent) {
         scope.launch { eventsChannel.send(event) }
+    }
+
+    private inner class Hooks : ResolutionPolicy.Hooks {
+        var trackables: ResolutionPolicy.Hooks.TrackableSetListener? = null
+        var subscribers: ResolutionPolicy.Hooks.SubscriberSetListener? = null
+
+        override fun trackables(listener: ResolutionPolicy.Hooks.TrackableSetListener) {
+            trackables = listener
+        }
+
+        override fun subscribers(listener: ResolutionPolicy.Hooks.SubscriberSetListener) {
+            subscribers = listener
+        }
+    }
+
+    private inner class Methods : ResolutionPolicy.Methods {
+        var proximityHandler: ResolutionPolicy.Methods.ProximityHandler? = null
+        var threshold: Proximity? = null
+        override fun refresh() {
+            enqueue(RefreshResolutionPolicyEvent())
+        }
+
+        override fun setProximityThreshold(
+            threshold: Proximity,
+            handler: ResolutionPolicy.Methods.ProximityHandler
+        ) {
+            this.proximityHandler = handler
+            this.threshold = threshold
+        }
+
+        override fun cancelProximityThreshold() {
+            proximityHandler?.onProximityCancelled()
+        }
+
+        fun onProximityReached() {
+            threshold?.let { proximityHandler?.onProximityReached(it) }
+        }
     }
 }

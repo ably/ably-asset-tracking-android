@@ -1,14 +1,11 @@
 package com.ably.tracking.example.javapublisher;
 
-import androidx.annotation.Nullable;
-
 import com.ably.tracking.Accuracy;
 import com.ably.tracking.Resolution;
 import com.ably.tracking.publisher.DefaultProximity;
 import com.ably.tracking.publisher.DefaultResolutionConstraints;
 import com.ably.tracking.publisher.DefaultResolutionSet;
 import com.ably.tracking.publisher.Proximity;
-import com.ably.tracking.publisher.ResolutionConstraints;
 import com.ably.tracking.publisher.ResolutionPolicy;
 import com.ably.tracking.publisher.Trackable;
 import com.ably.tracking.publisher.TrackableResolutionRequest;
@@ -19,6 +16,7 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -48,19 +46,7 @@ public class Snippets {
 
         // Call the policy in the same manner that the Kotlin-based pubisher would.
         final Resolution resolutionsResult = policy.resolve(new HashSet<Resolution>());
-        final Resolution requestsResult = policy.resolve(new TrackableResolutionRequest() {
-            @org.jetbrains.annotations.Nullable
-            @Override
-            public ResolutionConstraints getConstraints() {
-                return null;
-            }
-
-            @NotNull
-            @Override
-            public Set<Resolution> getRemoteRequests() {
-                return null;
-            }
-        });
+        final Resolution requestsResult = policy.resolve(new TrackableResolutionRequest(new Trackable("", null, null, null), Collections.emptySet()));
 
         // Validate that our policy returned what we told it to above.
         Assert.assertEquals(Accuracy.MINIMUM, resolutionsResult.getAccuracy());
@@ -97,9 +83,9 @@ public class Snippets {
         Assert.assertEquals("Foo", trackable.getId());
 
         Assert.assertTrue(trackable.getConstraints() instanceof DefaultResolutionConstraints);
-        final DefaultResolutionConstraints returnedConstraints = (DefaultResolutionConstraints)trackable.getConstraints();
+        final DefaultResolutionConstraints returnedConstraints = (DefaultResolutionConstraints) trackable.getConstraints();
 
-        final DefaultProximity returnedProximity = (DefaultProximity)returnedConstraints.getProximityThreshold();
+        final DefaultProximity returnedProximity = (DefaultProximity) returnedConstraints.getProximityThreshold();
         Assert.assertEquals(twoMinutes, returnedProximity.getTemporal().longValue());
 
         Assert.assertEquals(20.0f, returnedConstraints.getBatteryLevelThreshold(), 0.1f);
@@ -135,7 +121,7 @@ public class Snippets {
             public void onProximityReached(@NotNull Proximity threshold) {
                 log.add("reached");
                 Assert.assertTrue(threshold instanceof DefaultProximity);
-                final DefaultProximity dp = (DefaultProximity)threshold;
+                final DefaultProximity dp = (DefaultProximity) threshold;
                 Assert.assertEquals(333.0, dp.getSpatial(), 0.1);
             }
 

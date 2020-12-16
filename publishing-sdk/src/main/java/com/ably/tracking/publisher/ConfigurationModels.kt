@@ -178,6 +178,8 @@ interface ResolutionPolicy {
 
     /**
      * Determine a target [Resolution] for a [Trackable] object.
+     *
+     * The intention is for the resulting [Resolution] to impact networking per [Trackable].
      */
     fun resolve(request: TrackableResolutionRequest): Resolution
 
@@ -185,26 +187,29 @@ interface ResolutionPolicy {
      * Determine a target [Resolution] from a set of resolutions.
      *
      * This set may be empty.
+     *
+     * The intention use for this method is to be applied to Resolutions returned by first overload
+     * of [resolve] and to determine out of different resolutions per [Trackable] which [Resolution]
+     * should be used for setting the location engine updates frequency.
      */
     fun resolve(resolutions: Set<Resolution>): Resolution
 }
 
 /**
- * A request for a tracking [Resolution] for a [Trackable] object, where the request [Origin] is known.
+ * A request for a tracking [Resolution] for a [Trackable] object.
  */
-interface TrackableResolutionRequest {
+data class TrackableResolutionRequest(
     /**
-     * The constraints, if defined, for the [Trackable] object.
+     * The [Trackable] object that holds optional constraints.
      */
-    val constraints: ResolutionConstraints?
-
+    val trackable: Trackable,
     /**
      * Remote [Resolution] requests for the [Trackable] object.
      *
      * This set may be empty.
      */
     val remoteRequests: Set<Resolution>
-}
+)
 
 data class Destination(
     val latitude: Double,
@@ -218,7 +223,7 @@ data class Trackable(
     val constraints: ResolutionConstraints? = null
 )
 
-data class Subscriber(val id: String)
+data class Subscriber(val id: String, val trackable: Trackable)
 
 sealed class Proximity
 
@@ -292,6 +297,13 @@ data class DefaultResolutionSet(
      * @param resolution The resolution to be used to populate all fields.
      */
     constructor(resolution: Resolution) : this(resolution, resolution, resolution, resolution)
+
+    fun getResolution(isNear: Boolean, hasSubscriber: Boolean): Resolution = when {
+        isNear && hasSubscriber -> nearWithSubscriber
+        isNear && !hasSubscriber -> nearWithoutSubscriber
+        !isNear && hasSubscriber -> farWithSubscriber
+        else -> farWithoutSubscriber
+    }
 }
 
 /**

@@ -54,7 +54,8 @@ internal data class PublisherBuilder(
             mapConfiguration!!,
             debugConfiguration,
             locationUpdatedListener!!,
-            androidContext!!
+            androidContext!!,
+            resolutionPolicyFactory!!
         )
     }
 
@@ -64,5 +65,6 @@ internal data class PublisherBuilder(
             mapConfiguration == null ||
             locationUpdatedListener == null ||
             androidContext == null ||
-            transportationMode == null
+            transportationMode == null ||
+            resolutionPolicyFactory == null
 }
