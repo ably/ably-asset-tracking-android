@@ -440,7 +440,7 @@ constructor(
                 }
             }
             PresenceMessage.Action.update -> {
-                val data = event.presenceMessage.getData(gson)
+                val data = event.presenceMessage.getPresenceData(gson)
                 if (data.type == ClientTypes.SUBSCRIBER) {
                     updateSubscriber(event.presenceMessage.clientId, event.trackable, data)
                 }
@@ -470,12 +470,12 @@ constructor(
             subscribers.find { it.id == id }?.let { subscriber ->
                 data.resolution.let { resolution ->
                     if (resolution != null) {
-                        if (resolutionRequestsMap[trackable] == null) {
-                            resolutionRequestsMap[trackable] = mutableMapOf()
+                        if (requests[trackable] == null) {
+                            requests[trackable] = mutableMapOf()
                         }
-                        resolutionRequestsMap[trackable]?.put(subscriber, resolution)
+                        requests[trackable]?.put(subscriber, resolution)
                     } else {
-                        resolutionRequestsMap[trackable]?.remove(subscriber)
+                        requests[trackable]?.remove(subscriber)
                     }
                     resolveResolution(trackable)
                 }
