@@ -78,8 +78,8 @@ constructor(
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private val eventsChannel: SendChannel<PublisherEvent>
     private val resolutionPolicy: ResolutionPolicy
-    private val resolutionPolicyHooks = DefaultHooks()
-    private val resolutionPolicyMethods = DefaultMethods()
+    private val resolutionPolicyHooks = Hooks()
+    private val resolutionPolicyMethods = Methods()
     private val resolutionRequestsMap = mutableMapOf<Trackable, MutableSet<Resolution>>()
     private val subscribersMap = mutableMapOf<Trackable, MutableSet<Subscriber>>()
     private val resolutionMap = mutableMapOf<Trackable, Resolution>()
@@ -611,7 +611,7 @@ constructor(
         scope.launch { eventsChannel.send(event) }
     }
 
-    private inner class DefaultHooks : ResolutionPolicy.Hooks {
+    private inner class Hooks : ResolutionPolicy.Hooks {
         var trackables: ResolutionPolicy.Hooks.TrackableSetListener? = null
         var subscribers: ResolutionPolicy.Hooks.SubscriberSetListener? = null
 
@@ -624,7 +624,7 @@ constructor(
         }
     }
 
-    private inner class DefaultMethods : ResolutionPolicy.Methods {
+    private inner class Methods : ResolutionPolicy.Methods {
         var proximityHandler: ResolutionPolicy.Methods.ProximityHandler? = null
         var threshold: Proximity? = null
         override fun refresh() {
