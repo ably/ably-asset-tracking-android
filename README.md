@@ -31,16 +31,16 @@ Here is an example of how the Asset Publishing SDK can be used:
 ```kotlin
 // Prepare Resolution Constraints for the Resolution Policy
 val exampleConstraints = DefaultResolutionConstraints(
-    DefaultResolutionSet( // this constructor provides one Resolution for all states
-        Resolution(
-            accuracy = Accuracy.BALANCED,
-            desiredInterval = 1000L,
-            minimumDisplacement = 1.0
-            )
-        ),
-        proximityThreshold = DefaultProximity(spatial = 1.0),
-        batteryLevelThreshold = 10.0f,
-        lowBatteryMultiplier = 2.0f
+  DefaultResolutionSet( // this constructor provides one Resolution for all states
+    Resolution(
+      accuracy = Accuracy.BALANCED,
+      desiredInterval = 1000L,
+      minimumDisplacement = 1.0
+    )
+  ),
+  proximityThreshold = DefaultProximity(spatial = 1.0),
+  batteryLevelThreshold = 10.0f,
+  lowBatteryMultiplier = 2.0f
 )
 
 // Initialise and Start the Publisher
@@ -53,12 +53,12 @@ val publisher = Publisher.publishers() // get the Publisher builder in default s
 
 // Start tracking an asset
 publisher.track(
-    Trackable(
-        trackingId, // provide a tracking identifier for the asset
-        constraints = exampleConstraints // provide a set of Resolution constraints
-    ),
-    onSuccess = {},
-    onError = {}
+  Trackable(
+    trackingId, // provide a tracking identifier for the asset
+    constraints = exampleConstraints // provide a set of Resolution constraints
+  ),
+  onSuccess = {},
+  onError = {}
 )
 ```
 
