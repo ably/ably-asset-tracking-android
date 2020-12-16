@@ -87,13 +87,12 @@ assetSubscriber.sendChangeRequest( // request a different resolution when needed
 
 ## Example Apps
 
-This repository also contains example apps that showcase how Ably Asset Tracking SDKs can be used:
+This repository also contains example apps that showcase how the Ably Asset Tracking SDKs can be used:
 
 - the [Asset Publishing example app](publishing-example-app/)
 - the [Asset Subscribing example app](subscribing-example-app/)
 
-To build the apps you will need to specify [credentials](#api-keys-and-access-tokens) in Gradle properties.
-
+To build these apps you will need to specify [credentials](#api-keys-and-access-tokens) in Gradle properties.
 
 ## Development
 
@@ -142,20 +141,16 @@ The following secrets need configuring in a similar manner to that described abo
 - `MAPBOX_ACCESS_TOKEN`
 - `GOOGLE_MAPS_API_KEY`
 
-### `ResolutionPolicy` interface and its default implementation
+### Resolution Policies
 
-In order to provide SDK users flexibility in choosing balance between higher frequency of updates
-and optimal battery usage, the SDK provides several ways application developer can define the logic
-used to determine the frequency of updates:
+In order to provide application developers with flexibility when it comes to choosing their own balance between higher frequency of updates and optimal battery usage, we provide several ways for them to define the logic used to determine the frequency of updates:
 
-- Implementing custom `ResolutionPolicy` - this will provide greatest flexibility
-- Parameters on the `DefaultResolutionPolicy` - allows to flexibly assign parameters to the built-in
-implementation of the `ResolutionPolicy`
+- by implementing a custom `ResolutionPolicy` - providing the greatest flexibility
+- by using the default `ResolutionPolicy` implementation - with the controls provided by `DefaultResolutionPolicyFactory` and `DefaultResolutionConstraints`
 
+#### Using the Default Resolution Policy
 
-#### Parameters for the `DefaultResolutionPolicy`
-
-The simplest way to control the frequency of updates is by providing parameters in the form of `ResolutionConstraints`:
+The simplest way to control the frequency of updates is by providing parameters in the form of `DefaultResolutionConstraints`, assigned to the `constraints` property of the `Trackable` object:
 
 ```kotlin
 val exampleConstraints = DefaultResolutionConstraints(
@@ -172,17 +167,10 @@ val exampleConstraints = DefaultResolutionConstraints(
 )
 ```
 
-This values are then used in the `DefaultResolutionPolicy` which uses a simple
-decision algorithm which checks if resolution for certain state (relative to
-proximity threshold, battery threshold and subscribers presence) has been provided
-by user or taking the default, and then between this and resolutions requested by
-subscribers (if any) it uses the one that satisfies all requirements.
+These values are then used in the default `ResolutionPolicy`, created by the `DefaultResolutionPolicyFactory`. This default policy implementation uses a simple decision algorithm to determine the `Resolution` for a certain state, relative to proximity threshold, battery threshold and the presence of subscribers.
 
-#### Providing custom `ResolutionPolicy` implementation
+#### Providing a Custom Resolution Policy Implementation
 
-For a greater flexibility it is possible to  provide a custom implementation of the
-`ResolutionPolicy` interface. In this implementation user can define which logic will be applied
-to different parameters provided by application developer, and how resolution will be determined
-based on the parameters and requests from subscribers.
+For the greatest flexibility it is possible to provide a custom implementation of the `ResolutionPolicy` interface. In this implementation the application developer can define which logic will be applied to their own parameters, including how resolution is to be determined based on the those parameters and requests from subscribers.
 
 Please see `DefaultResolutionPolicy` [implementation](publishing-sdk/src/main/java/com/ably/tracking/publisher/DefaultResolutionPolicyFactory.kt) for an example.
