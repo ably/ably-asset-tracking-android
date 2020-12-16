@@ -61,6 +61,7 @@ constructor(
     private val gson: Gson = Gson()
     private val mapboxNavigation: MapboxNavigation
     private val ably: AblyRealtime
+    private val thresholdChecker = ThresholdChecker()
     private val channels: MutableMap<Trackable, Channel> = mutableMapOf()
     private val locationObserver = object : LocationObserver {
         override fun onRawLocationChanged(rawLocation: Location) {
@@ -205,24 +206,14 @@ constructor(
 
     private fun checkThreshold(currentLocation: Location) {
         methods.threshold?.let { threshold ->
-            when (threshold) {
-                is DefaultProximity -> {
-                    val spatialProximityReached: Boolean = threshold.spatial?.let { thresholdDistance ->
-                        active?.destination?.let { destination ->
-                            currentLocation.distanceInMetersFrom(destination) < thresholdDistance
-                        }
-                    } ?: false
-
-                    val temporalProximityReached: Boolean = threshold.temporal?.let { thresholdTime ->
-                        estimatedArrivalTimeInMilliseconds?.let { arrivalTime ->
-                            arrivalTime - getTimeInMilliseconds() < thresholdTime
-                        }
-                    } ?: false
-
-                    if (spatialProximityReached || temporalProximityReached) {
-                        methods.onProximityReached()
-                    }
-                }
+            if (thresholdChecker.isThresholdReached(
+                    threshold,
+                    currentLocation,
+                    active?.destination,
+                    estimatedArrivalTimeInMilliseconds
+                )
+            ) {
+                methods.onProximityReached()
             }
         }
     }
