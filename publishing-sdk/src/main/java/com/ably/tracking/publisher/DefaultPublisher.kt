@@ -15,7 +15,6 @@ import com.ably.tracking.common.EventNames
 import com.ably.tracking.common.MILLISECONDS_PER_SECOND
 import com.ably.tracking.common.PresenceData
 import com.ably.tracking.common.getPresenceData
-import com.ably.tracking.common.getTimeInMilliseconds
 import com.ably.tracking.common.toGeoJson
 import com.ably.tracking.common.toJsonArray
 import com.ably.tracking.publisher.debug.AblySimulationLocationEngine
@@ -536,7 +535,7 @@ constructor(
     }
 
     private fun performSetDestinationSuccess(event: SetDestinationSuccessEvent) {
-        estimatedArrivalTimeInMilliseconds = getTimeInMilliseconds() + event.routeDurationInMilliseconds
+        estimatedArrivalTimeInMilliseconds = System.currentTimeMillis() + event.routeDurationInMilliseconds
     }
 
     private fun removeCurrentDestination() {

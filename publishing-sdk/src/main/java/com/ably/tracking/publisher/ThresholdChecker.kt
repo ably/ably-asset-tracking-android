@@ -1,7 +1,6 @@
 package com.ably.tracking.publisher
 
 import android.location.Location
-import com.ably.tracking.common.getTimeInMilliseconds
 
 internal class ThresholdChecker {
     fun isThresholdReached(
@@ -46,7 +45,7 @@ internal class ThresholdChecker {
         estimatedArrivalTimeInMilliseconds: Long?
     ): Boolean =
         if (threshold.temporal != null && estimatedArrivalTimeInMilliseconds != null) {
-            estimatedArrivalTimeInMilliseconds - getTimeInMilliseconds() < threshold.temporal
+            estimatedArrivalTimeInMilliseconds - System.currentTimeMillis() < threshold.temporal
         } else {
             false
         }
