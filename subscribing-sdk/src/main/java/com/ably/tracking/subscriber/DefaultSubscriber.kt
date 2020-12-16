@@ -74,11 +74,11 @@ internal class DefaultSubscriber(
             gson.toJson(presenceData),
             object : CompletionListener {
                 override fun onSuccess() {
-                    onSuccess()
+                    postToMainThread { onSuccess() }
                 }
 
                 override fun onError(reason: ErrorInfo?) {
-                    onError(Exception("Unable to change resolution: ${reason?.message}"))
+                    postToMainThread { onError(Exception("Unable to change resolution: ${reason?.message}")) }
                 }
             }
         )
