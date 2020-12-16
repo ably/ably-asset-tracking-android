@@ -15,7 +15,10 @@ import com.ably.tracking.Accuracy
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.Resolution
 import com.ably.tracking.publisher.DebugConfiguration
+import com.ably.tracking.publisher.DefaultProximity
+import com.ably.tracking.publisher.DefaultResolutionConstraints
 import com.ably.tracking.publisher.DefaultResolutionPolicyFactory
+import com.ably.tracking.publisher.DefaultResolutionSet
 import com.ably.tracking.publisher.LocationSourceAbly
 import com.ably.tracking.publisher.LocationSourceRaw
 import com.ably.tracking.publisher.MapConfiguration
@@ -120,7 +123,21 @@ class MainActivity : AppCompatActivity() {
             .start()
             .apply {
                 track(
-                    Trackable(trackingId),
+                    Trackable(
+                        trackingId,
+                        constraints = DefaultResolutionConstraints(
+                            DefaultResolutionSet(
+                                Resolution(
+                                    Accuracy.BALANCED,
+                                    desiredInterval = 1000L,
+                                    minimumDisplacement = 1.0
+                                )
+                            ),
+                            DefaultProximity(spatial = 1.0),
+                            batteryLevelThreshold = 10.0f,
+                            lowBatteryMultiplier = 2.0f
+                        )
+                    ),
                     onSuccess = {},
                     onError = {
                         showToast("Error when tracking asset")

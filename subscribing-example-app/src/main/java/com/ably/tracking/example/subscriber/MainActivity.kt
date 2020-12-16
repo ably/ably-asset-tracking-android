@@ -4,7 +4,9 @@ import android.location.Location
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.ably.tracking.Accuracy
 import com.ably.tracking.ConnectionConfiguration
+import com.ably.tracking.Resolution
 import com.ably.tracking.subscriber.Subscriber
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -63,6 +65,7 @@ class MainActivity : AppCompatActivity() {
             .rawLocationUpdatedListener {} // if you prefer to display raw location call showMarkerOnMap() here
             .enhancedLocationUpdatedListener { showMarkerOnMap(it) }
             .trackingId(trackingId)
+            .resolution(Resolution(Accuracy.MAXIMUM, desiredInterval = 1000L, minimumDisplacement = 1.0))
             .assetStatusListener { updateAssetStatusInfo(it) }
             .start()
     }
