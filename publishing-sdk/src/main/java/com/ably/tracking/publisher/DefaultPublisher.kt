@@ -14,7 +14,7 @@ import com.ably.tracking.common.ClientTypes
 import com.ably.tracking.common.EventNames
 import com.ably.tracking.common.MILLISECONDS_PER_SECOND
 import com.ably.tracking.common.PresenceData
-import com.ably.tracking.common.getData
+import com.ably.tracking.common.getPresenceData
 import com.ably.tracking.common.getTimeInMilliseconds
 import com.ably.tracking.common.toGeoJson
 import com.ably.tracking.common.toJsonArray
@@ -437,13 +437,13 @@ constructor(
     private fun performPresenceMessage(event: PresenceMessageEvent) {
         when (event.presenceMessage.action) {
             PresenceMessage.Action.present, PresenceMessage.Action.enter -> {
-                val data = event.presenceMessage.getData(gson)
+                val data = event.presenceMessage.getPresenceData(gson)
                 if (data.type == ClientTypes.SUBSCRIBER) {
                     addSubscriber(event.presenceMessage.clientId, event.trackable)
                 }
             }
             PresenceMessage.Action.leave -> {
-                val data = event.presenceMessage.getData(gson)
+                val data = event.presenceMessage.getPresenceData(gson)
                 if (data.type == ClientTypes.SUBSCRIBER) {
                     removeSubscriber(event.presenceMessage.clientId, event.trackable)
                 }
