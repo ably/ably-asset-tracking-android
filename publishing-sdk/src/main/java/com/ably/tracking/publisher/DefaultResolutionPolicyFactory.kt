@@ -38,23 +38,24 @@ private class DefaultResolutionPolicy(
         resolveFromRequests(resolutions)
 
     override fun resolve(request: TrackableResolutionRequest): Resolution =
-        if (request.trackable.constraints != null) {
-            when (request.trackable.constraints) {
-                is DefaultResolutionConstraints -> resolveWithDefaultResolutionConstraints(request)
+        request.trackable.constraints.let { constraints ->
+            if (constraints != null) {
+                when (constraints) {
+                    is DefaultResolutionConstraints -> resolveWithDefaultResolutionConstraints(request, constraints)
+                }
+            } else {
+                resolveFromRequests(request.remoteRequests)
             }
-        } else {
-            resolveFromRequests(request.remoteRequests)
         }
 
     private fun resolveFromRequests(requests: Set<Resolution>): Resolution =
         if (requests.isEmpty()) defaultResolution else createFinalResolution(requests)
 
-    /**
-     * We're expecting that [ResolutionConstraints] from [Trackable] from [request] is not null and is of type [DefaultResolutionConstraints].
-     */
-    private fun resolveWithDefaultResolutionConstraints(request: TrackableResolutionRequest): Resolution {
-        val trackableConstraints = request.trackable.constraints as DefaultResolutionConstraints
-        val resolutionFromTrackable = trackableConstraints.resolutions.getResolution(
+    private fun resolveWithDefaultResolutionConstraints(
+        request: TrackableResolutionRequest,
+        constraints: DefaultResolutionConstraints
+    ): Resolution {
+        val resolutionFromTrackable = constraints.resolutions.getResolution(
             proximityThresholdReached,
             subscriberSetListener.hasSubscribers(request.trackable)
         )
@@ -63,7 +64,7 @@ private class DefaultResolutionPolicy(
             request.remoteRequests.let { if (it.isNotEmpty()) addAll(it) }
         }
         val finalResolution = if (allResolutions.isEmpty()) defaultResolution else createFinalResolution(allResolutions)
-        return adjustResolutionToBatteryLevel(finalResolution, trackableConstraints)
+        return adjustResolutionToBatteryLevel(finalResolution, constraints)
     }
 
     private fun adjustResolutionToBatteryLevel(
