@@ -37,33 +37,26 @@ private class DefaultResolutionPolicy(
 
     override fun resolve(request: TrackableResolutionRequest): Resolution =
         request.trackable.constraints.let { constraints ->
-            if (constraints != null) {
-                when (constraints) {
-                    is DefaultResolutionConstraints -> resolveWithDefaultResolutionConstraints(request, constraints)
+            when (constraints) {
+                null -> resolveFromRequests(request.remoteRequests)
+                is DefaultResolutionConstraints -> {
+                    val resolutionFromTrackable = constraints.resolutions.getResolution(
+                        proximityThresholdReached,
+                        subscriberSetListener.hasSubscribers(request.trackable)
+                    )
+                    val allResolutions = mutableSetOf<Resolution>().apply {
+                        add(resolutionFromTrackable)
+                        request.remoteRequests.let { if (it.isNotEmpty()) addAll(it) }
+                    }
+                    val finalResolution =
+                        if (allResolutions.isEmpty()) defaultResolution else createFinalResolution(allResolutions)
+                    return adjustResolutionToBatteryLevel(finalResolution, constraints)
                 }
-            } else {
-                resolveFromRequests(request.remoteRequests)
             }
         }
 
     private fun resolveFromRequests(requests: Set<Resolution>): Resolution =
         if (requests.isEmpty()) defaultResolution else createFinalResolution(requests)
-
-    private fun resolveWithDefaultResolutionConstraints(
-        request: TrackableResolutionRequest,
-        constraints: DefaultResolutionConstraints
-    ): Resolution {
-        val resolutionFromTrackable = constraints.resolutions.getResolution(
-            proximityThresholdReached,
-            subscriberSetListener.hasSubscribers(request.trackable)
-        )
-        val allResolutions = mutableSetOf<Resolution>().apply {
-            add(resolutionFromTrackable)
-            request.remoteRequests.let { if (it.isNotEmpty()) addAll(it) }
-        }
-        val finalResolution = if (allResolutions.isEmpty()) defaultResolution else createFinalResolution(allResolutions)
-        return adjustResolutionToBatteryLevel(finalResolution, constraints)
-    }
 
     private fun adjustResolutionToBatteryLevel(
         resolution: Resolution,
