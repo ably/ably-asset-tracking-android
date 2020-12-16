@@ -19,17 +19,16 @@ class DefaultResolutionPolicyFactory(
 
 private class DefaultResolutionPolicy(
     hooks: ResolutionPolicy.Hooks,
-    methods: ResolutionPolicy.Methods,
+    private val methods: ResolutionPolicy.Methods,
     private val defaultResolution: Resolution,
     private val batteryDataProvider: BatteryDataProvider
 ) : ResolutionPolicy {
-    private val proximityHandler =
-        DefaultProximityHandler(methods, { proximityThresholdReached = true }, { proximityThresholdReached = false })
-    private val subscriberSetListener = DefaultSubscriberSetListener()
+    private val proximityHandler = ProximityHandler()
+    private val subscriberSetListener = SubscriberSetListener()
     private var proximityThresholdReached = false
 
     init {
-        hooks.trackables(DefaultTrackableSetListener(methods, proximityHandler))
+        hooks.trackables(DefaultTrackableSetListener())
         hooks.subscribers(subscriberSetListener)
     }
 
@@ -92,62 +91,55 @@ private class DefaultResolutionPolicy(
     }
 
     private fun higher(a: Accuracy, b: Accuracy): Accuracy = if (a.level > b.level) a else b
-}
 
-private class DefaultSubscriberSetListener : ResolutionPolicy.Hooks.SubscriberSetListener {
-    private val subscriberSet = mutableSetOf<Subscriber>()
-    override fun onSubscriberAdded(subscriber: Subscriber) {
-        subscriberSet.add(subscriber)
+    private inner class SubscriberSetListener : ResolutionPolicy.Hooks.SubscriberSetListener {
+        private val subscriberSet = mutableSetOf<Subscriber>()
+        override fun onSubscriberAdded(subscriber: Subscriber) {
+            subscriberSet.add(subscriber)
+        }
+
+        override fun onSubscriberRemoved(subscriber: Subscriber) {
+            subscriberSet.remove(subscriber)
+        }
+
+        fun hasSubscribers(trackable: Trackable) = subscriberSet.any { it.trackable == trackable }
     }
 
-    override fun onSubscriberRemoved(subscriber: Subscriber) {
-        subscriberSet.remove(subscriber)
-    }
+    private inner class DefaultTrackableSetListener :
+        ResolutionPolicy.Hooks.TrackableSetListener {
+        private val trackableSet = mutableSetOf<Trackable>()
+        private var activeTrackable: Trackable? = null
+        override fun onTrackableAdded(trackable: Trackable) {
+            trackableSet.add(trackable)
+        }
 
-    fun hasSubscribers(trackable: Trackable) = subscriberSet.any { it.trackable == trackable }
-}
+        override fun onTrackableRemoved(trackable: Trackable) {
+            trackableSet.remove(trackable)
+        }
 
-private class DefaultTrackableSetListener(
-    private val methods: ResolutionPolicy.Methods,
-    private val proximityHandler: DefaultProximityHandler
-) :
-    ResolutionPolicy.Hooks.TrackableSetListener {
-    private val trackableSet = mutableSetOf<Trackable>()
-    private var activeTrackable: Trackable? = null
-    override fun onTrackableAdded(trackable: Trackable) {
-        trackableSet.add(trackable)
-    }
-
-    override fun onTrackableRemoved(trackable: Trackable) {
-        trackableSet.remove(trackable)
-    }
-
-    override fun onActiveTrackableChanged(trackable: Trackable?) {
-        if (trackable == null) {
-            activeTrackable = null
-            methods.cancelProximityThreshold()
-        } else {
-            activeTrackable = trackable
-            trackable.constraints?.let {
-                val constraints = it as DefaultResolutionConstraints
-                methods.setProximityThreshold(constraints.proximityThreshold, proximityHandler)
+        override fun onActiveTrackableChanged(trackable: Trackable?) {
+            if (trackable == null) {
+                activeTrackable = null
+                methods.cancelProximityThreshold()
+            } else {
+                activeTrackable = trackable
+                trackable.constraints?.let {
+                    val constraints = it as DefaultResolutionConstraints
+                    methods.setProximityThreshold(constraints.proximityThreshold, proximityHandler)
+                }
             }
         }
     }
-}
 
-private class DefaultProximityHandler(
-    private val methods: ResolutionPolicy.Methods,
-    private val proximityReachedCallback: () -> Unit,
-    private val proximityCancelledCallback: () -> Unit
-) :
-    ResolutionPolicy.Methods.ProximityHandler {
-    override fun onProximityReached(threshold: Proximity) {
-        proximityReachedCallback()
-        methods.refresh()
-    }
+    private inner class ProximityHandler :
+        ResolutionPolicy.Methods.ProximityHandler {
+        override fun onProximityReached(threshold: Proximity) {
+            proximityThresholdReached = true
+            methods.refresh()
+        }
 
-    override fun onProximityCancelled() {
-        proximityCancelledCallback()
+        override fun onProximityCancelled() {
+            proximityThresholdReached = false
+        }
     }
 }
