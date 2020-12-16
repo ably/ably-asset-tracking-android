@@ -5,8 +5,8 @@ import com.ably.tracking.Resolution
 import com.ably.tracking.common.ClientTypes
 import com.ably.tracking.common.EventNames
 import com.ably.tracking.common.PresenceData
-import com.ably.tracking.common.getPresenceData
 import com.ably.tracking.common.getGeoJsonMessages
+import com.ably.tracking.common.getPresenceData
 import com.ably.tracking.common.toLocation
 import com.google.gson.Gson
 import io.ably.lib.realtime.AblyRealtime
@@ -84,16 +84,20 @@ internal class DefaultSubscriber(
     }
 
     override fun sendChangeRequest(resolution: Resolution, onSuccess: () -> Unit, onError: (Exception) -> Unit) {
-        presenceData = presenceData.copy(resolution = resolution)
+        enqueue(ChangeResolutionEvent(resolution, onSuccess, onError))
+    }
+
+    private fun performChangeResolution(event: ChangeResolutionEvent) {
+        presenceData = presenceData.copy(resolution = event.resolution)
         channel.presence.update(
             gson.toJson(presenceData),
             object : CompletionListener {
                 override fun onSuccess() {
-                    postToMainThread { onSuccess() }
+                    enqueue(SuccessEvent(event.onSuccess))
                 }
 
                 override fun onError(reason: ErrorInfo?) {
-                    postToMainThread { onError(Exception("Unable to change resolution: ${reason?.message}")) }
+                    enqueue(ErrorEvent(Exception("Unable to change resolution: ${reason?.message}"), event.onError))
                 }
             }
         )
@@ -161,13 +165,13 @@ internal class DefaultSubscriber(
     private fun performPresenceMessage(event: PresenceMessageEvent) {
         when (event.presenceMessage.action) {
             PresenceMessage.Action.present, PresenceMessage.Action.enter -> {
-                val data = presenceMessage.getPresenceData(gson)
+                val data = event.presenceMessage.getPresenceData(gson)
                 if (data.type == ClientTypes.PUBLISHER) {
                     notifyAssetIsOnline()
                 }
             }
             PresenceMessage.Action.leave -> {
-                val data = presenceMessage.getPresenceData(gson)
+                val data = event.presenceMessage.getPresenceData(gson)
                 if (data.type == ClientTypes.PUBLISHER) {
                     notifyAssetIsOffline()
                 }
@@ -192,9 +196,20 @@ internal class DefaultSubscriber(
                     is RawLocationReceivedEvent -> performRawLocationReceived(event)
                     is EnhancedLocationReceivedEvent -> performEnhancedLocationReceived(event)
                     is PresenceMessageEvent -> performPresenceMessage(event)
+                    is ErrorEvent -> performEventError(event)
+                    is SuccessEvent -> performEventSuccess(event)
+                    is ChangeResolutionEvent -> performChangeResolution(event)
                 }
             }
         }
+
+    private fun performEventSuccess(event: SuccessEvent) {
+        callback { event.onSuccess() }
+    }
+
+    private fun performEventError(event: ErrorEvent) {
+        callback { event.onError(event.exception) }
+    }
 
     private fun callback(action: () -> Unit) {
         scope.launch(Dispatchers.Main) { action() }
