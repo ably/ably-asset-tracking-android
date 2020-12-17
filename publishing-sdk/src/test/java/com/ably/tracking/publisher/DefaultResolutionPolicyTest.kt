@@ -68,6 +68,25 @@ class DefaultResolutionPolicyTest {
     }
 
     @Test
+    fun `resolving a request with only trackable and no battery data should return the resolution from trackable with unchanged desiredInterval`() {
+        // given
+        mockBatteryLevel(null)
+        val trackableResolution = Resolution(Accuracy.MAXIMUM, 20L, 0.5)
+        val batteryLevelThreshold = 50f
+        val lowBatteryMultiplier = 2f
+        val resolutionRequest = TrackableResolutionRequest(
+            anyTrackable(trackableResolution, batteryLevelThreshold, lowBatteryMultiplier),
+            emptySet()
+        )
+
+        // when
+        val resolvedResolution = policy.resolve(resolutionRequest)
+
+        // then
+        Assert.assertEquals(trackableResolution, resolvedResolution)
+    }
+
+    @Test
     fun `resolving a request with only single remote resolution should return that remote resolution`() {
         // given
         val remoteResolution = Resolution(Accuracy.MAXIMUM, 20L, 0.5)
@@ -204,7 +223,7 @@ class DefaultResolutionPolicyTest {
     /**
      * [level] should be between [DefaultBatteryDataProvider.MINIMUM_BATTERY_PERCENTAGE] and [DefaultBatteryDataProvider.MAXIMUM_BATTERY_PERCENTAGE]
      */
-    private fun mockBatteryLevel(level: Float) {
+    private fun mockBatteryLevel(level: Float?) {
         every { batteryDataProvider.getCurrentBatteryPercentage() } returns level
     }
 
