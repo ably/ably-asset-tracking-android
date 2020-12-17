@@ -19,3 +19,16 @@ jobs:
         with:
           name: build-profile-report
           path: build/reports/profile/
+      - run: ./gradlew testDebugUnitTestCoverage
+      - uses: actions/upload-artifact@v2
+        with:
+          name: subscribing-sdk-test-coverage
+          path: subscribing-sdk/build/reports/jacoco/
+      - uses: actions/upload-artifact@v2
+        with:
+          name: publishing-sdk-test-coverage
+          path: publishing-sdk/build/reports/jacoco/
+      - uses: actions/upload-artifact@v2
+        with:
+          name: core-sdk-test-coverage
+          path: core-sdk/build/reports/jacoco/

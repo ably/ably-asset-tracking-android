@@ -1,0 +1,64 @@
+apply plugin: 'jacoco'
+
+jacoco {
+    toolVersion = '0.8.6'
+    // Custom reports directory can be specfied like this:
+    // reportsDir = file("$buildDir/customJacocoReportDir")
+}
+
+tasks.withType(Test) {
+    jacoco.includeNoLocationClasses = true
+}
+
+project.afterEvaluate {
+    // Grab all build types and product flavors
+    def buildTypes = android.buildTypes.collect { type ->
+        type.name
+    }
+    def productFlavors = android.productFlavors.collect { flavor ->
+        flavor.name
+    }
+    // When no product flavors defined, use empty
+    if (!productFlavors) productFlavors.add('')
+    productFlavors.each { productFlavorName ->
+        buildTypes.each { buildTypeName ->
+            def sourceName
+            if (!productFlavorName) {
+                sourceName = "${buildTypeName}"
+            } else {
+                sourceName = "${productFlavorName}${buildTypeName.capitalize()}"
+            }
+            def testTaskName = "test${sourceName.capitalize()}UnitTest"
+            // Create coverage task of form 'testFlavorTypeCoverage' depending on 'testFlavorTypeUnitTest'
+            task "${testTaskName}Coverage"(type: JacocoReport, dependsOn: "$testTaskName") {
+                group = "Reporting"
+                description = "Generate Jacoco coverage reports on the ${sourceName.capitalize()} build."
+
+                // Specify files that shouldn't be used when creating coverage report
+                def fileFilter = [
+                    '**/*Application*',
+                    '**/*Activity*',
+                    '**/*Fragment*',
+                    '**/*Command*',
+                    '**/*Module*'
+                ]
+                def debugTree = fileTree(dir: "${buildDir}/intermediates/classes/$productFlavorName/$buildTypeName", excludes: fileFilter)
+                def kotlinDebugTree = fileTree(dir: "${buildDir}/tmp/kotlin-classes/$sourceName", excludes: fileFilter)
+                classDirectories.from = files([debugTree], [kotlinDebugTree])
+                def coverageSourceDirs = [
+                    "src/main/java",
+                    "src/$productFlavorName/java",
+                    "src/$buildTypeName/java"
+                ]
+                additionalSourceDirs.from = files(coverageSourceDirs)
+                sourceDirectories.from = files(coverageSourceDirs)
+                executionData.from = files("${project.buildDir}/jacoco/${testTaskName}.exec")
+                reports {
+                    csv.destination file("${project.buildDir}/reports/jacoco/report.csv")
+                    csv.enabled = true
+                    html.enabled = true
+                }
+            }
+        }
+    }
+}
