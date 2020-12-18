@@ -55,7 +55,8 @@ constructor(
     private val debugConfiguration: DebugConfiguration?,
     private val locationUpdatedListener: LocationUpdatedListener,
     context: Context,
-    resolutionPolicyFactory: ResolutionPolicy.Factory
+    resolutionPolicyFactory: ResolutionPolicy.Factory,
+    initialTransportationMode: TransportationMode
 ) :
     Publisher {
     private val gson: Gson = Gson()
@@ -95,6 +96,7 @@ constructor(
      * After successfully setting the tracking destination this field will be set to NULL.
      **/
     private var destinationToSet: Destination? = null
+    private var currentDestination: Destination? = null
 
     init {
         eventsChannel = createEventsChannel(scope)
@@ -495,11 +497,15 @@ constructor(
         }
     }
 
-    override var transportationMode: TransportationMode
-        get() = TODO("Not yet implemented")
-        set(@Suppress("UNUSED_PARAMETER") value) {
-            TODO("Not yet implemented")
+    override var transportationMode: TransportationMode = initialTransportationMode
+        set(value) {
+            field = value
+            enqueue(TransportationModeChangedEvent())
         }
+
+    private fun performTransportationModeChanged() {
+        currentDestination?.let { enqueue(SetDestinationEvent(it)) }
+    }
 
     override fun stop() {
         enqueue(StopPublisherEvent())
@@ -539,11 +545,13 @@ constructor(
             if (currentLocation != null) {
                 destinationToSet = null
                 removeCurrentDestination()
+                currentDestination = event.destination
                 mapboxNavigation.requestRoutes(
                     RouteOptions.builder()
                         .applyDefaultParams()
                         .accessToken(mapConfiguration.apiKey)
                         .coordinates(getRouteCoordinates(currentLocation, event.destination))
+                        .profile(transportationMode.profile)
                         .build(),
                     object : RoutesRequestCallback {
                         override fun onRoutesReady(routes: List<DirectionsRoute>) {
@@ -573,6 +581,7 @@ constructor(
 
     private fun removeCurrentDestination() {
         mapboxNavigation.setRoutes(emptyList())
+        currentDestination = null
         estimatedArrivalTimeInMilliseconds = null
     }
 
@@ -615,6 +624,7 @@ constructor(
                     is RefreshResolutionPolicyEvent -> performRefreshResolutionPolicy()
                     is SetDestinationSuccessEvent -> performSetDestinationSuccess(event)
                     is PresenceMessageEvent -> performPresenceMessage(event)
+                    is TransportationModeChangedEvent -> performTransportationModeChanged()
                 }
             }
         }

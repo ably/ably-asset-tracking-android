@@ -1,6 +1,7 @@
 package com.ably.tracking.publisher
 
 import com.ably.tracking.Resolution
+import com.mapbox.api.directions.v5.DirectionsCriteria
 import io.ably.lib.realtime.ConnectionStateListener
 
 // TODO: make sure all this works from Java user perspective
@@ -340,7 +341,12 @@ data class DefaultResolutionConstraints(
     val lowBatteryMultiplier: Float
 ) : ResolutionConstraints()
 
-data class TransportationMode(val TBC: String)
+enum class TransportationMode(val profile: String) {
+    CAR(DirectionsCriteria.PROFILE_DRIVING),
+    BIKE(DirectionsCriteria.PROFILE_CYCLING),
+    WALK(DirectionsCriteria.PROFILE_WALKING),
+    CAR_TRAFFIC(DirectionsCriteria.PROFILE_DRIVING_TRAFFIC),
+}
 
 // TODO - probably should be removed in the final version
 // https://github.com/ably/ably-asset-tracking-android/issues/19

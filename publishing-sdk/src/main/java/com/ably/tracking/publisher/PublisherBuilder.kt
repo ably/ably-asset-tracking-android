@@ -15,7 +15,7 @@ internal data class PublisherBuilder(
     val debugConfiguration: DebugConfiguration? = null,
     val locationUpdatedListener: LocationUpdatedListener? = null,
     val androidContext: Context? = null,
-    val transportationMode: TransportationMode? = null,
+    val transportationMode: TransportationMode = TransportationMode.CAR,
     val resolutionPolicyFactory: ResolutionPolicy.Factory? = null
 ) : Publisher.Builder {
 
@@ -55,7 +55,8 @@ internal data class PublisherBuilder(
             debugConfiguration,
             locationUpdatedListener!!,
             androidContext!!,
-            resolutionPolicyFactory!!
+            resolutionPolicyFactory!!,
+            transportationMode
         )
     }
 

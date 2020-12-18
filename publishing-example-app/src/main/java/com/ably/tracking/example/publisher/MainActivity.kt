@@ -119,7 +119,7 @@ class MainActivity : AppCompatActivity() {
             .locationUpdatedListener { updateLocationInfo(it) }
             .resolutionPolicy(DefaultResolutionPolicyFactory(Resolution(Accuracy.MINIMUM, 1000L, 1.0), this))
             .androidContext(this)
-            .mode(TransportationMode("TBC"))
+            .mode(TransportationMode.CAR)
             .start()
             .apply {
                 track(
