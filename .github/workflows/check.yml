@@ -24,15 +24,15 @@ jobs:
 
       - uses: actions/upload-artifact@v2
         with:
-          name: subscribing-sdk-test-coverage
+          name: subscribing-sdk-coverage
           path: subscribing-sdk/build/reports/jacoco/
 
       - uses: actions/upload-artifact@v2
         with:
-          name: publishing-sdk-test-coverage
+          name: publishing-sdk-coverage
           path: publishing-sdk/build/reports/jacoco/
 
       - uses: actions/upload-artifact@v2
         with:
-          name: core-sdk-test-coverage
+          name: core-sdk-coverage
           path: core-sdk/build/reports/jacoco/
