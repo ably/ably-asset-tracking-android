@@ -38,7 +38,7 @@ class DefaultResolutionPolicyTest {
     fun `resolving a request with trackable but no remote resolutions should return the resolution from trackable`() {
         // given
         val trackableResolution = anyResolution()
-        val resolutionRequest = TrackableResolutionRequest(anyTrackable(trackableResolution), emptySet())
+        val resolutionRequest = TrackableResolutionRequest(createTrackable(trackableResolution), emptySet())
 
         // when
         val resolvedResolution = policy.resolve(resolutionRequest)
@@ -55,7 +55,7 @@ class DefaultResolutionPolicyTest {
         val batteryLevelThreshold = 50f
         val lowBatteryMultiplier = 2f
         val resolutionRequest = TrackableResolutionRequest(
-            anyTrackable(trackableResolution, batteryLevelThreshold, lowBatteryMultiplier),
+            createTrackable(trackableResolution, batteryLevelThreshold, lowBatteryMultiplier),
             emptySet()
         )
 
@@ -75,7 +75,7 @@ class DefaultResolutionPolicyTest {
         val batteryLevelThreshold = 50f
         val lowBatteryMultiplier = 2f
         val resolutionRequest = TrackableResolutionRequest(
-            anyTrackable(trackableResolution, batteryLevelThreshold, lowBatteryMultiplier),
+            createTrackable(trackableResolution, batteryLevelThreshold, lowBatteryMultiplier),
             emptySet()
         )
 
@@ -126,7 +126,7 @@ class DefaultResolutionPolicyTest {
             Resolution(Accuracy.MAXIMUM, 20L, 2.5)
         )
         val trackableResolution = Resolution(Accuracy.BALANCED, 1L, 0.5)
-        val resolutionRequest = TrackableResolutionRequest(anyTrackable(trackableResolution), remoteResolutions)
+        val resolutionRequest = TrackableResolutionRequest(createTrackable(trackableResolution), remoteResolutions)
 
         // when
         val resolvedResolution = policy.resolve(resolutionRequest)
@@ -149,7 +149,7 @@ class DefaultResolutionPolicyTest {
             Resolution(Accuracy.MAXIMUM, 20L, 2.5)
         )
         val resolutionRequest = TrackableResolutionRequest(
-            anyTrackable(trackableResolution, batteryLevelThreshold, lowBatteryMultiplier),
+            createTrackable(trackableResolution, batteryLevelThreshold, lowBatteryMultiplier),
             remoteResolutions
         )
 
@@ -165,7 +165,7 @@ class DefaultResolutionPolicyTest {
     fun `resolving a request with resolution set should return farWithoutSubscriber when above threshold and no subscriber is present`() {
         // given
         val trackableResolutionSet = anyDefaultResolutionSet()
-        val trackable = anyTrackable(trackableResolutionSet)
+        val trackable = createTrackable(trackableResolutionSet)
         val resolutionRequest = TrackableResolutionRequest(trackable, emptySet())
 
         // when
@@ -179,7 +179,7 @@ class DefaultResolutionPolicyTest {
     fun `resolving a request with resolution set should return farWithSubscriber when above threshold and at least one subscriber is present`() {
         // given
         val trackableResolutionSet = anyDefaultResolutionSet()
-        val trackable = anyTrackable(trackableResolutionSet)
+        val trackable = createTrackable(trackableResolutionSet)
         val resolutionRequest = TrackableResolutionRequest(trackable, emptySet())
         mockAboveThresholdWithSubscribers(trackable)
 
@@ -194,7 +194,7 @@ class DefaultResolutionPolicyTest {
     fun `resolving a request with resolution set should return nearWithoutSubscriber when below threshold and no subscriber is present`() {
         // given
         val trackableResolutionSet = anyDefaultResolutionSet()
-        val trackable = anyTrackable(trackableResolutionSet)
+        val trackable = createTrackable(trackableResolutionSet)
         val resolutionRequest = TrackableResolutionRequest(trackable, emptySet())
         mockBelowThresholdWithoutSubscribers(trackable)
 
@@ -209,7 +209,7 @@ class DefaultResolutionPolicyTest {
     fun `resolving a request with resolution set should return nearWithSubscriber when below threshold and at least one subscriber is present`() {
         // given
         val trackableResolutionSet = anyDefaultResolutionSet()
-        val trackable = anyTrackable(trackableResolutionSet)
+        val trackable = createTrackable(trackableResolutionSet)
         val resolutionRequest = TrackableResolutionRequest(trackable, emptySet())
         mockBelowThresholdWithSubscribers(trackable)
 
@@ -255,14 +255,14 @@ class DefaultResolutionPolicyTest {
 
     private fun anyTrackable() = Trackable("test_id")
 
-    private fun anyTrackable(resolution: Resolution) = anyTrackable(DefaultResolutionSet(resolution))
+    private fun createTrackable(resolution: Resolution) = createTrackable(DefaultResolutionSet(resolution))
 
-    private fun anyTrackable(resolutionSet: DefaultResolutionSet) = anyTrackable(resolutionSet, 10f, 1f)
+    private fun createTrackable(resolutionSet: DefaultResolutionSet) = createTrackable(resolutionSet, 10f, 1f)
 
-    private fun anyTrackable(resolution: Resolution, batteryLevelThreshold: Float, lowBatteryMultiplier: Float) =
-        anyTrackable(DefaultResolutionSet(resolution), batteryLevelThreshold, lowBatteryMultiplier)
+    private fun createTrackable(resolution: Resolution, batteryLevelThreshold: Float, lowBatteryMultiplier: Float) =
+        createTrackable(DefaultResolutionSet(resolution), batteryLevelThreshold, lowBatteryMultiplier)
 
-    private fun anyTrackable(
+    private fun createTrackable(
         resolutionSet: DefaultResolutionSet,
         batteryLevelThreshold: Float,
         lowBatteryMultiplier: Float
