@@ -79,4 +79,4 @@ internal data class PresenceMessageEvent(
     val presenceMessage: PresenceMessage
 ) : PublisherEvent()
 
-internal class TransportationModeChangedEvent : PublisherEvent()
+internal class RoutingProfileChangedEvent : PublisherEvent()

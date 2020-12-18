@@ -23,8 +23,8 @@ import com.ably.tracking.publisher.LocationSourceAbly
 import com.ably.tracking.publisher.LocationSourceRaw
 import com.ably.tracking.publisher.MapConfiguration
 import com.ably.tracking.publisher.Publisher
+import com.ably.tracking.publisher.RoutingProfile
 import com.ably.tracking.publisher.Trackable
-import com.ably.tracking.publisher.TransportationMode
 import io.ably.lib.realtime.ConnectionState
 import io.ably.lib.realtime.ConnectionStateListener
 import kotlinx.android.synthetic.main.activity_main.*
@@ -119,7 +119,7 @@ class MainActivity : AppCompatActivity() {
             .locationUpdatedListener { updateLocationInfo(it) }
             .resolutionPolicy(DefaultResolutionPolicyFactory(Resolution(Accuracy.MINIMUM, 1000L, 1.0), this))
             .androidContext(this)
-            .mode(TransportationMode.CAR)
+            .profile(RoutingProfile.DRIVING)
             .start()
             .apply {
                 track(

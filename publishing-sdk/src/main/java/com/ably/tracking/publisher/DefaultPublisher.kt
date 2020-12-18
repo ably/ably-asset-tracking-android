@@ -56,7 +56,7 @@ constructor(
     private val locationUpdatedListener: LocationUpdatedListener,
     context: Context,
     resolutionPolicyFactory: ResolutionPolicy.Factory,
-    initialTransportationMode: TransportationMode
+    initialRoutingProfile: RoutingProfile
 ) :
     Publisher {
     private val gson: Gson = Gson()
@@ -497,13 +497,13 @@ constructor(
         }
     }
 
-    override var transportationMode: TransportationMode = initialTransportationMode
+    override var routingProfile: RoutingProfile = initialRoutingProfile
         set(value) {
             field = value
-            enqueue(TransportationModeChangedEvent())
+            enqueue(RoutingProfileChangedEvent())
         }
 
-    private fun performTransportationModeChanged() {
+    private fun performRoutingProfileChanged() {
         currentDestination?.let { enqueue(SetDestinationEvent(it)) }
     }
 
@@ -551,7 +551,7 @@ constructor(
                         .applyDefaultParams()
                         .accessToken(mapConfiguration.apiKey)
                         .coordinates(getRouteCoordinates(currentLocation, event.destination))
-                        .profile(transportationMode.profile)
+                        .profile(routingProfile.profile)
                         .build(),
                     object : RoutesRequestCallback {
                         override fun onRoutesReady(routes: List<DirectionsRoute>) {
@@ -624,7 +624,7 @@ constructor(
                     is RefreshResolutionPolicyEvent -> performRefreshResolutionPolicy()
                     is SetDestinationSuccessEvent -> performSetDestinationSuccess(event)
                     is PresenceMessageEvent -> performPresenceMessage(event)
-                    is TransportationModeChangedEvent -> performTransportationModeChanged()
+                    is RoutingProfileChangedEvent -> performRoutingProfileChanged()
                 }
             }
         }

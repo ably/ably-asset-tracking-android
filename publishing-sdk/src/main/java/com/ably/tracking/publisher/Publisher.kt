@@ -79,7 +79,7 @@ interface Publisher {
     /**
      * The active means of transport for this publisher.
      */
-    var transportationMode: TransportationMode
+    var routingProfile: RoutingProfile
 
     /**
      * Stops this publisher from publishing locations. Once a publisher has been stopped, it cannot be restarted.
@@ -140,10 +140,10 @@ interface Publisher {
         /**
          * Set the means of transport being used for the initial state of publishers created from this builder.
          *
-         * @param mode The means of transport.
+         * @param profile The means of transport.
          * @return A new instance of the builder with this property changed.
          */
-        fun mode(mode: TransportationMode): Builder
+        fun profile(profile: RoutingProfile): Builder
 
         /**
          * Sets the policy factory to be used to define the target resolution for publishers created from this builder.

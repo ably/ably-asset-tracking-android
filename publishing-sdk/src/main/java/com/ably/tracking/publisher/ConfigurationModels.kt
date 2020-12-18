@@ -341,11 +341,11 @@ data class DefaultResolutionConstraints(
     val lowBatteryMultiplier: Float
 ) : ResolutionConstraints()
 
-enum class TransportationMode(val profile: String) {
-    CAR(DirectionsCriteria.PROFILE_DRIVING),
-    BIKE(DirectionsCriteria.PROFILE_CYCLING),
-    WALK(DirectionsCriteria.PROFILE_WALKING),
-    CAR_TRAFFIC(DirectionsCriteria.PROFILE_DRIVING_TRAFFIC),
+enum class RoutingProfile(val profile: String) {
+    DRIVING(DirectionsCriteria.PROFILE_DRIVING),
+    CYCLING(DirectionsCriteria.PROFILE_CYCLING),
+    WALKING(DirectionsCriteria.PROFILE_WALKING),
+    DRIVING_TRAFFIC(DirectionsCriteria.PROFILE_DRIVING_TRAFFIC),
 }
 
 // TODO - probably should be removed in the final version

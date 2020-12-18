@@ -15,7 +15,7 @@ internal data class PublisherBuilder(
     val debugConfiguration: DebugConfiguration? = null,
     val locationUpdatedListener: LocationUpdatedListener? = null,
     val androidContext: Context? = null,
-    val transportationMode: TransportationMode = TransportationMode.CAR,
+    val routingProfile: RoutingProfile = RoutingProfile.DRIVING,
     val resolutionPolicyFactory: ResolutionPolicy.Factory? = null
 ) : Publisher.Builder {
 
@@ -37,8 +37,8 @@ internal data class PublisherBuilder(
     override fun androidContext(context: Context): Publisher.Builder =
         this.copy(androidContext = context)
 
-    override fun mode(mode: TransportationMode): Publisher.Builder =
-        this.copy(transportationMode = mode)
+    override fun profile(profile: RoutingProfile): Publisher.Builder =
+        this.copy(routingProfile = profile)
 
     override fun resolutionPolicy(factory: ResolutionPolicy.Factory): Publisher.Builder =
         this.copy(resolutionPolicyFactory = factory)
@@ -56,7 +56,7 @@ internal data class PublisherBuilder(
             locationUpdatedListener!!,
             androidContext!!,
             resolutionPolicyFactory!!,
-            transportationMode
+            routingProfile
         )
     }
 
@@ -66,6 +66,6 @@ internal data class PublisherBuilder(
             mapConfiguration == null ||
             locationUpdatedListener == null ||
             androidContext == null ||
-            transportationMode == null ||
+            routingProfile == null ||
             resolutionPolicyFactory == null
 }
