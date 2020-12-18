@@ -6,9 +6,8 @@ import android.content.Context
 import android.location.Location
 import androidx.annotation.RequiresPermission
 import com.ably.tracking.ConnectionConfiguration
+import com.ably.tracking.LocationUpdatedListener
 import com.ably.tracking.LogConfiguration
-
-typealias LocationUpdatedListener = (Location) -> Unit
 
 /**
  * Represents a publisher. Publishers maintain the Ably connection, making use of navigation resources as required to

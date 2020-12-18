@@ -67,7 +67,6 @@ public class PublisherInterfaceUsageExamples {
                 }))
             .locationUpdatedListener(location -> {
                 onLocationUpdated(location);
-                return null;
             })
             .log(new LogConfiguration(true))
             .map(new MapConfiguration("API_KEY"))

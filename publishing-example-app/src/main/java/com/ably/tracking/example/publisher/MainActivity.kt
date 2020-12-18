@@ -13,6 +13,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.widget.ImageViewCompat
 import com.ably.tracking.Accuracy
 import com.ably.tracking.ConnectionConfiguration
+import com.ably.tracking.LocationUpdatedListener
 import com.ably.tracking.Resolution
 import com.ably.tracking.publisher.DebugConfiguration
 import com.ably.tracking.publisher.DefaultProximity
@@ -116,7 +117,11 @@ class MainActivity : AppCompatActivity() {
             .connection(ConnectionConfiguration(ABLY_API_KEY, CLIENT_ID))
             .map(MapConfiguration(MAPBOX_ACCESS_TOKEN))
             .debug(createDebugConfiguration(historyData))
-            .locationUpdatedListener { updateLocationInfo(it) }
+            .locationUpdatedListener(object : LocationUpdatedListener {
+                override fun onLocationUpdated(location: Location) {
+                    updateLocationInfo(location)
+                }
+            })
             .resolutionPolicy(DefaultResolutionPolicyFactory(Resolution(Accuracy.MINIMUM, 1000L, 1.0), this))
             .androidContext(this)
             .mode(TransportationMode("TBC"))

@@ -9,6 +9,7 @@ import android.os.Handler
 import android.os.Looper
 import androidx.annotation.RequiresPermission
 import com.ably.tracking.ConnectionConfiguration
+import com.ably.tracking.LocationUpdatedListener
 import com.ably.tracking.Resolution
 import com.ably.tracking.common.ClientTypes
 import com.ably.tracking.common.EventNames
@@ -167,7 +168,7 @@ constructor(
         }
         lastSentRaw = event.location
         destinationToSet?.let { setDestination(it) }
-        enqueue(SuccessEvent { locationUpdatedListener(event.location) })
+        enqueue(SuccessEvent { locationUpdatedListener.onLocationUpdated(event.location) })
         checkThreshold(event.location)
     }
 
@@ -187,7 +188,7 @@ constructor(
             }
         }
         lastSentEnhanced = event.location
-        enqueue(SuccessEvent { locationUpdatedListener(event.location) })
+        enqueue(SuccessEvent { locationUpdatedListener.onLocationUpdated(event.location) })
         checkThreshold(event.location)
     }
 

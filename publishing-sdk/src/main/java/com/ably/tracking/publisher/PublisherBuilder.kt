@@ -6,6 +6,7 @@ import android.content.Context
 import androidx.annotation.RequiresPermission
 import com.ably.tracking.BuilderConfigurationIncompleteException
 import com.ably.tracking.ConnectionConfiguration
+import com.ably.tracking.LocationUpdatedListener
 import com.ably.tracking.LogConfiguration
 
 internal data class PublisherBuilder(

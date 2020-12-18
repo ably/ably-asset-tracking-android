@@ -2,8 +2,10 @@ package com.ably.tracking.publisher
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.location.Location
 import com.ably.tracking.BuilderConfigurationIncompleteException
 import com.ably.tracking.ConnectionConfiguration
+import com.ably.tracking.LocationUpdatedListener
 import com.ably.tracking.LogConfiguration
 import io.mockk.mockk
 import org.junit.Assert
@@ -117,7 +119,7 @@ class FactoryUnitTests {
     @Test
     fun `setting location updated listener updates builder field`() {
         // given
-        val listener: LocationUpdatedListener = {}
+        val listener: LocationUpdatedListener = anyLocationUpdatedListener()
 
         // when
         val builder =
@@ -130,7 +132,7 @@ class FactoryUnitTests {
     @Test
     fun `setting location updated listener returns a new copy of builder`() {
         // given
-        val listener: LocationUpdatedListener = {}
+        val listener: LocationUpdatedListener = anyLocationUpdatedListener()
         val originalBuilder = Publisher.publishers()
 
         // when
@@ -178,7 +180,7 @@ class FactoryUnitTests {
             .connection(ConnectionConfiguration("", ""))
             .map(MapConfiguration(""))
             .log(LogConfiguration(true))
-            .locationUpdatedListener { }
+            .locationUpdatedListener(anyLocationUpdatedListener())
             .androidContext(mockedContext)
 
         // then
@@ -205,5 +207,9 @@ class FactoryUnitTests {
         Assert.assertNotNull(builder.logConfiguration)
         Assert.assertNotNull(builder.locationUpdatedListener)
         Assert.assertNotNull(builder.androidContext)
+    }
+
+    private fun anyLocationUpdatedListener(): LocationUpdatedListener = object : LocationUpdatedListener {
+        override fun onLocationUpdated(location: Location) = Unit
     }
 }
