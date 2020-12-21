@@ -1,28 +1,15 @@
 package com.ably.tracking.subscriber
 
 import android.annotation.SuppressLint
-import android.content.Context
 import com.ably.tracking.Accuracy
 import com.ably.tracking.BuilderConfigurationIncompleteException
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.LogConfiguration
 import com.ably.tracking.Resolution
-import io.mockk.mockk
 import org.junit.Assert
 import org.junit.Test
 
 class FactoryUnitTests {
-    @Test
-    fun `subscribers should return AssetSubscriber Builder object`() {
-        // given
-
-        // when
-        val builder = Subscriber.subscribers()
-
-        // then
-        Assert.assertTrue(builder is Subscriber.Builder)
-    }
-
     @Test
     fun `setting Ably connection config updates builder field`() {
         // given
@@ -210,7 +197,6 @@ class FactoryUnitTests {
         // given
         val builder = Subscriber.subscribers()
         assertAllBuilderFieldsAreNull(builder as SubscriberBuilder)
-        val mockedContext = mockk<Context>()
 
         // when
         val updatedBuilder = builder

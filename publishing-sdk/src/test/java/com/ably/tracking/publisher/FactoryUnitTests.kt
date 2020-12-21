@@ -14,17 +14,6 @@ import org.junit.Test
  */
 class FactoryUnitTests {
     @Test
-    fun `publishers should return Publisher Builder object`() {
-        // given
-
-        // when
-        val builder = Publisher.publishers()
-
-        // then
-        Assert.assertTrue(builder is Publisher.Builder)
-    }
-
-    @Test
     fun `setting Ably connection config updates builder field`() {
         // given
         val configuration = ConnectionConfiguration("", "")
