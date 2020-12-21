@@ -1,7 +1,7 @@
 package com.ably.tracking.publisher
 
+import com.ably.tracking.AblyStateChangeListener
 import com.ably.tracking.Resolution
-import io.ably.lib.realtime.ConnectionStateListener
 
 // TODO: make sure all this works from Java user perspective
 
@@ -345,7 +345,7 @@ data class TransportationMode(val TBC: String)
 // TODO - probably should be removed in the final version
 // https://github.com/ably/ably-asset-tracking-android/issues/19
 data class DebugConfiguration(
-    val ablyStateChangeListener: ((ConnectionStateListener.ConnectionStateChange) -> Unit)? = null,
+    val ablyStateChangeListener: AblyStateChangeListener? = null,
     val locationSource: LocationSource? = null,
     val locationHistoryReadyListener: ((String) -> Unit)? = null
 )

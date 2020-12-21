@@ -11,6 +11,7 @@ import androidx.annotation.RequiresPermission
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.widget.ImageViewCompat
+import com.ably.tracking.AblyStateChangeListener
 import com.ably.tracking.Accuracy
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.LocationUpdatedListener
@@ -164,7 +165,11 @@ class MainActivity : AppCompatActivity() {
 
     private fun createDebugConfiguration(historyData: String? = null): DebugConfiguration {
         return DebugConfiguration(
-            ablyStateChangeListener = { updateAblyStateInfo(it) },
+            ablyStateChangeListener = object : AblyStateChangeListener {
+                override fun onConnectionStateChange(connectionStateChange: ConnectionStateListener.ConnectionStateChange) {
+                    updateAblyStateInfo(connectionStateChange)
+                }
+            },
             locationSource = when (getLocationSourceType()) {
                 LocationSourceType.ABLY -> LocationSourceAbly(appPreferences.getSimulationChannel())
                 LocationSourceType.S3 -> LocationSourceRaw(historyData!!)

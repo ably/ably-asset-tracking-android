@@ -123,7 +123,7 @@ constructor(
         }
 
         debugConfiguration?.ablyStateChangeListener?.let { ablyStateChangeListener ->
-            ably.connection.on { state -> postToMainThread { ablyStateChangeListener(state) } }
+            ably.connection.on { state -> postToMainThread { ablyStateChangeListener.onConnectionStateChange(state) } }
         }
 
         mapboxNavigation = MapboxNavigation(mapboxBuilder.build())

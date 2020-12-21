@@ -58,7 +58,6 @@ public class PublisherInterfaceUsageExamples {
             .connection(new ConnectionConfiguration("API_KEY", "CLIENT_ID"))
             .debug(new DebugConfiguration(connectionStateChange -> {
                 onConnectionStateChanged(connectionStateChange);
-                return null;
             },
                 new LocationSourceRaw(""),
                 historyData -> {
