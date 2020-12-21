@@ -1,6 +1,7 @@
 package com.ably.tracking.subscriber
 
 import com.ably.tracking.ConnectionConfiguration
+import com.ably.tracking.LocationUpdatedListener
 import com.ably.tracking.Resolution
 import com.ably.tracking.common.ClientTypes
 import com.ably.tracking.common.EventNames
@@ -67,7 +68,7 @@ internal class DefaultSubscriber(
     }
 
     private fun performRawLocationReceived(event: RawLocationReceivedEvent) {
-        callback { rawLocationUpdatedListener(event.location) }
+        callback { rawLocationUpdatedListener.onLocationUpdated(event.location) }
     }
 
     private fun subscribeForEnhancedEvents() {
@@ -81,7 +82,7 @@ internal class DefaultSubscriber(
     }
 
     private fun performEnhancedLocationReceived(event: EnhancedLocationReceivedEvent) {
-        callback { enhancedLocationUpdatedListener(event.location) }
+        callback { enhancedLocationUpdatedListener.onLocationUpdated(event.location) }
     }
 
     override fun sendChangeRequest(resolution: Resolution, onSuccess: () -> Unit, onError: (Exception) -> Unit) {

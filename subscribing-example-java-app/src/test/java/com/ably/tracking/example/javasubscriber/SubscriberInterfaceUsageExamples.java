@@ -40,12 +40,10 @@ public class SubscriberInterfaceUsageExamples {
             .connection(new ConnectionConfiguration("API_KEY", "CLIENT_ID"))
             .enhancedLocationUpdatedListener(location -> {
                 onLocationUpdated(location);
-                return null;
             })
             .log(new LogConfiguration(true))
             .rawLocationUpdatedListener(location -> {
                 onLocationUpdated(location);
-                return null;
             })
             .resolution(new Resolution(Accuracy.MAXIMUM, 1L, 1.0))
             .trackingId("ID")

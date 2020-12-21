@@ -1,7 +1,8 @@
 package com.ably.tracking.subscriber
 
-import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.BuilderConfigurationIncompleteException
+import com.ably.tracking.ConnectionConfiguration
+import com.ably.tracking.LocationUpdatedListener
 import com.ably.tracking.LogConfiguration
 import com.ably.tracking.Resolution
 

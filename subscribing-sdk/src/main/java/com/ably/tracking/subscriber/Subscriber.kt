@@ -1,11 +1,10 @@
 package com.ably.tracking.subscriber
 
-import android.location.Location
 import com.ably.tracking.ConnectionConfiguration
+import com.ably.tracking.LocationUpdatedListener
 import com.ably.tracking.LogConfiguration
 import com.ably.tracking.Resolution
 
-typealias LocationUpdatedListener = (Location) -> Unit
 typealias StatusListener = (Boolean) -> Unit
 
 /**

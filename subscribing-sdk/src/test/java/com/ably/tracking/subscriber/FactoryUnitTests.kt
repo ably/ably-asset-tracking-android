@@ -1,9 +1,11 @@
 package com.ably.tracking.subscriber
 
 import android.annotation.SuppressLint
+import android.location.Location
 import com.ably.tracking.Accuracy
 import com.ably.tracking.BuilderConfigurationIncompleteException
 import com.ably.tracking.ConnectionConfiguration
+import com.ably.tracking.LocationUpdatedListener
 import com.ably.tracking.LogConfiguration
 import com.ably.tracking.Resolution
 import org.junit.Assert
@@ -65,7 +67,7 @@ class FactoryUnitTests {
     @Test
     fun `setting raw location updated listener updates builder field`() {
         // given
-        val listener: LocationUpdatedListener = {}
+        val listener: LocationUpdatedListener = anyLocationUpdatedListener()
 
         // when
         val builder =
@@ -79,7 +81,7 @@ class FactoryUnitTests {
     @Test
     fun `setting raw location updated listener returns a new copy of builder`() {
         // given
-        val listener: LocationUpdatedListener = {}
+        val listener: LocationUpdatedListener = anyLocationUpdatedListener()
         val originalBuilder = Subscriber.subscribers()
 
         // when
@@ -92,7 +94,7 @@ class FactoryUnitTests {
     @Test
     fun `setting enhanced location updated listener updates builder field`() {
         // given
-        val listener: LocationUpdatedListener = {}
+        val listener: LocationUpdatedListener = anyLocationUpdatedListener()
 
         // when
         val builder =
@@ -106,7 +108,7 @@ class FactoryUnitTests {
     @Test
     fun `setting enhanced location updated listener returns a new copy of builder`() {
         // given
-        val listener: LocationUpdatedListener = {}
+        val listener: LocationUpdatedListener = anyLocationUpdatedListener()
         val originalBuilder = Subscriber.subscribers()
 
         // when
@@ -202,8 +204,8 @@ class FactoryUnitTests {
         val updatedBuilder = builder
             .connection(ConnectionConfiguration("", ""))
             .log(LogConfiguration(true))
-            .rawLocationUpdatedListener { }
-            .enhancedLocationUpdatedListener { }
+            .rawLocationUpdatedListener(anyLocationUpdatedListener())
+            .enhancedLocationUpdatedListener(anyLocationUpdatedListener())
             .resolution(Resolution(Accuracy.BALANCED, 333, 666.6))
             .trackingId("")
 
@@ -233,5 +235,9 @@ class FactoryUnitTests {
         Assert.assertNotNull(builder.enhancedLocationUpdatedListener)
         Assert.assertNotNull(builder.resolution)
         Assert.assertNotNull(builder.trackingId)
+    }
+
+    private fun anyLocationUpdatedListener(): LocationUpdatedListener = object : LocationUpdatedListener {
+        override fun onLocationUpdated(location: Location) = Unit
     }
 }
