@@ -34,16 +34,8 @@ project.afterEvaluate {
                 group = "Reporting"
                 description = "Generate Jacoco coverage reports on the ${sourceName.capitalize()} build."
 
-                // Specify files that shouldn't be used when creating coverage report
-                def fileFilter = [
-                    '**/*Application*',
-                    '**/*Activity*',
-                    '**/*Fragment*',
-                    '**/*Command*',
-                    '**/*Module*'
-                ]
-                def debugTree = fileTree(dir: "${buildDir}/intermediates/classes/$productFlavorName/$buildTypeName", excludes: fileFilter)
-                def kotlinDebugTree = fileTree(dir: "${buildDir}/tmp/kotlin-classes/$sourceName", excludes: fileFilter)
+                def debugTree = fileTree(dir: "${buildDir}/intermediates/classes/$productFlavorName/$buildTypeName")
+                def kotlinDebugTree = fileTree(dir: "${buildDir}/tmp/kotlin-classes/$sourceName")
                 classDirectories.from = files([debugTree], [kotlinDebugTree])
                 def coverageSourceDirs = [
                     "src/main/java",
