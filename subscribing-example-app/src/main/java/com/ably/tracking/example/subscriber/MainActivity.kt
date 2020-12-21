@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.ably.tracking.Accuracy
+import com.ably.tracking.AssetStatusListener
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.LocationUpdatedListener
 import com.ably.tracking.Resolution
@@ -74,7 +75,11 @@ class MainActivity : AppCompatActivity() {
             })
             .trackingId(trackingId)
             .resolution(Resolution(Accuracy.MAXIMUM, desiredInterval = 1000L, minimumDisplacement = 1.0))
-            .assetStatusListener { updateAssetStatusInfo(it) }
+            .assetStatusListener(object : AssetStatusListener {
+                override fun onStatusChanged(isOnline: Boolean) {
+                    updateAssetStatusInfo(isOnline)
+                }
+            })
             .start()
     }
 

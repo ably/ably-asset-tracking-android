@@ -3,6 +3,7 @@ package com.ably.tracking.subscriber
 import android.annotation.SuppressLint
 import android.location.Location
 import com.ably.tracking.Accuracy
+import com.ably.tracking.AssetStatusListener
 import com.ably.tracking.BuilderConfigurationIncompleteException
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.LocationUpdatedListener
@@ -171,7 +172,7 @@ class FactoryUnitTests {
     @Test
     fun `setting asset status listener updates builder field`() {
         // given
-        val listener: StatusListener = {}
+        val listener: AssetStatusListener = anyAssetStatusListener()
 
         // when
         val builder =
@@ -184,7 +185,7 @@ class FactoryUnitTests {
     @Test
     fun `setting asset status listener returns a new copy of builder`() {
         // given
-        val listener: StatusListener = {}
+        val listener: AssetStatusListener = anyAssetStatusListener()
         val originalBuilder = Subscriber.subscribers()
 
         // when
@@ -239,5 +240,9 @@ class FactoryUnitTests {
 
     private fun anyLocationUpdatedListener(): LocationUpdatedListener = object : LocationUpdatedListener {
         override fun onLocationUpdated(location: Location) = Unit
+    }
+
+    private fun anyAssetStatusListener(): AssetStatusListener = object : AssetStatusListener {
+        override fun onStatusChanged(isOnline: Boolean) = Unit
     }
 }

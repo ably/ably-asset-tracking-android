@@ -1,5 +1,6 @@
 package com.ably.tracking.subscriber
 
+import com.ably.tracking.AssetStatusListener
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.LocationUpdatedListener
 import com.ably.tracking.Resolution
@@ -32,7 +33,7 @@ internal class DefaultSubscriber(
     private val rawLocationUpdatedListener: LocationUpdatedListener,
     private val enhancedLocationUpdatedListener: LocationUpdatedListener,
     trackingId: String,
-    private val assetStatusListener: StatusListener?,
+    private val assetStatusListener: AssetStatusListener?,
     resolution: Resolution?
 ) : Subscriber {
     private val ably: AblyRealtime
@@ -183,11 +184,11 @@ internal class DefaultSubscriber(
     }
 
     private fun notifyAssetIsOnline() {
-        assetStatusListener?.let { callback { it(true) } }
+        assetStatusListener?.let { callback { it.onStatusChanged(true) } }
     }
 
     private fun notifyAssetIsOffline() {
-        assetStatusListener?.let { callback { it(false) } }
+        assetStatusListener?.let { callback { it.onStatusChanged(false) } }
     }
 
     @OptIn(ObsoleteCoroutinesApi::class)

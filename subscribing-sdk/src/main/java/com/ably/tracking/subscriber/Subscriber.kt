@@ -1,11 +1,10 @@
 package com.ably.tracking.subscriber
 
+import com.ably.tracking.AssetStatusListener
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.LocationUpdatedListener
 import com.ably.tracking.LogConfiguration
 import com.ably.tracking.Resolution
-
-typealias StatusListener = (Boolean) -> Unit
 
 /**
  * Represents a subscriber. Subscribers maintain the Ably connection, relaying location updates for a tracked item back
@@ -116,7 +115,7 @@ interface Subscriber {
          * @param listener the listening function to be notified.
          * @return A new instance of the builder with this property changed.
          */
-        fun assetStatusListener(listener: StatusListener): Builder
+        fun assetStatusListener(listener: AssetStatusListener): Builder
 
         /**
          * Creates a [Subscriber] and starts listening for location updates.

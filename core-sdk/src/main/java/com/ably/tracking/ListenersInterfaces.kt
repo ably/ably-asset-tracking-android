@@ -52,3 +52,7 @@ interface RemoveTrackableListener {
      */
     fun onError(exception: Exception)
 }
+
+interface AssetStatusListener {
+    fun onStatusChanged(isOnline: Boolean)
+}

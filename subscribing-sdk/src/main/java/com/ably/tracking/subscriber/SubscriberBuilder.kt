@@ -1,5 +1,6 @@
 package com.ably.tracking.subscriber
 
+import com.ably.tracking.AssetStatusListener
 import com.ably.tracking.BuilderConfigurationIncompleteException
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.LocationUpdatedListener
@@ -13,7 +14,7 @@ internal data class SubscriberBuilder(
     val enhancedLocationUpdatedListener: LocationUpdatedListener? = null,
     val resolution: Resolution? = null,
     val trackingId: String? = null,
-    val assetStatusListener: StatusListener? = null
+    val assetStatusListener: AssetStatusListener? = null
 ) : Subscriber.Builder {
 
     override fun connection(configuration: ConnectionConfiguration): Subscriber.Builder =
@@ -34,7 +35,7 @@ internal data class SubscriberBuilder(
     override fun trackingId(trackingId: String): Subscriber.Builder =
         this.copy(trackingId = trackingId)
 
-    override fun assetStatusListener(listener: (Boolean) -> Unit): Subscriber.Builder =
+    override fun assetStatusListener(listener: AssetStatusListener): Subscriber.Builder =
         this.copy(assetStatusListener = listener)
 
     override fun start(): Subscriber {

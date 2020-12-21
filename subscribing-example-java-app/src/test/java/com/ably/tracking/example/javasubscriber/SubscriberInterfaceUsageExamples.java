@@ -35,7 +35,6 @@ public class SubscriberInterfaceUsageExamples {
         subscriberBuilder
             .assetStatusListener(isOnline -> {
                 onAssetStatusChanged(isOnline);
-                return null;
             })
             .connection(new ConnectionConfiguration("API_KEY", "CLIENT_ID"))
             .enhancedLocationUpdatedListener(location -> {
