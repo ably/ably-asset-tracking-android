@@ -53,11 +53,6 @@ project.afterEvaluate {
                 additionalSourceDirs.from = files(coverageSourceDirs)
                 sourceDirectories.from = files(coverageSourceDirs)
                 executionData.from = files("${project.buildDir}/jacoco/${testTaskName}.exec")
-                reports {
-                    csv.destination file("${project.buildDir}/reports/jacoco/report.csv")
-                    csv.enabled = true
-                    html.enabled = true
-                }
             }
         }
     }
