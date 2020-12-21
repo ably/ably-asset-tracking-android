@@ -14,6 +14,7 @@ import androidx.core.widget.ImageViewCompat
 import com.ably.tracking.AblyStateChangeListener
 import com.ably.tracking.Accuracy
 import com.ably.tracking.ConnectionConfiguration
+import com.ably.tracking.LocationHistoryListener
 import com.ably.tracking.LocationUpdatedListener
 import com.ably.tracking.Resolution
 import com.ably.tracking.publisher.DebugConfiguration
@@ -175,7 +176,11 @@ class MainActivity : AppCompatActivity() {
                 LocationSourceType.S3 -> LocationSourceRaw(historyData!!)
                 LocationSourceType.PHONE -> null
             },
-            locationHistoryReadyListener = { uploadLocationHistoryData(it) }
+            locationHistoryListener = object : LocationHistoryListener {
+                override fun onHistoryReady(historyData: String) {
+                    uploadLocationHistoryData(historyData)
+                }
+            }
         )
     }
 

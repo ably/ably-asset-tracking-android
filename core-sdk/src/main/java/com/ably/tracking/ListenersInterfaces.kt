@@ -10,3 +10,7 @@ interface LocationUpdatedListener {
 interface AblyStateChangeListener {
     fun onConnectionStateChange(connectionStateChange: ConnectionStateListener.ConnectionStateChange)
 }
+
+interface LocationHistoryListener {
+    fun onHistoryReady(historyData: String)
+}

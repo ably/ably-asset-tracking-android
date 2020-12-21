@@ -523,7 +523,7 @@ constructor(
                 clear()
             }
             mapboxReplayer?.finish()
-            debugConfiguration?.locationHistoryReadyListener?.invoke(mapboxNavigation.retrieveHistory())
+            debugConfiguration?.locationHistoryListener?.onHistoryReady(mapboxNavigation.retrieveHistory())
             mapboxNavigation.apply {
                 toggleHistory(false)
                 toggleHistory(true)

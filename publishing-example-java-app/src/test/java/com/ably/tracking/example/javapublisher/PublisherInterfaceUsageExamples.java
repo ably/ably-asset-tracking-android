@@ -62,7 +62,6 @@ public class PublisherInterfaceUsageExamples {
                 new LocationSourceRaw(""),
                 historyData -> {
                     onHistoryData(historyData);
-                    return null;
                 }))
             .locationUpdatedListener(location -> {
                 onLocationUpdated(location);
