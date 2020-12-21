@@ -5,6 +5,7 @@ import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.LocationUpdatedListener
 import com.ably.tracking.LogConfiguration
 import com.ably.tracking.Resolution
+import com.ably.tracking.SendResolutionChangeRequestListener
 
 /**
  * Represents a subscriber. Subscribers maintain the Ably connection, relaying location updates for a tracked item back
@@ -37,11 +38,9 @@ interface Subscriber {
      * however this does not necessarily mean that the request has been received and actioned by the publisher.
      *
      * @param resolution The resolution to request.
-     * @param onSuccess Function to be called if the request was successfully registered with the server.
-     * @param onError Function to be called if the request could not be sent or it was not possible to confirm that the
-     * server had processed the request.
+     * @param listener The listening function to be notified.
      */
-    fun sendChangeRequest(resolution: Resolution, onSuccess: () -> Unit, onError: (Exception) -> Unit)
+    fun sendChangeRequest(resolution: Resolution, listener: SendResolutionChangeRequestListener)
 
     /**
      * Stops this subscriber from listening to published locations. Once a subscriber has been stopped, it cannot be

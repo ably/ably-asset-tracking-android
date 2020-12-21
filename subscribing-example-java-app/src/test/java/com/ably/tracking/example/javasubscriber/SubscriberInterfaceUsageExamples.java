@@ -7,8 +7,10 @@ import com.ably.tracking.Accuracy;
 import com.ably.tracking.ConnectionConfiguration;
 import com.ably.tracking.LogConfiguration;
 import com.ably.tracking.Resolution;
+import com.ably.tracking.SendResolutionChangeRequestListener;
 import com.ably.tracking.subscriber.Subscriber;
 
+import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -51,21 +53,27 @@ public class SubscriberInterfaceUsageExamples {
 
     @Test
     public void publisherUsageExample() {
-        subscriber.sendChangeRequest(new Resolution(Accuracy.MAXIMUM, 1L, 1.0), () -> {
-            onSuccess();
-            return null;
-        }, e -> {
-            onError();
-            return null;
-        });
+        subscriber.sendChangeRequest(new Resolution(Accuracy.MAXIMUM, 1L, 1.0),
+            new SendResolutionChangeRequestListener() {
+                @Override
+                public void onSuccess() {
+                    doOnSuccess();
+                }
+
+                @Override
+                public void onError(@NotNull Exception exception) {
+                    doOnError();
+                }
+            }
+        );
         subscriber.stop();
     }
 
-    private void onSuccess() {
+    private void doOnSuccess() {
 
     }
 
-    private void onError() {
+    private void doOnError() {
 
     }
 
