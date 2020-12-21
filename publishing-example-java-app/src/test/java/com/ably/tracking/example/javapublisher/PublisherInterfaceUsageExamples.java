@@ -4,13 +4,13 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.location.Location;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
 import com.ably.tracking.Accuracy;
+import com.ably.tracking.AddTrackableListener;
 import com.ably.tracking.ConnectionConfiguration;
 import com.ably.tracking.LogConfiguration;
+import com.ably.tracking.RemoveTrackableListener;
 import com.ably.tracking.Resolution;
+import com.ably.tracking.TrackTrackableListener;
 import com.ably.tracking.publisher.DebugConfiguration;
 import com.ably.tracking.publisher.DefaultProximity;
 import com.ably.tracking.publisher.DefaultResolutionConstraints;
@@ -19,7 +19,6 @@ import com.ably.tracking.publisher.Destination;
 import com.ably.tracking.publisher.LocationSourceRaw;
 import com.ably.tracking.publisher.MapConfiguration;
 import com.ably.tracking.publisher.Publisher;
-import com.ably.tracking.publisher.ResolutionConstraints;
 import com.ably.tracking.publisher.ResolutionPolicy;
 import com.ably.tracking.publisher.Trackable;
 import com.ably.tracking.publisher.TransportationMode;
@@ -77,35 +76,45 @@ public class PublisherInterfaceUsageExamples {
         Trackable trackable = new Trackable("ID", null, null, null);
         publisher.track(
             trackable,
-            () -> {
-                onSuccess();
-                return null;
-            },
-            e -> {
-                onError();
-                return null;
+            new TrackTrackableListener() {
+                @Override
+                public void onSuccess() {
+                    doOnSuccess();
+                }
+
+                @Override
+                public void onError(@NotNull Exception exception) {
+                    doOnError();
+                }
             }
         );
         publisher.add(
             trackable,
-            () -> {
-                onSuccess();
-                return null;
-            },
-            e -> {
-                onError();
-                return null;
+            new AddTrackableListener() {
+                @Override
+                public void onSuccess() {
+                    doOnSuccess();
+                }
+
+                @Override
+                public void onError(@NotNull Exception exception) {
+                    doOnError();
+                }
             }
         );
         publisher.remove(trackable,
-            b -> {
-                onSuccess();
-                return null;
-            },
-            e -> {
-                onError();
-                return null;
-            });
+            new RemoveTrackableListener() {
+                @Override
+                public void onSuccess(boolean wasPresent) {
+                    doOnSuccess();
+                }
+
+                @Override
+                public void onError(@NotNull Exception exception) {
+                    doOnError();
+                }
+            }
+        );
         Trackable activeTrackable = publisher.getActive();
         TransportationMode transportationMode = new TransportationMode("TBC");
         publisher.setTransportationMode(transportationMode);
@@ -128,11 +137,11 @@ public class PublisherInterfaceUsageExamples {
         );
     }
 
-    private void onSuccess() {
+    private void doOnSuccess() {
 
     }
 
-    private void onError() {
+    private void doOnError() {
 
     }
 

@@ -17,6 +17,7 @@ import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.LocationHistoryListener
 import com.ably.tracking.LocationUpdatedListener
 import com.ably.tracking.Resolution
+import com.ably.tracking.TrackTrackableListener
 import com.ably.tracking.publisher.DebugConfiguration
 import com.ably.tracking.publisher.DefaultProximity
 import com.ably.tracking.publisher.DefaultResolutionConstraints
@@ -145,10 +146,13 @@ class MainActivity : AppCompatActivity() {
                             lowBatteryMultiplier = 2.0f
                         )
                     ),
-                    onSuccess = {},
-                    onError = {
-                        showToast("Error when tracking asset")
-                        stopTracking()
+                    object : TrackTrackableListener {
+                        override fun onSuccess() = Unit
+
+                        override fun onError(exception: Exception) {
+                            showToast("Error when tracking asset")
+                            stopTracking()
+                        }
                     }
                 )
             }
