@@ -31,7 +31,7 @@ project.afterEvaluate {
             // Create coverage task of form 'testFlavorTypeCoverage' depending on 'testFlavorTypeUnitTest'
             task "${testTaskName}Coverage"(type: JacocoReport, dependsOn: "$testTaskName") {
                 group = "Reporting"
-                description = "Generate Jacoco coverage reports on the ${sourceName.capitalize()} build."
+                description = "Generate Jacoco coverage reports for the ${sourceName.capitalize()} build."
 
                 def debugTree = fileTree(dir: "${buildDir}/intermediates/classes/$productFlavorName/$buildTypeName")
                 def kotlinDebugTree = fileTree(dir: "${buildDir}/tmp/kotlin-classes/$sourceName")
