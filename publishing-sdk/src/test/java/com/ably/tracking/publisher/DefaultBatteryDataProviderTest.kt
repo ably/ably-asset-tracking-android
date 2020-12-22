@@ -19,7 +19,7 @@ internal class DefaultBatteryDataProviderTest {
         val batteryPercentage = batteryDataProvider.calculateBatteryPercentage(level, scale)
 
         // then
-        Assert.assertEquals(30F, batteryPercentage)
+        Assert.assertEquals(30F, batteryPercentage, 0.1F)
     }
 
     @Test
@@ -32,7 +32,7 @@ internal class DefaultBatteryDataProviderTest {
         val batteryPercentage = batteryDataProvider.calculateBatteryPercentage(level, scale)
 
         // then
-        Assert.assertEquals(100F, batteryPercentage)
+        Assert.assertEquals(100F, batteryPercentage, 0.1F)
     }
 
     @Test
@@ -45,6 +45,6 @@ internal class DefaultBatteryDataProviderTest {
         val batteryPercentage = batteryDataProvider.calculateBatteryPercentage(level, scale)
 
         // then
-        Assert.assertEquals(0F, batteryPercentage)
+        Assert.assertEquals(0F, batteryPercentage, 0.1F)
     }
 }
