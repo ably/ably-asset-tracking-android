@@ -56,14 +56,14 @@ public class PublisherInterfaceUsageExamples {
             .androidContext(context)
             .connection(new ConnectionConfiguration("API_KEY", "CLIENT_ID"))
             .debug(new DebugConfiguration(connectionStateChange -> {
-                onConnectionStateChanged(connectionStateChange);
+
             },
                 new LocationSourceRaw(""),
                 historyData -> {
-                    onHistoryData(historyData);
+
                 }))
             .locationUpdatedListener(location -> {
-                onLocationUpdated(location);
+
             })
             .log(new LogConfiguration(true))
             .map(new MapConfiguration("API_KEY"))
@@ -79,12 +79,12 @@ public class PublisherInterfaceUsageExamples {
             new TrackTrackableListener() {
                 @Override
                 public void onSuccess() {
-                    doOnSuccess();
+
                 }
 
                 @Override
                 public void onError(@NotNull Exception exception) {
-                    doOnError();
+
                 }
             }
         );
@@ -93,12 +93,12 @@ public class PublisherInterfaceUsageExamples {
             new AddTrackableListener() {
                 @Override
                 public void onSuccess() {
-                    doOnSuccess();
+
                 }
 
                 @Override
                 public void onError(@NotNull Exception exception) {
-                    doOnError();
+
                 }
             }
         );
@@ -106,12 +106,12 @@ public class PublisherInterfaceUsageExamples {
             new RemoveTrackableListener() {
                 @Override
                 public void onSuccess(boolean wasPresent) {
-                    doOnSuccess();
+
                 }
 
                 @Override
                 public void onError(@NotNull Exception exception) {
-                    doOnError();
+
                 }
             }
         );
@@ -135,25 +135,5 @@ public class PublisherInterfaceUsageExamples {
                 3F
             )
         );
-    }
-
-    private void doOnSuccess() {
-
-    }
-
-    private void doOnError() {
-
-    }
-
-    private void onConnectionStateChanged(ConnectionStateListener.ConnectionStateChange connectionStateChange) {
-
-    }
-
-    private void onHistoryData(String historyData) {
-
-    }
-
-    private void onLocationUpdated(Location location) {
-
     }
 }

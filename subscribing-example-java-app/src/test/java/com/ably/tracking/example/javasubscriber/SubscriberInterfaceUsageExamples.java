@@ -36,15 +36,15 @@ public class SubscriberInterfaceUsageExamples {
     public void publisherBuilderUsageExample() {
         subscriberBuilder
             .assetStatusListener(isOnline -> {
-                onAssetStatusChanged(isOnline);
+
             })
             .connection(new ConnectionConfiguration("API_KEY", "CLIENT_ID"))
             .enhancedLocationUpdatedListener(location -> {
-                onLocationUpdated(location);
+
             })
             .log(new LogConfiguration(true))
             .rawLocationUpdatedListener(location -> {
-                onLocationUpdated(location);
+
             })
             .resolution(new Resolution(Accuracy.MAXIMUM, 1L, 1.0))
             .trackingId("ID")
@@ -57,31 +57,15 @@ public class SubscriberInterfaceUsageExamples {
             new SendResolutionChangeRequestListener() {
                 @Override
                 public void onSuccess() {
-                    doOnSuccess();
+
                 }
 
                 @Override
                 public void onError(@NotNull Exception exception) {
-                    doOnError();
+
                 }
             }
         );
         subscriber.stop();
-    }
-
-    private void doOnSuccess() {
-
-    }
-
-    private void doOnError() {
-
-    }
-
-    private void onAssetStatusChanged(Boolean isOnline) {
-
-    }
-
-    private void onLocationUpdated(Location location) {
-
     }
 }
