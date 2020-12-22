@@ -13,11 +13,11 @@ import androidx.core.content.ContextCompat
 import androidx.core.widget.ImageViewCompat
 import com.ably.tracking.AblyStateChangeListener
 import com.ably.tracking.Accuracy
+import com.ably.tracking.CallbackHandler
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.LocationHistoryListener
 import com.ably.tracking.LocationUpdatedListener
 import com.ably.tracking.Resolution
-import com.ably.tracking.TrackTrackableListener
 import com.ably.tracking.publisher.DebugConfiguration
 import com.ably.tracking.publisher.DefaultProximity
 import com.ably.tracking.publisher.DefaultResolutionConstraints
@@ -146,7 +146,7 @@ class MainActivity : AppCompatActivity() {
                             lowBatteryMultiplier = 2.0f
                         )
                     ),
-                    object : TrackTrackableListener {
+                    object : CallbackHandler {
                         override fun onSuccess() = Unit
 
                         override fun onError(exception: Exception) {

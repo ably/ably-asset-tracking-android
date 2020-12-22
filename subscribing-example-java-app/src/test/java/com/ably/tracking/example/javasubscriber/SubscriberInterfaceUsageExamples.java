@@ -4,10 +4,10 @@ import android.content.Context;
 import android.location.Location;
 
 import com.ably.tracking.Accuracy;
+import com.ably.tracking.CallbackHandler;
 import com.ably.tracking.ConnectionConfiguration;
 import com.ably.tracking.LogConfiguration;
 import com.ably.tracking.Resolution;
-import com.ably.tracking.SendResolutionChangeRequestListener;
 import com.ably.tracking.subscriber.Subscriber;
 
 import org.jetbrains.annotations.NotNull;
@@ -54,7 +54,7 @@ public class SubscriberInterfaceUsageExamples {
     @Test
     public void publisherUsageExample() {
         subscriber.sendChangeRequest(new Resolution(Accuracy.MAXIMUM, 1L, 1.0),
-            new SendResolutionChangeRequestListener() {
+            new CallbackHandler() {
                 @Override
                 public void onSuccess() {
 

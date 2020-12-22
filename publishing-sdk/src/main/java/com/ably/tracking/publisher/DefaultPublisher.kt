@@ -8,12 +8,11 @@ import android.location.Location
 import android.os.Handler
 import android.os.Looper
 import androidx.annotation.RequiresPermission
-import com.ably.tracking.AddTrackableListener
+import com.ably.tracking.CallbackHandler
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.LocationUpdatedListener
 import com.ably.tracking.RemoveTrackableListener
 import com.ably.tracking.Resolution
-import com.ably.tracking.TrackTrackableListener
 import com.ably.tracking.common.ClientTypes
 import com.ably.tracking.common.EventNames
 import com.ably.tracking.common.MILLISECONDS_PER_SECOND
@@ -240,8 +239,8 @@ constructor(
         }
     }
 
-    override fun track(trackable: Trackable, listener: TrackTrackableListener) {
-        enqueue(TrackTrackableEvent(trackable, { listener.onSuccess() }, { listener.onError(it) }))
+    override fun track(trackable: Trackable, handler: CallbackHandler) {
+        enqueue(TrackTrackableEvent(trackable, { handler.onSuccess() }, { handler.onError(it) }))
     }
 
     private fun performTrackTrackable(event: TrackTrackableEvent) {
@@ -270,8 +269,8 @@ constructor(
         enqueue(SuccessEvent(event.onSuccess))
     }
 
-    override fun add(trackable: Trackable, listener: AddTrackableListener) {
-        enqueue(AddTrackableEvent(trackable, { listener.onSuccess() }, { listener.onError(it) }))
+    override fun add(trackable: Trackable, handler: CallbackHandler) {
+        enqueue(AddTrackableEvent(trackable, { handler.onSuccess() }, { handler.onError(it) }))
     }
 
     private fun performAddTrackable(event: AddTrackableEvent) {

@@ -5,12 +5,11 @@ import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.content.Context
 import android.location.Location
 import androidx.annotation.RequiresPermission
-import com.ably.tracking.AddTrackableListener
+import com.ably.tracking.CallbackHandler
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.LocationUpdatedListener
 import com.ably.tracking.LogConfiguration
 import com.ably.tracking.RemoveTrackableListener
-import com.ably.tracking.TrackTrackableListener
 
 /**
  * Represents a publisher. Publishers maintain the Ably connection, making use of navigation resources as required to
@@ -40,9 +39,9 @@ interface Publisher {
      *
      * @param trackable The object to be added to this publisher's tracked set, if it's not already there, and to be
      * made the actively tracked object.
-     * @param listener Called when the trackable is successfully added and make the actively tracked object or when an error occurs
+     * @param handler Called when the trackable is successfully added and make the actively tracked object or when an error occurs
      */
-    fun track(trackable: Trackable, listener: TrackTrackableListener)
+    fun track(trackable: Trackable, handler: CallbackHandler)
 
     /**
      * Adds a [Trackable] object, but does not make it the actively tracked object, meaning that the state of the
@@ -51,9 +50,9 @@ interface Publisher {
      * If this object was already in this publisher's tracked set then this method does nothing.
      *
      * @param trackable The object to be added to this publisher's tracked set, if it's not already there.
-     * @param listener Called when the trackable is successfully added or an error occurs
+     * @param handler Called when the trackable is successfully added or an error occurs
      */
-    fun add(trackable: Trackable, listener: AddTrackableListener)
+    fun add(trackable: Trackable, handler: CallbackHandler)
 
     /**
      * Removes a [Trackable] object if it is known to this publisher, otherwise does nothing and returns false.

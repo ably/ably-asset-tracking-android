@@ -1,11 +1,11 @@
 package com.ably.tracking.subscriber
 
 import com.ably.tracking.AssetStatusListener
+import com.ably.tracking.CallbackHandler
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.LocationUpdatedListener
 import com.ably.tracking.LogConfiguration
 import com.ably.tracking.Resolution
-import com.ably.tracking.SendResolutionChangeRequestListener
 
 /**
  * Represents a subscriber. Subscribers maintain the Ably connection, relaying location updates for a tracked item back
@@ -38,9 +38,9 @@ interface Subscriber {
      * however this does not necessarily mean that the request has been received and actioned by the publisher.
      *
      * @param resolution The resolution to request.
-     * @param listener The listening function to be notified.
+     * @param handler The listening function to be notified.
      */
-    fun sendChangeRequest(resolution: Resolution, listener: SendResolutionChangeRequestListener)
+    fun sendChangeRequest(resolution: Resolution, handler: CallbackHandler)
 
     /**
      * Stops this subscriber from listening to published locations. Once a subscriber has been stopped, it cannot be

@@ -15,27 +15,8 @@ interface LocationHistoryListener {
     fun onHistoryReady(historyData: String)
 }
 
-interface TrackTrackableListener {
-    /**
-     * Called when the trackable is successfully added and made the actively tracked object
-     */
+interface CallbackHandler {
     fun onSuccess()
-
-    /**
-     * Called when an error occurs
-     */
-    fun onError(exception: Exception)
-}
-
-interface AddTrackableListener {
-    /**
-     * Called when the trackable is successfully added
-     */
-    fun onSuccess()
-
-    /**
-     * Called when an error occurs
-     */
     fun onError(exception: Exception)
 }
 
@@ -55,17 +36,4 @@ interface RemoveTrackableListener {
 
 interface AssetStatusListener {
     fun onStatusChanged(isOnline: Boolean)
-}
-
-interface SendResolutionChangeRequestListener {
-    /**
-     * Called when the the request is successfully registered with the server.
-     */
-    fun onSuccess()
-
-    /**
-     * Called if the request could not be sent or it was not possible to confirm that the
-     * server had processed the request.
-     */
-    fun onError(exception: Exception)
 }

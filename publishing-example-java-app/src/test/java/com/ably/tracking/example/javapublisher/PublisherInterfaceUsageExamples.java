@@ -5,12 +5,11 @@ import android.content.Context;
 import android.location.Location;
 
 import com.ably.tracking.Accuracy;
-import com.ably.tracking.AddTrackableListener;
+import com.ably.tracking.CallbackHandler;
 import com.ably.tracking.ConnectionConfiguration;
 import com.ably.tracking.LogConfiguration;
 import com.ably.tracking.RemoveTrackableListener;
 import com.ably.tracking.Resolution;
-import com.ably.tracking.TrackTrackableListener;
 import com.ably.tracking.publisher.DebugConfiguration;
 import com.ably.tracking.publisher.DefaultProximity;
 import com.ably.tracking.publisher.DefaultResolutionConstraints;
@@ -76,7 +75,7 @@ public class PublisherInterfaceUsageExamples {
         Trackable trackable = new Trackable("ID", null, null, null);
         publisher.track(
             trackable,
-            new TrackTrackableListener() {
+            new CallbackHandler() {
                 @Override
                 public void onSuccess() {
 
@@ -90,7 +89,7 @@ public class PublisherInterfaceUsageExamples {
         );
         publisher.add(
             trackable,
-            new AddTrackableListener() {
+            new CallbackHandler() {
                 @Override
                 public void onSuccess() {
 
