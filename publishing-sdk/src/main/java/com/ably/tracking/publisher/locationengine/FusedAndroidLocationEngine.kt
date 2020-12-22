@@ -9,19 +9,23 @@ import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Bundle
 import android.os.Looper
+import com.ably.tracking.Resolution
 import com.ably.tracking.common.MILLISECONDS_PER_SECOND
-import com.mapbox.android.core.location.LocationEngine
 import com.mapbox.android.core.location.LocationEngineCallback
 import com.mapbox.android.core.location.LocationEngineRequest
 import com.mapbox.android.core.location.LocationEngineResult
 import timber.log.Timber
 
 @SuppressLint("MissingPermission")
-open class FusedAndroidLocationEngine(context: Context) : LocationEngine {
+open class FusedAndroidLocationEngine(context: Context) : ResolutionLocationEngine {
     private val listeners: MutableMap<LocationEngineCallback<LocationEngineResult>, LocationListener> = mutableMapOf()
     private val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
     private val DEFAULT_PROVIDER = LocationManager.PASSIVE_PROVIDER
     private var currentProvider = DEFAULT_PROVIDER
+
+    override fun changeResolution(resolution: Resolution) {
+        TODO("Not yet implemented")
+    }
 
     override fun getLastLocation(callback: LocationEngineCallback<LocationEngineResult>) {
         getBestLastLocation().let {

@@ -18,11 +18,11 @@ import com.ably.tracking.common.getPresenceData
 import com.ably.tracking.common.toGeoJson
 import com.ably.tracking.common.toJsonArray
 import com.ably.tracking.publisher.debug.AblySimulationLocationEngine
-import com.ably.tracking.publisher.locationengine.LocationEngineUtils
-import com.ably.tracking.publisher.locationengine.GoogleLocationEngine
 import com.ably.tracking.publisher.locationengine.FusedAndroidLocationEngine
+import com.ably.tracking.publisher.locationengine.GoogleLocationEngine
+import com.ably.tracking.publisher.locationengine.LocationEngineUtils
+import com.ably.tracking.publisher.locationengine.ResolutionLocationEngine
 import com.google.gson.Gson
-import com.mapbox.android.core.location.LocationEngine
 import com.mapbox.api.directions.v5.models.DirectionsRoute
 import com.mapbox.api.directions.v5.models.RouteOptions
 import com.mapbox.navigation.base.internal.extensions.applyDefaultParams
@@ -135,7 +135,7 @@ constructor(
         startLocationUpdates()
     }
 
-    private fun getBestLocationEngine(context: Context): LocationEngine =
+    private fun getBestLocationEngine(context: Context): ResolutionLocationEngine =
         if (LocationEngineUtils.hasGoogleLocationServices(context)) {
             GoogleLocationEngine(context)
         } else {

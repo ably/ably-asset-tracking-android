@@ -5,21 +5,25 @@ import android.app.PendingIntent
 import android.content.Context
 import android.location.Location
 import android.os.Looper
+import com.ably.tracking.Resolution
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.tasks.OnFailureListener
 import com.google.android.gms.tasks.OnSuccessListener
-import com.mapbox.android.core.location.LocationEngine
 import com.mapbox.android.core.location.LocationEngineCallback
 import com.mapbox.android.core.location.LocationEngineRequest
 import com.mapbox.android.core.location.LocationEngineResult
 
 @SuppressLint("MissingPermission")
-class GoogleLocationEngine(context: Context) : LocationEngine {
+class GoogleLocationEngine(context: Context) : ResolutionLocationEngine {
     private val listeners: MutableMap<LocationEngineCallback<LocationEngineResult>, LocationCallback> = mutableMapOf()
     private val fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(context)
+
+    override fun changeResolution(resolution: Resolution) {
+        TODO("Not yet implemented")
+    }
 
     override fun getLastLocation(callback: LocationEngineCallback<LocationEngineResult>) {
         val wrapper = LastLocationListenersWrapper(callback)
