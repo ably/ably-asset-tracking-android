@@ -79,4 +79,8 @@ internal data class PresenceMessageEvent(
     val presenceMessage: PresenceMessage
 ) : PublisherEvent()
 
-internal class RoutingProfileChangedEvent : PublisherEvent()
+internal data class ChangeRoutingProfileEvent(
+    val routingProfile: RoutingProfile,
+    val onSuccess: () -> Unit,
+    val onError: (Exception) -> Unit
+) : PublisherEvent()

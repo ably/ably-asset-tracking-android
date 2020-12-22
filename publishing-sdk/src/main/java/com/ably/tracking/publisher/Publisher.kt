@@ -5,6 +5,7 @@ import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.content.Context
 import android.location.Location
 import androidx.annotation.RequiresPermission
+import com.ably.tracking.CallbackHandler
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.LogConfiguration
 
@@ -79,7 +80,15 @@ interface Publisher {
     /**
      * The active means of transport for this publisher.
      */
-    var routingProfile: RoutingProfile
+    val routingProfile: RoutingProfile
+
+    /**
+     * Changes the current routing profile.
+     *
+     * @param routingProfile The routing profile to be used from now on.
+     * @param handler The function to be called when change is made.
+     */
+    fun changeRoutingProfile(routingProfile: RoutingProfile, handler: CallbackHandler)
 
     /**
      * Stops this publisher from publishing locations. Once a publisher has been stopped, it cannot be restarted.

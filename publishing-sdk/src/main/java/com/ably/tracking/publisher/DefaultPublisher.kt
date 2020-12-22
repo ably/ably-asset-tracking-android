@@ -8,6 +8,7 @@ import android.location.Location
 import android.os.Handler
 import android.os.Looper
 import androidx.annotation.RequiresPermission
+import com.ably.tracking.CallbackHandler
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.Resolution
 import com.ably.tracking.common.ClientTypes
@@ -498,13 +499,15 @@ constructor(
     }
 
     override var routingProfile: RoutingProfile = initialRoutingProfile
-        set(value) {
-            field = value
-            enqueue(RoutingProfileChangedEvent())
-        }
 
-    private fun performRoutingProfileChanged() {
+    override fun changeRoutingProfile(routingProfile: RoutingProfile, handler: CallbackHandler) {
+        enqueue(ChangeRoutingProfileEvent(routingProfile, { handler.onSucces() }, { handler.onError(it) }))
+    }
+
+    private fun performChangeRoutingProfile(event: ChangeRoutingProfileEvent) {
+        routingProfile = event.routingProfile
         currentDestination?.let { enqueue(SetDestinationEvent(it)) }
+        enqueue(SuccessEvent(event.onSuccess))
     }
 
     override fun stop() {
@@ -624,7 +627,7 @@ constructor(
                     is RefreshResolutionPolicyEvent -> performRefreshResolutionPolicy()
                     is SetDestinationSuccessEvent -> performSetDestinationSuccess(event)
                     is PresenceMessageEvent -> performPresenceMessage(event)
-                    is RoutingProfileChangedEvent -> performRoutingProfileChanged()
+                    is ChangeRoutingProfileEvent -> performChangeRoutingProfile(event)
                 }
             }
         }
