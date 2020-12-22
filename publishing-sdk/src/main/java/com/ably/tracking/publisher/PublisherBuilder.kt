@@ -66,6 +66,5 @@ internal data class PublisherBuilder(
             mapConfiguration == null ||
             locationUpdatedListener == null ||
             androidContext == null ||
-            routingProfile == null ||
             resolutionPolicyFactory == null
 }
