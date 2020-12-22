@@ -209,6 +209,7 @@ constructor(
             if (thresholdChecker.isThresholdReached(
                     threshold,
                     currentLocation,
+                    System.currentTimeMillis(),
                     active?.destination,
                     estimatedArrivalTimeInMilliseconds
                 )

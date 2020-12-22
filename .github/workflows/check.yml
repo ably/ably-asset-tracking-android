@@ -9,13 +9,30 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - run: ./gradlew check --profile
+
+      - run: ./gradlew check testDebugUnitTestCoverage testReleaseUnitTestCoverage --profile
         env:
           ORG_GRADLE_PROJECT_MAPBOX_DOWNLOADS_TOKEN: ${{ secrets.MAPBOX_DOWNLOADS_TOKEN }}
           ORG_GRADLE_PROJECT_MAPBOX_ACCESS_TOKEN: ${{ secrets.MAPBOX_ACCESS_TOKEN }}
           ORG_GRADLE_PROJECT_ABLY_API_KEY: ${{ secrets.ABLY_API_KEY }}
           ORG_GRADLE_PROJECT_GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
+
       - uses: actions/upload-artifact@v2
         with:
           name: build-profile-report
           path: build/reports/profile/
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: subscribing-sdk-coverage
+          path: subscribing-sdk/build/reports/jacoco/
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: publishing-sdk-coverage
+          path: publishing-sdk/build/reports/jacoco/
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: core-sdk-coverage
+          path: core-sdk/build/reports/jacoco/
