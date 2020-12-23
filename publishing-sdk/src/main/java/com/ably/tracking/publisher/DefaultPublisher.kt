@@ -594,9 +594,20 @@ constructor(
 
     private fun resolveResolution(trackable: Trackable) {
         val resolutionRequests: Set<Resolution> = requests[trackable]?.values?.toSet() ?: emptySet()
-        resolutions[trackable] = policy.resolve(
-            TrackableResolutionRequest(trackable, resolutionRequests)
-        )
+        policy.resolve(TrackableResolutionRequest(trackable, resolutionRequests)).let { resolution ->
+            resolutions[trackable] = resolution
+            if (trackable == active) {
+                changeLocationUpdatesResolution(resolution)
+            }
+        }
+    }
+
+    private fun changeLocationUpdatesResolution(resolution: Resolution) {
+        mapboxNavigation.navigationOptions.locationEngine.let {
+            if (it is ResolutionLocationEngine) {
+                it.changeResolution(resolution)
+            }
+        }
     }
 
     private fun postToMainThread(operation: () -> Unit) {
