@@ -15,9 +15,16 @@ interface LocationHistoryListener {
     fun onHistoryReady(historyData: String)
 }
 
-interface CallbackHandler {
-    fun onSuccess()
-    fun onError(exception: Exception)
+sealed class Result {
+    fun isSuccess(): Boolean = this is SuccessResult
+    fun exception(): Exception? = (this as? FailureResult)?.exception
+}
+
+class SuccessResult : Result()
+data class FailureResult(val exception: Exception) : Result()
+
+interface ResultHandler {
+    fun onResult(result: Result)
 }
 
 interface RemoveTrackableListener {

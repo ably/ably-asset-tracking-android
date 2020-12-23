@@ -1,10 +1,12 @@
 package com.ably.tracking.subscriber
 
 import com.ably.tracking.AssetStatusListener
-import com.ably.tracking.CallbackHandler
 import com.ably.tracking.ConnectionConfiguration
+import com.ably.tracking.FailureResult
 import com.ably.tracking.LocationUpdatedListener
 import com.ably.tracking.Resolution
+import com.ably.tracking.ResultHandler
+import com.ably.tracking.SuccessResult
 import com.ably.tracking.common.ClientTypes
 import com.ably.tracking.common.EventNames
 import com.ably.tracking.common.PresenceData
@@ -87,8 +89,14 @@ internal class DefaultSubscriber(
         callback { enhancedLocationUpdatedListener.onLocationUpdated(event.location) }
     }
 
-    override fun sendChangeRequest(resolution: Resolution, handler: CallbackHandler) {
-        enqueue(ChangeResolutionEvent(resolution, { handler.onSuccess() }, { handler.onError(it) }))
+    override fun sendChangeRequest(resolution: Resolution, handler: ResultHandler) {
+        enqueue(
+            ChangeResolutionEvent(
+                resolution,
+                { handler.onResult(SuccessResult()) },
+                { handler.onResult(FailureResult(it)) }
+            )
+        )
     }
 
     private fun performChangeResolution(event: ChangeResolutionEvent) {

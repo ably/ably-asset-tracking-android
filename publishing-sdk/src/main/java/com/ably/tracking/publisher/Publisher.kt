@@ -5,11 +5,11 @@ import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.content.Context
 import android.location.Location
 import androidx.annotation.RequiresPermission
-import com.ably.tracking.CallbackHandler
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.LocationUpdatedListener
 import com.ably.tracking.LogConfiguration
 import com.ably.tracking.RemoveTrackableListener
+import com.ably.tracking.ResultHandler
 
 /**
  * Represents a publisher. Publishers maintain the Ably connection, making use of navigation resources as required to
@@ -41,7 +41,7 @@ interface Publisher {
      * made the actively tracked object.
      * @param handler Called when the trackable is successfully added and make the actively tracked object or when an error occurs
      */
-    fun track(trackable: Trackable, handler: CallbackHandler)
+    fun track(trackable: Trackable, handler: ResultHandler)
 
     /**
      * Adds a [Trackable] object, but does not make it the actively tracked object, meaning that the state of the
@@ -52,7 +52,7 @@ interface Publisher {
      * @param trackable The object to be added to this publisher's tracked set, if it's not already there.
      * @param handler Called when the trackable is successfully added or an error occurs
      */
-    fun add(trackable: Trackable, handler: CallbackHandler)
+    fun add(trackable: Trackable, handler: ResultHandler)
 
     /**
      * Removes a [Trackable] object if it is known to this publisher, otherwise does nothing and returns false.

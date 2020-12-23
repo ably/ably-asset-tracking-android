@@ -2,10 +2,8 @@ package com.ably.tracking.example.javapublisher;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.location.Location;
 
 import com.ably.tracking.Accuracy;
-import com.ably.tracking.CallbackHandler;
 import com.ably.tracking.ConnectionConfiguration;
 import com.ably.tracking.LogConfiguration;
 import com.ably.tracking.RemoveTrackableListener;
@@ -27,6 +25,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import io.ably.lib.realtime.ConnectionStateListener;
+import timber.log.Timber;
 
 import static org.mockito.Mockito.RETURNS_SELF;
 import static org.mockito.Mockito.mock;
@@ -75,29 +74,21 @@ public class PublisherInterfaceUsageExamples {
         Trackable trackable = new Trackable("ID", null, null, null);
         publisher.track(
             trackable,
-            new CallbackHandler() {
-                @Override
-                public void onSuccess() {
-
-                }
-
-                @Override
-                public void onError(@NotNull Exception exception) {
-
+            result -> {
+                if (result.isSuccess()) {
+                    Timber.d("Success");
+                } else {
+                    Timber.e(result.exception());
                 }
             }
         );
         publisher.add(
             trackable,
-            new CallbackHandler() {
-                @Override
-                public void onSuccess() {
-
-                }
-
-                @Override
-                public void onError(@NotNull Exception exception) {
-
+            result -> {
+                if (result.isSuccess()) {
+                    Timber.d("Success");
+                } else {
+                    Timber.e(result.exception());
                 }
             }
         );
