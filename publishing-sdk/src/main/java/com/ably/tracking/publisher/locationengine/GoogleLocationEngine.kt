@@ -16,22 +16,24 @@ import com.mapbox.android.core.location.LocationEngineCallback
 import com.mapbox.android.core.location.LocationEngineRequest
 import com.mapbox.android.core.location.LocationEngineResult
 
-@SuppressLint("MissingPermission")
 class GoogleLocationEngine(context: Context) : ResolutionLocationEngine {
     private val listeners: MutableMap<LocationEngineCallback<LocationEngineResult>, LocationCallback> = mutableMapOf()
     private val fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(context)
 
+    @SuppressLint("MissingPermission")
     override fun changeResolution(resolution: Resolution) {
         val request = resolution.toLocationEngineRequest()
         listeners.values.forEach { fusedLocationProviderClient.removeLocationUpdates(it) }
         listeners.keys.forEach { requestLocationUpdates(request, it, Looper.getMainLooper()) }
     }
 
+    @SuppressLint("MissingPermission")
     override fun getLastLocation(callback: LocationEngineCallback<LocationEngineResult>) {
         val wrapper = LastLocationListenersWrapper(callback)
         fusedLocationProviderClient.lastLocation.addOnSuccessListener(wrapper).addOnFailureListener(wrapper)
     }
 
+    @SuppressLint("MissingPermission")
     override fun requestLocationUpdates(
         request: LocationEngineRequest,
         callback: LocationEngineCallback<LocationEngineResult>,
@@ -44,6 +46,7 @@ class GoogleLocationEngine(context: Context) : ResolutionLocationEngine {
         )
     }
 
+    @SuppressLint("MissingPermission")
     override fun requestLocationUpdates(request: LocationEngineRequest, pendingIntent: PendingIntent?) {
         fusedLocationProviderClient.requestLocationUpdates(toGMSLocationRequest(request), pendingIntent)
     }

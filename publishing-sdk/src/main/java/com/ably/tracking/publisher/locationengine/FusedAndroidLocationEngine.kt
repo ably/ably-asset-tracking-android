@@ -16,13 +16,13 @@ import com.mapbox.android.core.location.LocationEngineRequest
 import com.mapbox.android.core.location.LocationEngineResult
 import timber.log.Timber
 
-@SuppressLint("MissingPermission")
 open class FusedAndroidLocationEngine(context: Context) : ResolutionLocationEngine {
     private val listeners: MutableMap<LocationEngineCallback<LocationEngineResult>, LocationListener> = mutableMapOf()
     private val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
     private val DEFAULT_PROVIDER = LocationManager.PASSIVE_PROVIDER
     private var currentProvider = DEFAULT_PROVIDER
 
+    @SuppressLint("MissingPermission")
     override fun changeResolution(resolution: Resolution) {
         val request = resolution.toLocationEngineRequest()
         listeners.values.forEach { locationManager.removeUpdates(it) }
@@ -51,6 +51,7 @@ open class FusedAndroidLocationEngine(context: Context) : ResolutionLocationEngi
         return bestLastLocation
     }
 
+    @SuppressLint("MissingPermission")
     private fun getLastLocationFor(provider: String): Location? =
         try {
             locationManager.getLastKnownLocation(provider)
@@ -59,6 +60,7 @@ open class FusedAndroidLocationEngine(context: Context) : ResolutionLocationEngi
             null
         }
 
+    @SuppressLint("MissingPermission")
     override fun requestLocationUpdates(
         request: LocationEngineRequest,
         callback: LocationEngineCallback<LocationEngineResult>,
@@ -81,6 +83,7 @@ open class FusedAndroidLocationEngine(context: Context) : ResolutionLocationEngi
         }
     }
 
+    @SuppressLint("MissingPermission")
     override fun requestLocationUpdates(request: LocationEngineRequest, pendingIntent: PendingIntent?) {
         pendingIntent?.let {
             currentProvider = getBestProvider(request.priority)
