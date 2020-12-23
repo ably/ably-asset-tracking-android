@@ -22,7 +22,9 @@ class GoogleLocationEngine(context: Context) : ResolutionLocationEngine {
     private val fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(context)
 
     override fun changeResolution(resolution: Resolution) {
-        TODO("Not yet implemented")
+        val request = resolution.toLocationEngineRequest()
+        listeners.values.forEach { fusedLocationProviderClient.removeLocationUpdates(it) }
+        listeners.keys.forEach { requestLocationUpdates(request, it, Looper.getMainLooper()) }
     }
 
     override fun getLastLocation(callback: LocationEngineCallback<LocationEngineResult>) {
