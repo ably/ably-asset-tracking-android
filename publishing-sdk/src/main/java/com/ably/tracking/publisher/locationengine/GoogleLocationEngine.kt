@@ -47,7 +47,7 @@ class GoogleLocationEngine(context: Context) : ResolutionLocationEngine {
     }
 
     override fun removeLocationUpdates(callback: LocationEngineCallback<LocationEngineResult>) {
-        listeners[callback]?.let { fusedLocationProviderClient.removeLocationUpdates(it) }
+        listeners.remove(callback)?.let { fusedLocationProviderClient.removeLocationUpdates(it) }
     }
 
     override fun removeLocationUpdates(pendingIntent: PendingIntent?) {

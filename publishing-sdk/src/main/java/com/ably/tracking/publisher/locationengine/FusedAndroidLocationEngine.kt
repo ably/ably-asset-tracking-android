@@ -133,7 +133,7 @@ open class FusedAndroidLocationEngine(context: Context) : ResolutionLocationEngi
         }
 
     override fun removeLocationUpdates(callback: LocationEngineCallback<LocationEngineResult>) {
-        listeners[callback]?.let { locationManager.removeUpdates(it) }
+        listeners.remove(callback)?.let { locationManager.removeUpdates(it) }
     }
 
     override fun removeLocationUpdates(pendingIntent: PendingIntent?) {
