@@ -27,20 +27,6 @@ interface ResultHandler {
     fun onResult(result: Result)
 }
 
-interface RemoveTrackableListener {
-    /**
-     * Called when the trackable is successfully removed
-     *
-     * @param wasPresent is true when the object was known to this publisher, being that it was in the tracked set.
-     */
-    fun onSuccess(wasPresent: Boolean)
-
-    /**
-     * Called when an error occurs
-     */
-    fun onError(exception: Exception)
-}
-
 interface AssetStatusListener {
     fun onStatusChanged(isOnline: Boolean)
 }

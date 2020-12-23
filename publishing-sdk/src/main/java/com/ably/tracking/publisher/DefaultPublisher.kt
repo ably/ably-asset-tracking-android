@@ -11,7 +11,6 @@ import androidx.annotation.RequiresPermission
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.FailureResult
 import com.ably.tracking.LocationUpdatedListener
-import com.ably.tracking.RemoveTrackableListener
 import com.ably.tracking.Resolution
 import com.ably.tracking.ResultHandler
 import com.ably.tracking.SuccessResult
@@ -315,8 +314,14 @@ constructor(
         enqueue(SuccessEvent(event.onSuccess))
     }
 
-    override fun remove(trackable: Trackable, listener: RemoveTrackableListener) {
-        enqueue(RemoveTrackableEvent(trackable, { listener.onSuccess(it) }, { listener.onError(it) }))
+    override fun remove(trackable: Trackable, handler: ResultHandler) {
+        enqueue(
+            RemoveTrackableEvent(
+                trackable,
+                { handler.onResult(SuccessResult()) },
+                { handler.onResult(FailureResult(it)) }
+            )
+        )
     }
 
     private fun performRemoveTrackable(event: RemoveTrackableEvent) {

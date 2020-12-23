@@ -6,7 +6,6 @@ import android.content.Context;
 import com.ably.tracking.Accuracy;
 import com.ably.tracking.ConnectionConfiguration;
 import com.ably.tracking.LogConfiguration;
-import com.ably.tracking.RemoveTrackableListener;
 import com.ably.tracking.Resolution;
 import com.ably.tracking.publisher.DebugConfiguration;
 import com.ably.tracking.publisher.DefaultProximity;
@@ -93,15 +92,11 @@ public class PublisherInterfaceUsageExamples {
             }
         );
         publisher.remove(trackable,
-            new RemoveTrackableListener() {
-                @Override
-                public void onSuccess(boolean wasPresent) {
-
-                }
-
-                @Override
-                public void onError(@NotNull Exception exception) {
-
+            result -> {
+                if (result.isSuccess()) {
+                    Timber.d("Success");
+                } else {
+                    Timber.e(result.exception());
                 }
             }
         );

@@ -8,7 +8,6 @@ import androidx.annotation.RequiresPermission
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.LocationUpdatedListener
 import com.ably.tracking.LogConfiguration
-import com.ably.tracking.RemoveTrackableListener
 import com.ably.tracking.ResultHandler
 
 /**
@@ -61,9 +60,9 @@ interface Publisher {
      * another object to become the actively tracked delivery then the [track] method must be subsequently called.
      *
      * @param trackable The object to be removed from this publisher's tracked set, it it's there.
-     * @param listener Called when the trackable is successfully removed or an error occurs
+     * @param handler Called when the trackable is successfully removed or an error occurs
      */
-    fun remove(trackable: Trackable, listener: RemoveTrackableListener)
+    fun remove(trackable: Trackable, handler: ResultHandler)
 
     /**
      * The actively tracked object, being the [Trackable] object whose destination will be used for location
