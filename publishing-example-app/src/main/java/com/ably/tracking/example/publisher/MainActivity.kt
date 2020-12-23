@@ -11,16 +11,15 @@ import androidx.annotation.RequiresPermission
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.widget.ImageViewCompat
-import com.ably.tracking.AblyStateChangeListener
 import com.ably.tracking.Accuracy
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.FailureResult
-import com.ably.tracking.LocationHistoryListener
-import com.ably.tracking.LocationUpdatedListener
 import com.ably.tracking.Resolution
-import com.ably.tracking.Result
-import com.ably.tracking.ResultHandler
 import com.ably.tracking.SuccessResult
+import com.ably.tracking.asAblyStateChangeListener
+import com.ably.tracking.asLocationHistoryListener
+import com.ably.tracking.asLocationUpdatedListener
+import com.ably.tracking.asResultHandler
 import com.ably.tracking.publisher.DebugConfiguration
 import com.ably.tracking.publisher.DefaultProximity
 import com.ably.tracking.publisher.DefaultResolutionConstraints
@@ -123,11 +122,7 @@ class MainActivity : AppCompatActivity() {
             .connection(ConnectionConfiguration(ABLY_API_KEY, CLIENT_ID))
             .map(MapConfiguration(MAPBOX_ACCESS_TOKEN))
             .debug(createDebugConfiguration(historyData))
-            .locationUpdatedListener(object : LocationUpdatedListener {
-                override fun onLocationUpdated(location: Location) {
-                    updateLocationInfo(location)
-                }
-            })
+            .locationUpdatedListener(asLocationUpdatedListener { updateLocationInfo(it) })
             .resolutionPolicy(DefaultResolutionPolicyFactory(Resolution(Accuracy.MINIMUM, 1000L, 1.0), this))
             .androidContext(this)
             .mode(TransportationMode("TBC"))
@@ -149,14 +144,12 @@ class MainActivity : AppCompatActivity() {
                             lowBatteryMultiplier = 2.0f
                         )
                     ),
-                    object : ResultHandler {
-                        override fun onResult(result: Result) {
-                            when (result) {
-                                is SuccessResult -> Unit
-                                is FailureResult -> {
-                                    showToast("Error when tracking asset")
-                                    stopTracking()
-                                }
+                    asResultHandler {
+                        when (it) {
+                            is SuccessResult -> Unit
+                            is FailureResult -> {
+                                showToast("Error when tracking asset")
+                                stopTracking()
                             }
                         }
                     }
@@ -176,21 +169,13 @@ class MainActivity : AppCompatActivity() {
 
     private fun createDebugConfiguration(historyData: String? = null): DebugConfiguration {
         return DebugConfiguration(
-            ablyStateChangeListener = object : AblyStateChangeListener {
-                override fun onConnectionStateChange(connectionStateChange: ConnectionStateListener.ConnectionStateChange) {
-                    updateAblyStateInfo(connectionStateChange)
-                }
-            },
+            ablyStateChangeListener = asAblyStateChangeListener { updateAblyStateInfo(it) },
             locationSource = when (getLocationSourceType()) {
                 LocationSourceType.ABLY -> LocationSourceAbly(appPreferences.getSimulationChannel())
                 LocationSourceType.S3 -> LocationSourceRaw(historyData!!)
                 LocationSourceType.PHONE -> null
             },
-            locationHistoryListener = object : LocationHistoryListener {
-                override fun onHistoryReady(historyData: String) {
-                    uploadLocationHistoryData(historyData)
-                }
-            }
+            locationHistoryListener = asLocationHistoryListener { uploadLocationHistoryData(it) }
         )
     }
 

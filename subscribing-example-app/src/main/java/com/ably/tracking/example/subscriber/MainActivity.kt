@@ -5,10 +5,10 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.ably.tracking.Accuracy
-import com.ably.tracking.AssetStatusListener
 import com.ably.tracking.ConnectionConfiguration
-import com.ably.tracking.LocationUpdatedListener
 import com.ably.tracking.Resolution
+import com.ably.tracking.asAssetStatusListener
+import com.ably.tracking.asLocationUpdatedListener
 import com.ably.tracking.subscriber.Subscriber
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -64,22 +64,11 @@ class MainActivity : AppCompatActivity() {
     private fun createAndStartAssetSubscriber(trackingId: String) {
         subscriber = Subscriber.subscribers()
             .connection(ConnectionConfiguration(ABLY_API_KEY, CLIENT_ID))
-            .rawLocationUpdatedListener(object : LocationUpdatedListener {
-                // if you prefer to display raw location call showMarkerOnMap() here
-                override fun onLocationUpdated(location: Location) = Unit
-            })
-            .enhancedLocationUpdatedListener(object : LocationUpdatedListener {
-                override fun onLocationUpdated(location: Location) {
-                    showMarkerOnMap(location)
-                }
-            })
+            .rawLocationUpdatedListener(asLocationUpdatedListener { }) // if you prefer to display raw location call showMarkerOnMap() here
+            .enhancedLocationUpdatedListener(asLocationUpdatedListener { showMarkerOnMap(it) })
             .trackingId(trackingId)
             .resolution(Resolution(Accuracy.MAXIMUM, desiredInterval = 1000L, minimumDisplacement = 1.0))
-            .assetStatusListener(object : AssetStatusListener {
-                override fun onStatusChanged(isOnline: Boolean) {
-                    updateAssetStatusInfo(isOnline)
-                }
-            })
+            .assetStatusListener(asAssetStatusListener { updateAssetStatusInfo(it) })
             .start()
     }
 
