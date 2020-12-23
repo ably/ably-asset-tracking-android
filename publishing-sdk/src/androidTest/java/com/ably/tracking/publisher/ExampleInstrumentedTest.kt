@@ -19,6 +19,6 @@ class ExampleInstrumentedTest {
     fun useAppContext() {
         // Context of the app under test.
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-        assertEquals("io.ably.tracking.publisher.test", appContext.packageName)
+        assertEquals("com.ably.tracking.publisher.test", appContext.packageName)
     }
 }

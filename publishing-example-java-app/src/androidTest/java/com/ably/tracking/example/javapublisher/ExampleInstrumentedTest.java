@@ -21,6 +21,6 @@ public class ExampleInstrumentedTest {
     public void useAppContext() {
         // Context of the app under test.
         Context appContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
-        assertEquals("io.ably.tracking.example.javapublisher", appContext.getPackageName());
+        assertEquals("com.ably.tracking.example.javapublisher", appContext.getPackageName());
     }
 }
