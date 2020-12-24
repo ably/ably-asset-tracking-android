@@ -17,7 +17,7 @@ class DefaultResolutionPolicyFactory(
     }
 }
 
-private class DefaultResolutionPolicy(
+internal class DefaultResolutionPolicy(
     hooks: ResolutionPolicy.Hooks,
     private val methods: ResolutionPolicy.Methods,
     private val defaultResolution: Resolution,

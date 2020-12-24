@@ -6,6 +6,7 @@ internal class ThresholdChecker {
     fun isThresholdReached(
         threshold: Proximity,
         currentLocation: Location,
+        currentTimeInMilliseconds: Long,
         destination: Destination?,
         estimatedArrivalTimeInMilliseconds: Long?
     ): Boolean =
@@ -13,6 +14,7 @@ internal class ThresholdChecker {
             is DefaultProximity -> isDefaultThresholdReached(
                 threshold,
                 currentLocation,
+                currentTimeInMilliseconds,
                 destination,
                 estimatedArrivalTimeInMilliseconds
             )
@@ -21,11 +23,13 @@ internal class ThresholdChecker {
     private fun isDefaultThresholdReached(
         threshold: DefaultProximity,
         currentLocation: Location,
+        currentTimeInMilliseconds: Long,
         destination: Destination?,
         estimatedArrivalTimeInMilliseconds: Long?
     ): Boolean {
         val spatialProximityReached = isSpatialProximityReached(threshold, currentLocation, destination)
-        val temporalProximityReached = isTemporalProximityReached(threshold, estimatedArrivalTimeInMilliseconds)
+        val temporalProximityReached =
+            isTemporalProximityReached(threshold, currentTimeInMilliseconds, estimatedArrivalTimeInMilliseconds)
         return spatialProximityReached || temporalProximityReached
     }
 
@@ -42,10 +46,11 @@ internal class ThresholdChecker {
 
     private fun isTemporalProximityReached(
         threshold: DefaultProximity,
+        currentTimeInMilliseconds: Long,
         estimatedArrivalTimeInMilliseconds: Long?
     ): Boolean =
         if (threshold.temporal != null && estimatedArrivalTimeInMilliseconds != null) {
-            estimatedArrivalTimeInMilliseconds - System.currentTimeMillis() < threshold.temporal
+            estimatedArrivalTimeInMilliseconds - currentTimeInMilliseconds < threshold.temporal
         } else {
             false
         }
