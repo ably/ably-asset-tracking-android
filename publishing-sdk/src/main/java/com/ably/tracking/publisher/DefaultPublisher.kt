@@ -17,7 +17,6 @@ import com.ably.tracking.common.PresenceData
 import com.ably.tracking.common.getPresenceData
 import com.ably.tracking.common.toGeoJson
 import com.ably.tracking.common.toJsonArray
-import com.ably.tracking.isAnyParamMorePreciseThan
 import com.ably.tracking.publisher.debug.AblySimulationLocationEngine
 import com.ably.tracking.publisher.locationengine.FusedAndroidLocationEngine
 import com.ably.tracking.publisher.locationengine.GoogleLocationEngine
@@ -599,9 +598,7 @@ constructor(
         val resolutionRequests: Set<Resolution> = requests[trackable]?.values?.toSet() ?: emptySet()
         policy.resolve(TrackableResolutionRequest(trackable, resolutionRequests)).let { resolution ->
             resolutions[trackable] = resolution
-            if (resolution.isAnyParamMorePreciseThan(locationEngineResolution)) {
-                enqueue(ChangeLocationEngineResolutionEvent())
-            }
+            enqueue(ChangeLocationEngineResolutionEvent())
         }
     }
 
