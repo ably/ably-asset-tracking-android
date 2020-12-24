@@ -18,6 +18,10 @@ import com.ably.tracking.common.getPresenceData
 import com.ably.tracking.common.toGeoJson
 import com.ably.tracking.common.toJsonArray
 import com.ably.tracking.publisher.debug.AblySimulationLocationEngine
+import com.ably.tracking.publisher.locationengine.FusedAndroidLocationEngine
+import com.ably.tracking.publisher.locationengine.GoogleLocationEngine
+import com.ably.tracking.publisher.locationengine.LocationEngineUtils
+import com.ably.tracking.publisher.locationengine.ResolutionLocationEngine
 import com.google.gson.Gson
 import com.mapbox.api.directions.v5.models.DirectionsRoute
 import com.mapbox.api.directions.v5.models.RouteOptions
@@ -84,6 +88,7 @@ constructor(
     private val requests = mutableMapOf<Trackable, MutableMap<Subscriber, Resolution>>()
     private val subscribers = mutableMapOf<Trackable, MutableSet<Subscriber>>()
     private val resolutions = mutableMapOf<Trackable, Resolution>()
+    private var locationEngineResolution: Resolution
     private var isTracking: Boolean = false
     private var mapboxReplayer: MapboxReplayer? = null
     private var lastSentRaw: Location? = null
@@ -102,6 +107,7 @@ constructor(
             hooks,
             methods
         )
+        locationEngineResolution = policy.resolve(emptySet())
         ably = AblyRealtime(connectionConfiguration.apiKey)
 
         Timber.w("Started.")
@@ -110,6 +116,7 @@ constructor(
             context,
             mapConfiguration.apiKey
         )
+        mapboxBuilder.locationEngine(getBestLocationEngine(context))
         debugConfiguration?.locationSource?.let { locationSource ->
             when (locationSource) {
                 is LocationSourceAbly -> {
@@ -129,6 +136,13 @@ constructor(
         mapboxNavigation.registerLocationObserver(locationObserver)
         startLocationUpdates()
     }
+
+    private fun getBestLocationEngine(context: Context): ResolutionLocationEngine =
+        if (LocationEngineUtils.hasGoogleLocationServices(context)) {
+            GoogleLocationEngine(context)
+        } else {
+            FusedAndroidLocationEngine(context)
+        }
 
     private fun useAblySimulationLocationEngine(
         mapboxBuilder: NavigationOptions.Builder,
@@ -312,7 +326,7 @@ constructor(
         if (removedChannel != null) {
             hooks.trackables?.onTrackableRemoved(event.trackable)
             removeAllSubscribers(event.trackable)
-            resolutions.remove(event.trackable)
+            resolutions.remove(event.trackable)?.let { enqueue(ChangeLocationEngineResolutionEvent()) }
             requests.remove(event.trackable)
             leaveChannelPresence(
                 removedChannel,
@@ -583,9 +597,23 @@ constructor(
 
     private fun resolveResolution(trackable: Trackable) {
         val resolutionRequests: Set<Resolution> = requests[trackable]?.values?.toSet() ?: emptySet()
-        resolutions[trackable] = policy.resolve(
-            TrackableResolutionRequest(trackable, resolutionRequests)
-        )
+        policy.resolve(TrackableResolutionRequest(trackable, resolutionRequests)).let { resolution ->
+            resolutions[trackable] = resolution
+            enqueue(ChangeLocationEngineResolutionEvent())
+        }
+    }
+
+    private fun performChangeLocationEngineResolution() {
+        locationEngineResolution = policy.resolve(resolutions.values.toSet())
+        changeLocationEngineResolution(locationEngineResolution)
+    }
+
+    private fun changeLocationEngineResolution(resolution: Resolution) {
+        mapboxNavigation.navigationOptions.locationEngine.let {
+            if (it is ResolutionLocationEngine) {
+                it.changeResolution(resolution)
+            }
+        }
     }
 
     private fun postToMainThread(operation: () -> Unit) {
@@ -616,6 +644,7 @@ constructor(
                     is RefreshResolutionPolicyEvent -> performRefreshResolutionPolicy()
                     is SetDestinationSuccessEvent -> performSetDestinationSuccess(event)
                     is PresenceMessageEvent -> performPresenceMessage(event)
+                    is ChangeLocationEngineResolutionEvent -> performChangeLocationEngineResolution()
                 }
             }
         }
