@@ -3,12 +3,12 @@ package com.ably.tracking.publisher
 import android.annotation.SuppressLint
 import android.content.Context
 import android.location.Location
-import com.ably.tracking.AblyStateChangeListener
+import com.ably.tracking.ConnectionStateChangeListener
 import com.ably.tracking.BuilderConfigurationIncompleteException
 import com.ably.tracking.ConnectionConfiguration
+import com.ably.tracking.ConnectionStateChange
 import com.ably.tracking.LocationUpdatedListener
 import com.ably.tracking.LogConfiguration
-import io.ably.lib.realtime.ConnectionStateListener
 import io.mockk.mockk
 import org.junit.Assert
 import org.junit.Test
@@ -95,7 +95,7 @@ class FactoryUnitTests {
     @Test
     fun `setting debug config updates builder field`() {
         // given
-        val configuration = DebugConfiguration(anyAblyStateChangeListener(), LocationSourceAbly(""))
+        val configuration = DebugConfiguration(anyConnectionStateChangeListener(), LocationSourceAbly(""))
 
         // when
         val builder =
@@ -215,8 +215,8 @@ class FactoryUnitTests {
         override fun onLocationUpdated(location: Location) = Unit
     }
 
-    private fun anyAblyStateChangeListener(): AblyStateChangeListener = object : AblyStateChangeListener {
-        override fun onConnectionStateChange(connectionStateChange: ConnectionStateListener.ConnectionStateChange) =
-            Unit
-    }
+    private fun anyConnectionStateChangeListener(): ConnectionStateChangeListener =
+        object : ConnectionStateChangeListener {
+            override fun onConnectionStateChange(change: ConnectionStateChange) = Unit
+        }
 }

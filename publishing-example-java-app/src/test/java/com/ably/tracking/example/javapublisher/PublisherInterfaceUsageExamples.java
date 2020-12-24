@@ -23,7 +23,6 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
 
-import io.ably.lib.realtime.ConnectionStateListener;
 import timber.log.Timber;
 
 import static org.mockito.Mockito.RETURNS_SELF;

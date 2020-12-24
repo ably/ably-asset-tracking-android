@@ -13,10 +13,11 @@ import androidx.core.content.ContextCompat
 import androidx.core.widget.ImageViewCompat
 import com.ably.tracking.Accuracy
 import com.ably.tracking.ConnectionConfiguration
+import com.ably.tracking.ConnectionState
 import com.ably.tracking.FailureResult
 import com.ably.tracking.Resolution
 import com.ably.tracking.SuccessResult
-import com.ably.tracking.asAblyStateChangeListener
+import com.ably.tracking.asConnectionStateChangeListener
 import com.ably.tracking.asLocationHistoryListener
 import com.ably.tracking.asLocationUpdatedListener
 import com.ably.tracking.asResultHandler
@@ -31,8 +32,6 @@ import com.ably.tracking.publisher.MapConfiguration
 import com.ably.tracking.publisher.Publisher
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.TransportationMode
-import io.ably.lib.realtime.ConnectionState
-import io.ably.lib.realtime.ConnectionStateListener
 import kotlinx.android.synthetic.main.activity_main.*
 import pub.devrel.easypermissions.AfterPermissionGranted
 import pub.devrel.easypermissions.EasyPermissions
@@ -169,7 +168,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun createDebugConfiguration(historyData: String? = null): DebugConfiguration {
         return DebugConfiguration(
-            ablyStateChangeListener = asAblyStateChangeListener { updateAblyStateInfo(it) },
+            connectionStateChangeListener = asConnectionStateChangeListener { updateAblyStateInfo(it.state) },
             locationSource = when (getLocationSourceType()) {
                 LocationSourceType.ABLY -> LocationSourceAbly(appPreferences.getSimulationChannel())
                 LocationSourceType.S3 -> LocationSourceRaw(historyData!!)
@@ -210,8 +209,8 @@ class MainActivity : AppCompatActivity() {
         bearingValueTextView.text = ""
     }
 
-    private fun updateAblyStateInfo(state: ConnectionStateListener.ConnectionStateChange) {
-        val isAblyConnected = state.current == ConnectionState.connected
+    private fun updateAblyStateInfo(state: ConnectionState) {
+        val isAblyConnected = state == ConnectionState.CONNECTED
         changeAblyStatusInfo(isAblyConnected)
     }
 

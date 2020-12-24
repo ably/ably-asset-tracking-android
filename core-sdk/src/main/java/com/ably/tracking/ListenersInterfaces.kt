@@ -1,7 +1,6 @@
 package com.ably.tracking
 
 import android.location.Location
-import io.ably.lib.realtime.ConnectionStateListener
 
 interface LocationUpdatedListener {
     fun onLocationUpdated(location: Location)
@@ -12,14 +11,33 @@ fun asLocationUpdatedListener(operation: (Location) -> Unit): LocationUpdatedLis
         override fun onLocationUpdated(location: Location) = operation(location)
     }
 
-interface AblyStateChangeListener {
-    fun onConnectionStateChange(connectionStateChange: ConnectionStateListener.ConnectionStateChange)
+enum class ConnectionState {
+    INITIALIZED,
+    CONNECTING,
+    CONNECTED,
+    DISCONNECTED,
+    SUSPENDED,
+    CLOSING,
+    CLOSED,
+    FAILED,
 }
 
-fun asAblyStateChangeListener(operation: (ConnectionStateListener.ConnectionStateChange) -> Unit): AblyStateChangeListener =
-    object : AblyStateChangeListener {
-        override fun onConnectionStateChange(connectionStateChange: ConnectionStateListener.ConnectionStateChange) =
-            operation(connectionStateChange)
+data class ConnectionStateChange(
+    val previousState: ConnectionState,
+    val state: ConnectionState
+)
+
+interface ConnectionStateChangeListener {
+    fun onConnectionStateChange(change: ConnectionStateChange)
+}
+
+/**
+ * Convenience method, adapting the Java-friendly [ConnectionStateChangeListener] API to make it easier and more
+ * idiomatic to use from Kotlin code.
+ */
+fun asConnectionStateChangeListener(operation: (ConnectionStateChange) -> Unit): ConnectionStateChangeListener =
+    object : ConnectionStateChangeListener {
+        override fun onConnectionStateChange(change: ConnectionStateChange) = operation(change)
     }
 
 interface LocationHistoryListener {

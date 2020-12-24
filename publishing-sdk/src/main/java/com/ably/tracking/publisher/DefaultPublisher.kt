@@ -26,6 +26,7 @@ import com.ably.tracking.publisher.locationengine.FusedAndroidLocationEngine
 import com.ably.tracking.publisher.locationengine.GoogleLocationEngine
 import com.ably.tracking.publisher.locationengine.LocationEngineUtils
 import com.ably.tracking.publisher.locationengine.ResolutionLocationEngine
+import com.ably.tracking.toTracking
 import com.google.gson.Gson
 import com.mapbox.api.directions.v5.models.DirectionsRoute
 import com.mapbox.api.directions.v5.models.RouteOptions
@@ -132,8 +133,12 @@ constructor(
             }
         }
 
-        debugConfiguration?.ablyStateChangeListener?.let { ablyStateChangeListener ->
-            ably.connection.on { state -> postToMainThread { ablyStateChangeListener.onConnectionStateChange(state) } }
+        debugConfiguration?.connectionStateChangeListener?.let { listener ->
+            ably.connection.on { state ->
+                postToMainThread {
+                    listener.onConnectionStateChange(state.toTracking())
+                }
+            }
         }
 
         mapboxNavigation = MapboxNavigation(mapboxBuilder.build())
