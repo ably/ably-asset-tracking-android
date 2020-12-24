@@ -3,7 +3,6 @@ package com.ably.tracking.example.javasubscriber;
 import android.content.Context;
 
 import com.ably.tracking.Accuracy;
-import com.ably.tracking.ResultHandler;
 import com.ably.tracking.ConnectionConfiguration;
 import com.ably.tracking.LogConfiguration;
 import com.ably.tracking.Resolution;
@@ -36,17 +35,11 @@ public class SubscriberInterfaceUsageExamples {
     @Test
     public void publisherBuilderUsageExample() {
         subscriberBuilder
-            .assetStatusListener(isOnline -> {
-
-            })
+            .assetStatus(isOnline -> { })
             .connection(new ConnectionConfiguration("API_KEY", "CLIENT_ID"))
-            .enhancedLocationUpdatedListener(location -> {
-
-            })
+            .enhancedLocations(location -> { })
             .log(new LogConfiguration(true))
-            .rawLocationUpdatedListener(location -> {
-
-            })
+            .rawLocations(location -> { })
             .resolution(new Resolution(Accuracy.MAXIMUM, 1L, 1.0))
             .trackingId("ID")
             .start();

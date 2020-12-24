@@ -6,9 +6,11 @@ import android.content.Context
 import android.location.Location
 import androidx.annotation.RequiresPermission
 import com.ably.tracking.ConnectionConfiguration
-import com.ably.tracking.LocationUpdatedListener
+import com.ably.tracking.LocationHandler
+import com.ably.tracking.LocationListener
 import com.ably.tracking.LogConfiguration
 import com.ably.tracking.ResultHandler
+import com.ably.tracking.ResultListener
 
 /**
  * Represents a publisher. Publishers maintain the Ably connection, making use of navigation resources as required to
@@ -36,11 +38,19 @@ interface Publisher {
      * If this object was already in this publisher's tracked set then this method only serves to change the actively
      * tracked object.
      *
+     * This method overload is preferable when calling from Kotlin.
+     *
      * @param trackable The object to be added to this publisher's tracked set, if it's not already there, and to be
      * made the actively tracked object.
      * @param handler Called when the trackable is successfully added and make the actively tracked object or when an error occurs
      */
+    @JvmSynthetic
     fun track(trackable: Trackable, handler: ResultHandler)
+
+    /**
+     * This method overload is provided for the convenience of those calling from Java.
+     */
+    fun track(trackable: Trackable, handler: ResultListener)
 
     /**
      * Adds a [Trackable] object, but does not make it the actively tracked object, meaning that the state of the
@@ -48,10 +58,18 @@ interface Publisher {
      *
      * If this object was already in this publisher's tracked set then this method does nothing.
      *
+     * This method overload is preferable when calling from Kotlin.
+     *
      * @param trackable The object to be added to this publisher's tracked set, if it's not already there.
      * @param handler Called when the trackable is successfully added or an error occurs
      */
+    @JvmSynthetic
     fun add(trackable: Trackable, handler: ResultHandler)
+
+    /**
+     * This method overload is provided for the convenience of those calling from Java.
+     */
+    fun add(trackable: Trackable, handler: ResultListener)
 
     /**
      * Removes a [Trackable] object if it is known to this publisher, otherwise does nothing and returns false.
@@ -59,10 +77,18 @@ interface Publisher {
      * If the removed object is the current actively [active] object then that state will be cleared, meaning that for
      * another object to become the actively tracked delivery then the [track] method must be subsequently called.
      *
+     * This method overload is preferable when calling from Kotlin.
+     *
      * @param trackable The object to be removed from this publisher's tracked set, it it's there.
      * @param handler Called when the trackable is successfully removed or an error occurs
      */
+    @JvmSynthetic
     fun remove(trackable: Trackable, handler: ResultHandler)
+
+    /**
+     * This method overload is provided for the convenience of those calling from Java.
+     */
+    fun remove(trackable: Trackable, handler: ResultListener)
 
     /**
      * The actively tracked object, being the [Trackable] object whose destination will be used for location
@@ -118,12 +144,25 @@ interface Publisher {
         fun log(configuration: LogConfiguration): Builder
 
         /**
-         * Sets a listener to be notified about location updates.
+         * Sets a handler to be notified about location updates.
          *
-         * @param listener The function, which will be called once per [Location] update.
+         * This method overload is preferable when calling from Kotlin.
+         *
+         * @param handler The function, which will be called once per [Location] update.
          * @return A new instance of the builder with this property changed.
          */
-        fun locationUpdatedListener(listener: LocationUpdatedListener): Builder
+        @JvmSynthetic
+        fun locations(handler: LocationHandler): Builder
+
+        /**
+         * Sets a handler to be notified about location updates.
+         *
+         * This method overload is provided for the convenience of those calling from Java.
+         *
+         * @param listener The object, which will be called once per [Location] update.
+         * @return A new instance of the builder with this property changed.
+         */
+        fun locations(listener: LocationListener): Builder
 
         /**
          * Sets the Android Context.

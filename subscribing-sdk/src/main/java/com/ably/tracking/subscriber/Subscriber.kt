@@ -1,11 +1,14 @@
 package com.ably.tracking.subscriber
 
+import com.ably.tracking.AssetStatusHandler
 import com.ably.tracking.AssetStatusListener
 import com.ably.tracking.ResultHandler
 import com.ably.tracking.ConnectionConfiguration
-import com.ably.tracking.LocationUpdatedListener
+import com.ably.tracking.LocationHandler
+import com.ably.tracking.LocationListener
 import com.ably.tracking.LogConfiguration
 import com.ably.tracking.Resolution
+import com.ably.tracking.ResultListener
 
 /**
  * Represents a subscriber. Subscribers maintain the Ably connection, relaying location updates for a tracked item back
@@ -34,13 +37,34 @@ interface Subscriber {
      *
      * Requests sent using this method will take time to propagate back to the publisher.
      *
-     * The [onSuccess] callback will be called once the request has been successfully registered with the server,
+     * The [handler] will be called once the request has been successfully registered with the server,
      * however this does not necessarily mean that the request has been received and actioned by the publisher.
      *
+     * This method overload is preferable when calling from Kotlin.
+     *
      * @param resolution The resolution to request.
-     * @param handler The listening function to be notified.
+     * @param handler The function to be notified.
      */
+    @JvmSynthetic
     fun sendChangeRequest(resolution: Resolution, handler: ResultHandler)
+
+    /**
+     * Sends the desired resolution for updates, to be requested from the remote publisher.
+     *
+     * An initial resolution may be defined from the outset of a [Subscriber]'s lifespan by using the
+     * [resolution][Builder.resolution] method on the [Builder] instance used to [start][Builder.start] it.
+     *
+     * Requests sent using this method will take time to propagate back to the publisher.
+     *
+     * The [listener] will be called once the request has been successfully registered with the server,
+     * however this does not necessarily mean that the request has been received and actioned by the publisher.
+     *
+     * This method overload is provided for the convenience of those calling from Java.
+     *
+     * @param resolution The resolution to request.
+     * @param listener The object to be notified.
+     */
+    fun sendChangeRequest(resolution: Resolution, listener: ResultListener)
 
     /**
      * Stops this subscriber from listening to published locations. Once a subscriber has been stopped, it cannot be
@@ -76,20 +100,46 @@ interface Subscriber {
         fun log(configuration: LogConfiguration): Builder
 
         /**
-         * Sets the listener to be notified when a raw location update is available.
+         * Sets the handler to be notified when a raw location update is available.
          *
-         * @param listener The listening function to be notified.
+         * This method overload is preferable when calling from Kotlin.
+         *
+         * @param handler The function to be notified.
          * @return A new instance of the builder with this property changed.
          */
-        fun rawLocationUpdatedListener(listener: LocationUpdatedListener): Builder
+        @JvmSynthetic
+        fun rawLocations(handler: LocationHandler): Builder
 
         /**
-         * Sets the listener to be notified when an enhanced location update is available.
+         * Sets the handler to be notified when a raw location update is available.
+         *
+         * This method overload is provided for the convenience of those calling from Java.
+         *
+         * @param listener The object to be notified.
+         * @return A new instance of the builder with this property changed.
+         */
+        fun rawLocations(listener: LocationListener): Builder
+
+        /**
+         * Sets the handler to be notified when a raw location update is available.
+         *
+         * This method overload is preferable when calling from Kotlin.
+         *
+         * @param handler The function to be notified.
+         * @return A new instance of the builder with this property changed.
+         */
+        @JvmSynthetic
+        fun enhancedLocations(handler: LocationHandler): Builder
+
+        /**
+         * Sets the handler to be notified when an enhanced location update is available.
+         *
+         * This method overload is provided for the convenience of those calling from Java.
          *
          * @param listener The listening function to be notified.
          * @return A new instance of the builder with this property changed.
          */
-        fun enhancedLocationUpdatedListener(listener: LocationUpdatedListener): Builder
+        fun enhancedLocations(listener: LocationListener): Builder
 
         /**
          * Sets the desired resolution of updates, to be requested from the remote publisher.
@@ -109,12 +159,25 @@ interface Subscriber {
         fun trackingId(trackingId: String): Builder
 
         /**
-         * Sets the listener to be notified when the online status of the asset changes.
+         * Sets the handler to be notified when the online status of the asset changes.
+         *
+         * This method overload is preferable when calling from Kotlin.
+         *
+         * @param handler The function to be notified.
+         * @return A new instance of the builder with this property changed.
+         */
+        @JvmSynthetic
+        fun assetStatus(handler: AssetStatusHandler): Builder
+
+        /**
+         * Sets the handler to be notified when the online status of the asset changes.
+         *
+         * This method overload is provided for the convenience of those calling from Java.
          *
          * @param listener the listening function to be notified.
          * @return A new instance of the builder with this property changed.
          */
-        fun assetStatusListener(listener: AssetStatusListener): Builder
+        fun assetStatus(listener: AssetStatusListener): Builder
 
         /**
          * Creates a [Subscriber] and starts listening for location updates.

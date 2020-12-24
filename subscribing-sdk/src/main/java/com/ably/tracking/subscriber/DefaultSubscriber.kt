@@ -1,11 +1,12 @@
 package com.ably.tracking.subscriber
 
-import com.ably.tracking.AssetStatusListener
+import com.ably.tracking.AssetStatusHandler
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.FailureResult
-import com.ably.tracking.LocationUpdatedListener
+import com.ably.tracking.LocationHandler
 import com.ably.tracking.Resolution
 import com.ably.tracking.ResultHandler
+import com.ably.tracking.ResultListener
 import com.ably.tracking.SuccessResult
 import com.ably.tracking.common.ClientTypes
 import com.ably.tracking.common.EventNames
@@ -33,10 +34,10 @@ import timber.log.Timber
 
 internal class DefaultSubscriber(
     private val connectionConfiguration: ConnectionConfiguration,
-    private val rawLocationUpdatedListener: LocationUpdatedListener,
-    private val enhancedLocationUpdatedListener: LocationUpdatedListener,
+    private val rawLocationHandler: LocationHandler,
+    private val enhancedLocationHandler: LocationHandler,
     trackingId: String,
-    private val assetStatusListener: AssetStatusListener?,
+    private val assetStatusHandler: AssetStatusHandler?,
     resolution: Resolution?
 ) : Subscriber {
     private val ably: AblyRealtime
@@ -72,7 +73,7 @@ internal class DefaultSubscriber(
     }
 
     private fun performRawLocationReceived(event: RawLocationReceivedEvent) {
-        callback { rawLocationUpdatedListener.onLocationUpdated(event.location) }
+        callback { rawLocationHandler(event.location) }
     }
 
     private fun subscribeForEnhancedEvents() {
@@ -86,17 +87,21 @@ internal class DefaultSubscriber(
     }
 
     private fun performEnhancedLocationReceived(event: EnhancedLocationReceivedEvent) {
-        callback { enhancedLocationUpdatedListener.onLocationUpdated(event.location) }
+        callback { enhancedLocationHandler(event.location) }
     }
 
     override fun sendChangeRequest(resolution: Resolution, handler: ResultHandler) {
         enqueue(
             ChangeResolutionEvent(
                 resolution,
-                { handler.onResult(SuccessResult()) },
-                { handler.onResult(FailureResult(it)) }
+                { handler(SuccessResult()) },
+                { handler(FailureResult(it)) }
             )
         )
+    }
+
+    override fun sendChangeRequest(resolution: Resolution, listener: ResultListener) {
+        sendChangeRequest(resolution, { listener.onResult(it) })
     }
 
     private fun performChangeResolution(event: ChangeResolutionEvent) {
@@ -193,11 +198,11 @@ internal class DefaultSubscriber(
     }
 
     private fun notifyAssetIsOnline() {
-        assetStatusListener?.let { callback { it.onStatusChanged(true) } }
+        assetStatusHandler?.let { callback { it(true) } }
     }
 
     private fun notifyAssetIsOffline() {
-        assetStatusListener?.let { callback { it.onStatusChanged(false) } }
+        assetStatusHandler?.let { callback { it(false) } }
     }
 
     @OptIn(ObsoleteCoroutinesApi::class)

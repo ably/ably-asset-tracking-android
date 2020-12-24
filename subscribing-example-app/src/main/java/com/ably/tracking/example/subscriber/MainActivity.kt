@@ -7,8 +7,6 @@ import androidx.appcompat.app.AppCompatActivity
 import com.ably.tracking.Accuracy
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.Resolution
-import com.ably.tracking.asAssetStatusListener
-import com.ably.tracking.asLocationUpdatedListener
 import com.ably.tracking.subscriber.Subscriber
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -64,11 +62,11 @@ class MainActivity : AppCompatActivity() {
     private fun createAndStartAssetSubscriber(trackingId: String) {
         subscriber = Subscriber.subscribers()
             .connection(ConnectionConfiguration(ABLY_API_KEY, CLIENT_ID))
-            .rawLocationUpdatedListener(asLocationUpdatedListener { }) // if you prefer to display raw location call showMarkerOnMap() here
-            .enhancedLocationUpdatedListener(asLocationUpdatedListener { showMarkerOnMap(it) })
+            .rawLocations { } // if you prefer to display raw location call showMarkerOnMap() here
+            .enhancedLocations({ showMarkerOnMap(it) })
             .trackingId(trackingId)
             .resolution(Resolution(Accuracy.MAXIMUM, desiredInterval = 1000L, minimumDisplacement = 1.0))
-            .assetStatusListener(asAssetStatusListener { updateAssetStatusInfo(it) })
+            .assetStatus({ updateAssetStatusInfo(it) })
             .start()
     }
 

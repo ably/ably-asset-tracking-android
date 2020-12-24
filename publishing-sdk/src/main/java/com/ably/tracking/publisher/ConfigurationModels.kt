@@ -1,7 +1,7 @@
 package com.ably.tracking.publisher
 
-import com.ably.tracking.ConnectionStateChangeListener
-import com.ably.tracking.LocationHistoryListener
+import com.ably.tracking.ConnectionStateChangeHandler
+import com.ably.tracking.LocationHistoryHandler
 import com.ably.tracking.Resolution
 
 // TODO: make sure all this works from Java user perspective
@@ -346,9 +346,9 @@ data class TransportationMode(val TBC: String)
 // TODO - probably should be removed in the final version
 // https://github.com/ably/ably-asset-tracking-android/issues/19
 data class DebugConfiguration(
-    val connectionStateChangeListener: ConnectionStateChangeListener? = null,
+    val connectionStateChangeHandler: ConnectionStateChangeHandler? = null,
     val locationSource: LocationSource? = null,
-    val locationHistoryListener: LocationHistoryListener? = null
+    val locationHistoryHandler: LocationHistoryHandler? = null
 )
 
 sealed class LocationSource

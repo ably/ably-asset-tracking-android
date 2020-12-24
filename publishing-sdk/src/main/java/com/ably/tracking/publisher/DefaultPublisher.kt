@@ -10,9 +10,10 @@ import android.os.Looper
 import androidx.annotation.RequiresPermission
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.FailureResult
-import com.ably.tracking.LocationUpdatedListener
+import com.ably.tracking.LocationHandler
 import com.ably.tracking.Resolution
 import com.ably.tracking.ResultHandler
+import com.ably.tracking.ResultListener
 import com.ably.tracking.SuccessResult
 import com.ably.tracking.common.ClientTypes
 import com.ably.tracking.common.EventNames
@@ -62,7 +63,7 @@ constructor(
     private val connectionConfiguration: ConnectionConfiguration,
     private val mapConfiguration: MapConfiguration,
     private val debugConfiguration: DebugConfiguration?,
-    private val locationUpdatedListener: LocationUpdatedListener,
+    private val locationHandler: LocationHandler,
     context: Context,
     resolutionPolicyFactory: ResolutionPolicy.Factory
 ) :
@@ -133,10 +134,10 @@ constructor(
             }
         }
 
-        debugConfiguration?.connectionStateChangeListener?.let { listener ->
+        debugConfiguration?.connectionStateChangeHandler?.let { handler ->
             ably.connection.on { state ->
                 postToMainThread {
-                    listener.onConnectionStateChange(state.toTracking())
+                    handler(state.toTracking())
                 }
             }
         }
@@ -190,7 +191,7 @@ constructor(
         }
         lastSentRaw = event.location
         destinationToSet?.let { setDestination(it) }
-        enqueue(SuccessEvent { locationUpdatedListener.onLocationUpdated(event.location) })
+        enqueue(SuccessEvent { locationHandler(event.location) })
         checkThreshold(event.location)
     }
 
@@ -210,7 +211,7 @@ constructor(
             }
         }
         lastSentEnhanced = event.location
-        enqueue(SuccessEvent { locationUpdatedListener.onLocationUpdated(event.location) })
+        enqueue(SuccessEvent { locationHandler(event.location) })
         checkThreshold(event.location)
     }
 
@@ -264,10 +265,14 @@ constructor(
         enqueue(
             TrackTrackableEvent(
                 trackable,
-                { handler.onResult(SuccessResult()) },
-                { handler.onResult(FailureResult(it)) }
+                { handler(SuccessResult()) },
+                { handler(FailureResult(it)) }
             )
         )
+    }
+
+    override fun track(trackable: Trackable, handler: ResultListener) {
+        track(trackable, { handler.onResult(it) })
     }
 
     private fun performTrackTrackable(event: TrackTrackableEvent) {
@@ -300,10 +305,14 @@ constructor(
         enqueue(
             AddTrackableEvent(
                 trackable,
-                { handler.onResult(SuccessResult()) },
-                { handler.onResult(FailureResult(it)) }
+                { handler(SuccessResult()) },
+                { handler(FailureResult(it)) }
             )
         )
+    }
+
+    override fun add(trackable: Trackable, handler: ResultListener) {
+        add(trackable, { handler.onResult(it) })
     }
 
     private fun performAddTrackable(event: AddTrackableEvent) {
@@ -338,10 +347,14 @@ constructor(
         enqueue(
             RemoveTrackableEvent(
                 trackable,
-                { handler.onResult(SuccessResult()) },
-                { handler.onResult(FailureResult(it)) }
+                { handler(SuccessResult()) },
+                { handler(FailureResult(it)) }
             )
         )
+    }
+
+    override fun remove(trackable: Trackable, handler: ResultListener) {
+        remove(trackable, { handler.onResult(it) })
     }
 
     private fun performRemoveTrackable(event: RemoveTrackableEvent) {
@@ -560,7 +573,7 @@ constructor(
                 clear()
             }
             mapboxReplayer?.finish()
-            debugConfiguration?.locationHistoryListener?.onHistoryReady(mapboxNavigation.retrieveHistory())
+            debugConfiguration?.locationHistoryHandler?.invoke(mapboxNavigation.retrieveHistory())
             mapboxNavigation.apply {
                 toggleHistory(false)
                 toggleHistory(true)

@@ -2,14 +2,11 @@ package com.ably.tracking
 
 import android.location.Location
 
-interface LocationUpdatedListener {
+interface LocationListener {
     fun onLocationUpdated(location: Location)
 }
 
-fun asLocationUpdatedListener(operation: (Location) -> Unit): LocationUpdatedListener =
-    object : LocationUpdatedListener {
-        override fun onLocationUpdated(location: Location) = operation(location)
-    }
+typealias LocationHandler = (Location) -> Unit
 
 enum class ConnectionState {
     INITIALIZED,
@@ -31,23 +28,9 @@ interface ConnectionStateChangeListener {
     fun onConnectionStateChange(change: ConnectionStateChange)
 }
 
-/**
- * Convenience method, adapting the Java-friendly [ConnectionStateChangeListener] API to make it easier and more
- * idiomatic to use from Kotlin code.
- */
-fun asConnectionStateChangeListener(operation: (ConnectionStateChange) -> Unit): ConnectionStateChangeListener =
-    object : ConnectionStateChangeListener {
-        override fun onConnectionStateChange(change: ConnectionStateChange) = operation(change)
-    }
+typealias ConnectionStateChangeHandler = (ConnectionStateChange) -> Unit
 
-interface LocationHistoryListener {
-    fun onHistoryReady(historyData: String)
-}
-
-fun asLocationHistoryListener(operation: (String) -> Unit): LocationHistoryListener =
-    object : LocationHistoryListener {
-        override fun onHistoryReady(historyData: String) = operation(historyData)
-    }
+typealias LocationHistoryHandler = (String) -> Unit
 
 sealed class Result {
     fun isSuccess(): Boolean = this is SuccessResult
@@ -57,20 +40,14 @@ sealed class Result {
 class SuccessResult : Result()
 data class FailureResult(val exception: Exception) : Result()
 
-interface ResultHandler {
+interface ResultListener {
     fun onResult(result: Result)
 }
 
-fun asResultHandler(operation: (Result) -> Unit): ResultHandler =
-    object : ResultHandler {
-        override fun onResult(result: Result) = operation(result)
-    }
+typealias ResultHandler = (Result) -> Unit
 
 interface AssetStatusListener {
     fun onStatusChanged(isOnline: Boolean)
 }
 
-fun asAssetStatusListener(operation: (Boolean) -> Unit): AssetStatusListener =
-    object : AssetStatusListener {
-        override fun onStatusChanged(isOnline: Boolean) = operation(isOnline)
-    }
+typealias AssetStatusHandler = (Boolean) -> Unit

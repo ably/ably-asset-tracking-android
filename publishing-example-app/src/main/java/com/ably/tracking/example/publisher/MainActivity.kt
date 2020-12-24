@@ -17,10 +17,6 @@ import com.ably.tracking.ConnectionState
 import com.ably.tracking.FailureResult
 import com.ably.tracking.Resolution
 import com.ably.tracking.SuccessResult
-import com.ably.tracking.asConnectionStateChangeListener
-import com.ably.tracking.asLocationHistoryListener
-import com.ably.tracking.asLocationUpdatedListener
-import com.ably.tracking.asResultHandler
 import com.ably.tracking.publisher.DebugConfiguration
 import com.ably.tracking.publisher.DefaultProximity
 import com.ably.tracking.publisher.DefaultResolutionConstraints
@@ -121,7 +117,7 @@ class MainActivity : AppCompatActivity() {
             .connection(ConnectionConfiguration(ABLY_API_KEY, CLIENT_ID))
             .map(MapConfiguration(MAPBOX_ACCESS_TOKEN))
             .debug(createDebugConfiguration(historyData))
-            .locationUpdatedListener(asLocationUpdatedListener { updateLocationInfo(it) })
+            .locations({ updateLocationInfo(it) })
             .resolutionPolicy(DefaultResolutionPolicyFactory(Resolution(Accuracy.MINIMUM, 1000L, 1.0), this))
             .androidContext(this)
             .mode(TransportationMode("TBC"))
@@ -143,7 +139,7 @@ class MainActivity : AppCompatActivity() {
                             lowBatteryMultiplier = 2.0f
                         )
                     ),
-                    asResultHandler {
+                    {
                         when (it) {
                             is SuccessResult -> Unit
                             is FailureResult -> {
@@ -168,13 +164,13 @@ class MainActivity : AppCompatActivity() {
 
     private fun createDebugConfiguration(historyData: String? = null): DebugConfiguration {
         return DebugConfiguration(
-            connectionStateChangeListener = asConnectionStateChangeListener { updateAblyStateInfo(it.state) },
+            connectionStateChangeHandler = { updateAblyStateInfo(it.state) },
             locationSource = when (getLocationSourceType()) {
                 LocationSourceType.ABLY -> LocationSourceAbly(appPreferences.getSimulationChannel())
                 LocationSourceType.S3 -> LocationSourceRaw(historyData!!)
                 LocationSourceType.PHONE -> null
             },
-            locationHistoryListener = asLocationHistoryListener { uploadLocationHistoryData(it) }
+            locationHistoryHandler = { uploadLocationHistoryData(it) }
         )
     }
 

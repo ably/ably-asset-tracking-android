@@ -3,11 +3,9 @@ package com.ably.tracking.publisher
 import android.annotation.SuppressLint
 import android.content.Context
 import android.location.Location
-import com.ably.tracking.ConnectionStateChangeListener
 import com.ably.tracking.BuilderConfigurationIncompleteException
 import com.ably.tracking.ConnectionConfiguration
-import com.ably.tracking.ConnectionStateChange
-import com.ably.tracking.LocationUpdatedListener
+import com.ably.tracking.LocationListener
 import com.ably.tracking.LogConfiguration
 import io.mockk.mockk
 import org.junit.Assert
@@ -93,19 +91,6 @@ class FactoryUnitTests {
     }
 
     @Test
-    fun `setting debug config updates builder field`() {
-        // given
-        val configuration = DebugConfiguration(anyConnectionStateChangeListener(), LocationSourceAbly(""))
-
-        // when
-        val builder =
-            Publisher.publishers().debug(configuration) as PublisherBuilder
-
-        // then
-        Assert.assertEquals(configuration, builder.debugConfiguration)
-    }
-
-    @Test
     fun `setting debug config returns a new copy of builder`() {
         // given
         val configuration = DebugConfiguration()
@@ -121,24 +106,26 @@ class FactoryUnitTests {
     @Test
     fun `setting location updated listener updates builder field`() {
         // given
-        val listener: LocationUpdatedListener = anyLocationUpdatedListener()
+        val listener: LocationListener = anyLocationUpdatedListener()
 
         // when
         val builder =
-            Publisher.publishers().locationUpdatedListener(listener) as PublisherBuilder
+            Publisher.publishers().locations(listener) as PublisherBuilder
 
         // then
-        Assert.assertEquals(listener, builder.locationUpdatedListener)
+        // TODO assert that the handler represents the listener
+        // Assert.assertEquals(listener, builder.locationUpdatedListener)
+        Assert.assertNotNull(builder.locationHandler)
     }
 
     @Test
     fun `setting location updated listener returns a new copy of builder`() {
         // given
-        val listener: LocationUpdatedListener = anyLocationUpdatedListener()
+        val listener: LocationListener = anyLocationUpdatedListener()
         val originalBuilder = Publisher.publishers()
 
         // when
-        val newBuilder = originalBuilder.locationUpdatedListener(listener)
+        val newBuilder = originalBuilder.locations(listener)
 
         // then
         Assert.assertNotEquals(newBuilder, originalBuilder)
@@ -182,7 +169,7 @@ class FactoryUnitTests {
             .connection(ConnectionConfiguration("", ""))
             .map(MapConfiguration(""))
             .log(LogConfiguration(true))
-            .locationUpdatedListener(anyLocationUpdatedListener())
+            .locations(anyLocationUpdatedListener())
             .androidContext(mockedContext)
 
         // then
@@ -199,7 +186,7 @@ class FactoryUnitTests {
         Assert.assertNull(builder.connectionConfiguration)
         Assert.assertNull(builder.mapConfiguration)
         Assert.assertNull(builder.logConfiguration)
-        Assert.assertNull(builder.locationUpdatedListener)
+        Assert.assertNull(builder.locationHandler)
         Assert.assertNull(builder.androidContext)
     }
 
@@ -207,16 +194,11 @@ class FactoryUnitTests {
         Assert.assertNotNull(builder.connectionConfiguration)
         Assert.assertNotNull(builder.mapConfiguration)
         Assert.assertNotNull(builder.logConfiguration)
-        Assert.assertNotNull(builder.locationUpdatedListener)
+        Assert.assertNotNull(builder.locationHandler)
         Assert.assertNotNull(builder.androidContext)
     }
 
-    private fun anyLocationUpdatedListener(): LocationUpdatedListener = object : LocationUpdatedListener {
+    private fun anyLocationUpdatedListener(): LocationListener = object : LocationListener {
         override fun onLocationUpdated(location: Location) = Unit
     }
-
-    private fun anyConnectionStateChangeListener(): ConnectionStateChangeListener =
-        object : ConnectionStateChangeListener {
-            override fun onConnectionStateChange(change: ConnectionStateChange) = Unit
-        }
 }
