@@ -30,7 +30,7 @@ internal data class PresenceMessageEvent(
 ) : SubscriberEvent()
 
 internal data class ChangeResolutionEvent(
-    val resolution: Resolution,
+    val resolution: Resolution?,
     val onSuccess: () -> Unit,
     val onError: (Exception) -> Unit
 ) : SubscriberEvent()
