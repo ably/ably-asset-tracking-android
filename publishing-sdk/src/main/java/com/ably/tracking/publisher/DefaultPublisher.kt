@@ -507,12 +507,7 @@ constructor(
             subscribers[trackable] = mutableSetOf()
         }
         subscribers[trackable]?.add(subscriber)
-        data.resolution?.let {
-            if (requests[trackable] == null) {
-                requests[trackable] = mutableMapOf()
-            }
-            requests[trackable]?.put(subscriber, it)
-        }
+        saveOrRemoveResolutionRequest(data.resolution, trackable, subscriber)
         hooks.subscribers?.onSubscriberAdded(subscriber)
         resolveResolution(trackable)
     }
@@ -521,14 +516,7 @@ constructor(
         subscribers[trackable]?.let { subscribers ->
             subscribers.find { it.id == id }?.let { subscriber ->
                 data.resolution.let { resolution ->
-                    if (resolution != null) {
-                        if (requests[trackable] == null) {
-                            requests[trackable] = mutableMapOf()
-                        }
-                        requests[trackable]?.put(subscriber, resolution)
-                    } else {
-                        requests[trackable]?.remove(subscriber)
-                    }
+                    saveOrRemoveResolutionRequest(resolution, trackable, subscriber)
                     resolveResolution(trackable)
                 }
             }
@@ -543,6 +531,17 @@ constructor(
                 hooks.subscribers?.onSubscriberRemoved(subscriber)
                 resolveResolution(trackable)
             }
+        }
+    }
+
+    private fun saveOrRemoveResolutionRequest(resolution: Resolution?, trackable: Trackable, subscriber: Subscriber) {
+        if (resolution != null) {
+            if (requests[trackable] == null) {
+                requests[trackable] = mutableMapOf()
+            }
+            requests[trackable]?.put(subscriber, resolution)
+        } else {
+            requests[trackable]?.remove(subscriber)
         }
     }
 
