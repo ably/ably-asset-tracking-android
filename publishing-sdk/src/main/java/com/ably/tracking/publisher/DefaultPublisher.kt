@@ -326,7 +326,7 @@ constructor(
         if (removedChannel != null) {
             hooks.trackables?.onTrackableRemoved(event.trackable)
             removeAllSubscribers(event.trackable)
-            resolutions.remove(event.trackable)
+            resolutions.remove(event.trackable)?.let { enqueue(ChangeLocationEngineResolutionEvent()) }
             requests.remove(event.trackable)
             leaveChannelPresence(
                 removedChannel,
