@@ -17,6 +17,7 @@ import com.ably.tracking.common.PresenceData
 import com.ably.tracking.common.getPresenceData
 import com.ably.tracking.common.toGeoJson
 import com.ably.tracking.common.toJsonArray
+import com.ably.tracking.isAnyParamMorePreciseThan
 import com.ably.tracking.publisher.debug.AblySimulationLocationEngine
 import com.ably.tracking.publisher.locationengine.FusedAndroidLocationEngine
 import com.ably.tracking.publisher.locationengine.GoogleLocationEngine
@@ -88,6 +89,7 @@ constructor(
     private val requests = mutableMapOf<Trackable, MutableMap<Subscriber, Resolution>>()
     private val subscribers = mutableMapOf<Trackable, MutableSet<Subscriber>>()
     private val resolutions = mutableMapOf<Trackable, Resolution>()
+    private var locationEngineResolution: Resolution
     private var isTracking: Boolean = false
     private var mapboxReplayer: MapboxReplayer? = null
     private var lastSentRaw: Location? = null
@@ -106,6 +108,7 @@ constructor(
             hooks,
             methods
         )
+        locationEngineResolution = policy.resolve(emptySet())
         ably = AblyRealtime(connectionConfiguration.apiKey)
 
         Timber.w("Started.")
@@ -596,13 +599,18 @@ constructor(
         val resolutionRequests: Set<Resolution> = requests[trackable]?.values?.toSet() ?: emptySet()
         policy.resolve(TrackableResolutionRequest(trackable, resolutionRequests)).let { resolution ->
             resolutions[trackable] = resolution
-            if (trackable == active) {
-                changeLocationUpdatesResolution(resolution)
+            if (resolution.isAnyParamMorePreciseThan(locationEngineResolution)) {
+                enqueue(ChangeLocationEngineResolutionEvent())
             }
         }
     }
 
-    private fun changeLocationUpdatesResolution(resolution: Resolution) {
+    private fun performChangeLocationEngineResolution() {
+        locationEngineResolution = policy.resolve(resolutions.values.toSet())
+        changeLocationEngineResolution(locationEngineResolution)
+    }
+
+    private fun changeLocationEngineResolution(resolution: Resolution) {
         mapboxNavigation.navigationOptions.locationEngine.let {
             if (it is ResolutionLocationEngine) {
                 it.changeResolution(resolution)
@@ -638,6 +646,7 @@ constructor(
                     is RefreshResolutionPolicyEvent -> performRefreshResolutionPolicy()
                     is SetDestinationSuccessEvent -> performSetDestinationSuccess(event)
                     is PresenceMessageEvent -> performPresenceMessage(event)
+                    is ChangeLocationEngineResolutionEvent -> performChangeLocationEngineResolution()
                 }
             }
         }

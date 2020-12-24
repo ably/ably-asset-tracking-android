@@ -86,3 +86,8 @@ data class Resolution(
      */
     val minimumDisplacement: Double
 )
+
+fun Resolution.isAnyParamMorePreciseThan(resolution: Resolution): Boolean =
+    desiredInterval < resolution.desiredInterval ||
+        minimumDisplacement < resolution.minimumDisplacement ||
+        accuracy.level > resolution.accuracy.level

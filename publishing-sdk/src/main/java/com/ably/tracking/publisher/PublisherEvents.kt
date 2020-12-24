@@ -78,3 +78,5 @@ internal data class PresenceMessageEvent(
     val trackable: Trackable,
     val presenceMessage: PresenceMessage
 ) : PublisherEvent()
+
+internal class ChangeLocationEngineResolutionEvent : PublisherEvent()
