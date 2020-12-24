@@ -38,12 +38,13 @@ interface Subscriber {
      * The [onSuccess] callback will be called once the request has been successfully registered with the server,
      * however this does not necessarily mean that the request has been received and actioned by the publisher.
      *
-     * @param resolution The resolution to request.
+     * @param resolution The resolution to request, or `null` to indicate that this subscriber should explicitly
+     * indicate that it has no preference in respect of resolution.
      * @param onSuccess Function to be called if the request was successfully registered with the server.
      * @param onError Function to be called if the request could not be sent or it was not possible to confirm that the
      * server had processed the request.
      */
-    fun sendChangeRequest(resolution: Resolution, onSuccess: () -> Unit, onError: (Exception) -> Unit)
+    fun sendChangeRequest(resolution: Resolution?, onSuccess: () -> Unit, onError: (Exception) -> Unit)
 
     /**
      * Stops this subscriber from listening to published locations. Once a subscriber has been stopped, it cannot be

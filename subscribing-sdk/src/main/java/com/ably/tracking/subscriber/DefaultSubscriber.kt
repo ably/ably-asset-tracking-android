@@ -84,7 +84,7 @@ internal class DefaultSubscriber(
         callback { enhancedLocationUpdatedListener(event.location) }
     }
 
-    override fun sendChangeRequest(resolution: Resolution, onSuccess: () -> Unit, onError: (Exception) -> Unit) {
+    override fun sendChangeRequest(resolution: Resolution?, onSuccess: () -> Unit, onError: (Exception) -> Unit) {
         enqueue(ChangeResolutionEvent(resolution, onSuccess, onError))
     }
 
