@@ -56,4 +56,3 @@ fun asAssetStatusListener(operation: (Boolean) -> Unit): AssetStatusListener =
     object : AssetStatusListener {
         override fun onStatusChanged(isOnline: Boolean) = operation(isOnline)
     }
-
