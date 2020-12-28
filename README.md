@@ -57,7 +57,7 @@ publisher.track(
     trackingId, // provide a tracking identifier for the asset
     constraints = exampleConstraints // provide a set of Resolution Constraints
   ),
-  asResultHandler {
+  {
       when (it) {
           is SuccessResult -> { }
           is FailureResult -> { }
@@ -73,18 +73,18 @@ Here is an example of how Asset Subscribing SDK can be used:
 ```kotlin
 val assetSubscriber = AssetSubscriber.subscribers() // Get an AssetSubscriber
   .ablyConfig(AblyConfiguration(ABLY_API_KEY, CLIENT_ID)) // provide Ably configuration with credentials
-  .rawLocationUpdatedListener(asLocationUpdatedListener { }) // provide a function to be called when raw location updates are received
-  .enhancedLocationUpdatedListener(asLocationUpdatedListener { }) // provide a function to be called when enhanced location updates are received
+  .rawLocationUpdatedListener { } // provide a function to be called when raw location updates are received
+  .enhancedLocationUpdatedListener { } // provide a function to be called when enhanced location updates are received
   .resolution( // request a specific resolution to be considered by the publisher
     Resolution(Accuracy.MAXIMUM, desiredInterval = 1000L, minimumDisplacement = 1.0)
   )
   .trackingId(trackingId) // provide the tracking identifier for the asset that needs to be tracked
-  .assetStatusListener(asAssetStatusListener { }) // provide a function to be called when the asset changes online/offline status
+  .assetStatusListener { } // provide a function to be called when the asset changes online/offline status
   .start() // start listening for updates
 
 assetSubscriber.sendChangeRequest( // request a different resolution when needed
     Resolution(Accuracy.MAXIMUM, desiredInterval = 100L, minimumDisplacement = 2.0),
-    asResultHandler {
+    {
         when (it) {
             is SuccessResult -> { }
             is FailureResult -> { }
