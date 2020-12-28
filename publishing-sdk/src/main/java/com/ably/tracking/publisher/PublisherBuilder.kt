@@ -34,7 +34,7 @@ internal data class PublisherBuilder(
         this.copy(locationHandler = handler)
 
     override fun locations(listener: LocationListener): Publisher.Builder =
-        locations({ listener.onLocationUpdated(it) })
+        locations { listener.onLocationUpdated(it) }
 
     override fun debug(configuration: DebugConfiguration?): Publisher.Builder =
         this.copy(debugConfiguration = configuration)

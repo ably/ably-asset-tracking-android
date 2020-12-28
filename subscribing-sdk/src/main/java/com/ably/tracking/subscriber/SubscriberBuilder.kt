@@ -29,13 +29,13 @@ internal data class SubscriberBuilder(
         this.copy(rawLocationHandler = handler)
 
     override fun rawLocations(listener: LocationListener): Subscriber.Builder =
-        rawLocations({ listener.onLocationUpdated(it) })
+        rawLocations { listener.onLocationUpdated(it) }
 
     override fun enhancedLocations(handler: LocationHandler): Subscriber.Builder =
         this.copy(enhancedLocationHandler = handler)
 
     override fun enhancedLocations(listener: LocationListener): Subscriber.Builder =
-        enhancedLocations({ listener.onLocationUpdated(it) })
+        enhancedLocations { listener.onLocationUpdated(it) }
 
     override fun resolution(resolution: Resolution): Subscriber.Builder =
         this.copy(resolution = resolution)
@@ -47,7 +47,7 @@ internal data class SubscriberBuilder(
         this.copy(assetStatusHandler = handler)
 
     override fun assetStatus(listener: AssetStatusListener): Subscriber.Builder =
-        assetStatus({ listener.onStatusChanged(it) })
+        assetStatus { listener.onStatusChanged(it) }
 
     override fun start(): Subscriber {
         if (isMissingRequiredFields()) {
