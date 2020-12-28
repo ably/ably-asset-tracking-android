@@ -271,8 +271,8 @@ constructor(
         )
     }
 
-    override fun track(trackable: Trackable, handler: ResultListener) {
-        track(trackable, { handler.onResult(it) })
+    override fun track(trackable: Trackable, listener: ResultListener) {
+        track(trackable) { listener.onResult(it) }
     }
 
     private fun performTrackTrackable(event: TrackTrackableEvent) {
@@ -311,8 +311,8 @@ constructor(
         )
     }
 
-    override fun add(trackable: Trackable, handler: ResultListener) {
-        add(trackable, { handler.onResult(it) })
+    override fun add(trackable: Trackable, listener: ResultListener) {
+        add(trackable) { listener.onResult(it) }
     }
 
     private fun performAddTrackable(event: AddTrackableEvent) {
@@ -353,8 +353,8 @@ constructor(
         )
     }
 
-    override fun remove(trackable: Trackable, handler: ResultListener) {
-        remove(trackable, { handler.onResult(it) })
+    override fun remove(trackable: Trackable, listener: ResultListener) {
+        remove(trackable) { listener.onResult(it) }
     }
 
     private fun performRemoveTrackable(event: RemoveTrackableEvent) {

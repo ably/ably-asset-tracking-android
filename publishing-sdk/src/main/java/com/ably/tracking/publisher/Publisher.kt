@@ -50,7 +50,7 @@ interface Publisher {
     /**
      * This method overload is provided for the convenience of those calling from Java.
      */
-    fun track(trackable: Trackable, handler: ResultListener)
+    fun track(trackable: Trackable, listener: ResultListener)
 
     /**
      * Adds a [Trackable] object, but does not make it the actively tracked object, meaning that the state of the
@@ -69,7 +69,7 @@ interface Publisher {
     /**
      * This method overload is provided for the convenience of those calling from Java.
      */
-    fun add(trackable: Trackable, handler: ResultListener)
+    fun add(trackable: Trackable, listener: ResultListener)
 
     /**
      * Removes a [Trackable] object if it is known to this publisher, otherwise does nothing and returns false.
@@ -88,7 +88,7 @@ interface Publisher {
     /**
      * This method overload is provided for the convenience of those calling from Java.
      */
-    fun remove(trackable: Trackable, handler: ResultListener)
+    fun remove(trackable: Trackable, listener: ResultListener)
 
     /**
      * The actively tracked object, being the [Trackable] object whose destination will be used for location
