@@ -352,4 +352,4 @@ data class DebugConfiguration(
 
 sealed class LocationSource
 data class LocationSourceAbly(val simulationChannelName: String) : LocationSource()
-data class LocationSourceRaw(val historyData: String) : LocationSource()
+data class LocationSourceRaw(val historyData: String, val onDataEnded: (() -> Unit)? = null) : LocationSource()
