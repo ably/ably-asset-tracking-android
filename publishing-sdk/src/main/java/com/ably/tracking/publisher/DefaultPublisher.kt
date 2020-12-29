@@ -95,6 +95,7 @@ constructor(
     private val requests = mutableMapOf<Trackable, MutableMap<Subscriber, Resolution>>()
     private val subscribers = mutableMapOf<Trackable, MutableSet<Subscriber>>()
     private val resolutions = mutableMapOf<Trackable, Resolution>()
+    private val stoppingFlags = StoppingFlags()
     private var locationEngineResolution: Resolution
     private var isTracking: Boolean = false
     private var mapboxReplayer: MapboxReplayer? = null
@@ -677,9 +678,17 @@ constructor(
     }
 
     private fun performMapboxStopped() {
+        stoppingFlags.isMapboxStopped = true
+        if (stoppingFlags.areAllServicesStopped()) {
+            enqueue(PublisherStoppedEvent())
+        }
     }
 
     private fun performAblyStopped() {
+        stoppingFlags.isAblyStopped = true
+        if (stoppingFlags.areAllServicesStopped()) {
+            enqueue(PublisherStoppedEvent())
+        }
     }
 
     private fun postToMainThread(operation: () -> Unit) {
@@ -769,5 +778,12 @@ constructor(
         fun onProximityReached() {
             threshold?.let { proximityHandler?.onProximityReached(it) }
         }
+    }
+
+    private data class StoppingFlags(
+        var isMapboxStopped: Boolean = false,
+        var isAblyStopped: Boolean = false
+    ) {
+        fun areAllServicesStopped() = isMapboxStopped && isAblyStopped
     }
 }
