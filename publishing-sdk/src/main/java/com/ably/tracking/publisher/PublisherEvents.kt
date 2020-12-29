@@ -9,6 +9,8 @@ internal sealed class PublisherEvent
 
 internal class StopPublisherEvent : PublisherEvent()
 
+internal class PublisherStoppedEvent(): PublisherEvent()
+
 internal class StartPublisherEvent : PublisherEvent()
 
 internal data class SuccessEvent(

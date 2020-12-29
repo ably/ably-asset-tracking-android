@@ -113,6 +113,12 @@ constructor(
      **/
     private var isStopping = false
 
+    /**
+     * Initially this field is set to false. It will be set to true when the publisher is stopped.
+     * After set to true this field shouldn't be ever changed to false.
+     **/
+    private var isStopped = false
+
     init {
         eventsChannel = createEventsChannel(scope)
         policy = resolutionPolicyFactory.createResolutionPolicy(
@@ -661,6 +667,10 @@ constructor(
         }
     }
 
+    private fun performPublisherStopped() {
+        isStopped = true
+    }
+
     private fun postToMainThread(operation: () -> Unit) {
         Handler(getLooperForMainThread()).post(operation)
     }
@@ -690,6 +700,7 @@ constructor(
                     is SetDestinationSuccessEvent -> performSetDestinationSuccess(event)
                     is PresenceMessageEvent -> performPresenceMessage(event)
                     is ChangeLocationEngineResolutionEvent -> performChangeLocationEngineResolution()
+                    is PublisherStoppedEvent -> performPublisherStopped()
                 }
             }
         }
