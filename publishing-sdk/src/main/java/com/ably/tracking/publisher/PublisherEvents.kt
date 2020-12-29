@@ -1,6 +1,8 @@
 package com.ably.tracking.publisher
 
 import android.location.Location
+import com.ably.tracking.ConnectionStateChange
+import com.ably.tracking.ConnectionStateChangeHandler
 import com.ably.tracking.ResultHandler
 import com.ably.tracking.common.GeoJsonMessage
 import io.ably.lib.realtime.Channel
@@ -89,3 +91,8 @@ internal data class PresenceMessageEvent(
 ) : PublisherEvent()
 
 internal class ChangeLocationEngineResolutionEvent : PublisherEvent()
+
+internal data class AblyStatusChangedEvent(
+    val connectionState: ConnectionStateChange,
+    val handler: ConnectionStateChangeHandler?
+) : PublisherEvent()

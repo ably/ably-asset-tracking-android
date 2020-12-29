@@ -5,10 +5,9 @@ import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.annotation.SuppressLint
 import android.content.Context
 import android.location.Location
-import android.os.Handler
-import android.os.Looper
 import androidx.annotation.RequiresPermission
 import com.ably.tracking.ConnectionConfiguration
+import com.ably.tracking.ConnectionState
 import com.ably.tracking.FailureResult
 import com.ably.tracking.LocationHandler
 import com.ably.tracking.Resolution
@@ -42,7 +41,6 @@ import com.mapbox.navigation.core.trip.session.LocationObserver
 import io.ably.lib.realtime.AblyRealtime
 import io.ably.lib.realtime.Channel
 import io.ably.lib.realtime.CompletionListener
-import io.ably.lib.realtime.ConnectionState
 import io.ably.lib.types.AblyException
 import io.ably.lib.types.ClientOptions
 import io.ably.lib.types.ErrorInfo
@@ -148,15 +146,8 @@ constructor(
             }
         }
 
-        debugConfiguration?.connectionStateChangeHandler?.let { handler ->
-            ably.connection.on { state ->
-                postToMainThread {
-                    handler(state.toTracking())
-                }
-                if (state.current == ConnectionState.closed) {
-                    enqueue(AblyStoppedEvent())
-                }
-            }
+        ably.connection.on { state ->
+            enqueue(AblyStatusChangedEvent(state.toTracking(), debugConfiguration?.connectionStateChangeHandler))
         }
 
         mapboxNavigation = MapboxNavigation(mapboxBuilder.build())
@@ -192,6 +183,13 @@ constructor(
             this.clearEvents()
             this.pushEvents(ReplayHistoryMapper().mapToReplayEvents(locationSource.historyData))
             this.play()
+        }
+    }
+
+    private fun performAblyStatusChanged(event: AblyStatusChangedEvent) {
+        event.handler?.let { enqueue(SuccessEvent { it(event.connectionState) }) }
+        if (event.connectionState.state == ConnectionState.CLOSED) {
+            enqueue(AblyStoppedEvent())
         }
     }
 
@@ -703,12 +701,6 @@ constructor(
         }
     }
 
-    private fun postToMainThread(operation: () -> Unit) {
-        Handler(getLooperForMainThread()).post(operation)
-    }
-
-    private fun getLooperForMainThread() = Looper.getMainLooper()
-
     @OptIn(ObsoleteCoroutinesApi::class)
     @RequiresPermission(anyOf = [ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION])
     private fun createEventsChannel(scope: CoroutineScope) =
@@ -735,6 +727,7 @@ constructor(
                     is AblyStoppedEvent -> performAblyStopped()
                     is MapboxStoppedEvent -> performMapboxStopped()
                     is PublisherStoppedEvent -> performPublisherStopped()
+                    is AblyStatusChangedEvent -> performAblyStatusChanged(event)
                 }
             }
         }
