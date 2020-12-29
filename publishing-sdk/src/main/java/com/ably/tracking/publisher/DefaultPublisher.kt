@@ -564,6 +564,7 @@ constructor(
     private fun performStopPublisher() {
         isStopping = true
         stopLocationUpdates()
+        leavePresenceChannels()
         ably.close()
         scope.cancel()
     }
@@ -571,19 +572,21 @@ constructor(
     private fun stopLocationUpdates() {
         if (isTracking) {
             isTracking = false
-            mapboxNavigation.unregisterLocationObserver(locationObserver)
-            channels.apply {
-                values.forEach {
-                    leaveChannelPresenceOmittingQueue(it, {}, { error -> Timber.e(error) })
-                }
-                clear()
-            }
-            mapboxReplayer?.finish()
-            debugConfiguration?.locationHistoryHandler?.invoke(mapboxNavigation.retrieveHistory())
             mapboxNavigation.apply {
-                toggleHistory(false)
-                toggleHistory(true)
+                stopTripSession()
+                mapboxReplayer?.finish()
+                debugConfiguration?.locationHistoryHandler?.invoke(retrieveHistory())
+                onDestroy()
             }
+        }
+    }
+
+    private fun leavePresenceChannels() {
+        channels.apply {
+            values.forEach {
+                leaveChannelPresenceOmittingQueue(it, {}, { error -> Timber.e(error) })
+            }
+            clear()
         }
     }
 
