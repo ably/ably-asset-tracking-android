@@ -42,6 +42,7 @@ import com.mapbox.navigation.core.trip.session.LocationObserver
 import io.ably.lib.realtime.AblyRealtime
 import io.ably.lib.realtime.Channel
 import io.ably.lib.realtime.CompletionListener
+import io.ably.lib.realtime.ConnectionState
 import io.ably.lib.types.AblyException
 import io.ably.lib.types.ClientOptions
 import io.ably.lib.types.ErrorInfo
@@ -150,6 +151,9 @@ constructor(
             ably.connection.on { state ->
                 postToMainThread {
                     handler(state.toTracking())
+                }
+                if (state.current == ConnectionState.closed) {
+                    enqueue(AblyStoppedEvent())
                 }
             }
         }
@@ -671,6 +675,9 @@ constructor(
         isStopped = true
     }
 
+    private fun performAblyStopped() {
+    }
+
     private fun postToMainThread(operation: () -> Unit) {
         Handler(getLooperForMainThread()).post(operation)
     }
@@ -700,6 +707,7 @@ constructor(
                     is SetDestinationSuccessEvent -> performSetDestinationSuccess(event)
                     is PresenceMessageEvent -> performPresenceMessage(event)
                     is ChangeLocationEngineResolutionEvent -> performChangeLocationEngineResolution()
+                    is AblyStoppedEvent -> performAblyStopped()
                     is PublisherStoppedEvent -> performPublisherStopped()
                 }
             }

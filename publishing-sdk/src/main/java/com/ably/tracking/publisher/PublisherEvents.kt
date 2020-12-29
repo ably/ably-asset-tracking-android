@@ -11,6 +11,8 @@ internal class StopPublisherEvent : PublisherEvent()
 
 internal class PublisherStoppedEvent(): PublisherEvent()
 
+internal class AblyStoppedEvent(): PublisherEvent()
+
 internal class StartPublisherEvent : PublisherEvent()
 
 internal data class SuccessEvent(
