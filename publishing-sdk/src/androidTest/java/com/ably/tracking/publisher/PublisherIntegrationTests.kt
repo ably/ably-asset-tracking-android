@@ -9,7 +9,7 @@ import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.Resolution
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Semaphore
 
 private const val MAPBOX_ACCESS_TOKEN = BuildConfig.MAPBOX_ACCESS_TOKEN
 private const val CLIENT_ID = "IntegrationTestsClient"
@@ -61,13 +61,13 @@ class PublisherIntegrationTests {
 }
 
 private class TestLock {
-    val latch = CountDownLatch(1)
+    val semaphore = Semaphore(1).apply { acquire() }
 
     fun block() {
-        latch.await()
+        semaphore.acquire()
     }
 
     fun resume() {
-        latch.countDown()
+        semaphore.release()
     }
 }
