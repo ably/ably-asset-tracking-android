@@ -94,7 +94,15 @@ public class PublisherInterfaceUsageExamples {
         TransportationMode transportationMode = new TransportationMode("TBC");
         publisher.setTransportationMode(transportationMode);
         transportationMode = publisher.getTransportationMode();
-        publisher.stop();
+        publisher.stop(
+            result -> {
+                if (result.isSuccess()) {
+                    Timber.d("Success");
+                } else {
+                    Timber.e(result.exception());
+                }
+            }
+        );
     }
 
     @Test

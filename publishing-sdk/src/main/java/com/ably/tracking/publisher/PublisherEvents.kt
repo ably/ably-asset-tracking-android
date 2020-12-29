@@ -1,19 +1,22 @@
 package com.ably.tracking.publisher
 
 import android.location.Location
+import com.ably.tracking.ResultHandler
 import com.ably.tracking.common.GeoJsonMessage
 import io.ably.lib.realtime.Channel
 import io.ably.lib.types.PresenceMessage
 
 internal sealed class PublisherEvent
 
-internal class StopPublisherEvent : PublisherEvent()
+internal data class StopPublisherEvent(
+    val handler: ResultHandler
+) : PublisherEvent()
 
-internal class PublisherStoppedEvent(): PublisherEvent()
+internal class PublisherStoppedEvent() : PublisherEvent()
 
-internal class AblyStoppedEvent(): PublisherEvent()
+internal class AblyStoppedEvent() : PublisherEvent()
 
-internal class MapboxStoppedEvent(): PublisherEvent()
+internal class MapboxStoppedEvent() : PublisherEvent()
 
 internal class StartPublisherEvent : PublisherEvent()
 

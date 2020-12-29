@@ -95,6 +95,7 @@ constructor(
     private val subscribers = mutableMapOf<Trackable, MutableSet<Subscriber>>()
     private val resolutions = mutableMapOf<Trackable, Resolution>()
     private val stoppingFlags = StoppingFlags()
+    private val stopPublisherHandlers: MutableList<ResultHandler> = mutableListOf()
     private var locationEngineResolution: Resolution
     private var isTracking: Boolean = false
     private var mapboxReplayer: MapboxReplayer? = null
@@ -567,15 +568,24 @@ constructor(
             TODO("Not yet implemented")
         }
 
-    override fun stop() {
-        enqueue(StopPublisherEvent())
+    override fun stop(handler: ResultHandler) {
+        enqueue(StopPublisherEvent(handler))
     }
 
-    private fun performStopPublisher() {
-        isStopping = true
-        stopLocationUpdates()
-        leavePresenceChannels()
-        ably.close()
+    override fun stop(listener: ResultListener) {
+        stop { listener.onResult(it) }
+    }
+
+    private fun performStopPublisher(event: StopPublisherEvent) {
+        stopPublisherHandlers.add(event.handler)
+        if (isStopped) {
+            enqueue(PublisherStoppedEvent())
+        } else if (!isStopping) {
+            isStopping = true
+            stopLocationUpdates()
+            leavePresenceChannels()
+            ably.close()
+        }
     }
 
     private fun stopLocationUpdates() {
@@ -673,6 +683,10 @@ constructor(
 
     private fun performPublisherStopped() {
         isStopped = true
+        stopPublisherHandlers.apply {
+            forEach { callback { it(SuccessResult()) } }
+            clear()
+        }
     }
 
     private fun performMapboxStopped() {
@@ -704,7 +718,7 @@ constructor(
                     is AddTrackableEvent -> performAddTrackable(event)
                     is TrackTrackableEvent -> performTrackTrackable(event)
                     is RemoveTrackableEvent -> performRemoveTrackable(event)
-                    is StopPublisherEvent -> performStopPublisher()
+                    is StopPublisherEvent -> performStopPublisher(event)
                     is StartPublisherEvent -> performStartPublisher()
                     is JoinPresenceSuccessEvent -> performJoinPresenceSuccess(event)
                     is TrackableReadyToTrackEvent -> performTrackableReadyToTrack(event)

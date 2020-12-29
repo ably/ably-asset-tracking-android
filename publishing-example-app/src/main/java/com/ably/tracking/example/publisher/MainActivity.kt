@@ -184,10 +184,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun stopTracking() {
-        publisher?.stop()
-        publisher = null
-
-        changeNavigationButtonState(false)
+        publisher?.stop {
+            when (it) {
+                is SuccessResult -> {
+                    publisher = null
+                    changeNavigationButtonState(false)
+                }
+                is FailureResult -> showToast("Stopping Publisher has failed")
+            }
+        }
     }
 
     private fun updateLocationInfo(location: Location) {

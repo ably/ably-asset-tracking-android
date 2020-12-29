@@ -106,9 +106,14 @@ interface Publisher {
     /**
      * Stops this publisher from publishing locations. Once a publisher has been stopped, it cannot be restarted.
      *
-     * It is strongly suggested to call this method from the main thread.
+     * @param handler Called when the publisher is successfully stopped or an error occurs.
      */
-    fun stop()
+    fun stop(handler: ResultHandler)
+
+    /**
+     * This method overload is provided for the convenience of those calling from Java.
+     */
+    fun stop(listener: ResultListener)
 
     /**
      * The methods implemented by builders capable of starting [Publisher] instances.
