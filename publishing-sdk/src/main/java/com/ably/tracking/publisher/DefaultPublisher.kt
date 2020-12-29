@@ -51,7 +51,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.actor
 import kotlinx.coroutines.launch
@@ -577,7 +576,6 @@ constructor(
         stopLocationUpdates()
         leavePresenceChannels()
         ably.close()
-        scope.cancel()
     }
 
     private fun stopLocationUpdates() {
