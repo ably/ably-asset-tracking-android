@@ -13,6 +13,8 @@ internal class PublisherStoppedEvent(): PublisherEvent()
 
 internal class AblyStoppedEvent(): PublisherEvent()
 
+internal class MapboxStoppedEvent(): PublisherEvent()
+
 internal class StartPublisherEvent : PublisherEvent()
 
 internal data class SuccessEvent(

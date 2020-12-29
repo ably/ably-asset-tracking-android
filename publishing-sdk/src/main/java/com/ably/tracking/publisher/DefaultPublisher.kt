@@ -588,6 +588,7 @@ constructor(
                 debugConfiguration?.locationHistoryHandler?.invoke(retrieveHistory())
                 onDestroy()
             }
+            enqueue(MapboxStoppedEvent())
         }
     }
 
@@ -675,6 +676,9 @@ constructor(
         isStopped = true
     }
 
+    private fun performMapboxStopped() {
+    }
+
     private fun performAblyStopped() {
     }
 
@@ -708,6 +712,7 @@ constructor(
                     is PresenceMessageEvent -> performPresenceMessage(event)
                     is ChangeLocationEngineResolutionEvent -> performChangeLocationEngineResolution()
                     is AblyStoppedEvent -> performAblyStopped()
+                    is MapboxStoppedEvent -> performMapboxStopped()
                     is PublisherStoppedEvent -> performPublisherStopped()
                 }
             }
