@@ -14,11 +14,11 @@ internal data class StopPublisherEvent(
     val handler: ResultHandler
 ) : PublisherEvent()
 
-internal class PublisherStoppedEvent() : PublisherEvent()
+internal class PublisherStoppedEvent : PublisherEvent()
 
-internal class AblyStoppedEvent() : PublisherEvent()
+internal class AblyStoppedEvent : PublisherEvent()
 
-internal class MapboxStoppedEvent() : PublisherEvent()
+internal class MapboxStoppedEvent : PublisherEvent()
 
 internal class StartPublisherEvent : PublisherEvent()
 
