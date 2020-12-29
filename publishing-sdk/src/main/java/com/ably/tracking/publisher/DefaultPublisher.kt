@@ -107,6 +107,12 @@ constructor(
      **/
     private var destinationToSet: Destination? = null
 
+    /**
+     * Initially this field is set to false. It will be set to true when the first [StopPublisherEvent] is being processed.
+     * After set to true this field shouldn't be ever changed to false.
+     **/
+    private var isStopping = false
+
     init {
         eventsChannel = createEventsChannel(scope)
         policy = resolutionPolicyFactory.createResolutionPolicy(
@@ -556,6 +562,7 @@ constructor(
     }
 
     private fun performStopPublisher() {
+        isStopping = true
         stopLocationUpdates()
         ably.close()
         scope.cancel()
