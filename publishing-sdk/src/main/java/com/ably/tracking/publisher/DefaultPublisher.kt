@@ -188,8 +188,10 @@ constructor(
 
     private fun performAblyStatusChanged(event: AblyStatusChangedEvent) {
         event.handler?.let { enqueue(SuccessEvent { it(event.connectionState) }) }
-        if (event.connectionState.state == ConnectionState.CLOSED) {
-            enqueue(AblyStoppedEvent())
+        when (event.connectionState.state) {
+            ConnectionState.CLOSED -> enqueue(AblyStoppedEvent(false))
+            ConnectionState.FAILED -> enqueue(AblyStoppedEvent(true))
+            else -> Unit
         }
     }
 
@@ -679,25 +681,35 @@ constructor(
         }
     }
 
-    private fun performPublisherStopped() {
+    private fun performPublisherStopped(event: PublisherStoppedEvent) {
         isStopped = true
         stopPublisherHandlers.apply {
-            forEach { callback { it(SuccessResult()) } }
+            forEach { handler ->
+                if (event.exception == null) {
+                    callback { handler(SuccessResult()) }
+                } else {
+                    callback { handler(FailureResult(event.exception)) }
+                }
+            }
             clear()
         }
     }
 
     private fun performMapboxStopped() {
         stoppingFlags.isMapboxStopped = true
-        if (stoppingFlags.areAllServicesStopped()) {
+        if (!isStopped && stoppingFlags.areAllServicesStopped()) {
             enqueue(PublisherStoppedEvent())
         }
     }
 
-    private fun performAblyStopped() {
+    private fun performAblyStopped(event: AblyStoppedEvent) {
         stoppingFlags.isAblyStopped = true
-        if (stoppingFlags.areAllServicesStopped()) {
-            enqueue(PublisherStoppedEvent())
+        if (!isStopped && stoppingFlags.areAllServicesStopped()) {
+            if (event.hasFailed) {
+                enqueue(PublisherStoppedEvent(Exception("Stopping Ably failed")))
+            } else {
+                enqueue(PublisherStoppedEvent())
+            }
         }
     }
 
@@ -728,9 +740,9 @@ constructor(
                     is SetDestinationSuccessEvent -> performSetDestinationSuccess(event)
                     is PresenceMessageEvent -> performPresenceMessage(event)
                     is ChangeLocationEngineResolutionEvent -> performChangeLocationEngineResolution()
-                    is AblyStoppedEvent -> performAblyStopped()
+                    is AblyStoppedEvent -> performAblyStopped(event)
                     is MapboxStoppedEvent -> performMapboxStopped()
-                    is PublisherStoppedEvent -> performPublisherStopped()
+                    is PublisherStoppedEvent -> performPublisherStopped(event)
                     is AblyStatusChangedEvent -> performAblyStatusChanged(event)
                 }
             }

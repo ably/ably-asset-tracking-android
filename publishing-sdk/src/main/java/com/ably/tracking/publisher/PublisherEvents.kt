@@ -16,9 +16,13 @@ internal data class StopPublisherEvent(
     val handler: ResultHandler
 ) : PublisherEvent()
 
-internal class PublisherStoppedEvent : PublisherEvent()
+internal data class PublisherStoppedEvent(
+    val exception: Exception? = null
+) : PublisherEvent()
 
-internal class AblyStoppedEvent : PublisherEvent()
+internal data class AblyStoppedEvent(
+    val hasFailed: Boolean
+) : PublisherEvent()
 
 internal class MapboxStoppedEvent : PublisherEvent()
 
