@@ -52,7 +52,11 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.actor
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import timber.log.Timber
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.coroutines.suspendCoroutine
 
 @SuppressLint("LogConditional")
 internal class DefaultPublisher
@@ -494,6 +498,20 @@ constructor(
         }
     }
 
+    /**
+     * Leaves the given [Channel]'s presence and **blocks** until it completes or fails.
+     * If an error occurs when leaving presence then it throws an [Exception].
+     */
+    private suspend fun leaveChannelPresenceBlocking(channel: Channel) {
+        suspendCoroutine<Unit> { continuation ->
+            leaveChannelPresenceOmittingQueue(
+                channel,
+                { continuation.resume(Unit) },
+                { continuation.resumeWithException(it) }
+            )
+        }
+    }
+
     private fun performPresenceMessage(event: PresenceMessageEvent) {
         when (event.presenceMessage.action) {
             PresenceMessage.Action.present, PresenceMessage.Action.enter -> {
@@ -582,8 +600,8 @@ constructor(
             enqueue(PublisherStoppedEvent())
         } else if (!isStopping) {
             isStopping = true
-            stopLocationUpdates()
             leavePresenceChannels()
+            stopLocationUpdates()
             ably.close()
         }
     }
@@ -602,12 +620,18 @@ constructor(
     }
 
     private fun leavePresenceChannels() {
-        channels.apply {
-            values.forEach {
-                leaveChannelPresenceOmittingQueue(it, {}, { error -> Timber.e(error) })
+        runBlocking(scope.coroutineContext) {
+            channels.values.forEach { channel ->
+                scope.launch {
+                    try {
+                        leaveChannelPresenceBlocking(channel)
+                    } catch (exception: Exception) {
+                        Timber.e(exception, "Leaving channel when stopping publisher failed")
+                    }
+                }
             }
-            clear()
         }
+        channels.clear()
     }
 
     private fun setDestination(destination: Destination) {
