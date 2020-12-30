@@ -706,6 +706,10 @@ constructor(
     private fun createEventsChannel(scope: CoroutineScope) =
         scope.actor<PublisherEvent> {
             for (event in channel) {
+                if ((isStopping || isStopped) && event is IgnorablePublisherEvent) {
+                    Timber.d("Ignoring event $event")
+                    continue
+                }
                 when (event) {
                     is AddTrackableEvent -> performAddTrackable(event)
                     is TrackTrackableEvent -> performTrackTrackable(event)
