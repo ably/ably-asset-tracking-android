@@ -24,10 +24,6 @@ data class ConnectionStateChange(
     val state: ConnectionState
 )
 
-interface ConnectionStateChangeListener {
-    fun onConnectionStateChange(change: ConnectionStateChange)
-}
-
 typealias ConnectionStateChangeHandler = (ConnectionStateChange) -> Unit
 
 typealias LocationHistoryHandler = (String) -> Unit
