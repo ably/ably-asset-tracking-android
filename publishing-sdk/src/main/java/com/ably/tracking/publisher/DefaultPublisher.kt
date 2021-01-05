@@ -66,7 +66,7 @@ constructor(
     private val mapboxNavigation: MapboxNavigation
     private val ably: AblyRealtime
     private val thresholdChecker = ThresholdChecker()
-    private val channels: MutableMap<Trackable, Channel> = mutableMapOf()
+    private val trackableData: MutableMap<Trackable, TrackableData> = mutableMapOf()
     private val locationObserver = object : LocationObserver {
         override fun onRawLocationChanged(rawLocation: Location) {
             sendRawLocationMessage(rawLocation)
@@ -175,10 +175,10 @@ constructor(
 
     private fun performRawLocationChanged(event: RawLocationChangedEvent) {
         Timber.d("sendRawLocationMessage: publishing: ${event.geoJsonMessage.synopsis()}")
-        for ((trackable, channel) in channels) {
+        for ((trackable, data) in trackableData) {
             if (shouldSendLocation(event.location, lastSentRawLocations[trackable], trackable)) {
                 lastSentRawLocations[trackable] = event.location
-                channel.publish(EventNames.RAW, event.geoJsonMessage.toJsonArray(gson))
+                data.channel.publish(EventNames.RAW, event.geoJsonMessage.toJsonArray(gson))
             }
         }
         lastPublisherLocation = event.location
@@ -197,10 +197,10 @@ constructor(
         event.geoJsonMessages.forEach {
             Timber.d("sendEnhancedLocationMessage: publishing: ${it.synopsis()}")
         }
-        for ((trackable, channel) in channels) {
+        for ((trackable, data) in trackableData) {
             if (shouldSendLocation(event.location, lastSentEnhancedLocations[trackable], trackable)) {
                 lastSentEnhancedLocations[trackable] = event.location
-                channel.publish(EventNames.ENHANCED, event.geoJsonMessages.toJsonArray(gson))
+                data.channel.publish(EventNames.ENHANCED, event.geoJsonMessages.toJsonArray(gson))
             }
         }
         enqueue(SuccessEvent { locationUpdatedListener(event.location) })
@@ -304,7 +304,7 @@ constructor(
         onSuccess: () -> Unit,
         onError: (Exception) -> Unit
     ) {
-        if (!channels.contains(trackable)) {
+        if (!trackableData.contains(trackable)) {
             createChannelAndJoinPresence(trackable, onSuccess, onError)
         } else {
             enqueue(SuccessEvent(onSuccess))
@@ -312,7 +312,7 @@ constructor(
     }
 
     private fun performJoinPresenceSuccess(event: JoinPresenceSuccessEvent) {
-        channels[event.trackable] = event.channel
+        trackableData[event.trackable] = TrackableData(event.channel)
         resolveResolution(event.trackable)
         hooks.trackables?.onTrackableAdded(event.trackable)
         enqueue(SuccessEvent(event.onSuccess))
@@ -327,8 +327,8 @@ constructor(
     }
 
     private fun performRemoveTrackable(event: RemoveTrackableEvent) {
-        val removedChannel = channels.remove(event.trackable)
-        if (removedChannel != null) {
+        val removedData = trackableData.remove(event.trackable)
+        if (removedData != null) {
             hooks.trackables?.onTrackableRemoved(event.trackable)
             removeAllSubscribers(event.trackable)
             resolutions.remove(event.trackable)?.let { enqueue(ChangeLocationEngineResolutionEvent()) }
@@ -336,7 +336,7 @@ constructor(
             lastSentRawLocations.remove(event.trackable)
             lastSentEnhancedLocations.remove(event.trackable)
             leaveChannelPresence(
-                removedChannel,
+                removedData.channel,
                 { enqueue(ClearActiveTrackableEvent(event.trackable) { event.onSuccess(true) }) },
                 event.onError
             )
@@ -536,9 +536,9 @@ constructor(
         if (isTracking) {
             isTracking = false
             mapboxNavigation.unregisterLocationObserver(locationObserver)
-            channels.apply {
+            trackableData.apply {
                 values.forEach {
-                    leaveChannelPresenceOmittingQueue(it, {}, { error -> Timber.e(error) })
+                    leaveChannelPresenceOmittingQueue(it.channel, {}, { error -> Timber.e(error) })
                 }
                 clear()
             }
@@ -598,7 +598,7 @@ constructor(
     }
 
     private fun performRefreshResolutionPolicy() {
-        channels.keys.forEach { resolveResolution(it) }
+        trackableData.keys.forEach { resolveResolution(it) }
     }
 
     private fun resolveResolution(trackable: Trackable) {
