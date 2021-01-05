@@ -87,7 +87,6 @@ constructor(
     private val methods = Methods()
     private val requests = mutableMapOf<Trackable, MutableMap<Subscriber, Resolution>>()
     private val subscribers = mutableMapOf<Trackable, MutableSet<Subscriber>>()
-    private val resolutions = mutableMapOf<Trackable, Resolution>()
     private var locationEngineResolution: Resolution
     private var isTracking: Boolean = false
     private var mapboxReplayer: MapboxReplayer? = null
@@ -210,7 +209,7 @@ constructor(
         lastSentLocation: Location?,
         trackable: Trackable
     ): Boolean {
-        val resolution = resolutions[trackable]
+        val resolution = trackableData[trackable]?.resolution
         return if (resolution != null && lastSentLocation != null) {
             val timeSinceLastSentLocation = currentLocation.timeFrom(lastSentLocation)
             val distanceFromLastSentLocation = currentLocation.distanceInMetersFrom(lastSentLocation)
@@ -329,7 +328,7 @@ constructor(
         if (removedData != null) {
             hooks.trackables?.onTrackableRemoved(event.trackable)
             removeAllSubscribers(event.trackable)
-            resolutions.remove(event.trackable)?.let { enqueue(ChangeLocationEngineResolutionEvent()) }
+            removedData.resolution?.let { enqueue(ChangeLocationEngineResolutionEvent()) }
             requests.remove(event.trackable)
             leaveChannelPresence(
                 removedData.channel,
@@ -600,13 +599,14 @@ constructor(
     private fun resolveResolution(trackable: Trackable) {
         val resolutionRequests: Set<Resolution> = requests[trackable]?.values?.toSet() ?: emptySet()
         policy.resolve(TrackableResolutionRequest(trackable, resolutionRequests)).let { resolution ->
-            resolutions[trackable] = resolution
+            trackableData[trackable] = trackableData[trackable]!!.copy(resolution = resolution)
             enqueue(ChangeLocationEngineResolutionEvent())
         }
     }
 
     private fun performChangeLocationEngineResolution() {
-        locationEngineResolution = policy.resolve(resolutions.values.toSet())
+        val trackableResolutions = trackableData.values.mapNotNull { it.resolution }.toSet()
+        locationEngineResolution = policy.resolve(trackableResolutions)
         changeLocationEngineResolution(locationEngineResolution)
     }
 
