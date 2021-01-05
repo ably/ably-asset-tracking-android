@@ -7,9 +7,9 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.ably.tracking.Accuracy
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.Resolution
+import com.ably.tracking.TestLock
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.util.concurrent.Semaphore
 
 private const val MAPBOX_ACCESS_TOKEN = BuildConfig.MAPBOX_ACCESS_TOKEN
 private const val CLIENT_ID = "IntegrationTestsClient"
@@ -58,16 +58,4 @@ class PublisherIntegrationTests {
 
     private fun getLocationData(context: Context) =
         context.assets.open("location_history_small.txt").use { String(it.readBytes()) }
-}
-
-private class TestLock {
-    val semaphore = Semaphore(1).apply { acquire() }
-
-    fun block() {
-        semaphore.acquire()
-    }
-
-    fun resume() {
-        semaphore.release()
-    }
 }
