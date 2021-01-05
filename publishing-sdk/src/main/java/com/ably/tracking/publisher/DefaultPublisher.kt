@@ -91,12 +91,13 @@ constructor(
     private var locationEngineResolution: Resolution
     private var isTracking: Boolean = false
     private var mapboxReplayer: MapboxReplayer? = null
-    private var lastSentRaw: Location? = null
-    private var lastSentEnhanced: Location? = null
+    private var lastPublisherLocation: Location? = null
+    private var lastSentRawLocations: MutableMap<Trackable, Location> = mutableMapOf()
+    private var lastSentEnhancedLocations: MutableMap<Trackable, Location> = mutableMapOf()
     private var estimatedArrivalTimeInMilliseconds: Long? = null
 
     /**
-     * This field will be set only when trying to set a tracking destination before receiving any [lastSentRaw].
+     * This field will be set only when trying to set a tracking destination before receiving any [lastPublisherLocation].
      * After successfully setting the tracking destination this field will be set to NULL.
      **/
     private var destinationToSet: Destination? = null
@@ -175,11 +176,13 @@ constructor(
     private fun performRawLocationChanged(event: RawLocationChangedEvent) {
         Timber.d("sendRawLocationMessage: publishing: ${event.geoJsonMessage.synopsis()}")
         for ((trackable, channel) in channels) {
-            if (shouldSendLocation(event.location, lastSentRaw ?: event.location, trackable)) {
+            val lastSentLocation = lastSentRawLocations[trackable] ?: event.location
+            if (shouldSendLocation(event.location, lastSentLocation, trackable)) {
+                lastSentRawLocations[trackable] = event.location
                 channel.publish(EventNames.RAW, event.geoJsonMessage.toJsonArray(gson))
             }
         }
-        lastSentRaw = event.location
+        lastPublisherLocation = event.location
         destinationToSet?.let { setDestination(it) }
         enqueue(SuccessEvent { locationUpdatedListener(event.location) })
         checkThreshold(event.location)
@@ -196,11 +199,12 @@ constructor(
             Timber.d("sendEnhancedLocationMessage: publishing: ${it.synopsis()}")
         }
         for ((trackable, channel) in channels) {
-            if (shouldSendLocation(event.location, lastSentEnhanced ?: event.location, trackable)) {
+            val lastSentLocation = lastSentEnhancedLocations[trackable] ?: event.location
+            if (shouldSendLocation(event.location, lastSentLocation, trackable)) {
+                lastSentEnhancedLocations[trackable] = event.location
                 channel.publish(EventNames.ENHANCED, event.geoJsonMessages.toJsonArray(gson))
             }
         }
-        lastSentEnhanced = event.location
         enqueue(SuccessEvent { locationUpdatedListener(event.location) })
         checkThreshold(event.location)
     }
@@ -328,6 +332,8 @@ constructor(
             removeAllSubscribers(event.trackable)
             resolutions.remove(event.trackable)?.let { enqueue(ChangeLocationEngineResolutionEvent()) }
             requests.remove(event.trackable)
+            lastSentRawLocations.remove(event.trackable)
+            lastSentEnhancedLocations.remove(event.trackable)
             leaveChannelPresence(
                 removedChannel,
                 { enqueue(ClearActiveTrackableEvent(event.trackable) { event.onSuccess(true) }) },
@@ -549,7 +555,7 @@ constructor(
     }
 
     private fun performSetDestination(event: SetDestinationEvent) {
-        lastSentRaw.let { currentLocation ->
+        lastPublisherLocation.let { currentLocation ->
             if (currentLocation != null) {
                 destinationToSet = null
                 removeCurrentDestination()
