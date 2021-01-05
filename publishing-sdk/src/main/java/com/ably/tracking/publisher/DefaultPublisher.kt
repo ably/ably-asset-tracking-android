@@ -92,8 +92,6 @@ constructor(
     private var isTracking: Boolean = false
     private var mapboxReplayer: MapboxReplayer? = null
     private var lastPublisherLocation: Location? = null
-    private var lastSentRawLocations: MutableMap<Trackable, Location> = mutableMapOf()
-    private var lastSentEnhancedLocations: MutableMap<Trackable, Location> = mutableMapOf()
     private var estimatedArrivalTimeInMilliseconds: Long? = null
 
     /**
@@ -176,8 +174,8 @@ constructor(
     private fun performRawLocationChanged(event: RawLocationChangedEvent) {
         Timber.d("sendRawLocationMessage: publishing: ${event.geoJsonMessage.synopsis()}")
         for ((trackable, data) in trackableData) {
-            if (shouldSendLocation(event.location, lastSentRawLocations[trackable], trackable)) {
-                lastSentRawLocations[trackable] = event.location
+            if (shouldSendLocation(event.location, data.lastSentRaw, trackable)) {
+                trackableData[trackable] = data.copy(lastSentRaw = event.location)
                 data.channel.publish(EventNames.RAW, event.geoJsonMessage.toJsonArray(gson))
             }
         }
@@ -198,8 +196,8 @@ constructor(
             Timber.d("sendEnhancedLocationMessage: publishing: ${it.synopsis()}")
         }
         for ((trackable, data) in trackableData) {
-            if (shouldSendLocation(event.location, lastSentEnhancedLocations[trackable], trackable)) {
-                lastSentEnhancedLocations[trackable] = event.location
+            if (shouldSendLocation(event.location, data.lastSentEnhanced, trackable)) {
+                trackableData[trackable] = data.copy(lastSentEnhanced = event.location)
                 data.channel.publish(EventNames.ENHANCED, event.geoJsonMessages.toJsonArray(gson))
             }
         }
@@ -333,8 +331,6 @@ constructor(
             removeAllSubscribers(event.trackable)
             resolutions.remove(event.trackable)?.let { enqueue(ChangeLocationEngineResolutionEvent()) }
             requests.remove(event.trackable)
-            lastSentRawLocations.remove(event.trackable)
-            lastSentEnhancedLocations.remove(event.trackable)
             leaveChannelPresence(
                 removedData.channel,
                 { enqueue(ClearActiveTrackableEvent(event.trackable) { event.onSuccess(true) }) },
