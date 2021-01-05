@@ -86,7 +86,6 @@ constructor(
     private val hooks = Hooks()
     private val methods = Methods()
     private val requests = mutableMapOf<Trackable, MutableMap<Subscriber, Resolution>>()
-    private val subscribers = mutableMapOf<Trackable, MutableSet<Subscriber>>()
     private var locationEngineResolution: Resolution
     private var isTracking: Boolean = false
     private var mapboxReplayer: MapboxReplayer? = null
@@ -341,7 +340,7 @@ constructor(
     }
 
     private fun removeAllSubscribers(trackable: Trackable) {
-        subscribers[trackable]?.let { subscribers ->
+        trackableData[trackable]?.subscribers?.let { subscribers ->
             subscribers.forEach { hooks.subscribers?.onSubscriberRemoved(it) }
             subscribers.clear()
         }
@@ -469,17 +468,14 @@ constructor(
 
     private fun addSubscriber(id: String, trackable: Trackable, data: PresenceData) {
         val subscriber = Subscriber(id, trackable)
-        if (subscribers[trackable] == null) {
-            subscribers[trackable] = mutableSetOf()
-        }
-        subscribers[trackable]?.add(subscriber)
+        trackableData[trackable]?.subscribers?.add(subscriber)
         saveOrRemoveResolutionRequest(data.resolution, trackable, subscriber)
         hooks.subscribers?.onSubscriberAdded(subscriber)
         resolveResolution(trackable)
     }
 
     private fun updateSubscriber(id: String, trackable: Trackable, data: PresenceData) {
-        subscribers[trackable]?.let { subscribers ->
+        trackableData[trackable]?.subscribers?.let { subscribers ->
             subscribers.find { it.id == id }?.let { subscriber ->
                 data.resolution.let { resolution ->
                     saveOrRemoveResolutionRequest(resolution, trackable, subscriber)
@@ -490,7 +486,7 @@ constructor(
     }
 
     private fun removeSubscriber(id: String, trackable: Trackable) {
-        subscribers[trackable]?.let { subscribers ->
+        trackableData[trackable]?.subscribers?.let { subscribers ->
             subscribers.find { it.id == id }?.let { subscriber ->
                 subscribers.remove(subscriber)
                 requests[trackable]?.remove(subscriber)
