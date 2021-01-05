@@ -85,7 +85,6 @@ constructor(
     private val policy: ResolutionPolicy
     private val hooks = Hooks()
     private val methods = Methods()
-    private val requests = mutableMapOf<Trackable, MutableMap<Subscriber, Resolution>>()
     private var locationEngineResolution: Resolution
     private var isTracking: Boolean = false
     private var mapboxReplayer: MapboxReplayer? = null
@@ -328,7 +327,6 @@ constructor(
             hooks.trackables?.onTrackableRemoved(event.trackable)
             removeAllSubscribers(event.trackable)
             removedData.resolution?.let { enqueue(ChangeLocationEngineResolutionEvent()) }
-            requests.remove(event.trackable)
             leaveChannelPresence(
                 removedData.channel,
                 { enqueue(ClearActiveTrackableEvent(event.trackable) { event.onSuccess(true) }) },
@@ -486,10 +484,10 @@ constructor(
     }
 
     private fun removeSubscriber(id: String, trackable: Trackable) {
-        trackableData[trackable]?.subscribers?.let { subscribers ->
-            subscribers.find { it.id == id }?.let { subscriber ->
-                subscribers.remove(subscriber)
-                requests[trackable]?.remove(subscriber)
+        trackableData[trackable]?.let { data ->
+            data.subscribers.find { it.id == id }?.let { subscriber ->
+                data.subscribers.remove(subscriber)
+                data.requests.remove(subscriber)
                 hooks.subscribers?.onSubscriberRemoved(subscriber)
                 resolveResolution(trackable)
             }
@@ -498,12 +496,9 @@ constructor(
 
     private fun saveOrRemoveResolutionRequest(resolution: Resolution?, trackable: Trackable, subscriber: Subscriber) {
         if (resolution != null) {
-            if (requests[trackable] == null) {
-                requests[trackable] = mutableMapOf()
-            }
-            requests[trackable]?.put(subscriber, resolution)
+            trackableData[trackable]?.requests?.put(subscriber, resolution)
         } else {
-            requests[trackable]?.remove(subscriber)
+            trackableData[trackable]?.requests?.remove(subscriber)
         }
     }
 
@@ -593,7 +588,7 @@ constructor(
     }
 
     private fun resolveResolution(trackable: Trackable) {
-        val resolutionRequests: Set<Resolution> = requests[trackable]?.values?.toSet() ?: emptySet()
+        val resolutionRequests: Set<Resolution> = trackableData[trackable]?.requests?.values?.toSet() ?: emptySet()
         policy.resolve(TrackableResolutionRequest(trackable, resolutionRequests)).let { resolution ->
             trackableData[trackable] = trackableData[trackable]!!.copy(resolution = resolution)
             enqueue(ChangeLocationEngineResolutionEvent())
