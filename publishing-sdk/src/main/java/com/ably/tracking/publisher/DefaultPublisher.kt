@@ -100,12 +100,13 @@ constructor(
     private var locationEngineResolution: Resolution
     private var isTracking: Boolean = false
     private var mapboxReplayer: MapboxReplayer? = null
-    private var lastSentRaw: Location? = null
-    private var lastSentEnhanced: Location? = null
+    private var lastPublisherLocation: Location? = null
+    private var lastSentRawLocations: MutableMap<Trackable, Location> = mutableMapOf()
+    private var lastSentEnhancedLocations: MutableMap<Trackable, Location> = mutableMapOf()
     private var estimatedArrivalTimeInMilliseconds: Long? = null
 
     /**
-     * This field will be set only when trying to set a tracking destination before receiving any [lastSentRaw].
+     * This field will be set only when trying to set a tracking destination before receiving any [lastPublisherLocation].
      * After successfully setting the tracking destination this field will be set to NULL.
      **/
     private var destinationToSet: Destination? = null
@@ -197,14 +198,14 @@ constructor(
     private fun performRawLocationChanged(event: RawLocationChangedEvent) {
         Timber.d("sendRawLocationMessage: publishing: ${event.geoJsonMessage.synopsis()}")
         for ((trackable, channel) in channels) {
-            if (shouldSendLocation(event.location, lastSentRaw ?: event.location, trackable)) {
+            val lastSentLocation = lastSentRawLocations[trackable] ?: event.location
+            if (shouldSendLocation(event.location, lastSentLocation, trackable)) {
+                lastSentRawLocations[trackable] = event.location
                 channel.publish(EventNames.RAW, event.geoJsonMessage.toJsonArray(gson))
             }
         }
-        lastSentRaw = event.location
-        destinationToSet?.let {
-            setDestination(it)
-        }
+        lastPublisherLocation = event.location
+        destinationToSet?.let { setDestination(it) }
         callback(locationHandler, event.location)
         checkThreshold(event.location)
     }
@@ -220,11 +221,12 @@ constructor(
             Timber.d("sendEnhancedLocationMessage: publishing: ${it.synopsis()}")
         }
         for ((trackable, channel) in channels) {
-            if (shouldSendLocation(event.location, lastSentEnhanced ?: event.location, trackable)) {
+            val lastSentLocation = lastSentEnhancedLocations[trackable] ?: event.location
+            if (shouldSendLocation(event.location, lastSentLocation, trackable)) {
+                lastSentEnhancedLocations[trackable] = event.location
                 channel.publish(EventNames.ENHANCED, event.geoJsonMessages.toJsonArray(gson))
             }
         }
-        lastSentEnhanced = event.location
         callback(locationHandler, event.location)
         checkThreshold(event.location)
     }
@@ -381,6 +383,8 @@ constructor(
             removeAllSubscribers(event.trackable)
             resolutions.remove(event.trackable)?.let { enqueue(ChangeLocationEngineResolutionEvent()) }
             requests.remove(event.trackable)
+            lastSentRawLocations.remove(event.trackable)
+            lastSentEnhancedLocations.remove(event.trackable)
 
             // If this was the active Trackable then clear that state and remove destination.
             if (active == event.trackable) {
@@ -532,7 +536,7 @@ constructor(
      */
     private fun setDestination(destination: Destination) {
         // TODO is there a way to ensure we're executing in the right thread?
-        lastSentRaw.let { currentLocation ->
+        lastPublisherLocation.let { currentLocation ->
             if (currentLocation != null) {
                 destinationToSet = null
                 removeCurrentDestination()
