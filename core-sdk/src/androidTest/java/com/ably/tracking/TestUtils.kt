@@ -5,11 +5,11 @@ import java.util.concurrent.Semaphore
 class TestLock {
     val semaphore = Semaphore(1).apply { acquire() }
 
-    fun block() {
+    fun acquire() {
         semaphore.acquire()
     }
 
-    fun resume() {
+    fun release() {
         semaphore.release()
     }
 }

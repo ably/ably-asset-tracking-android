@@ -29,11 +29,11 @@ class PublisherIntegrationTests {
         val publisher = createAndStartPublisher(
             context,
             locationData = locationData,
-            onLocationDataEnded = { testLock.resume() }
+            onLocationDataEnded = { testLock.release() }
         ).apply {
             track(Trackable("ID"), {}, { throw Exception("Error when starting tracking") })
         }
-        testLock.block()
+        testLock.acquire()
         publisher.stop()
 
         // then
