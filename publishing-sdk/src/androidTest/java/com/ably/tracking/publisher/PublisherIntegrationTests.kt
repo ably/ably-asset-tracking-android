@@ -7,7 +7,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.ably.tracking.Accuracy
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.Resolution
-import com.ably.tracking.TestLock
+import com.ably.tracking.common.TestLock
 import org.junit.Test
 import org.junit.runner.RunWith
 
