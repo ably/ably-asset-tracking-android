@@ -8,6 +8,7 @@ import com.ably.tracking.Accuracy
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.Resolution
 import com.ably.tracking.common.TestLock
+import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -24,6 +25,8 @@ class PublisherIntegrationTests {
         val testLock = TestLock()
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val locationData = getLocationData(context)
+        var trackSuccess: Boolean = false
+        var exception: Exception? = null
 
         // when
         val publisher = createAndStartPublisher(
@@ -31,12 +34,22 @@ class PublisherIntegrationTests {
             locationData = locationData,
             onLocationDataEnded = { testLock.release() }
         ).apply {
-            track(Trackable("ID"), {}, { throw Exception("Error when starting tracking") })
+            track(
+                Trackable("ID"),
+                {
+                    trackSuccess = true
+                },
+                {
+                    exception = it
+                }
+            )
         }
         testLock.acquire()
         publisher.stop()
 
         // then
+        Assert.assertTrue("Expected success callback on track.", trackSuccess)
+        Assert.assertNull("Expected no failure callback on track.", exception)
     }
 
     @SuppressLint("MissingPermission")
