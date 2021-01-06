@@ -151,7 +151,9 @@ subprojects {
                     }
                 }
                 release {
-                    initWith debug
+                    if (evaluatedSubProjectIsAnApp) {
+                        applySecretBuildConfigFields delegate
+                    }
                     minifyEnabled false
                     proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
                 }
