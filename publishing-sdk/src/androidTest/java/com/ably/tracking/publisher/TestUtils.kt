@@ -1,4 +1,4 @@
-package com.ably.tracking.common
+package com.ably.tracking.publisher
 
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
