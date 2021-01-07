@@ -31,6 +31,8 @@ import com.mapbox.navigation.core.MapboxNavigation
 import com.mapbox.navigation.core.directions.session.RoutesRequestCallback
 import com.mapbox.navigation.core.replay.MapboxReplayer
 import com.mapbox.navigation.core.replay.ReplayLocationEngine
+import com.mapbox.navigation.core.replay.history.ReplayEventBase
+import com.mapbox.navigation.core.replay.history.ReplayEventsObserver
 import com.mapbox.navigation.core.replay.history.ReplayHistoryMapper
 import com.mapbox.navigation.core.trip.session.LocationObserver
 import io.ably.lib.realtime.AblyRealtime
@@ -163,8 +165,17 @@ constructor(
         mapboxReplayer = MapboxReplayer().apply {
             mapboxBuilder.locationEngine(ReplayLocationEngine(this))
             this.clearEvents()
-            this.pushEvents(ReplayHistoryMapper().mapToReplayEvents(locationSource.historyData))
+            val historyEvents = ReplayHistoryMapper().mapToReplayEvents(locationSource.historyData)
+            val lastHistoryEvent = historyEvents.last()
+            this.pushEvents(historyEvents)
             this.play()
+            this.registerObserver(object : ReplayEventsObserver {
+                override fun replayEvents(events: List<ReplayEventBase>) {
+                    if (events.last() == lastHistoryEvent) {
+                        locationSource.onDataEnded?.let { handler -> enqueue(SuccessEvent { handler() }) }
+                    }
+                }
+            })
         }
     }
 
