@@ -176,8 +176,7 @@ constructor(
     private fun performRawLocationChanged(event: RawLocationChangedEvent) {
         Timber.d("sendRawLocationMessage: publishing: ${event.geoJsonMessage.synopsis()}")
         for ((trackable, channel) in channels) {
-            val lastSentLocation = lastSentRawLocations[trackable] ?: event.location
-            if (shouldSendLocation(event.location, lastSentLocation, trackable)) {
+            if (shouldSendLocation(event.location, lastSentRawLocations[trackable], trackable)) {
                 lastSentRawLocations[trackable] = event.location
                 channel.publish(EventNames.RAW, event.geoJsonMessage.toJsonArray(gson))
             }
@@ -199,8 +198,7 @@ constructor(
             Timber.d("sendEnhancedLocationMessage: publishing: ${it.synopsis()}")
         }
         for ((trackable, channel) in channels) {
-            val lastSentLocation = lastSentEnhancedLocations[trackable] ?: event.location
-            if (shouldSendLocation(event.location, lastSentLocation, trackable)) {
+            if (shouldSendLocation(event.location, lastSentEnhancedLocations[trackable], trackable)) {
                 lastSentEnhancedLocations[trackable] = event.location
                 channel.publish(EventNames.ENHANCED, event.geoJsonMessages.toJsonArray(gson))
             }
@@ -211,15 +209,18 @@ constructor(
 
     private fun shouldSendLocation(
         currentLocation: Location,
-        lastSentLocation: Location,
+        lastSentLocation: Location?,
         trackable: Trackable
     ): Boolean {
-        return resolutions[trackable]?.let { resolution ->
+        val resolution = resolutions[trackable]
+        return if (resolution != null && lastSentLocation != null) {
             val timeSinceLastSentLocation = currentLocation.timeFrom(lastSentLocation)
             val distanceFromLastSentLocation = currentLocation.distanceInMetersFrom(lastSentLocation)
             return distanceFromLastSentLocation >= resolution.minimumDisplacement &&
                 timeSinceLastSentLocation >= resolution.desiredInterval
-        } ?: true
+        } else {
+            true
+        }
     }
 
     private fun checkThreshold(currentLocation: Location) {
