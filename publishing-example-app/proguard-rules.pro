@@ -19,3 +19,11 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# Keep all enum values (if those enums are used) for enums that are in com.amplifyframework or any of its subpackages.
+# Needed for Amplify library.
+-keepclassmembers enum com.amplifyframework.** { *; }
+
+# Keep all enum values (if those enums are used) for enums that are in com.amazonaws or any of its subpackages.
+# Needed for Amplify library.
+-keepclassmembers enum com.amazonaws.** { *; }
