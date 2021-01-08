@@ -200,6 +200,11 @@ subprojects {
             if (evaluatedSubProjectIsALibrary) {
                 implementation 'io.ably:ably-android:1.2.2'
                 implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.2'
+
+                // Projects that use our SDK projects will crash when dispatching to the Main thread on
+                // the Android runtime unless we include this dependency. See:
+                // https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines/-dispatchers/-main.html
+                implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.4.2'
             }
 
             if (evaluatedSubProjectIsAnApp) {
