@@ -26,7 +26,7 @@ data class GeoJsonMessage(
 data class GeoJsonGeometry(
     @SerializedName("type") val type: String,
     @SerializedName("coordinates") val coordinates: List<Double>
-    )
+)
 
 data class GeoJsonProperties(
     @SerializedName("accuracyHorizontal") val accuracyHorizontal: Float,
