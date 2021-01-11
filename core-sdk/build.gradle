@@ -4,4 +4,10 @@ plugins {
     id 'org.jlleitschuh.gradle.ktlint'
 }
 
+android {
+    defaultConfig {
+        consumerProguardFiles 'consumer-rules.pro'
+    }
+}
+
 apply from: '../jacoco.gradle'
