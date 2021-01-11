@@ -1,5 +1,7 @@
 package com.ably.tracking
 
+import com.google.gson.annotations.SerializedName
+
 data class ConnectionConfiguration(val apiKey: String, val clientId: String)
 
 data class LogConfiguration(val enabled: Boolean) // TODO - specify config
@@ -63,6 +65,7 @@ data class Resolution(
      * significantly increased power usage. Conversely, the lowest power usage will be achieved by specifying
      * [Accuracy.MINIMUM] but at the expense of significantly decreased positional accuracy.
      */
+    @SerializedName("accuracy")
     val accuracy: Accuracy,
 
     /**
@@ -74,6 +77,7 @@ data class Resolution(
      * Used to govern the frequency of updates requested from the underlying location provider, as well as the frequency
      * of messages broadcast to subscribers.
      */
+    @SerializedName("desiredInterval")
     val desiredInterval: Long,
 
     /**
@@ -84,5 +88,6 @@ data class Resolution(
      *
      * Used to configure the underlying location provider, as well as to filter the broadcast of updates to subscribers.
      */
+    @SerializedName("minimumDisplacement")
     val minimumDisplacement: Double
 )

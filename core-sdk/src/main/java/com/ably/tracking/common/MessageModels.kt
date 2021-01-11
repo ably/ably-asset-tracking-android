@@ -2,6 +2,7 @@ package com.ably.tracking.common
 
 import com.ably.tracking.LocationUpdateType
 import com.ably.tracking.Resolution
+import com.google.gson.annotations.SerializedName
 
 object GeoJsonTypes {
     const val FEATURE = "Feature"
@@ -12,9 +13,9 @@ const val GEOMETRY_LONG_INDEX = 0
 const val GEOMETRY_LAT_INDEX = 1
 
 data class GeoJsonMessage(
-    val type: String,
-    val geometry: GeoJsonGeometry,
-    val properties: GeoJsonProperties
+    @SerializedName("type") val type: String,
+    @SerializedName("geometry") val geometry: GeoJsonGeometry,
+    @SerializedName("properties") val properties: GeoJsonProperties
 ) {
     // WARNING: Don't add fields to this class because they will be serialized and present in JSON
 
@@ -22,17 +23,23 @@ data class GeoJsonMessage(
         "[time:${properties.time}; lon:${geometry.coordinates[GEOMETRY_LONG_INDEX]} lat:${geometry.coordinates[GEOMETRY_LAT_INDEX]}; brg:${properties.bearing}]"
 }
 
-data class GeoJsonGeometry(val type: String, val coordinates: List<Double>)
+data class GeoJsonGeometry(
+    @SerializedName("type") val type: String,
+    @SerializedName("coordinates") val coordinates: List<Double>
+    )
 
 data class GeoJsonProperties(
-    val accuracyHorizontal: Float,
-    val altitude: Double,
-    val bearing: Float,
-    val speed: Float,
-    val time: Double
+    @SerializedName("accuracyHorizontal") val accuracyHorizontal: Float,
+    @SerializedName("altitude") val altitude: Double,
+    @SerializedName("bearing") val bearing: Float,
+    @SerializedName("speed") val speed: Float,
+    @SerializedName("time") val time: Double
 )
 
-data class PresenceData(val type: String, val resolution: Resolution? = null)
+data class PresenceData(
+    @SerializedName("type") val type: String,
+    @SerializedName("resolution") val resolution: Resolution? = null
+)
 
 data class EnhancedLocationUpdateMessage(
     val location: GeoJsonMessage,
