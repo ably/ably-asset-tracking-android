@@ -26,7 +26,7 @@ class PublisherIntegrationTests {
         val testLock = TestLock()
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val locationData = getLocationData(context)
-        var trackResult: Result? = null
+        var trackResult: Result<Unit>? = null
 
         // when
         val publisher = createAndStartPublisher(
@@ -45,7 +45,7 @@ class PublisherIntegrationTests {
         publisher.stop()
 
         // then
-        Assert.assertTrue("Expected success callback on track.", trackResult is SuccessResult)
+        Assert.assertTrue("Expected success callback on track.", trackResult is SuccessResult<Unit>)
     }
 
     @SuppressLint("MissingPermission")

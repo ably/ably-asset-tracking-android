@@ -45,12 +45,12 @@ interface Publisher {
      * @param handler Called when the trackable is successfully added and make the actively tracked object or when an error occurs
      */
     @JvmSynthetic
-    fun track(trackable: Trackable, handler: ResultHandler)
+    fun track(trackable: Trackable, handler: ResultHandler<Unit>)
 
     /**
      * This method overload is provided for the convenience of those calling from Java.
      */
-    fun track(trackable: Trackable, listener: ResultListener)
+    fun track(trackable: Trackable, listener: ResultListener<Void?>)
 
     /**
      * Adds a [Trackable] object, but does not make it the actively tracked object, meaning that the state of the
@@ -64,12 +64,12 @@ interface Publisher {
      * @param handler Called when the trackable is successfully added or an error occurs
      */
     @JvmSynthetic
-    fun add(trackable: Trackable, handler: ResultHandler)
+    fun add(trackable: Trackable, handler: ResultHandler<Unit>)
 
     /**
      * This method overload is provided for the convenience of those calling from Java.
      */
-    fun add(trackable: Trackable, listener: ResultListener)
+    fun add(trackable: Trackable, listener: ResultListener<Void?>)
 
     /**
      * Removes a [Trackable] object if it is known to this publisher, otherwise does nothing and returns false.
@@ -83,12 +83,12 @@ interface Publisher {
      * @param handler Called when the trackable is successfully removed or an error occurs
      */
     @JvmSynthetic
-    fun remove(trackable: Trackable, handler: ResultHandler)
+    fun remove(trackable: Trackable, handler: ResultHandler<Boolean>)
 
     /**
      * This method overload is provided for the convenience of those calling from Java.
      */
-    fun remove(trackable: Trackable, listener: ResultListener)
+    fun remove(trackable: Trackable, listener: ResultListener<Boolean>)
 
     /**
      * The actively tracked object, being the [Trackable] object whose destination will be used for location

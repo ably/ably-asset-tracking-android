@@ -67,7 +67,7 @@ public class PublisherInterfaceUsageExamples {
                 if (result.isSuccess()) {
                     Timber.d("Success");
                 } else {
-                    Timber.e(result.exception());
+                    // Timber.e(result.exception());
                 }
             }
         );
@@ -77,7 +77,7 @@ public class PublisherInterfaceUsageExamples {
                 if (result.isSuccess()) {
                     Timber.d("Success");
                 } else {
-                    Timber.e(result.exception());
+                    // Timber.e(result.exception());
                 }
             }
         );
@@ -86,7 +86,7 @@ public class PublisherInterfaceUsageExamples {
                 if (result.isSuccess()) {
                     Timber.d("Success");
                 } else {
-                    Timber.e(result.exception());
+                    // Timber.e(result.exception());
                 }
             }
         );

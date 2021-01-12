@@ -10,8 +10,4 @@ android {
 
 dependencies {
     implementation project(":publishing-sdk")
-
-    // Importing for testing purposes, so that we can assert Kotlin standard library constructs.
-    // e.g. https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-not-implemented-error/
-    testImplementation 'org.jetbrains.kotlin:kotlin-stdlib'
 }

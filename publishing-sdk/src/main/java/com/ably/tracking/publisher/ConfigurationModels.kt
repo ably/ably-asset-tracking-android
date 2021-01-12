@@ -4,8 +4,6 @@ import com.ably.tracking.ConnectionStateChangeHandler
 import com.ably.tracking.LocationHistoryHandler
 import com.ably.tracking.Resolution
 
-// TODO: make sure all this works from Java user perspective
-
 data class MapConfiguration(val apiKey: String)
 
 /**

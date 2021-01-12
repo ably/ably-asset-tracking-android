@@ -2,7 +2,9 @@ package com.ably.tracking.subscriber
 
 import com.ably.tracking.AssetStatusHandler
 import com.ably.tracking.ConnectionConfiguration
+import com.ably.tracking.ErrorInformation
 import com.ably.tracking.FailureResult
+import com.ably.tracking.Handler
 import com.ably.tracking.LocationHandler
 import com.ably.tracking.Resolution
 import com.ably.tracking.ResultHandler
@@ -13,7 +15,9 @@ import com.ably.tracking.common.EventNames
 import com.ably.tracking.common.PresenceData
 import com.ably.tracking.common.getGeoJsonMessages
 import com.ably.tracking.common.getPresenceData
+import com.ably.tracking.common.toJava
 import com.ably.tracking.common.toLocation
+import com.ably.tracking.toTracking
 import com.google.gson.Gson
 import io.ably.lib.realtime.AblyRealtime
 import io.ably.lib.realtime.Channel
@@ -45,7 +49,7 @@ internal class DefaultSubscriber(
     private val gson = Gson()
     private var presenceData = PresenceData(ClientTypes.SUBSCRIBER, resolution)
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
-    private val eventsChannel: SendChannel<SubscriberEvent>
+    private val eventsChannel: SendChannel<Event>
 
     init {
         eventsChannel = createEventsChannel(scope)
@@ -67,13 +71,9 @@ internal class DefaultSubscriber(
             Timber.i("Ably channel message (raw): $message")
             message.getGeoJsonMessages(gson).forEach {
                 Timber.d("Received raw location: ${it.synopsis()}")
-                enqueue(RawLocationReceivedEvent(it.toLocation()))
+                callback(rawLocationHandler, it.toLocation())
             }
         }
-    }
-
-    private fun performRawLocationReceived(event: RawLocationReceivedEvent) {
-        callback { rawLocationHandler(event.location) }
     }
 
     private fun subscribeForEnhancedEvents() {
@@ -81,27 +81,17 @@ internal class DefaultSubscriber(
             Timber.i("Ably channel message (enhanced): $message")
             message.getGeoJsonMessages(gson).forEach {
                 Timber.d("Received enhanced location: ${it.synopsis()}")
-                enqueue(EnhancedLocationReceivedEvent(it.toLocation()))
+                callback(enhancedLocationHandler, it.toLocation())
             }
         }
     }
 
-    private fun performEnhancedLocationReceived(event: EnhancedLocationReceivedEvent) {
-        callback { enhancedLocationHandler(event.location) }
+    override fun sendChangeRequest(resolution: Resolution, handler: ResultHandler<Unit>) {
+        enqueue(ChangeResolutionEvent(resolution, handler))
     }
 
-    override fun sendChangeRequest(resolution: Resolution, handler: ResultHandler) {
-        enqueue(
-            ChangeResolutionEvent(
-                resolution,
-                { handler(SuccessResult()) },
-                { handler(FailureResult(it)) }
-            )
-        )
-    }
-
-    override fun sendChangeRequest(resolution: Resolution, listener: ResultListener) {
-        sendChangeRequest(resolution, { listener.onResult(it) })
+    override fun sendChangeRequest(resolution: Resolution, listener: ResultListener<Void?>) {
+        sendChangeRequest(resolution, { listener.onResult(it.toJava()) })
     }
 
     private fun performChangeResolution(event: ChangeResolutionEvent) {
@@ -110,18 +100,18 @@ internal class DefaultSubscriber(
             gson.toJson(presenceData),
             object : CompletionListener {
                 override fun onSuccess() {
-                    enqueue(SuccessEvent(event.onSuccess))
+                    callback(event.handler, SuccessResult(Unit))
                 }
 
-                override fun onError(reason: ErrorInfo?) {
-                    enqueue(ErrorEvent(Exception("Unable to change resolution: ${reason?.message}"), event.onError))
+                override fun onError(reason: ErrorInfo) {
+                    callback(event.handler, reason.toTracking())
                 }
             }
         )
     }
 
     override fun stop() {
-        enqueue(StopSubscriberEvent())
+        enqueue(StopEvent())
     }
 
     private fun performStopSubscriber() {
@@ -141,10 +131,10 @@ internal class DefaultSubscriber(
                 object : CompletionListener {
                     override fun onSuccess() = Unit
 
-                    override fun onError(reason: ErrorInfo?) {
+                    override fun onError(reason: ErrorInfo) {
                         // TODO - handle error
                         // https://github.com/ably/ably-asset-tracking-android/issues/17
-                        Timber.e("Unable to enter presence: ${reason?.message}")
+                        Timber.e("Unable to enter presence: ${reason.message}")
                     }
                 }
             )
@@ -165,10 +155,10 @@ internal class DefaultSubscriber(
                 object : CompletionListener {
                     override fun onSuccess() = Unit
 
-                    override fun onError(reason: ErrorInfo?) {
+                    override fun onError(reason: ErrorInfo) {
                         // TODO - handle error
                         // https://github.com/ably/ably-asset-tracking-android/issues/17
-                        Timber.e("Unable to leave presence: ${reason?.message}")
+                        Timber.e("Unable to leave presence: ${reason.message}")
                     }
                 }
             )
@@ -198,42 +188,40 @@ internal class DefaultSubscriber(
     }
 
     private fun notifyAssetIsOnline() {
-        assetStatusHandler?.let { callback { it(true) } }
+        assetStatusHandler?.let { callback(it, true) }
     }
 
     private fun notifyAssetIsOffline() {
-        assetStatusHandler?.let { callback { it(false) } }
+        assetStatusHandler?.let { callback(it, false) }
     }
 
     @OptIn(ObsoleteCoroutinesApi::class)
     private fun createEventsChannel(scope: CoroutineScope) =
-        scope.actor<SubscriberEvent> {
+        scope.actor<Event> {
             for (event in channel) {
                 when (event) {
-                    is StopSubscriberEvent -> performStopSubscriber()
-                    is RawLocationReceivedEvent -> performRawLocationReceived(event)
-                    is EnhancedLocationReceivedEvent -> performEnhancedLocationReceived(event)
+                    is StopEvent -> performStopSubscriber()
                     is PresenceMessageEvent -> performPresenceMessage(event)
-                    is ErrorEvent -> performEventError(event)
-                    is SuccessEvent -> performEventSuccess(event)
                     is ChangeResolutionEvent -> performChangeResolution(event)
                 }
             }
         }
 
-    private fun performEventSuccess(event: SuccessEvent) {
-        callback { event.onSuccess() }
+    /**
+     * Send a failure event to the main thread, but only if the scope hasn't been cancelled.
+     */
+    private fun <T> callback(handler: ResultHandler<T>, errorInformation: ErrorInformation) {
+        callback(handler, FailureResult(errorInformation))
     }
 
-    private fun performEventError(event: ErrorEvent) {
-        callback { event.onError(event.exception) }
+    /**
+     * Send an event to the main thread, but only if the scope hasn't been cancelled.
+     */
+    private fun <T> callback(handler: Handler<T>, result: T) {
+        scope.launch(Dispatchers.Main) { handler(result) }
     }
 
-    private fun callback(action: () -> Unit) {
-        scope.launch(Dispatchers.Main) { action() }
-    }
-
-    private fun enqueue(event: SubscriberEvent) {
+    private fun enqueue(event: Event) {
         scope.launch { eventsChannel.send(event) }
     }
 }

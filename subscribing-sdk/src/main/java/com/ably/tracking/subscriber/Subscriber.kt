@@ -46,7 +46,7 @@ interface Subscriber {
      * @param handler The function to be notified.
      */
     @JvmSynthetic
-    fun sendChangeRequest(resolution: Resolution, handler: ResultHandler)
+    fun sendChangeRequest(resolution: Resolution, handler: ResultHandler<Unit>)
 
     /**
      * Sends the desired resolution for updates, to be requested from the remote publisher.
@@ -64,7 +64,7 @@ interface Subscriber {
      * @param resolution The resolution to request.
      * @param listener The object to be notified.
      */
-    fun sendChangeRequest(resolution: Resolution, listener: ResultListener)
+    fun sendChangeRequest(resolution: Resolution, listener: ResultListener<Void?>)
 
     /**
      * Stops this subscriber from listening to published locations. Once a subscriber has been stopped, it cannot be

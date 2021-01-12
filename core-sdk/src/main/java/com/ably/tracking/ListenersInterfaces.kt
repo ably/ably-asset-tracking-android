@@ -6,7 +6,8 @@ interface LocationListener {
     fun onLocationUpdated(location: Location)
 }
 
-typealias LocationHandler = (Location) -> Unit
+typealias Handler<T> = (T) -> Unit
+typealias LocationHandler = Handler<Location>
 
 enum class ConnectionState {
     INITIALIZED,
@@ -48,7 +49,13 @@ data class ErrorInformation(
      * An error underlying this error which caused this failure.
      */
     val cause: ErrorInformation?
-)
+) {
+    /**
+     * Creates an ErrorInformation instance representing an error generated internally from within the Ably Asset
+     * Tracking SDK.
+     */
+    constructor(message: String) : this(10001, 0, message, null, null)
+}
 
 /**
  * A change in state of a connection to the Ably service.
@@ -73,26 +80,25 @@ data class ConnectionStateChange(
 /**
  * Defines the signature of a function accepting state change events relating connectivity to the Ably service.
  */
-typealias ConnectionStateChangeHandler = (ConnectionStateChange) -> Unit
+typealias ConnectionStateChangeHandler = Handler<ConnectionStateChange>
 
-typealias LocationHistoryHandler = (String) -> Unit
+typealias LocationHistoryHandler = Handler<String>
 
-sealed class Result {
-    fun isSuccess(): Boolean = this is SuccessResult
-    fun exception(): Exception? = (this as? FailureResult)?.exception
+sealed class Result<T> {
+    val isSuccess: Boolean get() = this is SuccessResult<*>
 }
 
-class SuccessResult : Result()
-data class FailureResult(val exception: Exception) : Result()
+data class SuccessResult<T>(val result: T) : Result<T>()
+data class FailureResult<T>(val errorInformation: ErrorInformation) : Result<T>()
 
-interface ResultListener {
-    fun onResult(result: Result)
+interface ResultListener<T> {
+    fun onResult(result: Result<T>)
 }
 
-typealias ResultHandler = (Result) -> Unit
+typealias ResultHandler<T> = Handler<Result<T>>
 
 interface AssetStatusListener {
     fun onStatusChanged(isOnline: Boolean)
 }
 
-typealias AssetStatusHandler = (Boolean) -> Unit
+typealias AssetStatusHandler = Handler<Boolean>
