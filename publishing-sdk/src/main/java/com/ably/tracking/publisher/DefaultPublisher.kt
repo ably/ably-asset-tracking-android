@@ -429,6 +429,14 @@ constructor(
             enqueue(ChangeRoutingProfileEvent(value))
         }
 
+    override fun stop(handler: ResultHandler<Unit>) {
+        enqueue(StopEvent(handler))
+    }
+
+    override fun stop(listener: ResultListener<Void?>) {
+        stop() { listener.onResult(it.toJava()) }
+    }
+
     private fun performPresenceMessage(event: PresenceMessageEvent) {
         when (event.presenceMessage.action) {
             PresenceMessage.Action.present, PresenceMessage.Action.enter -> {
@@ -502,14 +510,13 @@ constructor(
         currentDestination?.let { setDestination(it) }
     }
 
-    override fun stop() {
-        enqueue(StopEvent())
-    }
-
-    private fun performStopPublisher() {
+    private fun performStopPublisher(event: StopEvent) {
         stopLocationUpdates()
         ably.close()
         scope.cancel()
+
+        // TODO implement proper stopping strategy which only calls back once we're fully stopped
+        callback(event.handler, SuccessResult(Unit))
     }
 
     private fun stopLocationUpdates() {
@@ -621,7 +628,7 @@ constructor(
                     is AddTrackableEvent -> performAddTrackable(event)
                     is TrackTrackableEvent -> performTrackTrackable(event)
                     is RemoveTrackableEvent -> performRemoveTrackable(event)
-                    is StopEvent -> performStopPublisher()
+                    is StopEvent -> performStopPublisher(event)
                     is StartEvent -> performStartPublisher()
                     is JoinPresenceSuccessEvent -> performJoinPresenceSuccess(event)
                     is RawLocationChangedEvent -> performRawLocationChanged(event)
