@@ -2,13 +2,29 @@ package com.ably.tracking
 
 import android.location.Location
 
+/**
+ * Defines an interface, to be implemented in Java code utilising the Ably Asset Tracking SDKs, allowing that code to
+ * handle events containing [Location] information.
+ */
 interface LocationListener {
     fun onLocationUpdated(location: Location)
 }
 
+/**
+ * Defines a function type, to be implemented in Kotlin code utilising the Ably Asset Tracking SDKs, allowing that code
+ * to handle events using that function as a callback (typically using a lamda expression).
+ */
 typealias Handler<T> = (T) -> Unit
+
+/**
+ * Defines a function type, to be implemented in Kotlin code utilising the Ably Asset Tracking SDKs, allowing that code
+ * to handle events containing [Location] information.
+ */
 typealias LocationHandler = Handler<Location>
 
+/**
+ * The state of connectivity to the Ably service.
+ */
 enum class ConnectionState {
     INITIALIZED,
     CONNECTING,
@@ -82,19 +98,60 @@ data class ConnectionStateChange(
  */
 typealias ConnectionStateChangeHandler = Handler<ConnectionStateChange>
 
+/**
+ * Defines a function type, to be implemented in Kotlin code utilising the Ably Asset Tracking SDKs, allowing that code
+ * to handle events containing location history information in [String] format.
+ */
 typealias LocationHistoryHandler = Handler<String>
 
+/**
+ * The result of an asynchronous operation, which will either have been successful or will have failed.
+ *
+ * Methods returning instances of this class to callback implementations, where there is no explicit type `T` to be
+ * returned, use a different signature depending on the method overload:
+ *
+ * - for Kotlin code: `Result<Unit>`
+ * - for Java code: `Result<Void?>`
+ */
 sealed class Result<T> {
+    /**
+     * `true` if the operation was successful, meaning that this instance is of type [SuccessResult].
+     */
     val isSuccess: Boolean get() = this is SuccessResult<*>
 }
 
-data class SuccessResult<T>(val result: T) : Result<T>()
-data class FailureResult<T>(val errorInformation: ErrorInformation) : Result<T>()
+/**
+ * Conveys that an asynchronous operation completed successfully.
+ */
+data class SuccessResult<T>(
+    /**
+     * The product of the operation, if applicable.
+     */
+    val result: T
+) : Result<T>()
 
+/**
+ * Conveys that an asynchronous operation failed.
+ */
+data class FailureResult<T>(
+    /**
+     * The reason why the operation failed.
+     */
+    val errorInformation: ErrorInformation
+) : Result<T>()
+
+/**
+ * Defines an interface, to be implemented in Java code utilising the Ably Asset Tracking SDKs, allowing that code to
+ * handle an event indicating the result of an asynchronous operation.
+ */
 interface ResultListener<T> {
     fun onResult(result: Result<T>)
 }
 
+/**
+ * Defines a function type, to be implemented in Kotlin code utilising the Ably Asset Tracking SDKs, allowing that code
+ * to handle an event indicating the result of an asynchronous operation.
+ */
 typealias ResultHandler<T> = Handler<Result<T>>
 
 interface AssetStatusListener {
