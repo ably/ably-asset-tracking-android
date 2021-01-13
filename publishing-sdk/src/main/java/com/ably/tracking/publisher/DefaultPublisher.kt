@@ -183,7 +183,7 @@ constructor(
             this.registerObserver(object : ReplayEventsObserver {
                 override fun replayEvents(events: List<ReplayEventBase>) {
                     if (events.last() == lastHistoryEvent) {
-                        locationSource.onDataEnded?.let { handler -> callback(handler) }
+                        locationSource.onDataEnded?.let { handler -> callback(handler, Unit) }
                     }
                 }
             })
@@ -628,13 +628,6 @@ constructor(
      */
     private fun <T> callback(handler: Handler<T>, result: T) {
         scope.launch(Dispatchers.Main) { handler(result) }
-    }
-
-    /**
-     * Send an event to the main thread, but only if the scope hasn't been cancelled.
-     */
-    private fun callback(handler: () -> Unit) {
-        scope.launch(Dispatchers.Main) { handler() }
     }
 
     private fun enqueue(event: Event) {

@@ -6,6 +6,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ably.tracking.Accuracy
 import com.ably.tracking.ConnectionConfiguration
+import com.ably.tracking.Handler
 import com.ably.tracking.Resolution
 import com.ably.tracking.Result
 import com.ably.tracking.SuccessResult
@@ -53,7 +54,7 @@ class PublisherIntegrationTests {
         context: Context,
         resolution: Resolution = Resolution(Accuracy.BALANCED, 1000L, 0.0),
         locationData: String,
-        onLocationDataEnded: () -> Unit
+        onLocationDataEnded: Handler<Unit>
     ) =
         Publisher.publishers()
             .androidContext(context)
