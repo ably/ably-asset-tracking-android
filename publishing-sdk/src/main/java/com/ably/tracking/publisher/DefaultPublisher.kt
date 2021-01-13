@@ -284,14 +284,6 @@ constructor(
     }
 
     private fun performTrackTrackable(event: TrackTrackableEvent) {
-        if (active != null) {
-            callback(
-                event.handler,
-                ErrorInformation("For this preview version of the SDK, this method may only be called once for any given instance of this class.")
-            )
-            return
-        }
-
         createChannelForTrackableIfNotExisits(event.trackable) {
             if (it.isSuccess) {
                 enqueue(SetActiveTrackableEvent(event.trackable, event.handler))
