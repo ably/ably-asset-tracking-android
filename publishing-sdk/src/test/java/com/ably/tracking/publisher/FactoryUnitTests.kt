@@ -2,8 +2,11 @@ package com.ably.tracking.publisher
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.location.Location
 import com.ably.tracking.BuilderConfigurationIncompleteException
 import com.ably.tracking.ConnectionConfiguration
+import com.ably.tracking.LocationHandler
+import com.ably.tracking.LocationListener
 import com.ably.tracking.LogConfiguration
 import io.mockk.mockk
 import org.junit.Assert
@@ -89,19 +92,6 @@ class FactoryUnitTests {
     }
 
     @Test
-    fun `setting debug config updates builder field`() {
-        // given
-        val configuration = DebugConfiguration({}, LocationSourceAbly(""))
-
-        // when
-        val builder =
-            Publisher.publishers().debug(configuration) as PublisherBuilder
-
-        // then
-        Assert.assertEquals(configuration, builder.debugConfiguration)
-    }
-
-    @Test
     fun `setting debug config returns a new copy of builder`() {
         // given
         val configuration = DebugConfiguration()
@@ -117,24 +107,26 @@ class FactoryUnitTests {
     @Test
     fun `setting location updated listener updates builder field`() {
         // given
-        val listener: LocationUpdatedListener = {}
+        val location = anyLocation()
+        lateinit var locationFromListener: Location
+        val listener = anyLocationUpdatedListener { locationFromListener = it }
 
         // when
-        val builder =
-            Publisher.publishers().locationUpdatedListener(listener) as PublisherBuilder
+        val builder = Publisher.publishers().locations(listener) as PublisherBuilder
+        builder.locationHandler!!.invoke(location)
 
         // then
-        Assert.assertEquals(listener, builder.locationUpdatedListener)
+        Assert.assertEquals(location, locationFromListener)
     }
 
     @Test
     fun `setting location updated listener returns a new copy of builder`() {
         // given
-        val listener: LocationUpdatedListener = {}
+        val listener: LocationListener = anyLocationUpdatedListener()
         val originalBuilder = Publisher.publishers()
 
         // when
-        val newBuilder = originalBuilder.locationUpdatedListener(listener)
+        val newBuilder = originalBuilder.locations(listener)
 
         // then
         Assert.assertNotEquals(newBuilder, originalBuilder)
@@ -178,7 +170,7 @@ class FactoryUnitTests {
             .connection(ConnectionConfiguration("", ""))
             .map(MapConfiguration(""))
             .log(LogConfiguration(true))
-            .locationUpdatedListener { }
+            .locations(anyLocationUpdatedListener())
             .androidContext(mockedContext)
 
         // then
@@ -195,7 +187,7 @@ class FactoryUnitTests {
         Assert.assertNull(builder.connectionConfiguration)
         Assert.assertNull(builder.mapConfiguration)
         Assert.assertNull(builder.logConfiguration)
-        Assert.assertNull(builder.locationUpdatedListener)
+        Assert.assertNull(builder.locationHandler)
         Assert.assertNull(builder.androidContext)
     }
 
@@ -203,7 +195,14 @@ class FactoryUnitTests {
         Assert.assertNotNull(builder.connectionConfiguration)
         Assert.assertNotNull(builder.mapConfiguration)
         Assert.assertNotNull(builder.logConfiguration)
-        Assert.assertNotNull(builder.locationUpdatedListener)
+        Assert.assertNotNull(builder.locationHandler)
         Assert.assertNotNull(builder.androidContext)
     }
+
+    private fun anyLocationUpdatedListener(handler: LocationHandler = {}): LocationListener =
+        object : LocationListener {
+            override fun onLocationUpdated(location: Location) = handler(location)
+        }
+
+    private fun anyLocation() = Location("fused")
 }

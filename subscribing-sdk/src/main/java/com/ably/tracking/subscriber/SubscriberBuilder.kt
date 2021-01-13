@@ -1,18 +1,22 @@
 package com.ably.tracking.subscriber
 
-import com.ably.tracking.ConnectionConfiguration
+import com.ably.tracking.AssetStatusHandler
+import com.ably.tracking.AssetStatusListener
 import com.ably.tracking.BuilderConfigurationIncompleteException
+import com.ably.tracking.ConnectionConfiguration
+import com.ably.tracking.LocationHandler
+import com.ably.tracking.LocationListener
 import com.ably.tracking.LogConfiguration
 import com.ably.tracking.Resolution
 
 internal data class SubscriberBuilder(
     val connectionConfiguration: ConnectionConfiguration? = null,
     val logConfiguration: LogConfiguration? = null,
-    val rawLocationUpdatedListener: LocationUpdatedListener? = null,
-    val enhancedLocationUpdatedListener: LocationUpdatedListener? = null,
+    val rawLocationHandler: LocationHandler? = null,
+    val enhancedLocationHandler: LocationHandler? = null,
     val resolution: Resolution? = null,
     val trackingId: String? = null,
-    val assetStatusListener: StatusListener? = null
+    val assetStatusHandler: AssetStatusHandler? = null
 ) : Subscriber.Builder {
 
     override fun connection(configuration: ConnectionConfiguration): Subscriber.Builder =
@@ -21,11 +25,17 @@ internal data class SubscriberBuilder(
     override fun log(configuration: LogConfiguration): Subscriber.Builder =
         this.copy(logConfiguration = configuration)
 
-    override fun rawLocationUpdatedListener(listener: LocationUpdatedListener): Subscriber.Builder =
-        this.copy(rawLocationUpdatedListener = listener)
+    override fun rawLocations(handler: LocationHandler): Subscriber.Builder =
+        this.copy(rawLocationHandler = handler)
 
-    override fun enhancedLocationUpdatedListener(listener: LocationUpdatedListener): Subscriber.Builder =
-        this.copy(enhancedLocationUpdatedListener = listener)
+    override fun rawLocations(listener: LocationListener): Subscriber.Builder =
+        rawLocations { listener.onLocationUpdated(it) }
+
+    override fun enhancedLocations(handler: LocationHandler): Subscriber.Builder =
+        this.copy(enhancedLocationHandler = handler)
+
+    override fun enhancedLocations(listener: LocationListener): Subscriber.Builder =
+        enhancedLocations { listener.onLocationUpdated(it) }
 
     override fun resolution(resolution: Resolution): Subscriber.Builder =
         this.copy(resolution = resolution)
@@ -33,8 +43,11 @@ internal data class SubscriberBuilder(
     override fun trackingId(trackingId: String): Subscriber.Builder =
         this.copy(trackingId = trackingId)
 
-    override fun assetStatusListener(listener: (Boolean) -> Unit): Subscriber.Builder =
-        this.copy(assetStatusListener = listener)
+    override fun assetStatus(handler: AssetStatusHandler): Subscriber.Builder =
+        this.copy(assetStatusHandler = handler)
+
+    override fun assetStatus(listener: AssetStatusListener): Subscriber.Builder =
+        assetStatus { listener.onStatusChanged(it) }
 
     override fun start(): Subscriber {
         if (isMissingRequiredFields()) {
@@ -43,10 +56,10 @@ internal data class SubscriberBuilder(
         // All below fields are required and above code checks if they are nulls, so using !! should be safe from NPE
         return DefaultSubscriber(
             connectionConfiguration!!,
-            rawLocationUpdatedListener!!,
-            enhancedLocationUpdatedListener!!,
+            rawLocationHandler!!,
+            enhancedLocationHandler!!,
             trackingId!!,
-            assetStatusListener,
+            assetStatusHandler,
             resolution
         )
     }
@@ -54,7 +67,7 @@ internal data class SubscriberBuilder(
     // TODO - define which fields are required and which are optional (for now: only fields needed to create AssetSubscriber)
     private fun isMissingRequiredFields() =
         connectionConfiguration == null ||
-            rawLocationUpdatedListener == null ||
-            enhancedLocationUpdatedListener == null ||
+            rawLocationHandler == null ||
+            enhancedLocationHandler == null ||
             trackingId == null
 }

@@ -55,10 +55,14 @@ val publisher = Publisher.publishers() // get the Publisher builder in default s
 publisher.track(
   Trackable(
     trackingId, // provide a tracking identifier for the asset
-    constraints = exampleConstraints // provide a set of Resolution constraints
+    constraints = exampleConstraints // provide a set of Resolution Constraints
   ),
-  onSuccess = {},
-  onError = {}
+  {
+      when (it) {
+          is SuccessResult -> { }
+          is FailureResult -> { }
+      }
+  }
 )
 ```
 
@@ -69,8 +73,8 @@ Here is an example of how Asset Subscribing SDK can be used:
 ```kotlin
 val assetSubscriber = AssetSubscriber.subscribers() // Get an AssetSubscriber
   .ablyConfig(AblyConfiguration(ABLY_API_KEY, CLIENT_ID)) // provide Ably configuration with credentials
-  .rawLocationUpdatedListener {} // provide a function to be called when raw location updates are received
-  .enhancedLocationUpdatedListener {} // provide a function to be called when enhanced location updates are received
+  .rawLocationUpdatedListener { } // provide a function to be called when raw location updates are received
+  .enhancedLocationUpdatedListener { } // provide a function to be called when enhanced location updates are received
   .resolution( // request a specific resolution to be considered by the publisher
     Resolution(Accuracy.MAXIMUM, desiredInterval = 1000L, minimumDisplacement = 1.0)
   )
@@ -80,8 +84,12 @@ val assetSubscriber = AssetSubscriber.subscribers() // Get an AssetSubscriber
 
 assetSubscriber.sendChangeRequest( // request a different resolution when needed
     Resolution(Accuracy.MAXIMUM, desiredInterval = 100L, minimumDisplacement = 2.0),
-    onSuccess = {},
-    onError = {}
+    {
+        when (it) {
+            is SuccessResult -> { }
+            is FailureResult -> { }
+        }
+    }
 )
 ```
 

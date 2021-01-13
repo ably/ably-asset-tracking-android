@@ -1,9 +1,12 @@
 package com.ably.tracking.subscriber
 
 import android.annotation.SuppressLint
+import android.location.Location
 import com.ably.tracking.Accuracy
+import com.ably.tracking.AssetStatusListener
 import com.ably.tracking.BuilderConfigurationIncompleteException
 import com.ably.tracking.ConnectionConfiguration
+import com.ably.tracking.LocationListener
 import com.ably.tracking.LogConfiguration
 import com.ably.tracking.Resolution
 import org.junit.Assert
@@ -65,25 +68,27 @@ class FactoryUnitTests {
     @Test
     fun `setting raw location updated listener updates builder field`() {
         // given
-        val listener: LocationUpdatedListener = {}
+        val listener: LocationListener = anyLocationUpdatedListener()
 
         // when
         val builder =
             Subscriber.subscribers()
-                .rawLocationUpdatedListener(listener) as SubscriberBuilder
+                .rawLocations(listener) as SubscriberBuilder
 
         // then
-        Assert.assertEquals(listener, builder.rawLocationUpdatedListener)
+        // TODO assert that the handler represents the listener
+        // Assert.assertEquals(listener, builder.rawLocationUpdatedListener)
+        Assert.assertNotNull(builder.rawLocationHandler)
     }
 
     @Test
     fun `setting raw location updated listener returns a new copy of builder`() {
         // given
-        val listener: LocationUpdatedListener = {}
+        val listener: LocationListener = anyLocationUpdatedListener()
         val originalBuilder = Subscriber.subscribers()
 
         // when
-        val newBuilder = originalBuilder.rawLocationUpdatedListener(listener)
+        val newBuilder = originalBuilder.rawLocations(listener)
 
         // then
         Assert.assertNotEquals(newBuilder, originalBuilder)
@@ -92,25 +97,27 @@ class FactoryUnitTests {
     @Test
     fun `setting enhanced location updated listener updates builder field`() {
         // given
-        val listener: LocationUpdatedListener = {}
+        val listener: LocationListener = anyLocationUpdatedListener()
 
         // when
         val builder =
             Subscriber.subscribers()
-                .enhancedLocationUpdatedListener(listener) as SubscriberBuilder
+                .enhancedLocations(listener) as SubscriberBuilder
 
         // then
-        Assert.assertEquals(listener, builder.enhancedLocationUpdatedListener)
+        // TODO assert that the handler represents the listener
+        // Assert.assertEquals(listener, builder.enhancedLocationUpdatedListener)
+        Assert.assertNotNull(builder.enhancedLocationHandler)
     }
 
     @Test
     fun `setting enhanced location updated listener returns a new copy of builder`() {
         // given
-        val listener: LocationUpdatedListener = {}
+        val listener: LocationListener = anyLocationUpdatedListener()
         val originalBuilder = Subscriber.subscribers()
 
         // when
-        val newBuilder = originalBuilder.enhancedLocationUpdatedListener(listener)
+        val newBuilder = originalBuilder.enhancedLocations(listener)
 
         // then
         Assert.assertNotEquals(newBuilder, originalBuilder)
@@ -169,24 +176,26 @@ class FactoryUnitTests {
     @Test
     fun `setting asset status listener updates builder field`() {
         // given
-        val listener: StatusListener = {}
+        val listener: AssetStatusListener = anyAssetStatusListener()
 
         // when
         val builder =
-            Subscriber.subscribers().assetStatusListener(listener) as SubscriberBuilder
+            Subscriber.subscribers().assetStatus(listener) as SubscriberBuilder
 
         // then
-        Assert.assertEquals(listener, builder.assetStatusListener)
+        // TODO assert that the handler represents the listener
+        // Assert.assertEquals(listener, builder.assetStatusListener)
+        Assert.assertNotNull(builder.assetStatusHandler)
     }
 
     @Test
     fun `setting asset status listener returns a new copy of builder`() {
         // given
-        val listener: StatusListener = {}
+        val listener: AssetStatusListener = anyAssetStatusListener()
         val originalBuilder = Subscriber.subscribers()
 
         // when
-        val newBuilder = originalBuilder.assetStatusListener(listener)
+        val newBuilder = originalBuilder.assetStatus(listener)
 
         // then
         Assert.assertNotEquals(newBuilder, originalBuilder)
@@ -202,8 +211,8 @@ class FactoryUnitTests {
         val updatedBuilder = builder
             .connection(ConnectionConfiguration("", ""))
             .log(LogConfiguration(true))
-            .rawLocationUpdatedListener { }
-            .enhancedLocationUpdatedListener { }
+            .rawLocations(anyLocationUpdatedListener())
+            .enhancedLocations(anyLocationUpdatedListener())
             .resolution(Resolution(Accuracy.BALANCED, 333, 666.6))
             .trackingId("")
 
@@ -220,8 +229,8 @@ class FactoryUnitTests {
     private fun assertAllBuilderFieldsAreNull(builder: SubscriberBuilder) {
         Assert.assertNull(builder.connectionConfiguration)
         Assert.assertNull(builder.logConfiguration)
-        Assert.assertNull(builder.rawLocationUpdatedListener)
-        Assert.assertNull(builder.enhancedLocationUpdatedListener)
+        Assert.assertNull(builder.rawLocationHandler)
+        Assert.assertNull(builder.enhancedLocationHandler)
         Assert.assertNull(builder.resolution)
         Assert.assertNull(builder.trackingId)
     }
@@ -229,9 +238,17 @@ class FactoryUnitTests {
     private fun assertAllBuilderFieldsAreNotNull(builder: SubscriberBuilder) {
         Assert.assertNotNull(builder.connectionConfiguration)
         Assert.assertNotNull(builder.logConfiguration)
-        Assert.assertNotNull(builder.rawLocationUpdatedListener)
-        Assert.assertNotNull(builder.enhancedLocationUpdatedListener)
+        Assert.assertNotNull(builder.rawLocationHandler)
+        Assert.assertNotNull(builder.enhancedLocationHandler)
         Assert.assertNotNull(builder.resolution)
         Assert.assertNotNull(builder.trackingId)
+    }
+
+    private fun anyLocationUpdatedListener(): LocationListener = object : LocationListener {
+        override fun onLocationUpdated(location: Location) = Unit
+    }
+
+    private fun anyAssetStatusListener(): AssetStatusListener = object : AssetStatusListener {
+        override fun onStatusChanged(isOnline: Boolean) = Unit
     }
 }
