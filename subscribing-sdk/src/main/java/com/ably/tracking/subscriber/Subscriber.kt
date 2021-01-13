@@ -69,8 +69,6 @@ interface Subscriber {
     /**
      * Stops this subscriber from listening to published locations. Once a subscriber has been stopped, it cannot be
      * restarted.
-     *
-     * It is strongly suggested to call this method from the main thread.
      */
     fun stop()
 
@@ -181,8 +179,6 @@ interface Subscriber {
 
         /**
          * Creates a [Subscriber] and starts listening for location updates.
-         *
-         * It is strongly suggested to call this method from the main thread.
          *
          * @return A new subscriber instance.
          * @throws com.ably.tracking.BuilderConfigurationIncompleteException If all required params aren't set

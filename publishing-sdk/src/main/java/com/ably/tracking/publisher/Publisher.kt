@@ -105,8 +105,6 @@ interface Publisher {
 
     /**
      * Stops this publisher from publishing locations. Once a publisher has been stopped, it cannot be restarted.
-     *
-     * It is strongly suggested to call this method from the main thread.
      */
     fun stop()
 
@@ -196,7 +194,6 @@ interface Publisher {
          * tracking is required from the outset then the [track][Publisher.track] method must be subsequently called.
          *
          * In order to detect device's location ACCESS_COARSE_LOCATION or ACCESS_FINE_LOCATION permission must be granted.
-         * It is strongly suggested to call this method from the main thread.
          *
          * @return A new publisher instance.
          * @throws com.ably.tracking.BuilderConfigurationIncompleteException If all required params aren't set
