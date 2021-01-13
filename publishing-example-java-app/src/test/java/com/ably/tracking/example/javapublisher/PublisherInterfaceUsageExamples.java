@@ -91,13 +91,7 @@ public class PublisherInterfaceUsageExamples {
             }
         );
         Trackable activeTrackable = publisher.getActive();
-        publisher.changeRoutingProfile(RoutingProfile.CYCLING, result -> {
-            if (result.isSuccess()) {
-                Timber.d("Success");
-            } else {
-                Timber.e("Failed with error information: %s", result.getFailure().getErrorInformation());
-            }
-        });
+        publisher.setRoutingProfile(RoutingProfile.CYCLING);
         RoutingProfile routingProfile = publisher.getRoutingProfile();
         publisher.stop();
     }

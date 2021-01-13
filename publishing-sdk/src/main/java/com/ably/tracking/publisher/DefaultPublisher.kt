@@ -69,7 +69,7 @@ constructor(
     private val locationHandler: LocationHandler,
     context: Context,
     resolutionPolicyFactory: ResolutionPolicy.Factory,
-    initialRoutingProfile: RoutingProfile
+    private var _routingProfile: RoutingProfile
 ) :
     Publisher {
     private val gson: Gson = Gson()
@@ -426,6 +426,12 @@ constructor(
 
     override var active: Trackable? = null
 
+    override var routingProfile: RoutingProfile
+        get() = _routingProfile
+        set(value) {
+            enqueue(ChangeRoutingProfileEvent(value))
+        }
+
     private fun performPresenceMessage(event: PresenceMessageEvent) {
         when (event.presenceMessage.action) {
             PresenceMessage.Action.present, PresenceMessage.Action.enter -> {
@@ -494,20 +500,9 @@ constructor(
         }
     }
 
-    override var routingProfile: RoutingProfile = initialRoutingProfile
-
-    override fun changeRoutingProfile(routingProfile: RoutingProfile, handler: ResultHandler<Unit>) {
-        enqueue(ChangeRoutingProfileEvent(routingProfile, handler))
-    }
-
-    override fun changeRoutingProfile(routingProfile: RoutingProfile, listener: ResultListener<Void?>) {
-        changeRoutingProfile(routingProfile) { listener.onResult(it.toJava()) }
-    }
-
     private fun performChangeRoutingProfile(event: ChangeRoutingProfileEvent) {
         routingProfile = event.routingProfile
         currentDestination?.let { setDestination(it) }
-        callback(event.handler, SuccessResult(Unit))
     }
 
     override fun stop() {

@@ -101,21 +101,7 @@ interface Publisher {
     /**
      * The active means of transport for this publisher.
      */
-    val routingProfile: RoutingProfile
-
-    /**
-     * Changes the current routing profile.
-     *
-     * @param routingProfile The routing profile to be used from now on.
-     * @param handler Called when the routing profile is changed or an error occurs
-     */
-    @JvmSynthetic
-    fun changeRoutingProfile(routingProfile: RoutingProfile, handler: ResultHandler<Unit>)
-
-    /**
-     * This method overload is provided for the convenience of those calling from Java.
-     */
-    fun changeRoutingProfile(routingProfile: RoutingProfile, listener: ResultListener<Void?>)
+    var routingProfile: RoutingProfile
 
     /**
      * Stops this publisher from publishing locations. Once a publisher has been stopped, it cannot be restarted.
