@@ -518,11 +518,11 @@ constructor(
                 }
                 clear()
             }
-            mapboxReplayer?.finish()
-            debugConfiguration?.locationHistoryHandler?.invoke(mapboxNavigation.retrieveHistory())
             mapboxNavigation.apply {
-                toggleHistory(false)
-                toggleHistory(true)
+                stopTripSession()
+                mapboxReplayer?.finish()
+                debugConfiguration?.locationHistoryHandler?.invoke(retrieveHistory())
+                onDestroy()
             }
         }
     }
