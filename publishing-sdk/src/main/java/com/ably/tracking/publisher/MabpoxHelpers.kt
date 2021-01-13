@@ -1,6 +1,7 @@
 package com.ably.tracking.publisher
 
 import android.location.Location
+import com.mapbox.api.directions.v5.DirectionsCriteria
 import com.mapbox.geojson.Point
 
 /**
@@ -16,3 +17,10 @@ internal fun getRouteCoordinates(
         Point.fromLngLat(startingLocation.longitude, startingLocation.latitude),
         Point.fromLngLat(destination.longitude, destination.latitude)
     )
+
+internal fun RoutingProfile.toMapboxProfileName() = when (this) {
+    RoutingProfile.DRIVING -> DirectionsCriteria.PROFILE_DRIVING
+    RoutingProfile.CYCLING -> DirectionsCriteria.PROFILE_CYCLING
+    RoutingProfile.WALKING -> DirectionsCriteria.PROFILE_WALKING
+    RoutingProfile.DRIVING_TRAFFIC -> DirectionsCriteria.PROFILE_DRIVING_TRAFFIC
+}

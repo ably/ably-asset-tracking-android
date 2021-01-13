@@ -554,7 +554,7 @@ constructor(
                         .applyDefaultParams()
                         .accessToken(mapConfiguration.apiKey)
                         .coordinates(getRouteCoordinates(currentLocation, destination))
-                        .profile(routingProfile.profile)
+                        .profile(routingProfile.toMapboxProfileName())
                         .build(),
                     object : RoutesRequestCallback {
                         override fun onRoutesReady(routes: List<DirectionsRoute>) {

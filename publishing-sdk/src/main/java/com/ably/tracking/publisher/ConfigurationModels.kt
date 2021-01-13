@@ -4,7 +4,6 @@ import com.ably.tracking.ConnectionStateChangeHandler
 import com.ably.tracking.Handler
 import com.ably.tracking.LocationHistoryHandler
 import com.ably.tracking.Resolution
-import com.mapbox.api.directions.v5.DirectionsCriteria
 
 data class MapConfiguration(val apiKey: String)
 
@@ -344,26 +343,26 @@ data class DefaultResolutionConstraints(
 /**
  * Represents the means of transport that's being used.
  */
-enum class RoutingProfile(val profile: String) {
+enum class RoutingProfile {
     /**
      * For car and motorcycle routing. This profile prefers high-speed roads like highways.
      */
-    DRIVING(DirectionsCriteria.PROFILE_DRIVING),
+    DRIVING,
 
     /**
      * For bicycle routing. This profile prefers routes that are safe for cyclist, avoiding highways and preferring streets with bike lanes.
      */
-    CYCLING(DirectionsCriteria.PROFILE_CYCLING),
+    CYCLING,
 
     /**
      * For pedestrian and hiking routing. This profile prefers sidewalks and trails.
      */
-    WALKING(DirectionsCriteria.PROFILE_WALKING),
+    WALKING,
 
     /**
      * For car and motorcycle routing. This profile factors in current and historic traffic conditions to avoid slowdowns.
      */
-    DRIVING_TRAFFIC(DirectionsCriteria.PROFILE_DRIVING_TRAFFIC),
+    DRIVING_TRAFFIC,
 }
 
 // TODO - probably should be removed in the final version
