@@ -5,7 +5,6 @@ import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.content.Context
 import android.location.Location
 import androidx.annotation.RequiresPermission
-import com.ably.tracking.CallbackHandler
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.LocationHandler
 import com.ably.tracking.LocationListener
@@ -108,9 +107,15 @@ interface Publisher {
      * Changes the current routing profile.
      *
      * @param routingProfile The routing profile to be used from now on.
-     * @param handler The function to be called when change is made.
+     * @param handler Called when the routing profile is changed or an error occurs
      */
-    fun changeRoutingProfile(routingProfile: RoutingProfile, handler: CallbackHandler)
+    @JvmSynthetic
+    fun changeRoutingProfile(routingProfile: RoutingProfile, handler: ResultHandler<Unit>)
+
+    /**
+     * This method overload is provided for the convenience of those calling from Java.
+     */
+    fun changeRoutingProfile(routingProfile: RoutingProfile, listener: ResultListener<Void?>)
 
     /**
      * Stops this publisher from publishing locations. Once a publisher has been stopped, it cannot be restarted.

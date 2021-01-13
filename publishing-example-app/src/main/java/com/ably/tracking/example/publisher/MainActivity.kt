@@ -28,9 +28,6 @@ import com.ably.tracking.publisher.MapConfiguration
 import com.ably.tracking.publisher.Publisher
 import com.ably.tracking.publisher.RoutingProfile
 import com.ably.tracking.publisher.Trackable
-import io.ably.lib.realtime.ConnectionState
-import io.ably.lib.realtime.ConnectionStateListener
-import com.ably.tracking.publisher.TransportationMode
 import kotlinx.android.synthetic.main.activity_main.*
 import pub.devrel.easypermissions.AfterPermissionGranted
 import pub.devrel.easypermissions.EasyPermissions

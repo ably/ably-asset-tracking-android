@@ -16,8 +16,8 @@ import com.ably.tracking.publisher.LocationSourceRaw;
 import com.ably.tracking.publisher.MapConfiguration;
 import com.ably.tracking.publisher.Publisher;
 import com.ably.tracking.publisher.ResolutionPolicy;
+import com.ably.tracking.publisher.RoutingProfile;
 import com.ably.tracking.publisher.Trackable;
-import com.ably.tracking.publisher.TransportationMode;
 
 import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
@@ -91,9 +91,14 @@ public class PublisherInterfaceUsageExamples {
             }
         );
         Trackable activeTrackable = publisher.getActive();
-        TransportationMode transportationMode = new TransportationMode("TBC");
-        publisher.setTransportationMode(transportationMode);
-        transportationMode = publisher.getTransportationMode();
+        publisher.changeRoutingProfile(RoutingProfile.CYCLING, result -> {
+            if (result.isSuccess()) {
+                Timber.d("Success");
+            } else {
+                Timber.e("Failed with error information: %s", result.getFailure().getErrorInformation());
+            }
+        });
+        RoutingProfile routingProfile = publisher.getRoutingProfile();
         publisher.stop();
     }
 

@@ -6,7 +6,6 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.location.Location
 import androidx.annotation.RequiresPermission
-import com.ably.tracking.CallbackHandler
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.ErrorInformation
 import com.ably.tracking.FailureResult
@@ -497,14 +496,18 @@ constructor(
 
     override var routingProfile: RoutingProfile = initialRoutingProfile
 
-    override fun changeRoutingProfile(routingProfile: RoutingProfile, handler: CallbackHandler) {
-        enqueue(ChangeRoutingProfileEvent(routingProfile, { handler.onSucces() }, { handler.onError(it) }))
+    override fun changeRoutingProfile(routingProfile: RoutingProfile, handler: ResultHandler<Unit>) {
+        enqueue(ChangeRoutingProfileEvent(routingProfile, handler))
+    }
+
+    override fun changeRoutingProfile(routingProfile: RoutingProfile, listener: ResultListener<Void?>) {
+        changeRoutingProfile(routingProfile) { listener.onResult(it.toJava()) }
     }
 
     private fun performChangeRoutingProfile(event: ChangeRoutingProfileEvent) {
         routingProfile = event.routingProfile
-        currentDestination?.let { enqueue(SetDestinationEvent(it)) }
-        enqueue(SuccessEvent(event.onSuccess))
+        currentDestination?.let { setDestination(it) }
+        callback(event.handler, SuccessResult(Unit))
     }
 
     override fun stop() {
@@ -545,7 +548,7 @@ constructor(
             if (currentLocation != null) {
                 destinationToSet = null
                 removeCurrentDestination()
-                currentDestination = event.destination
+                currentDestination = destination
                 mapboxNavigation.requestRoutes(
                     RouteOptions.builder()
                         .applyDefaultParams()

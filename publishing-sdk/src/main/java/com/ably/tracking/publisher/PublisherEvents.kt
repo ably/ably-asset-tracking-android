@@ -67,6 +67,5 @@ internal class ChangeLocationEngineResolutionEvent : Event()
 
 internal data class ChangeRoutingProfileEvent(
     val routingProfile: RoutingProfile,
-    val onSuccess: () -> Unit,
-    val onError: (Exception) -> Unit
-) : PublisherEvent()
+    val handler: ResultHandler<Unit>
+) : Event()
