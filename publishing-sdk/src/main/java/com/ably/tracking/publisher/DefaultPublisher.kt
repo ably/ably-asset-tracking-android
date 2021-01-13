@@ -554,7 +554,7 @@ constructor(
                         override fun onRoutesRequestCanceled(routeOptions: RouteOptions) = Unit
 
                         override fun onRoutesRequestFailure(throwable: Throwable, routeOptions: RouteOptions) {
-                            // TODO what does this mean for us?
+                            // We won't know the ETA for the active trackable and therefore we won't be able to check the temporal threshold.
                             Timber.e(throwable, "Failed call to requestRoutes.")
                         }
                     }
