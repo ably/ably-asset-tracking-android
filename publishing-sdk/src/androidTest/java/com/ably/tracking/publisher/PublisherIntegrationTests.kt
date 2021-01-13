@@ -62,7 +62,7 @@ class PublisherIntegrationTests {
             .map(MapConfiguration(MAPBOX_ACCESS_TOKEN))
             .locations({ })
             .resolutionPolicy(DefaultResolutionPolicyFactory(resolution, context))
-            .mode(TransportationMode("TBC"))
+            .profile(RoutingProfile.CYCLING)
             .debug(DebugConfiguration(locationSource = LocationSourceRaw(locationData, onLocationDataEnded)))
             .start()
 
