@@ -70,7 +70,7 @@ data class ErrorInformation(
      * Creates an ErrorInformation instance representing an error generated internally from within the Ably Asset
      * Tracking SDK.
      */
-    constructor(message: String) : this(10001, 0, message, null, null)
+    constructor(message: String) : this(100000, 0, message, null, null)
 }
 
 /**
