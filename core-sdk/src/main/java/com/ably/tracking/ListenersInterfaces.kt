@@ -118,6 +118,16 @@ sealed class Result<T> {
      * `true` if the operation was successful, meaning that this instance is of type [SuccessResult].
      */
     val isSuccess: Boolean get() = this is SuccessResult<*>
+
+    /**
+     * Convenience access to this instance as a [SuccessResult], if it's of that sub-type.
+     */
+    val success: SuccessResult<T>? = this as? SuccessResult<T>
+
+    /**
+     * Convenience access to this instance as a [FailureResult], if it's of that sub-type.
+     */
+    val failure: FailureResult<T>? = this as? FailureResult<T>
 }
 
 /**

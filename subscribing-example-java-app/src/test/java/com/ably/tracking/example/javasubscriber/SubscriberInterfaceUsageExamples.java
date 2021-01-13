@@ -52,7 +52,7 @@ public class SubscriberInterfaceUsageExamples {
                 if (result.isSuccess()) {
                     Timber.d("Success");
                 } else {
-                    // Timber.e(result.exception());
+                    Timber.e("Failed with error information: %s", result.getFailure().getErrorInformation());
                 }
             }
         );
