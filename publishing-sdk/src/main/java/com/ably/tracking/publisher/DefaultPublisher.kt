@@ -292,13 +292,24 @@ constructor(
             return
         }
 
-        active = event.trackable
-        hooks.trackables?.onActiveTrackableChanged(event.trackable)
-        event.trackable.destination?.let {
-            setDestination(it)
+        createChannelForTrackableIfNotExisits(event.trackable) {
+            if (it.isSuccess) {
+                enqueue(SetActiveTrackableEvent(event.trackable, event.handler))
+            } else {
+                callback(event.handler, it)
+            }
         }
+    }
 
-        createChannelForTrackableIfNotExisits(event.trackable, event.handler)
+    private fun performSetActiveTrackableEvent(event: SetActiveTrackableEvent) {
+        if (active != event.trackable) {
+            active = event.trackable
+            hooks.trackables?.onActiveTrackableChanged(event.trackable)
+            event.trackable.destination?.let {
+                setDestination(it)
+            }
+        }
+        callback(event.handler, SuccessResult(Unit))
     }
 
     override fun add(trackable: Trackable, handler: ResultHandler<Unit>) {
@@ -612,6 +623,7 @@ constructor(
                     is SetDestinationSuccessEvent -> performSetDestinationSuccess(event)
                     is PresenceMessageEvent -> performPresenceMessage(event)
                     is ChangeLocationEngineResolutionEvent -> performChangeLocationEngineResolution()
+                    is SetActiveTrackableEvent -> performSetActiveTrackableEvent(event)
                 }
             }
         }
