@@ -5,20 +5,31 @@ import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.annotation.SuppressLint
 import android.content.Context
 import android.location.Location
-import android.os.Handler
-import android.os.Looper
 import androidx.annotation.RequiresPermission
 import com.ably.tracking.CallbackHandler
 import com.ably.tracking.ConnectionConfiguration
+import com.ably.tracking.ErrorInformation
+import com.ably.tracking.FailureResult
+import com.ably.tracking.Handler
+import com.ably.tracking.LocationHandler
 import com.ably.tracking.Resolution
+import com.ably.tracking.ResultHandler
+import com.ably.tracking.ResultListener
+import com.ably.tracking.SuccessResult
 import com.ably.tracking.common.ClientTypes
 import com.ably.tracking.common.EventNames
 import com.ably.tracking.common.MILLISECONDS_PER_SECOND
 import com.ably.tracking.common.PresenceData
 import com.ably.tracking.common.getPresenceData
 import com.ably.tracking.common.toGeoJson
+import com.ably.tracking.common.toJava
 import com.ably.tracking.common.toJsonArray
 import com.ably.tracking.publisher.debug.AblySimulationLocationEngine
+import com.ably.tracking.publisher.locationengine.FusedAndroidLocationEngine
+import com.ably.tracking.publisher.locationengine.GoogleLocationEngine
+import com.ably.tracking.publisher.locationengine.LocationEngineUtils
+import com.ably.tracking.publisher.locationengine.ResolutionLocationEngine
+import com.ably.tracking.toTracking
 import com.google.gson.Gson
 import com.mapbox.api.directions.v5.models.DirectionsRoute
 import com.mapbox.api.directions.v5.models.RouteOptions
@@ -28,6 +39,8 @@ import com.mapbox.navigation.core.MapboxNavigation
 import com.mapbox.navigation.core.directions.session.RoutesRequestCallback
 import com.mapbox.navigation.core.replay.MapboxReplayer
 import com.mapbox.navigation.core.replay.ReplayLocationEngine
+import com.mapbox.navigation.core.replay.history.ReplayEventBase
+import com.mapbox.navigation.core.replay.history.ReplayEventsObserver
 import com.mapbox.navigation.core.replay.history.ReplayHistoryMapper
 import com.mapbox.navigation.core.trip.session.LocationObserver
 import io.ably.lib.realtime.AblyRealtime
@@ -54,7 +67,7 @@ constructor(
     private val connectionConfiguration: ConnectionConfiguration,
     private val mapConfiguration: MapConfiguration,
     private val debugConfiguration: DebugConfiguration?,
-    private val locationUpdatedListener: LocationUpdatedListener,
+    private val locationHandler: LocationHandler,
     context: Context,
     resolutionPolicyFactory: ResolutionPolicy.Factory,
     initialRoutingProfile: RoutingProfile
@@ -79,13 +92,14 @@ constructor(
     }
     private val presenceData = PresenceData(ClientTypes.PUBLISHER)
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
-    private val eventsChannel: SendChannel<PublisherEvent>
+    private val eventsChannel: SendChannel<Event>
     private val policy: ResolutionPolicy
     private val hooks = Hooks()
     private val methods = Methods()
     private val requests = mutableMapOf<Trackable, MutableMap<Subscriber, Resolution>>()
     private val subscribers = mutableMapOf<Trackable, MutableSet<Subscriber>>()
     private val resolutions = mutableMapOf<Trackable, Resolution>()
+    private var locationEngineResolution: Resolution
     private var isTracking: Boolean = false
     private var mapboxReplayer: MapboxReplayer? = null
     private var lastSentRaw: Location? = null
@@ -105,6 +119,7 @@ constructor(
             hooks,
             methods
         )
+        locationEngineResolution = policy.resolve(emptySet())
         ably = AblyRealtime(connectionConfiguration.apiKey)
 
         Timber.w("Started.")
@@ -113,6 +128,7 @@ constructor(
             context,
             mapConfiguration.apiKey
         )
+        mapboxBuilder.locationEngine(getBestLocationEngine(context))
         debugConfiguration?.locationSource?.let { locationSource ->
             when (locationSource) {
                 is LocationSourceAbly -> {
@@ -124,14 +140,25 @@ constructor(
             }
         }
 
-        debugConfiguration?.ablyStateChangeListener?.let { ablyStateChangeListener ->
-            ably.connection.on { state -> postToMainThread { ablyStateChangeListener(state) } }
+        debugConfiguration?.connectionStateChangeHandler?.let { handler ->
+            ably.connection.on { state ->
+                postToMainThread {
+                    handler(state.toTracking())
+                }
+            }
         }
 
         mapboxNavigation = MapboxNavigation(mapboxBuilder.build())
         mapboxNavigation.registerLocationObserver(locationObserver)
         startLocationUpdates()
     }
+
+    private fun getBestLocationEngine(context: Context): ResolutionLocationEngine =
+        if (LocationEngineUtils.hasGoogleLocationServices(context)) {
+            GoogleLocationEngine(context)
+        } else {
+            FusedAndroidLocationEngine(context)
+        }
 
     private fun useAblySimulationLocationEngine(
         mapboxBuilder: NavigationOptions.Builder,
@@ -152,8 +179,17 @@ constructor(
         mapboxReplayer = MapboxReplayer().apply {
             mapboxBuilder.locationEngine(ReplayLocationEngine(this))
             this.clearEvents()
-            this.pushEvents(ReplayHistoryMapper().mapToReplayEvents(locationSource.historyData))
+            val historyEvents = ReplayHistoryMapper().mapToReplayEvents(locationSource.historyData)
+            val lastHistoryEvent = historyEvents.last()
+            this.pushEvents(historyEvents)
             this.play()
+            this.registerObserver(object : ReplayEventsObserver {
+                override fun replayEvents(events: List<ReplayEventBase>) {
+                    if (events.last() == lastHistoryEvent) {
+                        locationSource.onDataEnded?.let { handler -> callback(handler, Unit) }
+                    }
+                }
+            })
         }
     }
 
@@ -169,8 +205,10 @@ constructor(
             }
         }
         lastSentRaw = event.location
-        destinationToSet?.let { setDestination(it) }
-        enqueue(SuccessEvent { locationUpdatedListener(event.location) })
+        destinationToSet?.let {
+            setDestination(it)
+        }
+        callback(locationHandler, event.location)
         checkThreshold(event.location)
     }
 
@@ -190,7 +228,7 @@ constructor(
             }
         }
         lastSentEnhanced = event.location
-        enqueue(SuccessEvent { locationUpdatedListener(event.location) })
+        callback(locationHandler, event.location)
         checkThreshold(event.location)
     }
 
@@ -212,6 +250,7 @@ constructor(
             if (thresholdChecker.isThresholdReached(
                     threshold,
                     currentLocation,
+                    System.currentTimeMillis(),
                     active?.destination,
                     estimatedArrivalTimeInMilliseconds
                 )
@@ -222,7 +261,7 @@ constructor(
     }
 
     private fun startLocationUpdates() {
-        enqueue(StartPublisherEvent())
+        enqueue(StartEvent())
     }
 
     @RequiresPermission(anyOf = [ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION])
@@ -239,58 +278,87 @@ constructor(
         }
     }
 
-    override fun track(trackable: Trackable, onSuccess: () -> Unit, onError: (Exception) -> Unit) {
-        enqueue(TrackTrackableEvent(trackable, onSuccess, onError))
+    override fun track(trackable: Trackable, handler: ResultHandler<Unit>) {
+        enqueue(TrackTrackableEvent(trackable, handler))
+    }
+
+    override fun track(trackable: Trackable, listener: ResultListener<Void?>) {
+        track(trackable) { listener.onResult(it.toJava()) }
     }
 
     private fun performTrackTrackable(event: TrackTrackableEvent) {
-        if (this.active != null) {
-            enqueue(
-                ErrorEvent(
-                    IllegalStateException("For this preview version of the SDK, this method may only be called once for any given instance of this class."),
-                    event.onError
-                )
+        if (active != null) {
+            callback(
+                event.handler,
+                ErrorInformation("For this preview version of the SDK, this method may only be called once for any given instance of this class.")
             )
+            return
         }
 
-        createChannelForTrackableIfNotExisits(
-            event.trackable,
-            { enqueue(TrackableReadyToTrackEvent(event.trackable, event.onSuccess)) },
-            event.onError
-        )
+        createChannelForTrackableIfNotExisits(event.trackable) {
+            if (it.isSuccess) {
+                enqueue(SetActiveTrackableEvent(event.trackable, event.handler))
+            } else {
+                callback(event.handler, it)
+            }
+        }
     }
 
-    private fun performTrackableReadyToTrack(event: TrackableReadyToTrackEvent) {
+    private fun performSetActiveTrackableEvent(event: SetActiveTrackableEvent) {
         if (active != event.trackable) {
             active = event.trackable
             hooks.trackables?.onActiveTrackableChanged(event.trackable)
-            event.trackable.destination?.let { setDestination(it) }
+            event.trackable.destination?.let {
+                setDestination(it)
+            }
         }
-        enqueue(SuccessEvent(event.onSuccess))
+        callback(event.handler, SuccessResult(Unit))
     }
 
-    override fun add(trackable: Trackable, onSuccess: () -> Unit, onError: (Exception) -> Unit) {
-        enqueue(AddTrackableEvent(trackable, onSuccess, onError))
+    override fun add(trackable: Trackable, handler: ResultHandler<Unit>) {
+        enqueue(AddTrackableEvent(trackable, handler))
+    }
+
+    override fun add(trackable: Trackable, listener: ResultListener<Void?>) {
+        add(trackable) { listener.onResult(it.toJava()) }
     }
 
     private fun performAddTrackable(event: AddTrackableEvent) {
-        createChannelForTrackableIfNotExisits(event.trackable, event.onSuccess, event.onError)
+        createChannelForTrackableIfNotExisits(event.trackable, event.handler)
     }
 
     /**
      * Creates a [Channel] for the [Trackable], joins the channel's presence and enqueues [SuccessEvent].
      * If a [Channel] for the given [Trackable] exists then it just enqueues [SuccessEvent].
-     * If during channel creation and joining presence an error occurs then it enqueues [ErrorEvent] with the exception.
+     * If during channel creation and joining presence an error occurs then it enqueues [FailureEvent] with the exception.
      */
     private fun createChannelForTrackableIfNotExisits(
         trackable: Trackable,
-        onSuccess: () -> Unit,
-        onError: (Exception) -> Unit
+        handler: ResultHandler<Unit>
     ) {
         if (!channels.contains(trackable)) {
-            createChannelAndJoinPresence(trackable, onSuccess, onError)
+            ably.channels.get(trackable.id).apply {
+                try {
+                    presence.subscribe { enqueue(PresenceMessageEvent(trackable, it)) }
+                    presence.enterClient(
+                        connectionConfiguration.clientId,
+                        gson.toJson(presenceData),
+                        object : CompletionListener {
+                            override fun onSuccess() {
+                                enqueue(JoinPresenceSuccessEvent(trackable, this@apply, handler))
+                            }
+
+                            override fun onError(reason: ErrorInfo) {
+                                callback(handler, reason.toTracking())
+                            }
+                        }
+                    )
+                } catch (ablyException: AblyException) {
+                    callback(handler, ablyException.errorInfo.toTracking())
+                }
+            }
         } else {
-            enqueue(SuccessEvent(onSuccess))
+            callback(handler, SuccessResult(Unit))
         }
     }
 
@@ -298,15 +366,15 @@ constructor(
         channels[event.trackable] = event.channel
         resolveResolution(event.trackable)
         hooks.trackables?.onTrackableAdded(event.trackable)
-        enqueue(SuccessEvent(event.onSuccess))
+        callback(event.handler, SuccessResult(Unit))
     }
 
-    override fun remove(
-        trackable: Trackable,
-        onSuccess: (wasPresent: Boolean) -> Unit,
-        onError: (Exception) -> Unit
-    ) {
-        enqueue(RemoveTrackableEvent(trackable, onSuccess, onError))
+    override fun remove(trackable: Trackable, handler: ResultHandler<Boolean>) {
+        enqueue(RemoveTrackableEvent(trackable, handler))
+    }
+
+    override fun remove(trackable: Trackable, listener: ResultListener<Boolean>) {
+        remove(trackable) { listener.onResult(it) }
     }
 
     private fun performRemoveTrackable(event: RemoveTrackableEvent) {
@@ -314,15 +382,39 @@ constructor(
         if (removedChannel != null) {
             hooks.trackables?.onTrackableRemoved(event.trackable)
             removeAllSubscribers(event.trackable)
-            resolutions.remove(event.trackable)
+            resolutions.remove(event.trackable)?.let { enqueue(ChangeLocationEngineResolutionEvent()) }
             requests.remove(event.trackable)
-            leaveChannelPresence(
-                removedChannel,
-                { enqueue(ClearActiveTrackableEvent(event.trackable) { event.onSuccess(true) }) },
-                event.onError
-            )
+
+            // If this was the active Trackable then clear that state and remove destination.
+            if (active == event.trackable) {
+                removeCurrentDestination()
+                active = null
+                hooks.trackables?.onActiveTrackableChanged(null)
+            }
+
+            // Leave Ably channel.
+            removedChannel.presence.unsubscribe()
+            try {
+                removedChannel.presence.leaveClient(
+                    connectionConfiguration.clientId,
+                    gson.toJson(presenceData),
+                    object : CompletionListener {
+                        override fun onSuccess() {
+                            // notify with true to indicate that it was removed
+                            callback(event.handler, SuccessResult(true))
+                        }
+
+                        override fun onError(reason: ErrorInfo) {
+                            callback(event.handler, reason.toTracking())
+                        }
+                    }
+                )
+            } catch (ablyException: AblyException) {
+                callback(event.handler, ablyException.errorInfo.toTracking())
+            }
         } else {
-            enqueue(SuccessEvent { event.onSuccess(false) })
+            // notify with false to indicate that it was not removed
+            callback(event.handler, SuccessResult(false))
         }
     }
 
@@ -333,101 +425,7 @@ constructor(
         }
     }
 
-    private fun performClearActiveTrackable(event: ClearActiveTrackableEvent) {
-        if (active == event.trackable) {
-            removeCurrentDestination()
-            active = null
-            hooks.trackables?.onActiveTrackableChanged(null)
-        }
-        enqueue(SuccessEvent(event.onSuccess))
-    }
-
     override var active: Trackable? = null
-
-    /**
-     * Creates a [Channel] for the [Trackable] and joins the channel's presence.
-     * If successfully enters presence then it enqueues [JoinPresenceSuccessEvent] with the created [Channel].
-     * If an error occurs during that process then it enqueues [ErrorEvent] with the exception.
-     */
-    private fun createChannelAndJoinPresence(
-        trackable: Trackable,
-        onSuccess: () -> Unit,
-        onError: (Exception) -> Unit
-    ) {
-        ably.channels.get(trackable.id).apply {
-            try {
-                presence.subscribe { enqueue(PresenceMessageEvent(trackable, it)) }
-                presence.enterClient(
-                    connectionConfiguration.clientId,
-                    gson.toJson(presenceData),
-                    object : CompletionListener {
-                        override fun onSuccess() {
-                            enqueue(JoinPresenceSuccessEvent(trackable, this@apply, onSuccess))
-                        }
-
-                        override fun onError(reason: ErrorInfo?) {
-                            val errorMessage = "Unable to enter presence: ${reason?.message}"
-                            Timber.e(errorMessage)
-                            enqueue(ErrorEvent(Exception(errorMessage), onError))
-                        }
-                    }
-                )
-            } catch (ablyException: AblyException) {
-                Timber.e(ablyException)
-                enqueue(ErrorEvent(Exception(ablyException), onError))
-            }
-        }
-    }
-
-    /**
-     * Leaves the given [Channel]'s presence.
-     * If successfully leaves presence then it enqueues [SuccessEvent].
-     * If an error occurs during that process then it enqueues [ErrorEvent] with the exception.
-     */
-    private fun leaveChannelPresence(
-        channel: Channel,
-        onSuccess: () -> Unit,
-        onError: (Exception) -> Unit
-    ) {
-        leaveChannelPresenceOmittingQueue(
-            channel,
-            { enqueue(SuccessEvent(onSuccess)) },
-            { enqueue(ErrorEvent(it, onError)) }
-        )
-    }
-
-    /**
-     * Leaves the given [Channel]'s presence without enqueueing any events.
-     * If successfully leaves presence then it calls [onSuccess].
-     * If an error occurs during that process then it calls [onError] with the exception.
-     */
-    private fun leaveChannelPresenceOmittingQueue(
-        channel: Channel,
-        onSuccess: () -> Unit,
-        onError: (Exception) -> Unit
-    ) {
-        try {
-            channel.presence.unsubscribe()
-            channel.presence.leaveClient(
-                connectionConfiguration.clientId,
-                gson.toJson(presenceData),
-                object : CompletionListener {
-                    override fun onSuccess() {
-                        onSuccess()
-                    }
-
-                    override fun onError(reason: ErrorInfo?) {
-                        val errorMessage = "Unable to leave presence: ${reason?.message}"
-                        Timber.e(errorMessage)
-                        onError(Exception(errorMessage))
-                    }
-                }
-            )
-        } catch (ablyException: AblyException) {
-            Timber.e(ablyException)
-            onError(ablyException)
-        }
-    }
 
     private fun performPresenceMessage(event: PresenceMessageEvent) {
         when (event.presenceMessage.action) {
@@ -459,12 +457,7 @@ constructor(
             subscribers[trackable] = mutableSetOf()
         }
         subscribers[trackable]?.add(subscriber)
-        data.resolution?.let {
-            if (requests[trackable] == null) {
-                requests[trackable] = mutableMapOf()
-            }
-            requests[trackable]?.put(subscriber, it)
-        }
+        saveOrRemoveResolutionRequest(data.resolution, trackable, subscriber)
         hooks.subscribers?.onSubscriberAdded(subscriber)
         resolveResolution(trackable)
     }
@@ -473,14 +466,7 @@ constructor(
         subscribers[trackable]?.let { subscribers ->
             subscribers.find { it.id == id }?.let { subscriber ->
                 data.resolution.let { resolution ->
-                    if (resolution != null) {
-                        if (requests[trackable] == null) {
-                            requests[trackable] = mutableMapOf()
-                        }
-                        requests[trackable]?.put(subscriber, resolution)
-                    } else {
-                        requests[trackable]?.remove(subscriber)
-                    }
+                    saveOrRemoveResolutionRequest(resolution, trackable, subscriber)
                     resolveResolution(trackable)
                 }
             }
@@ -498,6 +484,17 @@ constructor(
         }
     }
 
+    private fun saveOrRemoveResolutionRequest(resolution: Resolution?, trackable: Trackable, subscriber: Subscriber) {
+        if (resolution != null) {
+            if (requests[trackable] == null) {
+                requests[trackable] = mutableMapOf()
+            }
+            requests[trackable]?.put(subscriber, resolution)
+        } else {
+            requests[trackable]?.remove(subscriber)
+        }
+    }
+
     override var routingProfile: RoutingProfile = initialRoutingProfile
 
     override fun changeRoutingProfile(routingProfile: RoutingProfile, handler: CallbackHandler) {
@@ -511,7 +508,7 @@ constructor(
     }
 
     override fun stop() {
-        enqueue(StopPublisherEvent())
+        enqueue(StopEvent())
     }
 
     private fun performStopPublisher() {
@@ -526,12 +523,12 @@ constructor(
             mapboxNavigation.unregisterLocationObserver(locationObserver)
             channels.apply {
                 values.forEach {
-                    leaveChannelPresenceOmittingQueue(it, {}, { error -> Timber.e(error) })
+                    // TODO leave channel presence
                 }
                 clear()
             }
             mapboxReplayer?.finish()
-            debugConfiguration?.locationHistoryReadyListener?.invoke(mapboxNavigation.retrieveHistory())
+            debugConfiguration?.locationHistoryHandler?.invoke(mapboxNavigation.retrieveHistory())
             mapboxNavigation.apply {
                 toggleHistory(false)
                 toggleHistory(true)
@@ -539,11 +536,11 @@ constructor(
         }
     }
 
+    /**
+     * This method must be called from the publishers event queue.
+     */
     private fun setDestination(destination: Destination) {
-        enqueue(SetDestinationEvent(destination))
-    }
-
-    private fun performSetDestination(event: SetDestinationEvent) {
+        // TODO is there a way to ensure we're executing in the right thread?
         lastSentRaw.let { currentLocation ->
             if (currentLocation != null) {
                 destinationToSet = null
@@ -553,7 +550,7 @@ constructor(
                     RouteOptions.builder()
                         .applyDefaultParams()
                         .accessToken(mapConfiguration.apiKey)
-                        .coordinates(getRouteCoordinates(currentLocation, event.destination))
+                        .coordinates(getRouteCoordinates(currentLocation, destination))
                         .profile(routingProfile.profile)
                         .build(),
                     object : RoutesRequestCallback {
@@ -568,12 +565,13 @@ constructor(
                         override fun onRoutesRequestCanceled(routeOptions: RouteOptions) = Unit
 
                         override fun onRoutesRequestFailure(throwable: Throwable, routeOptions: RouteOptions) {
-                            enqueue(ErrorEvent(Exception(throwable)) { Timber.e(it) })
+                            // We won't know the ETA for the active trackable and therefore we won't be able to check the temporal threshold.
+                            Timber.e(throwable, "Failed call to requestRoutes.")
                         }
                     }
                 )
             } else {
-                destinationToSet = event.destination
+                destinationToSet = destination
             }
         }
     }
@@ -594,57 +592,70 @@ constructor(
 
     private fun resolveResolution(trackable: Trackable) {
         val resolutionRequests: Set<Resolution> = requests[trackable]?.values?.toSet() ?: emptySet()
-        resolutions[trackable] = policy.resolve(
-            TrackableResolutionRequest(trackable, resolutionRequests)
-        )
+        policy.resolve(TrackableResolutionRequest(trackable, resolutionRequests)).let { resolution ->
+            resolutions[trackable] = resolution
+            enqueue(ChangeLocationEngineResolutionEvent())
+        }
+    }
+
+    private fun performChangeLocationEngineResolution() {
+        locationEngineResolution = policy.resolve(resolutions.values.toSet())
+        changeLocationEngineResolution(locationEngineResolution)
+    }
+
+    private fun changeLocationEngineResolution(resolution: Resolution) {
+        mapboxNavigation.navigationOptions.locationEngine.let {
+            if (it is ResolutionLocationEngine) {
+                it.changeResolution(resolution)
+            }
+        }
     }
 
     private fun postToMainThread(operation: () -> Unit) {
-        Handler(getLooperForMainThread()).post(operation)
+        android.os.Handler(getLooperForMainThread()).post(operation)
     }
 
-    private fun getLooperForMainThread() = Looper.getMainLooper()
+    private fun getLooperForMainThread() = android.os.Looper.getMainLooper()
 
     @OptIn(ObsoleteCoroutinesApi::class)
     @RequiresPermission(anyOf = [ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION])
     private fun createEventsChannel(scope: CoroutineScope) =
-        scope.actor<PublisherEvent> {
+        scope.actor<Event> {
             for (event in channel) {
                 when (event) {
                     is AddTrackableEvent -> performAddTrackable(event)
                     is TrackTrackableEvent -> performTrackTrackable(event)
                     is RemoveTrackableEvent -> performRemoveTrackable(event)
-                    is StopPublisherEvent -> performStopPublisher()
-                    is StartPublisherEvent -> performStartPublisher()
+                    is StopEvent -> performStopPublisher()
+                    is StartEvent -> performStartPublisher()
                     is JoinPresenceSuccessEvent -> performJoinPresenceSuccess(event)
-                    is TrackableReadyToTrackEvent -> performTrackableReadyToTrack(event)
-                    is SuccessEvent -> performEventSuccess(event)
-                    is ErrorEvent -> performEventError(event)
-                    is ClearActiveTrackableEvent -> performClearActiveTrackable(event)
                     is RawLocationChangedEvent -> performRawLocationChanged(event)
                     is EnhancedLocationChangedEvent -> performEnhancedLocationChanged(event)
-                    is SetDestinationEvent -> performSetDestination(event)
                     is RefreshResolutionPolicyEvent -> performRefreshResolutionPolicy()
                     is SetDestinationSuccessEvent -> performSetDestinationSuccess(event)
                     is PresenceMessageEvent -> performPresenceMessage(event)
+                    is ChangeLocationEngineResolutionEvent -> performChangeLocationEngineResolution()
+                    is SetActiveTrackableEvent -> performSetActiveTrackableEvent(event)
                     is ChangeRoutingProfileEvent -> performChangeRoutingProfile(event)
                 }
             }
         }
 
-    private fun performEventSuccess(event: SuccessEvent) {
-        callback { event.onSuccess() }
+    /**
+     * Send a failure event to the main thread, but only if the scope hasn't been cancelled.
+     */
+    private fun <T> callback(handler: ResultHandler<T>, errorInformation: ErrorInformation) {
+        callback(handler, FailureResult(errorInformation))
     }
 
-    private fun performEventError(event: ErrorEvent) {
-        callback { event.onError(event.exception) }
+    /**
+     * Send an event to the main thread, but only if the scope hasn't been cancelled.
+     */
+    private fun <T> callback(handler: Handler<T>, result: T) {
+        scope.launch(Dispatchers.Main) { handler(result) }
     }
 
-    private fun callback(action: () -> Unit) {
-        scope.launch(Dispatchers.Main) { action() }
-    }
-
-    private fun enqueue(event: PublisherEvent) {
+    private fun enqueue(event: Event) {
         scope.launch { eventsChannel.send(event) }
     }
 

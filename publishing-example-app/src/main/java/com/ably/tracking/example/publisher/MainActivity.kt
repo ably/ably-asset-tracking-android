@@ -13,7 +13,10 @@ import androidx.core.content.ContextCompat
 import androidx.core.widget.ImageViewCompat
 import com.ably.tracking.Accuracy
 import com.ably.tracking.ConnectionConfiguration
+import com.ably.tracking.ConnectionState
+import com.ably.tracking.FailureResult
 import com.ably.tracking.Resolution
+import com.ably.tracking.SuccessResult
 import com.ably.tracking.publisher.DebugConfiguration
 import com.ably.tracking.publisher.DefaultProximity
 import com.ably.tracking.publisher.DefaultResolutionConstraints
@@ -27,6 +30,7 @@ import com.ably.tracking.publisher.RoutingProfile
 import com.ably.tracking.publisher.Trackable
 import io.ably.lib.realtime.ConnectionState
 import io.ably.lib.realtime.ConnectionStateListener
+import com.ably.tracking.publisher.TransportationMode
 import kotlinx.android.synthetic.main.activity_main.*
 import pub.devrel.easypermissions.AfterPermissionGranted
 import pub.devrel.easypermissions.EasyPermissions
@@ -116,7 +120,7 @@ class MainActivity : AppCompatActivity() {
             .connection(ConnectionConfiguration(ABLY_API_KEY, CLIENT_ID))
             .map(MapConfiguration(MAPBOX_ACCESS_TOKEN))
             .debug(createDebugConfiguration(historyData))
-            .locationUpdatedListener { updateLocationInfo(it) }
+            .locations({ updateLocationInfo(it) })
             .resolutionPolicy(DefaultResolutionPolicyFactory(Resolution(Accuracy.MINIMUM, 1000L, 1.0), this))
             .androidContext(this)
             .profile(RoutingProfile.DRIVING)
@@ -138,10 +142,14 @@ class MainActivity : AppCompatActivity() {
                             lowBatteryMultiplier = 2.0f
                         )
                     ),
-                    onSuccess = {},
-                    onError = {
-                        showToast("Error when tracking asset")
-                        stopTracking()
+                    {
+                        when (it) {
+                            is SuccessResult -> Unit
+                            is FailureResult -> {
+                                showToast("Error when tracking asset")
+                                stopTracking()
+                            }
+                        }
                     }
                 )
             }
@@ -159,13 +167,13 @@ class MainActivity : AppCompatActivity() {
 
     private fun createDebugConfiguration(historyData: String? = null): DebugConfiguration {
         return DebugConfiguration(
-            ablyStateChangeListener = { updateAblyStateInfo(it) },
+            connectionStateChangeHandler = { updateAblyStateInfo(it.state) },
             locationSource = when (getLocationSourceType()) {
                 LocationSourceType.ABLY -> LocationSourceAbly(appPreferences.getSimulationChannel())
                 LocationSourceType.S3 -> LocationSourceRaw(historyData!!)
                 LocationSourceType.PHONE -> null
             },
-            locationHistoryReadyListener = { uploadLocationHistoryData(it) }
+            locationHistoryHandler = { uploadLocationHistoryData(it) }
         )
     }
 
@@ -200,8 +208,8 @@ class MainActivity : AppCompatActivity() {
         bearingValueTextView.text = ""
     }
 
-    private fun updateAblyStateInfo(state: ConnectionStateListener.ConnectionStateChange) {
-        val isAblyConnected = state.current == ConnectionState.connected
+    private fun updateAblyStateInfo(state: ConnectionState) {
+        val isAblyConnected = state == ConnectionState.CONNECTED
         changeAblyStatusInfo(isAblyConnected)
     }
 

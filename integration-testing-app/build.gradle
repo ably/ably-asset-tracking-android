@@ -1,0 +1,16 @@
+plugins {
+    id 'com.android.application'
+    id 'kotlin-android'
+    id 'org.jlleitschuh.gradle.ktlint'
+}
+
+android {
+    defaultConfig {
+        applicationId "com.ably.tracking.tests"
+    }
+}
+
+dependencies {
+    implementation project(":subscribing-sdk")
+    implementation project(":publishing-sdk")
+}

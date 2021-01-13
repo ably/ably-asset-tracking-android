@@ -1,10 +1,10 @@
 package com.ably.tracking.publisher
 
+import com.ably.tracking.ConnectionStateChangeHandler
+import com.ably.tracking.Handler
+import com.ably.tracking.LocationHistoryHandler
 import com.ably.tracking.Resolution
 import com.mapbox.api.directions.v5.DirectionsCriteria
-import io.ably.lib.realtime.ConnectionStateListener
-
-// TODO: make sure all this works from Java user perspective
 
 data class MapConfiguration(val apiKey: String)
 
@@ -298,13 +298,13 @@ data class DefaultResolutionSet(
      * @param resolution The resolution to be used to populate all fields.
      */
     constructor(resolution: Resolution) : this(resolution, resolution, resolution, resolution)
+}
 
-    fun getResolution(isNear: Boolean, hasSubscriber: Boolean): Resolution = when {
-        isNear && hasSubscriber -> nearWithSubscriber
-        isNear && !hasSubscriber -> nearWithoutSubscriber
-        !isNear && hasSubscriber -> farWithSubscriber
-        else -> farWithoutSubscriber
-    }
+internal fun DefaultResolutionSet.getResolution(isNear: Boolean, hasSubscriber: Boolean): Resolution = when {
+    isNear && hasSubscriber -> nearWithSubscriber
+    isNear && !hasSubscriber -> nearWithoutSubscriber
+    !isNear && hasSubscriber -> farWithSubscriber
+    else -> farWithoutSubscriber
 }
 
 /**
@@ -369,11 +369,11 @@ enum class RoutingProfile(val profile: String) {
 // TODO - probably should be removed in the final version
 // https://github.com/ably/ably-asset-tracking-android/issues/19
 data class DebugConfiguration(
-    val ablyStateChangeListener: ((ConnectionStateListener.ConnectionStateChange) -> Unit)? = null,
+    val connectionStateChangeHandler: ConnectionStateChangeHandler? = null,
     val locationSource: LocationSource? = null,
-    val locationHistoryReadyListener: ((String) -> Unit)? = null
+    val locationHistoryHandler: LocationHistoryHandler? = null
 )
 
 sealed class LocationSource
 data class LocationSourceAbly(val simulationChannelName: String) : LocationSource()
-data class LocationSourceRaw(val historyData: String) : LocationSource()
+data class LocationSourceRaw(val historyData: String, val onDataEnded: Handler<Unit>? = null) : LocationSource()

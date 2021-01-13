@@ -128,24 +128,46 @@ subprojects {
                       'UnusedIds'
             }
 
-            def applyAppBuildConfigFields = { buildType ->
+            def applySecretBuildConfigFields = { buildType ->
+                // Configuration that must not be applied to SDK project main source set builds.
+                // This configuration is, however, required for Android's connectedCheck task (which uses the androidTest source set) - which is why
+                // we use it for that scenario using the android.testBuildType configuration.
                 // TODO drop buildType param by using closure delegate, which might be cleaner, or find alternative
+                // https://developer.android.com/reference/tools/gradle-api/4.1/com/android/build/api/dsl/VariantDimension#buildConfigField(kotlin.String,%20kotlin.String,%20kotlin.String)
                 buildType.buildConfigField 'String', 'ABLY_API_KEY', "\"${property('ABLY_API_KEY')}\""
                 buildType.buildConfigField 'String', 'MAPBOX_ACCESS_TOKEN', "\"${property('MAPBOX_ACCESS_TOKEN')}\""
             }
 
+            // Override the default "debug" BuildType used by the `connectedCheck` Android task.
+            testBuildType "secret" // see android.buildTypes.secret
+
+            // https://developer.android.com/studio/build/build-variants#build-types
             buildTypes {
-                release {
-                    minifyEnabled false
-                    proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+                secret {
+                    initWith debug
+
+                    // We need secrets to be injected into the generated BuildConfig class when integration testing,
+                    // across all projects, including SDKs.
+                    // This is being done under this new BuildType in order to make it impossible for the secrets to
+                    // be accidentally injected into debug or release builds when they don't generate example apps.
+                    applySecretBuildConfigFields delegate
+                }
+
+                debug {
+                    // Secrets must not be injected into SDK builds - they are only for example apps or SDK
+                    // integration tests (via Android's `connectedCheck` task), in which case they are injected
+                    // by using the `secret` BuildType and used by Android tests using `testBuildType`.
                     if (evaluatedSubProjectIsAnApp) {
-                        applyAppBuildConfigFields delegate
+                        applySecretBuildConfigFields delegate
                     }
                 }
-                debug {
+
+                release {
                     if (evaluatedSubProjectIsAnApp) {
-                        applyAppBuildConfigFields delegate
+                        applySecretBuildConfigFields delegate
                     }
+                    minifyEnabled false
+                    proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
                 }
             }
         }
@@ -173,11 +195,18 @@ subprojects {
                 implementation 'androidx.core:core-ktx:1.3.2'
 
                 testImplementation 'io.mockk:mockk:1.10.2'
+            } else {
+                testImplementation 'org.mockito:mockito-core:3.6.28'
             }
 
             if (evaluatedSubProjectIsALibrary) {
                 implementation 'io.ably:ably-android:1.2.2'
                 implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.2'
+
+                // Projects that use our SDK projects will crash when dispatching to the Main thread on
+                // the Android runtime unless we include this dependency. See:
+                // https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines/-dispatchers/-main.html
+                implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.4.2'
             }
 
             if (evaluatedSubProjectIsAnApp) {

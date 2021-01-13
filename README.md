@@ -55,10 +55,14 @@ val publisher = Publisher.publishers() // get the Publisher builder in default s
 publisher.track(
   Trackable(
     trackingId, // provide a tracking identifier for the asset
-    constraints = exampleConstraints // provide a set of Resolution constraints
+    constraints = exampleConstraints // provide a set of Resolution Constraints
   ),
-  onSuccess = {},
-  onError = {}
+  {
+      when (it) {
+          is SuccessResult -> { }
+          is FailureResult -> { }
+      }
+  }
 )
 ```
 
@@ -69,8 +73,8 @@ Here is an example of how Asset Subscribing SDK can be used:
 ```kotlin
 val assetSubscriber = AssetSubscriber.subscribers() // Get an AssetSubscriber
   .ablyConfig(AblyConfiguration(ABLY_API_KEY, CLIENT_ID)) // provide Ably configuration with credentials
-  .rawLocationUpdatedListener {} // provide a function to be called when raw location updates are received
-  .enhancedLocationUpdatedListener {} // provide a function to be called when enhanced location updates are received
+  .rawLocationUpdatedListener { } // provide a function to be called when raw location updates are received
+  .enhancedLocationUpdatedListener { } // provide a function to be called when enhanced location updates are received
   .resolution( // request a specific resolution to be considered by the publisher
     Resolution(Accuracy.MAXIMUM, desiredInterval = 1000L, minimumDisplacement = 1.0)
   )
@@ -80,8 +84,12 @@ val assetSubscriber = AssetSubscriber.subscribers() // Get an AssetSubscriber
 
 assetSubscriber.sendChangeRequest( // request a different resolution when needed
     Resolution(Accuracy.MAXIMUM, desiredInterval = 100L, minimumDisplacement = 2.0),
-    onSuccess = {},
-    onError = {}
+    {
+        when (it) {
+            is SuccessResult -> { }
+            is FailureResult -> { }
+        }
+    }
 )
 ```
 
@@ -174,3 +182,17 @@ These values are then used in the default `ResolutionPolicy`, created by the `De
 For the greatest flexibility it is possible to provide a custom implementation of the `ResolutionPolicy` interface. In this implementation the application developer can define which logic will be applied to their own parameters, including how resolution is to be determined based on the those parameters and requests from subscribers.
 
 Please see `DefaultResolutionPolicy` [implementation](publishing-sdk/src/main/java/com/ably/tracking/publisher/DefaultResolutionPolicyFactory.kt) for an example.
+
+### Debugging Gradle Task Dependencies
+
+There isn't an out-of-the-box command provided by Gradle to provide a readable breakdown of which tasks in the build are configured to rely upon which other tasks. The `--dry-run` switch helps a bit, but it provides a flat view which doesn't provide the full picture.
+
+We could have taken the option to include some Groovy code or a plugin in the root project configuration to provide a full task tree view, however it's strictly not needed to be part of the sources within this repository to build the projects as it's only a tool to help with debugging Gradle's configuration.
+
+If such a view is required then we suggest installing [this Gradle-global, user-level init script](https://github.com/dorongold/gradle-task-tree#init-script-snippet), within `~/.gradle/init.gradle` as [described in the Gradle documentation](https://docs.gradle.org/current/userguide/init_scripts.html#sec:using_an_init_script). Once the init script is in place then, for example, the Gradle `check` task can be examined using:
+
+    ./gradlew check taskTree --no-repeat
+
+The `taskTree` task requires a preceding task name and can be run per project, a fact that's visible with:
+
+    ./gradlew tasks --all | grep taskTree

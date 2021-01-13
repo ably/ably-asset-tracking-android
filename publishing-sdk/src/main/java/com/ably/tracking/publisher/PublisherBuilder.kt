@@ -6,6 +6,8 @@ import android.content.Context
 import androidx.annotation.RequiresPermission
 import com.ably.tracking.BuilderConfigurationIncompleteException
 import com.ably.tracking.ConnectionConfiguration
+import com.ably.tracking.LocationHandler
+import com.ably.tracking.LocationListener
 import com.ably.tracking.LogConfiguration
 
 internal data class PublisherBuilder(
@@ -13,7 +15,7 @@ internal data class PublisherBuilder(
     val mapConfiguration: MapConfiguration? = null,
     val logConfiguration: LogConfiguration? = null,
     val debugConfiguration: DebugConfiguration? = null,
-    val locationUpdatedListener: LocationUpdatedListener? = null,
+    val locationHandler: LocationHandler? = null,
     val androidContext: Context? = null,
     val routingProfile: RoutingProfile = RoutingProfile.DRIVING,
     val resolutionPolicyFactory: ResolutionPolicy.Factory? = null
@@ -28,11 +30,14 @@ internal data class PublisherBuilder(
     override fun log(configuration: LogConfiguration): Publisher.Builder =
         this.copy(logConfiguration = configuration)
 
+    override fun locations(handler: LocationHandler): Publisher.Builder =
+        this.copy(locationHandler = handler)
+
+    override fun locations(listener: LocationListener): Publisher.Builder =
+        locations { listener.onLocationUpdated(it) }
+
     override fun debug(configuration: DebugConfiguration?): Publisher.Builder =
         this.copy(debugConfiguration = configuration)
-
-    override fun locationUpdatedListener(listener: LocationUpdatedListener): Publisher.Builder =
-        this.copy(locationUpdatedListener = listener)
 
     override fun androidContext(context: Context): Publisher.Builder =
         this.copy(androidContext = context)
@@ -53,7 +58,7 @@ internal data class PublisherBuilder(
             connectionConfiguration!!,
             mapConfiguration!!,
             debugConfiguration,
-            locationUpdatedListener!!,
+            locationHandler!!,
             androidContext!!,
             resolutionPolicyFactory!!,
             routingProfile
@@ -64,7 +69,7 @@ internal data class PublisherBuilder(
     private fun isMissingRequiredFields() =
         connectionConfiguration == null ||
             mapConfiguration == null ||
-            locationUpdatedListener == null ||
+            locationHandler == null ||
             androidContext == null ||
             resolutionPolicyFactory == null
 }
