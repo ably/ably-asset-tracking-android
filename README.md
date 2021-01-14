@@ -172,16 +172,16 @@ The simplest way to control the frequency of updates is by providing parameters 
 
 ```kotlin
 val exampleConstraints = DefaultResolutionConstraints(
-  DefaultResolutionSet(
-    Resolution(
-      accuracy = Accuracy.BALANCED,
-      desiredInterval = 1000L, // milliseconds
-      minimumDisplacement = 1.0 // metres
-    )
-  ),
-  proximityThreshold = DefaultProximity(spatial = 1.0), // metres
-  batteryLevelThreshold = 10.0f, // percent
-  lowBatteryMultiplier = 2.0f
+    DefaultResolutionSet(
+        Resolution(
+            accuracy = Accuracy.BALANCED,
+            desiredInterval = 1000L, // milliseconds
+            minimumDisplacement = 1.0 // metres
+        )
+    ),
+    proximityThreshold = DefaultProximity(spatial = 1.0), // metres
+    batteryLevelThreshold = 10.0f, // percent
+    lowBatteryMultiplier = 2.0f
 )
 ```
 
