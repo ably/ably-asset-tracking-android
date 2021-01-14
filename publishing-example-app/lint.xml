@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<lint>
+  <!-- Ignore issue in example code, for simplicity -->
+  <issue id="MissingPermission">
+    <ignore path="src/androidTest/java/com/ably/tracking/example/publisher/ExampleUsage.kt" />
+  </issue>
+</lint>

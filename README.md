@@ -32,38 +32,42 @@ Here is an example of how the Asset Publishing SDK can be used:
 ```kotlin
 // Prepare Resolution Constraints for the Resolution Policy
 val exampleConstraints = DefaultResolutionConstraints(
-  DefaultResolutionSet( // this constructor provides one Resolution for all states
-    Resolution(
-      accuracy = Accuracy.BALANCED,
-      desiredInterval = 1000L,
-      minimumDisplacement = 1.0
-    )
-  ),
-  proximityThreshold = DefaultProximity(spatial = 1.0),
-  batteryLevelThreshold = 10.0f,
-  lowBatteryMultiplier = 2.0f
+    DefaultResolutionSet( // this constructor provides one Resolution for all states
+        Resolution(
+            accuracy = Accuracy.BALANCED,
+            desiredInterval = 1000L,
+            minimumDisplacement = 1.0
+        )
+    ),
+    proximityThreshold = DefaultProximity(spatial = 1.0),
+    batteryLevelThreshold = 10.0f,
+    lowBatteryMultiplier = 2.0f
 )
 
 // Initialise and Start the Publisher
 val publisher = Publisher.publishers() // get the Publisher builder in default state
-  .ably(AblyConfiguration(ABLY_API_KEY, CLIENT_ID)) // provide Ably configuration with credentials
-  .map(MapConfiguration(MAPBOX_ACCESS_TOKEN)) // provide Mapbox configuration with credentials
-  .androidContext(this) // provide Android runtime context
-  .profile(RoutingProfile.CYCLING) // provide mode of transportation for better location enhancements
-  .start()
+    .connection(ConnectionConfiguration(ABLY_API_KEY, CLIENT_ID)) // provide Ably configuration with credentials
+    .map(MapConfiguration(MAPBOX_ACCESS_TOKEN)) // provide Mapbox configuration with credentials
+    .androidContext(this) // provide Android runtime context
+    .profile(RoutingProfile.CYCLING) // provide mode of transportation for better location enhancements
+    .start()
 
 // Start tracking an asset
 publisher.track(
-  Trackable(
-    trackingId, // provide a tracking identifier for the asset
-    constraints = exampleConstraints // provide a set of Resolution Constraints
-  ),
-  {
-      when (it) {
-          is SuccessResult -> { }
-          is FailureResult -> { }
-      }
-  }
+    Trackable(
+        trackingId, // provide a tracking identifier for the asset
+        constraints = exampleConstraints // provide a set of Resolution Constraints
+    ),
+    {
+        when (it) {
+            is SuccessResult -> {
+                // TODO handle asset tracking started successfully
+            }
+            is FailureResult -> {
+                // TODO handle asset tracking could not be started
+            }
+        }
+    }
 )
 ```
 

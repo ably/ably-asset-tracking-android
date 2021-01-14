@@ -1,0 +1,71 @@
+package com.ably.tracking.example.publisher
+
+import android.app.Activity
+import com.ably.tracking.Accuracy
+import com.ably.tracking.ConnectionConfiguration
+import com.ably.tracking.FailureResult
+import com.ably.tracking.Resolution
+import com.ably.tracking.SuccessResult
+import com.ably.tracking.publisher.DefaultProximity
+import com.ably.tracking.publisher.DefaultResolutionConstraints
+import com.ably.tracking.publisher.DefaultResolutionSet
+import com.ably.tracking.publisher.MapConfiguration
+import com.ably.tracking.publisher.Publisher
+import com.ably.tracking.publisher.RoutingProfile
+import com.ably.tracking.publisher.Trackable
+
+// PLACEHOLDERS:
+
+val ABLY_API_KEY = ""
+val CLIENT_ID = ""
+val MAPBOX_ACCESS_TOKEN = ""
+
+class ExampleUsage(
+    val trackingId: String
+) : Activity() {
+    override fun onStart() {
+        super.onStart()
+
+        // EXAMPLE SNIPPET FROM HERE, WITH EXCESS INDENT REMOVED:
+
+        // Prepare Resolution Constraints for the Resolution Policy
+        val exampleConstraints = DefaultResolutionConstraints(
+            DefaultResolutionSet( // this constructor provides one Resolution for all states
+                Resolution(
+                    accuracy = Accuracy.BALANCED,
+                    desiredInterval = 1000L,
+                    minimumDisplacement = 1.0
+                )
+            ),
+            proximityThreshold = DefaultProximity(spatial = 1.0),
+            batteryLevelThreshold = 10.0f,
+            lowBatteryMultiplier = 2.0f
+        )
+
+        // Initialise and Start the Publisher
+        val publisher = Publisher.publishers() // get the Publisher builder in default state
+            .connection(ConnectionConfiguration(ABLY_API_KEY, CLIENT_ID)) // provide Ably configuration with credentials
+            .map(MapConfiguration(MAPBOX_ACCESS_TOKEN)) // provide Mapbox configuration with credentials
+            .androidContext(this) // provide Android runtime context
+            .profile(RoutingProfile.CYCLING) // provide mode of transportation for better location enhancements
+            .start()
+
+        // Start tracking an asset
+        publisher.track(
+            Trackable(
+                trackingId, // provide a tracking identifier for the asset
+                constraints = exampleConstraints // provide a set of Resolution Constraints
+            ),
+            {
+                when (it) {
+                    is SuccessResult -> {
+                        // TODO handle asset tracking started successfully
+                    }
+                    is FailureResult -> {
+                        // TODO handle asset tracking could not be started
+                    }
+                }
+            }
+        )
+    }
+}
