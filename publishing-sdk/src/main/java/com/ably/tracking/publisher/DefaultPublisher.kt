@@ -68,7 +68,8 @@ constructor(
     private val debugConfiguration: DebugConfiguration?,
     private val locationHandler: LocationHandler,
     context: Context,
-    resolutionPolicyFactory: ResolutionPolicy.Factory
+    resolutionPolicyFactory: ResolutionPolicy.Factory,
+    private var _routingProfile: RoutingProfile
 ) :
     Publisher {
     private val gson: Gson = Gson()
@@ -109,6 +110,7 @@ constructor(
      * After successfully setting the tracking destination this field will be set to NULL.
      **/
     private var destinationToSet: Destination? = null
+    private var currentDestination: Destination? = null
 
     init {
         eventsChannel = createEventsChannel(scope)
@@ -416,6 +418,12 @@ constructor(
 
     override var active: Trackable? = null
 
+    override var routingProfile: RoutingProfile
+        get() = _routingProfile
+        set(value) {
+            enqueue(ChangeRoutingProfileEvent(value))
+        }
+
     private fun performPresenceMessage(event: PresenceMessageEvent) {
         when (event.presenceMessage.action) {
             PresenceMessage.Action.present, PresenceMessage.Action.enter -> {
@@ -484,11 +492,10 @@ constructor(
         }
     }
 
-    override var transportationMode: TransportationMode
-        get() = TODO("Not yet implemented")
-        set(@Suppress("UNUSED_PARAMETER") value) {
-            TODO("Not yet implemented")
-        }
+    private fun performChangeRoutingProfile(event: ChangeRoutingProfileEvent) {
+        _routingProfile = event.routingProfile
+        currentDestination?.let { setDestination(it) }
+    }
 
     override fun stop() {
         enqueue(StopEvent())
@@ -528,11 +535,13 @@ constructor(
             if (currentLocation != null) {
                 destinationToSet = null
                 removeCurrentDestination()
+                currentDestination = destination
                 mapboxNavigation.requestRoutes(
                     RouteOptions.builder()
                         .applyDefaultParams()
                         .accessToken(mapConfiguration.apiKey)
                         .coordinates(getRouteCoordinates(currentLocation, destination))
+                        .profile(routingProfile.toMapboxProfileName())
                         .build(),
                     object : RoutesRequestCallback {
                         override fun onRoutesReady(routes: List<DirectionsRoute>) {
@@ -563,6 +572,7 @@ constructor(
 
     private fun removeCurrentDestination() {
         mapboxNavigation.setRoutes(emptyList())
+        currentDestination = null
         estimatedArrivalTimeInMilliseconds = null
     }
 
@@ -616,6 +626,7 @@ constructor(
                     is PresenceMessageEvent -> performPresenceMessage(event)
                     is ChangeLocationEngineResolutionEvent -> performChangeLocationEngineResolution()
                     is SetActiveTrackableEvent -> performSetActiveTrackableEvent(event)
+                    is ChangeRoutingProfileEvent -> performChangeRoutingProfile(event)
                 }
             }
         }

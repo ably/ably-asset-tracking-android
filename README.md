@@ -48,7 +48,7 @@ val publisher = Publisher.publishers() // get the Publisher builder in default s
   .ably(AblyConfiguration(ABLY_API_KEY, CLIENT_ID)) // provide Ably configuration with credentials
   .map(MapConfiguration(MAPBOX_ACCESS_TOKEN)) // provide Mapbox configuration with credentials
   .androidContext(this) // provide Android runtime context
-  .mode(TransportationMode("bike")) // provide mode of transportation for better location enhancements
+  .profile(RoutingProfile.CYCLING) // provide mode of transportation for better location enhancements
   .start()
 
 // Start tracking an asset

@@ -26,8 +26,8 @@ import com.ably.tracking.publisher.LocationSourceAbly
 import com.ably.tracking.publisher.LocationSourceRaw
 import com.ably.tracking.publisher.MapConfiguration
 import com.ably.tracking.publisher.Publisher
+import com.ably.tracking.publisher.RoutingProfile
 import com.ably.tracking.publisher.Trackable
-import com.ably.tracking.publisher.TransportationMode
 import kotlinx.android.synthetic.main.activity_main.*
 import pub.devrel.easypermissions.AfterPermissionGranted
 import pub.devrel.easypermissions.EasyPermissions
@@ -120,7 +120,7 @@ class MainActivity : AppCompatActivity() {
             .locations({ updateLocationInfo(it) })
             .resolutionPolicy(DefaultResolutionPolicyFactory(Resolution(Accuracy.MINIMUM, 1000L, 1.0), this))
             .androidContext(this)
-            .mode(TransportationMode("TBC"))
+            .profile(RoutingProfile.DRIVING)
             .start()
             .apply {
                 track(

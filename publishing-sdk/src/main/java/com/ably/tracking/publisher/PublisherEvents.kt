@@ -64,3 +64,7 @@ internal data class PresenceMessageEvent(
 ) : Event()
 
 internal class ChangeLocationEngineResolutionEvent : Event()
+
+internal data class ChangeRoutingProfileEvent(
+    val routingProfile: RoutingProfile
+) : Event()
