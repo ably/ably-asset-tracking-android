@@ -30,7 +30,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.actor
 import kotlinx.coroutines.launch
@@ -122,9 +121,8 @@ internal class DefaultSubscriber(
         channel.unsubscribe()
         leaveChannelPresence()
         ably.close()
-        scope.cancel()
 
-        // TODO implement proper stopping strategy which only calls back once we're fully stopped
+        // TODO implement proper stopping strategy which only calls back once we're fully stopped (considering whether scope.cancel() is appropriate)
         callback(event.handler, SuccessResult(Unit))
     }
 
