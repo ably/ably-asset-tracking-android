@@ -102,7 +102,6 @@ constructor(
     private var isTracking: Boolean = false
     private var mapboxReplayer: MapboxReplayer? = null
     private var lastPublisherLocation: Location? = null
-    private var lastSentRawLocations: MutableMap<Trackable, Location> = mutableMapOf()
     private var lastSentEnhancedLocations: MutableMap<Trackable, Location> = mutableMapOf()
     private var estimatedArrivalTimeInMilliseconds: Long? = null
 
@@ -198,17 +197,8 @@ constructor(
     }
 
     private fun performRawLocationChanged(event: RawLocationChangedEvent) {
-        Timber.d("sendRawLocationMessage: publishing: ${event.geoJsonMessage.synopsis()}")
-        for ((trackable, channel) in channels) {
-            if (shouldSendLocation(event.location, lastSentRawLocations[trackable], trackable)) {
-                lastSentRawLocations[trackable] = event.location
-                channel.publish(EventNames.RAW, event.geoJsonMessage.toJsonArray(gson))
-            }
-        }
         lastPublisherLocation = event.location
         destinationToSet?.let { setDestination(it) }
-        callback(locationHandler, event.location)
-        checkThreshold(event.location)
     }
 
     private fun sendEnhancedLocationMessage(enhancedLocation: Location, keyPoints: List<Location>) {
@@ -378,7 +368,6 @@ constructor(
             removeAllSubscribers(event.trackable)
             resolutions.remove(event.trackable)?.let { enqueue(ChangeLocationEngineResolutionEvent()) }
             requests.remove(event.trackable)
-            lastSentRawLocations.remove(event.trackable)
             lastSentEnhancedLocations.remove(event.trackable)
 
             // If this was the active Trackable then clear that state and remove destination.
