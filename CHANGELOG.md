@@ -16,6 +16,7 @@
 
 **Merged pull requests:**
 
+- Readme tweaks and corrections [\#148](https://github.com/ably/ably-asset-tracking-android/pull/148) ([QuintinWillison](https://github.com/QuintinWillison))
 - Add status badge for the emulate workflow [\#146](https://github.com/ably/ably-asset-tracking-android/pull/146) ([QuintinWillison](https://github.com/QuintinWillison))
 - Fix wrong ably state change events [\#143](https://github.com/ably/ably-asset-tracking-android/pull/143) ([KacperKluka](https://github.com/KacperKluka))
 - Use our own LocationUpdate instead of Android's Location class [\#142](https://github.com/ably/ably-asset-tracking-android/pull/142) ([KacperKluka](https://github.com/KacperKluka))
