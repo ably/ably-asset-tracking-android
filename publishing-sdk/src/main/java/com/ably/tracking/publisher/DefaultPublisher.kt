@@ -204,13 +204,13 @@ constructor(
     }
 
     private fun sendEnhancedLocationMessage(enhancedLocation: Location, keyPoints: List<Location>) {
-        val predictedLocations = if (keyPoints.size > 1) keyPoints.subList(0, keyPoints.size - 1) else emptyList()
+        val intermediateLocations = if (keyPoints.size > 1) keyPoints.subList(0, keyPoints.size - 1) else emptyList()
         enqueue(
             EnhancedLocationChangedEvent(
                 EnhancedLocationUpdate(
                     enhancedLocation,
-                    predictedLocations,
-                    if (predictedLocations.isEmpty()) LocationUpdateType.ACTUAL else LocationUpdateType.PREDICTED
+                    intermediateLocations,
+                    if (intermediateLocations.isEmpty()) LocationUpdateType.ACTUAL else LocationUpdateType.PREDICTED
                 )
             )
         )

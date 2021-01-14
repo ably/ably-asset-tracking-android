@@ -6,7 +6,7 @@ open class LocationUpdate(val location: Location)
 
 class EnhancedLocationUpdate(
     location: Location,
-    val predictedLocations: List<Location>,
+    val intermediateLocations: List<Location>,
     val type: LocationUpdateType
 ) : LocationUpdate(location)
 
