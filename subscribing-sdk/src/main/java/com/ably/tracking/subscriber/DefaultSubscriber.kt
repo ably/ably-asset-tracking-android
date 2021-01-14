@@ -96,7 +96,8 @@ internal class DefaultSubscriber(
 
     private fun performChangeResolution(event: ChangeResolutionEvent) {
         presenceData = presenceData.copy(resolution = event.resolution)
-        channel.presence.update(
+        channel.presence.updateClient(
+            connectionConfiguration.clientId,
             gson.toJson(presenceData),
             object : CompletionListener {
                 override fun onSuccess() {
