@@ -5,8 +5,8 @@ import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.content.Context
 import androidx.annotation.RequiresPermission
 import com.ably.tracking.ConnectionConfiguration
-import com.ably.tracking.LocationHandler
-import com.ably.tracking.LocationListener
+import com.ably.tracking.LocationUpdateHandler
+import com.ably.tracking.LocationUpdateListener
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.LogConfiguration
 import com.ably.tracking.ResultHandler
@@ -152,7 +152,7 @@ interface Publisher {
          * @return A new instance of the builder with this property changed.
          */
         @JvmSynthetic
-        fun locations(handler: LocationHandler): Builder
+        fun locations(handler: LocationUpdateHandler): Builder
 
         /**
          * Sets a handler to be notified about location updates.
@@ -162,7 +162,7 @@ interface Publisher {
          * @param listener The object, which will be called once per [LocationUpdate] update.
          * @return A new instance of the builder with this property changed.
          */
-        fun locations(listener: LocationListener): Builder
+        fun locations(listener: LocationUpdateListener): Builder
 
         /**
          * Sets the Android Context.

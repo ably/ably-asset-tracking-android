@@ -5,8 +5,8 @@ import android.content.Context
 import android.location.Location
 import com.ably.tracking.BuilderConfigurationIncompleteException
 import com.ably.tracking.ConnectionConfiguration
-import com.ably.tracking.LocationHandler
-import com.ably.tracking.LocationListener
+import com.ably.tracking.LocationUpdateHandler
+import com.ably.tracking.LocationUpdateListener
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.LogConfiguration
 import io.mockk.mockk
@@ -123,7 +123,7 @@ class FactoryUnitTests {
     @Test
     fun `setting location updated listener returns a new copy of builder`() {
         // given
-        val listener: LocationListener = anyLocationUpdatedListener()
+        val listener: LocationUpdateListener = anyLocationUpdatedListener()
         val originalBuilder = Publisher.publishers()
 
         // when
@@ -200,9 +200,9 @@ class FactoryUnitTests {
         Assert.assertNotNull(builder.androidContext)
     }
 
-    private fun anyLocationUpdatedListener(handler: LocationHandler = {}): LocationListener =
-        object : LocationListener {
-            override fun onLocationUpdated(locationUpdate: LocationUpdate) = handler(locationUpdate)
+    private fun anyLocationUpdatedListener(handler: LocationUpdateHandler = {}): LocationUpdateListener =
+        object : LocationUpdateListener {
+            override fun onLocationUpdate(locationUpdate: LocationUpdate) = handler(locationUpdate)
         }
 
     private fun anyLocation() = Location("fused")

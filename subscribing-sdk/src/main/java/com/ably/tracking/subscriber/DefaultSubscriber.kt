@@ -5,7 +5,7 @@ import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.ErrorInformation
 import com.ably.tracking.FailureResult
 import com.ably.tracking.Handler
-import com.ably.tracking.LocationHandler
+import com.ably.tracking.LocationUpdateHandler
 import com.ably.tracking.Resolution
 import com.ably.tracking.ResultHandler
 import com.ably.tracking.ResultListener
@@ -37,7 +37,7 @@ import timber.log.Timber
 
 internal class DefaultSubscriber(
     private val connectionConfiguration: ConnectionConfiguration,
-    private val enhancedLocationHandler: LocationHandler,
+    private val enhancedLocationHandler: LocationUpdateHandler,
     trackingId: String,
     private val assetStatusHandler: AssetStatusHandler?,
     resolution: Resolution?

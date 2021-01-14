@@ -11,7 +11,7 @@ import com.ably.tracking.EnhancedLocationUpdate
 import com.ably.tracking.ErrorInformation
 import com.ably.tracking.FailureResult
 import com.ably.tracking.Handler
-import com.ably.tracking.LocationHandler
+import com.ably.tracking.LocationUpdateHandler
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.LocationUpdateType
 import com.ably.tracking.Resolution
@@ -68,7 +68,7 @@ constructor(
     private val connectionConfiguration: ConnectionConfiguration,
     private val mapConfiguration: MapConfiguration,
     private val debugConfiguration: DebugConfiguration?,
-    private val locationHandler: LocationHandler,
+    private val locationHandler: LocationUpdateHandler,
     context: Context,
     resolutionPolicyFactory: ResolutionPolicy.Factory,
     private var _routingProfile: RoutingProfile
