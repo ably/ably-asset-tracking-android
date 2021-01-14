@@ -12,7 +12,6 @@ import com.ably.tracking.Resolution
 internal data class SubscriberBuilder(
     val connectionConfiguration: ConnectionConfiguration? = null,
     val logConfiguration: LogConfiguration? = null,
-    val rawLocationHandler: LocationHandler? = null,
     val enhancedLocationHandler: LocationHandler? = null,
     val resolution: Resolution? = null,
     val trackingId: String? = null,
@@ -24,12 +23,6 @@ internal data class SubscriberBuilder(
 
     override fun log(configuration: LogConfiguration): Subscriber.Builder =
         this.copy(logConfiguration = configuration)
-
-    override fun rawLocations(handler: LocationHandler): Subscriber.Builder =
-        this.copy(rawLocationHandler = handler)
-
-    override fun rawLocations(listener: LocationListener): Subscriber.Builder =
-        rawLocations { listener.onLocationUpdated(it) }
 
     override fun enhancedLocations(handler: LocationHandler): Subscriber.Builder =
         this.copy(enhancedLocationHandler = handler)
@@ -56,7 +49,6 @@ internal data class SubscriberBuilder(
         // All below fields are required and above code checks if they are nulls, so using !! should be safe from NPE
         return DefaultSubscriber(
             connectionConfiguration!!,
-            rawLocationHandler!!,
             enhancedLocationHandler!!,
             trackingId!!,
             assetStatusHandler,
@@ -67,7 +59,6 @@ internal data class SubscriberBuilder(
     // TODO - define which fields are required and which are optional (for now: only fields needed to create AssetSubscriber)
     private fun isMissingRequiredFields() =
         connectionConfiguration == null ||
-            rawLocationHandler == null ||
             enhancedLocationHandler == null ||
             trackingId == null
 }

@@ -2,12 +2,12 @@ package com.ably.tracking.subscriber
 
 import com.ably.tracking.AssetStatusHandler
 import com.ably.tracking.AssetStatusListener
-import com.ably.tracking.ResultHandler
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.LocationHandler
 import com.ably.tracking.LocationListener
 import com.ably.tracking.LogConfiguration
 import com.ably.tracking.Resolution
+import com.ably.tracking.ResultHandler
 import com.ably.tracking.ResultListener
 
 /**
@@ -98,27 +98,6 @@ interface Subscriber {
          * @return A new instance of the builder with this property changed.
          */
         fun log(configuration: LogConfiguration): Builder
-
-        /**
-         * Sets the handler to be notified when a raw location update is available.
-         *
-         * This method overload is preferable when calling from Kotlin.
-         *
-         * @param handler The function to be notified.
-         * @return A new instance of the builder with this property changed.
-         */
-        @JvmSynthetic
-        fun rawLocations(handler: LocationHandler): Builder
-
-        /**
-         * Sets the handler to be notified when a raw location update is available.
-         *
-         * This method overload is provided for the convenience of those calling from Java.
-         *
-         * @param listener The object to be notified.
-         * @return A new instance of the builder with this property changed.
-         */
-        fun rawLocations(listener: LocationListener): Builder
 
         /**
          * Sets the handler to be notified when a raw location update is available.

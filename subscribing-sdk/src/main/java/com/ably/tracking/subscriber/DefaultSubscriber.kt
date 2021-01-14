@@ -38,7 +38,6 @@ import timber.log.Timber
 
 internal class DefaultSubscriber(
     private val connectionConfiguration: ConnectionConfiguration,
-    private val rawLocationHandler: LocationHandler,
     private val enhancedLocationHandler: LocationHandler,
     trackingId: String,
     private val assetStatusHandler: AssetStatusHandler?,
@@ -62,18 +61,7 @@ internal class DefaultSubscriber(
         Timber.w("Started.")
 
         joinChannelPresence()
-        subscribeForRawEvents()
         subscribeForEnhancedEvents()
-    }
-
-    private fun subscribeForRawEvents() {
-        channel.subscribe(EventNames.RAW) { message ->
-            Timber.i("Ably channel message (raw): $message")
-            message.getGeoJsonMessages(gson).forEach {
-                Timber.d("Received raw location: ${it.synopsis()}")
-                callback(rawLocationHandler, it.toLocation())
-            }
-        }
     }
 
     private fun subscribeForEnhancedEvents() {
