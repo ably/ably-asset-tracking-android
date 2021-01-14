@@ -13,10 +13,9 @@ import com.ably.tracking.SuccessResult
 import com.ably.tracking.common.ClientTypes
 import com.ably.tracking.common.EventNames
 import com.ably.tracking.common.PresenceData
-import com.ably.tracking.common.getGeoJsonMessages
 import com.ably.tracking.common.getPresenceData
 import com.ably.tracking.common.toJava
-import com.ably.tracking.common.toLocation
+import com.ably.tracking.getEnhancedLocationUpdate
 import com.ably.tracking.toTracking
 import com.google.gson.Gson
 import io.ably.lib.realtime.AblyRealtime
@@ -67,9 +66,8 @@ internal class DefaultSubscriber(
     private fun subscribeForEnhancedEvents() {
         channel.subscribe(EventNames.ENHANCED) { message ->
             Timber.i("Ably channel message (enhanced): $message")
-            message.getGeoJsonMessages(gson).forEach {
-                Timber.d("Received enhanced location: ${it.synopsis()}")
-                callback(enhancedLocationHandler, it.toLocation())
+            message.getEnhancedLocationUpdate(gson).let {
+                callback(enhancedLocationHandler, it.location)
             }
         }
     }
