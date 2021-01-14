@@ -40,7 +40,7 @@ fun io.ably.lib.types.ErrorInfo.toTracking() =
  */
 fun io.ably.lib.realtime.ConnectionStateListener.ConnectionStateChange.toTracking() =
     ConnectionStateChange(
-        this.previous.toTracking(),
         this.current.toTracking(),
+        this.previous.toTracking(),
         this.reason?.toTracking()
     )
