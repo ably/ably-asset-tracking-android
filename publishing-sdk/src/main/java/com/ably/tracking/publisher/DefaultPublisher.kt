@@ -11,8 +11,8 @@ import com.ably.tracking.EnhancedLocationUpdate
 import com.ably.tracking.ErrorInformation
 import com.ably.tracking.FailureResult
 import com.ably.tracking.Handler
-import com.ably.tracking.LocationUpdateHandler
 import com.ably.tracking.LocationUpdate
+import com.ably.tracking.LocationUpdateHandler
 import com.ably.tracking.LocationUpdateType
 import com.ably.tracking.Resolution
 import com.ably.tracking.ResultHandler
@@ -24,12 +24,12 @@ import com.ably.tracking.common.MILLISECONDS_PER_SECOND
 import com.ably.tracking.common.PresenceData
 import com.ably.tracking.common.getPresenceData
 import com.ably.tracking.common.toJava
+import com.ably.tracking.common.toJson
 import com.ably.tracking.publisher.debug.AblySimulationLocationEngine
 import com.ably.tracking.publisher.locationengine.FusedAndroidLocationEngine
 import com.ably.tracking.publisher.locationengine.GoogleLocationEngine
 import com.ably.tracking.publisher.locationengine.LocationEngineUtils
 import com.ably.tracking.publisher.locationengine.ResolutionLocationEngine
-import com.ably.tracking.toJson
 import com.ably.tracking.toTracking
 import com.google.gson.Gson
 import com.mapbox.api.directions.v5.models.DirectionsRoute

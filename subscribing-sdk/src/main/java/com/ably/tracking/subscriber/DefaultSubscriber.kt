@@ -13,9 +13,9 @@ import com.ably.tracking.SuccessResult
 import com.ably.tracking.common.ClientTypes
 import com.ably.tracking.common.EventNames
 import com.ably.tracking.common.PresenceData
+import com.ably.tracking.common.getEnhancedLocationUpdate
 import com.ably.tracking.common.getPresenceData
 import com.ably.tracking.common.toJava
-import com.ably.tracking.getEnhancedLocationUpdate
 import com.ably.tracking.toTracking
 import com.google.gson.Gson
 import io.ably.lib.realtime.AblyRealtime
