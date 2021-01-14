@@ -32,38 +32,42 @@ Here is an example of how the Asset Publishing SDK can be used:
 ```kotlin
 // Prepare Resolution Constraints for the Resolution Policy
 val exampleConstraints = DefaultResolutionConstraints(
-  DefaultResolutionSet( // this constructor provides one Resolution for all states
-    Resolution(
-      accuracy = Accuracy.BALANCED,
-      desiredInterval = 1000L,
-      minimumDisplacement = 1.0
-    )
-  ),
-  proximityThreshold = DefaultProximity(spatial = 1.0),
-  batteryLevelThreshold = 10.0f,
-  lowBatteryMultiplier = 2.0f
+    DefaultResolutionSet( // this constructor provides one Resolution for all states
+        Resolution(
+            accuracy = Accuracy.BALANCED,
+            desiredInterval = 1000L,
+            minimumDisplacement = 1.0
+        )
+    ),
+    proximityThreshold = DefaultProximity(spatial = 1.0),
+    batteryLevelThreshold = 10.0f,
+    lowBatteryMultiplier = 2.0f
 )
 
 // Initialise and Start the Publisher
 val publisher = Publisher.publishers() // get the Publisher builder in default state
-  .ably(AblyConfiguration(ABLY_API_KEY, CLIENT_ID)) // provide Ably configuration with credentials
-  .map(MapConfiguration(MAPBOX_ACCESS_TOKEN)) // provide Mapbox configuration with credentials
-  .androidContext(this) // provide Android runtime context
-  .profile(RoutingProfile.CYCLING) // provide mode of transportation for better location enhancements
-  .start()
+    .connection(ConnectionConfiguration(ABLY_API_KEY, CLIENT_ID)) // provide Ably configuration with credentials
+    .map(MapConfiguration(MAPBOX_ACCESS_TOKEN)) // provide Mapbox configuration with credentials
+    .androidContext(this) // provide Android runtime context
+    .profile(RoutingProfile.DRIVING) // provide mode of transportation for better location enhancements
+    .start()
 
 // Start tracking an asset
 publisher.track(
-  Trackable(
-    trackingId, // provide a tracking identifier for the asset
-    constraints = exampleConstraints // provide a set of Resolution Constraints
-  ),
-  {
-      when (it) {
-          is SuccessResult -> { }
-          is FailureResult -> { }
-      }
-  }
+    Trackable(
+        trackingId, // provide a tracking identifier for the asset
+        constraints = exampleConstraints // provide a set of Resolution Constraints
+    ),
+    {
+        when (it) {
+            is SuccessResult -> {
+                // TODO handle asset tracking started successfully
+            }
+            is FailureResult -> {
+                // TODO handle asset tracking could not be started
+            }
+        }
+    }
 )
 ```
 
@@ -72,22 +76,28 @@ Asset Subscribing SDK is used to receive the location of the required assets.
 Here is an example of how Asset Subscribing SDK can be used:
 
 ```kotlin
-val assetSubscriber = AssetSubscriber.subscribers() // Get an AssetSubscriber
-  .ablyConfig(AblyConfiguration(ABLY_API_KEY, CLIENT_ID)) // provide Ably configuration with credentials
-  .enhancedLocationUpdatedListener { } // provide a function to be called when enhanced location updates are received
-  .resolution( // request a specific resolution to be considered by the publisher
-    Resolution(Accuracy.MAXIMUM, desiredInterval = 1000L, minimumDisplacement = 1.0)
-  )
-  .trackingId(trackingId) // provide the tracking identifier for the asset that needs to be tracked
-  .assetStatusListener { } // provide a function to be called when the asset changes online/offline status
-  .start() // start listening for updates
+// Initialise and Start the Subscriber
+val subscriber = Subscriber.subscribers() // Get an AssetSubscriber
+    .connection(ConnectionConfiguration(ABLY_API_KEY, CLIENT_ID)) // provide Ably configuration with credentials
+    .enhancedLocations { } // provide a function to be called when enhanced location updates are received
+    .resolution( // request a specific resolution to be considered by the publisher
+        Resolution(Accuracy.MAXIMUM, desiredInterval = 1000L, minimumDisplacement = 1.0)
+    )
+    .trackingId(trackingId) // provide the tracking identifier for the asset that needs to be tracked
+    .assetStatus { } // provide a function to be called when the asset changes online/offline status
+    .start() // start listening for updates
 
-assetSubscriber.sendChangeRequest( // request a different resolution when needed
+// Request a different resolution when needed.
+subscriber.sendChangeRequest(
     Resolution(Accuracy.MAXIMUM, desiredInterval = 100L, minimumDisplacement = 2.0),
     {
         when (it) {
-            is SuccessResult -> { }
-            is FailureResult -> { }
+            is SuccessResult -> {
+                // TODO change request submitted successfully
+            }
+            is FailureResult -> {
+                // TODO change request could not be submitted
+            }
         }
     }
 )
@@ -162,16 +172,16 @@ The simplest way to control the frequency of updates is by providing parameters 
 
 ```kotlin
 val exampleConstraints = DefaultResolutionConstraints(
-  DefaultResolutionSet(
-    Resolution(
-      accuracy = Accuracy.BALANCED,
-      desiredInterval = 1000L, // milliseconds
-      minimumDisplacement = 1.0 // metres
-    )
-  ),
-  proximityThreshold = DefaultProximity(spatial = 1.0), // metres
-  batteryLevelThreshold = 10.0f, // percent
-  lowBatteryMultiplier = 2.0f
+    DefaultResolutionSet(
+        Resolution(
+            accuracy = Accuracy.BALANCED,
+            desiredInterval = 1000L, // milliseconds
+            minimumDisplacement = 1.0 // metres
+        )
+    ),
+    proximityThreshold = DefaultProximity(spatial = 1.0), // metres
+    batteryLevelThreshold = 10.0f, // percent
+    lowBatteryMultiplier = 2.0f
 )
 ```
 
