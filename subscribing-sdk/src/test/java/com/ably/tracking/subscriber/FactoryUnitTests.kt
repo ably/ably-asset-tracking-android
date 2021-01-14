@@ -66,35 +66,6 @@ class FactoryUnitTests {
     }
 
     @Test
-    fun `setting raw location updated listener updates builder field`() {
-        // given
-        val listener: LocationListener = anyLocationUpdatedListener()
-
-        // when
-        val builder =
-            Subscriber.subscribers()
-                .rawLocations(listener) as SubscriberBuilder
-
-        // then
-        // TODO assert that the handler represents the listener
-        // Assert.assertEquals(listener, builder.rawLocationUpdatedListener)
-        Assert.assertNotNull(builder.rawLocationHandler)
-    }
-
-    @Test
-    fun `setting raw location updated listener returns a new copy of builder`() {
-        // given
-        val listener: LocationListener = anyLocationUpdatedListener()
-        val originalBuilder = Subscriber.subscribers()
-
-        // when
-        val newBuilder = originalBuilder.rawLocations(listener)
-
-        // then
-        Assert.assertNotEquals(newBuilder, originalBuilder)
-    }
-
-    @Test
     fun `setting enhanced location updated listener updates builder field`() {
         // given
         val listener: LocationListener = anyLocationUpdatedListener()
@@ -211,7 +182,6 @@ class FactoryUnitTests {
         val updatedBuilder = builder
             .connection(ConnectionConfiguration("", ""))
             .log(LogConfiguration(true))
-            .rawLocations(anyLocationUpdatedListener())
             .enhancedLocations(anyLocationUpdatedListener())
             .resolution(Resolution(Accuracy.BALANCED, 333, 666.6))
             .trackingId("")
@@ -229,7 +199,6 @@ class FactoryUnitTests {
     private fun assertAllBuilderFieldsAreNull(builder: SubscriberBuilder) {
         Assert.assertNull(builder.connectionConfiguration)
         Assert.assertNull(builder.logConfiguration)
-        Assert.assertNull(builder.rawLocationHandler)
         Assert.assertNull(builder.enhancedLocationHandler)
         Assert.assertNull(builder.resolution)
         Assert.assertNull(builder.trackingId)
@@ -238,7 +207,6 @@ class FactoryUnitTests {
     private fun assertAllBuilderFieldsAreNotNull(builder: SubscriberBuilder) {
         Assert.assertNotNull(builder.connectionConfiguration)
         Assert.assertNotNull(builder.logConfiguration)
-        Assert.assertNotNull(builder.rawLocationHandler)
         Assert.assertNotNull(builder.enhancedLocationHandler)
         Assert.assertNotNull(builder.resolution)
         Assert.assertNotNull(builder.trackingId)
