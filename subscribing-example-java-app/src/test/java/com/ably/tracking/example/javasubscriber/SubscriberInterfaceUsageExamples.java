@@ -56,6 +56,12 @@ public class SubscriberInterfaceUsageExamples {
                 }
             }
         );
-        subscriber.stop();
+        subscriber.stop(result -> {
+            if (result.isSuccess()) {
+                Timber.d("Success");
+            } else {
+                Timber.e("Failed with error information: %s", result.getFailure().getErrorInformation());
+            }
+        });
     }
 }

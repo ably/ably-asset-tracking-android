@@ -70,9 +70,17 @@ interface Subscriber {
      * Stops this subscriber from listening to published locations. Once a subscriber has been stopped, it cannot be
      * restarted.
      *
-     * It is strongly suggested to call this method from the main thread.
+     * This method overload is preferable when calling from Kotlin.
+     *
+     * @param handler Called when the publisher has been successfully removed or an error occurs.
      */
-    fun stop()
+    @JvmSynthetic
+    fun stop(handler: ResultHandler<Unit>)
+
+    /**
+     * This method overload is provided for the convenient of those calling from Java.
+     */
+    fun stop(listener: ResultListener<Void?>)
 
     /**
      * The methods implemented by builders capable of starting [Subscriber] instances.
@@ -181,8 +189,6 @@ interface Subscriber {
 
         /**
          * Creates a [Subscriber] and starts listening for location updates.
-         *
-         * It is strongly suggested to call this method from the main thread.
          *
          * @return A new subscriber instance.
          * @throws com.ably.tracking.BuilderConfigurationIncompleteException If all required params aren't set

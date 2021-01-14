@@ -6,7 +6,9 @@ import io.ably.lib.types.PresenceMessage
 
 internal sealed class Event
 
-internal class StopEvent : Event()
+internal class StopEvent(
+    val handler: ResultHandler<Unit>
+) : Event()
 
 internal data class PresenceMessageEvent(
     val presenceMessage: PresenceMessage

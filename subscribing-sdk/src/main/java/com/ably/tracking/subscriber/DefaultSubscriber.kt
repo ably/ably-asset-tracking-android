@@ -30,7 +30,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.actor
 import kotlinx.coroutines.launch
@@ -94,6 +93,14 @@ internal class DefaultSubscriber(
         sendChangeRequest(resolution, { listener.onResult(it.toJava()) })
     }
 
+    override fun stop(handler: ResultHandler<Unit>) {
+        enqueue(StopEvent(handler))
+    }
+
+    override fun stop(listener: ResultListener<Void?>) {
+        stop() { listener.onResult(it.toJava()) }
+    }
+
     private fun performChangeResolution(event: ChangeResolutionEvent) {
         presenceData = presenceData.copy(resolution = event.resolution)
         channel.presence.update(
@@ -110,15 +117,13 @@ internal class DefaultSubscriber(
         )
     }
 
-    override fun stop() {
-        enqueue(StopEvent())
-    }
-
-    private fun performStopSubscriber() {
+    private fun performStopSubscriber(event: StopEvent) {
         channel.unsubscribe()
         leaveChannelPresence()
         ably.close()
-        scope.cancel()
+
+        // TODO implement proper stopping strategy which only calls back once we're fully stopped (considering whether scope.cancel() is appropriate)
+        callback(event.handler, SuccessResult(Unit))
     }
 
     private fun joinChannelPresence() {
@@ -200,7 +205,7 @@ internal class DefaultSubscriber(
         scope.actor<Event> {
             for (event in channel) {
                 when (event) {
-                    is StopEvent -> performStopSubscriber()
+                    is StopEvent -> performStopSubscriber(event)
                     is PresenceMessageEvent -> performPresenceMessage(event)
                     is ChangeResolutionEvent -> performChangeResolution(event)
                 }
