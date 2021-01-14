@@ -33,7 +33,7 @@ internal class ThresholdCheckerTest {
     fun `threshold is reached when current location is within spatial threshold from destination`() {
         // given
         val threshold = DefaultProximity(spatial = 1.0)
-        val currentLocation = createLocation(1.1, 1.1)
+        val currentLocation = createLocation(1.000001, 1.0)
         val destination = Destination(1.0, 1.0)
 
         // when
@@ -94,7 +94,7 @@ internal class ThresholdCheckerTest {
         // given
         val threshold = DefaultProximity(spatial = 1.0, temporal = 500L)
         val currentTime = System.currentTimeMillis()
-        val currentLocation = createLocation(1.1, 1.1)
+        val currentLocation = createLocation(1.000001, 1.0)
         val destination = Destination(1.0, 1.0)
         val estimatedArrivalTimeInMilliseconds = currentTime + 1500L
 
