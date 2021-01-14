@@ -30,10 +30,10 @@ internal class AblySimulationLocationEngine(ablyOptions: ClientOptions, simulati
         ably.connection.on { Timber.i("Ably connection state change: $it") }
         simulationChannel.on { Timber.i("Ably channel state change: $it") }
 
-        simulationChannel.subscribe(EventNames.RAW) { message ->
+        simulationChannel.subscribe(EventNames.ENHANCED) { message ->
             Timber.i("Ably channel message: $message")
             message.getGeoJsonMessages(gson).forEach {
-                Timber.d("Received raw location: ${it.synopsis()}")
+                Timber.d("Received enhanced location: ${it.synopsis()}")
                 val loc = it.toLocation()
                 loc.elapsedRealtimeNanos = SystemClock.elapsedRealtimeNanos()
                 onLocationEngineResult(LocationEngineResult.create(loc))
