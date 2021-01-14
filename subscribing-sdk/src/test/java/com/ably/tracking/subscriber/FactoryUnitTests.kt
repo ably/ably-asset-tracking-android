@@ -1,12 +1,12 @@
 package com.ably.tracking.subscriber
 
 import android.annotation.SuppressLint
-import android.location.Location
 import com.ably.tracking.Accuracy
 import com.ably.tracking.AssetStatusListener
 import com.ably.tracking.BuilderConfigurationIncompleteException
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.LocationListener
+import com.ably.tracking.LocationUpdate
 import com.ably.tracking.LogConfiguration
 import com.ably.tracking.Resolution
 import org.junit.Assert
@@ -213,7 +213,7 @@ class FactoryUnitTests {
     }
 
     private fun anyLocationUpdatedListener(): LocationListener = object : LocationListener {
-        override fun onLocationUpdated(location: Location) = Unit
+        override fun onLocationUpdated(locationUpdate: LocationUpdate) = Unit
     }
 
     private fun anyAssetStatusListener(): AssetStatusListener = object : AssetStatusListener {

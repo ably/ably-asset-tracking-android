@@ -225,7 +225,7 @@ constructor(
                 channel.publish(EventNames.ENHANCED, locationUpdateJson)
             }
         }
-        callback(locationHandler, event.locationUpdate.location)
+        callback(locationHandler, event.locationUpdate)
         checkThreshold(event.locationUpdate.location)
     }
 

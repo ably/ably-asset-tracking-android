@@ -117,7 +117,7 @@ class MainActivity : AppCompatActivity() {
             .connection(ConnectionConfiguration(ABLY_API_KEY, CLIENT_ID))
             .map(MapConfiguration(MAPBOX_ACCESS_TOKEN))
             .debug(createDebugConfiguration(historyData))
-            .locations({ updateLocationInfo(it) })
+            .locations { updateLocationInfo(it.location) }
             .resolutionPolicy(DefaultResolutionPolicyFactory(Resolution(Accuracy.MINIMUM, 1000L, 1.0), this))
             .androidContext(this)
             .profile(RoutingProfile.DRIVING)

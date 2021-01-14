@@ -67,7 +67,7 @@ internal class DefaultSubscriber(
         channel.subscribe(EventNames.ENHANCED) { message ->
             Timber.i("Ably channel message (enhanced): $message")
             message.getEnhancedLocationUpdate(gson).let {
-                callback(enhancedLocationHandler, it.location)
+                callback(enhancedLocationHandler, it)
             }
         }
     }
