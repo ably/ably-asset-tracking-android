@@ -76,10 +76,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun stopSubscribing() {
-        subscriber?.stop()
-        subscriber = null
-        changeStartButtonState(false)
-        marker = null
+        subscriber?.stop() {
+            // TODO check Result (it) for failure and report accordingly
+            subscriber = null
+            changeStartButtonState(false)
+            marker = null
+        }
     }
 
     private fun showMarkerOnMap(location: Location) {
