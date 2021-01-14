@@ -42,7 +42,7 @@ interface Publisher {
      *
      * @param trackable The object to be added to this publisher's tracked set, if it's not already there, and to be
      * made the actively tracked object.
-     * @param handler Called when the trackable is successfully added and make the actively tracked object or when an error occurs
+     * @param handler Called when the trackable is successfully added and make the actively tracked object or when an error occurs.
      */
     @JvmSynthetic
     fun track(trackable: Trackable, handler: ResultHandler<Unit>)
@@ -61,7 +61,7 @@ interface Publisher {
      * This method overload is preferable when calling from Kotlin.
      *
      * @param trackable The object to be added to this publisher's tracked set, if it's not already there.
-     * @param handler Called when the trackable is successfully added or an error occurs
+     * @param handler Called when the trackable is successfully added or an error occurs.
      */
     @JvmSynthetic
     fun add(trackable: Trackable, handler: ResultHandler<Unit>)
@@ -80,7 +80,7 @@ interface Publisher {
      * This method overload is preferable when calling from Kotlin.
      *
      * @param trackable The object to be removed from this publisher's tracked set, it it's there.
-     * @param handler Called when the trackable is successfully removed or an error occurs
+     * @param handler Called when the trackable is successfully removed or an error occurs.
      */
     @JvmSynthetic
     fun remove(trackable: Trackable, handler: ResultHandler<Boolean>)
@@ -106,9 +106,17 @@ interface Publisher {
     /**
      * Stops this publisher from publishing locations. Once a publisher has been stopped, it cannot be restarted.
      *
-     * It is strongly suggested to call this method from the main thread.
+     * This method overload is preferable when calling from Kotlin.
+     *
+     * @param handler Called when the publisher has been successfully removed or an error occurs.
      */
-    fun stop()
+    @JvmSynthetic
+    fun stop(handler: ResultHandler<Unit>)
+
+    /**
+     * This method overload is provided for the convenient of those calling from Java.
+     */
+    fun stop(listener: ResultListener<Void?>)
 
     /**
      * The methods implemented by builders capable of starting [Publisher] instances.
@@ -196,7 +204,6 @@ interface Publisher {
          * tracking is required from the outset then the [track][Publisher.track] method must be subsequently called.
          *
          * In order to detect device's location ACCESS_COARSE_LOCATION or ACCESS_FINE_LOCATION permission must be granted.
-         * It is strongly suggested to call this method from the main thread.
          *
          * @return A new publisher instance.
          * @throws com.ably.tracking.BuilderConfigurationIncompleteException If all required params aren't set

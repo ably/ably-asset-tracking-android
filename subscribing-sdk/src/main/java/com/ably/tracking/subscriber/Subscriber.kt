@@ -2,12 +2,12 @@ package com.ably.tracking.subscriber
 
 import com.ably.tracking.AssetStatusHandler
 import com.ably.tracking.AssetStatusListener
-import com.ably.tracking.ResultHandler
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.LocationHandler
 import com.ably.tracking.LocationListener
 import com.ably.tracking.LogConfiguration
 import com.ably.tracking.Resolution
+import com.ably.tracking.ResultHandler
 import com.ably.tracking.ResultListener
 
 /**
@@ -70,9 +70,17 @@ interface Subscriber {
      * Stops this subscriber from listening to published locations. Once a subscriber has been stopped, it cannot be
      * restarted.
      *
-     * It is strongly suggested to call this method from the main thread.
+     * This method overload is preferable when calling from Kotlin.
+     *
+     * @param handler Called when the publisher has been successfully removed or an error occurs.
      */
-    fun stop()
+    @JvmSynthetic
+    fun stop(handler: ResultHandler<Unit>)
+
+    /**
+     * This method overload is provided for the convenient of those calling from Java.
+     */
+    fun stop(listener: ResultListener<Void?>)
 
     /**
      * The methods implemented by builders capable of starting [Subscriber] instances.
@@ -98,27 +106,6 @@ interface Subscriber {
          * @return A new instance of the builder with this property changed.
          */
         fun log(configuration: LogConfiguration): Builder
-
-        /**
-         * Sets the handler to be notified when a raw location update is available.
-         *
-         * This method overload is preferable when calling from Kotlin.
-         *
-         * @param handler The function to be notified.
-         * @return A new instance of the builder with this property changed.
-         */
-        @JvmSynthetic
-        fun rawLocations(handler: LocationHandler): Builder
-
-        /**
-         * Sets the handler to be notified when a raw location update is available.
-         *
-         * This method overload is provided for the convenience of those calling from Java.
-         *
-         * @param listener The object to be notified.
-         * @return A new instance of the builder with this property changed.
-         */
-        fun rawLocations(listener: LocationListener): Builder
 
         /**
          * Sets the handler to be notified when a raw location update is available.
@@ -181,8 +168,6 @@ interface Subscriber {
 
         /**
          * Creates a [Subscriber] and starts listening for location updates.
-         *
-         * It is strongly suggested to call this method from the main thread.
          *
          * @return A new subscriber instance.
          * @throws com.ably.tracking.BuilderConfigurationIncompleteException If all required params aren't set

@@ -62,7 +62,6 @@ class MainActivity : AppCompatActivity() {
     private fun createAndStartAssetSubscriber(trackingId: String) {
         subscriber = Subscriber.subscribers()
             .connection(ConnectionConfiguration(ABLY_API_KEY, CLIENT_ID))
-            .rawLocations { } // if you prefer to display raw location call showMarkerOnMap() here
             .enhancedLocations({ showMarkerOnMap(it) })
             .trackingId(trackingId)
             .resolution(Resolution(Accuracy.MAXIMUM, desiredInterval = 1000L, minimumDisplacement = 1.0))
@@ -76,10 +75,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun stopSubscribing() {
-        subscriber?.stop()
-        subscriber = null
-        changeStartButtonState(false)
-        marker = null
+        subscriber?.stop() {
+            // TODO check Result (it) for failure and report accordingly
+            subscriber = null
+            changeStartButtonState(false)
+            marker = null
+        }
     }
 
     private fun showMarkerOnMap(location: Location) {

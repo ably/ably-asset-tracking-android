@@ -39,7 +39,6 @@ public class SubscriberInterfaceUsageExamples {
             .connection(new ConnectionConfiguration("API_KEY", "CLIENT_ID"))
             .enhancedLocations(location -> { })
             .log(new LogConfiguration(true))
-            .rawLocations(location -> { })
             .resolution(new Resolution(Accuracy.MAXIMUM, 1L, 1.0))
             .trackingId("ID")
             .start();
@@ -56,6 +55,12 @@ public class SubscriberInterfaceUsageExamples {
                 }
             }
         );
-        subscriber.stop();
+        subscriber.stop(result -> {
+            if (result.isSuccess()) {
+                Timber.d("Success");
+            } else {
+                Timber.e("Failed with error information: %s", result.getFailure().getErrorInformation());
+            }
+        });
     }
 }

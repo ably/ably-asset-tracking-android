@@ -53,7 +53,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.actor
 import kotlinx.coroutines.launch
@@ -102,7 +101,6 @@ constructor(
     private var isTracking: Boolean = false
     private var mapboxReplayer: MapboxReplayer? = null
     private var lastPublisherLocation: Location? = null
-    private var lastSentRawLocations: MutableMap<Trackable, Location> = mutableMapOf()
     private var lastSentEnhancedLocations: MutableMap<Trackable, Location> = mutableMapOf()
     private var estimatedArrivalTimeInMilliseconds: Long? = null
 
@@ -198,17 +196,8 @@ constructor(
     }
 
     private fun performRawLocationChanged(event: RawLocationChangedEvent) {
-        Timber.d("sendRawLocationMessage: publishing: ${event.geoJsonMessage.synopsis()}")
-        for ((trackable, channel) in channels) {
-            if (shouldSendLocation(event.location, lastSentRawLocations[trackable], trackable)) {
-                lastSentRawLocations[trackable] = event.location
-                channel.publish(EventNames.RAW, event.geoJsonMessage.toJsonArray(gson))
-            }
-        }
         lastPublisherLocation = event.location
         destinationToSet?.let { setDestination(it) }
-        callback(locationHandler, event.location)
-        checkThreshold(event.location)
     }
 
     private fun sendEnhancedLocationMessage(enhancedLocation: Location, keyPoints: List<Location>) {
@@ -378,7 +367,6 @@ constructor(
             removeAllSubscribers(event.trackable)
             resolutions.remove(event.trackable)?.let { enqueue(ChangeLocationEngineResolutionEvent()) }
             requests.remove(event.trackable)
-            lastSentRawLocations.remove(event.trackable)
             lastSentEnhancedLocations.remove(event.trackable)
 
             // If this was the active Trackable then clear that state and remove destination.
@@ -428,6 +416,14 @@ constructor(
         set(value) {
             enqueue(ChangeRoutingProfileEvent(value))
         }
+
+    override fun stop(handler: ResultHandler<Unit>) {
+        enqueue(StopEvent(handler))
+    }
+
+    override fun stop(listener: ResultListener<Void?>) {
+        stop() { listener.onResult(it.toJava()) }
+    }
 
     private fun performPresenceMessage(event: PresenceMessageEvent) {
         when (event.presenceMessage.action) {
@@ -502,14 +498,12 @@ constructor(
         currentDestination?.let { setDestination(it) }
     }
 
-    override fun stop() {
-        enqueue(StopEvent())
-    }
-
-    private fun performStopPublisher() {
+    private fun performStopPublisher(event: StopEvent) {
         stopLocationUpdates()
         ably.close()
-        scope.cancel()
+
+        // TODO implement proper stopping strategy which only calls back once we're fully stopped (considering whether scope.cancel() is appropriate)
+        callback(event.handler, SuccessResult(Unit))
     }
 
     private fun stopLocationUpdates() {
@@ -621,7 +615,7 @@ constructor(
                     is AddTrackableEvent -> performAddTrackable(event)
                     is TrackTrackableEvent -> performTrackTrackable(event)
                     is RemoveTrackableEvent -> performRemoveTrackable(event)
-                    is StopEvent -> performStopPublisher()
+                    is StopEvent -> performStopPublisher(event)
                     is StartEvent -> performStartPublisher()
                     is JoinPresenceSuccessEvent -> performJoinPresenceSuccess(event)
                     is RawLocationChangedEvent -> performRawLocationChanged(event)

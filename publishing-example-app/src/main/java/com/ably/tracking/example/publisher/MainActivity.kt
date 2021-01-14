@@ -184,10 +184,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun stopTracking() {
-        publisher?.stop()
-        publisher = null
-
-        changeNavigationButtonState(false)
+        publisher?.stop() {
+            // TODO check Result (it) for failure and report accordingly
+            publisher = null
+            changeNavigationButtonState(false)
+        }
     }
 
     private fun updateLocationInfo(location: Location) {

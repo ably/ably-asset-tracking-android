@@ -73,7 +73,6 @@ Here is an example of how Asset Subscribing SDK can be used:
 ```kotlin
 val assetSubscriber = AssetSubscriber.subscribers() // Get an AssetSubscriber
   .ablyConfig(AblyConfiguration(ABLY_API_KEY, CLIENT_ID)) // provide Ably configuration with credentials
-  .rawLocationUpdatedListener { } // provide a function to be called when raw location updates are received
   .enhancedLocationUpdatedListener { } // provide a function to be called when enhanced location updates are received
   .resolution( // request a specific resolution to be considered by the publisher
     Resolution(Accuracy.MAXIMUM, desiredInterval = 1000L, minimumDisplacement = 1.0)
