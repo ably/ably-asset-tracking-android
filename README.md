@@ -76,22 +76,28 @@ Asset Subscribing SDK is used to receive the location of the required assets.
 Here is an example of how Asset Subscribing SDK can be used:
 
 ```kotlin
-val assetSubscriber = AssetSubscriber.subscribers() // Get an AssetSubscriber
-  .ablyConfig(AblyConfiguration(ABLY_API_KEY, CLIENT_ID)) // provide Ably configuration with credentials
-  .enhancedLocationUpdatedListener { } // provide a function to be called when enhanced location updates are received
-  .resolution( // request a specific resolution to be considered by the publisher
-    Resolution(Accuracy.MAXIMUM, desiredInterval = 1000L, minimumDisplacement = 1.0)
-  )
-  .trackingId(trackingId) // provide the tracking identifier for the asset that needs to be tracked
-  .assetStatusListener { } // provide a function to be called when the asset changes online/offline status
-  .start() // start listening for updates
+// Initialise and Start the Subscriber
+val subscriber = Subscriber.subscribers() // Get an AssetSubscriber
+    .connection(ConnectionConfiguration(ABLY_API_KEY, CLIENT_ID)) // provide Ably configuration with credentials
+    .enhancedLocations { } // provide a function to be called when enhanced location updates are received
+    .resolution( // request a specific resolution to be considered by the publisher
+        Resolution(Accuracy.MAXIMUM, desiredInterval = 1000L, minimumDisplacement = 1.0)
+    )
+    .trackingId(trackingId) // provide the tracking identifier for the asset that needs to be tracked
+    .assetStatus { } // provide a function to be called when the asset changes online/offline status
+    .start() // start listening for updates
 
-assetSubscriber.sendChangeRequest( // request a different resolution when needed
+// Request a different resolution when needed.
+subscriber.sendChangeRequest(
     Resolution(Accuracy.MAXIMUM, desiredInterval = 100L, minimumDisplacement = 2.0),
     {
         when (it) {
-            is SuccessResult -> { }
-            is FailureResult -> { }
+            is SuccessResult -> {
+                // TODO change request submitted successfully
+            }
+            is FailureResult -> {
+                // TODO change request could not be submitted
+            }
         }
     }
 )
