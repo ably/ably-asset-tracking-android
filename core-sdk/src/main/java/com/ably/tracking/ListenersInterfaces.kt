@@ -1,13 +1,11 @@
 package com.ably.tracking
 
-import android.location.Location
-
 /**
  * Defines an interface, to be implemented in Java code utilising the Ably Asset Tracking SDKs, allowing that code to
- * handle events containing [Location] information.
+ * handle events containing [LocationUpdate] information.
  */
-interface LocationListener {
-    fun onLocationUpdated(location: Location)
+interface LocationUpdateListener {
+    fun onLocationUpdate(locationUpdate: LocationUpdate)
 }
 
 /**
@@ -18,9 +16,9 @@ typealias Handler<T> = (T) -> Unit
 
 /**
  * Defines a function type, to be implemented in Kotlin code utilising the Ably Asset Tracking SDKs, allowing that code
- * to handle events containing [Location] information.
+ * to handle events containing [LocationUpdate] information.
  */
-typealias LocationHandler = Handler<Location>
+typealias LocationUpdateHandler = Handler<LocationUpdate>
 
 /**
  * The state of connectivity to the Ably service.

@@ -7,10 +7,13 @@ import android.content.Context
 import android.location.Location
 import androidx.annotation.RequiresPermission
 import com.ably.tracking.ConnectionConfiguration
+import com.ably.tracking.EnhancedLocationUpdate
 import com.ably.tracking.ErrorInformation
 import com.ably.tracking.FailureResult
 import com.ably.tracking.Handler
-import com.ably.tracking.LocationHandler
+import com.ably.tracking.LocationUpdate
+import com.ably.tracking.LocationUpdateHandler
+import com.ably.tracking.LocationUpdateType
 import com.ably.tracking.Resolution
 import com.ably.tracking.ResultHandler
 import com.ably.tracking.ResultListener
@@ -21,9 +24,8 @@ import com.ably.tracking.common.EventNames
 import com.ably.tracking.common.MILLISECONDS_PER_SECOND
 import com.ably.tracking.common.PresenceData
 import com.ably.tracking.common.getPresenceData
-import com.ably.tracking.common.toGeoJson
 import com.ably.tracking.common.toJava
-import com.ably.tracking.common.toJsonArray
+import com.ably.tracking.common.toJson
 import com.ably.tracking.publisher.debug.AblySimulationLocationEngine
 import com.ably.tracking.publisher.locationengine.FusedAndroidLocationEngine
 import com.ably.tracking.publisher.locationengine.GoogleLocationEngine
@@ -66,7 +68,7 @@ constructor(
     private val connectionConfiguration: ConnectionConfiguration,
     private val mapConfiguration: MapConfiguration,
     private val debugConfiguration: DebugConfiguration?,
-    private val locationHandler: LocationHandler,
+    private val locationHandler: LocationUpdateHandler,
     context: Context,
     resolutionPolicyFactory: ResolutionPolicy.Factory,
     private var _routingProfile: RoutingProfile
@@ -194,32 +196,38 @@ constructor(
     }
 
     private fun sendRawLocationMessage(rawLocation: Location) {
-        enqueue(RawLocationChangedEvent(rawLocation, rawLocation.toGeoJson()))
+        enqueue(RawLocationChangedEvent(LocationUpdate(rawLocation)))
     }
 
     private fun performRawLocationChanged(event: RawLocationChangedEvent) {
-        lastPublisherLocation = event.location
+        lastPublisherLocation = event.locationUpdate.location
         destinationToSet?.let { setDestination(it) }
     }
 
     private fun sendEnhancedLocationMessage(enhancedLocation: Location, keyPoints: List<Location>) {
-        val locations = if (keyPoints.isEmpty()) listOf(enhancedLocation) else keyPoints
-        val geoJsonMessages = locations.map { it.toGeoJson() }
-        enqueue(EnhancedLocationChangedEvent(enhancedLocation, geoJsonMessages))
+        val intermediateLocations = if (keyPoints.size > 1) keyPoints.subList(0, keyPoints.size - 1) else emptyList()
+        enqueue(
+            EnhancedLocationChangedEvent(
+                EnhancedLocationUpdate(
+                    enhancedLocation,
+                    intermediateLocations,
+                    if (intermediateLocations.isEmpty()) LocationUpdateType.ACTUAL else LocationUpdateType.PREDICTED
+                )
+            )
+        )
     }
 
     private fun performEnhancedLocationChanged(event: EnhancedLocationChangedEvent) {
-        event.geoJsonMessages.forEach {
-            Timber.d("sendEnhancedLocationMessage: publishing: ${it.synopsis()}")
-        }
+        val locationUpdateJson = event.locationUpdate.toJson(gson)
+        Timber.d("sendEnhancedLocationMessage: publishing: $locationUpdateJson")
         for ((trackable, channel) in channels) {
-            if (shouldSendLocation(event.location, lastSentEnhancedLocations[trackable], trackable)) {
-                lastSentEnhancedLocations[trackable] = event.location
-                channel.publish(EventNames.ENHANCED, event.geoJsonMessages.toJsonArray(gson))
+            if (shouldSendLocation(event.locationUpdate.location, lastSentEnhancedLocations[trackable], trackable)) {
+                lastSentEnhancedLocations[trackable] = event.locationUpdate.location
+                channel.publish(EventNames.ENHANCED, locationUpdateJson)
             }
         }
-        callback(locationHandler, event.location)
-        checkThreshold(event.location)
+        callback(locationHandler, event.locationUpdate)
+        checkThreshold(event.locationUpdate.location)
     }
 
     private fun shouldSendLocation(

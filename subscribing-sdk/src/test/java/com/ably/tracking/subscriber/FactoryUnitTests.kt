@@ -1,12 +1,12 @@
 package com.ably.tracking.subscriber
 
 import android.annotation.SuppressLint
-import android.location.Location
 import com.ably.tracking.Accuracy
 import com.ably.tracking.AssetStatusListener
 import com.ably.tracking.BuilderConfigurationIncompleteException
 import com.ably.tracking.ConnectionConfiguration
-import com.ably.tracking.LocationListener
+import com.ably.tracking.LocationUpdateListener
+import com.ably.tracking.LocationUpdate
 import com.ably.tracking.LogConfiguration
 import com.ably.tracking.Resolution
 import org.junit.Assert
@@ -68,7 +68,7 @@ class FactoryUnitTests {
     @Test
     fun `setting enhanced location updated listener updates builder field`() {
         // given
-        val listener: LocationListener = anyLocationUpdatedListener()
+        val listener: LocationUpdateListener = anyLocationUpdatedListener()
 
         // when
         val builder =
@@ -84,7 +84,7 @@ class FactoryUnitTests {
     @Test
     fun `setting enhanced location updated listener returns a new copy of builder`() {
         // given
-        val listener: LocationListener = anyLocationUpdatedListener()
+        val listener: LocationUpdateListener = anyLocationUpdatedListener()
         val originalBuilder = Subscriber.subscribers()
 
         // when
@@ -212,8 +212,8 @@ class FactoryUnitTests {
         Assert.assertNotNull(builder.trackingId)
     }
 
-    private fun anyLocationUpdatedListener(): LocationListener = object : LocationListener {
-        override fun onLocationUpdated(location: Location) = Unit
+    private fun anyLocationUpdatedListener(): LocationUpdateListener = object : LocationUpdateListener {
+        override fun onLocationUpdate(locationUpdate: LocationUpdate) = Unit
     }
 
     private fun anyAssetStatusListener(): AssetStatusListener = object : AssetStatusListener {

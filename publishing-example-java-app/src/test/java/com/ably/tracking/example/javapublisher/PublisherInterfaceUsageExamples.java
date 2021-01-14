@@ -51,7 +51,7 @@ public class PublisherInterfaceUsageExamples {
         publisherBuilder
             .androidContext(context)
             .connection(new ConnectionConfiguration("API_KEY", "CLIENT_ID"))
-            .locations(location -> { })
+            .locations(locationUpdate -> { })
             .log(new LogConfiguration(true))
             .map(new MapConfiguration("API_KEY"))
             .resolutionPolicy(resolutionPolicyFactory)

@@ -3,8 +3,8 @@ package com.ably.tracking.subscriber
 import com.ably.tracking.AssetStatusHandler
 import com.ably.tracking.AssetStatusListener
 import com.ably.tracking.ConnectionConfiguration
-import com.ably.tracking.LocationHandler
-import com.ably.tracking.LocationListener
+import com.ably.tracking.LocationUpdateHandler
+import com.ably.tracking.LocationUpdateListener
 import com.ably.tracking.LogConfiguration
 import com.ably.tracking.Resolution
 import com.ably.tracking.ResultHandler
@@ -116,7 +116,7 @@ interface Subscriber {
          * @return A new instance of the builder with this property changed.
          */
         @JvmSynthetic
-        fun enhancedLocations(handler: LocationHandler): Builder
+        fun enhancedLocations(handler: LocationUpdateHandler): Builder
 
         /**
          * Sets the handler to be notified when an enhanced location update is available.
@@ -126,7 +126,7 @@ interface Subscriber {
          * @param listener The listening function to be notified.
          * @return A new instance of the builder with this property changed.
          */
-        fun enhancedLocations(listener: LocationListener): Builder
+        fun enhancedLocations(listener: LocationUpdateListener): Builder
 
         /**
          * Sets the desired resolution of updates, to be requested from the remote publisher.

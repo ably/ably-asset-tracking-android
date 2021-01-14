@@ -4,15 +4,15 @@ import com.ably.tracking.AssetStatusHandler
 import com.ably.tracking.AssetStatusListener
 import com.ably.tracking.BuilderConfigurationIncompleteException
 import com.ably.tracking.ConnectionConfiguration
-import com.ably.tracking.LocationHandler
-import com.ably.tracking.LocationListener
+import com.ably.tracking.LocationUpdateHandler
+import com.ably.tracking.LocationUpdateListener
 import com.ably.tracking.LogConfiguration
 import com.ably.tracking.Resolution
 
 internal data class SubscriberBuilder(
     val connectionConfiguration: ConnectionConfiguration? = null,
     val logConfiguration: LogConfiguration? = null,
-    val enhancedLocationHandler: LocationHandler? = null,
+    val enhancedLocationHandler: LocationUpdateHandler? = null,
     val resolution: Resolution? = null,
     val trackingId: String? = null,
     val assetStatusHandler: AssetStatusHandler? = null
@@ -24,11 +24,11 @@ internal data class SubscriberBuilder(
     override fun log(configuration: LogConfiguration): Subscriber.Builder =
         this.copy(logConfiguration = configuration)
 
-    override fun enhancedLocations(handler: LocationHandler): Subscriber.Builder =
+    override fun enhancedLocations(handler: LocationUpdateHandler): Subscriber.Builder =
         this.copy(enhancedLocationHandler = handler)
 
-    override fun enhancedLocations(listener: LocationListener): Subscriber.Builder =
-        enhancedLocations { listener.onLocationUpdated(it) }
+    override fun enhancedLocations(listener: LocationUpdateListener): Subscriber.Builder =
+        enhancedLocations { listener.onLocationUpdate(it) }
 
     override fun resolution(resolution: Resolution): Subscriber.Builder =
         this.copy(resolution = resolution)

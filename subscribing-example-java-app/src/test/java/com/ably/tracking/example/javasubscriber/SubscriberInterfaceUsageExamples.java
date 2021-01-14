@@ -37,7 +37,7 @@ public class SubscriberInterfaceUsageExamples {
         subscriberBuilder
             .assetStatus(isOnline -> { })
             .connection(new ConnectionConfiguration("API_KEY", "CLIENT_ID"))
-            .enhancedLocations(location -> { })
+            .enhancedLocations(locationUpdate -> { })
             .log(new LogConfiguration(true))
             .resolution(new Resolution(Accuracy.MAXIMUM, 1L, 1.0))
             .trackingId("ID")

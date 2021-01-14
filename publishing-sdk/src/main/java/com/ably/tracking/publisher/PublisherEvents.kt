@@ -1,8 +1,8 @@
 package com.ably.tracking.publisher
 
-import android.location.Location
+import com.ably.tracking.EnhancedLocationUpdate
+import com.ably.tracking.LocationUpdate
 import com.ably.tracking.ResultHandler
-import com.ably.tracking.common.GeoJsonMessage
 import io.ably.lib.realtime.Channel
 import io.ably.lib.types.PresenceMessage
 
@@ -45,13 +45,11 @@ internal data class JoinPresenceSuccessEvent(
 ) : Event()
 
 internal data class RawLocationChangedEvent(
-    val location: Location,
-    val geoJsonMessage: GeoJsonMessage
+    val locationUpdate: LocationUpdate
 ) : Event()
 
 internal data class EnhancedLocationChangedEvent(
-    val location: Location,
-    val geoJsonMessages: List<GeoJsonMessage>
+    val locationUpdate: EnhancedLocationUpdate
 ) : Event()
 
 internal class RefreshResolutionPolicyEvent : Event()

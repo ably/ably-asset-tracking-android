@@ -5,7 +5,7 @@ import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.ErrorInformation
 import com.ably.tracking.FailureResult
 import com.ably.tracking.Handler
-import com.ably.tracking.LocationHandler
+import com.ably.tracking.LocationUpdateHandler
 import com.ably.tracking.Resolution
 import com.ably.tracking.ResultHandler
 import com.ably.tracking.ResultListener
@@ -14,10 +14,9 @@ import com.ably.tracking.clientOptions
 import com.ably.tracking.common.ClientTypes
 import com.ably.tracking.common.EventNames
 import com.ably.tracking.common.PresenceData
-import com.ably.tracking.common.getGeoJsonMessages
+import com.ably.tracking.common.getEnhancedLocationUpdate
 import com.ably.tracking.common.getPresenceData
 import com.ably.tracking.common.toJava
-import com.ably.tracking.common.toLocation
 import com.ably.tracking.toTracking
 import com.google.gson.Gson
 import io.ably.lib.realtime.AblyRealtime
@@ -38,7 +37,7 @@ import timber.log.Timber
 
 internal class DefaultSubscriber(
     private val connectionConfiguration: ConnectionConfiguration,
-    private val enhancedLocationHandler: LocationHandler,
+    private val enhancedLocationHandler: LocationUpdateHandler,
     trackingId: String,
     private val assetStatusHandler: AssetStatusHandler?,
     resolution: Resolution?
@@ -67,9 +66,8 @@ internal class DefaultSubscriber(
     private fun subscribeForEnhancedEvents() {
         channel.subscribe(EventNames.ENHANCED) { message ->
             Timber.i("Ably channel message (enhanced): $message")
-            message.getGeoJsonMessages(gson).forEach {
-                Timber.d("Received enhanced location: ${it.synopsis()}")
-                callback(enhancedLocationHandler, it.toLocation())
+            message.getEnhancedLocationUpdate(gson).let {
+                callback(enhancedLocationHandler, it)
             }
         }
     }

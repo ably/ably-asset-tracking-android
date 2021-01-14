@@ -1,5 +1,6 @@
 package com.ably.tracking.common
 
+import com.ably.tracking.LocationUpdateType
 import com.ably.tracking.Resolution
 
 object GeoJsonTypes {
@@ -32,3 +33,9 @@ data class GeoJsonProperties(
 )
 
 data class PresenceData(val type: String, val resolution: Resolution? = null)
+
+data class EnhancedLocationUpdateMessage(
+    val location: GeoJsonMessage,
+    val intermediateLocations: List<GeoJsonMessage>,
+    val type: LocationUpdateType
+)

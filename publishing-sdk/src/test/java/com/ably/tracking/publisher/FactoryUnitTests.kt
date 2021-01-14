@@ -5,8 +5,9 @@ import android.content.Context
 import android.location.Location
 import com.ably.tracking.BuilderConfigurationIncompleteException
 import com.ably.tracking.ConnectionConfiguration
-import com.ably.tracking.LocationHandler
-import com.ably.tracking.LocationListener
+import com.ably.tracking.LocationUpdateHandler
+import com.ably.tracking.LocationUpdateListener
+import com.ably.tracking.LocationUpdate
 import com.ably.tracking.LogConfiguration
 import io.mockk.mockk
 import org.junit.Assert
@@ -107,22 +108,22 @@ class FactoryUnitTests {
     @Test
     fun `setting location updated listener updates builder field`() {
         // given
-        val location = anyLocation()
-        lateinit var locationFromListener: Location
+        val locationUpdate = anyLocationUpdate()
+        lateinit var locationFromListener: LocationUpdate
         val listener = anyLocationUpdatedListener { locationFromListener = it }
 
         // when
         val builder = Publisher.publishers().locations(listener) as PublisherBuilder
-        builder.locationHandler!!.invoke(location)
+        builder.locationHandler!!.invoke(locationUpdate)
 
         // then
-        Assert.assertEquals(location, locationFromListener)
+        Assert.assertEquals(locationUpdate, locationFromListener)
     }
 
     @Test
     fun `setting location updated listener returns a new copy of builder`() {
         // given
-        val listener: LocationListener = anyLocationUpdatedListener()
+        val listener: LocationUpdateListener = anyLocationUpdatedListener()
         val originalBuilder = Publisher.publishers()
 
         // when
@@ -199,10 +200,12 @@ class FactoryUnitTests {
         Assert.assertNotNull(builder.androidContext)
     }
 
-    private fun anyLocationUpdatedListener(handler: LocationHandler = {}): LocationListener =
-        object : LocationListener {
-            override fun onLocationUpdated(location: Location) = handler(location)
+    private fun anyLocationUpdatedListener(handler: LocationUpdateHandler = {}): LocationUpdateListener =
+        object : LocationUpdateListener {
+            override fun onLocationUpdate(locationUpdate: LocationUpdate) = handler(locationUpdate)
         }
 
     private fun anyLocation() = Location("fused")
+
+    private fun anyLocationUpdate() = LocationUpdate(anyLocation())
 }

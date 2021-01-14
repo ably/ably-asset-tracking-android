@@ -62,7 +62,7 @@ class MainActivity : AppCompatActivity() {
     private fun createAndStartAssetSubscriber(trackingId: String) {
         subscriber = Subscriber.subscribers()
             .connection(ConnectionConfiguration(ABLY_API_KEY, CLIENT_ID))
-            .enhancedLocations({ showMarkerOnMap(it) })
+            .enhancedLocations({ showMarkerOnMap(it.location) })
             .trackingId(trackingId)
             .resolution(Resolution(Accuracy.MAXIMUM, desiredInterval = 1000L, minimumDisplacement = 1.0))
             .assetStatus({ updateAssetStatusInfo(it) })

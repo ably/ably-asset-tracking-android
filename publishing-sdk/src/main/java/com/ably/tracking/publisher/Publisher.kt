@@ -3,11 +3,11 @@ package com.ably.tracking.publisher
 import android.Manifest.permission.ACCESS_COARSE_LOCATION
 import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.content.Context
-import android.location.Location
 import androidx.annotation.RequiresPermission
 import com.ably.tracking.ConnectionConfiguration
-import com.ably.tracking.LocationHandler
-import com.ably.tracking.LocationListener
+import com.ably.tracking.LocationUpdateHandler
+import com.ably.tracking.LocationUpdateListener
+import com.ably.tracking.LocationUpdate
 import com.ably.tracking.LogConfiguration
 import com.ably.tracking.ResultHandler
 import com.ably.tracking.ResultListener
@@ -156,21 +156,21 @@ interface Publisher {
          *
          * This method overload is preferable when calling from Kotlin.
          *
-         * @param handler The function, which will be called once per [Location] update.
+         * @param handler The function, which will be called once per [LocationUpdate] update.
          * @return A new instance of the builder with this property changed.
          */
         @JvmSynthetic
-        fun locations(handler: LocationHandler): Builder
+        fun locations(handler: LocationUpdateHandler): Builder
 
         /**
          * Sets a handler to be notified about location updates.
          *
          * This method overload is provided for the convenience of those calling from Java.
          *
-         * @param listener The object, which will be called once per [Location] update.
+         * @param listener The object, which will be called once per [LocationUpdate] update.
          * @return A new instance of the builder with this property changed.
          */
-        fun locations(listener: LocationListener): Builder
+        fun locations(listener: LocationUpdateListener): Builder
 
         /**
          * Sets the Android Context.
