@@ -1,5 +1,7 @@
 package com.ably.tracking
 
+import io.ably.lib.types.ClientOptions
+
 /**
  * Extension converting Ably Realtime connection state to the equivalent [ConnectionState] API presented to users of
  * the Ably Asset Tracking SDKs.
@@ -44,3 +46,13 @@ fun io.ably.lib.realtime.ConnectionStateListener.ConnectionStateChange.toTrackin
         this.previous.toTracking(),
         this.reason?.toTracking()
     )
+
+/**
+ * Extension vending Ably client library ClientOptions from a [ConnectionConfiguration] instance.
+ */
+val ConnectionConfiguration.clientOptions: ClientOptions
+    get() {
+        val options = ClientOptions(this.apiKey)
+        options.clientId = this.clientId
+        return options
+    }
