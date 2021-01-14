@@ -15,6 +15,7 @@ import com.ably.tracking.Resolution
 import com.ably.tracking.ResultHandler
 import com.ably.tracking.ResultListener
 import com.ably.tracking.SuccessResult
+import com.ably.tracking.clientOptions
 import com.ably.tracking.common.ClientTypes
 import com.ably.tracking.common.EventNames
 import com.ably.tracking.common.MILLISECONDS_PER_SECOND
@@ -118,7 +119,7 @@ constructor(
             methods
         )
         locationEngineResolution = policy.resolve(emptySet())
-        ably = AblyRealtime(connectionConfiguration.apiKey)
+        ably = AblyRealtime(connectionConfiguration.clientOptions)
 
         Timber.w("Started.")
 
@@ -164,6 +165,7 @@ constructor(
     ) {
         mapboxBuilder.locationEngine(
             AblySimulationLocationEngine(
+                // TODO should there be a clientId in use here?
                 ClientOptions(connectionConfiguration.apiKey),
                 locationSource.simulationChannelName
             )
@@ -323,8 +325,7 @@ constructor(
             ably.channels.get(trackable.id).apply {
                 try {
                     presence.subscribe { enqueue(PresenceMessageEvent(trackable, it)) }
-                    presence.enterClient(
-                        connectionConfiguration.clientId,
+                    presence.enter(
                         gson.toJson(presenceData),
                         object : CompletionListener {
                             override fun onSuccess() {
@@ -379,8 +380,7 @@ constructor(
             // Leave Ably channel.
             removedChannel.presence.unsubscribe()
             try {
-                removedChannel.presence.leaveClient(
-                    connectionConfiguration.clientId,
+                removedChannel.presence.leave(
                     gson.toJson(presenceData),
                     object : CompletionListener {
                         override fun onSuccess() {

@@ -10,6 +10,7 @@ import com.ably.tracking.Resolution
 import com.ably.tracking.ResultHandler
 import com.ably.tracking.ResultListener
 import com.ably.tracking.SuccessResult
+import com.ably.tracking.clientOptions
 import com.ably.tracking.common.ClientTypes
 import com.ably.tracking.common.EventNames
 import com.ably.tracking.common.PresenceData
@@ -51,7 +52,7 @@ internal class DefaultSubscriber(
 
     init {
         eventsChannel = createEventsChannel(scope)
-        ably = AblyRealtime(connectionConfiguration.apiKey)
+        ably = AblyRealtime(connectionConfiguration.clientOptions)
         channel = ably.channels.get(
             trackingId,
             ChannelOptions().apply { params = mapOf("rewind" to "1") }
@@ -118,8 +119,7 @@ internal class DefaultSubscriber(
         try {
             notifyAssetIsOffline()
             channel.presence.subscribe { enqueue(PresenceMessageEvent(it)) }
-            channel.presence.enterClient(
-                connectionConfiguration.clientId,
+            channel.presence.enter(
                 gson.toJson(presenceData),
                 object : CompletionListener {
                     override fun onSuccess() = Unit
@@ -142,8 +142,7 @@ internal class DefaultSubscriber(
         try {
             channel.presence.unsubscribe()
             notifyAssetIsOffline()
-            channel.presence.leaveClient(
-                connectionConfiguration.clientId,
+            channel.presence.leave(
                 gson.toJson(presenceData),
                 object : CompletionListener {
                     override fun onSuccess() = Unit
