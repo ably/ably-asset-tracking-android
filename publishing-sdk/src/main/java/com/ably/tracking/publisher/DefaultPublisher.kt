@@ -501,7 +501,7 @@ constructor(
     }
 
     private fun performChangeRoutingProfile(event: ChangeRoutingProfileEvent) {
-        routingProfile = event.routingProfile
+        _routingProfile = event.routingProfile
         currentDestination?.let { setDestination(it) }
     }
 
