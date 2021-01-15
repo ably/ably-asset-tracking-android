@@ -48,7 +48,7 @@ data class ResolutionRequest(
 )
 
 data class EnhancedLocationUpdateMessage(
-    val location: GeoJsonMessage,
-    val intermediateLocations: List<GeoJsonMessage>,
-    val type: LocationUpdateType
+    @SerializedName("location") val location: GeoJsonMessage,
+    @SerializedName("intermediateLocations") val intermediateLocations: List<GeoJsonMessage>,
+    @SerializedName("type") val type: LocationUpdateType
 )
