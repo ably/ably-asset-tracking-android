@@ -26,6 +26,7 @@ import com.ably.tracking.common.PresenceData
 import com.ably.tracking.common.getPresenceData
 import com.ably.tracking.common.toJava
 import com.ably.tracking.common.toJson
+import com.ably.tracking.common.toResolution
 import com.ably.tracking.publisher.debug.AblySimulationLocationEngine
 import com.ably.tracking.publisher.locationengine.FusedAndroidLocationEngine
 import com.ably.tracking.publisher.locationengine.GoogleLocationEngine
@@ -463,7 +464,7 @@ constructor(
             subscribers[trackable] = mutableSetOf()
         }
         subscribers[trackable]?.add(subscriber)
-        saveOrRemoveResolutionRequest(data.resolution, trackable, subscriber)
+        saveOrRemoveResolutionRequest(data.resolutionRequest?.toResolution(), trackable, subscriber)
         hooks.subscribers?.onSubscriberAdded(subscriber)
         resolveResolution(trackable)
     }
@@ -471,8 +472,8 @@ constructor(
     private fun updateSubscriber(id: String, trackable: Trackable, data: PresenceData) {
         subscribers[trackable]?.let { subscribers ->
             subscribers.find { it.id == id }?.let { subscriber ->
-                data.resolution.let { resolution ->
-                    saveOrRemoveResolutionRequest(resolution, trackable, subscriber)
+                data.resolutionRequest.let { resolution ->
+                    saveOrRemoveResolutionRequest(resolution?.toResolution(), trackable, subscriber)
                     resolveResolution(trackable)
                 }
             }

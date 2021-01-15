@@ -1,7 +1,7 @@
 package com.ably.tracking.common
 
+import com.ably.tracking.Accuracy
 import com.ably.tracking.LocationUpdateType
-import com.ably.tracking.Resolution
 import com.google.gson.annotations.SerializedName
 
 object GeoJsonTypes {
@@ -38,7 +38,13 @@ data class GeoJsonProperties(
 
 data class PresenceData(
     @SerializedName("type") val type: String,
-    @SerializedName("resolution") val resolution: Resolution? = null
+    @SerializedName("resolution") val resolutionRequest: ResolutionRequest? = null
+)
+
+data class ResolutionRequest(
+    @SerializedName("accuracy") val accuracy: Accuracy,
+    @SerializedName("desiredInterval") val desiredInterval: Long,
+    @SerializedName("minimumDisplacement") val minimumDisplacement: Double
 )
 
 data class EnhancedLocationUpdateMessage(

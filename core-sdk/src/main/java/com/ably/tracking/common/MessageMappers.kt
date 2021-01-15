@@ -1,6 +1,7 @@
 package com.ably.tracking.common
 
 import com.ably.tracking.EnhancedLocationUpdate
+import com.ably.tracking.Resolution
 import com.google.gson.Gson
 import io.ably.lib.types.Message
 import io.ably.lib.types.PresenceMessage
@@ -20,3 +21,7 @@ fun Message.getEnhancedLocationUpdate(gson: Gson): EnhancedLocationUpdate =
                 message.type
             )
         }
+
+fun Resolution.toRequest(): ResolutionRequest = ResolutionRequest(accuracy, desiredInterval, minimumDisplacement)
+
+fun ResolutionRequest.toResolution(): Resolution = Resolution(accuracy, desiredInterval, minimumDisplacement)

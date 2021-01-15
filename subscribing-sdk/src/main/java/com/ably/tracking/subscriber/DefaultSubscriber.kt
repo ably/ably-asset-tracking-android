@@ -17,6 +17,7 @@ import com.ably.tracking.common.PresenceData
 import com.ably.tracking.common.getEnhancedLocationUpdate
 import com.ably.tracking.common.getPresenceData
 import com.ably.tracking.common.toJava
+import com.ably.tracking.common.toRequest
 import com.ably.tracking.toTracking
 import com.google.gson.Gson
 import io.ably.lib.realtime.AblyRealtime
@@ -45,7 +46,7 @@ internal class DefaultSubscriber(
     private val ably: AblyRealtime
     private val channel: Channel
     private val gson = Gson()
-    private var presenceData = PresenceData(ClientTypes.SUBSCRIBER, resolution)
+    private var presenceData = PresenceData(ClientTypes.SUBSCRIBER, resolution?.toRequest())
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private val eventsChannel: SendChannel<Event>
 
@@ -89,7 +90,7 @@ internal class DefaultSubscriber(
     }
 
     private fun performChangeResolution(event: ChangeResolutionEvent) {
-        presenceData = presenceData.copy(resolution = event.resolution)
+        presenceData = presenceData.copy(resolutionRequest = event.resolution?.toRequest())
         channel.presence.update(
             gson.toJson(presenceData),
             object : CompletionListener {
