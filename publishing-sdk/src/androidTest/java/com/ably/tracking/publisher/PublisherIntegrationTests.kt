@@ -21,8 +21,8 @@ class PublisherIntegrationTests {
     @Test
     fun createAndStartPublisherAndWaitUntilDataEnds() {
         // given
-        val dataEndedExpectation = UnitTestExpectation()
-        val trackResultExpectation = UnitResultTestExpectation()
+        val dataEndedExpectation = UnitTestExpectation("data ended")
+        val trackResultExpectation = UnitResultTestExpectation("track response")
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val locationData = getLocationData(context)
 
@@ -31,7 +31,7 @@ class PublisherIntegrationTests {
             context,
             locationData = locationData,
             onLocationDataEnded = {
-                dataEndedExpectation.fulfill(Unit)
+                dataEndedExpectation.fulfill()
             }
         ).apply {
             track(
@@ -47,13 +47,14 @@ class PublisherIntegrationTests {
         trackResultExpectation.await()
 
         // cleanup
-        val stopResultExpectation = UnitResultTestExpectation()
+        val stopResultExpectation = UnitResultTestExpectation("stop response")
         publisher.stop() {
             stopResultExpectation.fulfill(it)
         }
         stopResultExpectation.await()
 
         // then
+        dataEndedExpectation.assertFulfilled()
         trackResultExpectation.assertSuccess()
         stopResultExpectation.assertSuccess()
     }

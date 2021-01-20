@@ -1,7 +1,6 @@
 package com.ably.tracking.publisher
 
 import com.ably.tracking.Result
-import org.junit.Assert
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
 
@@ -15,41 +14,62 @@ private const val DEFAULT_ACQUIRE_TIMEOUT_IN_SECONDS = 5L
  *
  * When the expectation is fulfilled the permit is released, allowing await to succeed.
  */
-open class TestExpectation<T> {
+open class TestExpectation<T>(
+    /**
+     * A description of what we're waiting for.
+     */
+    val description: String
+) {
+    private var waiting: Boolean = false
     var result: T? = null
 
-    val semaphore = Semaphore(1).apply {
+    private val semaphore = Semaphore(1).apply {
         this.acquire()
     }
 
     /**
      * Calls tryAcquire on the encapsulated semaphore.
-     * @throws Exception If the timeout was reached before the permit could be acquired.
      */
     fun await(timeoutInSeconds: Long = DEFAULT_ACQUIRE_TIMEOUT_IN_SECONDS) {
-        val hasAcquired = semaphore.tryAcquire(1, timeoutInSeconds, TimeUnit.SECONDS)
-        if (!hasAcquired) {
-            throw Exception("Timeout when attempting to acquire semaphore permit.")
+        if (waiting) {
+            throw AssertionError("Already awaiting expectation '$description'.")
         }
+        waiting = true
+        semaphore.tryAcquire(1, timeoutInSeconds, TimeUnit.SECONDS)
+        waiting = false
     }
 
     /**
      * Calls release on the encapsulated semaphore.
      */
     fun fulfill(result: T) {
+        if (null != this.result) {
+            throw AssertionError("Expectation '$description' already fulfilled.")
+        }
         this.result = result
         semaphore.release()
     }
-}
 
-class UnitResultTestExpectation : TestExpectation<Result<Unit>>() {
-    fun assertSuccess() {
+    fun assertFulfilled(): T {
         result?.let {
-            Assert.assertTrue("Expected success.", it.isSuccess)
-            return
+            return it
         }
-        Assert.fail("Expectation unfulfilled.")
+        throw AssertionError("Expectation '$description' unfulfilled.")
     }
 }
 
-class UnitTestExpectation : TestExpectation<Unit>()
+class UnitResultTestExpectation(label: String) : TestExpectation<Result<Unit>>(label) {
+    fun assertSuccess() {
+        assertFulfilled().let {
+            if (!it.isSuccess) {
+                throw AssertionError("Expectation '$description' did not result in success.")
+            }
+        }
+    }
+}
+
+class UnitTestExpectation(label: String) : TestExpectation<Unit>(label) {
+    fun fulfill() {
+        fulfill(Unit)
+    }
+}
