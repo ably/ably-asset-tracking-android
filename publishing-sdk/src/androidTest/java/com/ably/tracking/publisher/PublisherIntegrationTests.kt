@@ -8,9 +8,6 @@ import com.ably.tracking.Accuracy
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.Handler
 import com.ably.tracking.Resolution
-import com.ably.tracking.Result
-import com.ably.tracking.SuccessResult
-import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -24,36 +21,41 @@ class PublisherIntegrationTests {
     @Test
     fun createAndStartPublisherAndWaitUntilDataEnds() {
         // given
-        val testLock = TestLock()
-        val stopLock = TestLock()
+        val dataEndedExpectation = UnitTestExpectation()
+        val trackResultExpectation = UnitResultTestExpectation()
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val locationData = getLocationData(context)
-        var trackResult: Result<Unit>? = null
-        var stopResult: Result<Unit>? = null
 
         // when
         val publisher = createAndStartPublisher(
             context,
             locationData = locationData,
-            onLocationDataEnded = { testLock.release() }
+            onLocationDataEnded = {
+                dataEndedExpectation.fulfill(Unit)
+            }
         ).apply {
             track(
                 Trackable("ID"),
                 {
-                    trackResult = it
+                    trackResultExpectation.fulfill(it)
                 }
             )
         }
-        testLock.acquire()
+
+        // await asynchronous events
+        dataEndedExpectation.await()
+        trackResultExpectation.await()
+
+        // cleanup
+        val stopResultExpectation = UnitResultTestExpectation()
         publisher.stop() {
-            stopResult = it
-            stopLock.release()
+            stopResultExpectation.fulfill(it)
         }
-        stopLock.acquire()
+        stopResultExpectation.await()
 
         // then
-        Assert.assertTrue("Expected success callback on track.", trackResult is SuccessResult<Unit>)
-        Assert.assertTrue("Expected success callback on stop.", stopResult is SuccessResult<Unit>)
+        trackResultExpectation.assertSuccess()
+        stopResultExpectation.assertSuccess()
     }
 
     @SuppressLint("MissingPermission")
