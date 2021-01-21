@@ -8,9 +8,6 @@ import com.ably.tracking.Accuracy
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.Handler
 import com.ably.tracking.Resolution
-import com.ably.tracking.Result
-import com.ably.tracking.SuccessResult
-import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -23,37 +20,53 @@ class PublisherIntegrationTests {
 
     @Test
     fun createAndStartPublisherAndWaitUntilDataEnds() {
+        testLogD("##########  PublisherIntegrationTests.createAndStartPublisherAndWaitUntilDataEnds  ##########")
+
         // given
-        val testLock = TestLock()
-        val stopLock = TestLock()
+        testLogD("GIVEN")
+        val dataEndedExpectation = UnitTestExpectation("data ended")
+        val trackResultExpectation = UnitResultTestExpectation("track response")
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val locationData = getLocationData(context)
-        var trackResult: Result<Unit>? = null
-        var stopResult: Result<Unit>? = null
 
         // when
+        testLogD("WHEN")
         val publisher = createAndStartPublisher(
             context,
             locationData = locationData,
-            onLocationDataEnded = { testLock.release() }
+            onLocationDataEnded = {
+                testLogD("data ended")
+                dataEndedExpectation.fulfill()
+            }
         ).apply {
             track(
                 Trackable("ID"),
                 {
-                    trackResult = it
+                    testLogD("track result: $it")
+                    trackResultExpectation.fulfill(it)
                 }
             )
         }
-        testLock.acquire()
+
+        // await asynchronous events
+        testLogD("AWAIT")
+        dataEndedExpectation.await()
+        trackResultExpectation.await()
+
+        // cleanup
+        testLogD("CLEANUP")
+        val stopResultExpectation = UnitResultTestExpectation("stop response")
         publisher.stop() {
-            stopResult = it
-            stopLock.release()
+            testLogD("stop result: $it")
+            stopResultExpectation.fulfill(it)
         }
-        stopLock.acquire()
+        stopResultExpectation.await()
 
         // then
-        Assert.assertTrue("Expected success callback on track.", trackResult is SuccessResult<Unit>)
-        Assert.assertTrue("Expected success callback on stop.", stopResult is SuccessResult<Unit>)
+        testLogD("THEN")
+        dataEndedExpectation.assertFulfilled()
+        trackResultExpectation.assertSuccess()
+        stopResultExpectation.assertSuccess()
     }
 
     @SuppressLint("MissingPermission")
