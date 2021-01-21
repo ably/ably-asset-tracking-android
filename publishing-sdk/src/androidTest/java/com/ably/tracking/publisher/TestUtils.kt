@@ -18,8 +18,8 @@ private val encounteredThreadIds = HashSet<Long>()
 @SuppressLint("LogNotTimber", "LogConditional")
 fun testLogD(message: String) {
     val thread = Thread.currentThread()
-    val id = thread.id
-    if (!encounteredThreadIds.contains(id)) {
+    val currentThreadId = thread.id
+    if (!encounteredThreadIds.contains(currentThreadId)) {
         val currentThreadLooper = Looper.myLooper()
 
         val looperDescription =
@@ -30,8 +30,8 @@ fun testLogD(message: String) {
                     "has Looper (not main)"
             else "no Looper"
 
-        Log.d(TAG, "THREAD $id is '${thread.name}' [$looperDescription]")
-        encounteredThreadIds.add(id)
+        Log.d(TAG, "THREAD $currentThreadId is '${thread.name}' [$looperDescription]")
+        encounteredThreadIds.add(currentThreadId)
     }
 
     Log.d(TAG, "${Thread.currentThread().id}:  $message")
