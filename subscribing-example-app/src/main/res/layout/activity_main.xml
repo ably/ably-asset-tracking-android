@@ -26,8 +26,8 @@
     android:layout_height="wrap_content"
     android:layout_marginStart="30dp"
     android:text="@string/asset_status_offline"
-    app:layout_constraintStart_toStartOf="parent"
     app:layout_constraintBottom_toBottomOf="@id/animationSwitch"
+    app:layout_constraintStart_toStartOf="parent"
     app:layout_constraintTop_toTopOf="@id/animationSwitch" />
 
   <TextView
@@ -46,6 +46,64 @@
     android:checked="true"
     app:layout_constraintEnd_toEndOf="parent"
     app:layout_constraintTop_toBottomOf="@id/appTitleTextView" />
+
+  <TextView
+    android:id="@+id/resolutionAccuracyLabelTextView"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:text="@string/resolution_accuracy"
+    android:textAlignment="center"
+    app:layout_constraintEnd_toStartOf="@id/resolutionDisplacementLabelTextView"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintTop_toBottomOf="@id/animationSwitch" />
+
+  <TextView
+    android:id="@+id/resolutionDisplacementLabelTextView"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:text="@string/resolution_minimum_displacement"
+    android:textAlignment="center"
+    app:layout_constraintEnd_toStartOf="@id/resolutionIntervalLabelTextView"
+    app:layout_constraintStart_toEndOf="@id/resolutionAccuracyLabelTextView"
+    app:layout_constraintTop_toTopOf="@id/resolutionAccuracyLabelTextView" />
+
+  <TextView
+    android:id="@+id/resolutionIntervalLabelTextView"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:text="@string/resolution_desired_interval"
+    android:textAlignment="center"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintStart_toEndOf="@id/resolutionDisplacementLabelTextView"
+    app:layout_constraintTop_toTopOf="@id/resolutionAccuracyLabelTextView" />
+
+  <TextView
+    android:id="@+id/resolutionAccuracyTextView"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:paddingBottom="10dp"
+    app:layout_constraintEnd_toEndOf="@id/resolutionAccuracyLabelTextView"
+    app:layout_constraintStart_toStartOf="@id/resolutionAccuracyLabelTextView"
+    app:layout_constraintTop_toBottomOf="@id/resolutionAccuracyLabelTextView"
+    tools:text="balanced" />
+
+  <TextView
+    android:id="@+id/resolutionDisplacementTextView"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    app:layout_constraintEnd_toEndOf="@id/resolutionDisplacementLabelTextView"
+    app:layout_constraintStart_toStartOf="@id/resolutionDisplacementLabelTextView"
+    app:layout_constraintTop_toTopOf="@id/resolutionAccuracyTextView"
+    tools:text="10.0m" />
+
+  <TextView
+    android:id="@+id/resolutionIntervalTextView"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    app:layout_constraintEnd_toEndOf="@id/resolutionIntervalLabelTextView"
+    app:layout_constraintStart_toStartOf="@id/resolutionIntervalLabelTextView"
+    app:layout_constraintTop_toTopOf="@id/resolutionAccuracyTextView"
+    tools:text="100s" />
 
   <TextView
     android:id="@+id/trackingIdLabel"
@@ -82,6 +140,6 @@
     android:layout_width="match_parent"
     android:layout_height="0dp"
     app:layout_constraintBottom_toTopOf="@id/trackingIdLabel"
-    app:layout_constraintTop_toBottomOf="@id/animationSwitch" />
+    app:layout_constraintTop_toBottomOf="@id/resolutionAccuracyTextView" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

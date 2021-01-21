@@ -19,12 +19,18 @@ import kotlinx.android.synthetic.main.activity_main.*
 
 private const val CLIENT_ID = "<INSERT_CLIENT_ID_HERE>"
 private const val ABLY_API_KEY = BuildConfig.ABLY_API_KEY
+private const val MILLISECONDS_PER_SECOND = 1000L
+private const val ZOOM_LEVEL_BUILDINGS = 20F
 private const val ZOOM_LEVEL_STREETS = 15F
+private const val ZOOM_LEVEL_CITY = 10F
+private const val ZOOM_LEVEL_CONTINENT = 5F
 
 class MainActivity : AppCompatActivity() {
     private var subscriber: Subscriber? = null
     private var googleMap: GoogleMap? = null
     private var marker: Marker? = null
+    private var resolution: Resolution =
+        Resolution(Accuracy.MAXIMUM, desiredInterval = 1000L, minimumDisplacement = 1.0)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -51,7 +57,9 @@ class MainActivity : AppCompatActivity() {
         trackingIdEditText.text.toString().trim().let { trackingId ->
             if (trackingId.isNotEmpty()) {
                 googleMap?.clear()
+                googleMap?.setOnCameraIdleListener { updateResolutionBasedOnZoomLevel() }
                 createAndStartAssetSubscriber(trackingId)
+                updateResolutionInfo(resolution)
                 changeStartButtonState(true)
             } else {
                 showToast("Insert tracking ID")
@@ -64,9 +72,62 @@ class MainActivity : AppCompatActivity() {
             .connection(ConnectionConfiguration(ABLY_API_KEY, CLIENT_ID))
             .enhancedLocations({ showMarkerOnMap(it.location) })
             .trackingId(trackingId)
-            .resolution(Resolution(Accuracy.MAXIMUM, desiredInterval = 1000L, minimumDisplacement = 1.0))
+            .resolution(resolution)
             .assetStatus({ updateAssetStatusInfo(it) })
             .start()
+    }
+
+    private fun updateResolutionBasedOnZoomLevel() {
+        googleMap?.cameraPosition?.zoom?.let {
+            val newResolution = getResolutionForZoomLevel(it)
+            if (newResolution != resolution) {
+                changeResolution(newResolution)
+            }
+        }
+    }
+
+    private fun changeResolution(newResolution: Resolution) {
+        subscriber?.sendChangeRequest(newResolution) {
+            if (it.isSuccess) {
+                resolution = newResolution
+                updateResolutionInfo(newResolution)
+            } else {
+                showToast("Changing resolution error")
+            }
+        }
+    }
+
+    private fun getResolutionForZoomLevel(zoomLevel: Float): Resolution =
+        when (zoomLevel) {
+            in ZOOM_LEVEL_BUILDINGS..Float.MAX_VALUE -> Resolution(
+                Accuracy.MAXIMUM, desiredInterval = 1 * MILLISECONDS_PER_SECOND, minimumDisplacement = 1.0
+            )
+            in ZOOM_LEVEL_STREETS..ZOOM_LEVEL_BUILDINGS -> Resolution(
+                Accuracy.HIGH, desiredInterval = 3 * MILLISECONDS_PER_SECOND, minimumDisplacement = 10.0
+            )
+            in ZOOM_LEVEL_CITY..ZOOM_LEVEL_STREETS -> Resolution(
+                Accuracy.BALANCED, desiredInterval = 10 * MILLISECONDS_PER_SECOND, minimumDisplacement = 100.0
+            )
+            in ZOOM_LEVEL_CONTINENT..ZOOM_LEVEL_CITY -> Resolution(
+                Accuracy.LOW, desiredInterval = 60 * MILLISECONDS_PER_SECOND, minimumDisplacement = 5000.0
+            )
+            else -> Resolution(
+                Accuracy.MINIMUM, desiredInterval = 120 * MILLISECONDS_PER_SECOND, minimumDisplacement = 10000.0
+            )
+        }
+
+    private fun updateResolutionInfo(resolution: Resolution) {
+        resolutionAccuracyTextView.text = resolution.accuracy.name
+        resolutionDisplacementTextView.text =
+            getString(R.string.resolution_minimum_displacement_value, resolution.minimumDisplacement)
+        resolutionIntervalTextView.text =
+            getString(R.string.resolution_desired_interval_value, resolution.desiredInterval)
+    }
+
+    private fun clearResolutionInfo() {
+        resolutionAccuracyTextView.text = ""
+        resolutionDisplacementTextView.text = ""
+        resolutionIntervalTextView.text = ""
     }
 
     private fun updateAssetStatusInfo(isOnline: Boolean) {
@@ -75,6 +136,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun stopSubscribing() {
+        googleMap?.setOnCameraIdleListener { }
+        clearResolutionInfo()
         subscriber?.stop() {
             // TODO check Result (it) for failure and report accordingly
             subscriber = null
