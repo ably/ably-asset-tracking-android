@@ -14,7 +14,7 @@ private const val DEFAULT_ACQUIRE_TIMEOUT_IN_SECONDS = 5L
  *
  * When the expectation is fulfilled the permit is released, allowing await to succeed.
  */
-open class TestExpectation<T>(
+open class Expectation<T>(
     /**
      * A description of what we're waiting for.
      */
@@ -56,7 +56,7 @@ open class TestExpectation<T>(
         result ?: throw AssertionError("Expectation '$description' unfulfilled.")
 }
 
-class UnitResultTestExpectation(label: String) : TestExpectation<Result<Unit>>(label) {
+class UnitResultExpectation(label: String) : Expectation<Result<Unit>>(label) {
     fun assertSuccess() {
         assertFulfilled().let {
             if (!it.isSuccess) {
@@ -66,7 +66,7 @@ class UnitResultTestExpectation(label: String) : TestExpectation<Result<Unit>>(l
     }
 }
 
-class UnitTestExpectation(label: String) : TestExpectation<Unit>(label) {
+class UnitExpectation(label: String) : Expectation<Unit>(label) {
     fun fulfill() {
         fulfill(Unit)
     }
