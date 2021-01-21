@@ -8,6 +8,9 @@ import com.ably.tracking.Accuracy
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.Handler
 import com.ably.tracking.Resolution
+import com.ably.tracking.test.common.UnitResultTestExpectation
+import com.ably.tracking.test.common.UnitTestExpectation
+import com.ably.tracking.test.common.testLogD
 import org.junit.Test
 import org.junit.runner.RunWith
 
