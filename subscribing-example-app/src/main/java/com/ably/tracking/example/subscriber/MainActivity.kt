@@ -25,6 +25,8 @@ class MainActivity : AppCompatActivity() {
     private var subscriber: Subscriber? = null
     private var googleMap: GoogleMap? = null
     private var marker: Marker? = null
+    private var resolution: Resolution =
+        Resolution(Accuracy.MAXIMUM, desiredInterval = 1000L, minimumDisplacement = 1.0)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -52,6 +54,7 @@ class MainActivity : AppCompatActivity() {
             if (trackingId.isNotEmpty()) {
                 googleMap?.clear()
                 createAndStartAssetSubscriber(trackingId)
+                updateResolutionInfo(resolution)
                 changeStartButtonState(true)
             } else {
                 showToast("Insert tracking ID")
@@ -64,9 +67,23 @@ class MainActivity : AppCompatActivity() {
             .connection(ConnectionConfiguration(ABLY_API_KEY, CLIENT_ID))
             .enhancedLocations({ showMarkerOnMap(it.location) })
             .trackingId(trackingId)
-            .resolution(Resolution(Accuracy.MAXIMUM, desiredInterval = 1000L, minimumDisplacement = 1.0))
+            .resolution(resolution)
             .assetStatus({ updateAssetStatusInfo(it) })
             .start()
+    }
+
+    private fun updateResolutionInfo(resolution: Resolution) {
+        resolutionAccuracyTextView.text = resolution.accuracy.name
+        resolutionDisplacementTextView.text =
+            getString(R.string.resolution_minimum_displacement_value, resolution.minimumDisplacement)
+        resolutionIntervalTextView.text =
+            getString(R.string.resolution_desired_interval_value, resolution.desiredInterval)
+    }
+
+    private fun clearResolutionInfo() {
+        resolutionAccuracyTextView.text = ""
+        resolutionDisplacementTextView.text = ""
+        resolutionIntervalTextView.text = ""
     }
 
     private fun updateAssetStatusInfo(isOnline: Boolean) {
@@ -75,6 +92,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun stopSubscribing() {
+        clearResolutionInfo()
         subscriber?.stop() {
             // TODO check Result (it) for failure and report accordingly
             subscriber = null
