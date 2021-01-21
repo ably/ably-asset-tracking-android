@@ -1,5 +1,8 @@
 package com.ably.tracking.publisher
 
+import android.annotation.SuppressLint
+import android.os.Looper
+import android.util.Log
 import com.ably.tracking.Result
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
@@ -8,6 +11,24 @@ import java.util.concurrent.TimeUnit
  * A timeout appropriate for most integration tests.
  */
 private const val DEFAULT_ACQUIRE_TIMEOUT_IN_SECONDS = 5L
+
+private val TAG = "PUBLISHING SDK IT"
+private val encounteredThreadIds = HashSet<Long>()
+
+@SuppressLint("LogNotTimber", "LogConditional")
+fun testLogD(message: String) {
+    val thread = Thread.currentThread()
+    val id = thread.id
+    if (!encounteredThreadIds.contains(id)) {
+        val looper = Looper.myLooper()
+        val looperDescription =
+            if (null != looper) if (looper == Looper.getMainLooper()) "main Looper" else "has Looper (not main)" else "no Looper"
+        Log.d(TAG, "THREAD $id is '${thread.name}' [$looperDescription]")
+        encounteredThreadIds.add(id)
+    }
+
+    Log.d(TAG, "${Thread.currentThread().id}:  $message")
+}
 
 /**
  * Encapsulates a semaphore with a single permit, acquired from the outset.
@@ -35,7 +56,9 @@ open class TestExpectation<T>(
             throw AssertionError("Already awaiting expectation '$description'.")
         }
         waiting = true
-        semaphore.tryAcquire(1, timeoutInSeconds, TimeUnit.SECONDS)
+        testLogD("semaphore '$description' acquire...")
+        val acquired = semaphore.tryAcquire(1, timeoutInSeconds, TimeUnit.SECONDS)
+        testLogD("semaphore '$description' ${if (acquired) "acquired" else "failed to acquire"}")
         waiting = false
     }
 

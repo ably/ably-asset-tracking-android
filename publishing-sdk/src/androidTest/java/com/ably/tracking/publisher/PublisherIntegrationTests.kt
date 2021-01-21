@@ -20,40 +20,50 @@ class PublisherIntegrationTests {
 
     @Test
     fun createAndStartPublisherAndWaitUntilDataEnds() {
+        testLogD("##########  PublisherIntegrationTests.createAndStartPublisherAndWaitUntilDataEnds  ##########")
+
         // given
+        testLogD("GIVEN")
         val dataEndedExpectation = UnitTestExpectation("data ended")
         val trackResultExpectation = UnitResultTestExpectation("track response")
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val locationData = getLocationData(context)
 
         // when
+        testLogD("WHEN")
         val publisher = createAndStartPublisher(
             context,
             locationData = locationData,
             onLocationDataEnded = {
+                testLogD("data ended")
                 dataEndedExpectation.fulfill()
             }
         ).apply {
             track(
                 Trackable("ID"),
                 {
+                    testLogD("track result: $it")
                     trackResultExpectation.fulfill(it)
                 }
             )
         }
 
         // await asynchronous events
+        testLogD("AWAIT")
         dataEndedExpectation.await()
         trackResultExpectation.await()
 
         // cleanup
+        testLogD("CLEANUP")
         val stopResultExpectation = UnitResultTestExpectation("stop response")
         publisher.stop() {
+            testLogD("stop result: $it")
             stopResultExpectation.fulfill(it)
         }
         stopResultExpectation.await()
 
         // then
+        testLogD("THEN")
         dataEndedExpectation.assertFulfilled()
         trackResultExpectation.assertSuccess()
         stopResultExpectation.assertSuccess()
