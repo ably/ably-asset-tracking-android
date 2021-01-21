@@ -20,9 +20,9 @@ fun testLogD(message: String) {
     val thread = Thread.currentThread()
     val id = thread.id
     if (!encounteredThreadIds.contains(id)) {
-        val looper = Looper.myLooper()
+        val currentThreadLooper = Looper.myLooper()
         val looperDescription =
-            if (null != looper) if (looper == Looper.getMainLooper()) "main Looper" else "has Looper (not main)" else "no Looper"
+            if (null != currentThreadLooper) if (currentThreadLooper == Looper.getMainLooper()) "main Looper" else "has Looper (not main)" else "no Looper"
         Log.d(TAG, "THREAD $id is '${thread.name}' [$looperDescription]")
         encounteredThreadIds.add(id)
     }
