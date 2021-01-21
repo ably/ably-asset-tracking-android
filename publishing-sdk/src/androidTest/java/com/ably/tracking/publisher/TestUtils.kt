@@ -80,12 +80,8 @@ open class TestExpectation<T>(
         semaphore.release()
     }
 
-    fun assertFulfilled(): T {
-        result?.let {
-            return it
-        }
-        throw AssertionError("Expectation '$description' unfulfilled.")
-    }
+    fun assertFulfilled(): T =
+        result ?: throw AssertionError("Expectation '$description' unfulfilled.")
 }
 
 class UnitResultTestExpectation(label: String) : TestExpectation<Result<Unit>>(label) {
