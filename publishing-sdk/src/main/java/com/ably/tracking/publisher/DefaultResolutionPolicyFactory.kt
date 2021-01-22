@@ -40,10 +40,7 @@ internal class DefaultResolutionPolicy(
             when (constraints) {
                 null -> resolveFromRequests(request.remoteRequests)
                 is DefaultResolutionConstraints -> {
-                    val resolutionFromTrackable = constraints.resolutions.getResolution(
-                        proximityThresholdReached,
-                        subscriberSetListener.hasSubscribers(request.trackable)
-                    )
+                    val resolutionFromTrackable = getResolutionFromTrackable(constraints, request.trackable)
                     val allResolutions = mutableSetOf<Resolution>().apply {
                         add(resolutionFromTrackable)
                         request.remoteRequests.let { if (it.isNotEmpty()) addAll(it) }
@@ -54,6 +51,22 @@ internal class DefaultResolutionPolicy(
                 }
             }
         }
+
+    private fun getResolutionFromTrackable(
+        resolutionConstraints: DefaultResolutionConstraints,
+        trackable: Trackable
+    ): Resolution {
+        val hasSubscribers = subscriberSetListener.hasSubscribers(trackable)
+
+        return if (proximityThresholdReached)
+            resolutionConstraints.resolutions.getResolution(isNear = true, hasSubscriber = hasSubscribers)
+                ?: defaultResolution
+        else {
+            resolutionConstraints.resolutions.getResolution(isNear = false, hasSubscriber = hasSubscribers)
+                ?: resolutionConstraints.resolutions.getResolution(isNear = true, hasSubscriber = false)
+                ?: defaultResolution
+        }
+    }
 
     private fun resolveFromRequests(requests: Set<Resolution>): Resolution =
         if (requests.isEmpty()) defaultResolution else createFinalResolution(requests)
