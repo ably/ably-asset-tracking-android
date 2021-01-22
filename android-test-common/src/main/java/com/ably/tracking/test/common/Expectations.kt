@@ -1,8 +1,5 @@
-package com.ably.tracking.publisher
+package com.ably.tracking.test.common
 
-import android.annotation.SuppressLint
-import android.os.Looper
-import android.util.Log
 import com.ably.tracking.Result
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
@@ -12,37 +9,12 @@ import java.util.concurrent.TimeUnit
  */
 private const val DEFAULT_ACQUIRE_TIMEOUT_IN_SECONDS = 5L
 
-private val TAG = "PUBLISHING SDK IT"
-private val encounteredThreadIds = HashSet<Long>()
-
-@SuppressLint("LogNotTimber", "LogConditional")
-fun testLogD(message: String) {
-    val thread = Thread.currentThread()
-    val currentThreadId = thread.id
-    if (!encounteredThreadIds.contains(currentThreadId)) {
-        val currentThreadLooper = Looper.myLooper()
-
-        val looperDescription =
-            if (null != currentThreadLooper)
-                if (currentThreadLooper == Looper.getMainLooper())
-                    "main Looper"
-                else
-                    "has Looper (not main)"
-            else "no Looper"
-
-        Log.d(TAG, "THREAD $currentThreadId is '${thread.name}' [$looperDescription]")
-        encounteredThreadIds.add(currentThreadId)
-    }
-
-    Log.d(TAG, "${Thread.currentThread().id}:  $message")
-}
-
 /**
  * Encapsulates a semaphore with a single permit, acquired from the outset.
  *
  * When the expectation is fulfilled the permit is released, allowing await to succeed.
  */
-open class TestExpectation<T>(
+open class Expectation<T>(
     /**
      * A description of what we're waiting for.
      */
@@ -84,7 +56,7 @@ open class TestExpectation<T>(
         result ?: throw AssertionError("Expectation '$description' unfulfilled.")
 }
 
-class UnitResultTestExpectation(label: String) : TestExpectation<Result<Unit>>(label) {
+class UnitResultExpectation(label: String) : Expectation<Result<Unit>>(label) {
     fun assertSuccess() {
         assertFulfilled().let {
             if (!it.isSuccess) {
@@ -94,7 +66,7 @@ class UnitResultTestExpectation(label: String) : TestExpectation<Result<Unit>>(l
     }
 }
 
-class UnitTestExpectation(label: String) : TestExpectation<Unit>(label) {
+class UnitExpectation(label: String) : Expectation<Unit>(label) {
     fun fulfill() {
         fulfill(Unit)
     }

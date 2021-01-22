@@ -8,6 +8,9 @@ import com.ably.tracking.Accuracy
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.Handler
 import com.ably.tracking.Resolution
+import com.ably.tracking.test.common.UnitResultExpectation
+import com.ably.tracking.test.common.UnitExpectation
+import com.ably.tracking.test.common.testLogD
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -24,8 +27,8 @@ class PublisherIntegrationTests {
 
         // given
         testLogD("GIVEN")
-        val dataEndedExpectation = UnitTestExpectation("data ended")
-        val trackResultExpectation = UnitResultTestExpectation("track response")
+        val dataEndedExpectation = UnitExpectation("data ended")
+        val trackResultExpectation = UnitResultExpectation("track response")
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val locationData = getLocationData(context)
 
@@ -55,7 +58,7 @@ class PublisherIntegrationTests {
 
         // cleanup
         testLogD("CLEANUP")
-        val stopResultExpectation = UnitResultTestExpectation("stop response")
+        val stopResultExpectation = UnitResultExpectation("stop response")
         publisher.stop() {
             testLogD("stop result: $it")
             stopResultExpectation.fulfill(it)
