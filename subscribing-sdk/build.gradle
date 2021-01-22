@@ -8,4 +8,5 @@ apply from: '../jacoco.gradle'
 
 dependencies {
     api project(':core-sdk')
+    implementation project(':common')
 }
