@@ -148,5 +148,3 @@ typealias ResultHandler<T> = Handler<Result<T>>
 interface AssetStatusListener {
     fun onStatusChanged(isOnline: Boolean)
 }
-
-typealias AssetStatusHandler = Handler<Boolean>

@@ -41,21 +41,28 @@ interface Publisher {
      * If this object was already in this publisher's tracked set then this method only serves to change the actively
      * tracked object.
      *
-     * This method overload is preferable when calling from Kotlin.
-     *
      * @param trackable The object to be added to this publisher's tracked set, if it's not already there, and to be
      * made the actively tracked object.
-     * @param handler Called when the trackable is successfully added and make the actively tracked object or when an error occurs.
-     * TODO: Refactor as a suspend function
      */
     @JvmSynthetic
     suspend fun track(trackable: Trackable)
 
     /**
+     * Adds a [Trackable] object and makes it the actively tracked object, meaning that the state of the [active] field
+     * will be updated to this object, if that wasn't already the case.
+     *
+     * If this object was already in this publisher's tracked set then this method only serves to change the actively
+     * tracked object.
+     *
      * This method overload is provided for the convenience of those calling from Java.
-     * TODO: Refactor to return CompletableFuture
+     * Kotlin users will generally prefer to use the [track] method.
+     *
+     * @param trackable The object to be added to this publisher's tracked set, if it's not already there, and to be
+     * made the actively tracked object.
+     *
+     * @return A [CompletableFuture] that completes when the object has been removed.
      */
-    fun trackTrackable(trackable: Trackable): CompletableFuture<Void>
+    fun trackAsync(trackable: Trackable): CompletableFuture<Void>
 
     /**
      * Adds a [Trackable] object, but does not make it the actively tracked object, meaning that the state of the
@@ -63,20 +70,25 @@ interface Publisher {
      *
      * If this object was already in this publisher's tracked set then this method does nothing.
      *
-     * This method overload is preferable when calling from Kotlin.
-     *
      * @param trackable The object to be added to this publisher's tracked set, if it's not already there.
-     * @param handler Called when the trackable is successfully added or an error occurs.
      */
     @JvmSynthetic
     suspend fun add(trackable: Trackable)
 
     /**
+     * Adds a [Trackable] object, but does not make it the actively tracked object, meaning that the state of the
+     * [active] field will not change.
+     *
+     * If this object was already in this publisher's tracked set then this method does nothing.
+     *
      * This method overload is provided for the convenience of those calling from Java.
-     * NOTE the "Trackable" suffix on this name is there because otherwise we name class with [add].
-     * TODO why do some Java APIs say CompletableFuture<?> - can we vend that if we need to?
+     * Kotlin users will generally prefer to use the [add] method.
+     *
+     * @param trackable The object to be added to this publisher's tracked set, if it's not already there.
+     *
+     * @return A [CompletableFuture] that completes when the object has been added.
      */
-    fun addTrackable(trackable: Trackable): CompletableFuture<Void>
+    fun addAsync(trackable: Trackable): CompletableFuture<Void>
 
     /**
      * Removes a [Trackable] object if it is known to this publisher, otherwise does nothing and returns false.
@@ -84,20 +96,27 @@ interface Publisher {
      * If the removed object is the current actively [active] object then that state will be cleared, meaning that for
      * another object to become the actively tracked delivery then the [track] method must be subsequently called.
      *
-     * This method overload is preferable when calling from Kotlin.
-     *
      * @param trackable The object to be removed from this publisher's tracked set, it it's there.
-     * @param handler Called when the trackable is successfully removed or an error occurs.
-     * TODO: Refactor as a suspend function
+     *
+     * @return `true` if the object was known to this publisher, otherise `false`.
      */
     @JvmSynthetic
     suspend fun remove(trackable: Trackable): Boolean
 
     /**
+     * Removes a [Trackable] object if it is known to this publisher, otherwise does nothing and returns false.
+     *
+     * If the removed object is the current actively [active] object then that state will be cleared, meaning that for
+     * another object to become the actively tracked delivery then the [track] method must be subsequently called.
+     *
      * This method overload is provided for the convenience of those calling from Java.
-     * TODO: Refactor to return CompletableFuture
+     * Kotlin users will generally prefer to use the [remove] method.
+     *
+     * @param trackable The object to be removed from this publisher's tracked set, it it's there.
+     *
+     * @return A [CompletableFuture] that completes when the object has been removed.
      */
-    fun removeTrackable(trackable: Trackable): CompletableFuture<Void>
+    fun removeAsync(trackable: Trackable): CompletableFuture<Boolean>
 
     /**
      * The actively tracked object, being the [Trackable] object whose destination will be used for location
@@ -113,23 +132,9 @@ interface Publisher {
     var routingProfile: RoutingProfile
 
     /**
-     * Modelling the API presented by BroadcastEventBus:
-     * https://elizarov.medium.com/shared-flows-broadcast-channels-899b675e805c
-     * TODO: It seems we cannot annotate this with @JvmSynthetic - how do we solve that?
-     *       The error presented is:
-     *       "This annotation is not applicable to target 'member property without backing field or delegate'"
-     * TODO: Consider whether a StateFlow would be more appropriate
+     * The shared flow emitting location values when they become available.
      */
     val locations: SharedFlow<LocationUpdate>
-
-    /**
-     * Modelling the API presented by BroadcastEventBus:
-     * https://elizarov.medium.com/shared-flows-broadcast-channels-899b675e805c
-     * TODO: It seems we cannot annotate this with @JvmSynthetic - how do we solve that?
-     *       The error presented is:
-     *       "This annotation is not applicable to target 'member property without backing field or delegate'"
-     */
-    val connectionStates: SharedFlow<ConnectionStateChange>
 
     /**
      * This method overload is provided for the convenience of those calling from Java.
@@ -138,19 +143,25 @@ interface Publisher {
     fun addListener(listener: LocationUpdateListener)
 
     /**
-     * Stops this publisher from publishing locations. Once a publisher has been stopped, it cannot be restarted.
-     *
-     * This method overload is preferable when calling from Kotlin.
-     *
-     * @param handler Called when the publisher has been successfully removed or an error occurs.
+     * The shared flow emitting connection state change values when they become available.
      */
-    @JvmSynthetic
-    fun stop(handler: ResultHandler<Unit>)
+    val connectionStates: SharedFlow<ConnectionStateChange>
 
     /**
-     * This method overload is provided for the convenient of those calling from Java.
+     * Stops this publisher from publishing locations. Once a publisher has been stopped, it cannot be restarted.
      */
-    fun stop(listener: ResultListener<Void?>)
+    @JvmSynthetic
+    suspend fun stop()
+
+    /**
+     * Stops this publisher from publishing locations. Once a publisher has been stopped, it cannot be restarted.
+     *
+     * This method overload is provided for the convenient of those calling from Java.
+     * Kotlin users will generally prefer to use the [stop] method.
+     *
+     * @return A [CompletableFuture] that completes when the Publisher has been stopped.
+     */
+    fun stopAsync(): CompletableFuture<Void>
 
     /**
      * The methods implemented by builders capable of starting [Publisher] instances.
