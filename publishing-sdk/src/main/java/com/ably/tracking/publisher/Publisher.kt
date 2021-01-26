@@ -13,6 +13,7 @@ import com.ably.tracking.LogConfiguration
 import com.ably.tracking.ResultHandler
 import com.ably.tracking.ResultListener
 import kotlinx.coroutines.flow.SharedFlow
+import java.util.concurrent.CompletableFuture
 
 /**
  * Represents a publisher. Publishers maintain the Ably connection, making use of navigation resources as required to
@@ -48,13 +49,13 @@ interface Publisher {
      * TODO: Refactor as a suspend function
      */
     @JvmSynthetic
-    fun track(trackable: Trackable, handler: ResultHandler<Unit>)
+    suspend fun track(trackable: Trackable)
 
     /**
      * This method overload is provided for the convenience of those calling from Java.
      * TODO: Refactor to return CompletableFuture
      */
-    fun track(trackable: Trackable, listener: ResultListener<Void?>)
+    fun trackTrackable(trackable: Trackable): CompletableFuture<Void>
 
     /**
      * Adds a [Trackable] object, but does not make it the actively tracked object, meaning that the state of the
@@ -66,16 +67,16 @@ interface Publisher {
      *
      * @param trackable The object to be added to this publisher's tracked set, if it's not already there.
      * @param handler Called when the trackable is successfully added or an error occurs.
-     * TODO: Refactor as a suspend function
      */
     @JvmSynthetic
-    fun add(trackable: Trackable, handler: ResultHandler<Unit>)
+    suspend fun add(trackable: Trackable)
 
     /**
      * This method overload is provided for the convenience of those calling from Java.
-     * TODO: Refactor to return CompletableFuture
+     * NOTE the "Trackable" suffix on this name is there because otherwise we name class with [add].
+     * TODO why do some Java APIs say CompletableFuture<?> - can we vend that if we need to?
      */
-    fun add(trackable: Trackable, listener: ResultListener<Void?>)
+    fun addTrackable(trackable: Trackable): CompletableFuture<Void>
 
     /**
      * Removes a [Trackable] object if it is known to this publisher, otherwise does nothing and returns false.
@@ -90,13 +91,13 @@ interface Publisher {
      * TODO: Refactor as a suspend function
      */
     @JvmSynthetic
-    fun remove(trackable: Trackable, handler: ResultHandler<Boolean>)
+    suspend fun remove(trackable: Trackable): Boolean
 
     /**
      * This method overload is provided for the convenience of those calling from Java.
      * TODO: Refactor to return CompletableFuture
      */
-    fun remove(trackable: Trackable, listener: ResultListener<Boolean>)
+    fun removeTrackable(trackable: Trackable): CompletableFuture<Void>
 
     /**
      * The actively tracked object, being the [Trackable] object whose destination will be used for location
@@ -117,6 +118,7 @@ interface Publisher {
      * TODO: It seems we cannot annotate this with @JvmSynthetic - how do we solve that?
      *       The error presented is:
      *       "This annotation is not applicable to target 'member property without backing field or delegate'"
+     * TODO: Consider whether a StateFlow would be more appropriate
      */
     val locations: SharedFlow<LocationUpdate>
 

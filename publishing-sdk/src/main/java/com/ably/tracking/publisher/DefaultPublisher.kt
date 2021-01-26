@@ -614,7 +614,6 @@ constructor(
 
     private fun getLooperForMainThread() = android.os.Looper.getMainLooper()
 
-    @OptIn(ObsoleteCoroutinesApi::class)
     @RequiresPermission(anyOf = [ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION])
     private fun createEventsChannel(scope: CoroutineScope) =
         scope.actor<Event> {
