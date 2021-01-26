@@ -15,12 +15,6 @@ interface LocationUpdateListener {
 typealias Handler<T> = (T) -> Unit
 
 /**
- * Defines a function type, to be implemented in Kotlin code utilising the Ably Asset Tracking SDKs, allowing that code
- * to handle events containing [LocationUpdate] information.
- */
-typealias LocationUpdateHandler = Handler<LocationUpdate>
-
-/**
  * The state of connectivity to the Ably service.
  */
 enum class ConnectionState {
@@ -90,17 +84,6 @@ data class ConnectionStateChange(
      */
     val errorInformation: ErrorInformation?
 )
-
-/**
- * Defines the signature of a function accepting state change events relating connectivity to the Ably service.
- */
-typealias ConnectionStateChangeHandler = Handler<ConnectionStateChange>
-
-/**
- * Defines a function type, to be implemented in Kotlin code utilising the Ably Asset Tracking SDKs, allowing that code
- * to handle events containing location history information in [String] format.
- */
-typealias LocationHistoryHandler = Handler<String>
 
 /**
  * The result of an asynchronous operation, which will either have been successful or will have failed.

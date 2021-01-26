@@ -368,9 +368,7 @@ enum class RoutingProfile {
 // TODO - probably should be removed in the final version
 // https://github.com/ably/ably-asset-tracking-android/issues/19
 data class DebugConfiguration(
-    val connectionStateChangeHandler: ConnectionStateChangeHandler? = null,
     val locationSource: LocationSource? = null,
-    val locationHistoryHandler: LocationHistoryHandler? = null
 )
 
 sealed class LocationSource

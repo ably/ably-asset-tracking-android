@@ -5,12 +5,14 @@ import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.content.Context
 import androidx.annotation.RequiresPermission
 import com.ably.tracking.ConnectionConfiguration
+import com.ably.tracking.ConnectionStateChange
 import com.ably.tracking.LocationUpdateHandler
 import com.ably.tracking.LocationUpdateListener
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.LogConfiguration
 import com.ably.tracking.ResultHandler
 import com.ably.tracking.ResultListener
+import kotlinx.coroutines.flow.SharedFlow
 
 /**
  * Represents a publisher. Publishers maintain the Ably connection, making use of navigation resources as required to
@@ -43,12 +45,14 @@ interface Publisher {
      * @param trackable The object to be added to this publisher's tracked set, if it's not already there, and to be
      * made the actively tracked object.
      * @param handler Called when the trackable is successfully added and make the actively tracked object or when an error occurs.
+     * TODO: Refactor as a suspend function
      */
     @JvmSynthetic
     fun track(trackable: Trackable, handler: ResultHandler<Unit>)
 
     /**
      * This method overload is provided for the convenience of those calling from Java.
+     * TODO: Refactor to return CompletableFuture
      */
     fun track(trackable: Trackable, listener: ResultListener<Void?>)
 
@@ -62,12 +66,14 @@ interface Publisher {
      *
      * @param trackable The object to be added to this publisher's tracked set, if it's not already there.
      * @param handler Called when the trackable is successfully added or an error occurs.
+     * TODO: Refactor as a suspend function
      */
     @JvmSynthetic
     fun add(trackable: Trackable, handler: ResultHandler<Unit>)
 
     /**
      * This method overload is provided for the convenience of those calling from Java.
+     * TODO: Refactor to return CompletableFuture
      */
     fun add(trackable: Trackable, listener: ResultListener<Void?>)
 
@@ -81,12 +87,14 @@ interface Publisher {
      *
      * @param trackable The object to be removed from this publisher's tracked set, it it's there.
      * @param handler Called when the trackable is successfully removed or an error occurs.
+     * TODO: Refactor as a suspend function
      */
     @JvmSynthetic
     fun remove(trackable: Trackable, handler: ResultHandler<Boolean>)
 
     /**
      * This method overload is provided for the convenience of those calling from Java.
+     * TODO: Refactor to return CompletableFuture
      */
     fun remove(trackable: Trackable, listener: ResultListener<Boolean>)
 
@@ -102,6 +110,30 @@ interface Publisher {
      * The active means of transport for this publisher.
      */
     var routingProfile: RoutingProfile
+
+    /**
+     * Modelling the API presented by BroadcastEventBus:
+     * https://elizarov.medium.com/shared-flows-broadcast-channels-899b675e805c
+     * TODO: It seems we cannot annotate this with @JvmSynthetic - how do we solve that?
+     *       The error presented is:
+     *       "This annotation is not applicable to target 'member property without backing field or delegate'"
+     */
+    val locations: SharedFlow<LocationUpdate>
+
+    /**
+     * Modelling the API presented by BroadcastEventBus:
+     * https://elizarov.medium.com/shared-flows-broadcast-channels-899b675e805c
+     * TODO: It seems we cannot annotate this with @JvmSynthetic - how do we solve that?
+     *       The error presented is:
+     *       "This annotation is not applicable to target 'member property without backing field or delegate'"
+     */
+    val connectionStates: SharedFlow<ConnectionStateChange>
+
+    /**
+     * This method overload is provided for the convenience of those calling from Java.
+     * Kotlin users will generally prefer to use the shared flow returned by [locations].
+     */
+    fun addListener(listener: LocationUpdateListener)
 
     /**
      * Stops this publisher from publishing locations. Once a publisher has been stopped, it cannot be restarted.
@@ -150,27 +182,6 @@ interface Publisher {
          * @return A new instance of the builder with this property changed.
          */
         fun log(configuration: LogConfiguration): Builder
-
-        /**
-         * Sets a handler to be notified about location updates.
-         *
-         * This method overload is preferable when calling from Kotlin.
-         *
-         * @param handler The function, which will be called once per [LocationUpdate] update.
-         * @return A new instance of the builder with this property changed.
-         */
-        @JvmSynthetic
-        fun locations(handler: LocationUpdateHandler): Builder
-
-        /**
-         * Sets a handler to be notified about location updates.
-         *
-         * This method overload is provided for the convenience of those calling from Java.
-         *
-         * @param listener The object, which will be called once per [LocationUpdate] update.
-         * @return A new instance of the builder with this property changed.
-         */
-        fun locations(listener: LocationUpdateListener): Builder
 
         /**
          * Sets the Android Context.
