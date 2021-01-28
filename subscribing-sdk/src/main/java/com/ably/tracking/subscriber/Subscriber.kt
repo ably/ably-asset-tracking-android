@@ -1,15 +1,11 @@
 package com.ably.tracking.subscriber
 
-import com.ably.tracking.AssetStatusHandler
 import com.ably.tracking.AssetStatusListener
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.LocationUpdate
-import com.ably.tracking.LocationUpdateHandler
 import com.ably.tracking.LocationUpdateListener
 import com.ably.tracking.LogConfiguration
 import com.ably.tracking.Resolution
-import com.ably.tracking.ResultHandler
-import com.ably.tracking.ResultListener
 import kotlinx.coroutines.flow.SharedFlow
 import java.util.concurrent.CompletableFuture
 

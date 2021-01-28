@@ -1,217 +1,76 @@
 package com.ably.tracking.subscriber
 
-import com.ably.tracking.AssetStatusHandler
-import com.ably.tracking.ConnectionConfiguration
-import com.ably.tracking.ErrorInformation
-import com.ably.tracking.FailureResult
-import com.ably.tracking.Handler
-import com.ably.tracking.LocationUpdateHandler
+import com.ably.tracking.AssetStatusListener
+import com.ably.tracking.LocationUpdate
+import com.ably.tracking.LocationUpdateListener
 import com.ably.tracking.Resolution
-import com.ably.tracking.ResultHandler
-import com.ably.tracking.ResultListener
-import com.ably.tracking.SuccessResult
-import com.ably.tracking.clientOptions
-import com.ably.tracking.common.ClientTypes
-import com.ably.tracking.common.EventNames
-import com.ably.tracking.common.PresenceData
-import com.ably.tracking.common.getEnhancedLocationUpdate
-import com.ably.tracking.common.getPresenceData
-import com.ably.tracking.common.toJava
-import com.ably.tracking.toTracking
-import com.google.gson.Gson
-import io.ably.lib.realtime.AblyRealtime
-import io.ably.lib.realtime.Channel
-import io.ably.lib.realtime.CompletionListener
-import io.ably.lib.types.AblyException
-import io.ably.lib.types.ChannelOptions
-import io.ably.lib.types.ErrorInfo
-import io.ably.lib.types.PresenceMessage
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ObsoleteCoroutinesApi
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.channels.SendChannel
-import kotlinx.coroutines.channels.actor
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.SharedFlow
 import timber.log.Timber
+import java.util.concurrent.CompletableFuture
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.coroutines.suspendCoroutine
 
 internal class DefaultSubscriber(
-    private val connectionConfiguration: ConnectionConfiguration,
-    private val enhancedLocationHandler: LocationUpdateHandler,
-    trackingId: String,
-    private val assetStatusHandler: AssetStatusHandler?,
+    ablyService: AblyService,
     resolution: Resolution?
 ) : Subscriber {
-    private val ably: AblyRealtime
-    private val channel: Channel
-    private val gson = Gson()
-    private var presenceData = PresenceData(ClientTypes.SUBSCRIBER, resolution)
-    private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
-    private val eventsChannel: SendChannel<Event>
+    private val core: CoreSubscriberContract
+
+    override val enhancedLocations: SharedFlow<LocationUpdate>
+        get() = core.enhancedLocations
+
+    override val assetStatuses: SharedFlow<Boolean>
+        get() = core.assetStatuses
 
     init {
-        eventsChannel = createEventsChannel(scope)
-        ably = AblyRealtime(connectionConfiguration.clientOptions)
-        channel = ably.channels.get(
-            trackingId,
-            ChannelOptions().apply { params = mapOf("rewind" to "1") }
-        )
-
         Timber.w("Started.")
 
-        joinChannelPresence()
-        subscribeForEnhancedEvents()
+        core = createCoreSubscriber(ablyService, resolution)
+        core.enqueue(StartEvent())
     }
 
-    private fun subscribeForEnhancedEvents() {
-        channel.subscribe(EventNames.ENHANCED) { message ->
-            Timber.i("Ably channel message (enhanced): $message")
-            message.getEnhancedLocationUpdate(gson).let {
-                callback(enhancedLocationHandler, it)
-            }
+    override suspend fun sendChangeRequest(resolution: Resolution) {
+        // send change request over channel and wait for the result
+        suspendCoroutine<Unit> { continuation ->
+            core.request(ChangeResolutionEvent(resolution) {
+                if (it.isSuccess) {
+                    continuation.resume(Unit)
+                } else {
+                    continuation.resumeWithException(Exception("Changing resolution event failed"))
+                }
+            })
         }
     }
 
-    override fun sendChangeRequest(resolution: Resolution, handler: ResultHandler<Unit>) {
-        enqueue(ChangeResolutionEvent(resolution, handler))
-    }
-
-    override fun sendChangeRequest(resolution: Resolution, listener: ResultListener<Void?>) {
-        sendChangeRequest(resolution, { listener.onResult(it.toJava()) })
-    }
-
-    override fun stop(handler: ResultHandler<Unit>) {
-        enqueue(StopEvent(handler))
-    }
-
-    override fun stop(listener: ResultListener<Void?>) {
-        stop() { listener.onResult(it.toJava()) }
-    }
-
-    private fun performChangeResolution(event: ChangeResolutionEvent) {
-        presenceData = presenceData.copy(resolution = event.resolution)
-        channel.presence.update(
-            gson.toJson(presenceData),
-            object : CompletionListener {
-                override fun onSuccess() {
-                    callback(event.handler, SuccessResult(Unit))
+    override suspend fun stop() {
+        // send stop request over channel and wait for the result
+        suspendCoroutine<Unit> { continuation ->
+            core.request(StopEvent {
+                if (it.isSuccess) {
+                    continuation.resume(Unit)
+                } else {
+                    continuation.resumeWithException(Exception("Stopping failed"))
                 }
-
-                override fun onError(reason: ErrorInfo) {
-                    callback(event.handler, reason.toTracking())
-                }
-            }
-        )
-    }
-
-    private fun performStopSubscriber(event: StopEvent) {
-        channel.unsubscribe()
-        leaveChannelPresence()
-        ably.close()
-
-        // TODO implement proper stopping strategy which only calls back once we're fully stopped (considering whether scope.cancel() is appropriate)
-        callback(event.handler, SuccessResult(Unit))
-    }
-
-    private fun joinChannelPresence() {
-        try {
-            notifyAssetIsOffline()
-            channel.presence.subscribe { enqueue(PresenceMessageEvent(it)) }
-            channel.presence.enter(
-                gson.toJson(presenceData),
-                object : CompletionListener {
-                    override fun onSuccess() = Unit
-
-                    override fun onError(reason: ErrorInfo) {
-                        // TODO - handle error
-                        // https://github.com/ably/ably-asset-tracking-android/issues/17
-                        Timber.e("Unable to enter presence: ${reason.message}")
-                    }
-                }
-            )
-        } catch (ablyException: AblyException) {
-            // TODO - handle exception
-            // https://github.com/ably/ably-asset-tracking-android/issues/17
-            Timber.e(ablyException)
+            })
         }
     }
 
-    private fun leaveChannelPresence() {
-        try {
-            channel.presence.unsubscribe()
-            notifyAssetIsOffline()
-            channel.presence.leave(
-                gson.toJson(presenceData),
-                object : CompletionListener {
-                    override fun onSuccess() = Unit
-
-                    override fun onError(reason: ErrorInfo) {
-                        // TODO - handle error
-                        // https://github.com/ably/ably-asset-tracking-android/issues/17
-                        Timber.e("Unable to leave presence: ${reason.message}")
-                    }
-                }
-            )
-        } catch (ablyException: AblyException) {
-            // TODO - handle exception
-            // https://github.com/ably/ably-asset-tracking-android/issues/17
-            Timber.e(ablyException)
-        }
+    override fun sendChangeRequestAsync(resolution: Resolution): CompletableFuture<Void> {
+        TODO()
+//        return scope.async { performChangeResolution(resolution) }.asCompletableFuture()
     }
 
-    private fun performPresenceMessage(event: PresenceMessageEvent) {
-        when (event.presenceMessage.action) {
-            PresenceMessage.Action.present, PresenceMessage.Action.enter -> {
-                val data = event.presenceMessage.getPresenceData(gson)
-                if (data.type == ClientTypes.PUBLISHER) {
-                    notifyAssetIsOnline()
-                }
-            }
-            PresenceMessage.Action.leave -> {
-                val data = event.presenceMessage.getPresenceData(gson)
-                if (data.type == ClientTypes.PUBLISHER) {
-                    notifyAssetIsOffline()
-                }
-            }
-            else -> Unit
-        }
+    override fun addEnhancedLocationListener(listener: LocationUpdateListener) {
+        TODO("Not yet implemented")
     }
 
-    private fun notifyAssetIsOnline() {
-        assetStatusHandler?.let { callback(it, true) }
+    override fun addListener(listener: AssetStatusListener) {
+        TODO("Not yet implemented")
     }
 
-    private fun notifyAssetIsOffline() {
-        assetStatusHandler?.let { callback(it, false) }
-    }
-
-    @OptIn(ObsoleteCoroutinesApi::class)
-    private fun createEventsChannel(scope: CoroutineScope) =
-        scope.actor<Event> {
-            for (event in channel) {
-                when (event) {
-                    is StopEvent -> performStopSubscriber(event)
-                    is PresenceMessageEvent -> performPresenceMessage(event)
-                    is ChangeResolutionEvent -> performChangeResolution(event)
-                }
-            }
-        }
-
-    /**
-     * Send a failure event to the main thread, but only if the scope hasn't been cancelled.
-     */
-    private fun <T> callback(handler: ResultHandler<T>, errorInformation: ErrorInformation) {
-        callback(handler, FailureResult(errorInformation))
-    }
-
-    /**
-     * Send an event to the main thread, but only if the scope hasn't been cancelled.
-     */
-    private fun <T> callback(handler: Handler<T>, result: T) {
-        scope.launch(Dispatchers.Main) { handler(result) }
-    }
-
-    private fun enqueue(event: Event) {
-        scope.launch { eventsChannel.send(event) }
+    override fun stopAsync(): CompletableFuture<Void> {
+        TODO("Not yet implemented")
+//        stop() { listener.onResult(it.toJava()) }
     }
 }
