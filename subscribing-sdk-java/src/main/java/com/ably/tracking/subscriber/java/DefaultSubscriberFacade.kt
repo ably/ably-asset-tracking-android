@@ -1,7 +1,7 @@
 package com.ably.tracking.subscriber.java
 
-import com.ably.tracking.AssetStatusListener
-import com.ably.tracking.LocationUpdateListener
+import com.ably.tracking.java.AssetStatusListener
+import com.ably.tracking.java.LocationUpdateListener
 import com.ably.tracking.Resolution
 import com.ably.tracking.subscriber.Subscriber
 import java.util.concurrent.CompletableFuture

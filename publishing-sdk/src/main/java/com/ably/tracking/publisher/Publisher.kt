@@ -6,14 +6,9 @@ import android.content.Context
 import androidx.annotation.RequiresPermission
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.ConnectionStateChange
-import com.ably.tracking.LocationUpdateHandler
-import com.ably.tracking.LocationUpdateListener
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.LogConfiguration
-import com.ably.tracking.ResultHandler
-import com.ably.tracking.ResultListener
 import kotlinx.coroutines.flow.SharedFlow
-import java.util.concurrent.CompletableFuture
 
 /**
  * Represents a publisher. Publishers maintain the Ably connection, making use of navigation resources as required to
@@ -48,23 +43,6 @@ interface Publisher {
     suspend fun track(trackable: Trackable)
 
     /**
-     * Adds a [Trackable] object and makes it the actively tracked object, meaning that the state of the [active] field
-     * will be updated to this object, if that wasn't already the case.
-     *
-     * If this object was already in this publisher's tracked set then this method only serves to change the actively
-     * tracked object.
-     *
-     * This method overload is provided for the convenience of those calling from Java.
-     * Kotlin users will generally prefer to use the [track] method.
-     *
-     * @param trackable The object to be added to this publisher's tracked set, if it's not already there, and to be
-     * made the actively tracked object.
-     *
-     * @return A [CompletableFuture] that completes when the object has been removed.
-     */
-    fun trackAsync(trackable: Trackable): CompletableFuture<Void>
-
-    /**
      * Adds a [Trackable] object, but does not make it the actively tracked object, meaning that the state of the
      * [active] field will not change.
      *
@@ -74,21 +52,6 @@ interface Publisher {
      */
     @JvmSynthetic
     suspend fun add(trackable: Trackable)
-
-    /**
-     * Adds a [Trackable] object, but does not make it the actively tracked object, meaning that the state of the
-     * [active] field will not change.
-     *
-     * If this object was already in this publisher's tracked set then this method does nothing.
-     *
-     * This method overload is provided for the convenience of those calling from Java.
-     * Kotlin users will generally prefer to use the [add] method.
-     *
-     * @param trackable The object to be added to this publisher's tracked set, if it's not already there.
-     *
-     * @return A [CompletableFuture] that completes when the object has been added.
-     */
-    fun addAsync(trackable: Trackable): CompletableFuture<Void>
 
     /**
      * Removes a [Trackable] object if it is known to this publisher, otherwise does nothing and returns false.
@@ -102,21 +65,6 @@ interface Publisher {
      */
     @JvmSynthetic
     suspend fun remove(trackable: Trackable): Boolean
-
-    /**
-     * Removes a [Trackable] object if it is known to this publisher, otherwise does nothing and returns false.
-     *
-     * If the removed object is the current actively [active] object then that state will be cleared, meaning that for
-     * another object to become the actively tracked delivery then the [track] method must be subsequently called.
-     *
-     * This method overload is provided for the convenience of those calling from Java.
-     * Kotlin users will generally prefer to use the [remove] method.
-     *
-     * @param trackable The object to be removed from this publisher's tracked set, it it's there.
-     *
-     * @return A [CompletableFuture] that completes when the object has been removed.
-     */
-    fun removeAsync(trackable: Trackable): CompletableFuture<Boolean>
 
     /**
      * The actively tracked object, being the [Trackable] object whose destination will be used for location
@@ -137,12 +85,6 @@ interface Publisher {
     val locations: SharedFlow<LocationUpdate>
 
     /**
-     * This method overload is provided for the convenience of those calling from Java.
-     * Kotlin users will generally prefer to use the shared flow returned by [locations].
-     */
-    fun addListener(listener: LocationUpdateListener)
-
-    /**
      * The shared flow emitting connection state change values when they become available.
      */
     val connectionStates: SharedFlow<ConnectionStateChange>
@@ -152,16 +94,6 @@ interface Publisher {
      */
     @JvmSynthetic
     suspend fun stop()
-
-    /**
-     * Stops this publisher from publishing locations. Once a publisher has been stopped, it cannot be restarted.
-     *
-     * This method overload is provided for the convenient of those calling from Java.
-     * Kotlin users will generally prefer to use the [stop] method.
-     *
-     * @return A [CompletableFuture] that completes when the Publisher has been stopped.
-     */
-    fun stopAsync(): CompletableFuture<Void>
 
     /**
      * The methods implemented by builders capable of starting [Publisher] instances.

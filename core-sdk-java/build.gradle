@@ -7,6 +7,5 @@ plugins {
 apply from: '../jacoco.gradle'
 
 dependencies {
-    api project(':subscribing-sdk')
-    api project(':core-sdk-java')
+    api project(':core-sdk')
 }

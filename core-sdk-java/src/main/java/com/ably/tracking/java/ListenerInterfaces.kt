@@ -1,4 +1,4 @@
-package com.ably.tracking.subscriber.java
+package com.ably.tracking.java
 
 import com.ably.tracking.LocationUpdate
 
