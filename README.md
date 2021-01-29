@@ -141,15 +141,6 @@ We also provide support for applications written in Java, however the requiremen
 - require Java 1.8 or later
 - require a minimum of Android API Level 24 at runtime
 
-### Coding Conventions and Style Guide
-
-- Use best, current practice wherever possible.
-- Kotlin is our primary development language for this project (in respect of SDK interfaces and implementation, as well as example app development):
-    - We must keep in mind that some developers may choose to utilise the SDKs we build from a Java codebase (see [Calling Kotlin from Java](https://kotlinlang.org/docs/reference/java-to-kotlin-interop.html))
-    - We should do our best to avoid "writing Kotlin with a Java accent":
-        - published [Kotlin idioms](https://kotlinlang.org/docs/reference/idioms.html) should be utilised
-        - strict linting and static analysis rules should be applied to all code, including unit and integration tests - Kotlin's Coding Conventions may be a starting point but all rules **must** fail the build when built from the command line (i.e. `./gradlew`, especially including CI / CD runs)
-
 ### MapBox SDK dependency
 
 After cloning this repository for the first time, you will likely find that opening it in Android Studio or attempting to use Gradle from the command line (e.g. `./gradlew tasks`) will produce the following **FAILURE**:
