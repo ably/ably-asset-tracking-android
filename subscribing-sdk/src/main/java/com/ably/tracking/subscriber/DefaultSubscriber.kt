@@ -34,7 +34,7 @@ internal class DefaultSubscriber(
                 if (it.isSuccess) {
                     continuation.resume(Unit)
                 } else {
-                    continuation.resumeWithException(Exception("Changing resolution event failed"))
+                    continuation.resumeWithException(it.exceptionOrNull()!!)
                 }
             })
         }
@@ -47,7 +47,7 @@ internal class DefaultSubscriber(
                 if (it.isSuccess) {
                     continuation.resume(Unit)
                 } else {
-                    continuation.resumeWithException(Exception("Stopping failed"))
+                    continuation.resumeWithException(it.exceptionOrNull()!!)
                 }
             })
         }

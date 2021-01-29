@@ -1,10 +1,7 @@
 package com.ably.tracking.subscriber
 
 import com.ably.tracking.ConnectionConfiguration
-import com.ably.tracking.FailureResult
 import com.ably.tracking.LocationUpdate
-import com.ably.tracking.Result
-import com.ably.tracking.SuccessResult
 import com.ably.tracking.clientOptions
 import com.ably.tracking.common.EventNames
 import com.ably.tracking.common.PresenceData
@@ -88,11 +85,12 @@ internal class DefaultAblyService(
             gson.toJson(presenceData),
             object : CompletionListener {
                 override fun onSuccess() {
-                    callback(SuccessResult(Unit))
+                    callback(Result.success(Unit))
                 }
 
                 override fun onError(reason: ErrorInfo) {
-                    callback(FailureResult(reason.toTracking()))
+                    // TODO - shouldn't we somehow keep all ErrorInfo data in the exception?
+                    callback(Result.failure(Exception(reason.toTracking().message)))
                 }
             }
         )
