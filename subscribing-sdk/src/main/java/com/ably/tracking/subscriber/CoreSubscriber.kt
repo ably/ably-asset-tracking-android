@@ -79,12 +79,12 @@ private class CoreSubscriber(
                     }
                     is PresenceMessageEvent -> {
                         when (event.presenceMessage.action) {
-                            PresenceAction.PRESENT, PresenceAction.ENTER -> {
+                            PresenceAction.PRESENT_OR_ENTER -> {
                                 if (event.presenceMessage.data.type == ClientTypes.PUBLISHER) {
                                     notifyAssetIsOnline()
                                 }
                             }
-                            PresenceAction.LEAVE -> {
+                            PresenceAction.LEAVE_OR_ABSENT -> {
                                 if (event.presenceMessage.data.type == ClientTypes.PUBLISHER) {
                                     notifyAssetIsOffline()
                                 }

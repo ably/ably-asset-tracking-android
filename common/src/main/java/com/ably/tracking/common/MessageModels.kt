@@ -35,7 +35,7 @@ data class GeoJsonProperties(
 data class PresenceMessage(val action: PresenceAction, val data: PresenceData)
 
 enum class PresenceAction {
-    ABSENT, PRESENT, ENTER, LEAVE, UPDATE;
+    PRESENT_OR_ENTER, LEAVE_OR_ABSENT, UPDATE;
 }
 
 data class PresenceData(val type: String, val resolution: Resolution? = null)

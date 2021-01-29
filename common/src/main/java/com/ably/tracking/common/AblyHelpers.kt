@@ -72,9 +72,9 @@ fun io.ably.lib.types.PresenceMessage.toTracking(gson: Gson) =
     )
 
 fun io.ably.lib.types.PresenceMessage.Action.toTracking(): PresenceAction = when(this){
-    io.ably.lib.types.PresenceMessage.Action.absent -> PresenceAction.ABSENT
-    io.ably.lib.types.PresenceMessage.Action.present -> PresenceAction.PRESENT
-    io.ably.lib.types.PresenceMessage.Action.enter -> PresenceAction.ENTER
-    io.ably.lib.types.PresenceMessage.Action.leave -> PresenceAction.LEAVE
+    io.ably.lib.types.PresenceMessage.Action.present -> PresenceAction.PRESENT_OR_ENTER
+    io.ably.lib.types.PresenceMessage.Action.enter -> PresenceAction.PRESENT_OR_ENTER
     io.ably.lib.types.PresenceMessage.Action.update -> PresenceAction.UPDATE
+    io.ably.lib.types.PresenceMessage.Action.leave -> PresenceAction.LEAVE_OR_ABSENT
+    io.ably.lib.types.PresenceMessage.Action.absent -> PresenceAction.LEAVE_OR_ABSENT
 }
