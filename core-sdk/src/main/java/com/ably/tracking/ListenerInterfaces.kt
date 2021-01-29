@@ -77,52 +77,7 @@ data class ConnectionStateChange(
     val errorInformation: ErrorInformation?
 )
 
-/**
- * The result of an asynchronous operation, which will either have been successful or will have failed.
- *
- * Methods returning instances of this class to callback implementations, where there is no explicit type `T` to be
- * returned, use a different signature depending on the method overload:
- *
- * - for Kotlin code: `Result<Unit>`
- * - for Java code: `Result<Void?>`
- */
-sealed class Result<T> {
-    /**
-     * `true` if the operation was successful, meaning that this instance is of type [SuccessResult].
-     */
-    val isSuccess: Boolean get() = this is SuccessResult<*>
-
-    /**
-     * Convenience access to this instance as a [SuccessResult], if it's of that sub-type.
-     */
-    val success: SuccessResult<T>? = this as? SuccessResult<T>
-
-    /**
-     * Convenience access to this instance as a [FailureResult], if it's of that sub-type.
-     */
-    val failure: FailureResult<T>? = this as? FailureResult<T>
-}
-
-/**
- * Conveys that an asynchronous operation completed successfully.
- */
-data class SuccessResult<T>(
-    /**
-     * The product of the operation, if applicable.
-     */
-    val result: T
-) : Result<T>()
-
-/**
- * Conveys that an asynchronous operation failed.
- */
-data class FailureResult<T>(
-    /**
-     * The reason why the operation failed.
-     */
-    val errorInformation: ErrorInformation
-) : Result<T>()
-
+// TODO to be removed
 /**
  * Defines an interface, to be implemented in Java code utilising the Ably Asset Tracking SDKs, allowing that code to
  * handle an event indicating the result of an asynchronous operation.
