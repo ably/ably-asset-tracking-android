@@ -128,7 +128,18 @@ From the dialog presented by `File` > `Open...` / `Open an Existing Project`, se
 
 ### Android Runtime Requirements
 
-These SDKs require a minimum of Android API Level 21 at runtime.
+#### Kotlin Users
+
+These SDKs require a minimum of Android API Level 21 at runtime for applications written in Kotlin.
+
+#### Java Users
+
+We also provide support for applications written in Java, however the requirements differ in that case:
+- must wrap using the appropriate Java facade for the SDK they are using:
+    - [publishing-sdk-java](publishing-sdk-java/) for the [publishing-sdk](publishing-sdk/)
+    - [subscribing-sdk-java](subscribing-sdk-java/) for the [subscribing-sdk](subscribing-sdk/)
+- require Java 1.8 or later
+- require a minimum of Android API Level 24 at runtime
 
 ### Coding Conventions and Style Guide
 
