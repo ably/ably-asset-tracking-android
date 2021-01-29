@@ -31,10 +31,10 @@ internal class DefaultSubscriber(
         // send change request over channel and wait for the result
         suspendCoroutine<Unit> { continuation ->
             core.request(ChangeResolutionEvent(resolution) {
-                if (it.isSuccess) {
-                    continuation.resume(Unit)
-                } else {
-                    continuation.resumeWithException(it.exceptionOrNull()!!)
+                try {
+                    continuation.resume(it.getOrThrow())
+                } catch (exception: Exception){
+                    continuation.resumeWithException(exception)
                 }
             })
         }
@@ -44,10 +44,10 @@ internal class DefaultSubscriber(
         // send stop request over channel and wait for the result
         suspendCoroutine<Unit> { continuation ->
             core.request(StopEvent {
-                if (it.isSuccess) {
-                    continuation.resume(Unit)
-                } else {
-                    continuation.resumeWithException(it.exceptionOrNull()!!)
+                try {
+                    continuation.resume(it.getOrThrow())
+                } catch (exception: Exception){
+                    continuation.resumeWithException(exception)
                 }
             })
         }
