@@ -4,7 +4,6 @@ import com.ably.tracking.LocationUpdate
 import com.ably.tracking.Resolution
 import kotlinx.coroutines.flow.SharedFlow
 import timber.log.Timber
-import java.util.concurrent.CompletableFuture
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
