@@ -8,6 +8,7 @@ import com.ably.tracking.common.PresenceData
 import com.ably.tracking.common.PresenceMessage
 import com.ably.tracking.common.getEnhancedLocationUpdate
 import com.ably.tracking.toTracking
+import com.ably.tracking.toTrackingException
 import com.google.gson.Gson
 import io.ably.lib.realtime.AblyRealtime
 import io.ably.lib.realtime.Channel
@@ -89,8 +90,7 @@ internal class DefaultAblyService(
                 }
 
                 override fun onError(reason: ErrorInfo) {
-                    // TODO - shouldn't we somehow keep all ErrorInfo data in the exception?
-                    callback(Result.failure(Exception(reason.toTracking().message)))
+                    callback(Result.failure(reason.toTrackingException()))
                 }
             }
         )
