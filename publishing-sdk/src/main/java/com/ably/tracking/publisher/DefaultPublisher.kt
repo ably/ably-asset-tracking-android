@@ -84,14 +84,14 @@ constructor(
     private val hooks = Hooks()
     private val methods = Methods()
     private val trackables = mutableSetOf<Trackable>()
-    private val requests = mutableMapOf<Trackable, MutableMap<Subscriber, Resolution>>()
-    private val subscribers = mutableMapOf<Trackable, MutableSet<Subscriber>>()
-    private val resolutions = mutableMapOf<Trackable, Resolution>()
+    private val requests = mutableMapOf<String, MutableMap<Subscriber, Resolution>>()
+    private val subscribers = mutableMapOf<String, MutableSet<Subscriber>>()
+    private val resolutions = mutableMapOf<String, Resolution>()
     private var locationEngineResolution: Resolution
     private var isTracking: Boolean = false
     private var mapboxReplayer: MapboxReplayer? = null
     private var lastPublisherLocation: Location? = null
-    private var lastSentEnhancedLocations: MutableMap<Trackable, Location> = mutableMapOf()
+    private var lastSentEnhancedLocations: MutableMap<String, Location> = mutableMapOf()
     private var estimatedArrivalTimeInMilliseconds: Long? = null
 
     /**
@@ -206,8 +206,8 @@ constructor(
 
     private fun performEnhancedLocationChanged(event: EnhancedLocationChangedEvent) {
         for (trackable in trackables) {
-            if (shouldSendLocation(event.locationUpdate.location, lastSentEnhancedLocations[trackable], trackable)) {
-                lastSentEnhancedLocations[trackable] = event.locationUpdate.location
+            if (shouldSendLocation(event.locationUpdate.location, lastSentEnhancedLocations[trackable.id], trackable)) {
+                lastSentEnhancedLocations[trackable.id] = event.locationUpdate.location
                 ablyService.sendEnhancedLocation(trackable.id, event.locationUpdate)
             }
         }
@@ -220,7 +220,7 @@ constructor(
         lastSentLocation: Location?,
         trackable: Trackable
     ): Boolean {
-        val resolution = resolutions[trackable]
+        val resolution = resolutions[trackable.id]
         return if (resolution != null && lastSentLocation != null) {
             val timeSinceLastSentLocation = currentLocation.timeFrom(lastSentLocation)
             val distanceFromLastSentLocation = currentLocation.distanceInMetersFrom(lastSentLocation)
@@ -345,9 +345,9 @@ constructor(
         if (wasTrackablePresent) {
             hooks.trackables?.onTrackableRemoved(event.trackable)
             removeAllSubscribers(event.trackable)
-            resolutions.remove(event.trackable)?.let { enqueue(ChangeLocationEngineResolutionEvent()) }
-            requests.remove(event.trackable)
-            lastSentEnhancedLocations.remove(event.trackable)
+            resolutions.remove(event.trackable.id)?.let { enqueue(ChangeLocationEngineResolutionEvent()) }
+            requests.remove(event.trackable.id)
+            lastSentEnhancedLocations.remove(event.trackable.id)
 
             // If this was the active Trackable then clear that state and remove destination.
             if (active == event.trackable) {
@@ -372,7 +372,7 @@ constructor(
     }
 
     private fun removeAllSubscribers(trackable: Trackable) {
-        subscribers[trackable]?.let { subscribers ->
+        subscribers[trackable.id]?.let { subscribers ->
             subscribers.forEach { hooks.subscribers?.onSubscriberRemoved(it) }
             subscribers.clear()
         }
@@ -416,17 +416,17 @@ constructor(
 
     private fun addSubscriber(id: String, trackable: Trackable, data: PresenceData) {
         val subscriber = Subscriber(id, trackable)
-        if (subscribers[trackable] == null) {
-            subscribers[trackable] = mutableSetOf()
+        if (subscribers[trackable.id] == null) {
+            subscribers[trackable.id] = mutableSetOf()
         }
-        subscribers[trackable]?.add(subscriber)
+        subscribers[trackable.id]?.add(subscriber)
         saveOrRemoveResolutionRequest(data.resolution, trackable, subscriber)
         hooks.subscribers?.onSubscriberAdded(subscriber)
         resolveResolution(trackable)
     }
 
     private fun updateSubscriber(id: String, trackable: Trackable, data: PresenceData) {
-        subscribers[trackable]?.let { subscribers ->
+        subscribers[trackable.id]?.let { subscribers ->
             subscribers.find { it.id == id }?.let { subscriber ->
                 data.resolution.let { resolution ->
                     saveOrRemoveResolutionRequest(resolution, trackable, subscriber)
@@ -437,10 +437,10 @@ constructor(
     }
 
     private fun removeSubscriber(id: String, trackable: Trackable) {
-        subscribers[trackable]?.let { subscribers ->
+        subscribers[trackable.id]?.let { subscribers ->
             subscribers.find { it.id == id }?.let { subscriber ->
                 subscribers.remove(subscriber)
-                requests[trackable]?.remove(subscriber)
+                requests[trackable.id]?.remove(subscriber)
                 hooks.subscribers?.onSubscriberRemoved(subscriber)
                 resolveResolution(trackable)
             }
@@ -449,12 +449,12 @@ constructor(
 
     private fun saveOrRemoveResolutionRequest(resolution: Resolution?, trackable: Trackable, subscriber: Subscriber) {
         if (resolution != null) {
-            if (requests[trackable] == null) {
-                requests[trackable] = mutableMapOf()
+            if (requests[trackable.id] == null) {
+                requests[trackable.id] = mutableMapOf()
             }
-            requests[trackable]?.put(subscriber, resolution)
+            requests[trackable.id]?.put(subscriber, resolution)
         } else {
-            requests[trackable]?.remove(subscriber)
+            requests[trackable.id]?.remove(subscriber)
         }
     }
 
@@ -540,9 +540,9 @@ constructor(
     }
 
     private fun resolveResolution(trackable: Trackable) {
-        val resolutionRequests: Set<Resolution> = requests[trackable]?.values?.toSet() ?: emptySet()
+        val resolutionRequests: Set<Resolution> = requests[trackable.id]?.values?.toSet() ?: emptySet()
         policy.resolve(TrackableResolutionRequest(trackable, resolutionRequests)).let { resolution ->
-            resolutions[trackable] = resolution
+            resolutions[trackable.id] = resolution
             enqueue(ChangeLocationEngineResolutionEvent())
         }
     }
