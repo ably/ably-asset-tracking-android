@@ -9,5 +9,5 @@ android {
 }
 
 dependencies {
-    implementation project(":subscribing-sdk")
+    implementation project(":subscribing-sdk-java")
 }

@@ -6,5 +6,6 @@ include ':android-test-common',
         ':publishing-example-app',
         ':publishing-example-java-app',
         ':subscribing-sdk',
+        ':subscribing-sdk-java',
         ':subscribing-example-app',
         ':subscribing-example-java-app'

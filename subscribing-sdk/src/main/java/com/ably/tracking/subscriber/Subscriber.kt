@@ -1,13 +1,10 @@
 package com.ably.tracking.subscriber
 
-import com.ably.tracking.AssetStatusListener
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.LocationUpdate
-import com.ably.tracking.LocationUpdateListener
 import com.ably.tracking.LogConfiguration
 import com.ably.tracking.Resolution
 import kotlinx.coroutines.flow.SharedFlow
-import java.util.concurrent.CompletableFuture
 
 /**
  * Represents a subscriber. Subscribers maintain the Ably connection, relaying location updates for a tracked item back
@@ -45,39 +42,9 @@ interface Subscriber {
     suspend fun sendChangeRequest(resolution: Resolution)
 
     /**
-     * Sends the desired resolution for updates, to be requested from the remote publisher.
-     *
-     * An initial resolution may be defined from the outset of a [Subscriber]'s lifespan by using the
-     * [resolution][Builder.resolution] method on the [Builder] instance used to [start][Builder.start] it.
-     *
-     * Requests sent using this method will take time to propagate back to the publisher.
-     *
-     * The [listener] will be called once the request has been successfully registered with the server,
-     * however this does not necessarily mean that the request has been received and actioned by the publisher.
-     *
-     * This method overload is provided for the convenience of those calling from Java.
-     * Kotlin users will generally prefer to use the [sendChangeRequest] method.
-     *
-     * @param resolution The resolution to request.
-     *
-     * @return A [CompletableFuture] that completes when the object has been removed.
-     */
-    fun sendChangeRequestAsync(resolution: Resolution): CompletableFuture<Void>
-
-    /**
      * The shared flow emitting enhanced location values when they become available.
      */
     val enhancedLocations: SharedFlow<LocationUpdate>
-
-    /**
-     * Adds a handler to be notified when an enhanced location update is available.
-     *
-     * This method overload is provided for the convenience of those calling from Java.
-     * Kotlin users will generally prefer to use the shared flow returned by [enhancedLocations].
-     *
-     * @param listener The listening function to be notified.
-     */
-    fun addEnhancedLocationListener(listener: LocationUpdateListener)
 
     /**
      * The shared flow emitting values when the online status of the asset changes.
@@ -85,32 +52,11 @@ interface Subscriber {
     val assetStatuses: SharedFlow<Boolean>
 
     /**
-     * Adds a handler to be notified when the online status of the asset changes.
-     *
-     * This method overload is provided for the convenience of those calling from Java.
-     * Kotlin users will generally prefer to use the shared flow returned by [assetStatuses].
-     *
-     * @param listener the listening function to be notified.
-     */
-    fun addListener(listener: AssetStatusListener)
-
-    /**
      * Stops this subscriber from listening to published locations. Once a subscriber has been stopped, it cannot be
      * restarted.
      */
     @JvmSynthetic
     suspend fun stop()
-
-    /**
-     * Stops this subscriber from listening to published locations. Once a subscriber has been stopped, it cannot be
-     * restarted.
-     *
-     * This method overload is provided for the convenient of those calling from Java.
-     * Kotlin users will generally prefer to use the [stop] method.
-     *
-     * @return A [CompletableFuture] that completes when the object has been removed.
-     */
-    fun stopAsync(): CompletableFuture<Void>
 
     /**
      * The methods implemented by builders capable of starting [Subscriber] instances.

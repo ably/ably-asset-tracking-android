@@ -1,8 +1,6 @@
 package com.ably.tracking.subscriber
 
-import com.ably.tracking.AssetStatusListener
 import com.ably.tracking.LocationUpdate
-import com.ably.tracking.LocationUpdateListener
 import com.ably.tracking.Resolution
 import kotlinx.coroutines.flow.SharedFlow
 import timber.log.Timber
@@ -54,23 +52,5 @@ internal class DefaultSubscriber(
                 }
             })
         }
-    }
-
-    override fun sendChangeRequestAsync(resolution: Resolution): CompletableFuture<Void> {
-        TODO()
-//        return scope.async { performChangeResolution(resolution) }.asCompletableFuture()
-    }
-
-    override fun addEnhancedLocationListener(listener: LocationUpdateListener) {
-        TODO("Not yet implemented")
-    }
-
-    override fun addListener(listener: AssetStatusListener) {
-        TODO("Not yet implemented")
-    }
-
-    override fun stopAsync(): CompletableFuture<Void> {
-        TODO("Not yet implemented")
-//        stop() { listener.onResult(it.toJava()) }
     }
 }

@@ -1,14 +1,6 @@
 package com.ably.tracking
 
 /**
- * Defines an interface, to be implemented in Java code utilising the Ably Asset Tracking SDKs, allowing that code to
- * handle events containing [LocationUpdate] information.
- */
-interface LocationUpdateListener {
-    fun onLocationUpdate(locationUpdate: LocationUpdate)
-}
-
-/**
  * Defines a function type, to be implemented in Kotlin code utilising the Ably Asset Tracking SDKs, allowing that code
  * to handle events using that function as a callback (typically using a lamda expression).
  */
@@ -144,7 +136,3 @@ interface ResultListener<T> {
  * to handle an event indicating the result of an asynchronous operation.
  */
 typealias ResultHandler<T> = Handler<Result<T>>
-
-interface AssetStatusListener {
-    fun onStatusChanged(isOnline: Boolean)
-}
