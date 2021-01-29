@@ -32,7 +32,7 @@ data class GeoJsonProperties(
     val time: Double
 )
 
-data class PresenceMessage(val action: PresenceAction, val data: PresenceData)
+data class PresenceMessage(val action: PresenceAction, val data: PresenceData, val clientId: String)
 
 enum class PresenceAction {
     PRESENT_OR_ENTER, LEAVE_OR_ABSENT, UPDATE;

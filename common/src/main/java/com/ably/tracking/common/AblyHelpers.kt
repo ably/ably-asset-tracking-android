@@ -86,7 +86,8 @@ val ConnectionConfiguration.clientOptions: ClientOptions
 fun io.ably.lib.types.PresenceMessage.toTracking(gson: Gson) =
     PresenceMessage(
         this.action.toTracking(),
-        this.getPresenceData(gson)
+        this.getPresenceData(gson),
+        this.clientId
     )
 
 fun io.ably.lib.types.PresenceMessage.Action.toTracking(): PresenceAction = when(this){
