@@ -3,10 +3,8 @@ package com.ably.tracking.subscriber
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.Resolution
 import com.ably.tracking.common.ClientTypes
+import com.ably.tracking.common.PresenceAction
 import com.ably.tracking.common.PresenceData
-import com.ably.tracking.common.getPresenceData
-import com.google.gson.Gson
-import io.ably.lib.types.PresenceMessage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -39,7 +37,6 @@ private class CoreSubscriber(
 ) :
     CoreSubscriberContract {
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
-    private val gson = Gson()
     private val sendEventChannel: SendChannel<Event>
     private val _assetStatuses: MutableSharedFlow<Boolean> = MutableSharedFlow()
     private val _enhancedLocations: MutableSharedFlow<LocationUpdate> = MutableSharedFlow()
@@ -82,15 +79,13 @@ private class CoreSubscriber(
                     }
                     is PresenceMessageEvent -> {
                         when (event.presenceMessage.action) {
-                            PresenceMessage.Action.present, PresenceMessage.Action.enter -> {
-                                val data = event.presenceMessage.getPresenceData(gson)
-                                if (data.type == ClientTypes.PUBLISHER) {
+                            PresenceAction.PRESENT, PresenceAction.ENTER -> {
+                                if (event.presenceMessage.data.type == ClientTypes.PUBLISHER) {
                                     notifyAssetIsOnline()
                                 }
                             }
-                            PresenceMessage.Action.leave -> {
-                                val data = event.presenceMessage.getPresenceData(gson)
-                                if (data.type == ClientTypes.PUBLISHER) {
+                            PresenceAction.LEAVE -> {
+                                if (event.presenceMessage.data.type == ClientTypes.PUBLISHER) {
                                     notifyAssetIsOffline()
                                 }
                             }

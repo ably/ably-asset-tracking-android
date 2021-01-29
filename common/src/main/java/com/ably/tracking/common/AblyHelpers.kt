@@ -1,5 +1,9 @@
 package com.ably.tracking
 
+import com.ably.tracking.common.PresenceAction
+import com.ably.tracking.common.PresenceMessage
+import com.ably.tracking.common.getPresenceData
+import com.google.gson.Gson
 import io.ably.lib.types.ClientOptions
 
 /**
@@ -56,3 +60,21 @@ val ConnectionConfiguration.clientOptions: ClientOptions
         options.clientId = this.clientId
         return options
     }
+
+/**
+ * Extension converting Ably Realtime presence message to the equivalent [PresenceMessage] API
+ * presented to users of the Ably Asset Tracking SDKs.
+ */
+fun io.ably.lib.types.PresenceMessage.toTracking(gson: Gson) =
+    PresenceMessage(
+        this.action.toTracking(),
+        this.getPresenceData(gson)
+    )
+
+fun io.ably.lib.types.PresenceMessage.Action.toTracking(): PresenceAction = when(this){
+    io.ably.lib.types.PresenceMessage.Action.absent -> PresenceAction.ABSENT
+    io.ably.lib.types.PresenceMessage.Action.present -> PresenceAction.PRESENT
+    io.ably.lib.types.PresenceMessage.Action.enter -> PresenceAction.ENTER
+    io.ably.lib.types.PresenceMessage.Action.leave -> PresenceAction.LEAVE
+    io.ably.lib.types.PresenceMessage.Action.update -> PresenceAction.UPDATE
+}

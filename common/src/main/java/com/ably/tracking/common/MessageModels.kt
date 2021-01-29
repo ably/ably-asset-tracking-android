@@ -32,6 +32,12 @@ data class GeoJsonProperties(
     val time: Double
 )
 
+data class PresenceMessage(val action: PresenceAction, val data: PresenceData)
+
+enum class PresenceAction {
+    ABSENT, PRESENT, ENTER, LEAVE, UPDATE;
+}
+
 data class PresenceData(val type: String, val resolution: Resolution? = null)
 
 data class EnhancedLocationUpdateMessage(

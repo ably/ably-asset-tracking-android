@@ -2,7 +2,7 @@ package com.ably.tracking.subscriber
 
 import com.ably.tracking.Resolution
 import com.ably.tracking.ResultHandler
-import io.ably.lib.types.PresenceMessage
+import com.ably.tracking.common.PresenceMessage
 
 internal sealed class Event
 

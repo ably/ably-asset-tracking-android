@@ -8,6 +8,7 @@ import com.ably.tracking.SuccessResult
 import com.ably.tracking.clientOptions
 import com.ably.tracking.common.EventNames
 import com.ably.tracking.common.PresenceData
+import com.ably.tracking.common.PresenceMessage
 import com.ably.tracking.common.getEnhancedLocationUpdate
 import com.ably.tracking.toTracking
 import com.google.gson.Gson
@@ -17,13 +18,11 @@ import io.ably.lib.realtime.CompletionListener
 import io.ably.lib.types.AblyException
 import io.ably.lib.types.ChannelOptions
 import io.ably.lib.types.ErrorInfo
-import io.ably.lib.types.PresenceMessage
 import timber.log.Timber
 
 internal interface AblyService {
     fun subscribeForEnhancedEvents(listener: (LocationUpdate) -> Unit)
     fun connect(presenceData: PresenceData)
-    // TODO change to a type that's our internal type
     fun subscribeForPresenceMessages(listener: (PresenceMessage) -> Unit)
     fun updatePresenceData(presenceData: PresenceData, callback: (Result<Unit>) -> Unit)
     fun close(presenceData: PresenceData)
@@ -81,7 +80,7 @@ internal class DefaultAblyService(
     }
 
     override fun subscribeForPresenceMessages(listener: (PresenceMessage) -> Unit) {
-        channel.presence.subscribe { listener(it) }
+        channel.presence.subscribe { listener(it.toTracking(gson)) }
     }
 
     override fun updatePresenceData(presenceData: PresenceData, callback: (Result<Unit>) -> Unit) {
