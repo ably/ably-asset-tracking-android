@@ -3,8 +3,7 @@ package com.ably.tracking.publisher
 import com.ably.tracking.EnhancedLocationUpdate
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.ResultHandler
-import io.ably.lib.realtime.Channel
-import io.ably.lib.types.PresenceMessage
+import com.ably.tracking.common.PresenceMessage
 
 internal sealed class Event
 
@@ -40,7 +39,6 @@ internal data class RemoveTrackableEvent(
 
 internal data class JoinPresenceSuccessEvent(
     val trackable: Trackable,
-    val channel: Channel,
     val handler: ResultHandler<Unit>
 ) : Event()
 
