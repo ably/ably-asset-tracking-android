@@ -40,6 +40,7 @@ constructor(
     private var _routingProfile: RoutingProfile
 ) :
     Publisher {
+    private val core: CorePublisher
     private val thresholdChecker = ThresholdChecker()
     private val locationObserver = object : LocationObserver {
         override fun onRawLocationChanged(rawLocation: Location) {
@@ -92,6 +93,8 @@ constructor(
         locationEngineResolution = policy.resolve(emptySet())
 
         Timber.w("Started.")
+
+        core = createCorePublisher(ablyService, mapboxService)
 
         ablyService.subscribeForAblyStateChange { state -> scope.launch { _connectionStates.emit(state) } }
 
