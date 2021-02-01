@@ -3,6 +3,7 @@ package com.ably.tracking.publisher
 import android.Manifest
 import androidx.annotation.RequiresPermission
 import com.ably.tracking.ConnectionStateChange
+import com.ably.tracking.LocationUpdate
 import com.ably.tracking.common.ClientTypes
 import com.ably.tracking.common.PresenceData
 import kotlinx.coroutines.CoroutineScope
@@ -21,6 +22,7 @@ import timber.log.Timber
 internal interface CorePublisher {
     fun enqueue(event: AdhocEvent)
     fun request(request: Request)
+    val locations: SharedFlow<LocationUpdate>
     val connectionStates: SharedFlow<ConnectionStateChange>
 }
 
@@ -40,7 +42,10 @@ constructor(
 ) : CorePublisher {
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private val sendEventChannel: SendChannel<Event>
+    private val _locations = MutableSharedFlow<LocationUpdate>()
     private val _connectionStates = MutableSharedFlow<ConnectionStateChange>()
+    override val locations: SharedFlow<LocationUpdate>
+        get() = _locations.asSharedFlow()
     override val connectionStates: SharedFlow<ConnectionStateChange>
         get() = _connectionStates.asSharedFlow()
 

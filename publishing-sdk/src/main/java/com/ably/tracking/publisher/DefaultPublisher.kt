@@ -24,9 +24,7 @@ import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.actor
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
@@ -77,9 +75,8 @@ constructor(
     private var destinationToSet: Destination? = null
     private var currentDestination: Destination? = null
 
-    private val _locations = MutableSharedFlow<LocationUpdate>()
     override val locations: SharedFlow<LocationUpdate>
-        get() = _locations.asSharedFlow()
+        get() = core.locations
     override val connectionStates: SharedFlow<ConnectionStateChange>
         get() = core.connectionStates
 
@@ -128,7 +125,7 @@ constructor(
                 ablyService.sendEnhancedLocation(trackable.id, event.locationUpdate)
             }
         }
-        scope.launch { _locations.emit(event.locationUpdate) }
+//        scope.launch { _locations.emit(event.locationUpdate) }
         checkThreshold(event.locationUpdate.location)
     }
 
