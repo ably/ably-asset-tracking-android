@@ -90,7 +90,7 @@ constructor(
 
         Timber.w("Started.")
 
-        core = createCorePublisher(ablyService, mapboxService)
+        core = createCorePublisher(ablyService, mapboxService, resolutionPolicyFactory)
 
         mapboxService.registerLocationObserver(locationObserver)
         core.enqueue(StartEvent())
@@ -107,7 +107,7 @@ constructor(
 
     private fun sendEnhancedLocationMessage(enhancedLocation: Location, keyPoints: List<Location>) {
         val intermediateLocations = if (keyPoints.size > 1) keyPoints.subList(0, keyPoints.size - 1) else emptyList()
-        enqueue(
+        core.enqueue(
             EnhancedLocationChangedEvent(
                 EnhancedLocationUpdate(
                     enhancedLocation,
@@ -116,48 +116,6 @@ constructor(
                 )
             )
         )
-    }
-
-    private fun performEnhancedLocationChanged(event: EnhancedLocationChangedEvent) {
-        for (trackable in trackables) {
-            if (shouldSendLocation(event.locationUpdate.location, lastSentEnhancedLocations[trackable.id], trackable)) {
-                lastSentEnhancedLocations[trackable.id] = event.locationUpdate.location
-                ablyService.sendEnhancedLocation(trackable.id, event.locationUpdate)
-            }
-        }
-//        scope.launch { _locations.emit(event.locationUpdate) }
-        checkThreshold(event.locationUpdate.location)
-    }
-
-    private fun shouldSendLocation(
-        currentLocation: Location,
-        lastSentLocation: Location?,
-        trackable: Trackable
-    ): Boolean {
-        val resolution = resolutions[trackable.id]
-        return if (resolution != null && lastSentLocation != null) {
-            val timeSinceLastSentLocation = currentLocation.timeFrom(lastSentLocation)
-            val distanceFromLastSentLocation = currentLocation.distanceInMetersFrom(lastSentLocation)
-            return distanceFromLastSentLocation >= resolution.minimumDisplacement &&
-                timeSinceLastSentLocation >= resolution.desiredInterval
-        } else {
-            true
-        }
-    }
-
-    private fun checkThreshold(currentLocation: Location) {
-        methods.threshold?.let { threshold ->
-            if (thresholdChecker.isThresholdReached(
-                    threshold,
-                    currentLocation,
-                    System.currentTimeMillis(),
-                    active?.destination,
-                    estimatedArrivalTimeInMilliseconds
-                )
-            ) {
-                methods.onProximityReached()
-            }
-        }
     }
 
 //    override fun track(trackable: Trackable, handler: ResultHandler<Unit>) {
@@ -438,7 +396,7 @@ constructor(
                     is StartEvent -> {}
                     is JoinPresenceSuccessEvent -> performJoinPresenceSuccess(event)
                     is RawLocationChangedEvent -> performRawLocationChanged(event)
-                    is EnhancedLocationChangedEvent -> performEnhancedLocationChanged(event)
+                    is EnhancedLocationChangedEvent -> {}
                     is RefreshResolutionPolicyEvent -> performRefreshResolutionPolicy()
                     is SetDestinationSuccessEvent -> performSetDestinationSuccess(event)
                     is PresenceMessageEvent -> performPresenceMessage(event)

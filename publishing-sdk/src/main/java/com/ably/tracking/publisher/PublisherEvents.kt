@@ -51,9 +51,9 @@ internal data class RawLocationChangedEvent(
 
 internal data class EnhancedLocationChangedEvent(
     val locationUpdate: EnhancedLocationUpdate
-) : Event()
+) : AdhocEvent()
 
-internal class RefreshResolutionPolicyEvent : Event()
+internal class RefreshResolutionPolicyEvent : AdhocEvent()
 
 internal data class SetDestinationSuccessEvent(
     val routeDurationInMilliseconds: Long
