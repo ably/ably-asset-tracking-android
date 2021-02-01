@@ -78,11 +78,10 @@ constructor(
     private var currentDestination: Destination? = null
 
     private val _locations = MutableSharedFlow<LocationUpdate>()
-    private val _connectionStates = MutableSharedFlow<ConnectionStateChange>()
     override val locations: SharedFlow<LocationUpdate>
         get() = _locations.asSharedFlow()
     override val connectionStates: SharedFlow<ConnectionStateChange>
-        get() = _connectionStates.asSharedFlow()
+        get() = core.connectionStates
 
     init {
         eventsChannel = createEventsChannel(scope)
@@ -95,8 +94,6 @@ constructor(
         Timber.w("Started.")
 
         core = createCorePublisher(ablyService, mapboxService)
-
-        ablyService.subscribeForAblyStateChange { state -> scope.launch { _connectionStates.emit(state) } }
 
         mapboxService.registerLocationObserver(locationObserver)
         core.enqueue(StartEvent())
