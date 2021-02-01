@@ -12,7 +12,7 @@ internal class DefaultSubscriber(
     ablyService: AblyService,
     resolution: Resolution?
 ) : Subscriber {
-    private val core: CoreSubscriberContract
+    private val core: CoreSubscriber
 
     override val enhancedLocations: SharedFlow<LocationUpdate>
         get() = core.enhancedLocations

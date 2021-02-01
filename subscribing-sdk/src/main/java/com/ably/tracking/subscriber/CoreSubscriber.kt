@@ -17,7 +17,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 
-internal interface CoreSubscriberContract {
+internal interface CoreSubscriber {
     fun enqueue(event: AdhocEvent)
     fun request(request: Request)
     val enhancedLocations: SharedFlow<LocationUpdate>
@@ -27,15 +27,15 @@ internal interface CoreSubscriberContract {
 internal fun createCoreSubscriber(
     ablyService: AblyService,
     initialResolution: Resolution? = null
-): CoreSubscriberContract {
-    return CoreSubscriber(ablyService, initialResolution)
+): CoreSubscriber {
+    return DefaultCoreSubscriber(ablyService, initialResolution)
 }
 
-private class CoreSubscriber(
+private class DefaultCoreSubscriber(
     private val ablyService: AblyService,
     private val initialResolution: Resolution?
 ) :
-    CoreSubscriberContract {
+    CoreSubscriber {
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private val sendEventChannel: SendChannel<Event>
     private val _assetStatuses: MutableSharedFlow<Boolean> = MutableSharedFlow()
