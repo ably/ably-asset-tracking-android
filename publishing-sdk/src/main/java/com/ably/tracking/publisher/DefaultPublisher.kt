@@ -3,10 +3,8 @@ package com.ably.tracking.publisher
 import android.Manifest.permission.ACCESS_COARSE_LOCATION
 import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.annotation.SuppressLint
-import android.content.Context
 import android.location.Location
 import androidx.annotation.RequiresPermission
-import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.ConnectionStateChange
 import com.ably.tracking.EnhancedLocationUpdate
 import com.ably.tracking.ErrorInformation
@@ -16,28 +14,10 @@ import com.ably.tracking.LocationUpdateType
 import com.ably.tracking.Resolution
 import com.ably.tracking.ResultHandler
 import com.ably.tracking.common.ClientTypes
-import com.ably.tracking.common.MILLISECONDS_PER_SECOND
 import com.ably.tracking.common.PresenceAction
 import com.ably.tracking.common.PresenceData
-import com.ably.tracking.publisher.debug.AblySimulationLocationEngine
-import com.ably.tracking.publisher.locationengine.FusedAndroidLocationEngine
-import com.ably.tracking.publisher.locationengine.GoogleLocationEngine
-import com.ably.tracking.publisher.locationengine.LocationEngineUtils
-import com.ably.tracking.publisher.locationengine.ResolutionLocationEngine
-import com.mapbox.api.directions.v5.models.DirectionsRoute
-import com.mapbox.api.directions.v5.models.RouteOptions
-import com.mapbox.navigation.base.internal.extensions.applyDefaultParams
-import com.mapbox.navigation.base.options.NavigationOptions
-import com.mapbox.navigation.core.MapboxNavigation
-import com.mapbox.navigation.core.directions.session.RoutesRequestCallback
-import com.mapbox.navigation.core.replay.MapboxReplayer
-import com.mapbox.navigation.core.replay.ReplayLocationEngine
-import com.mapbox.navigation.core.replay.history.ReplayEventBase
-import com.mapbox.navigation.core.replay.history.ReplayEventsObserver
-import com.mapbox.navigation.core.replay.history.ReplayHistoryMapper
 import com.mapbox.navigation.core.trip.session.LocationObserver
 import io.ably.lib.realtime.Channel
-import io.ably.lib.types.ClientOptions
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ObsoleteCoroutinesApi
@@ -55,15 +35,11 @@ internal class DefaultPublisher
 @RequiresPermission(anyOf = [ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION])
 constructor(
     private val ablyService: AblyService,
-    private val connectionConfiguration: ConnectionConfiguration,
-    private val mapConfiguration: MapConfiguration,
-    private val debugConfiguration: DebugConfiguration?,
-    context: Context,
+    private val mapboxService: MapboxService,
     resolutionPolicyFactory: ResolutionPolicy.Factory,
     private var _routingProfile: RoutingProfile
 ) :
     Publisher {
-    private val mapboxNavigation: MapboxNavigation
     private val thresholdChecker = ThresholdChecker()
     private val locationObserver = object : LocationObserver {
         override fun onRawLocationChanged(rawLocation: Location) {
@@ -89,7 +65,6 @@ constructor(
     private val resolutions = mutableMapOf<String, Resolution>()
     private var locationEngineResolution: Resolution
     private var isTracking: Boolean = false
-    private var mapboxReplayer: MapboxReplayer? = null
     private var lastPublisherLocation: Location? = null
     private var lastSentEnhancedLocations: MutableMap<String, Location> = mutableMapOf()
     private var estimatedArrivalTimeInMilliseconds: Long? = null
@@ -118,68 +93,10 @@ constructor(
 
         Timber.w("Started.")
 
-        val mapboxBuilder = MapboxNavigation.defaultNavigationOptionsBuilder(
-            context,
-            mapConfiguration.apiKey
-        )
-        mapboxBuilder.locationEngine(getBestLocationEngine(context))
-        debugConfiguration?.locationSource?.let { locationSource ->
-            when (locationSource) {
-                is LocationSourceAbly -> {
-                    useAblySimulationLocationEngine(mapboxBuilder, locationSource)
-                }
-                is LocationSourceRaw -> {
-                    useHistoryDataReplayerLocationEngine(mapboxBuilder, locationSource)
-                }
-            }
-        }
-
         ablyService.subscribeForAblyStateChange { state -> scope.launch { _connectionStates.emit(state) } }
 
-        mapboxNavigation = MapboxNavigation(mapboxBuilder.build())
-        mapboxNavigation.registerLocationObserver(locationObserver)
+        mapboxService.registerLocationObserver(locationObserver)
         startLocationUpdates()
-    }
-
-    private fun getBestLocationEngine(context: Context): ResolutionLocationEngine =
-        if (LocationEngineUtils.hasGoogleLocationServices(context)) {
-            GoogleLocationEngine(context)
-        } else {
-            FusedAndroidLocationEngine(context)
-        }
-
-    private fun useAblySimulationLocationEngine(
-        mapboxBuilder: NavigationOptions.Builder,
-        locationSource: LocationSourceAbly
-    ) {
-        mapboxBuilder.locationEngine(
-            AblySimulationLocationEngine(
-                // TODO should there be a clientId in use here?
-                ClientOptions(connectionConfiguration.apiKey),
-                locationSource.simulationChannelName
-            )
-        )
-    }
-
-    private fun useHistoryDataReplayerLocationEngine(
-        mapboxBuilder: NavigationOptions.Builder,
-        locationSource: LocationSourceRaw
-    ) {
-        mapboxReplayer = MapboxReplayer().apply {
-            mapboxBuilder.locationEngine(ReplayLocationEngine(this))
-            this.clearEvents()
-            val historyEvents = ReplayHistoryMapper().mapToReplayEvents(locationSource.historyData)
-            val lastHistoryEvent = historyEvents.last()
-            this.pushEvents(historyEvents)
-            this.play()
-            this.registerObserver(object : ReplayEventsObserver {
-                override fun replayEvents(events: List<ReplayEventBase>) {
-                    if (events.last() == lastHistoryEvent) {
-                        locationSource.onDataEnded?.let { handler -> callback(handler, Unit) }
-                    }
-                }
-            })
-        }
     }
 
     private fun sendRawLocationMessage(rawLocation: Location) {
@@ -257,10 +174,7 @@ constructor(
 
             Timber.e("startLocationUpdates")
 
-            mapboxNavigation.apply {
-                toggleHistory(true)
-                startTripSession()
-            }
+            mapboxService.startTrip()
         }
     }
 
@@ -357,10 +271,10 @@ constructor(
             }
 
             // Leave Ably channel.
-            ablyService.disconnect(event.trackable.id, presenceData){
-                if(it.isSuccess){
+            ablyService.disconnect(event.trackable.id, presenceData) {
+                if (it.isSuccess) {
                     callback(event.handler, Result.success(true))
-                }else {
+                } else {
                     // TODO - callback handler with error
 //                    callback(event.handler, it.exceptionOrNull()!!)
                 }
@@ -474,14 +388,8 @@ constructor(
     private fun stopLocationUpdates() {
         if (isTracking) {
             isTracking = false
-            mapboxNavigation.unregisterLocationObserver(locationObserver)
-            mapboxNavigation.apply {
-                stopTripSession()
-                mapboxReplayer?.finish()
-                // TODO - add some kind of a listener for history data to the API
-//                debugConfiguration?.locationHistoryHandler?.invoke(retrieveHistory())
-                onDestroy()
-            }
+            mapboxService.unregisterLocationObserver(locationObserver)
+            mapboxService.stopAndClose()
         }
     }
 
@@ -495,30 +403,9 @@ constructor(
                 destinationToSet = null
                 removeCurrentDestination()
                 currentDestination = destination
-                mapboxNavigation.requestRoutes(
-                    RouteOptions.builder()
-                        .applyDefaultParams()
-                        .accessToken(mapConfiguration.apiKey)
-                        .coordinates(getRouteCoordinates(currentLocation, destination))
-                        .profile(routingProfile.toMapboxProfileName())
-                        .build(),
-                    object : RoutesRequestCallback {
-                        override fun onRoutesReady(routes: List<DirectionsRoute>) {
-                            routes.firstOrNull()?.let {
-                                val routeDurationInMilliseconds =
-                                    (it.durationTypical() ?: it.duration()) * MILLISECONDS_PER_SECOND
-                                enqueue(SetDestinationSuccessEvent(routeDurationInMilliseconds.toLong()))
-                            }
-                        }
-
-                        override fun onRoutesRequestCanceled(routeOptions: RouteOptions) = Unit
-
-                        override fun onRoutesRequestFailure(throwable: Throwable, routeOptions: RouteOptions) {
-                            // We won't know the ETA for the active trackable and therefore we won't be able to check the temporal threshold.
-                            Timber.e(throwable, "Failed call to requestRoutes.")
-                        }
-                    }
-                )
+                mapboxService.setRoute(currentLocation, destination, routingProfile) {
+                    enqueue(SetDestinationSuccessEvent(it))
+                }
             } else {
                 destinationToSet = destination
             }
@@ -530,7 +417,7 @@ constructor(
     }
 
     private fun removeCurrentDestination() {
-        mapboxNavigation.setRoutes(emptyList())
+        mapboxService.clearRoute()
         currentDestination = null
         estimatedArrivalTimeInMilliseconds = null
     }
@@ -553,18 +440,8 @@ constructor(
     }
 
     private fun changeLocationEngineResolution(resolution: Resolution) {
-        mapboxNavigation.navigationOptions.locationEngine.let {
-            if (it is ResolutionLocationEngine) {
-                it.changeResolution(resolution)
-            }
-        }
+        mapboxService.changeResolution(resolution)
     }
-
-    private fun postToMainThread(operation: () -> Unit) {
-        android.os.Handler(getLooperForMainThread()).post(operation)
-    }
-
-    private fun getLooperForMainThread() = android.os.Looper.getMainLooper()
 
     @OptIn(ObsoleteCoroutinesApi::class)
     @RequiresPermission(anyOf = [ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION])

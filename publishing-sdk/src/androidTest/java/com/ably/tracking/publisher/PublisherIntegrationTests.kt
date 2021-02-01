@@ -77,7 +77,7 @@ class PublisherIntegrationTests {
         context: Context,
         resolution: Resolution = Resolution(Accuracy.BALANCED, 1000L, 0.0),
         locationData: String,
-        onLocationDataEnded: Handler<Unit>
+        onLocationDataEnded: () -> Unit
     ) =
         Publisher.publishers()
             .androidContext(context)

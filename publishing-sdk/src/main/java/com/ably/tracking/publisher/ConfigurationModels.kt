@@ -1,6 +1,5 @@
 package com.ably.tracking.publisher
 
-import com.ably.tracking.Handler
 import com.ably.tracking.Resolution
 
 data class MapConfiguration(val apiKey: String)
@@ -371,4 +370,4 @@ data class DebugConfiguration(
 
 sealed class LocationSource
 data class LocationSourceAbly(val simulationChannelName: String) : LocationSource()
-data class LocationSourceRaw(val historyData: String, val onDataEnded: Handler<Unit>? = null) : LocationSource()
+data class LocationSourceRaw(val historyData: String, val onDataEnded: (() -> Unit)? = null) : LocationSource()
