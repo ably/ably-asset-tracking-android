@@ -12,12 +12,14 @@ import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 internal interface CorePublisher {
     fun enqueue(event: AdhocEvent)
     fun request(request: Request)
 }
 
+@RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
 internal fun createCorePublisher(
     ablyService: AblyService,
     mapboxService: MapboxService
@@ -25,7 +27,9 @@ internal fun createCorePublisher(
     return DefaultCorePublisher(ablyService, mapboxService)
 }
 
-private class DefaultCorePublisher(
+private class DefaultCorePublisher
+@RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
+constructor(
     private val ablyService: AblyService,
     private val mapboxService: MapboxService
 ) : CorePublisher {
@@ -60,7 +64,15 @@ private class DefaultCorePublisher(
             // processing
             for (event in receiveEventChannel) {
                 when (event) {
+                    is StartEvent -> {
+                        if (!isTracking) {
+                            isTracking = true
 
+                            Timber.e("startLocationUpdates")
+
+                            mapboxService.startTrip()
+                        }
+                    }
                 }
             }
         }

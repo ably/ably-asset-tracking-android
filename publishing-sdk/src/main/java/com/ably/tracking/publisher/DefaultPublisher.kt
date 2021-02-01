@@ -99,7 +99,7 @@ constructor(
         ablyService.subscribeForAblyStateChange { state -> scope.launch { _connectionStates.emit(state) } }
 
         mapboxService.registerLocationObserver(locationObserver)
-        startLocationUpdates()
+        core.enqueue(StartEvent())
     }
 
     private fun sendRawLocationMessage(rawLocation: Location) {
@@ -163,21 +163,6 @@ constructor(
             ) {
                 methods.onProximityReached()
             }
-        }
-    }
-
-    private fun startLocationUpdates() {
-        enqueue(StartEvent())
-    }
-
-    @RequiresPermission(anyOf = [ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION])
-    private fun performStartPublisher() {
-        if (!isTracking) {
-            isTracking = true
-
-            Timber.e("startLocationUpdates")
-
-            mapboxService.startTrip()
         }
     }
 
@@ -456,7 +441,7 @@ constructor(
                     is TrackTrackableEvent -> performTrackTrackable(event)
                     is RemoveTrackableEvent -> performRemoveTrackable(event)
                     is StopEvent -> performStopPublisher(event)
-                    is StartEvent -> performStartPublisher()
+                    is StartEvent -> {}
                     is JoinPresenceSuccessEvent -> performJoinPresenceSuccess(event)
                     is RawLocationChangedEvent -> performRawLocationChanged(event)
                     is EnhancedLocationChangedEvent -> performEnhancedLocationChanged(event)

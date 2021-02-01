@@ -14,7 +14,7 @@ internal class StopEvent(
     val handler: ResultHandler<Unit>
 ) : Event()
 
-internal class StartEvent : Event()
+internal class StartEvent : AdhocEvent()
 
 internal data class AddTrackableEvent(
     val trackable: Trackable,
