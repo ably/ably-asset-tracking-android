@@ -68,4 +68,4 @@ internal class ChangeLocationEngineResolutionEvent : AdhocEvent()
 
 internal data class ChangeRoutingProfileEvent(
     val routingProfile: RoutingProfile
-) : Event()
+) : AdhocEvent()

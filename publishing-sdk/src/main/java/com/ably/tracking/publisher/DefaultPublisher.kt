@@ -154,9 +154,10 @@ constructor(
     override var active: Trackable? = null
 
     override var routingProfile: RoutingProfile
+    // TODO - get routing profile value from the CorePublisher
         get() = _routingProfile
         set(value) {
-            enqueue(ChangeRoutingProfileEvent(value))
+            core.enqueue(ChangeRoutingProfileEvent(value))
         }
 
 //    override fun stop(handler: ResultHandler<Unit>) {
@@ -231,11 +232,6 @@ constructor(
         }
     }
 
-    private fun performChangeRoutingProfile(event: ChangeRoutingProfileEvent) {
-        _routingProfile = event.routingProfile
-        currentDestination?.let { setDestination(it) }
-    }
-
     private fun performStopPublisher(event: StopEvent) {
         ablyService.close(presenceData)
         stopLocationUpdates()
@@ -304,7 +300,7 @@ constructor(
                     is PresenceMessageEvent -> {}
                     is ChangeLocationEngineResolutionEvent -> {}
                     is SetActiveTrackableEvent -> {}
-                    is ChangeRoutingProfileEvent -> performChangeRoutingProfile(event)
+                    is ChangeRoutingProfileEvent -> {}
                 }
             }
         }

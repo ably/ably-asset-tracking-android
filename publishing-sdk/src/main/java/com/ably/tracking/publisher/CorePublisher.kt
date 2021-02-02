@@ -244,6 +244,10 @@ constructor(
                     is RefreshResolutionPolicyEvent -> {
                         state.trackables.forEach { resolveResolution(it, state) }
                     }
+                    is ChangeRoutingProfileEvent -> {
+                        state.routingProfile = event.routingProfile
+                        state.currentDestination?.let { setDestination(it, state) }
+                    }
                 }
             }
         }
