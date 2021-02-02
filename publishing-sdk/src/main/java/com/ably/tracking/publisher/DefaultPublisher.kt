@@ -27,6 +27,9 @@ import kotlinx.coroutines.channels.actor
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.coroutines.suspendCoroutine
 
 @SuppressLint("LogConditional")
 internal class DefaultPublisher
@@ -142,16 +145,17 @@ constructor(
         callback(event.handler, Result.success(Unit))
     }
 
-//    override fun add(trackable: Trackable, handler: ResultHandler<Unit>) {
-//        enqueue(AddTrackableEvent(trackable, handler))
-//    }
 
-//    override fun add(trackable: Trackable, listener: ResultListener<Void?>) {
-//        add(trackable) { listener.onResult(it.toJava()) }
-//    }
-
-    private fun performAddTrackable(event: AddTrackableEvent) {
-        createChannelForTrackableIfNotExisits(event.trackable, event.handler)
+    override suspend fun add(trackable: Trackable) {
+        suspendCoroutine<Unit> { continuation ->
+            core.request(AddTrackableEvent(trackable) {
+                try {
+                    continuation.resume(it.getOrThrow())
+                } catch (exception: Exception){
+                    continuation.resumeWithException(exception)
+                }
+            })
+        }
     }
 
     /**
@@ -172,13 +176,6 @@ constructor(
                 callback(handler, result)
             }
         }
-    }
-
-    private fun performJoinPresenceSuccess(event: JoinPresenceSuccessEvent) {
-        trackables.add(event.trackable)
-        resolveResolution(event.trackable)
-        hooks.trackables?.onTrackableAdded(event.trackable)
-        callback(event.handler, Result.success(Unit))
     }
 
 //    override fun remove(trackable: Trackable, handler: ResultHandler<Boolean>) {
@@ -365,33 +362,24 @@ constructor(
         }
     }
 
-    private fun performChangeLocationEngineResolution() {
-        locationEngineResolution = policy.resolve(resolutions.values.toSet())
-        changeLocationEngineResolution(locationEngineResolution)
-    }
-
-    private fun changeLocationEngineResolution(resolution: Resolution) {
-        mapboxService.changeResolution(resolution)
-    }
-
     @OptIn(ObsoleteCoroutinesApi::class)
     @RequiresPermission(anyOf = [ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION])
     private fun createEventsChannel(scope: CoroutineScope) =
         scope.actor<Event> {
             for (event in channel) {
                 when (event) {
-                    is AddTrackableEvent -> performAddTrackable(event)
+                    is AddTrackableEvent -> {}
                     is TrackTrackableEvent -> performTrackTrackable(event)
                     is RemoveTrackableEvent -> performRemoveTrackable(event)
                     is StopEvent -> performStopPublisher(event)
                     is StartEvent -> {}
-                    is JoinPresenceSuccessEvent -> performJoinPresenceSuccess(event)
+                    is JoinPresenceSuccessEvent -> {}
                     is RawLocationChangedEvent -> {}
                     is EnhancedLocationChangedEvent -> {}
                     is RefreshResolutionPolicyEvent -> performRefreshResolutionPolicy()
                     is SetDestinationSuccessEvent -> {}
-                    is PresenceMessageEvent -> performPresenceMessage(event)
-                    is ChangeLocationEngineResolutionEvent -> performChangeLocationEngineResolution()
+                    is PresenceMessageEvent -> {}
+                    is ChangeLocationEngineResolutionEvent -> {}
                     is SetActiveTrackableEvent -> performSetActiveTrackableEvent(event)
                     is ChangeRoutingProfileEvent -> performChangeRoutingProfile(event)
                 }
@@ -455,10 +443,6 @@ constructor(
     }
 
     override suspend fun track(trackable: Trackable) {
-        TODO("Not yet implemented")
-    }
-
-    override suspend fun add(trackable: Trackable) {
         TODO("Not yet implemented")
     }
 

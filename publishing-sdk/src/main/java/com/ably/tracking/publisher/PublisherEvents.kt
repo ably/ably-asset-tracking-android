@@ -19,7 +19,7 @@ internal class StartEvent : AdhocEvent()
 internal data class AddTrackableEvent(
     val trackable: Trackable,
     val handler: ResultHandler<Unit>
-) : Event()
+) : Request()
 
 internal data class TrackTrackableEvent(
     val trackable: Trackable,
@@ -43,7 +43,7 @@ internal data class RemoveTrackableEvent(
 internal data class JoinPresenceSuccessEvent(
     val trackable: Trackable,
     val handler: ResultHandler<Unit>
-) : Event()
+) : Request()
 
 internal data class RawLocationChangedEvent(
     val locationUpdate: LocationUpdate
@@ -62,9 +62,9 @@ internal data class SetDestinationSuccessEvent(
 internal data class PresenceMessageEvent(
     val trackable: Trackable,
     val presenceMessage: PresenceMessage
-) : Event()
+) : AdhocEvent()
 
-internal class ChangeLocationEngineResolutionEvent : Event()
+internal class ChangeLocationEngineResolutionEvent : AdhocEvent()
 
 internal data class ChangeRoutingProfileEvent(
     val routingProfile: RoutingProfile

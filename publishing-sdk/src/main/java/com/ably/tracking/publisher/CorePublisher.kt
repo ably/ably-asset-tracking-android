@@ -6,7 +6,9 @@ import androidx.annotation.RequiresPermission
 import com.ably.tracking.ConnectionStateChange
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.Resolution
+import com.ably.tracking.ResultHandler
 import com.ably.tracking.common.ClientTypes
+import com.ably.tracking.common.PresenceAction
 import com.ably.tracking.common.PresenceData
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -40,6 +42,7 @@ internal fun createCorePublisher(
 
 private data class PublisherState(
     var routingProfile: RoutingProfile,
+    var locationEngineResolution: Resolution,
     var isTracking: Boolean = false,
     val trackables: MutableSet<Trackable> = mutableSetOf(),
     val resolutions: MutableMap<String, Resolution> = mutableMapOf(),
@@ -49,6 +52,8 @@ private data class PublisherState(
     var lastPublisherLocation: Location? = null,
     var destinationToSet: Destination? = null,
     var currentDestination: Destination? = null,
+    val subscribers: MutableMap<String, MutableSet<Subscriber>> = mutableMapOf(),
+    val requests: MutableMap<String, MutableMap<Subscriber, Resolution>> = mutableMapOf(),
     var presenceData: PresenceData = PresenceData(ClientTypes.PUBLISHER)
 )
 
@@ -103,7 +108,7 @@ constructor(
     ) {
         launch {
             // state
-            val state = PublisherState(routingProfile)
+            val state = PublisherState(routingProfile, policy.resolve(emptySet()))
 
             // processing
             for (event in receiveEventChannel) {
@@ -144,8 +149,128 @@ constructor(
                             state.estimatedArrivalTimeInMilliseconds
                         )
                     }
+                    is AddTrackableEvent -> {
+                        createChannelForTrackableIfNotExisits(event.trackable, event.handler, state)
+                    }
+                    is PresenceMessageEvent -> {
+                        when (event.presenceMessage.action) {
+                            PresenceAction.PRESENT_OR_ENTER -> {
+                                if (event.presenceMessage.data.type == ClientTypes.SUBSCRIBER) {
+                                    addSubscriber(
+                                        event.presenceMessage.clientId,
+                                        event.trackable,
+                                        event.presenceMessage.data,
+                                        state
+                                    )
+                                }
+                            }
+                            PresenceAction.LEAVE_OR_ABSENT -> {
+                                if (event.presenceMessage.data.type == ClientTypes.SUBSCRIBER) {
+                                    removeSubscriber(event.presenceMessage.clientId, event.trackable, state)
+                                }
+                            }
+                            PresenceAction.UPDATE -> {
+                                if (event.presenceMessage.data.type == ClientTypes.SUBSCRIBER) {
+                                    updateSubscriber(
+                                        event.presenceMessage.clientId,
+                                        event.trackable,
+                                        event.presenceMessage.data,
+                                        state
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    is JoinPresenceSuccessEvent -> {
+                        state.trackables.add(event.trackable)
+                        resolveResolution(event.trackable, state)
+                        hooks.trackables?.onTrackableAdded(event.trackable)
+                        event.handler(Result.success(Unit))
+                    }
+                    is ChangeLocationEngineResolutionEvent -> {
+                        state.locationEngineResolution = policy.resolve(state.resolutions.values.toSet())
+                        mapboxService.changeResolution(state.locationEngineResolution)
+                    }
                 }
             }
+        }
+    }
+
+    /**
+     * Creates a [Channel] for the [Trackable], joins the channel's presence and enqueues [SuccessEvent].
+     * If a [Channel] for the given [Trackable] exists then it just enqueues [SuccessEvent].
+     * If during channel creation and joining presence an error occurs then it enqueues [FailureEvent] with the exception.
+     */
+    private fun createChannelForTrackableIfNotExisits(
+        trackable: Trackable,
+        handler: ResultHandler<Unit>,
+        state: PublisherState
+    ) {
+        ablyService.connect(trackable.id, state.presenceData) { result ->
+            if (result.isSuccess) {
+                ablyService.subscribeForPresenceMessages(trackable.id) { enqueue(PresenceMessageEvent(trackable, it)) }
+                request(JoinPresenceSuccessEvent(trackable, handler))
+            } else {
+                // TODO - is this correct in case of an error?
+                handler(result)
+            }
+        }
+    }
+
+    private fun addSubscriber(id: String, trackable: Trackable, data: PresenceData, state: PublisherState) {
+        val subscriber = Subscriber(id, trackable)
+        if (state.subscribers[trackable.id] == null) {
+            state.subscribers[trackable.id] = mutableSetOf()
+        }
+        state.subscribers[trackable.id]?.add(subscriber)
+        saveOrRemoveResolutionRequest(data.resolution, trackable, subscriber, state)
+        hooks.subscribers?.onSubscriberAdded(subscriber)
+        resolveResolution(trackable, state)
+    }
+
+    private fun updateSubscriber(id: String, trackable: Trackable, data: PresenceData, state: PublisherState) {
+        state.subscribers[trackable.id]?.let { subscribers ->
+            subscribers.find { it.id == id }?.let { subscriber ->
+                data.resolution.let { resolution ->
+                    saveOrRemoveResolutionRequest(resolution, trackable, subscriber, state)
+                    resolveResolution(trackable, state)
+                }
+            }
+        }
+    }
+
+    private fun removeSubscriber(id: String, trackable: Trackable, state: PublisherState) {
+        state.subscribers[trackable.id]?.let { subscribers ->
+            subscribers.find { it.id == id }?.let { subscriber ->
+                subscribers.remove(subscriber)
+                state.requests[trackable.id]?.remove(subscriber)
+                hooks.subscribers?.onSubscriberRemoved(subscriber)
+                resolveResolution(trackable, state)
+            }
+        }
+    }
+
+    private fun saveOrRemoveResolutionRequest(
+        resolution: Resolution?,
+        trackable: Trackable,
+        subscriber: Subscriber,
+        state: PublisherState
+    ) {
+        if (resolution != null) {
+            if (state.requests[trackable.id] == null) {
+                state.requests[trackable.id] = mutableMapOf()
+            }
+            state.requests[trackable.id]?.put(subscriber, resolution)
+        } else {
+            state.requests[trackable.id]?.remove(subscriber)
+        }
+    }
+
+    private fun resolveResolution(trackable: Trackable, state: PublisherState) {
+        val resolutionRequests: Set<Resolution> = state.requests[trackable.id]?.values?.toSet() ?: emptySet()
+        policy.resolve(TrackableResolutionRequest(trackable, resolutionRequests)).let { resolution ->
+            state.resolutions[trackable.id] = resolution
+            enqueue(ChangeLocationEngineResolutionEvent())
         }
     }
 
