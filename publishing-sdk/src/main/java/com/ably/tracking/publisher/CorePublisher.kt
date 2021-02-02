@@ -149,6 +149,25 @@ constructor(
                             state.estimatedArrivalTimeInMilliseconds
                         )
                     }
+                    is TrackTrackableEvent -> {
+                        createChannelForTrackableIfNotExisits(event.trackable, {
+                            if (it.isSuccess) {
+                                request(SetActiveTrackableEvent(event.trackable, event.handler))
+                            } else {
+                                event.handler(it)
+                            }
+                        }, state)
+                    }
+                    is SetActiveTrackableEvent -> {
+                        if (state.active != event.trackable) {
+                            state.active = event.trackable
+                            hooks.trackables?.onActiveTrackableChanged(event.trackable)
+                            event.trackable.destination?.let {
+                                setDestination(it, state)
+                            }
+                        }
+                        event.handler(Result.success(Unit))
+                    }
                     is AddTrackableEvent -> {
                         createChannelForTrackableIfNotExisits(event.trackable, event.handler, state)
                     }

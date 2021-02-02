@@ -17,7 +17,6 @@ import com.ably.tracking.common.ClientTypes
 import com.ably.tracking.common.PresenceAction
 import com.ably.tracking.common.PresenceData
 import com.mapbox.navigation.core.trip.session.LocationObserver
-import io.ably.lib.realtime.Channel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ObsoleteCoroutinesApi
@@ -116,65 +115,27 @@ constructor(
         )
     }
 
-//    override fun track(trackable: Trackable, handler: ResultHandler<Unit>) {
-//        enqueue(TrackTrackableEvent(trackable, handler))
-//    }
-
-//    override fun track(trackable: Trackable, listener: ResultListener<Void?>) {
-//        track(trackable) { listener.onResult(it.toJava()) }
-//    }
-
-    private fun performTrackTrackable(event: TrackTrackableEvent) {
-        createChannelForTrackableIfNotExisits(event.trackable) {
-            if (it.isSuccess) {
-                enqueue(SetActiveTrackableEvent(event.trackable, event.handler))
-            } else {
-                callback(event.handler, it)
-            }
-        }
-    }
-
-    private fun performSetActiveTrackableEvent(event: SetActiveTrackableEvent) {
-        if (active != event.trackable) {
-            active = event.trackable
-            hooks.trackables?.onActiveTrackableChanged(event.trackable)
-            event.trackable.destination?.let {
-                setDestination(it)
-            }
-        }
-        callback(event.handler, Result.success(Unit))
-    }
-
-
-    override suspend fun add(trackable: Trackable) {
+    override suspend fun track(trackable: Trackable) {
         suspendCoroutine<Unit> { continuation ->
-            core.request(AddTrackableEvent(trackable) {
+            core.request(TrackTrackableEvent(trackable) {
                 try {
                     continuation.resume(it.getOrThrow())
-                } catch (exception: Exception){
+                } catch (exception: Exception) {
                     continuation.resumeWithException(exception)
                 }
             })
         }
     }
 
-    /**
-     * Creates a [Channel] for the [Trackable], joins the channel's presence and enqueues [SuccessEvent].
-     * If a [Channel] for the given [Trackable] exists then it just enqueues [SuccessEvent].
-     * If during channel creation and joining presence an error occurs then it enqueues [FailureEvent] with the exception.
-     */
-    private fun createChannelForTrackableIfNotExisits(
-        trackable: Trackable,
-        handler: ResultHandler<Unit>
-    ) {
-        ablyService.connect(trackable.id, presenceData) { result ->
-            if (result.isSuccess) {
-                ablyService.subscribeForPresenceMessages(trackable.id) { enqueue(PresenceMessageEvent(trackable, it)) }
-                enqueue(JoinPresenceSuccessEvent(trackable, handler))
-            } else {
-                // TODO - is this correct in case of an error?
-                callback(handler, result)
-            }
+    override suspend fun add(trackable: Trackable) {
+        suspendCoroutine<Unit> { continuation ->
+            core.request(AddTrackableEvent(trackable) {
+                try {
+                    continuation.resume(it.getOrThrow())
+                } catch (exception: Exception) {
+                    continuation.resumeWithException(exception)
+                }
+            })
         }
     }
 
@@ -369,7 +330,7 @@ constructor(
             for (event in channel) {
                 when (event) {
                     is AddTrackableEvent -> {}
-                    is TrackTrackableEvent -> performTrackTrackable(event)
+                    is TrackTrackableEvent -> {}
                     is RemoveTrackableEvent -> performRemoveTrackable(event)
                     is StopEvent -> performStopPublisher(event)
                     is StartEvent -> {}
@@ -380,7 +341,7 @@ constructor(
                     is SetDestinationSuccessEvent -> {}
                     is PresenceMessageEvent -> {}
                     is ChangeLocationEngineResolutionEvent -> {}
-                    is SetActiveTrackableEvent -> performSetActiveTrackableEvent(event)
+                    is SetActiveTrackableEvent -> {}
                     is ChangeRoutingProfileEvent -> performChangeRoutingProfile(event)
                 }
             }
@@ -440,10 +401,6 @@ constructor(
         fun onProximityReached() {
             threshold?.let { proximityHandler?.onProximityReached(it) }
         }
-    }
-
-    override suspend fun track(trackable: Trackable) {
-        TODO("Not yet implemented")
     }
 
     override suspend fun remove(trackable: Trackable): Boolean {

@@ -24,12 +24,12 @@ internal data class AddTrackableEvent(
 internal data class TrackTrackableEvent(
     val trackable: Trackable,
     val handler: ResultHandler<Unit>
-) : Event()
+) : Request()
 
 internal data class SetActiveTrackableEvent(
     val trackable: Trackable,
     val handler: ResultHandler<Unit>
-) : Event()
+) : Request()
 
 internal data class RemoveTrackableEvent(
     val trackable: Trackable,
