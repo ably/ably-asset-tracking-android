@@ -277,10 +277,6 @@ constructor(
         estimatedArrivalTimeInMilliseconds = null
     }
 
-    private fun performRefreshResolutionPolicy() {
-        trackables.forEach { resolveResolution(it) }
-    }
-
     private fun resolveResolution(trackable: Trackable) {
         val resolutionRequests: Set<Resolution> = requests[trackable.id]?.values?.toSet() ?: emptySet()
         policy.resolve(TrackableResolutionRequest(trackable, resolutionRequests)).let { resolution ->
@@ -303,7 +299,7 @@ constructor(
                     is JoinPresenceSuccessEvent -> {}
                     is RawLocationChangedEvent -> {}
                     is EnhancedLocationChangedEvent -> {}
-                    is RefreshResolutionPolicyEvent -> performRefreshResolutionPolicy()
+                    is RefreshResolutionPolicyEvent -> {}
                     is SetDestinationSuccessEvent -> {}
                     is PresenceMessageEvent -> {}
                     is ChangeLocationEngineResolutionEvent -> {}
@@ -349,7 +345,7 @@ constructor(
         var proximityHandler: ResolutionPolicy.Methods.ProximityHandler? = null
         var threshold: Proximity? = null
         override fun refresh() {
-            enqueue(RefreshResolutionPolicyEvent())
+            core.enqueue(RefreshResolutionPolicyEvent())
         }
 
         override fun setProximityThreshold(

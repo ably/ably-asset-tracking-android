@@ -241,6 +241,9 @@ constructor(
                             event.handler(Result.success(false))
                         }
                     }
+                    is RefreshResolutionPolicyEvent -> {
+                        state.trackables.forEach { resolveResolution(it, state) }
+                    }
                 }
             }
         }
