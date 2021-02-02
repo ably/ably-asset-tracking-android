@@ -37,6 +37,16 @@ internal fun createCorePublisher(
     return DefaultCorePublisher(ablyService, mapboxService, resolutionPolicyFactory)
 }
 
+private data class PublisherState(
+    var isTracking: Boolean = false,
+    val trackables: MutableSet<Trackable> = mutableSetOf(),
+    val resolutions: MutableMap<String, Resolution> = mutableMapOf(),
+    val lastSentEnhancedLocations: MutableMap<String, Location> = mutableMapOf(),
+    var estimatedArrivalTimeInMilliseconds: Long? = null,
+    var active: Trackable? = null,
+    var presenceData: PresenceData = PresenceData(ClientTypes.PUBLISHER)
+)
+
 private class DefaultCorePublisher
 @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
 constructor(
@@ -84,20 +94,14 @@ constructor(
     private fun CoroutineScope.sequenceEventsQueue(receiveEventChannel: ReceiveChannel<Event>) {
         launch {
             // state
-            var isTracking = false
-            val trackables = mutableSetOf<Trackable>()
-            val resolutions = mutableMapOf<String, Resolution>()
-            val lastSentEnhancedLocations: MutableMap<String, Location> = mutableMapOf()
-            var estimatedArrivalTimeInMilliseconds: Long? = null
-            val active: Trackable? = null
-            val presenceData = PresenceData(ClientTypes.PUBLISHER)
+            val state = PublisherState()
 
             // processing
             for (event in receiveEventChannel) {
                 when (event) {
                     is StartEvent -> {
-                        if (!isTracking) {
-                            isTracking = true
+                        if (!state.isTracking) {
+                            state.isTracking = true
 
                             Timber.e("startLocationUpdates")
 
@@ -105,19 +109,19 @@ constructor(
                         }
                     }
                     is EnhancedLocationChangedEvent -> {
-                        for (trackable in trackables) {
+                        for (trackable in state.trackables) {
                             if (shouldSendLocation(
                                     event.locationUpdate.location,
-                                    lastSentEnhancedLocations[trackable.id],
-                                    resolutions[trackable.id]
+                                    state.lastSentEnhancedLocations[trackable.id],
+                                    state.resolutions[trackable.id]
                                 )
                             ) {
-                                lastSentEnhancedLocations[trackable.id] = event.locationUpdate.location
+                                state.lastSentEnhancedLocations[trackable.id] = event.locationUpdate.location
                                 ablyService.sendEnhancedLocation(trackable.id, event.locationUpdate)
                             }
                         }
                         scope.launch { _locations.emit(event.locationUpdate) }
-                        checkThreshold(event.locationUpdate.location, active, estimatedArrivalTimeInMilliseconds)
+                        checkThreshold(event.locationUpdate.location, state.active, state.estimatedArrivalTimeInMilliseconds)
                     }
                 }
             }
