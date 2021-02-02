@@ -210,8 +210,46 @@ constructor(
                         state.locationEngineResolution = policy.resolve(state.resolutions.values.toSet())
                         mapboxService.changeResolution(state.locationEngineResolution)
                     }
+                    is RemoveTrackableEvent -> {
+                        val wasTrackablePresent = state.trackables.remove(event.trackable)
+                        if (wasTrackablePresent) {
+                            hooks.trackables?.onTrackableRemoved(event.trackable)
+                            removeAllSubscribers(event.trackable, state)
+                            state.resolutions.remove(event.trackable.id)
+                                ?.let { enqueue(ChangeLocationEngineResolutionEvent()) }
+                            state.requests.remove(event.trackable.id)
+                            state.lastSentEnhancedLocations.remove(event.trackable.id)
+
+                            // If this was the active Trackable then clear that state and remove destination.
+                            if (state.active == event.trackable) {
+                                removeCurrentDestination(state)
+                                state.active = null
+                                hooks.trackables?.onActiveTrackableChanged(null)
+                            }
+
+                            // Leave Ably channel.
+                            ablyService.disconnect(event.trackable.id, state.presenceData) {
+                                if (it.isSuccess) {
+                                    event.handler(Result.success(true))
+                                } else {
+                                    // TODO - callback handler with error
+                                    // callback(event.handler, it.exceptionOrNull()!!)
+                                }
+                            }
+                        } else {
+                            // notify with false to indicate that it was not removed
+                            event.handler(Result.success(false))
+                        }
+                    }
                 }
             }
+        }
+    }
+
+    private fun removeAllSubscribers(trackable: Trackable, state: PublisherState) {
+        state.subscribers[trackable.id]?.let { subscribers ->
+            subscribers.forEach { hooks.subscribers?.onSubscriberRemoved(it) }
+            subscribers.clear()
         }
     }
 

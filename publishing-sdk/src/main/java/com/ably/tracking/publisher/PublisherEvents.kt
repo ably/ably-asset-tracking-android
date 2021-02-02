@@ -38,7 +38,7 @@ internal data class RemoveTrackableEvent(
      * On success, the handler is supplied `true` if the [Trackable] was already present.
      */
     val handler: ResultHandler<Boolean>
-) : Event()
+) : Request()
 
 internal data class JoinPresenceSuccessEvent(
     val trackable: Trackable,

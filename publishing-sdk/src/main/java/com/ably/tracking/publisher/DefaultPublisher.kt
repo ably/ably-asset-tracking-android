@@ -139,49 +139,15 @@ constructor(
         }
     }
 
-//    override fun remove(trackable: Trackable, handler: ResultHandler<Boolean>) {
-//        enqueue(RemoveTrackableEvent(trackable, handler))
-//    }
-
-//    override fun remove(trackable: Trackable, listener: ResultListener<Boolean>) {
-//        remove(trackable) { listener.onResult(it) }
-//    }
-
-    private fun performRemoveTrackable(event: RemoveTrackableEvent) {
-        val wasTrackablePresent = trackables.remove(event.trackable)
-        if (wasTrackablePresent) {
-            hooks.trackables?.onTrackableRemoved(event.trackable)
-            removeAllSubscribers(event.trackable)
-            resolutions.remove(event.trackable.id)?.let { enqueue(ChangeLocationEngineResolutionEvent()) }
-            requests.remove(event.trackable.id)
-            lastSentEnhancedLocations.remove(event.trackable.id)
-
-            // If this was the active Trackable then clear that state and remove destination.
-            if (active == event.trackable) {
-                removeCurrentDestination()
-                active = null
-                hooks.trackables?.onActiveTrackableChanged(null)
-            }
-
-            // Leave Ably channel.
-            ablyService.disconnect(event.trackable.id, presenceData) {
-                if (it.isSuccess) {
-                    callback(event.handler, Result.success(true))
-                } else {
-                    // TODO - callback handler with error
-//                    callback(event.handler, it.exceptionOrNull()!!)
+    override suspend fun remove(trackable: Trackable): Boolean {
+        return suspendCoroutine { continuation ->
+            core.request(RemoveTrackableEvent(trackable) {
+                try {
+                    continuation.resume(it.getOrThrow())
+                } catch (exception: Exception) {
+                    continuation.resumeWithException(exception)
                 }
-            }
-        } else {
-            // notify with false to indicate that it was not removed
-            callback(event.handler, Result.success(false))
-        }
-    }
-
-    private fun removeAllSubscribers(trackable: Trackable) {
-        subscribers[trackable.id]?.let { subscribers ->
-            subscribers.forEach { hooks.subscribers?.onSubscriberRemoved(it) }
-            subscribers.clear()
+            })
         }
     }
 
@@ -331,7 +297,7 @@ constructor(
                 when (event) {
                     is AddTrackableEvent -> {}
                     is TrackTrackableEvent -> {}
-                    is RemoveTrackableEvent -> performRemoveTrackable(event)
+                    is RemoveTrackableEvent -> {}
                     is StopEvent -> performStopPublisher(event)
                     is StartEvent -> {}
                     is JoinPresenceSuccessEvent -> {}
@@ -401,10 +367,6 @@ constructor(
         fun onProximityReached() {
             threshold?.let { proximityHandler?.onProximityReached(it) }
         }
-    }
-
-    override suspend fun remove(trackable: Trackable): Boolean {
-        TODO("Not yet implemented")
     }
 
     override suspend fun stop() {
