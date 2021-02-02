@@ -19,11 +19,16 @@ constructor(
     ablyService: AblyService,
     mapboxService: MapboxService,
     resolutionPolicyFactory: ResolutionPolicy.Factory,
-    private var _routingProfile: RoutingProfile
+    routingProfile: RoutingProfile
 ) :
     Publisher {
     private val core: CorePublisher
 
+    override val active: Trackable?
+        get() = core.active
+    override var routingProfile: RoutingProfile
+        get() = core.routingProfile
+        set(value) = core.enqueue(ChangeRoutingProfileEvent(value))
     override val locations: SharedFlow<LocationUpdate>
         get() = core.locations
     override val connectionStates: SharedFlow<ConnectionStateChange>
@@ -32,7 +37,7 @@ constructor(
     init {
         Timber.w("Started.")
 
-        core = createCorePublisher(ablyService, mapboxService, resolutionPolicyFactory, _routingProfile)
+        core = createCorePublisher(ablyService, mapboxService, resolutionPolicyFactory, routingProfile)
 
         core.enqueue(StartEvent())
     }
@@ -72,16 +77,6 @@ constructor(
             })
         }
     }
-
-    // TODO - get active from the CorePublisher
-    override var active: Trackable? = null
-
-    override var routingProfile: RoutingProfile
-        // TODO - get routing profile value from the CorePublisher
-        get() = _routingProfile
-        set(value) {
-            core.enqueue(ChangeRoutingProfileEvent(value))
-        }
 
     override suspend fun stop() {
         suspendCoroutine<Unit> { continuation ->

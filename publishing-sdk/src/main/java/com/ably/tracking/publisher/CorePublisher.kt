@@ -31,6 +31,8 @@ internal interface CorePublisher {
     fun request(request: Request)
     val locations: SharedFlow<LocationUpdate>
     val connectionStates: SharedFlow<ConnectionStateChange>
+    val active: Trackable?
+    val routingProfile: RoutingProfile
 }
 
 @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
@@ -102,6 +104,11 @@ constructor(
         get() = _locations.asSharedFlow()
     override val connectionStates: SharedFlow<ConnectionStateChange>
         get() = _connectionStates.asSharedFlow()
+    // TODO - expose the [active] and [routingProfile] from the queue [state] object
+    override val active: Trackable?
+        get() = TODO("Not yet implemented")
+    override val routingProfile: RoutingProfile
+        get() = TODO("Not yet implemented")
 
     init {
         policy = resolutionPolicyFactory.createResolutionPolicy(
