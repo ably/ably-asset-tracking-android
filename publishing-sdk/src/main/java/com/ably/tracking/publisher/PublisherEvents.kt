@@ -12,7 +12,7 @@ internal sealed class Request: Event()
 
 internal class StopEvent(
     val handler: ResultHandler<Unit>
-) : Event()
+) : Request()
 
 internal class StartEvent : AdhocEvent()
 

@@ -248,6 +248,16 @@ constructor(
                         state.routingProfile = event.routingProfile
                         state.currentDestination?.let { setDestination(it, state) }
                     }
+                    is StopEvent -> {
+                        ablyService.close(state.presenceData)
+                        if (state.isTracking) {
+                            state.isTracking = false
+//                            mapboxService.unregisterLocationObserver(locationObserver)
+                            mapboxService.stopAndClose()
+                        }
+                        // TODO implement proper stopping strategy which only calls back once we're fully stopped (considering whether scope.cancel() is appropriate)
+                        event.handler(Result.success(Unit))
+                    }
                 }
             }
         }

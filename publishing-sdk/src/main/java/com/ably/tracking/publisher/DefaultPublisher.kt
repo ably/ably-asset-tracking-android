@@ -160,13 +160,17 @@ constructor(
             core.enqueue(ChangeRoutingProfileEvent(value))
         }
 
-//    override fun stop(handler: ResultHandler<Unit>) {
-//        enqueue(StopEvent(handler))
-//    }
-
-//    override fun stop(listener: ResultListener<Void?>) {
-//        stop() { listener.onResult(it.toJava()) }
-//    }
+    override suspend fun stop() {
+        suspendCoroutine<Unit> { continuation ->
+            core.request(StopEvent {
+                try {
+                    continuation.resume(it.getOrThrow())
+                } catch (exception: Exception) {
+                    continuation.resumeWithException(exception)
+                }
+            })
+        }
+    }
 
     private fun performPresenceMessage(event: PresenceMessageEvent) {
         when (event.presenceMessage.action) {
@@ -232,22 +236,6 @@ constructor(
         }
     }
 
-    private fun performStopPublisher(event: StopEvent) {
-        ablyService.close(presenceData)
-        stopLocationUpdates()
-
-        // TODO implement proper stopping strategy which only calls back once we're fully stopped (considering whether scope.cancel() is appropriate)
-        callback(event.handler, Result.success(Unit))
-    }
-
-    private fun stopLocationUpdates() {
-        if (isTracking) {
-            isTracking = false
-            mapboxService.unregisterLocationObserver(locationObserver)
-            mapboxService.stopAndClose()
-        }
-    }
-
     /**
      * This method must be called from the publishers event queue.
      */
@@ -290,7 +278,7 @@ constructor(
                     is AddTrackableEvent -> {}
                     is TrackTrackableEvent -> {}
                     is RemoveTrackableEvent -> {}
-                    is StopEvent -> performStopPublisher(event)
+                    is StopEvent -> {}
                     is StartEvent -> {}
                     is JoinPresenceSuccessEvent -> {}
                     is RawLocationChangedEvent -> {}
@@ -359,9 +347,5 @@ constructor(
         fun onProximityReached() {
             threshold?.let { proximityHandler?.onProximityReached(it) }
         }
-    }
-
-    override suspend fun stop() {
-        TODO("Not yet implemented")
     }
 }
