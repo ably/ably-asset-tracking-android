@@ -6,17 +6,14 @@ import android.annotation.SuppressLint
 import android.location.Location
 import androidx.annotation.RequiresPermission
 import com.ably.tracking.ConnectionStateChange
-import com.ably.tracking.EnhancedLocationUpdate
 import com.ably.tracking.ErrorInformation
 import com.ably.tracking.Handler
 import com.ably.tracking.LocationUpdate
-import com.ably.tracking.LocationUpdateType
 import com.ably.tracking.Resolution
 import com.ably.tracking.ResultHandler
 import com.ably.tracking.common.ClientTypes
 import com.ably.tracking.common.PresenceAction
 import com.ably.tracking.common.PresenceData
-import com.mapbox.navigation.core.trip.session.LocationObserver
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ObsoleteCoroutinesApi
@@ -42,18 +39,6 @@ constructor(
     Publisher {
     private val core: CorePublisher
     private val thresholdChecker = ThresholdChecker()
-    private val locationObserver = object : LocationObserver {
-        override fun onRawLocationChanged(rawLocation: Location) {
-            sendRawLocationMessage(rawLocation)
-        }
-
-        override fun onEnhancedLocationChanged(
-            enhancedLocation: Location,
-            keyPoints: List<Location>
-        ) {
-            sendEnhancedLocationMessage(enhancedLocation, keyPoints)
-        }
-    }
     private val presenceData = PresenceData(ClientTypes.PUBLISHER)
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private val eventsChannel: SendChannel<Event>
@@ -94,25 +79,7 @@ constructor(
 
         core = createCorePublisher(ablyService, mapboxService, resolutionPolicyFactory, _routingProfile)
 
-        mapboxService.registerLocationObserver(locationObserver)
         core.enqueue(StartEvent())
-    }
-
-    private fun sendRawLocationMessage(rawLocation: Location) {
-        core.enqueue(RawLocationChangedEvent(LocationUpdate(rawLocation)))
-    }
-
-    private fun sendEnhancedLocationMessage(enhancedLocation: Location, keyPoints: List<Location>) {
-        val intermediateLocations = if (keyPoints.size > 1) keyPoints.subList(0, keyPoints.size - 1) else emptyList()
-        core.enqueue(
-            EnhancedLocationChangedEvent(
-                EnhancedLocationUpdate(
-                    enhancedLocation,
-                    intermediateLocations,
-                    if (intermediateLocations.isEmpty()) LocationUpdateType.ACTUAL else LocationUpdateType.PREDICTED
-                )
-            )
-        )
     }
 
     override suspend fun track(trackable: Trackable) {

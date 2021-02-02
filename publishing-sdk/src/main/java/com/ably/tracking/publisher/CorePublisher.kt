@@ -4,12 +4,15 @@ import android.Manifest
 import android.location.Location
 import androidx.annotation.RequiresPermission
 import com.ably.tracking.ConnectionStateChange
+import com.ably.tracking.EnhancedLocationUpdate
 import com.ably.tracking.LocationUpdate
+import com.ably.tracking.LocationUpdateType
 import com.ably.tracking.Resolution
 import com.ably.tracking.ResultHandler
 import com.ably.tracking.common.ClientTypes
 import com.ably.tracking.common.PresenceAction
 import com.ably.tracking.common.PresenceData
+import com.mapbox.navigation.core.trip.session.LocationObserver
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -73,6 +76,28 @@ constructor(
     private val policy: ResolutionPolicy
     private val hooks = Hooks()
     private val methods = Methods()
+    private val locationObserver = object : LocationObserver {
+        override fun onRawLocationChanged(rawLocation: Location) {
+            enqueue(RawLocationChangedEvent(LocationUpdate(rawLocation)))
+        }
+
+        override fun onEnhancedLocationChanged(
+            enhancedLocation: Location,
+            keyPoints: List<Location>
+        ) {
+            val intermediateLocations =
+                if (keyPoints.size > 1) keyPoints.subList(0, keyPoints.size - 1) else emptyList()
+            enqueue(
+                EnhancedLocationChangedEvent(
+                    EnhancedLocationUpdate(
+                        enhancedLocation,
+                        intermediateLocations,
+                        if (intermediateLocations.isEmpty()) LocationUpdateType.ACTUAL else LocationUpdateType.PREDICTED
+                    )
+                )
+            )
+        }
+    }
     override val locations: SharedFlow<LocationUpdate>
         get() = _locations.asSharedFlow()
     override val connectionStates: SharedFlow<ConnectionStateChange>
@@ -91,6 +116,7 @@ constructor(
             }
         }
         ablyService.subscribeForAblyStateChange { state -> scope.launch { _connectionStates.emit(state) } }
+        mapboxService.registerLocationObserver(locationObserver)
     }
 
     override fun enqueue(event: AdhocEvent) {
@@ -252,7 +278,7 @@ constructor(
                         ablyService.close(state.presenceData)
                         if (state.isTracking) {
                             state.isTracking = false
-//                            mapboxService.unregisterLocationObserver(locationObserver)
+                            mapboxService.unregisterLocationObserver(locationObserver)
                             mapboxService.stopAndClose()
                         }
                         // TODO implement proper stopping strategy which only calls back once we're fully stopped (considering whether scope.cancel() is appropriate)
