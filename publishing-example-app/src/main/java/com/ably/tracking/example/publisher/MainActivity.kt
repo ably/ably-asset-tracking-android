@@ -30,7 +30,8 @@ import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import pub.devrel.easypermissions.AfterPermissionGranted
 import pub.devrel.easypermissions.EasyPermissions
@@ -45,8 +46,7 @@ private const val ABLY_API_KEY = BuildConfig.ABLY_API_KEY
 class MainActivity : AppCompatActivity() {
     private var publisher: Publisher? = null
     private lateinit var appPreferences: AppPreferences
-    // TODO - confirm if the scope definition is correct (shouldn't it be Dispatchers.Main?)
-    private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+    private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -122,7 +122,6 @@ class MainActivity : AppCompatActivity() {
             .connection(ConnectionConfiguration(ABLY_API_KEY, CLIENT_ID))
             .map(MapConfiguration(MAPBOX_ACCESS_TOKEN))
             .debug(createDebugConfiguration(historyData))
-//            .locations { updateLocationInfo(it.location) }
             .resolutionPolicy(DefaultResolutionPolicyFactory(Resolution(Accuracy.MINIMUM, 1000L, 1.0), this))
             .androidContext(this)
             .profile(RoutingProfile.DRIVING)
@@ -152,7 +151,12 @@ class MainActivity : AppCompatActivity() {
                         stopTracking()
                     }
                 }
-                scope.launch { connectionStates.collect { updateAblyStateInfo(it.state) } }
+                connectionStates
+                    .onEach { updateAblyStateInfo(it.state) }
+                    .launchIn(scope)
+                locations
+                    .onEach { updateLocationInfo(it.location) }
+                    .launchIn(scope)
             }
         changeNavigationButtonState(true)
     }

@@ -19,7 +19,8 @@ import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
 private const val CLIENT_ID = "<INSERT_CLIENT_ID_HERE>"
@@ -36,8 +37,7 @@ class MainActivity : AppCompatActivity() {
     private var marker: Marker? = null
     private var resolution: Resolution =
         Resolution(Accuracy.MAXIMUM, desiredInterval = 1000L, minimumDisplacement = 1.0)
-    // TODO - confirm if the scope definition is correct (shouldn't it be Dispatchers.Main?)
-    private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+    private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -77,14 +77,16 @@ class MainActivity : AppCompatActivity() {
     private fun createAndStartAssetSubscriber(trackingId: String) {
         subscriber = Subscriber.subscribers()
             .connection(ConnectionConfiguration(ABLY_API_KEY, CLIENT_ID))
-//            .enhancedLocations({ showMarkerOnMap(it.location) })
             .trackingId(trackingId)
             .resolution(resolution)
-//            .assetStatus({ updateAssetStatusInfo(it) })
             .start()
             .apply {
-                scope.launch { enhancedLocations.collect { showMarkerOnMap(it.location) } }
-                scope.launch { assetStatuses.collect { updateAssetStatusInfo(it) } }
+                enhancedLocations
+                    .onEach { showMarkerOnMap(it.location) }
+                    .launchIn(scope)
+                assetStatuses
+                    .onEach { updateAssetStatusInfo(it) }
+                    .launchIn(scope)
             }
     }
 

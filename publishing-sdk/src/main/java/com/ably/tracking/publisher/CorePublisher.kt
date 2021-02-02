@@ -265,8 +265,7 @@ constructor(
                                 if (it.isSuccess) {
                                     event.handler(Result.success(true))
                                 } else {
-                                    // TODO - callback handler with error
-                                    // callback(event.handler, it.exceptionOrNull()!!)
+                                    event.handler(Result.failure(it.exceptionOrNull()!!))
                                 }
                             }
                         } else {
