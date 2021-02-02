@@ -90,19 +90,14 @@ constructor(
 
         Timber.w("Started.")
 
-        core = createCorePublisher(ablyService, mapboxService, resolutionPolicyFactory)
+        core = createCorePublisher(ablyService, mapboxService, resolutionPolicyFactory, _routingProfile)
 
         mapboxService.registerLocationObserver(locationObserver)
         core.enqueue(StartEvent())
     }
 
     private fun sendRawLocationMessage(rawLocation: Location) {
-        enqueue(RawLocationChangedEvent(LocationUpdate(rawLocation)))
-    }
-
-    private fun performRawLocationChanged(event: RawLocationChangedEvent) {
-        lastPublisherLocation = event.locationUpdate.location
-        destinationToSet?.let { setDestination(it) }
+        core.enqueue(RawLocationChangedEvent(LocationUpdate(rawLocation)))
     }
 
     private fun sendEnhancedLocationMessage(enhancedLocation: Location, keyPoints: List<Location>) {
@@ -352,10 +347,6 @@ constructor(
         }
     }
 
-    private fun performSetDestinationSuccess(event: SetDestinationSuccessEvent) {
-        estimatedArrivalTimeInMilliseconds = System.currentTimeMillis() + event.routeDurationInMilliseconds
-    }
-
     private fun removeCurrentDestination() {
         mapboxService.clearRoute()
         currentDestination = null
@@ -395,10 +386,10 @@ constructor(
                     is StopEvent -> performStopPublisher(event)
                     is StartEvent -> {}
                     is JoinPresenceSuccessEvent -> performJoinPresenceSuccess(event)
-                    is RawLocationChangedEvent -> performRawLocationChanged(event)
+                    is RawLocationChangedEvent -> {}
                     is EnhancedLocationChangedEvent -> {}
                     is RefreshResolutionPolicyEvent -> performRefreshResolutionPolicy()
-                    is SetDestinationSuccessEvent -> performSetDestinationSuccess(event)
+                    is SetDestinationSuccessEvent -> {}
                     is PresenceMessageEvent -> performPresenceMessage(event)
                     is ChangeLocationEngineResolutionEvent -> performChangeLocationEngineResolution()
                     is SetActiveTrackableEvent -> performSetActiveTrackableEvent(event)

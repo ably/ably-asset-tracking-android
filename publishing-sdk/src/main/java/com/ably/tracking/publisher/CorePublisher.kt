@@ -32,18 +32,23 @@ internal interface CorePublisher {
 internal fun createCorePublisher(
     ablyService: AblyService,
     mapboxService: MapboxService,
-    resolutionPolicyFactory: ResolutionPolicy.Factory
+    resolutionPolicyFactory: ResolutionPolicy.Factory,
+    routingProfile: RoutingProfile
 ): CorePublisher {
-    return DefaultCorePublisher(ablyService, mapboxService, resolutionPolicyFactory)
+    return DefaultCorePublisher(ablyService, mapboxService, resolutionPolicyFactory, routingProfile)
 }
 
 private data class PublisherState(
+    var routingProfile: RoutingProfile,
     var isTracking: Boolean = false,
     val trackables: MutableSet<Trackable> = mutableSetOf(),
     val resolutions: MutableMap<String, Resolution> = mutableMapOf(),
     val lastSentEnhancedLocations: MutableMap<String, Location> = mutableMapOf(),
     var estimatedArrivalTimeInMilliseconds: Long? = null,
     var active: Trackable? = null,
+    var lastPublisherLocation: Location? = null,
+    var destinationToSet: Destination? = null,
+    var currentDestination: Destination? = null,
     var presenceData: PresenceData = PresenceData(ClientTypes.PUBLISHER)
 )
 
@@ -52,7 +57,8 @@ private class DefaultCorePublisher
 constructor(
     private val ablyService: AblyService,
     private val mapboxService: MapboxService,
-    resolutionPolicyFactory: ResolutionPolicy.Factory
+    resolutionPolicyFactory: ResolutionPolicy.Factory,
+    routingProfile: RoutingProfile
 ) : CorePublisher {
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private val sendEventChannel: SendChannel<Event>
@@ -76,7 +82,7 @@ constructor(
         sendEventChannel = channel
         scope.launch {
             coroutineScope {
-                sequenceEventsQueue(channel)
+                sequenceEventsQueue(channel, routingProfile)
             }
         }
         ablyService.subscribeForAblyStateChange { state -> scope.launch { _connectionStates.emit(state) } }
@@ -91,10 +97,13 @@ constructor(
     }
 
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
-    private fun CoroutineScope.sequenceEventsQueue(receiveEventChannel: ReceiveChannel<Event>) {
+    private fun CoroutineScope.sequenceEventsQueue(
+        receiveEventChannel: ReceiveChannel<Event>,
+        routingProfile: RoutingProfile
+    ) {
         launch {
             // state
-            val state = PublisherState()
+            val state = PublisherState(routingProfile)
 
             // processing
             for (event in receiveEventChannel) {
@@ -107,6 +116,14 @@ constructor(
 
                             mapboxService.startTrip()
                         }
+                    }
+                    is SetDestinationSuccessEvent -> {
+                        state.estimatedArrivalTimeInMilliseconds =
+                            System.currentTimeMillis() + event.routeDurationInMilliseconds
+                    }
+                    is RawLocationChangedEvent -> {
+                        state.lastPublisherLocation = event.locationUpdate.location
+                        state.destinationToSet?.let { setDestination(it, state) }
                     }
                     is EnhancedLocationChangedEvent -> {
                         for (trackable in state.trackables) {
@@ -121,11 +138,37 @@ constructor(
                             }
                         }
                         scope.launch { _locations.emit(event.locationUpdate) }
-                        checkThreshold(event.locationUpdate.location, state.active, state.estimatedArrivalTimeInMilliseconds)
+                        checkThreshold(
+                            event.locationUpdate.location,
+                            state.active,
+                            state.estimatedArrivalTimeInMilliseconds
+                        )
                     }
                 }
             }
         }
+    }
+
+    private fun setDestination(destination: Destination, state: PublisherState) {
+        // TODO is there a way to ensure we're executing in the right thread?
+        state.lastPublisherLocation.let { currentLocation ->
+            if (currentLocation != null) {
+                state.destinationToSet = null
+                removeCurrentDestination(state)
+                state.currentDestination = destination
+                mapboxService.setRoute(currentLocation, destination, state.routingProfile) {
+                    enqueue(SetDestinationSuccessEvent(it))
+                }
+            } else {
+                state.destinationToSet = destination
+            }
+        }
+    }
+
+    private fun removeCurrentDestination(state: PublisherState) {
+        mapboxService.clearRoute()
+        state.currentDestination = null
+        state.estimatedArrivalTimeInMilliseconds = null
     }
 
     private fun checkThreshold(

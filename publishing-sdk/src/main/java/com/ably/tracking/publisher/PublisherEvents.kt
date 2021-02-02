@@ -47,7 +47,7 @@ internal data class JoinPresenceSuccessEvent(
 
 internal data class RawLocationChangedEvent(
     val locationUpdate: LocationUpdate
-) : Event()
+) : AdhocEvent()
 
 internal data class EnhancedLocationChangedEvent(
     val locationUpdate: EnhancedLocationUpdate
@@ -57,7 +57,7 @@ internal class RefreshResolutionPolicyEvent : AdhocEvent()
 
 internal data class SetDestinationSuccessEvent(
     val routeDurationInMilliseconds: Long
-) : Event()
+) : AdhocEvent()
 
 internal data class PresenceMessageEvent(
     val trackable: Trackable,
