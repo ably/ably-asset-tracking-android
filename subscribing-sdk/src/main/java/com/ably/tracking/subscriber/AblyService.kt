@@ -40,7 +40,7 @@ internal class DefaultAblyService(
         }
         ably = AblyRealtime(clientOptions)
         ably.connection.on {
-
+            // TODO - what we were supposed to do here
         }
         ably.connect()
         channel = ably.channels.get(

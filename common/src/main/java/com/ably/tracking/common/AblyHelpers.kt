@@ -90,7 +90,7 @@ fun io.ably.lib.types.PresenceMessage.toTracking(gson: Gson) =
         this.clientId
     )
 
-fun io.ably.lib.types.PresenceMessage.Action.toTracking(): PresenceAction = when(this){
+fun io.ably.lib.types.PresenceMessage.Action.toTracking(): PresenceAction = when (this) {
     io.ably.lib.types.PresenceMessage.Action.present -> PresenceAction.PRESENT_OR_ENTER
     io.ably.lib.types.PresenceMessage.Action.enter -> PresenceAction.PRESENT_OR_ENTER
     io.ably.lib.types.PresenceMessage.Action.update -> PresenceAction.UPDATE

@@ -6,11 +6,11 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ably.tracking.Accuracy
 import com.ably.tracking.ConnectionConfiguration
-import com.ably.tracking.Handler
 import com.ably.tracking.Resolution
-import com.ably.tracking.test.common.UnitResultExpectation
 import com.ably.tracking.test.common.UnitExpectation
+import com.ably.tracking.test.common.UnitResultExpectation
 import com.ably.tracking.test.common.testLogD
+import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -41,14 +41,15 @@ class PublisherIntegrationTests {
                 testLogD("data ended")
                 dataEndedExpectation.fulfill()
             }
-        ).apply {
-            track(
-                Trackable("ID"),
-                {
-                    testLogD("track result: $it")
-                    trackResultExpectation.fulfill(it)
-                }
-            )
+        )
+        runBlocking {
+            try {
+                publisher.track(Trackable("ID"))
+                testLogD("track success")
+                trackResultExpectation.fulfill(Result.success(Unit))
+            } catch (e: Exception) {
+                testLogD("track failed")
+            }
         }
 
         // await asynchronous events
@@ -59,9 +60,14 @@ class PublisherIntegrationTests {
         // cleanup
         testLogD("CLEANUP")
         val stopResultExpectation = UnitResultExpectation("stop response")
-        publisher.stop() {
-            testLogD("stop result: $it")
-            stopResultExpectation.fulfill(it)
+        runBlocking {
+            try {
+                publisher.stop()
+                testLogD("stop succes")
+                stopResultExpectation.fulfill(Result.success(Unit))
+            } catch (e: Exception) {
+                testLogD("stop failed")
+            }
         }
         stopResultExpectation.await()
 
@@ -83,7 +89,6 @@ class PublisherIntegrationTests {
             .androidContext(context)
             .connection(ConnectionConfiguration(ABLY_API_KEY, CLIENT_ID))
             .map(MapConfiguration(MAPBOX_ACCESS_TOKEN))
-            .locations({ })
             .resolutionPolicy(DefaultResolutionPolicyFactory(resolution, context))
             .profile(RoutingProfile.CYCLING)
             .debug(DebugConfiguration(locationSource = LocationSourceRaw(locationData, onLocationDataEnded)))

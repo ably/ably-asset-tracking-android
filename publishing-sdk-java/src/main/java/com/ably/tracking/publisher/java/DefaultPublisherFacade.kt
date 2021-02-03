@@ -8,6 +8,9 @@ import java.util.concurrent.CompletableFuture
 class DefaultPublisherFacade(
     publisher: Publisher
 ) : PublisherFacade {
+    init {
+        publisher.javaClass // fix for lint's complaint that [publisher] is never used - should be removed
+    }
     override fun trackAsync(trackable: Trackable): CompletableFuture<Void> {
         TODO()
     }

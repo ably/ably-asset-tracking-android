@@ -104,6 +104,7 @@ constructor(
         get() = _locations.asSharedFlow()
     override val connectionStates: SharedFlow<ConnectionStateChange>
         get() = _connectionStates.asSharedFlow()
+
     // TODO - expose the [active] and [routingProfile] from the queue [state] object
     override val active: Trackable?
         get() = TODO("Not yet implemented")
@@ -183,13 +184,17 @@ constructor(
                         )
                     }
                     is TrackTrackableEvent -> {
-                        createChannelForTrackableIfNotExisits(event.trackable, {
-                            if (it.isSuccess) {
-                                request(SetActiveTrackableEvent(event.trackable, event.handler))
-                            } else {
-                                event.handler(it)
-                            }
-                        }, state)
+                        createChannelForTrackableIfNotExisits(
+                            event.trackable,
+                            {
+                                if (it.isSuccess) {
+                                    request(SetActiveTrackableEvent(event.trackable, event.handler))
+                                } else {
+                                    event.handler(it)
+                                }
+                            },
+                            state
+                        )
                     }
                     is SetActiveTrackableEvent -> {
                         if (state.active != event.trackable) {

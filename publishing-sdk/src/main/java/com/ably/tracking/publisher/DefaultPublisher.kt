@@ -44,49 +44,57 @@ constructor(
 
     override suspend fun track(trackable: Trackable) {
         suspendCoroutine<Unit> { continuation ->
-            core.request(TrackTrackableEvent(trackable) {
-                try {
-                    continuation.resume(it.getOrThrow())
-                } catch (exception: Exception) {
-                    continuation.resumeWithException(exception)
+            core.request(
+                TrackTrackableEvent(trackable) {
+                    try {
+                        continuation.resume(it.getOrThrow())
+                    } catch (exception: Exception) {
+                        continuation.resumeWithException(exception)
+                    }
                 }
-            })
+            )
         }
     }
 
     override suspend fun add(trackable: Trackable) {
         suspendCoroutine<Unit> { continuation ->
-            core.request(AddTrackableEvent(trackable) {
-                try {
-                    continuation.resume(it.getOrThrow())
-                } catch (exception: Exception) {
-                    continuation.resumeWithException(exception)
+            core.request(
+                AddTrackableEvent(trackable) {
+                    try {
+                        continuation.resume(it.getOrThrow())
+                    } catch (exception: Exception) {
+                        continuation.resumeWithException(exception)
+                    }
                 }
-            })
+            )
         }
     }
 
     override suspend fun remove(trackable: Trackable): Boolean {
         return suspendCoroutine { continuation ->
-            core.request(RemoveTrackableEvent(trackable) {
-                try {
-                    continuation.resume(it.getOrThrow())
-                } catch (exception: Exception) {
-                    continuation.resumeWithException(exception)
+            core.request(
+                RemoveTrackableEvent(trackable) {
+                    try {
+                        continuation.resume(it.getOrThrow())
+                    } catch (exception: Exception) {
+                        continuation.resumeWithException(exception)
+                    }
                 }
-            })
+            )
         }
     }
 
     override suspend fun stop() {
         suspendCoroutine<Unit> { continuation ->
-            core.request(StopEvent {
-                try {
-                    continuation.resume(it.getOrThrow())
-                } catch (exception: Exception) {
-                    continuation.resumeWithException(exception)
+            core.request(
+                StopEvent {
+                    try {
+                        continuation.resume(it.getOrThrow())
+                    } catch (exception: Exception) {
+                        continuation.resumeWithException(exception)
+                    }
                 }
-            })
+            )
         }
     }
 }

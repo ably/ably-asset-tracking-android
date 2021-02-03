@@ -121,7 +121,8 @@ subprojects {
                               'UnpackedNativeCode',
                               'LockedOrientationActivity',
                               'IconLocation',
-                              'StopShip'
+                              'StopShip',
+                              'ObsoleteSdkInt'
 
                 // Lint rules which are disabled by default (see: lint --show), but which we would
                 // rather were enabled.

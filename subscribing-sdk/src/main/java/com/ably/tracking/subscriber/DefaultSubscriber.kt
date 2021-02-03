@@ -30,26 +30,30 @@ internal class DefaultSubscriber(
     override suspend fun sendChangeRequest(resolution: Resolution) {
         // send change request over channel and wait for the result
         suspendCoroutine<Unit> { continuation ->
-            core.request(ChangeResolutionEvent(resolution) {
-                try {
-                    continuation.resume(it.getOrThrow())
-                } catch (exception: Exception){
-                    continuation.resumeWithException(exception)
+            core.request(
+                ChangeResolutionEvent(resolution) {
+                    try {
+                        continuation.resume(it.getOrThrow())
+                    } catch (exception: Exception) {
+                        continuation.resumeWithException(exception)
+                    }
                 }
-            })
+            )
         }
     }
 
     override suspend fun stop() {
         // send stop request over channel and wait for the result
         suspendCoroutine<Unit> { continuation ->
-            core.request(StopEvent {
-                try {
-                    continuation.resume(it.getOrThrow())
-                } catch (exception: Exception){
-                    continuation.resumeWithException(exception)
+            core.request(
+                StopEvent {
+                    try {
+                        continuation.resume(it.getOrThrow())
+                    } catch (exception: Exception) {
+                        continuation.resumeWithException(exception)
+                    }
                 }
-            })
+            )
         }
     }
 }

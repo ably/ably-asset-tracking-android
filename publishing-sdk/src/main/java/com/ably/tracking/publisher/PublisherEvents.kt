@@ -7,8 +7,8 @@ import com.ably.tracking.common.PresenceMessage
 
 internal sealed class Event
 
-internal sealed class AdhocEvent: Event()
-internal sealed class Request: Event()
+internal sealed class AdhocEvent : Event()
+internal sealed class Request : Event()
 
 internal class StopEvent(
     val handler: ResultHandler<Unit>

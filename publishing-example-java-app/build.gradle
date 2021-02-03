@@ -9,5 +9,5 @@ android {
 }
 
 dependencies {
-    implementation project(":publishing-sdk")
+    implementation project(":publishing-sdk-java")
 }

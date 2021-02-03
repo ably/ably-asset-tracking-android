@@ -24,22 +24,23 @@ public class UsageExamples {
 
         final SubscriberFacade subscriber = SubscriberFacade.wrap(nativeSubscriber);
 
-        subscriber.addListener(isOnline -> {
-            // handle isOnline
-        });
-
-        subscriber.addEnhancedLocationListener(locationUpdate -> {
-            // handle locationUpdate
-        });
-
-        // use methods that return a completable future
-        try {
-            subscriber.sendChangeRequestAsync(new Resolution(Accuracy.MAXIMUM, 1L, 1.0)).get();
-            subscriber.stopAsync().get();
-        } catch (ExecutionException e) {
-            // handle execution exception
-        } catch (InterruptedException e) {
-            // handle interruption exception
-        }
+        // TODO - uncomment when SubscriberFacade is implemented
+//        subscriber.addListener(isOnline -> {
+//            // handle isOnline
+//        });
+//
+//        subscriber.addEnhancedLocationListener(locationUpdate -> {
+//            // handle locationUpdate
+//        });
+//
+//        // use methods that return a completable future
+//        try {
+//            subscriber.sendChangeRequestAsync(new Resolution(Accuracy.MAXIMUM, 1L, 1.0)).get();
+//            subscriber.stopAsync().get();
+//        } catch (ExecutionException e) {
+//            // handle execution exception
+//        } catch (InterruptedException e) {
+//            // handle interruption exception
+//        }
     }
 }
