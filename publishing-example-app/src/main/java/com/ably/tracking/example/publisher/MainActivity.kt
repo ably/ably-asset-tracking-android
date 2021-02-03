@@ -176,8 +176,8 @@ class MainActivity : AppCompatActivity() {
                 LocationSourceType.ABLY -> LocationSourceAbly(appPreferences.getSimulationChannel())
                 LocationSourceType.S3 -> LocationSourceRaw(historyData!!)
                 LocationSourceType.PHONE -> null
-            }
-//            locationHistoryHandler = { uploadLocationHistoryData(it) }
+            },
+            locationHistoryHandler = { uploadLocationHistoryData(it) }
         )
     }
 

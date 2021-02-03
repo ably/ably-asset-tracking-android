@@ -47,7 +47,7 @@ internal class DefaultMapboxService(
     context: Context,
     private val mapConfiguration: MapConfiguration,
     connectionConfiguration: ConnectionConfiguration,
-    debugConfiguration: DebugConfiguration? = null
+    private val debugConfiguration: DebugConfiguration? = null
 ) : MapboxService {
     private val mapboxNavigation: MapboxNavigation
     private var mapboxReplayer: MapboxReplayer? = null
@@ -84,8 +84,7 @@ internal class DefaultMapboxService(
         mapboxNavigation.apply {
             stopTripSession()
             mapboxReplayer?.finish()
-            // TODO - add some kind of a listener for history data to the API
-            // debugConfiguration?.locationHistoryHandler?.invoke(retrieveHistory())
+            debugConfiguration?.locationHistoryHandler?.invoke(retrieveHistory())
             onDestroy()
         }
     }
