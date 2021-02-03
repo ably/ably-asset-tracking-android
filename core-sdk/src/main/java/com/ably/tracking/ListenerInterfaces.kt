@@ -77,15 +77,6 @@ data class ConnectionStateChange(
     val errorInformation: ErrorInformation?
 )
 
-// TODO to be removed
-/**
- * Defines an interface, to be implemented in Java code utilising the Ably Asset Tracking SDKs, allowing that code to
- * handle an event indicating the result of an asynchronous operation.
- */
-interface ResultListener<T> {
-    fun onResult(result: Result<T>)
-}
-
 /**
  * Defines a function type, to be implemented in Kotlin code utilising the Ably Asset Tracking SDKs, allowing that code
  * to handle an event indicating the result of an asynchronous operation.
