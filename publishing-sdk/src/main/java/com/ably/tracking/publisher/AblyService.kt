@@ -77,10 +77,11 @@ internal class DefaultAblyService(
     }
 
     override fun disconnect(trackableId: String, presenceData: PresenceData, callback: (Result<Unit>) -> Unit) {
-        channels[trackableId]?.let { channel ->
-            channel.presence.unsubscribe()
+        val removedChannel = channels.remove(trackableId)
+        if (removedChannel != null) {
+            removedChannel.presence.unsubscribe()
             try {
-                channel.presence.leave(
+                removedChannel.presence.leave(
                     gson.toJson(presenceData),
                     object : CompletionListener {
                         override fun onSuccess() {
@@ -95,6 +96,8 @@ internal class DefaultAblyService(
             } catch (ablyException: AblyException) {
                 callback(Result.failure(ablyException))
             }
+        } else {
+            callback(Result.success(Unit))
         }
     }
 
