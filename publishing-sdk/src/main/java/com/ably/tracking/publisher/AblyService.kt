@@ -18,13 +18,75 @@ import io.ably.lib.types.AblyException
 import io.ably.lib.types.ErrorInfo
 import timber.log.Timber
 
+/**
+ * Wrapper for the [AblyRealtime] that's used to interact with the Ably SDK.
+ * In the variant for the [Publisher] the service is created without any channels. They are created later when you call [connect].
+ */
 internal interface AblyService {
+    /**
+     * Adds a listener for the [AblyRealtime] state updates.
+     *
+     * @param listener The function that will be called each time the [AblyRealtime] state changes.
+     */
     fun subscribeForAblyStateChange(listener: (ConnectionStateChange) -> Unit)
+
+    /**
+     * Adds a listener for the presence messages that are received from the channel's presence.
+     * Should be called only when there's an existing channel for the [trackableId].
+     * If a channel for the [trackableId] doesn't exist then nothing happens.
+     *
+     * @param trackableId The ID of the trackable channel.
+     * @param listener The function that will be called each time a presence message is received.
+     */
     fun subscribeForPresenceMessages(trackableId: String, listener: (PresenceMessage) -> Unit)
+
+    /**
+     * Sends an enhanced location update to the channel.
+     * Should be called only when there's an existing channel for the [trackableId].
+     * If a channel for the [trackableId] doesn't exist then nothing happens.
+     *
+     * @param trackableId The ID of the trackable channel.
+     * @param locationUpdate The location update that is sent to the channel.
+     */
     fun sendEnhancedLocation(trackableId: String, locationUpdate: EnhancedLocationUpdate)
+
+    /**
+     * Joins the presence of the channel for the given [trackableId] and add it to the connected channels.
+     * If successfully joined the presence then the channel is added to the connected channels.
+     * If a channel for the given [trackableId] doesn't exist then it just calls [callback] with success.
+     *
+     * @param trackableId The ID of the trackable channel.
+     * @param presenceData The data that will be send via the presence channel.
+     * @param callback The function that will be called when connecting completes.
+     */
     fun connect(trackableId: String, presenceData: PresenceData, callback: (Result<Unit>) -> Unit)
+
+    /**
+     * Updates presence data in the [trackableId] channel's presence.
+     * Should be called only when there's an existing channel for the [trackableId].
+     * If a channel for the [trackableId] doesn't exist then nothing happens.
+     *
+     * @param trackableId The ID of the trackable channel.
+     * @param presenceData The data that will be send via the presence channel.
+     * @param callback The function that will be called when connecting completes.
+     */
     fun updatePresenceData(trackableId: String, presenceData: PresenceData, callback: (Result<Unit>) -> Unit)
+
+    /**
+     * Removes the [trackableId] channel from the connected channels and leaves the presence of that channel.
+     * If a channel for the given [trackableId] doesn't exist then it just calls [callback] with success.
+     *
+     * @param trackableId The ID of the trackable channel.
+     * @param presenceData The data that will be send via the presence channel.
+     * @param callback The function that will be called when connecting completes.
+     */
     fun disconnect(trackableId: String, presenceData: PresenceData, callback: (Result<Unit>) -> Unit)
+
+    /**
+     * Cleanups and closes all the connected channels and their presence. In the end closes Ably connection.
+     *
+     * @param presenceData The data that will be send via the presence channels.
+     */
     fun close(presenceData: PresenceData)
 }
 

@@ -18,11 +18,45 @@ import io.ably.lib.types.ChannelOptions
 import io.ably.lib.types.ErrorInfo
 import timber.log.Timber
 
+/**
+ * Wrapper for the [AblyRealtime] that's used to interact with the Ably SDK.
+ * In the variant for the [Subscriber] the service is created with a tracking ID and only one channel.
+ */
 internal interface AblyService {
+    /**
+     * Adds a listener for the enhanced location updates that are received from the channel.
+     *
+     * @param listener The function that will be called each time an enhanced location update event is received.
+     */
     fun subscribeForEnhancedEvents(listener: (LocationUpdate) -> Unit)
+
+    /**
+     * Joins the presence of the channel.
+     *
+     * @param presenceData The data that will be send via the presence channel.
+     */
     fun connect(presenceData: PresenceData)
+
+    /**
+     * Adds a listener for the presence messages that are received from the channel's presence.
+     *
+     * @param listener The function that will be called each time a presence message is received.
+     */
     fun subscribeForPresenceMessages(listener: (PresenceMessage) -> Unit)
+
+    /**
+     * Updates presence data in the channel's presence.
+     *
+     * @param presenceData The data that will be send via the presence channel.
+     * @param callback The function that will be called when updating presence data completes.
+     */
     fun updatePresenceData(presenceData: PresenceData, callback: (Result<Unit>) -> Unit)
+
+    /**
+     * Cleanups and closes the channel, presence and Ably connections.
+     *
+     * @param presenceData The data that will be send via the presence channel.
+     */
     fun close(presenceData: PresenceData)
 }
 

@@ -7,7 +7,14 @@ import com.ably.tracking.common.PresenceMessage
 
 internal sealed class Event
 
+/**
+ * Represents an event that doesn't have a callback (launch and forget).
+ */
 internal sealed class AdhocEvent : Event()
+
+/**
+ * Represents an event that invokes an action that calls a callback when it completes.
+ */
 internal sealed class Request : Event()
 
 internal class StopEvent(

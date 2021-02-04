@@ -27,14 +27,56 @@ import com.mapbox.navigation.core.trip.session.LocationObserver
 import io.ably.lib.types.ClientOptions
 import timber.log.Timber
 
+/**
+ * Wrapper for the [MapboxNavigation] that's used to interact with the Mapbox SDK.
+ */
 internal interface MapboxService {
+    /**
+     * Starts the navigation trip which results in location updates from the location engine.
+     */
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
     fun startTrip()
+
+    /**
+     * Stops the navigation trip and closes the whole [MapboxNavigation].
+     */
     fun stopAndClose()
+
+    /**
+     * Adds a location observer that gets notified when a new raw or enhanced location is received.
+     *
+     * @param locationObserver The location observer to register.
+     */
     fun registerLocationObserver(locationObserver: LocationObserver)
+
+    /**
+     * Removes a location observer if it was previously added with [registerLocationObserver].
+     *
+     * @param locationObserver The location observer to remove.
+     */
     fun unregisterLocationObserver(locationObserver: LocationObserver)
+
+    /**
+     * Changes the [resolution] of the location engine if it's a subtype of the [ResolutionLocationEngine].
+     *
+     * @param resolution The new resolution to set.
+     */
     fun changeResolution(resolution: Resolution)
+
+    /**
+     * Removes the currently active route.
+     */
     fun clearRoute()
+
+    /**
+     * Sets a route with the provided parameters. The route starts in [currentLocation] and ends in [destination].
+     * When the route is successfully set then it calls the [routeDurationCallback] with the estimated route duration.
+     *
+     * @param currentLocation The current location of the [Publisher].
+     * @param destination The destination of the [Trackable].
+     * @param routingProfile The routing profile for the route.
+     * @param routeDurationCallback The function that's called with the ETA of the route in milliseconds.
+     */
     fun setRoute(
         currentLocation: Location,
         destination: Destination,
