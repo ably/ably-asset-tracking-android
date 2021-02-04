@@ -86,17 +86,6 @@ subprojects {
                 kotlinOptions {
                     jvmTarget = '1.8'
                     allWarningsAsErrors = true
-
-                    // The actor method from kotlinx.coroutines is obsolete, despite there not being a replacement for it yet!
-                    // That means we get the following warning on build when we use it:
-                    //   "This declaration is experimental and its usage should be marked with '@kotlinx.coroutines.ObsoleteCoroutinesApi' or '@OptIn(kotlinx.coroutines.ObsoleteCoroutinesApi::class)'"
-                    // We can continue using it by marking our implementing methods with @OptIn(ObsoleteCoroutinesApi::class),
-                    // as the message suggests, however that then results in the following build failure message:
-                    //   "This class can only be used with the compiler argument '-Xopt-in=kotlin.RequiresOptIn'"
-                    // So, based on this documentation:
-                    //   https://kotlinlang.org/docs/reference/opt-in-requirements.html#module-wide-opt-in
-                    // this compiler argument solves that build failure:
-                    freeCompilerArgs += "-Xopt-in=kotlin.RequiresOptIn"
                 }
             }
 
