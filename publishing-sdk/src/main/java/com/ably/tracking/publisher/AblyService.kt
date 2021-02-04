@@ -98,14 +98,7 @@ internal class DefaultAblyService(
     private val channels: MutableMap<String, Channel> = mutableMapOf()
 
     init {
-        val clientOptions = connectionConfiguration.clientOptions.apply {
-            autoConnect = false
-        }
-        ably = AblyRealtime(clientOptions)
-        ably.connection.on {
-            // TODO - what we were supposed to do here
-        }
-        ably.connect()
+        ably = AblyRealtime(connectionConfiguration.clientOptions)
     }
 
     override fun subscribeForAblyStateChange(listener: (ConnectionStateChange) -> Unit) {

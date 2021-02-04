@@ -69,14 +69,7 @@ internal class DefaultAblyService(
     private val channel: Channel
 
     init {
-        val clientOptions = connectionConfiguration.clientOptions.apply {
-            autoConnect = false
-        }
-        ably = AblyRealtime(clientOptions)
-        ably.connection.on {
-            // TODO - what we were supposed to do here
-        }
-        ably.connect()
+        ably = AblyRealtime(connectionConfiguration.clientOptions)
         channel = ably.channels.get(
             trackingId,
             ChannelOptions().apply { params = mapOf("rewind" to "1") }
