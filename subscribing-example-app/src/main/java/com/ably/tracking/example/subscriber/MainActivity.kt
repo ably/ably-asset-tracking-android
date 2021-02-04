@@ -37,6 +37,7 @@ class MainActivity : AppCompatActivity() {
     private var marker: Marker? = null
     private var resolution: Resolution =
         Resolution(Accuracy.MAXIMUM, desiredInterval = 1000L, minimumDisplacement = 1.0)
+    // SupervisorJob() is used to keep the scope working after any of its children fail
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
     override fun onCreate(savedInstanceState: Bundle?) {

@@ -46,6 +46,7 @@ private const val ABLY_API_KEY = BuildConfig.ABLY_API_KEY
 class MainActivity : AppCompatActivity() {
     private var publisher: Publisher? = null
     private lateinit var appPreferences: AppPreferences
+    // SupervisorJob() is used to keep the scope working after any of its children fail
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
     override fun onCreate(savedInstanceState: Bundle?) {

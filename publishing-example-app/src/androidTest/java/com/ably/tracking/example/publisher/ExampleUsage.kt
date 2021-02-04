@@ -13,6 +13,7 @@ import com.ably.tracking.publisher.RoutingProfile
 import com.ably.tracking.publisher.Trackable
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
 // PLACEHOLDERS:
@@ -24,7 +25,8 @@ val MAPBOX_ACCESS_TOKEN = ""
 class ExampleUsage(
     val trackingId: String
 ) : Activity() {
-    val scope = CoroutineScope(Dispatchers.Main)
+    // SupervisorJob() is used to keep the scope working after any of its children fail
+    val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     override fun onStart() {
         super.onStart()
 
