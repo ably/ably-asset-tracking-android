@@ -60,8 +60,9 @@ class ExampleUsage(
                         trackingId, // provide a tracking identifier for the asset
                         constraints = exampleConstraints // provide a set of Resolution Constraints
                     )
-                    // TODO handle asset tracking started successfully
                 )
+                // TODO handle asset tracking started successfully
+                // it's safe to update the UI directly here (see [scope])
             } catch (exception: Exception) {
                 // TODO handle asset tracking could not be started
             }
