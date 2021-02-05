@@ -32,6 +32,7 @@ internal interface Ably {
 
     /**
      * Adds a listener for the presence messages that are received from the channel's presence.
+     * After adding a listener it will emit [PresenceMessage] for each client that's currently in the presence.
      * Should be called only when there's an existing channel for the [trackableId].
      * If a channel for the [trackableId] doesn't exist then nothing happens.
      *
@@ -163,7 +164,10 @@ internal class DefaultAbly(
     }
 
     override fun subscribeForPresenceMessages(trackableId: String, listener: (PresenceMessage) -> Unit) {
-        channels[trackableId]?.presence?.subscribe { listener(it.toTracking(gson)) }
+        channels[trackableId]?.let { channel ->
+            channel.presence.get(true).forEach { listener(it.toTracking(gson)) }
+            channel.presence.subscribe { listener(it.toTracking(gson)) }
+        }
     }
 
     override fun updatePresenceData(trackableId: String, presenceData: PresenceData, callback: (Result<Unit>) -> Unit) {
