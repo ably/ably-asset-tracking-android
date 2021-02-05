@@ -16,8 +16,8 @@ import kotlin.coroutines.suspendCoroutine
 internal class DefaultPublisher
 @RequiresPermission(anyOf = [ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION])
 constructor(
-    ablyService: AblyService,
-    mapboxService: MapboxService,
+    ably: Ably,
+    mapbox: Mapbox,
     resolutionPolicyFactory: ResolutionPolicy.Factory,
     routingProfile: RoutingProfile
 ) :
@@ -37,7 +37,7 @@ constructor(
     init {
         Timber.w("Started.")
 
-        core = createCorePublisher(ablyService, mapboxService, resolutionPolicyFactory, routingProfile)
+        core = createCorePublisher(ably, mapbox, resolutionPolicyFactory, routingProfile)
 
         core.enqueue(StartEvent())
     }

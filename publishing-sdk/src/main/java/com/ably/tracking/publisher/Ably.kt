@@ -22,7 +22,7 @@ import timber.log.Timber
  * Wrapper for the [AblyRealtime] that's used to interact with the Ably SDK.
  * In the variant for the [Publisher] the service is created without any channels. They are created later when you call [connect].
  */
-internal interface AblyService {
+internal interface Ably {
     /**
      * Adds a listener for the [AblyRealtime] state updates.
      *
@@ -53,7 +53,7 @@ internal interface AblyService {
     /**
      * Joins the presence of the channel for the given [trackableId] and add it to the connected channels.
      * If successfully joined the presence then the channel is added to the connected channels.
-     * If a channel for the given [trackableId] doesn't exist then it just calls [callback] with success.
+     * If a channel for the given [trackableId] exists then it just calls [callback] with success.
      *
      * @param trackableId The ID of the trackable channel.
      * @param presenceData The data that will be send via the presence channel.
@@ -90,9 +90,9 @@ internal interface AblyService {
     fun close(presenceData: PresenceData)
 }
 
-internal class DefaultAblyService(
+internal class DefaultAbly(
     connectionConfiguration: ConnectionConfiguration
-) : AblyService {
+) : Ably {
     private val gson = Gson()
     private val ably: AblyRealtime
     private val channels: MutableMap<String, Channel> = mutableMapOf()

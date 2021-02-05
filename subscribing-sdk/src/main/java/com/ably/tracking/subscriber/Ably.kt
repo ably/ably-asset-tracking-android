@@ -22,7 +22,7 @@ import timber.log.Timber
  * Wrapper for the [AblyRealtime] that's used to interact with the Ably SDK.
  * In the variant for the [Subscriber] the service is created with a tracking ID and only one channel.
  */
-internal interface AblyService {
+internal interface Ably {
     /**
      * Adds a listener for the enhanced location updates that are received from the channel.
      *
@@ -60,10 +60,10 @@ internal interface AblyService {
     fun close(presenceData: PresenceData)
 }
 
-internal class DefaultAblyService(
+internal class DefaultAbly(
     connectionConfiguration: ConnectionConfiguration,
     trackingId: String
-) : AblyService {
+) : Ably {
     private val gson = Gson()
     private val ably: AblyRealtime
     private val channel: Channel

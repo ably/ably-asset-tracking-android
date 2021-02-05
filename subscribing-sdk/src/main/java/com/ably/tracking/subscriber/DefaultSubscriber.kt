@@ -9,7 +9,7 @@ import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 
 internal class DefaultSubscriber(
-    ablyService: AblyService,
+    ably: Ably,
     resolution: Resolution?
 ) : Subscriber {
     private val core: CoreSubscriber
@@ -23,7 +23,7 @@ internal class DefaultSubscriber(
     init {
         Timber.w("Started.")
 
-        core = createCoreSubscriber(ablyService, resolution)
+        core = createCoreSubscriber(ably, resolution)
         core.enqueue(StartEvent())
     }
 

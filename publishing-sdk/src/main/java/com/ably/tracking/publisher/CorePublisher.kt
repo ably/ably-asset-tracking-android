@@ -37,12 +37,12 @@ internal interface CorePublisher {
 
 @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
 internal fun createCorePublisher(
-    ablyService: AblyService,
-    mapboxService: MapboxService,
+    ably: Ably,
+    mapbox: Mapbox,
     resolutionPolicyFactory: ResolutionPolicy.Factory,
     routingProfile: RoutingProfile
 ): CorePublisher {
-    return DefaultCorePublisher(ablyService, mapboxService, resolutionPolicyFactory, routingProfile)
+    return DefaultCorePublisher(ably, mapbox, resolutionPolicyFactory, routingProfile)
 }
 
 private data class PublisherState(
@@ -65,8 +65,8 @@ private data class PublisherState(
 private class DefaultCorePublisher
 @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
 constructor(
-    private val ablyService: AblyService,
-    private val mapboxService: MapboxService,
+    private val ably: Ably,
+    private val mapbox: Mapbox,
     resolutionPolicyFactory: ResolutionPolicy.Factory,
     routingProfile: RoutingProfile
 ) : CorePublisher {
@@ -123,8 +123,8 @@ constructor(
                 sequenceEventsQueue(channel, routingProfile)
             }
         }
-        ablyService.subscribeForAblyStateChange { state -> scope.launch { _connectionStates.emit(state) } }
-        mapboxService.registerLocationObserver(locationObserver)
+        ably.subscribeForAblyStateChange { state -> scope.launch { _connectionStates.emit(state) } }
+        mapbox.registerLocationObserver(locationObserver)
     }
 
     override fun enqueue(event: AdhocEvent) {
@@ -153,7 +153,7 @@ constructor(
 
                             Timber.e("startLocationUpdates")
 
-                            mapboxService.startTrip()
+                            mapbox.startTrip()
                         }
                     }
                     is SetDestinationSuccessEvent -> {
@@ -173,7 +173,7 @@ constructor(
                                 )
                             ) {
                                 state.lastSentEnhancedLocations[trackable.id] = event.locationUpdate.location
-                                ablyService.sendEnhancedLocation(trackable.id, event.locationUpdate)
+                                ably.sendEnhancedLocation(trackable.id, event.locationUpdate)
                             }
                         }
                         scope.launch { _locations.emit(event.locationUpdate) }
@@ -246,7 +246,7 @@ constructor(
                     }
                     is ChangeLocationEngineResolutionEvent -> {
                         state.locationEngineResolution = policy.resolve(state.resolutions.values.toSet())
-                        mapboxService.changeResolution(state.locationEngineResolution)
+                        mapbox.changeResolution(state.locationEngineResolution)
                     }
                     is RemoveTrackableEvent -> {
                         val wasTrackablePresent = state.trackables.remove(event.trackable)
@@ -266,7 +266,7 @@ constructor(
                             }
 
                             // Leave Ably channel.
-                            ablyService.disconnect(event.trackable.id, state.presenceData) {
+                            ably.disconnect(event.trackable.id, state.presenceData) {
                                 if (it.isSuccess) {
                                     event.handler(Result.success(true))
                                 } else {
@@ -286,11 +286,11 @@ constructor(
                         state.currentDestination?.let { setDestination(it, state) }
                     }
                     is StopEvent -> {
-                        ablyService.close(state.presenceData)
+                        ably.close(state.presenceData)
                         if (state.isTracking) {
                             state.isTracking = false
-                            mapboxService.unregisterLocationObserver(locationObserver)
-                            mapboxService.stopAndClose()
+                            mapbox.unregisterLocationObserver(locationObserver)
+                            mapbox.stopAndClose()
                         }
                         // TODO implement proper stopping strategy which only calls back once we're fully stopped (considering whether scope.cancel() is appropriate)
                         event.handler(Result.success(Unit))
@@ -317,9 +317,9 @@ constructor(
         handler: ResultHandler<Unit>,
         state: PublisherState
     ) {
-        ablyService.connect(trackable.id, state.presenceData) { result ->
+        ably.connect(trackable.id, state.presenceData) { result ->
             if (result.isSuccess) {
-                ablyService.subscribeForPresenceMessages(trackable.id) { enqueue(PresenceMessageEvent(trackable, it)) }
+                ably.subscribeForPresenceMessages(trackable.id) { enqueue(PresenceMessageEvent(trackable, it)) }
                 request(JoinPresenceSuccessEvent(trackable, handler))
             } else {
                 // TODO - is this correct in case of an error?
@@ -392,7 +392,7 @@ constructor(
                 state.destinationToSet = null
                 removeCurrentDestination(state)
                 state.currentDestination = destination
-                mapboxService.setRoute(currentLocation, destination, state.routingProfile) {
+                mapbox.setRoute(currentLocation, destination, state.routingProfile) {
                     enqueue(SetDestinationSuccessEvent(it))
                 }
             } else {
@@ -402,7 +402,7 @@ constructor(
     }
 
     private fun removeCurrentDestination(state: PublisherState) {
-        mapboxService.clearRoute()
+        mapbox.clearRoute()
         state.currentDestination = null
         state.estimatedArrivalTimeInMilliseconds = null
     }

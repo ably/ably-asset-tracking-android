@@ -25,14 +25,14 @@ internal interface CoreSubscriber {
 }
 
 internal fun createCoreSubscriber(
-    ablyService: AblyService,
+    ably: Ably,
     initialResolution: Resolution? = null
 ): CoreSubscriber {
-    return DefaultCoreSubscriber(ablyService, initialResolution)
+    return DefaultCoreSubscriber(ably, initialResolution)
 }
 
 private class DefaultCoreSubscriber(
-    private val ablyService: AblyService,
+    private val ably: Ably,
     private val initialResolution: Resolution?
 ) :
     CoreSubscriber {
@@ -75,7 +75,7 @@ private class DefaultCoreSubscriber(
                         subscribeForEnhancedEvents()
                         subscribeForPresenceMessages()
                         // TODO - listen for the response
-                        ablyService.connect(presenceData)
+                        ably.connect(presenceData)
                     }
                     is PresenceMessageEvent -> {
                         when (event.presenceMessage.action) {
@@ -94,12 +94,12 @@ private class DefaultCoreSubscriber(
                     }
                     is ChangeResolutionEvent -> {
                         presenceData = presenceData.copy(resolution = event.resolution)
-                        ablyService.updatePresenceData(presenceData) {
+                        ably.updatePresenceData(presenceData) {
                             event.handler(it)
                         }
                     }
                     is StopEvent -> {
-                        ablyService.close(presenceData)
+                        ably.close(presenceData)
                         notifyAssetIsOffline()
                         // TODO add proper handling for callback when stopping the subscriber (handle success and failure)
                         event.handler(Result.success(Unit))
@@ -110,13 +110,13 @@ private class DefaultCoreSubscriber(
     }
 
     private fun subscribeForPresenceMessages() {
-        ablyService.subscribeForPresenceMessages {
+        ably.subscribeForPresenceMessages {
             enqueue(PresenceMessageEvent(it))
         }
     }
 
     private fun subscribeForEnhancedEvents() {
-        ablyService.subscribeForEnhancedEvents {
+        ably.subscribeForEnhancedEvents {
             scope.launch { _enhancedLocations.emit(it) }
         }
     }

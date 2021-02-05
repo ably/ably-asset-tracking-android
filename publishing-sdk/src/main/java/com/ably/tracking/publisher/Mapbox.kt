@@ -30,7 +30,7 @@ import timber.log.Timber
 /**
  * Wrapper for the [MapboxNavigation] that's used to interact with the Mapbox SDK.
  */
-internal interface MapboxService {
+internal interface Mapbox {
     /**
      * Starts the navigation trip which results in location updates from the location engine.
      */
@@ -85,12 +85,12 @@ internal interface MapboxService {
     )
 }
 
-internal class DefaultMapboxService(
+internal class DefaultMapbox(
     context: Context,
     private val mapConfiguration: MapConfiguration,
     connectionConfiguration: ConnectionConfiguration,
     private val debugConfiguration: DebugConfiguration? = null
-) : MapboxService {
+) : Mapbox {
     private val mapboxNavigation: MapboxNavigation
     private var mapboxReplayer: MapboxReplayer? = null
 
