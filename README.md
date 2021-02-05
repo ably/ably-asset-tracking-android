@@ -53,22 +53,17 @@ val publisher = Publisher.publishers() // get the Publisher builder in default s
     .start()
 
 // Start tracking an asset
-publisher.track(
-    Trackable(
-        trackingId, // provide a tracking identifier for the asset
-        constraints = exampleConstraints // provide a set of Resolution Constraints
-    ),
-    {
-        when (it) {
-            is SuccessResult -> {
-                // TODO handle asset tracking started successfully
-            }
-            is FailureResult -> {
-                // TODO handle asset tracking could not be started
-            }
-        }
-    }
-)
+try {
+    publisher.track(
+        Trackable(
+            trackingId, // provide a tracking identifier for the asset
+            constraints = exampleConstraints // provide a set of Resolution Constraints
+        )
+    )
+    // TODO handle asset tracking started successfully
+} catch (exception: Exception) {
+    // TODO handle asset tracking could not be started
+}
 ```
 
 Asset Subscribing SDK is used to receive the location of the required assets.
@@ -79,7 +74,6 @@ Here is an example of how Asset Subscribing SDK can be used:
 // Initialise and Start the Subscriber
 val subscriber = Subscriber.subscribers() // Get an AssetSubscriber
     .connection(ConnectionConfiguration(ABLY_API_KEY, CLIENT_ID)) // provide Ably configuration with credentials
-    .enhancedLocations { } // provide a function to be called when enhanced location updates are received
     .resolution( // request a specific resolution to be considered by the publisher
         Resolution(Accuracy.MAXIMUM, desiredInterval = 1000L, minimumDisplacement = 1.0)
     )
@@ -87,20 +81,18 @@ val subscriber = Subscriber.subscribers() // Get an AssetSubscriber
     .assetStatus { } // provide a function to be called when the asset changes online/offline status
     .start() // start listening for updates
 
+// Listen for location updates
+locations
+    .onEach { } // provide a function to be called when enhanced location updates are received
+    .launchIn(scope) // coroutines scope on which the locations are received
+
 // Request a different resolution when needed.
-subscriber.sendChangeRequest(
-    Resolution(Accuracy.MAXIMUM, desiredInterval = 100L, minimumDisplacement = 2.0),
-    {
-        when (it) {
-            is SuccessResult -> {
-                // TODO change request submitted successfully
-            }
-            is FailureResult -> {
-                // TODO change request could not be submitted
-            }
-        }
-    }
-)
+try {
+    subscriber.sendChangeRequest(Resolution(Accuracy.MAXIMUM, desiredInterval = 100L, minimumDisplacement = 2.0))
+    // TODO change request submitted successfully
+} catch (exception: Exception) {
+    // TODO change request could not be submitted
+}
 ```
 
 ## Example Apps
