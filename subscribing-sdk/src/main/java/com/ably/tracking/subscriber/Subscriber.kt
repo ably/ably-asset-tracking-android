@@ -44,7 +44,7 @@ interface Subscriber {
     /**
      * The shared flow emitting enhanced location values when they become available.
      */
-    val enhancedLocations: SharedFlow<LocationUpdate>
+    val locations: SharedFlow<LocationUpdate>
 
     /**
      * The shared flow emitting values when the online status of the asset changes.

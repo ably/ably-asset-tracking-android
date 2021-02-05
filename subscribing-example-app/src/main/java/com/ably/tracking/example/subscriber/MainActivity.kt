@@ -82,7 +82,7 @@ class MainActivity : AppCompatActivity() {
             .resolution(resolution)
             .start()
             .apply {
-                enhancedLocations
+                locations
                     .onEach { showMarkerOnMap(it.location) }
                     .launchIn(scope)
                 assetStatuses

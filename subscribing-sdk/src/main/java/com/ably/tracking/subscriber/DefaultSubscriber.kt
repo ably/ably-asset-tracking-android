@@ -14,7 +14,7 @@ internal class DefaultSubscriber(
 ) : Subscriber {
     private val core: CoreSubscriber
 
-    override val enhancedLocations: SharedFlow<LocationUpdate>
+    override val locations: SharedFlow<LocationUpdate>
         get() = core.enhancedLocations
 
     override val assetStatuses: SharedFlow<Boolean>

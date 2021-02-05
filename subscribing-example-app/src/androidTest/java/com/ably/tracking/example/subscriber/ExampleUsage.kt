@@ -28,7 +28,7 @@ fun exampleUsage(trackingId: String) {
         .trackingId(trackingId) // provide the tracking identifier for the asset that needs to be tracked
         .start() // start listening for updates
 
-    subscriber.enhancedLocations
+    subscriber.locations
         .onEach {
             // provide a function to be called when enhanced location updates are received
         }
