@@ -63,7 +63,7 @@ internal class DefaultResolutionPolicy(
                 ?: defaultResolution
         else {
             resolutionConstraints.resolutions.getResolution(isNear = false, hasSubscriber = hasSubscribers)
-                ?: resolutionConstraints.resolutions.getResolution(isNear = true, hasSubscriber = false)
+                ?: resolutionConstraints.resolutions.getResolution(isNear = true, hasSubscriber = hasSubscribers)
                 ?: defaultResolution
         }
     }

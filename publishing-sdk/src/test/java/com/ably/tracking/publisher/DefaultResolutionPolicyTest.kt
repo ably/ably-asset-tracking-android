@@ -261,13 +261,13 @@ class DefaultResolutionPolicyTest {
     }
 
     @Test
-    fun `resolving a request with resolution set should return nearWithoutSubscriber if farWithSubscriber resolution is null and when above threshold and at least one subscriber is present`() {
+    fun `resolving a request with resolution set should return nearWithSubscriber if farWithSubscriber resolution is null and when above threshold and at least one subscriber is present`() {
         // given
         val trackableResolutionSet = DefaultResolutionSet(
             farWithoutSubscriber = defaultResolution,
             farWithSubscriber = null,
-            nearWithoutSubscriber = anyResolution(),
-            nearWithSubscriber = defaultResolution
+            nearWithoutSubscriber = defaultResolution,
+            nearWithSubscriber = anyResolution()
         )
         val trackable = createTrackable(trackableResolutionSet)
         val resolutionRequest = TrackableResolutionRequest(trackable, emptySet())
@@ -277,7 +277,7 @@ class DefaultResolutionPolicyTest {
         val resolvedResolution = policy.resolve(resolutionRequest)
 
         // then
-        Assert.assertEquals(trackableResolutionSet.nearWithoutSubscriber, resolvedResolution)
+        Assert.assertEquals(trackableResolutionSet.nearWithSubscriber, resolvedResolution)
     }
 
     @Test
@@ -300,14 +300,14 @@ class DefaultResolutionPolicyTest {
     }
 
     @Test
-    fun `resolving a request with resolution set should return default resolution if farWithSubscriber and nearWithoutSubscriber resolutions are null and when above threshold and at least one subscriber is present`() {
+    fun `resolving a request with resolution set should return default resolution if farWithSubscriber and nearWithSubscriber resolutions are null and when above threshold and at least one subscriber is present`() {
 
         // given
         val trackableResolutionSet = DefaultResolutionSet(
             farWithoutSubscriber = anyResolution(),
             farWithSubscriber = null,
-            nearWithoutSubscriber = null,
-            nearWithSubscriber = anyResolution()
+            nearWithoutSubscriber = anyResolution(),
+            nearWithSubscriber = null
         )
         val trackable = createTrackable(trackableResolutionSet)
         val resolutionRequest = TrackableResolutionRequest(trackable, emptySet())
@@ -321,7 +321,7 @@ class DefaultResolutionPolicyTest {
     }
 
     @Test
-    fun `resolving a request with resolution set should return default resolution if farWithoutSubscriber and nearWithourSubscriber resolutions are null and when above threshold and no subscriber is present`() {
+    fun `resolving a request with resolution set should return default resolution if farWithoutSubscriber and nearWithoutSubscriber resolutions are null and when above threshold and no subscriber is present`() {
         // given
         val trackableResolutionSet = DefaultResolutionSet(
             farWithoutSubscriber = null,
