@@ -72,8 +72,8 @@ constructor(
 ) : CorePublisher {
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private val sendEventChannel: SendChannel<Event>
-    private val _locations = MutableSharedFlow<LocationUpdate>()
-    private val _connectionStates = MutableSharedFlow<ConnectionStateChange>()
+    private val _locations = MutableSharedFlow<LocationUpdate>(replay = 1)
+    private val _connectionStates = MutableSharedFlow<ConnectionStateChange>(replay = 1)
     private val thresholdChecker = ThresholdChecker()
     private val policy: ResolutionPolicy
     private val hooks = Hooks()

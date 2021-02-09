@@ -38,8 +38,8 @@ private class DefaultCoreSubscriber(
     CoreSubscriber {
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private val sendEventChannel: SendChannel<Event>
-    private val _assetStatuses: MutableSharedFlow<Boolean> = MutableSharedFlow()
-    private val _enhancedLocations: MutableSharedFlow<LocationUpdate> = MutableSharedFlow()
+    private val _assetStatuses: MutableSharedFlow<Boolean> = MutableSharedFlow(replay = 1)
+    private val _enhancedLocations: MutableSharedFlow<LocationUpdate> = MutableSharedFlow(replay = 1)
 
     override val enhancedLocations: SharedFlow<LocationUpdate>
         get() = _enhancedLocations.asSharedFlow()
