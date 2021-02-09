@@ -1,10 +1,12 @@
 package com.ably.tracking.subscriber
 
+import com.ably.tracking.AssetStatus
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.LogConfiguration
 import com.ably.tracking.Resolution
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
 
 /**
  * Represents a subscriber. Subscribers maintain the Ably connection, relaying location updates for a tracked item back
@@ -49,7 +51,7 @@ interface Subscriber {
     /**
      * The shared flow emitting values when the online status of the asset changes.
      */
-    val assetStatuses: SharedFlow<Boolean>
+    val assetStatuses: StateFlow<AssetStatus>
 
     /**
      * Stops this subscriber from listening to published locations. Once a subscriber has been stopped, it cannot be

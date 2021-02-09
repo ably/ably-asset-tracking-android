@@ -1,5 +1,6 @@
 package com.ably.tracking.subscriber
 
+import com.ably.tracking.AssetStatus
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.Resolution
 import com.ably.tracking.common.ClientTypes
@@ -13,15 +14,18 @@ import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 internal interface CoreSubscriber {
     fun enqueue(event: AdhocEvent)
     fun request(request: Request)
     val enhancedLocations: SharedFlow<LocationUpdate>
-    val assetStatuses: SharedFlow<Boolean>
+    val assetStatuses: StateFlow<AssetStatus>
 }
 
 internal fun createCoreSubscriber(
@@ -38,14 +42,14 @@ private class DefaultCoreSubscriber(
     CoreSubscriber {
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private val sendEventChannel: SendChannel<Event>
-    private val _assetStatuses: MutableSharedFlow<Boolean> = MutableSharedFlow(replay = 1)
+    private val _assetStatuses: MutableStateFlow<AssetStatus> = MutableStateFlow(AssetStatus.Offline())
     private val _enhancedLocations: MutableSharedFlow<LocationUpdate> = MutableSharedFlow(replay = 1)
 
     override val enhancedLocations: SharedFlow<LocationUpdate>
         get() = _enhancedLocations.asSharedFlow()
 
-    override val assetStatuses: SharedFlow<Boolean>
-        get() = _assetStatuses.asSharedFlow()
+    override val assetStatuses: StateFlow<AssetStatus>
+        get() = _assetStatuses.asStateFlow()
 
     init {
         val channel = Channel<Event>()
@@ -122,10 +126,10 @@ private class DefaultCoreSubscriber(
     }
 
     private suspend fun notifyAssetIsOnline() {
-        _assetStatuses.emit(true)
+        _assetStatuses.emit(AssetStatus.Online())
     }
 
     private suspend fun notifyAssetIsOffline() {
-        _assetStatuses.emit(false)
+        _assetStatuses.emit(AssetStatus.Offline())
     }
 }

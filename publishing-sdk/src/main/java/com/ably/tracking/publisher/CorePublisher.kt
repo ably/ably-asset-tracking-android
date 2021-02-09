@@ -3,6 +3,7 @@ package com.ably.tracking.publisher
 import android.Manifest
 import android.location.Location
 import androidx.annotation.RequiresPermission
+import com.ably.tracking.AssetStatus
 import com.ably.tracking.ConnectionStateChange
 import com.ably.tracking.EnhancedLocationUpdate
 import com.ably.tracking.LocationUpdate
@@ -21,8 +22,11 @@ import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
@@ -185,11 +189,13 @@ constructor(
                     is TrackTrackableEvent -> {
                         createChannelForTrackableIfNotExisits(
                             event.trackable,
-                            {
-                                if (it.isSuccess) {
-                                    request(SetActiveTrackableEvent(event.trackable, event.handler))
+                            { result ->
+                                if (result.isSuccess) {
+                                    request(SetActiveTrackableEvent(event.trackable) {
+                                        event.handler(result)
+                                    })
                                 } else {
-                                    event.handler(it)
+                                    event.handler(result)
                                 }
                             },
                             state
@@ -242,7 +248,12 @@ constructor(
                         scope.launch { _trackables.emit(state.trackables) }
                         resolveResolution(event.trackable, state)
                         hooks.trackables?.onTrackableAdded(event.trackable)
-                        event.handler(Result.success(Unit))
+                        val assetStatus = state.assetStatuses[event.trackable.id] ?: AssetStatus.Offline()
+                        val assetStatusFlow =
+                            state.assetStatusFlows[event.trackable.id] ?: MutableStateFlow(assetStatus)
+                        state.assetStatusFlows[event.trackable.id] = assetStatusFlow
+                        state.assetStatuses[event.trackable.id] = assetStatus
+                        event.handler(Result.success(assetStatusFlow.asStateFlow()))
                     }
                     is ChangeLocationEngineResolutionEvent -> {
                         state.locationEngineResolution = policy.resolve(state.resolutions.values.toSet())
@@ -252,6 +263,8 @@ constructor(
                         val wasTrackablePresent = state.trackables.remove(event.trackable)
                         scope.launch { _trackables.emit(state.trackables) }
                         if (wasTrackablePresent) {
+                            state.assetStatusFlows.remove(event.trackable.id) // there is no way to stop the StateFlow so we just remove it
+                            state.assetStatuses.remove(event.trackable.id)
                             hooks.trackables?.onTrackableRemoved(event.trackable)
                             removeAllSubscribers(event.trackable, state)
                             state.resolutions.remove(event.trackable.id)
@@ -315,16 +328,16 @@ constructor(
      */
     private fun createChannelForTrackableIfNotExisits(
         trackable: Trackable,
-        handler: ResultHandler<Unit>,
+        handler: ResultHandler<StateFlow<AssetStatus>>,
         state: PublisherState
     ) {
         ably.connect(trackable.id, state.presenceData) { result ->
-            if (result.isSuccess) {
+            try {
+                result.getOrThrow()
                 ably.subscribeForPresenceMessages(trackable.id) { enqueue(PresenceMessageEvent(trackable, it)) }
                 request(JoinPresenceSuccessEvent(trackable, handler))
-            } else {
-                // TODO - is this correct in case of an error?
-                handler(result)
+            } catch (exception: Exception) {
+                handler(Result.failure(exception))
             }
         }
     }
@@ -484,6 +497,8 @@ constructor(
         var locationEngineResolution: Resolution,
         var isTracking: Boolean = false,
         val trackables: MutableSet<Trackable> = mutableSetOf(),
+        val assetStatuses: MutableMap<String, AssetStatus> = mutableMapOf(),
+        val assetStatusFlows: MutableMap<String, MutableStateFlow<AssetStatus>> = mutableMapOf(),
         val resolutions: MutableMap<String, Resolution> = mutableMapOf(),
         val lastSentEnhancedLocations: MutableMap<String, Location> = mutableMapOf(),
         var estimatedArrivalTimeInMilliseconds: Long? = null,
