@@ -14,9 +14,7 @@ import androidx.core.widget.ImageViewCompat
 import com.ably.tracking.Accuracy
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.ConnectionState
-import com.ably.tracking.FailureResult
 import com.ably.tracking.Resolution
-import com.ably.tracking.SuccessResult
 import com.ably.tracking.publisher.DebugConfiguration
 import com.ably.tracking.publisher.DefaultProximity
 import com.ably.tracking.publisher.DefaultResolutionConstraints
@@ -29,6 +27,12 @@ import com.ably.tracking.publisher.Publisher
 import com.ably.tracking.publisher.RoutingProfile
 import com.ably.tracking.publisher.Trackable
 import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 import pub.devrel.easypermissions.AfterPermissionGranted
 import pub.devrel.easypermissions.EasyPermissions
 import timber.log.Timber
@@ -42,6 +46,8 @@ private const val ABLY_API_KEY = BuildConfig.ABLY_API_KEY
 class MainActivity : AppCompatActivity() {
     private var publisher: Publisher? = null
     private lateinit var appPreferences: AppPreferences
+    // SupervisorJob() is used to keep the scope working after any of its children fail
+    private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -117,38 +123,41 @@ class MainActivity : AppCompatActivity() {
             .connection(ConnectionConfiguration(ABLY_API_KEY, CLIENT_ID))
             .map(MapConfiguration(MAPBOX_ACCESS_TOKEN))
             .debug(createDebugConfiguration(historyData))
-            .locations { updateLocationInfo(it.location) }
             .resolutionPolicy(DefaultResolutionPolicyFactory(Resolution(Accuracy.MINIMUM, 1000L, 1.0), this))
             .androidContext(this)
             .profile(RoutingProfile.DRIVING)
             .start()
             .apply {
-                track(
-                    Trackable(
-                        trackingId,
-                        constraints = DefaultResolutionConstraints(
-                            DefaultResolutionSet(
-                                Resolution(
-                                    Accuracy.BALANCED,
-                                    desiredInterval = 1000L,
-                                    minimumDisplacement = 1.0
+                scope.launch {
+                    try {
+                        track(
+                            Trackable(
+                                trackingId,
+                                constraints = DefaultResolutionConstraints(
+                                    DefaultResolutionSet(
+                                        Resolution(
+                                            Accuracy.BALANCED,
+                                            desiredInterval = 1000L,
+                                            minimumDisplacement = 1.0
+                                        )
+                                    ),
+                                    DefaultProximity(spatial = 1.0),
+                                    batteryLevelThreshold = 10.0f,
+                                    lowBatteryMultiplier = 2.0f
                                 )
-                            ),
-                            DefaultProximity(spatial = 1.0),
-                            batteryLevelThreshold = 10.0f,
-                            lowBatteryMultiplier = 2.0f
+                            )
                         )
-                    ),
-                    {
-                        when (it) {
-                            is SuccessResult -> Unit
-                            is FailureResult -> {
-                                showToast("Error when tracking asset")
-                                stopTracking()
-                            }
-                        }
+                    } catch (exception: Exception) {
+                        showToast("Error when tracking asset")
+                        stopTracking()
                     }
-                )
+                }
+                connectionStates
+                    .onEach { updateAblyStateInfo(it.state) }
+                    .launchIn(scope)
+                locations
+                    .onEach { updateLocationInfo(it.location) }
+                    .launchIn(scope)
             }
         changeNavigationButtonState(true)
     }
@@ -164,7 +173,6 @@ class MainActivity : AppCompatActivity() {
 
     private fun createDebugConfiguration(historyData: String? = null): DebugConfiguration {
         return DebugConfiguration(
-            connectionStateChangeHandler = { updateAblyStateInfo(it.state) },
             locationSource = when (getLocationSourceType()) {
                 LocationSourceType.ABLY -> LocationSourceAbly(appPreferences.getSimulationChannel())
                 LocationSourceType.S3 -> LocationSourceRaw(historyData!!)
@@ -184,10 +192,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun stopTracking() {
-        publisher?.stop() {
-            // TODO check Result (it) for failure and report accordingly
-            publisher = null
-            changeNavigationButtonState(false)
+        scope.launch {
+            try {
+                publisher?.stop()
+                publisher = null
+                changeNavigationButtonState(false)
+            } catch (e: Exception) {
+                // TODO check Result (it) for failure and report accordingly
+            }
         }
     }
 

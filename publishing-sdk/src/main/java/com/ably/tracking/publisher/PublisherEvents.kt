@@ -3,31 +3,40 @@ package com.ably.tracking.publisher
 import com.ably.tracking.EnhancedLocationUpdate
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.ResultHandler
-import io.ably.lib.realtime.Channel
-import io.ably.lib.types.PresenceMessage
+import com.ably.tracking.common.PresenceMessage
 
 internal sealed class Event
 
+/**
+ * Represents an event that doesn't have a callback (launch and forget).
+ */
+internal sealed class AdhocEvent : Event()
+
+/**
+ * Represents an event that invokes an action that calls a callback when it completes.
+ */
+internal sealed class Request : Event()
+
 internal class StopEvent(
     val handler: ResultHandler<Unit>
-) : Event()
+) : Request()
 
-internal class StartEvent : Event()
+internal class StartEvent : AdhocEvent()
 
 internal data class AddTrackableEvent(
     val trackable: Trackable,
     val handler: ResultHandler<Unit>
-) : Event()
+) : Request()
 
 internal data class TrackTrackableEvent(
     val trackable: Trackable,
     val handler: ResultHandler<Unit>
-) : Event()
+) : Request()
 
 internal data class SetActiveTrackableEvent(
     val trackable: Trackable,
     val handler: ResultHandler<Unit>
-) : Event()
+) : Request()
 
 internal data class RemoveTrackableEvent(
     val trackable: Trackable,
@@ -36,35 +45,34 @@ internal data class RemoveTrackableEvent(
      * On success, the handler is supplied `true` if the [Trackable] was already present.
      */
     val handler: ResultHandler<Boolean>
-) : Event()
+) : Request()
 
 internal data class JoinPresenceSuccessEvent(
     val trackable: Trackable,
-    val channel: Channel,
     val handler: ResultHandler<Unit>
-) : Event()
+) : Request()
 
 internal data class RawLocationChangedEvent(
     val locationUpdate: LocationUpdate
-) : Event()
+) : AdhocEvent()
 
 internal data class EnhancedLocationChangedEvent(
     val locationUpdate: EnhancedLocationUpdate
-) : Event()
+) : AdhocEvent()
 
-internal class RefreshResolutionPolicyEvent : Event()
+internal class RefreshResolutionPolicyEvent : AdhocEvent()
 
 internal data class SetDestinationSuccessEvent(
     val routeDurationInMilliseconds: Long
-) : Event()
+) : AdhocEvent()
 
 internal data class PresenceMessageEvent(
     val trackable: Trackable,
     val presenceMessage: PresenceMessage
-) : Event()
+) : AdhocEvent()
 
-internal class ChangeLocationEngineResolutionEvent : Event()
+internal class ChangeLocationEngineResolutionEvent : AdhocEvent()
 
 internal data class ChangeRoutingProfileEvent(
     val routingProfile: RoutingProfile
-) : Event()
+) : AdhocEvent()

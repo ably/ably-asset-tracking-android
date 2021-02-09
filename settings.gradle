@@ -1,10 +1,13 @@
 include ':android-test-common',
         ':common',
         ':core-sdk',
+        ':core-sdk-java',
         ':integration-testing-app',
         ':publishing-sdk',
+        ':publishing-sdk-java',
         ':publishing-example-app',
         ':publishing-example-java-app',
         ':subscribing-sdk',
+        ':subscribing-sdk-java',
         ':subscribing-example-app',
         ':subscribing-example-java-app'

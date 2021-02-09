@@ -53,22 +53,17 @@ val publisher = Publisher.publishers() // get the Publisher builder in default s
     .start()
 
 // Start tracking an asset
-publisher.track(
-    Trackable(
-        trackingId, // provide a tracking identifier for the asset
-        constraints = exampleConstraints // provide a set of Resolution Constraints
-    ),
-    {
-        when (it) {
-            is SuccessResult -> {
-                // TODO handle asset tracking started successfully
-            }
-            is FailureResult -> {
-                // TODO handle asset tracking could not be started
-            }
-        }
-    }
-)
+try {
+    publisher.track(
+        Trackable(
+            trackingId, // provide a tracking identifier for the asset
+            constraints = exampleConstraints // provide a set of Resolution Constraints
+        )
+    )
+    // TODO handle asset tracking started successfully
+} catch (exception: Exception) {
+    // TODO handle asset tracking could not be started
+}
 ```
 
 Asset Subscribing SDK is used to receive the location of the required assets.
@@ -79,7 +74,6 @@ Here is an example of how Asset Subscribing SDK can be used:
 // Initialise and Start the Subscriber
 val subscriber = Subscriber.subscribers() // Get an AssetSubscriber
     .connection(ConnectionConfiguration(ABLY_API_KEY, CLIENT_ID)) // provide Ably configuration with credentials
-    .enhancedLocations { } // provide a function to be called when enhanced location updates are received
     .resolution( // request a specific resolution to be considered by the publisher
         Resolution(Accuracy.MAXIMUM, desiredInterval = 1000L, minimumDisplacement = 1.0)
     )
@@ -87,20 +81,18 @@ val subscriber = Subscriber.subscribers() // Get an AssetSubscriber
     .assetStatus { } // provide a function to be called when the asset changes online/offline status
     .start() // start listening for updates
 
+// Listen for location updates
+locations
+    .onEach { } // provide a function to be called when enhanced location updates are received
+    .launchIn(scope) // coroutines scope on which the locations are received
+
 // Request a different resolution when needed.
-subscriber.sendChangeRequest(
-    Resolution(Accuracy.MAXIMUM, desiredInterval = 100L, minimumDisplacement = 2.0),
-    {
-        when (it) {
-            is SuccessResult -> {
-                // TODO change request submitted successfully
-            }
-            is FailureResult -> {
-                // TODO change request could not be submitted
-            }
-        }
-    }
-)
+try {
+    subscriber.sendChangeRequest(Resolution(Accuracy.MAXIMUM, desiredInterval = 100L, minimumDisplacement = 2.0))
+    // TODO change request submitted successfully
+} catch (exception: Exception) {
+    // TODO change request could not be submitted
+}
 ```
 
 ## Example Apps
@@ -128,16 +120,18 @@ From the dialog presented by `File` > `Open...` / `Open an Existing Project`, se
 
 ### Android Runtime Requirements
 
-These SDKs require a minimum of Android API Level 21 at runtime.
+#### Kotlin Users
 
-### Coding Conventions and Style Guide
+These SDKs require a minimum of Android API Level 21 at runtime for applications written in Kotlin.
 
-- Use best, current practice wherever possible.
-- Kotlin is our primary development language for this project (in respect of SDK interfaces and implementation, as well as example app development):
-    - We must keep in mind that some developers may choose to utilise the SDKs we build from a Java codebase (see [Calling Kotlin from Java](https://kotlinlang.org/docs/reference/java-to-kotlin-interop.html))
-    - We should do our best to avoid "writing Kotlin with a Java accent":
-        - published [Kotlin idioms](https://kotlinlang.org/docs/reference/idioms.html) should be utilised
-        - strict linting and static analysis rules should be applied to all code, including unit and integration tests - Kotlin's Coding Conventions may be a starting point but all rules **must** fail the build when built from the command line (i.e. `./gradlew`, especially including CI / CD runs)
+#### Java Users
+
+We also provide support for applications written in Java, however the requirements differ in that case:
+- must wrap using the appropriate Java facade for the SDK they are using:
+    - [publishing-sdk-java](publishing-sdk-java/) for the [publishing-sdk](publishing-sdk/)
+    - [subscribing-sdk-java](subscribing-sdk-java/) for the [subscribing-sdk](subscribing-sdk/)
+- require Java 1.8 or later
+- require a minimum of Android API Level 24 at runtime
 
 ### MapBox SDK dependency
 

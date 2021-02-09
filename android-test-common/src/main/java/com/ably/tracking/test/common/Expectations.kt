@@ -1,6 +1,5 @@
 package com.ably.tracking.test.common
 
-import com.ably.tracking.Result
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
 

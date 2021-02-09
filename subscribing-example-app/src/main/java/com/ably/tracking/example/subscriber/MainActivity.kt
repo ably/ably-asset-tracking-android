@@ -16,6 +16,12 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 
 private const val CLIENT_ID = "<INSERT_CLIENT_ID_HERE>"
 private const val ABLY_API_KEY = BuildConfig.ABLY_API_KEY
@@ -31,6 +37,8 @@ class MainActivity : AppCompatActivity() {
     private var marker: Marker? = null
     private var resolution: Resolution =
         Resolution(Accuracy.MAXIMUM, desiredInterval = 1000L, minimumDisplacement = 1.0)
+    // SupervisorJob() is used to keep the scope working after any of its children fail
+    private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -70,28 +78,36 @@ class MainActivity : AppCompatActivity() {
     private fun createAndStartAssetSubscriber(trackingId: String) {
         subscriber = Subscriber.subscribers()
             .connection(ConnectionConfiguration(ABLY_API_KEY, CLIENT_ID))
-            .enhancedLocations({ showMarkerOnMap(it.location) })
             .trackingId(trackingId)
             .resolution(resolution)
-            .assetStatus({ updateAssetStatusInfo(it) })
             .start()
+            .apply {
+                locations
+                    .onEach { showMarkerOnMap(it.location) }
+                    .launchIn(scope)
+                assetStatuses
+                    .onEach { updateAssetStatusInfo(it) }
+                    .launchIn(scope)
+            }
     }
 
     private fun updateResolutionBasedOnZoomLevel() {
         googleMap?.cameraPosition?.zoom?.let {
             val newResolution = getResolutionForZoomLevel(it)
             if (newResolution != resolution) {
-                changeResolution(newResolution)
+                scope.launch { changeResolution(newResolution) }
             }
         }
     }
 
-    private fun changeResolution(newResolution: Resolution) {
-        subscriber?.sendChangeRequest(newResolution) {
-            if (it.isSuccess) {
+    private suspend fun changeResolution(newResolution: Resolution) {
+        // TODO - is this try/catch the best way to do it? maybe we should return the Result and let clients handle it their way?
+        subscriber?.let {
+            try {
+                it.sendChangeRequest(newResolution)
                 resolution = newResolution
                 updateResolutionInfo(newResolution)
-            } else {
+            } catch (exception: Exception) {
                 showToast("Changing resolution error")
             }
         }
@@ -138,11 +154,15 @@ class MainActivity : AppCompatActivity() {
     private fun stopSubscribing() {
         googleMap?.setOnCameraIdleListener { }
         clearResolutionInfo()
-        subscriber?.stop() {
-            // TODO check Result (it) for failure and report accordingly
-            subscriber = null
-            changeStartButtonState(false)
-            marker = null
+        scope.launch {
+            try {
+                subscriber?.stop()
+                subscriber = null
+                changeStartButtonState(false)
+                marker = null
+            } catch (exception: Exception) {
+                // TODO check Result (it) for failure and report accordingly
+            }
         }
     }
 

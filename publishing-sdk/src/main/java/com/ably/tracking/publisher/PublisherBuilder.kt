@@ -6,8 +6,6 @@ import android.content.Context
 import androidx.annotation.RequiresPermission
 import com.ably.tracking.BuilderConfigurationIncompleteException
 import com.ably.tracking.ConnectionConfiguration
-import com.ably.tracking.LocationUpdateHandler
-import com.ably.tracking.LocationUpdateListener
 import com.ably.tracking.LogConfiguration
 
 internal data class PublisherBuilder(
@@ -15,7 +13,6 @@ internal data class PublisherBuilder(
     val mapConfiguration: MapConfiguration? = null,
     val logConfiguration: LogConfiguration? = null,
     val debugConfiguration: DebugConfiguration? = null,
-    val locationHandler: LocationUpdateHandler? = null,
     val androidContext: Context? = null,
     val routingProfile: RoutingProfile = RoutingProfile.DRIVING,
     val resolutionPolicyFactory: ResolutionPolicy.Factory? = null
@@ -29,12 +26,6 @@ internal data class PublisherBuilder(
 
     override fun log(configuration: LogConfiguration): Publisher.Builder =
         this.copy(logConfiguration = configuration)
-
-    override fun locations(handler: LocationUpdateHandler): Publisher.Builder =
-        this.copy(locationHandler = handler)
-
-    override fun locations(listener: LocationUpdateListener): Publisher.Builder =
-        locations { listener.onLocationUpdate(it) }
 
     override fun debug(configuration: DebugConfiguration?): Publisher.Builder =
         this.copy(debugConfiguration = configuration)
@@ -55,11 +46,8 @@ internal data class PublisherBuilder(
         }
         // All below fields are required and above code checks if they are nulls, so using !! should be safe from NPE
         return DefaultPublisher(
-            connectionConfiguration!!,
-            mapConfiguration!!,
-            debugConfiguration,
-            locationHandler!!,
-            androidContext!!,
+            DefaultAbly(connectionConfiguration!!),
+            DefaultMapbox(androidContext!!, mapConfiguration!!, connectionConfiguration, debugConfiguration),
             resolutionPolicyFactory!!,
             routingProfile
         )
@@ -69,7 +57,6 @@ internal data class PublisherBuilder(
     private fun isMissingRequiredFields() =
         connectionConfiguration == null ||
             mapConfiguration == null ||
-            locationHandler == null ||
             androidContext == null ||
             resolutionPolicyFactory == null
 }

@@ -3,9 +3,7 @@ package com.ably.tracking.example.publisher
 import android.app.Activity
 import com.ably.tracking.Accuracy
 import com.ably.tracking.ConnectionConfiguration
-import com.ably.tracking.FailureResult
 import com.ably.tracking.Resolution
-import com.ably.tracking.SuccessResult
 import com.ably.tracking.publisher.DefaultProximity
 import com.ably.tracking.publisher.DefaultResolutionConstraints
 import com.ably.tracking.publisher.DefaultResolutionSet
@@ -13,6 +11,10 @@ import com.ably.tracking.publisher.MapConfiguration
 import com.ably.tracking.publisher.Publisher
 import com.ably.tracking.publisher.RoutingProfile
 import com.ably.tracking.publisher.Trackable
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 
 // PLACEHOLDERS:
 
@@ -23,6 +25,8 @@ val MAPBOX_ACCESS_TOKEN = ""
 class ExampleUsage(
     val trackingId: String
 ) : Activity() {
+    // SupervisorJob() is used to keep the scope working after any of its children fail
+    val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     override fun onStart() {
         super.onStart()
 
@@ -51,21 +55,19 @@ class ExampleUsage(
             .start()
 
         // Start tracking an asset
-        publisher.track(
-            Trackable(
-                trackingId, // provide a tracking identifier for the asset
-                constraints = exampleConstraints // provide a set of Resolution Constraints
-            ),
-            {
-                when (it) {
-                    is SuccessResult -> {
-                        // TODO handle asset tracking started successfully
-                    }
-                    is FailureResult -> {
-                        // TODO handle asset tracking could not be started
-                    }
-                }
+        scope.launch {
+            try {
+                publisher.track(
+                    Trackable(
+                        trackingId, // provide a tracking identifier for the asset
+                        constraints = exampleConstraints // provide a set of Resolution Constraints
+                    )
+                )
+                // TODO handle asset tracking started successfully
+                // it's safe to update the UI directly here (see [scope])
+            } catch (exception: Exception) {
+                // TODO handle asset tracking could not be started
             }
-        )
+        }
     }
 }

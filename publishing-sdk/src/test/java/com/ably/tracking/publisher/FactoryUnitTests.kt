@@ -5,9 +5,6 @@ import android.content.Context
 import android.location.Location
 import com.ably.tracking.BuilderConfigurationIncompleteException
 import com.ably.tracking.ConnectionConfiguration
-import com.ably.tracking.LocationUpdateHandler
-import com.ably.tracking.LocationUpdateListener
-import com.ably.tracking.LocationUpdate
 import com.ably.tracking.LogConfiguration
 import io.mockk.mockk
 import org.junit.Assert
@@ -106,34 +103,6 @@ class FactoryUnitTests {
     }
 
     @Test
-    fun `setting location updated listener updates builder field`() {
-        // given
-        val locationUpdate = anyLocationUpdate()
-        lateinit var locationFromListener: LocationUpdate
-        val listener = anyLocationUpdatedListener { locationFromListener = it }
-
-        // when
-        val builder = Publisher.publishers().locations(listener) as PublisherBuilder
-        builder.locationHandler!!.invoke(locationUpdate)
-
-        // then
-        Assert.assertEquals(locationUpdate, locationFromListener)
-    }
-
-    @Test
-    fun `setting location updated listener returns a new copy of builder`() {
-        // given
-        val listener: LocationUpdateListener = anyLocationUpdatedListener()
-        val originalBuilder = Publisher.publishers()
-
-        // when
-        val newBuilder = originalBuilder.locations(listener)
-
-        // then
-        Assert.assertNotEquals(newBuilder, originalBuilder)
-    }
-
-    @Test
     fun `setting android context updates builder field`() {
         // given
         val mockedContext = mockk<Context>()
@@ -171,7 +140,6 @@ class FactoryUnitTests {
             .connection(ConnectionConfiguration("", ""))
             .map(MapConfiguration(""))
             .log(LogConfiguration(true))
-            .locations(anyLocationUpdatedListener())
             .androidContext(mockedContext)
 
         // then
@@ -188,7 +156,6 @@ class FactoryUnitTests {
         Assert.assertNull(builder.connectionConfiguration)
         Assert.assertNull(builder.mapConfiguration)
         Assert.assertNull(builder.logConfiguration)
-        Assert.assertNull(builder.locationHandler)
         Assert.assertNull(builder.androidContext)
     }
 
@@ -196,16 +163,8 @@ class FactoryUnitTests {
         Assert.assertNotNull(builder.connectionConfiguration)
         Assert.assertNotNull(builder.mapConfiguration)
         Assert.assertNotNull(builder.logConfiguration)
-        Assert.assertNotNull(builder.locationHandler)
         Assert.assertNotNull(builder.androidContext)
     }
 
-    private fun anyLocationUpdatedListener(handler: LocationUpdateHandler = {}): LocationUpdateListener =
-        object : LocationUpdateListener {
-            override fun onLocationUpdate(locationUpdate: LocationUpdate) = handler(locationUpdate)
-        }
-
     private fun anyLocation() = Location("fused")
-
-    private fun anyLocationUpdate() = LocationUpdate(anyLocation())
 }

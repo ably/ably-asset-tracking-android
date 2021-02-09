@@ -7,23 +7,21 @@ import com.ably.tracking.Accuracy;
 import com.ably.tracking.ConnectionConfiguration;
 import com.ably.tracking.LogConfiguration;
 import com.ably.tracking.Resolution;
-import com.ably.tracking.publisher.DebugConfiguration;
 import com.ably.tracking.publisher.DefaultProximity;
 import com.ably.tracking.publisher.DefaultResolutionConstraints;
 import com.ably.tracking.publisher.DefaultResolutionSet;
 import com.ably.tracking.publisher.Destination;
-import com.ably.tracking.publisher.LocationSourceRaw;
 import com.ably.tracking.publisher.MapConfiguration;
 import com.ably.tracking.publisher.Publisher;
 import com.ably.tracking.publisher.ResolutionPolicy;
 import com.ably.tracking.publisher.RoutingProfile;
 import com.ably.tracking.publisher.Trackable;
+import com.ably.tracking.publisher.java.PublisherFacade;
 
-import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
 
-import timber.log.Timber;
+import java.util.concurrent.CompletableFuture;
 
 import static org.mockito.Mockito.RETURNS_SELF;
 import static org.mockito.Mockito.mock;
@@ -33,17 +31,19 @@ import static org.mockito.Mockito.withSettings;
 @SuppressLint("MissingPermission")
 public class PublisherInterfaceUsageExamples {
     Context context;
-    Publisher publisher;
+    Publisher nativePublisher;
     Publisher.Builder publisherBuilder;
     ResolutionPolicy.Factory resolutionPolicyFactory;
+    PublisherFacade publisher;
 
     @Before
     public void beforeEach() {
         context = mock(Context.class);
-        publisher = mock(Publisher.class);
+        nativePublisher = mock(Publisher.class);
         publisherBuilder = mock(Publisher.Builder.class, withSettings().defaultAnswer(RETURNS_SELF));
         resolutionPolicyFactory = mock(ResolutionPolicy.Factory.class);
-        when(publisherBuilder.start()).thenReturn(publisher);
+        when(publisherBuilder.start()).thenReturn(nativePublisher);
+        publisher = PublisherFacade.wrap(nativePublisher);
     }
 
     @Test
@@ -51,7 +51,6 @@ public class PublisherInterfaceUsageExamples {
         publisherBuilder
             .androidContext(context)
             .connection(new ConnectionConfiguration("API_KEY", "CLIENT_ID"))
-            .locations(locationUpdate -> { })
             .log(new LogConfiguration(true))
             .map(new MapConfiguration("API_KEY"))
             .resolutionPolicy(resolutionPolicyFactory)
@@ -61,45 +60,16 @@ public class PublisherInterfaceUsageExamples {
     @Test
     public void publisherUsageExample() {
         Trackable trackable = new Trackable("ID", null, null, null);
-        publisher.track(
-            trackable,
-            result -> {
-                if (result.isSuccess()) {
-                    Timber.d("Success");
-                } else {
-                    Timber.e("Failed with error information: %s", result.getFailure().getErrorInformation());
-                }
-            }
-        );
-        publisher.add(
-            trackable,
-            result -> {
-                if (result.isSuccess()) {
-                    Timber.d("Success");
-                } else {
-                    Timber.e("Failed with error information: %s", result.getFailure().getErrorInformation());
-                }
-            }
-        );
-        publisher.remove(trackable,
-            result -> {
-                if (result.isSuccess()) {
-                    Timber.d("Success");
-                } else {
-                    Timber.e("Failed with error information: %s", result.getFailure().getErrorInformation());
-                }
-            }
-        );
-        Trackable activeTrackable = publisher.getActive();
-        publisher.setRoutingProfile(RoutingProfile.CYCLING);
-        RoutingProfile routingProfile = publisher.getRoutingProfile();
-        publisher.stop(result -> {
-            if (result.isSuccess()) {
-                Timber.d("Success");
-            } else {
-                Timber.e("Failed with error information: %s", result.getFailure().getErrorInformation());
-            }
-        });
+        Trackable activeTrackable = nativePublisher.getActive();
+        nativePublisher.setRoutingProfile(RoutingProfile.CYCLING);
+        RoutingProfile routingProfile = nativePublisher.getRoutingProfile();
+        // TODO - uncomment when PublisherFacade is implemented
+//        CompletableFuture<Void> trackResult = publisher.trackAsync(trackable);
+//        CompletableFuture<Void> addResult = publisher.addAsync(trackable);
+//        CompletableFuture<Boolean> removeResult = publisher.removeAsync(trackable);
+//        CompletableFuture<Void> stopResult = publisher.stopAsync();
+//        publisher.addListener(locationUpdate -> {
+//        });
     }
 
     @Test

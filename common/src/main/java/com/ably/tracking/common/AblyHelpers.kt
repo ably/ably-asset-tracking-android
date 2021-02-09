@@ -1,5 +1,9 @@
 package com.ably.tracking
 
+import com.ably.tracking.common.PresenceAction
+import com.ably.tracking.common.PresenceMessage
+import com.ably.tracking.common.getPresenceData
+import com.google.gson.Gson
 import io.ably.lib.types.ClientOptions
 
 /**
@@ -34,6 +38,24 @@ fun io.ably.lib.types.ErrorInfo.toTracking() =
     )
 
 /**
+ * Extension converting Ably error info objects to the equivalent [AblyException] API presented to users of the Ably
+ * Asset Tracking SDKs.
+ *
+ * The `requestId` field is yet to be implemented by ably-java, however even once it is available then the chances are
+ * that it'll still not be exposed through to users of the Ably Asset Tracking SDKs in order to keep things simple.
+ */
+fun io.ably.lib.types.ErrorInfo.toTrackingException() =
+    AblyException(
+        ErrorInformation(
+            this.code,
+            this.statusCode,
+            this.message,
+            this.href, // may be null
+            null // yet to be implemented by ably-java
+        )
+    )
+
+/**
  * Extension converting Ably Realtime connection state change events to the equivalent [ConnectionStateChange] API
  * presented to users of the Ably Asset Tracking SDKs.
  *
@@ -56,3 +78,22 @@ val ConnectionConfiguration.clientOptions: ClientOptions
         options.clientId = this.clientId
         return options
     }
+
+/**
+ * Extension converting Ably Realtime presence message to the equivalent [PresenceMessage] API
+ * presented to users of the Ably Asset Tracking SDKs.
+ */
+fun io.ably.lib.types.PresenceMessage.toTracking(gson: Gson) =
+    PresenceMessage(
+        this.action.toTracking(),
+        this.getPresenceData(gson),
+        this.clientId
+    )
+
+fun io.ably.lib.types.PresenceMessage.Action.toTracking(): PresenceAction = when (this) {
+    io.ably.lib.types.PresenceMessage.Action.present -> PresenceAction.PRESENT_OR_ENTER
+    io.ably.lib.types.PresenceMessage.Action.enter -> PresenceAction.PRESENT_OR_ENTER
+    io.ably.lib.types.PresenceMessage.Action.update -> PresenceAction.UPDATE
+    io.ably.lib.types.PresenceMessage.Action.leave -> PresenceAction.LEAVE_OR_ABSENT
+    io.ably.lib.types.PresenceMessage.Action.absent -> PresenceAction.LEAVE_OR_ABSENT
+}
