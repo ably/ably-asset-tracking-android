@@ -189,9 +189,7 @@ constructor(
                             event.trackable,
                             { result ->
                                 if (result.isSuccess) {
-                                    request(SetActiveTrackableEvent(event.trackable) {
-                                        event.handler(result)
-                                    })
+                                    request(SetActiveTrackableEvent(event.trackable) { event.handler(result) })
                                 } else {
                                     event.handler(result)
                                 }

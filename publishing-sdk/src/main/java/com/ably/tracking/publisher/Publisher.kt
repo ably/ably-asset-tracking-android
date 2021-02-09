@@ -6,7 +6,6 @@ import android.content.Context
 import androidx.annotation.RequiresPermission
 import com.ably.tracking.AssetStatus
 import com.ably.tracking.ConnectionConfiguration
-import com.ably.tracking.ConnectionStateChange
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.LogConfiguration
 import kotlinx.coroutines.flow.SharedFlow

@@ -38,6 +38,7 @@ class MainActivity : AppCompatActivity() {
     private var marker: Marker? = null
     private var resolution: Resolution =
         Resolution(Accuracy.MAXIMUM, desiredInterval = 1000L, minimumDisplacement = 1.0)
+
     // SupervisorJob() is used to keep the scope working after any of its children fail
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
@@ -148,7 +149,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateAssetStatusInfo(assetStatus: AssetStatus) {
-        val textId = when(assetStatus){
+        val textId = when (assetStatus) {
             is AssetStatus.Online -> R.string.asset_status_online
             is AssetStatus.Offline -> R.string.asset_status_offline
             is AssetStatus.Failed -> R.string.asset_status_failed
