@@ -7,6 +7,7 @@
   <string name="animation">Animation</string>
   <string name="asset_status_offline">The asset is offline</string>
   <string name="asset_status_online">The asset is online</string>
+  <string name="asset_status_failed">The asset failed</string>
   <string name="resolution_accuracy">Accuracy</string>
   <string name="resolution_minimum_displacement">Min displacement</string>
   <string name="resolution_minimum_displacement_value">%.1fm</string>
