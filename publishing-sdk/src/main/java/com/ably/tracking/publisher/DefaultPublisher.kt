@@ -5,7 +5,6 @@ import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.annotation.SuppressLint
 import androidx.annotation.RequiresPermission
 import com.ably.tracking.AssetStatus
-import com.ably.tracking.ConnectionStateChange
 import com.ably.tracking.LocationUpdate
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -34,8 +33,6 @@ constructor(
         set(value) = core.enqueue(ChangeRoutingProfileEvent(value))
     override val locations: SharedFlow<LocationUpdate>
         get() = core.locations
-    override val connectionStates: SharedFlow<ConnectionStateChange>
-        get() = core.connectionStates
     override val trackables: SharedFlow<Set<Trackable>>
         get() = core.trackables
     override val locationHistory: SharedFlow<LocationHistoryData>

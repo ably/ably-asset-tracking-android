@@ -4,7 +4,6 @@ import android.Manifest
 import android.location.Location
 import androidx.annotation.RequiresPermission
 import com.ably.tracking.AssetStatus
-import com.ably.tracking.ConnectionStateChange
 import com.ably.tracking.EnhancedLocationUpdate
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.LocationUpdateType
@@ -34,7 +33,6 @@ internal interface CorePublisher {
     fun enqueue(event: AdhocEvent)
     fun request(request: Request)
     val locations: SharedFlow<LocationUpdate>
-    val connectionStates: SharedFlow<ConnectionStateChange>
     val trackables: SharedFlow<Set<Trackable>>
     val locationHistory: SharedFlow<LocationHistoryData>
     val active: Trackable?
@@ -64,7 +62,6 @@ constructor(
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private val sendEventChannel: SendChannel<Event>
     private val _locations = MutableSharedFlow<LocationUpdate>(replay = 1)
-    private val _connectionStates = MutableSharedFlow<ConnectionStateChange>(replay = 1)
     private val _trackables = MutableSharedFlow<Set<Trackable>>(replay = 1)
     private val _locationHistory = MutableSharedFlow<LocationHistoryData>()
     private val thresholdChecker = ThresholdChecker()
@@ -103,8 +100,6 @@ constructor(
     }
     override val locations: SharedFlow<LocationUpdate>
         get() = _locations.asSharedFlow()
-    override val connectionStates: SharedFlow<ConnectionStateChange>
-        get() = _connectionStates.asSharedFlow()
     override val trackables: SharedFlow<Set<Trackable>>
         get() = _trackables.asSharedFlow()
     override val locationHistory: SharedFlow<LocationHistoryData>
@@ -125,7 +120,6 @@ constructor(
                 sequenceEventsQueue(channel, routingProfile)
             }
         }
-        ably.subscribeForAblyStateChange { state -> scope.launch { _connectionStates.emit(state) } }
         mapbox.registerLocationObserver(locationObserver)
         mapbox.setLocationHistoryListener { historyData -> scope.launch { _locationHistory.emit(historyData) } }
     }

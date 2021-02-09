@@ -89,11 +89,6 @@ interface Publisher {
     val locations: SharedFlow<LocationUpdate>
 
     /**
-     * The shared flow emitting connection state change values when they become available.
-     */
-    val connectionStates: SharedFlow<ConnectionStateChange>
-
-    /**
      * The shared flow emitting all trackables tracked by the publisher.
      */
     val trackables: SharedFlow<Set<Trackable>>
