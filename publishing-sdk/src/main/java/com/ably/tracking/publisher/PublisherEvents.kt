@@ -1,6 +1,7 @@
 package com.ably.tracking.publisher
 
 import com.ably.tracking.AssetStatus
+import com.ably.tracking.ConnectionStateChange
 import com.ably.tracking.EnhancedLocationUpdate
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.ResultHandler
@@ -78,3 +79,5 @@ internal class ChangeLocationEngineResolutionEvent : AdhocEvent()
 internal data class ChangeRoutingProfileEvent(
     val routingProfile: RoutingProfile
 ) : AdhocEvent()
+
+internal data class AblyConnectionStateChangeEvent(val connectionStateChange: ConnectionStateChange) : AdhocEvent()

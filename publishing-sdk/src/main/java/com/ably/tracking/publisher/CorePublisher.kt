@@ -4,6 +4,8 @@ import android.Manifest
 import android.location.Location
 import androidx.annotation.RequiresPermission
 import com.ably.tracking.AssetStatus
+import com.ably.tracking.ConnectionState
+import com.ably.tracking.ConnectionStateChange
 import com.ably.tracking.EnhancedLocationUpdate
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.LocationUpdateType
@@ -120,6 +122,7 @@ constructor(
                 sequenceEventsQueue(channel, routingProfile)
             }
         }
+        ably.subscribeForAblyStateChange { enqueue(AblyConnectionStateChangeEvent(it)) }
         mapbox.registerLocationObserver(locationObserver)
         mapbox.setLocationHistoryListener { historyData -> scope.launch { _locationHistory.emit(historyData) } }
     }
@@ -171,6 +174,7 @@ constructor(
                             ) {
                                 state.lastSentEnhancedLocations[trackable.id] = event.locationUpdate.location
                                 ably.sendEnhancedLocation(trackable.id, event.locationUpdate)
+                                updateAssetStatuses(state, trackable.id)
                             }
                         }
                         scope.launch { _locations.emit(event.locationUpdate) }
@@ -303,8 +307,27 @@ constructor(
                         // TODO implement proper stopping strategy which only calls back once we're fully stopped (considering whether scope.cancel() is appropriate)
                         event.handler(Result.success(Unit))
                     }
+                    is AblyConnectionStateChangeEvent -> {
+                        state.lastConnectionStateChange = event.connectionStateChange
+                        state.trackables.forEach {
+                            updateAssetStatuses(state, it.id)
+                        }
+                    }
                 }
             }
+        }
+    }
+
+    private fun updateAssetStatuses(state: PublisherState, trackableId: String) {
+        val hasSentAtLeastOneLocation: Boolean = state.lastSentEnhancedLocations[trackableId] != null
+        val newStatus = when (state.lastConnectionStateChange.state) {
+            ConnectionState.ONLINE -> if (hasSentAtLeastOneLocation) AssetStatus.Online() else AssetStatus.Offline()
+            ConnectionState.OFFLINE -> AssetStatus.Offline()
+            ConnectionState.FAILED -> AssetStatus.Failed(state.lastConnectionStateChange.errorInformation!!) // are we sure error information will always be present?
+        }
+        if (newStatus != state.assetStatuses[trackableId]) {
+            state.assetStatuses[trackableId] = newStatus
+            scope.launch { state.assetStatusFlows[trackableId]?.emit(newStatus) }
         }
     }
 
@@ -493,6 +516,9 @@ constructor(
         val trackables: MutableSet<Trackable> = mutableSetOf(),
         val assetStatuses: MutableMap<String, AssetStatus> = mutableMapOf(),
         val assetStatusFlows: MutableMap<String, MutableStateFlow<AssetStatus>> = mutableMapOf(),
+        var lastConnectionStateChange: ConnectionStateChange = ConnectionStateChange(
+            ConnectionState.OFFLINE, ConnectionState.OFFLINE, null
+        ),
         val resolutions: MutableMap<String, Resolution> = mutableMapOf(),
         val lastSentEnhancedLocations: MutableMap<String, Location> = mutableMapOf(),
         var estimatedArrivalTimeInMilliseconds: Long? = null,
