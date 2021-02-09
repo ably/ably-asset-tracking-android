@@ -3,7 +3,7 @@
   <string name="navigation_button_ready">Start trip</string>
   <string name="navigation_button_working">Stop trip</string>
   <string name="ably_asset_tracking">Ably Asset Tracking</string>
-  <string name="ably_connection_status_label">Ably connection status:</string>
+  <string name="asset_status_label">Asset status:</string>
   <string name="location_source_label">Location Source:</string>
   <string name="current_location_and_bearing">Current Location and Bearing</string>
   <string name="latitude_label">Lat</string>
@@ -12,6 +12,7 @@
   <string name="tracking_id">Tracking ID</string>
   <string name="offline">OFFLINE</string>
   <string name="online">ONLINE</string>
+  <string name="failed">FAILED</string>
 
   <string name="preferences_general_category_title">Navigation Settings</string>
   <string name="preferences_location_source_key">location_source</string>
