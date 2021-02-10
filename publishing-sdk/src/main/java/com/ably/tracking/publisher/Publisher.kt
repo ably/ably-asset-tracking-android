@@ -91,6 +91,7 @@ interface Publisher {
      * The shared flow emitting all trackables tracked by the publisher.
      */
     val trackables: SharedFlow<Set<Trackable>>
+        @JvmSynthetic get
 
     /**
      * The shared flow emitting trip location history when it becomes available.
@@ -104,6 +105,7 @@ interface Publisher {
      * @param trackableId The ID of an already added trackable.
      * @return [StateFlow] that represents the [AssetStatus] of the added [Trackable]. If the trackable doesn't exist it returns null.
      */
+    @JvmSynthetic
     fun getAssetStatus(trackableId: String): StateFlow<AssetStatus>?
 
     /**

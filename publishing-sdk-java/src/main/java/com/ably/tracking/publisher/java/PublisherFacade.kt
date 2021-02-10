@@ -1,5 +1,6 @@
 package com.ably.tracking.publisher.java
 
+import com.ably.tracking.java.AssetStatusListener
 import com.ably.tracking.java.LocationUpdateListener
 import com.ably.tracking.publisher.Publisher
 import com.ably.tracking.publisher.Trackable
@@ -20,10 +21,11 @@ interface PublisherFacade {
      *
      * @param trackable The object to be added to this publisher's tracked set, if it's not already there, and to be
      * made the actively tracked object.
+     * @param listener The listener to be notified when the added asset status changes.
      *
      * @return A [CompletableFuture] that completes when the object has been removed.
      */
-    fun trackAsync(trackable: Trackable): CompletableFuture<Void>
+    fun trackAsync(trackable: Trackable, listener: AssetStatusListener?): CompletableFuture<Void>
 
     /**
      * Adds a [Trackable] object, but does not make it the actively tracked object, meaning that the state of the
@@ -33,10 +35,11 @@ interface PublisherFacade {
      * simply completing successfully.
      *
      * @param trackable The object to be added to this publisher's tracked set, if it's not already there.
+     * @param listener The listener to be notified when the added asset status changes.
      *
      * @return A [CompletableFuture] that completes when the object has been added.
      */
-    fun addAsync(trackable: Trackable): CompletableFuture<Void>
+    fun addAsync(trackable: Trackable, listener: AssetStatusListener?): CompletableFuture<Void>
 
     /**
      * Removes a [Trackable] object if it is known to this publisher, otherwise does nothing and returns false.
@@ -56,9 +59,23 @@ interface PublisherFacade {
     fun addListener(listener: LocationUpdateListener)
 
     /**
+     * Add a listener to receive set of all trackables tracked by the publisher when it changes.
+     */
+    fun addTrackablesListener(listener: TrackablesListener)
+
+    /**
      * Add a listener to receive trip's location history data when it becomes available.
      */
     fun addLocationHistoryListener(listener: LocationHistoryListener)
+
+    /**
+     * Add a listener to receive an already added trackable's current status when it changes.
+     * Does nothing if the trackable isn't currently tracked by the Publisher.
+     *
+     * @param trackableId The ID of the already added trackable.
+     * @param listener The listener to be notified when the specified trackable status changes.
+     */
+    fun addTrackableStatusListener(trackableId: String, listener: AssetStatusListener)
 
     /**
      * Stops this publisher from publishing locations. Once a publisher has been stopped, it cannot be restarted.
