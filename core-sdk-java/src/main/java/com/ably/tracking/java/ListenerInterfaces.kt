@@ -1,5 +1,6 @@
 package com.ably.tracking.java
 
+import com.ably.tracking.AssetStatus
 import com.ably.tracking.LocationUpdate
 
 /**
@@ -15,5 +16,5 @@ interface LocationUpdateListener {
  * handle events indicating the online status of an asset.
  */
 interface AssetStatusListener {
-    fun onStatusChanged(isOnline: Boolean)
+    fun onStatusChanged(assetStatus: AssetStatus)
 }
