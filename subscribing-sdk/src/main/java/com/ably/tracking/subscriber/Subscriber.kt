@@ -47,11 +47,13 @@ interface Subscriber {
      * The shared flow emitting enhanced location values when they become available.
      */
     val locations: SharedFlow<LocationUpdate>
+        @JvmSynthetic get
 
     /**
      * The shared flow emitting values when the online status of the asset changes.
      */
     val assetStatuses: StateFlow<AssetStatus>
+        @JvmSynthetic get
 
     /**
      * Stops this subscriber from listening to published locations. Once a subscriber has been stopped, it cannot be

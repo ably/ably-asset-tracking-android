@@ -86,6 +86,7 @@ interface Publisher {
      * The shared flow emitting location values when they become available.
      */
     val locations: SharedFlow<LocationUpdate>
+        @JvmSynthetic get
 
     /**
      * The shared flow emitting all trackables tracked by the publisher.

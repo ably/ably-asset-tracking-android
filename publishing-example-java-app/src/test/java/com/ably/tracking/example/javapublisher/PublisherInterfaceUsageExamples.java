@@ -77,9 +77,9 @@ public class PublisherInterfaceUsageExamples {
     @Test
     public void publisherUsageExample() {
         Trackable trackable = new Trackable("ID", null, null, null);
-        Trackable activeTrackable = nativePublisher.getActive();
-        nativePublisher.setRoutingProfile(RoutingProfile.CYCLING);
-        RoutingProfile routingProfile = nativePublisher.getRoutingProfile();
+        Trackable activeTrackable = publisher.getActive();
+        publisher.setRoutingProfile(RoutingProfile.CYCLING);
+        RoutingProfile routingProfile = publisher.getRoutingProfile();
         try {
             publisher.trackAsync(trackable, assetStatus -> {
                 // handle assetStatus

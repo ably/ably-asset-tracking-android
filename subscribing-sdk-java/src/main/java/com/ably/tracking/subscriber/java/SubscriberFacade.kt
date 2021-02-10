@@ -12,7 +12,7 @@ import java.util.concurrent.CompletableFuture
  *
  * Kotlin users will generally prefer to directly use the interfaces offered by [Subscriber].
  */
-interface SubscriberFacade {
+interface SubscriberFacade : Subscriber {
     /**
      * Sends the desired resolution for updates, to be requested from the remote publisher.
      *
