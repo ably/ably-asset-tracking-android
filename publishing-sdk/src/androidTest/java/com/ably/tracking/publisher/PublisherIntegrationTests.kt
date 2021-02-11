@@ -93,7 +93,7 @@ class PublisherIntegrationTests {
             .map(MapConfiguration(MAPBOX_ACCESS_TOKEN))
             .resolutionPolicy(DefaultResolutionPolicyFactory(resolution, context))
             .profile(RoutingProfile.CYCLING)
-            .locationSource(LocationSourceRaw(locationData, onLocationDataEnded))
+            .locationSource(LocationSourceRaw.create(locationData, onLocationDataEnded))
             .start()
 
     private fun getLocationData(context: Context): LocationHistoryData {

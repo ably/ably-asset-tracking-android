@@ -378,5 +378,37 @@ enum class RoutingProfile {
 }
 
 sealed class LocationSource
-data class LocationSourceAbly(val simulationChannelName: String) : LocationSource()
-data class LocationSourceRaw(val historyData: LocationHistoryData, val onDataEnded: (() -> Unit)? = null) : LocationSource()
+class LocationSourceAbly private constructor(val simulationChannelName: String) : LocationSource() {
+    companion object {
+        @JvmStatic
+        fun create(simulationChannelName: String) = LocationSourceAbly(simulationChannelName)
+    }
+
+    private constructor() : this("")
+}
+
+class LocationSourceRaw private constructor(
+    val historyData: LocationHistoryData,
+    val onDataEnded: (() -> Unit)? = null
+) :
+    LocationSource() {
+    companion object {
+        @JvmSynthetic
+        fun create(historyData: LocationHistoryData, onDataEnded: (() -> Unit)? = null) =
+            LocationSourceRaw(historyData, onDataEnded)
+
+        @JvmStatic
+        fun createRaw(historyData: LocationHistoryData, callback: (DataEndedCallback)? = null) =
+            LocationSourceRaw(historyData, callback)
+    }
+
+    private constructor() : this(historyData = LocationHistoryData("", emptyList()), onDataEnded = null)
+    private constructor(historyData: LocationHistoryData, callback: (DataEndedCallback)? = null) : this(
+        historyData,
+        { callback?.onDataEnded() }
+    )
+}
+
+interface DataEndedCallback {
+    fun onDataEnded()
+}

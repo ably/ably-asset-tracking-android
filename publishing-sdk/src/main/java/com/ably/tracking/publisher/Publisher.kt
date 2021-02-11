@@ -98,6 +98,7 @@ interface Publisher {
      * The shared flow emitting trip location history when it becomes available.
      */
     val locationHistory: SharedFlow<LocationHistoryData>
+        @JvmSynthetic get
 
     /**
      * Stops this publisher from publishing locations. Once a publisher has been stopped, it cannot be restarted.

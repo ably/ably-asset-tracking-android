@@ -92,7 +92,7 @@ class FactoryUnitTests {
     @Test
     fun `setting location source returns a new copy of builder`() {
         // given
-        val locationSource = LocationSourceRaw("")
+        val locationSource = LocationSourceRaw.create(LocationHistoryData("1.0", emptyList()))
         val originalBuilder = Publisher.publishers()
 
         // when

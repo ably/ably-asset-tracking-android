@@ -27,6 +27,10 @@ class DefaultPublisherFacade(
         TODO()
     }
 
+    override fun addLocationHistoryListener(listener: LocationHistoryListener) {
+        TODO()
+    }
+
     override fun stopAsync(): CompletableFuture<Void> {
         TODO()
     }

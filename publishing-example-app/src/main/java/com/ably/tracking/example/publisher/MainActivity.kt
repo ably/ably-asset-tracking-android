@@ -220,8 +220,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun createLocationSource(historyData: LocationHistoryData? = null): LocationSource? =
         when (getLocationSourceType()) {
-            LocationSourceType.ABLY -> LocationSourceAbly(appPreferences.getSimulationChannel())
-            LocationSourceType.S3 -> LocationSourceRaw(historyData!!)
+            LocationSourceType.ABLY -> LocationSourceAbly.create(appPreferences.getSimulationChannel())
+            LocationSourceType.S3 -> LocationSourceRaw.create(historyData!!)
             LocationSourceType.PHONE -> null
         }
 
