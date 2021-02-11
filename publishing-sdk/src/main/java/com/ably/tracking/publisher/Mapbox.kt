@@ -89,7 +89,8 @@ internal class DefaultMapbox(
     context: Context,
     private val mapConfiguration: MapConfiguration,
     connectionConfiguration: ConnectionConfiguration,
-    private val debugConfiguration: DebugConfiguration? = null
+    private val debugConfiguration: DebugConfiguration? = null,
+    locationSource: LocationSource? = null
 ) : Mapbox {
     private val mapboxNavigation: MapboxNavigation
     private var mapboxReplayer: MapboxReplayer? = null
@@ -100,13 +101,13 @@ internal class DefaultMapbox(
             mapConfiguration.apiKey
         )
         mapboxBuilder.locationEngine(getBestLocationEngine(context))
-        debugConfiguration?.locationSource?.let { locationSource ->
-            when (locationSource) {
+        locationSource?.let {
+            when (it) {
                 is LocationSourceAbly -> {
-                    useAblySimulationLocationEngine(mapboxBuilder, locationSource, connectionConfiguration)
+                    useAblySimulationLocationEngine(mapboxBuilder, it, connectionConfiguration)
                 }
                 is LocationSourceRaw -> {
-                    useHistoryDataReplayerLocationEngine(mapboxBuilder, locationSource)
+                    useHistoryDataReplayerLocationEngine(mapboxBuilder, it)
                 }
             }
         }

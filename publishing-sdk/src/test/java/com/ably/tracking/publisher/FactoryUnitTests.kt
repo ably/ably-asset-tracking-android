@@ -103,6 +103,19 @@ class FactoryUnitTests {
     }
 
     @Test
+    fun `setting location source returns a new copy of builder`() {
+        // given
+        val locationSource = LocationSourceRaw("")
+        val originalBuilder = Publisher.publishers()
+
+        // when
+        val newBuilder = originalBuilder.locationSource(locationSource)
+
+        // then
+        Assert.assertNotEquals(newBuilder, originalBuilder)
+    }
+
+    @Test
     fun `setting android context updates builder field`() {
         // given
         val mockedContext = mockk<Context>()

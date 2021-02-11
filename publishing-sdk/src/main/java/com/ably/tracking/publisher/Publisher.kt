@@ -159,6 +159,15 @@ interface Publisher {
         fun resolutionPolicy(factory: ResolutionPolicy.Factory): Builder
 
         /**
+         * Sets the location source to be used instead of the GPS.
+         * The location source will be providing location updates for the [Publisher].
+         *
+         * @param locationSource The location source from which location updates will be received.
+         * @return A new instance of the builder with this property changed.
+         */
+        fun locationSource(locationSource: LocationSource?): Builder
+
+        /**
          * Creates a [Publisher] and starts publishing.
          *
          * The returned publisher instance does not start in a state whereby it is actively tracking anything. If
