@@ -27,6 +27,8 @@ import com.mapbox.navigation.core.trip.session.LocationObserver
 import io.ably.lib.types.ClientOptions
 import timber.log.Timber
 
+typealias LocationHistoryListener = (LocationHistoryData) -> Unit
+
 /**
  * Wrapper for the [MapboxNavigation] that's used to interact with the Mapbox SDK.
  */
@@ -83,17 +85,24 @@ internal interface Mapbox {
         routingProfile: RoutingProfile,
         routeDurationCallback: (durationInMilliseconds: Long) -> Unit
     )
+
+    /**
+     * Sets a location history listener that will be notified when a trip history is ready.
+     *
+     * @param listener The function to call when location history data is ready.
+     */
+    fun setLocationHistoryListener(listener: LocationHistoryListener?)
 }
 
 internal class DefaultMapbox(
     context: Context,
     private val mapConfiguration: MapConfiguration,
     connectionConfiguration: ConnectionConfiguration,
-    private val debugConfiguration: DebugConfiguration? = null,
     locationSource: LocationSource? = null
 ) : Mapbox {
     private val mapboxNavigation: MapboxNavigation
     private var mapboxReplayer: MapboxReplayer? = null
+    private var locationHistoryListener: (LocationHistoryListener)? = null
 
     init {
         val mapboxBuilder = MapboxNavigation.defaultNavigationOptionsBuilder(
@@ -129,9 +138,7 @@ internal class DefaultMapbox(
             mapboxReplayer?.finish()
             val tripHistoryString = retrieveHistory()
             val historyEvents = ReplayHistoryMapper().mapToReplayEvents(tripHistoryString)
-            debugConfiguration?.locationHistoryHandler?.invoke(
-                LocationHistoryData(LOCATION_HISTORY_VERSION, historyEvents.toGeoJsonMessages())
-            )
+            locationHistoryListener?.invoke(LocationHistoryData(LOCATION_HISTORY_VERSION, historyEvents.toGeoJsonMessages()))
             onDestroy()
         }
     }
@@ -228,5 +235,9 @@ internal class DefaultMapbox(
                 }
             })
         }
+    }
+
+    override fun setLocationHistoryListener(listener: LocationHistoryListener?) {
+        this.locationHistoryListener = listener
     }
 }

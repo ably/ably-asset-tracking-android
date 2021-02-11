@@ -36,6 +36,8 @@ constructor(
         get() = core.connectionStates
     override val trackables: SharedFlow<Set<Trackable>>
         get() = core.trackables
+    override val locationHistory: SharedFlow<LocationHistoryData>
+        get() = core.locationHistory
 
     init {
         Timber.w("Started.")

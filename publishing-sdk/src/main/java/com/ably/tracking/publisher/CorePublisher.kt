@@ -32,6 +32,7 @@ internal interface CorePublisher {
     val locations: SharedFlow<LocationUpdate>
     val connectionStates: SharedFlow<ConnectionStateChange>
     val trackables: SharedFlow<Set<Trackable>>
+    val locationHistory: SharedFlow<LocationHistoryData>
     val active: Trackable?
     val routingProfile: RoutingProfile
 }
@@ -61,6 +62,7 @@ constructor(
     private val _locations = MutableSharedFlow<LocationUpdate>(replay = 1)
     private val _connectionStates = MutableSharedFlow<ConnectionStateChange>(replay = 1)
     private val _trackables = MutableSharedFlow<Set<Trackable>>(replay = 1)
+    private val _locationHistory = MutableSharedFlow<LocationHistoryData>()
     private val thresholdChecker = ThresholdChecker()
     private val policy: ResolutionPolicy
     private val hooks = Hooks()
@@ -101,6 +103,8 @@ constructor(
         get() = _connectionStates.asSharedFlow()
     override val trackables: SharedFlow<Set<Trackable>>
         get() = _trackables.asSharedFlow()
+    override val locationHistory: SharedFlow<LocationHistoryData>
+        get() = _locationHistory.asSharedFlow()
 
     override var active: Trackable? = null
     override var routingProfile: RoutingProfile = routingProfile
@@ -119,6 +123,7 @@ constructor(
         }
         ably.subscribeForAblyStateChange { state -> scope.launch { _connectionStates.emit(state) } }
         mapbox.registerLocationObserver(locationObserver)
+        mapbox.setLocationHistoryListener { historyData -> scope.launch { _locationHistory.emit(historyData) } }
     }
 
     override fun enqueue(event: AdhocEvent) {

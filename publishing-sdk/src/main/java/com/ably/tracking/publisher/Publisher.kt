@@ -95,6 +95,11 @@ interface Publisher {
     val trackables: SharedFlow<Set<Trackable>>
 
     /**
+     * The shared flow emitting trip location history when it becomes available.
+     */
+    val locationHistory: SharedFlow<LocationHistoryData>
+
+    /**
      * Stops this publisher from publishing locations. Once a publisher has been stopped, it cannot be restarted.
      */
     @JvmSynthetic
@@ -180,15 +185,5 @@ interface Publisher {
          */
         @RequiresPermission(anyOf = [ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION])
         fun start(): Publisher
-
-        /**
-         * Sets the debug configuration.
-         *
-         * @param configuration debug configuration object [DebugConfiguration]
-         * @return A new instance of the builder with this property changed.
-         */
-        // TODO - probably should be removed in the final version
-        // https://github.com/ably/ably-asset-tracking-android/issues/19
-        fun debug(configuration: DebugConfiguration?): Builder
     }
 }

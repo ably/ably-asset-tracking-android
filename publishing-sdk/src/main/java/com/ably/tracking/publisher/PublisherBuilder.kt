@@ -12,7 +12,6 @@ internal data class PublisherBuilder(
     val connectionConfiguration: ConnectionConfiguration? = null,
     val mapConfiguration: MapConfiguration? = null,
     val logConfiguration: LogConfiguration? = null,
-    val debugConfiguration: DebugConfiguration? = null,
     val androidContext: Context? = null,
     val routingProfile: RoutingProfile = RoutingProfile.DRIVING,
     val resolutionPolicyFactory: ResolutionPolicy.Factory? = null,
@@ -27,9 +26,6 @@ internal data class PublisherBuilder(
 
     override fun log(configuration: LogConfiguration): Publisher.Builder =
         this.copy(logConfiguration = configuration)
-
-    override fun debug(configuration: DebugConfiguration?): Publisher.Builder =
-        this.copy(debugConfiguration = configuration)
 
     override fun androidContext(context: Context): Publisher.Builder =
         this.copy(androidContext = context)
@@ -51,7 +47,7 @@ internal data class PublisherBuilder(
         // All below fields are required and above code checks if they are nulls, so using !! should be safe from NPE
         return DefaultPublisher(
             DefaultAbly(connectionConfiguration!!),
-            DefaultMapbox(androidContext!!, mapConfiguration!!, connectionConfiguration, debugConfiguration, locationSource),
+            DefaultMapbox(androidContext!!, mapConfiguration!!, connectionConfiguration, locationSource),
             resolutionPolicyFactory!!,
             routingProfile,
             DefaultBatteryDataProvider(androidContext)

@@ -377,12 +377,6 @@ enum class RoutingProfile {
     DRIVING_TRAFFIC,
 }
 
-// TODO - probably should be removed in the final version
-// https://github.com/ably/ably-asset-tracking-android/issues/19
-data class DebugConfiguration(
-    val locationHistoryHandler: ((LocationHistoryData) -> Unit)? = null
-)
-
 sealed class LocationSource
 data class LocationSourceAbly(val simulationChannelName: String) : LocationSource()
 data class LocationSourceRaw(val historyData: LocationHistoryData, val onDataEnded: (() -> Unit)? = null) : LocationSource()

@@ -18,7 +18,6 @@ import com.ably.tracking.Accuracy
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.ConnectionState
 import com.ably.tracking.Resolution
-import com.ably.tracking.publisher.DebugConfiguration
 import com.ably.tracking.publisher.DefaultProximity
 import com.ably.tracking.publisher.DefaultResolutionConstraints
 import com.ably.tracking.publisher.DefaultResolutionPolicyFactory
@@ -167,7 +166,6 @@ class MainActivity : AppCompatActivity() {
         publisherService?.publisher = Publisher.publishers()
             .connection(ConnectionConfiguration(ABLY_API_KEY, CLIENT_ID))
             .map(MapConfiguration(MAPBOX_ACCESS_TOKEN))
-            .debug(createDebugConfiguration())
             .locationSource(createLocationSource(historyData))
             .resolutionPolicy(DefaultResolutionPolicyFactory(Resolution(Accuracy.MINIMUM, 1000L, 1.0), this))
             .androidContext(this)
@@ -204,6 +202,9 @@ class MainActivity : AppCompatActivity() {
                 locations
                     .onEach { updateLocationInfo(it.location) }
                     .launchIn(scope)
+                locationHistory
+                    .onEach { uploadLocationHistoryData(it) }
+                    .launchIn(scope)
             }
         changeNavigationButtonState(true)
     }
@@ -223,12 +224,6 @@ class MainActivity : AppCompatActivity() {
             LocationSourceType.S3 -> LocationSourceRaw(historyData!!)
             LocationSourceType.PHONE -> null
         }
-
-    private fun createDebugConfiguration(): DebugConfiguration {
-        return DebugConfiguration(
-            locationHistoryHandler = { uploadLocationHistoryData(it) }
-        )
-    }
 
     private fun uploadLocationHistoryData(historyData: LocationHistoryData) {
         if (getLocationSourceType() == LocationSourceType.PHONE) {
