@@ -40,9 +40,10 @@ internal fun createCorePublisher(
     ably: Ably,
     mapbox: Mapbox,
     resolutionPolicyFactory: ResolutionPolicy.Factory,
-    routingProfile: RoutingProfile
+    routingProfile: RoutingProfile,
+    batteryDataProvider: BatteryDataProvider
 ): CorePublisher {
-    return DefaultCorePublisher(ably, mapbox, resolutionPolicyFactory, routingProfile)
+    return DefaultCorePublisher(ably, mapbox, resolutionPolicyFactory, routingProfile, batteryDataProvider)
 }
 
 private data class PublisherState(
@@ -68,7 +69,8 @@ constructor(
     private val ably: Ably,
     private val mapbox: Mapbox,
     resolutionPolicyFactory: ResolutionPolicy.Factory,
-    routingProfile: RoutingProfile
+    routingProfile: RoutingProfile,
+    private val batteryDataProvider: BatteryDataProvider
 ) : CorePublisher {
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private val sendEventChannel: SendChannel<Event>
@@ -80,7 +82,14 @@ constructor(
     private val methods = Methods()
     private val locationObserver = object : LocationObserver {
         override fun onRawLocationChanged(rawLocation: Location) {
-            enqueue(RawLocationChangedEvent(LocationUpdate(rawLocation)))
+            enqueue(
+                RawLocationChangedEvent(
+                    LocationUpdate(
+                        rawLocation,
+                        batteryDataProvider.getCurrentBatteryPercentage()
+                    )
+                )
+            )
         }
 
         override fun onEnhancedLocationChanged(
@@ -93,6 +102,7 @@ constructor(
                 EnhancedLocationChangedEvent(
                     EnhancedLocationUpdate(
                         enhancedLocation,
+                        batteryDataProvider.getCurrentBatteryPercentage(),
                         intermediateLocations,
                         if (intermediateLocations.isEmpty()) LocationUpdateType.ACTUAL else LocationUpdateType.PREDICTED
                     )

@@ -42,6 +42,7 @@ data class PresenceData(val type: String, val resolution: Resolution? = null)
 
 data class EnhancedLocationUpdateMessage(
     val location: GeoJsonMessage,
+    val batteryLevel: Float?,
     val intermediateLocations: List<GeoJsonMessage>,
     val type: LocationUpdateType
 )

@@ -49,7 +49,8 @@ internal data class PublisherBuilder(
             DefaultAbly(connectionConfiguration!!),
             DefaultMapbox(androidContext!!, mapConfiguration!!, connectionConfiguration, debugConfiguration),
             resolutionPolicyFactory!!,
-            routingProfile
+            routingProfile,
+            DefaultBatteryDataProvider(androidContext)
         )
     }
 

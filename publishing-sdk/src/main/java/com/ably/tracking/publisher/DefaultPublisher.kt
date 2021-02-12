@@ -19,7 +19,8 @@ constructor(
     ably: Ably,
     mapbox: Mapbox,
     resolutionPolicyFactory: ResolutionPolicy.Factory,
-    routingProfile: RoutingProfile
+    routingProfile: RoutingProfile,
+    batteryDataProvider: BatteryDataProvider
 ) :
     Publisher {
     private val core: CorePublisher
@@ -37,7 +38,7 @@ constructor(
     init {
         Timber.w("Started.")
 
-        core = createCorePublisher(ably, mapbox, resolutionPolicyFactory, routingProfile)
+        core = createCorePublisher(ably, mapbox, resolutionPolicyFactory, routingProfile, batteryDataProvider)
 
         core.enqueue(StartEvent())
     }
