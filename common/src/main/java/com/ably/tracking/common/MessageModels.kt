@@ -10,6 +10,7 @@ object GeoJsonTypes {
 
 const val GEOMETRY_LONG_INDEX = 0
 const val GEOMETRY_LAT_INDEX = 1
+const val GEOMETRY_ALT_INDEX = 2
 
 data class GeoJsonMessage(
     val type: String,
@@ -26,7 +27,6 @@ data class GeoJsonGeometry(val type: String, val coordinates: List<Double>)
 
 data class GeoJsonProperties(
     val accuracyHorizontal: Float,
-    val altitude: Double,
     val bearing: Float,
     val speed: Float,
     val time: Double
