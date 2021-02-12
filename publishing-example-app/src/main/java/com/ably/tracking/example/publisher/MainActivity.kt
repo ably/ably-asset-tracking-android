@@ -50,6 +50,7 @@ private const val NO_FLAGS = 0
 class MainActivity : AppCompatActivity() {
     private var publisherService: PublisherService? = null
     private lateinit var appPreferences: AppPreferences
+
     // SupervisorJob() is used to keep the scope working after any of its children fail
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     private val publisherServiceConnection = object : ServiceConnection {
@@ -60,7 +61,15 @@ class MainActivity : AppCompatActivity() {
                     startTracking()
                 } else {
                     changeNavigationButtonState(true)
-                    trackingIdEditText.setText(service.publisher?.active?.id)
+                    service.publisher?.let { publisher ->
+                        trackingIdEditText.setText(publisher.active?.id)
+                        publisher.connectionStates
+                            .onEach { updateAblyStateInfo(it.state) }
+                            .launchIn(scope)
+                        publisher.locations
+                            .onEach { updateLocationInfo(it.location) }
+                            .launchIn(scope)
+                    }
                 }
             }
         }
