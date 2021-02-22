@@ -12,8 +12,8 @@ import androidx.core.content.ContextCompat
 import com.ably.tracking.Accuracy
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.Resolution
-import com.ably.tracking.publisher.DebugConfiguration
 import com.ably.tracking.publisher.DefaultResolutionPolicyFactory
+import com.ably.tracking.publisher.LocationSource
 import com.ably.tracking.publisher.MapConfiguration
 import com.ably.tracking.publisher.Publisher
 import com.ably.tracking.publisher.RoutingProfile
@@ -59,12 +59,12 @@ abstract class PublisherServiceActivity : AppCompatActivity() {
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
     protected fun startPublisher(
         defaultResolution: Resolution = DEFAULT_RESOLUTION,
-        debugConfiguration: DebugConfiguration? = null
+        locationSource: LocationSource? = null
     ) {
         publisherService?.publisher = Publisher.publishers()
             .connection(ConnectionConfiguration(ABLY_API_KEY, CLIENT_ID))
             .map(MapConfiguration(MAPBOX_ACCESS_TOKEN))
-            .debug(debugConfiguration)
+            .locationSource(locationSource)
             .resolutionPolicy(DefaultResolutionPolicyFactory(defaultResolution, this))
             .androidContext(this)
             .profile(RoutingProfile.DRIVING)

@@ -2,33 +2,24 @@ package com.ably.tracking.example.publisher
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.content.ComponentName
 import android.content.Intent
-import android.content.ServiceConnection
 import android.content.res.ColorStateList
 import android.location.Location
 import android.os.Bundle
-import android.os.IBinder
 import android.widget.Toast
 import androidx.annotation.RequiresPermission
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.widget.ImageViewCompat
 import com.ably.tracking.Accuracy
 import com.ably.tracking.AssetStatus
-import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.Resolution
 import com.ably.tracking.publisher.DefaultProximity
 import com.ably.tracking.publisher.DefaultResolutionConstraints
-import com.ably.tracking.publisher.DefaultResolutionPolicyFactory
 import com.ably.tracking.publisher.DefaultResolutionSet
 import com.ably.tracking.publisher.LocationHistoryData
 import com.ably.tracking.publisher.LocationSource
 import com.ably.tracking.publisher.LocationSourceAbly
 import com.ably.tracking.publisher.LocationSourceRaw
-import com.ably.tracking.publisher.MapConfiguration
-import com.ably.tracking.publisher.Publisher
-import com.ably.tracking.publisher.RoutingProfile
 import com.ably.tracking.publisher.Trackable
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.coroutines.CoroutineScope
@@ -43,42 +34,29 @@ import timber.log.Timber
 
 private val REQUIRED_PERMISSIONS = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
 private const val REQUEST_LOCATION_PERMISSION = 1
-private const val MAPBOX_ACCESS_TOKEN = BuildConfig.MAPBOX_ACCESS_TOKEN
-private const val CLIENT_ID = "<INSERT_CLIENT_ID_HERE>"
-private const val ABLY_API_KEY = BuildConfig.ABLY_API_KEY
-private const val NO_FLAGS = 0
 
-class MainActivity : AppCompatActivity() {
-    private var publisherService: PublisherService? = null
+class MainActivity : PublisherServiceActivity() {
     private lateinit var appPreferences: AppPreferences
 
     // SupervisorJob() is used to keep the scope working after any of its children fail
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
-    private val publisherServiceConnection = object : ServiceConnection {
-        override fun onServiceConnected(className: ComponentName, serviceBinder: IBinder) {
-            (serviceBinder as PublisherService.Binder).getService().let { service ->
-                publisherService = service
-                if (service.publisher == null) {
-                    startTracking()
-                } else {
-                    changeNavigationButtonState(true)
-                    service.publisher?.let { publisher ->
-                        publisher.active?.id?.let { trackableId ->
-                            trackingIdEditText.setText(trackableId)
-                            publisher.getAssetStatus(trackableId)
-                                ?.onEach { updateAssetStatusInfo(it) }
-                                ?.launchIn(scope)
-                        }
-                        publisher.locations
-                            .onEach { updateLocationInfo(it.location) }
-                            .launchIn(scope)
-                    }
-                }
-            }
-        }
 
-        override fun onServiceDisconnected(className: ComponentName) {
-            publisherService = null
+    override fun onPublisherServiceConnected(publisherService: PublisherService) {
+        if (publisherService.publisher == null) {
+            startTracking()
+        } else {
+            changeNavigationButtonState(true)
+            publisherService.publisher?.let { publisher ->
+                publisher.active?.id?.let { trackableId ->
+                    trackingIdEditText.setText(trackableId)
+                    publisher.getAssetStatus(trackableId)
+                        ?.onEach { updateAssetStatusInfo(it) }
+                        ?.launchIn(scope)
+                }
+                publisher.locations
+                    .onEach { updateLocationInfo(it.location) }
+                    .launchIn(scope)
+            }
         }
     }
 
@@ -95,7 +73,6 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
 
-        bindService(createServiceIntent(), publisherServiceConnection, NO_FLAGS)
         startNavigationButton.setOnClickListener {
             if (publisherService == null) {
                 startAndBindPublisherService()
@@ -105,21 +82,9 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun startAndBindPublisherService() {
-        ContextCompat.startForegroundService(this, createServiceIntent())
-        bindService(createServiceIntent(), publisherServiceConnection, NO_FLAGS)
-    }
-
-    private fun createServiceIntent() = Intent(this, PublisherService::class.java)
-
     override fun onStart() {
         super.onStart()
         updateLocationSourceMethodInfo()
-    }
-
-    override fun onDestroy() {
-        unbindService(publisherServiceConnection)
-        super.onDestroy()
     }
 
     private fun updateLocationSourceMethodInfo() {
@@ -165,49 +130,45 @@ class MainActivity : AppCompatActivity() {
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
     private fun createAndStartAssetPublisher(trackingId: String, historyData: LocationHistoryData? = null) {
         clearLocationInfo()
-        publisherService?.publisher = Publisher.publishers()
-            .connection(ConnectionConfiguration(ABLY_API_KEY, CLIENT_ID))
-            .map(MapConfiguration(MAPBOX_ACCESS_TOKEN))
-            .locationSource(createLocationSource(historyData))
-            .resolutionPolicy(DefaultResolutionPolicyFactory(Resolution(Accuracy.MINIMUM, 1000L, 1.0), this))
-            .androidContext(this)
-            .profile(RoutingProfile.DRIVING)
-            .start()
-            .apply {
-                scope.launch {
-                    try {
-                        val assetStatus = track(
-                            Trackable(
-                                trackingId,
-                                constraints = DefaultResolutionConstraints(
-                                    DefaultResolutionSet(
-                                        Resolution(
-                                            Accuracy.BALANCED,
-                                            desiredInterval = 1000L,
-                                            minimumDisplacement = 1.0
-                                        )
-                                    ),
-                                    DefaultProximity(spatial = 1.0),
-                                    batteryLevelThreshold = 10.0f,
-                                    lowBatteryMultiplier = 2.0f
-                                )
+        startPublisher(
+            defaultResolution = Resolution(Accuracy.MINIMUM, 1000L, 1.0),
+            locationSource = createLocationSource(historyData)
+        )
+        publisherService?.publisher?.apply {
+            scope.launch {
+                try {
+                    val assetStatus = track(
+                        Trackable(
+                            trackingId,
+                            constraints = DefaultResolutionConstraints(
+                                DefaultResolutionSet(
+                                    Resolution(
+                                        Accuracy.BALANCED,
+                                        desiredInterval = 1000L,
+                                        minimumDisplacement = 1.0
+                                    )
+                                ),
+                                DefaultProximity(spatial = 1.0),
+                                batteryLevelThreshold = 10.0f,
+                                lowBatteryMultiplier = 2.0f
                             )
                         )
-                        assetStatus
-                            .onEach { updateAssetStatusInfo(it) }
-                            .launchIn(scope)
-                    } catch (exception: Exception) {
-                        showToast("Error when tracking asset")
-                        stopTracking()
-                    }
+                    )
+                    assetStatus
+                        .onEach { updateAssetStatusInfo(it) }
+                        .launchIn(scope)
+                } catch (exception: Exception) {
+                    showToast("Error when tracking asset")
+                    stopTracking()
                 }
-                locations
-                    .onEach { updateLocationInfo(it.location) }
-                    .launchIn(scope)
-                locationHistory
-                    .onEach { uploadLocationHistoryData(it) }
-                    .launchIn(scope)
             }
+            locations
+                .onEach { updateLocationInfo(it.location) }
+                .launchIn(scope)
+            locationHistory
+                .onEach { uploadLocationHistoryData(it) }
+                .launchIn(scope)
+        }
         changeNavigationButtonState(true)
     }
 
@@ -246,7 +207,7 @@ class MainActivity : AppCompatActivity() {
                 // TODO check Result (it) for failure and report accordingly
             }
         }
-        stopService(createServiceIntent())
+        stopPublisherService()
     }
 
     private fun updateLocationInfo(location: Location) {
