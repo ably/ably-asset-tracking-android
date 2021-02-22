@@ -1,14 +1,9 @@
 package com.ably.tracking.example.publisher
 
-import android.content.ComponentName
-import android.content.Intent
-import android.content.ServiceConnection
 import android.content.res.ColorStateList
 import android.location.Location
 import android.os.Bundle
-import android.os.IBinder
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.widget.ImageViewCompat
 import com.ably.tracking.ConnectionState
@@ -26,26 +21,11 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
-private const val NO_FLAGS = 0
-
-class TrackableDetailsActivity : AppCompatActivity() {
-    private var publisherService: PublisherService? = null
+class TrackableDetailsActivity : PublisherServiceActivity() {
     private lateinit var appPreferences: AppPreferences
 
     // SupervisorJob() is used to keep the scope working after any of its children fail
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
-    private val publisherServiceConnection = object : ServiceConnection {
-        override fun onServiceConnected(className: ComponentName, serviceBinder: IBinder) {
-            (serviceBinder as PublisherService.Binder).getService().let { service ->
-                publisherService = service
-                listenForPublisherChanges(service)
-            }
-        }
-
-        override fun onServiceDisconnected(p0: ComponentName?) {
-            publisherService = null
-        }
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -55,10 +35,13 @@ class TrackableDetailsActivity : AppCompatActivity() {
 
         listenForPublisherChanges(publisherService)
 
-        bindService(createServiceIntent(), publisherServiceConnection, NO_FLAGS)
         stopTrackingButton.setOnClickListener {
             stopTracking()
         }
+    }
+
+    override fun onPublisherServiceConnected(publisherService: PublisherService) {
+        listenForPublisherChanges(publisherService)
     }
 
     private fun listenForPublisherChanges(publisherService: PublisherService?) {
@@ -71,8 +54,6 @@ class TrackableDetailsActivity : AppCompatActivity() {
                 .launchIn(scope)
         }
     }
-
-    private fun createServiceIntent() = Intent(this, PublisherService::class.java)
 
     private fun updateLocationSourceMethodInfo() {
         locationSourceMethodTextView.text = appPreferences.getLocationSource()
