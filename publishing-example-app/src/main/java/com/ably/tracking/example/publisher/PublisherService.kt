@@ -81,7 +81,7 @@ class PublisherService : Service() {
     }
 
     private fun uploadLocationHistoryData(historyData: LocationHistoryData) {
-        if (getLocationSourceType() == MainActivity.LocationSourceType.PHONE) {
+        if (getLocationSourceType() == LocationSourceType.PHONE) {
             S3Helper.uploadHistoryData(
                 this,
                 historyData
@@ -91,12 +91,14 @@ class PublisherService : Service() {
 
     private fun getLocationSourceType() =
         when (appPreferences.getLocationSource()) {
-            getString(R.string.location_source_ably) -> MainActivity.LocationSourceType.ABLY
-            getString(R.string.location_source_s3) -> MainActivity.LocationSourceType.S3
-            else -> MainActivity.LocationSourceType.PHONE
+            getString(R.string.location_source_ably) -> LocationSourceType.ABLY
+            getString(R.string.location_source_s3) -> LocationSourceType.S3
+            else -> LocationSourceType.PHONE
         }
 
     private fun showToast(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 }
+
+enum class LocationSourceType { PHONE, ABLY, S3 }

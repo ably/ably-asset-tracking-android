@@ -7,12 +7,6 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.core.widget.ImageViewCompat
 import com.ably.tracking.ConnectionState
-import kotlinx.android.synthetic.main.activity_main.ablyConnectionStatusImageView
-import kotlinx.android.synthetic.main.activity_main.ablyConnectionStatusValueTextView
-import kotlinx.android.synthetic.main.activity_main.bearingValueTextView
-import kotlinx.android.synthetic.main.activity_main.latitudeValueTextView
-import kotlinx.android.synthetic.main.activity_main.locationSourceMethodTextView
-import kotlinx.android.synthetic.main.activity_main.longitudeValueTextView
 import kotlinx.android.synthetic.main.activity_trackable_details.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

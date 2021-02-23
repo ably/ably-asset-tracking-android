@@ -94,16 +94,16 @@ class AddTrackableActivity : PublisherServiceActivity() {
 
     private fun createLocationSource(historyData: String? = null): LocationSource? =
         when (getLocationSourceType()) {
-            MainActivity.LocationSourceType.ABLY -> LocationSourceAbly(appPreferences.getSimulationChannel())
-            MainActivity.LocationSourceType.S3 -> LocationSourceRaw(historyData!!)
-            MainActivity.LocationSourceType.PHONE -> null
+            LocationSourceType.ABLY -> LocationSourceAbly(appPreferences.getSimulationChannel())
+            LocationSourceType.S3 -> LocationSourceRaw(historyData!!)
+            LocationSourceType.PHONE -> null
         }
 
     private fun getLocationSourceType() =
         when (appPreferences.getLocationSource()) {
-            getString(R.string.location_source_ably) -> MainActivity.LocationSourceType.ABLY
-            getString(R.string.location_source_s3) -> MainActivity.LocationSourceType.S3
-            else -> MainActivity.LocationSourceType.PHONE
+            getString(R.string.location_source_ably) -> LocationSourceType.ABLY
+            getString(R.string.location_source_s3) -> LocationSourceType.S3
+            else -> LocationSourceType.PHONE
         }
 
     private fun downloadLocationHistoryData(onHistoryDataDownloaded: (historyData: String) -> Unit) {
