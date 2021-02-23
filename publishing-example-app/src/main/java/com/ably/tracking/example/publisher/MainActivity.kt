@@ -130,7 +130,7 @@ class MainActivity : PublisherServiceActivity() {
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
     private fun createAndStartAssetPublisher(trackingId: String, historyData: LocationHistoryData? = null) {
         clearLocationInfo()
-        startPublisher(
+        publisherService?.startPublisher(
             defaultResolution = Resolution(Accuracy.MINIMUM, 1000L, 1.0),
             locationSource = createLocationSource(historyData)
         )
@@ -165,9 +165,6 @@ class MainActivity : PublisherServiceActivity() {
             locations
                 .onEach { updateLocationInfo(it.location) }
                 .launchIn(scope)
-            locationHistory
-                .onEach { uploadLocationHistoryData(it) }
-                .launchIn(scope)
         }
         changeNavigationButtonState(true)
     }
@@ -187,15 +184,6 @@ class MainActivity : PublisherServiceActivity() {
             LocationSourceType.S3 -> LocationSourceRaw.create(historyData!!)
             LocationSourceType.PHONE -> null
         }
-
-    private fun uploadLocationHistoryData(historyData: LocationHistoryData) {
-        if (getLocationSourceType() == LocationSourceType.PHONE) {
-            S3Helper.uploadHistoryData(
-                this,
-                historyData
-            ) { showToast("S3 not initialized - cannot upload history data") }
-        }
-    }
 
     private fun stopTracking() {
         scope.launch {
