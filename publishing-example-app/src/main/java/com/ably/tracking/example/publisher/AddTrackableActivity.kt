@@ -37,19 +37,35 @@ class AddTrackableActivity : PublisherServiceActivity() {
     }
 
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
+    override fun onPublisherServiceConnected(publisherService: PublisherService) {
+        // If the publisher is null it means that we've just created the service and we should add a trackable
+        if (publisherService.publisher == null) {
+            startAddingTrackable(trackableIdEditText.text.toString().trim())
+        }
+    }
+
+    @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
     private fun addTrackable() {
         trackableIdEditText.text.toString().trim().let { trackableId ->
             if (trackableId.isNotEmpty()) {
-                addTrackableButton.isEnabled = false
-                progressIndicator.visibility = View.VISIBLE
-                if (getLocationSourceType() == MainActivity.LocationSourceType.S3) {
-                    downloadLocationHistoryData { startPublisherAndAddTrackable(trackableId, it) }
+                showLoading()
+                if (publisherService == null) {
+                    startAndBindPublisherService()
                 } else {
-                    startPublisherAndAddTrackable(trackableId)
+                    startAddingTrackable(trackableId)
                 }
             } else {
                 showToast("Insert tracking ID")
             }
+        }
+    }
+
+    @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
+    private fun startAddingTrackable(trackableId: String) {
+        if (getLocationSourceType() == LocationSourceType.S3) {
+            downloadLocationHistoryData { startPublisherAndAddTrackable(trackableId, it) }
+        } else {
+            startPublisherAndAddTrackable(trackableId)
         }
     }
 
@@ -85,8 +101,7 @@ class AddTrackableActivity : PublisherServiceActivity() {
                     finish()
                 } catch (exception: Exception) {
                     showToast("Error when adding the trackable")
-                    progressIndicator.visibility = View.GONE
-                    addTrackableButton.isEnabled = true
+                    hideLoading()
                 }
             }
         }
@@ -113,6 +128,18 @@ class AddTrackableActivity : PublisherServiceActivity() {
             onHistoryDataDownloaded = { onHistoryDataDownloaded(it) },
             onUninitialized = { showToast("S3 not initialized - cannot download history data") }
         )
+    }
+
+    private fun showLoading() {
+        progressIndicator.visibility = View.VISIBLE
+        addTrackableButton.isEnabled = false
+        trackableIdEditText.isEnabled = false
+    }
+
+    private fun hideLoading() {
+        progressIndicator.visibility = View.GONE
+        addTrackableButton.isEnabled = true
+        trackableIdEditText.isEnabled = true
     }
 
     private fun showToast(message: String) {
