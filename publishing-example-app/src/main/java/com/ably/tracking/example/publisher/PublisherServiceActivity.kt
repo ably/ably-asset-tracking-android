@@ -3,7 +3,6 @@ package com.ably.tracking.example.publisher
 import android.content.ComponentName
 import android.content.Intent
 import android.content.ServiceConnection
-import android.os.Bundle
 import android.os.IBinder
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -23,20 +22,26 @@ abstract class PublisherServiceActivity : AppCompatActivity() {
             }
         }
 
+        /**
+         * The Android system calls this when the connection to the service is unexpectedly lost,
+         * such as when the service has crashed or has been killed.
+         * This is not called when the client unbinds.
+         */
         override fun onServiceDisconnected(className: ComponentName) {
-            publisherService = null
-            onPublisherServiceDisconnected()
+
         }
     }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+    override fun onStart() {
+        super.onStart()
         bindPublisherService()
     }
 
-    override fun onDestroy() {
+    override fun onStop() {
         unbindPublisherService()
-        super.onDestroy()
+        publisherService = null
+        onPublisherServiceDisconnected()
+        super.onStop()
     }
 
     /**
