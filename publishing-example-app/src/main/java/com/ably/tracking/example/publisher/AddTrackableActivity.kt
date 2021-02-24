@@ -97,7 +97,9 @@ class AddTrackableActivity : PublisherServiceActivity() {
                             )
                         )
                     )
-                    startActivity(Intent(this@AddTrackableActivity, TrackableDetailsActivity::class.java))
+                    startActivity(Intent(this@AddTrackableActivity, TrackableDetailsActivity::class.java).apply {
+                        putExtra(TRACKABLE_ID_EXTRA, trackableId)
+                    })
                     finish()
                 } catch (exception: Exception) {
                     showToast("Error when adding the trackable")

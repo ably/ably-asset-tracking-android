@@ -164,7 +164,7 @@
     app:layout_constraintTop_toBottomOf="@+id/bearingLabelTextView" />
 
   <TextView
-    android:id="@+id/trackingIdLabelTextView"
+    android:id="@+id/trackableIdLabelTextView"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:layout_marginTop="15dp"
@@ -173,13 +173,13 @@
     app:layout_constraintTop_toBottomOf="@id/trackableDetailsSectionTextView" />
 
   <TextView
-    android:id="@+id/trackingIdTextView"
+    android:id="@+id/trackableIdTextView"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:layout_marginStart="10dp"
     android:textColor="@color/black"
-    app:layout_constraintBottom_toBottomOf="@id/trackingIdLabelTextView"
-    app:layout_constraintStart_toEndOf="@id/trackingIdLabelTextView"
+    app:layout_constraintBottom_toBottomOf="@id/trackableIdLabelTextView"
+    app:layout_constraintStart_toEndOf="@id/trackableIdLabelTextView"
     tools:text="SOME ID" />
 
   <androidx.appcompat.widget.AppCompatButton

@@ -19,6 +19,7 @@ const val TRACKABLE_ID_EXTRA = "TRACKABLE_ID"
 
 class TrackableDetailsActivity : PublisherServiceActivity() {
     private lateinit var appPreferences: AppPreferences
+    private lateinit var trackableId: String
 
     // SupervisorJob() is used to keep the scope working after any of its children fail
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
@@ -26,9 +27,12 @@ class TrackableDetailsActivity : PublisherServiceActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_trackable_details)
+        trackableId = intent.extras?.getString(TRACKABLE_ID_EXTRA)
+            ?: throw Exception("Cannot open details activity without a Trackable ID")
         appPreferences = AppPreferences(this) // TODO - Add some DI (Koin)?
         updateLocationSourceMethodInfo()
 
+        trackableIdTextView.text = trackableId
         listenForPublisherChanges(publisherService)
 
         stopTrackingButton.setOnClickListener {
