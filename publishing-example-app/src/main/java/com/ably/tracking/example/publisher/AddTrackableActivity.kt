@@ -33,26 +33,26 @@ class AddTrackableActivity : PublisherServiceActivity() {
         setContentView(R.layout.activity_add_trackable)
         appPreferences = AppPreferences(this) // TODO - Add some DI (Koin)?
 
-        addTrackableButton.setOnClickListener { addTrackable() }
+        addTrackableButton.setOnClickListener { beginAddingTrackable() }
     }
 
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
     override fun onPublisherServiceConnected(publisherService: PublisherService) {
         // If the publisher is null it means that we've just created the service and we should add a trackable
         if (publisherService.publisher == null) {
-            startAddingTrackable(trackableIdEditText.text.toString().trim())
+            addTrackable(getTrackableId())
         }
     }
 
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
-    private fun addTrackable() {
-        trackableIdEditText.text.toString().trim().let { trackableId ->
+    private fun beginAddingTrackable() {
+        getTrackableId().let { trackableId ->
             if (trackableId.isNotEmpty()) {
                 showLoading()
                 if (publisherService == null) {
                     startAndBindPublisherService()
                 } else {
-                    startAddingTrackable(trackableId)
+                    addTrackable(trackableId)
                 }
             } else {
                 showToast("Insert tracking ID")
@@ -61,11 +61,15 @@ class AddTrackableActivity : PublisherServiceActivity() {
     }
 
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
-    private fun startAddingTrackable(trackableId: String) {
-        if (getLocationSourceType() == LocationSourceType.S3) {
-            downloadLocationHistoryData { startPublisherAndAddTrackable(trackableId, it) }
+    private fun addTrackable(trackableId: String) {
+        if (publisherService?.publisher == null) {
+            if (getLocationSourceType() == LocationSourceType.S3) {
+                downloadLocationHistoryData { startPublisherAndAddTrackable(trackableId, it) }
+            } else {
+                startPublisherAndAddTrackable(trackableId)
+            }
         } else {
-            startPublisherAndAddTrackable(trackableId)
+            addTrackableToThePublisher(trackableId)
         }
     }
 
@@ -77,6 +81,10 @@ class AddTrackableActivity : PublisherServiceActivity() {
                 locationSource = createLocationSource(historyData)
             )
         }
+        addTrackableToThePublisher(trackableId)
+    }
+
+    private fun addTrackableToThePublisher(trackableId: String) {
         publisherService?.publisher?.apply {
             scope.launch {
                 try {
@@ -147,4 +155,6 @@ class AddTrackableActivity : PublisherServiceActivity() {
     private fun showToast(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
+
+    private fun getTrackableId(): String = trackableIdEditText.text.toString().trim()
 }
