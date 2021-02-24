@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
+import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.coroutines.CoroutineScope
@@ -46,6 +47,7 @@ class MainActivity : PublisherServiceActivity() {
 
         trackablesRecyclerView.adapter = trackablesAdapter
         trackablesRecyclerView.layoutManager = LinearLayoutManager(this)
+        trackablesRecyclerView.addItemDecoration(DividerItemDecoration(this, DividerItemDecoration.VERTICAL))
         trackablesAdapter.onItemClickedCallback = { onTrackableClicked(it.id) }
     }
 
