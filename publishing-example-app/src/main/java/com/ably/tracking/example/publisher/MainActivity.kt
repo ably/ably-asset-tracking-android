@@ -2,10 +2,13 @@ package com.ably.tracking.example.publisher
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.ComponentName
 import android.content.Intent
+import android.content.ServiceConnection
 import android.content.res.ColorStateList
 import android.location.Location
 import android.os.Bundle
+import android.os.IBinder
 import android.widget.Toast
 import androidx.annotation.RequiresPermission
 import androidx.appcompat.app.AppCompatActivity
@@ -42,12 +45,39 @@ private const val REQUEST_LOCATION_PERMISSION = 1
 private const val MAPBOX_ACCESS_TOKEN = BuildConfig.MAPBOX_ACCESS_TOKEN
 private const val CLIENT_ID = "<INSERT_CLIENT_ID_HERE>"
 private const val ABLY_API_KEY = BuildConfig.ABLY_API_KEY
+private const val NO_FLAGS = 0
 
 class MainActivity : AppCompatActivity() {
-    private var publisher: Publisher? = null
+    private var publisherService: PublisherService? = null
     private lateinit var appPreferences: AppPreferences
+
     // SupervisorJob() is used to keep the scope working after any of its children fail
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+    private val publisherServiceConnection = object : ServiceConnection {
+        override fun onServiceConnected(className: ComponentName, serviceBinder: IBinder) {
+            (serviceBinder as PublisherService.Binder).getService().let { service ->
+                publisherService = service
+                if (service.publisher == null) {
+                    startTracking()
+                } else {
+                    changeNavigationButtonState(true)
+                    service.publisher?.let { publisher ->
+                        trackingIdEditText.setText(publisher.active?.id)
+                        publisher.connectionStates
+                            .onEach { updateAblyStateInfo(it.state) }
+                            .launchIn(scope)
+                        publisher.locations
+                            .onEach { updateLocationInfo(it.location) }
+                            .launchIn(scope)
+                    }
+                }
+            }
+        }
+
+        override fun onServiceDisconnected(className: ComponentName) {
+            publisherService = null
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -62,18 +92,31 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
 
+        bindService(createServiceIntent(), publisherServiceConnection, NO_FLAGS)
         startNavigationButton.setOnClickListener {
-            if (publisher == null) {
-                startTracking()
+            if (publisherService == null) {
+                startAndBindPublisherService()
             } else {
                 stopTracking()
             }
         }
     }
 
+    private fun startAndBindPublisherService() {
+        ContextCompat.startForegroundService(this, createServiceIntent())
+        bindService(createServiceIntent(), publisherServiceConnection, NO_FLAGS)
+    }
+
+    private fun createServiceIntent() = Intent(this, PublisherService::class.java)
+
     override fun onStart() {
         super.onStart()
         updateLocationSourceMethodInfo()
+    }
+
+    override fun onDestroy() {
+        unbindService(publisherServiceConnection)
+        super.onDestroy()
     }
 
     private fun updateLocationSourceMethodInfo() {
@@ -119,7 +162,7 @@ class MainActivity : AppCompatActivity() {
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
     private fun createAndStartAssetPublisher(trackingId: String, historyData: String? = null) {
         clearLocationInfo()
-        publisher = Publisher.publishers()
+        publisherService?.publisher = Publisher.publishers()
             .connection(ConnectionConfiguration(ABLY_API_KEY, CLIENT_ID))
             .map(MapConfiguration(MAPBOX_ACCESS_TOKEN))
             .debug(createDebugConfiguration(historyData))
@@ -194,13 +237,14 @@ class MainActivity : AppCompatActivity() {
     private fun stopTracking() {
         scope.launch {
             try {
-                publisher?.stop()
-                publisher = null
+                publisherService?.publisher?.stop()
+                publisherService?.publisher = null
                 changeNavigationButtonState(false)
             } catch (e: Exception) {
                 // TODO check Result (it) for failure and report accordingly
             }
         }
+        stopService(createServiceIntent())
     }
 
     private fun updateLocationInfo(location: Location) {

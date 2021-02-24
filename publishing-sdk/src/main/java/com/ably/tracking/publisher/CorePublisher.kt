@@ -45,23 +45,6 @@ internal fun createCorePublisher(
     return DefaultCorePublisher(ably, mapbox, resolutionPolicyFactory, routingProfile)
 }
 
-private data class PublisherState(
-    var routingProfile: RoutingProfile,
-    var locationEngineResolution: Resolution,
-    var isTracking: Boolean = false,
-    val trackables: MutableSet<Trackable> = mutableSetOf(),
-    val resolutions: MutableMap<String, Resolution> = mutableMapOf(),
-    val lastSentEnhancedLocations: MutableMap<String, Location> = mutableMapOf(),
-    var estimatedArrivalTimeInMilliseconds: Long? = null,
-    var active: Trackable? = null,
-    var lastPublisherLocation: Location? = null,
-    var destinationToSet: Destination? = null,
-    var currentDestination: Destination? = null,
-    val subscribers: MutableMap<String, MutableSet<Subscriber>> = mutableMapOf(),
-    val requests: MutableMap<String, MutableMap<Subscriber, Resolution>> = mutableMapOf(),
-    var presenceData: PresenceData = PresenceData(ClientTypes.PUBLISHER)
-)
-
 private class DefaultCorePublisher
 @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
 constructor(
@@ -105,11 +88,8 @@ constructor(
     override val connectionStates: SharedFlow<ConnectionStateChange>
         get() = _connectionStates.asSharedFlow()
 
-    // TODO - expose the [active] and [routingProfile] from the queue [state] object
-    override val active: Trackable?
-        get() = TODO("Not yet implemented")
-    override val routingProfile: RoutingProfile
-        get() = TODO("Not yet implemented")
+    override var active: Trackable? = null
+    override var routingProfile: RoutingProfile = routingProfile
 
     init {
         policy = resolutionPolicyFactory.createResolutionPolicy(
@@ -476,5 +456,33 @@ constructor(
         fun onProximityReached() {
             threshold?.let { proximityHandler?.onProximityReached(it) }
         }
+    }
+
+    private inner class PublisherState(
+        routingProfile: RoutingProfile,
+        var locationEngineResolution: Resolution,
+        var isTracking: Boolean = false,
+        val trackables: MutableSet<Trackable> = mutableSetOf(),
+        val resolutions: MutableMap<String, Resolution> = mutableMapOf(),
+        val lastSentEnhancedLocations: MutableMap<String, Location> = mutableMapOf(),
+        var estimatedArrivalTimeInMilliseconds: Long? = null,
+        active: Trackable? = null,
+        var lastPublisherLocation: Location? = null,
+        var destinationToSet: Destination? = null,
+        var currentDestination: Destination? = null,
+        val subscribers: MutableMap<String, MutableSet<Subscriber>> = mutableMapOf(),
+        val requests: MutableMap<String, MutableMap<Subscriber, Resolution>> = mutableMapOf(),
+        var presenceData: PresenceData = PresenceData(ClientTypes.PUBLISHER)
+    ) {
+        var active: Trackable? = active
+            set(value) {
+                this@DefaultCorePublisher.active = value
+                field = value
+            }
+        var routingProfile: RoutingProfile = routingProfile
+            set(value) {
+                this@DefaultCorePublisher.routingProfile = value
+                field = value
+            }
     }
 }
