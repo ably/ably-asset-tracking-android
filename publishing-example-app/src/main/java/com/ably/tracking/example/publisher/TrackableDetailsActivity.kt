@@ -15,6 +15,8 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
+const val TRACKABLE_ID_EXTRA = "TRACKABLE_ID"
+
 class TrackableDetailsActivity : PublisherServiceActivity() {
     private lateinit var appPreferences: AppPreferences
 

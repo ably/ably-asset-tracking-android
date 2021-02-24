@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
+import androidx.recyclerview.widget.LinearLayoutManager
 import kotlinx.android.synthetic.main.activity_main.*
 import pub.devrel.easypermissions.AfterPermissionGranted
 import pub.devrel.easypermissions.EasyPermissions
@@ -31,11 +32,21 @@ class MainActivity : PublisherServiceActivity() {
         addTrackableFab.setOnClickListener {
             showAddTrackableScreen()
         }
+
+        trackablesRecyclerView.adapter = trackablesAdapter
+        trackablesRecyclerView.layoutManager = LinearLayoutManager(this)
+        trackablesAdapter.onItemClicked = { onTrackableClicked(it.id) }
     }
 
     override fun onStart() {
         super.onStart()
         updateLocationSourceMethodInfo()
+    }
+
+    private fun onTrackableClicked(trackableId: String) {
+        startActivity(Intent(this, TrackableDetailsActivity::class.java).apply {
+            putExtra(TRACKABLE_ID_EXTRA, trackableId)
+        })
     }
 
     private fun updateLocationSourceMethodInfo() {
