@@ -27,9 +27,7 @@ abstract class PublisherServiceActivity : AppCompatActivity() {
          * such as when the service has crashed or has been killed.
          * This is not called when the client unbinds.
          */
-        override fun onServiceDisconnected(className: ComponentName) {
-
-        }
+        override fun onServiceDisconnected(className: ComponentName) {}
     }
 
     override fun onStart() {
@@ -48,17 +46,13 @@ abstract class PublisherServiceActivity : AppCompatActivity() {
      * Called when there's a successful connection with [PublisherService].
      * Should be overwritten in the inheriting class if it wants to perform some actions on the service connect.
      */
-    protected open fun onPublisherServiceConnected(publisherService: PublisherService) {
-
-    }
+    protected open fun onPublisherServiceConnected(publisherService: PublisherService) {}
 
     /**
      * Called when the [PublisherService] is disconnected.
      * Should be overwritten in the inheriting class if it wants to perform some actions on the service disconnect.
      */
-    protected open fun onPublisherServiceDisconnected() {
-
-    }
+    protected open fun onPublisherServiceDisconnected() {}
 
     /**
      * Creates and starts the [PublisherService].
@@ -84,5 +78,4 @@ abstract class PublisherServiceActivity : AppCompatActivity() {
     }
 
     private fun createServiceIntent() = Intent(this, PublisherService::class.java)
-
 }

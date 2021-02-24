@@ -32,6 +32,5 @@ class TrackableViewHolder(view: View) : RecyclerView.ViewHolder(view) {
     fun bind(trackable: Trackable, onItemClickedCallback: OnTrackableItemClickedCallback?) {
         itemView.trackableIdTextView.text = trackable.id
         onItemClickedCallback?.let { callback -> itemView.setOnClickListener { callback(trackable) } }
-
     }
 }

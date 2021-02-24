@@ -80,9 +80,11 @@ class MainActivity : PublisherServiceActivity() {
     }
 
     private fun onTrackableClicked(trackableId: String) {
-        startActivity(Intent(this, TrackableDetailsActivity::class.java).apply {
-            putExtra(TRACKABLE_ID_EXTRA, trackableId)
-        })
+        startActivity(
+            Intent(this, TrackableDetailsActivity::class.java).apply {
+                putExtra(TRACKABLE_ID_EXTRA, trackableId)
+            }
+        )
     }
 
     private fun updateLocationSourceMethodInfo() {

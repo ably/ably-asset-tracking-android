@@ -21,7 +21,7 @@
   <string name="stop_tracking_dialog_title">Stop tracking</string>
   <string name="stop_tracking_dialog_message">Are you sure that you want to remove this trackable?</string>
   <string name="dialog_positive_button">OK</string>
-  <string name="dialog_negative_button">CANCEL</string>
+  <string name="dialog_negative_button">Cancel</string>
   <string name="trackable_list">Trackable List</string>
 
   <string name="preferences_general_category_title">Navigation Settings</string>

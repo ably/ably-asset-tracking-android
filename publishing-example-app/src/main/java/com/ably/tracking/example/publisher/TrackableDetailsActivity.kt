@@ -77,7 +77,6 @@ class TrackableDetailsActivity : PublisherServiceActivity() {
             }
             .setNegativeButton(R.string.dialog_negative_button, null)
             .show()
-
     }
 
     private fun updateLocationInfo(location: Location) {
