@@ -54,6 +54,15 @@ class MainActivity : PublisherServiceActivity() {
             trackablesUpdateJob = publisher.trackables
                 .onEach {
                     trackablesAdapter.trackables = it.toList()
+                    if (it.isEmpty() && publisherService.publisher != null) {
+                        try {
+                            publisherService.publisher?.stop()
+                            publisherService.publisher = null
+                        } catch (e: Exception) {
+                            // TODO check Result (it) for failure and report accordingly
+                        }
+                        stopPublisherService()
+                    }
                 }
                 .launchIn(scope)
         }
