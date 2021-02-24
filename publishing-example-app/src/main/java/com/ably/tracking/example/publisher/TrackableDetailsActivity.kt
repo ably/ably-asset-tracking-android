@@ -7,6 +7,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.core.widget.ImageViewCompat
 import com.ably.tracking.ConnectionState
+import com.ably.tracking.publisher.Trackable
 import kotlinx.android.synthetic.main.activity_trackable_details.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -20,6 +21,7 @@ const val TRACKABLE_ID_EXTRA = "TRACKABLE_ID"
 class TrackableDetailsActivity : PublisherServiceActivity() {
     private lateinit var appPreferences: AppPreferences
     private lateinit var trackableId: String
+    private var trackables: Set<Trackable>? = null
 
     // SupervisorJob() is used to keep the scope working after any of its children fail
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
@@ -52,6 +54,9 @@ class TrackableDetailsActivity : PublisherServiceActivity() {
             locations
                 .onEach { updateLocationInfo(it.location) }
                 .launchIn(scope)
+            trackables
+                .onEach { this@TrackableDetailsActivity.trackables = it }
+                .launchIn(scope)
         }
     }
 
@@ -65,8 +70,9 @@ class TrackableDetailsActivity : PublisherServiceActivity() {
             .setMessage(R.string.stop_tracking_dialog_message)
             .setPositiveButton(R.string.dialog_positive_button) { _, _ ->
                 scope.launch {
-//                     TODO - remove trackable from publisher and finish the activity
-//                    publisher?.remove()
+                    val trackableToRemove = trackables?.find { trackable -> trackable.id == trackableId }
+                    trackableToRemove?.let { publisherService?.publisher?.remove(it) }
+                    finish()
                 }
             }
             .setNegativeButton(R.string.dialog_negative_button, null)
