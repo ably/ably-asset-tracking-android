@@ -218,7 +218,16 @@ data class Trackable(
     val metadata: String? = null,
     val destination: Destination? = null,
     val constraints: ResolutionConstraints? = null
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        when (other) {
+            null -> false
+            is Trackable -> other.id == id
+            else -> false
+        }
+
+    override fun hashCode(): Int = id.hashCode()
+}
 
 data class Subscriber(val id: String, val trackable: Trackable)
 
