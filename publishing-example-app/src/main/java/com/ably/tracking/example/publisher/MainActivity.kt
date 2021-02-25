@@ -63,10 +63,12 @@ class MainActivity : AppCompatActivity() {
                 } else {
                     changeNavigationButtonState(true)
                     service.publisher?.let { publisher ->
-                        trackingIdEditText.setText(publisher.active?.id)
-                        publisher.connectionStates
-                            .onEach { updateAblyStateInfo(it.state) }
-                            .launchIn(scope)
+                        publisher.active?.id?.let { trackableId ->
+                            trackingIdEditText.setText(trackableId)
+                            publisher.getAssetStatus(trackableId)
+                                ?.onEach { updateAssetStatusInfo(it) }
+                                ?.launchIn(scope)
+                        }
                         publisher.locations
                             .onEach { updateLocationInfo(it.location) }
                             .launchIn(scope)
