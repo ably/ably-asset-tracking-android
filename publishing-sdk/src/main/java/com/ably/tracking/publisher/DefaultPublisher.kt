@@ -39,8 +39,6 @@ constructor(
         get() = core.locationHistory
 
     init {
-        Timber.w("Started.")
-
         core = createCorePublisher(ably, mapbox, resolutionPolicyFactory, routingProfile, batteryDataProvider)
 
         core.enqueue(StartEvent())

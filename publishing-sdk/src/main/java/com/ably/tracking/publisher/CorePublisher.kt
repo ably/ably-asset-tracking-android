@@ -29,7 +29,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import timber.log.Timber
 
 internal interface CorePublisher {
     fun enqueue(event: AdhocEvent)
@@ -152,9 +151,6 @@ constructor(
                     is StartEvent -> {
                         if (!state.isTracking) {
                             state.isTracking = true
-
-                            Timber.e("startLocationUpdates")
-
                             mapbox.startTrip()
                         }
                     }
