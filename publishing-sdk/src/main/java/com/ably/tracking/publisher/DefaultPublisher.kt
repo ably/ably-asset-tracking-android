@@ -101,4 +101,6 @@ constructor(
             )
         }
     }
+
+    override fun getAssetStatus(trackableId: String): StateFlow<AssetStatus>? = core.assetStatusFlows[trackableId]
 }

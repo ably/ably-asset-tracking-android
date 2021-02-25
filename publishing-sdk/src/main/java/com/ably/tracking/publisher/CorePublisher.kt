@@ -39,6 +39,7 @@ internal interface CorePublisher {
     val locationHistory: SharedFlow<LocationHistoryData>
     val active: Trackable?
     val routingProfile: RoutingProfile
+    val assetStatusFlows: Map<String, StateFlow<AssetStatus>>
 }
 
 @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
@@ -109,6 +110,7 @@ constructor(
 
     override var active: Trackable? = null
     override var routingProfile: RoutingProfile = routingProfile
+    override var assetStatusFlows: Map<String, StateFlow<AssetStatus>> = emptyMap()
 
     init {
         policy = resolutionPolicyFactory.createResolutionPolicy(
@@ -248,6 +250,7 @@ constructor(
                         val assetStatusFlow =
                             state.assetStatusFlows[event.trackable.id] ?: MutableStateFlow(assetStatus)
                         state.assetStatusFlows[event.trackable.id] = assetStatusFlow
+                        assetStatusFlows = state.assetStatusFlows
                         state.assetStatuses[event.trackable.id] = assetStatus
                         event.handler(Result.success(assetStatusFlow.asStateFlow()))
                     }
@@ -260,6 +263,7 @@ constructor(
                         scope.launch { _trackables.emit(state.trackables) }
                         if (wasTrackablePresent) {
                             state.assetStatusFlows.remove(event.trackable.id) // there is no way to stop the StateFlow so we just remove it
+                            assetStatusFlows = state.assetStatusFlows
                             state.assetStatuses.remove(event.trackable.id)
                             hooks.trackables?.onTrackableRemoved(event.trackable)
                             removeAllSubscribers(event.trackable, state)

@@ -99,6 +99,14 @@ interface Publisher {
         @JvmSynthetic get
 
     /**
+     * Returns an asset status flow representing the [AssetStatus] for an already added [Trackable].
+     *
+     * @param trackableId The ID of an already added trackable.
+     * @return [StateFlow] that represents the [AssetStatus] of the added [Trackable]. If the trackable doesn't exist it returns null.
+     */
+    fun getAssetStatus(trackableId: String): StateFlow<AssetStatus>?
+
+    /**
      * Stops this publisher from publishing locations. Once a publisher has been stopped, it cannot be restarted.
      */
     @JvmSynthetic
