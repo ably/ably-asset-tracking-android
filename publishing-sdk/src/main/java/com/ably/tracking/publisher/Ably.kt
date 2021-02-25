@@ -38,6 +38,8 @@ internal interface Ably {
      *
      * @param trackableId The ID of the trackable channel.
      * @param listener The function that will be called each time a presence message is received.
+     *
+     * @throws com.ably.tracking.AblyException if something goes wrong.
      */
     fun subscribeForPresenceMessages(trackableId: String, listener: (PresenceMessage) -> Unit)
 
@@ -48,6 +50,8 @@ internal interface Ably {
      *
      * @param trackableId The ID of the trackable channel.
      * @param locationUpdate The location update that is sent to the channel.
+     *
+     * @throws com.ably.tracking.AblyException if something goes wrong.
      */
     fun sendEnhancedLocation(trackableId: String, locationUpdate: EnhancedLocationUpdate)
 
@@ -58,7 +62,7 @@ internal interface Ably {
      *
      * @param trackableId The ID of the trackable channel.
      * @param presenceData The data that will be send via the presence channel.
-     * @param callback The function that will be called when connecting completes.
+     * @param callback The function that will be called when connecting completes. If something goes wrong it will be called with [com.ably.tracking.AblyException].
      */
     fun connect(trackableId: String, presenceData: PresenceData, callback: (Result<Unit>) -> Unit)
 
@@ -69,7 +73,7 @@ internal interface Ably {
      *
      * @param trackableId The ID of the trackable channel.
      * @param presenceData The data that will be send via the presence channel.
-     * @param callback The function that will be called when connecting completes.
+     * @param callback The function that will be called when updating presence data completes. If something goes wrong it will be called with [com.ably.tracking.AblyException].
      */
     fun updatePresenceData(trackableId: String, presenceData: PresenceData, callback: (Result<Unit>) -> Unit)
 
@@ -79,7 +83,7 @@ internal interface Ably {
      *
      * @param trackableId The ID of the trackable channel.
      * @param presenceData The data that will be send via the presence channel.
-     * @param callback The function that will be called when connecting completes.
+     * @param callback The function that will be called when disconnecting completes. If something goes wrong it will be called with [com.ably.tracking.AblyException].
      */
     fun disconnect(trackableId: String, presenceData: PresenceData, callback: (Result<Unit>) -> Unit)
 
@@ -124,7 +128,7 @@ internal class DefaultAbly(
                         }
                     )
                 } catch (ablyException: AblyException) {
-                    callback(Result.failure(ablyException))
+                    callback(Result.failure(ablyException.errorInfo.toTrackingException()))
                 }
             }
         } else {
@@ -150,7 +154,7 @@ internal class DefaultAbly(
                     }
                 )
             } catch (ablyException: AblyException) {
-                callback(Result.failure(ablyException))
+                callback(Result.failure(ablyException.errorInfo.toTrackingException()))
             }
         } else {
             callback(Result.success(Unit))
@@ -163,17 +167,17 @@ internal class DefaultAbly(
         try {
             channels[trackableId]?.publish(EventNames.ENHANCED, locationUpdateJson)
         } catch (exception: AblyException) {
-            Timber.e(exception, "sendEnhancedLocationMessage: publishing: $locationUpdateJson")
+            throw exception.errorInfo.toTrackingException()
         }
     }
 
     override fun subscribeForPresenceMessages(trackableId: String, listener: (PresenceMessage) -> Unit) {
         channels[trackableId]?.let { channel ->
-            channel.presence.get(true).forEach { listener(it.toTracking(gson)) }
             try {
+                channel.presence.get(true).forEach { listener(it.toTracking(gson)) }
                 channel.presence.subscribe { listener(it.toTracking(gson)) }
             } catch (exception: AblyException) {
-                Timber.e(exception, "subscribeForPresenceMessages: Cannot subscribe to presence messages")
+                throw exception.errorInfo.toTrackingException()
             }
         }
     }
@@ -193,7 +197,7 @@ internal class DefaultAbly(
                 }
             )
         } catch (exception: AblyException) {
-            callback(Result.failure(exception))
+            callback(Result.failure(exception.errorInfo.toTrackingException()))
         }
     }
 
