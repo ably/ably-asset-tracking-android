@@ -31,6 +31,7 @@ internal interface CorePublisher {
     fun request(request: Request)
     val locations: SharedFlow<LocationUpdate>
     val connectionStates: SharedFlow<ConnectionStateChange>
+    val trackables: SharedFlow<Set<Trackable>>
     val active: Trackable?
     val routingProfile: RoutingProfile
 }
@@ -57,6 +58,7 @@ constructor(
     private val sendEventChannel: SendChannel<Event>
     private val _locations = MutableSharedFlow<LocationUpdate>(replay = 1)
     private val _connectionStates = MutableSharedFlow<ConnectionStateChange>(replay = 1)
+    private val _trackables = MutableSharedFlow<Set<Trackable>>(replay = 1)
     private val thresholdChecker = ThresholdChecker()
     private val policy: ResolutionPolicy
     private val hooks = Hooks()
@@ -87,6 +89,8 @@ constructor(
         get() = _locations.asSharedFlow()
     override val connectionStates: SharedFlow<ConnectionStateChange>
         get() = _connectionStates.asSharedFlow()
+    override val trackables: SharedFlow<Set<Trackable>>
+        get() = _trackables.asSharedFlow()
 
     override var active: Trackable? = null
     override var routingProfile: RoutingProfile = routingProfile
@@ -220,6 +224,7 @@ constructor(
                     }
                     is JoinPresenceSuccessEvent -> {
                         state.trackables.add(event.trackable)
+                        scope.launch { _trackables.emit(state.trackables) }
                         resolveResolution(event.trackable, state)
                         hooks.trackables?.onTrackableAdded(event.trackable)
                         event.handler(Result.success(Unit))
@@ -230,6 +235,7 @@ constructor(
                     }
                     is RemoveTrackableEvent -> {
                         val wasTrackablePresent = state.trackables.remove(event.trackable)
+                        scope.launch { _trackables.emit(state.trackables) }
                         if (wasTrackablePresent) {
                             hooks.trackables?.onTrackableRemoved(event.trackable)
                             removeAllSubscribers(event.trackable, state)
