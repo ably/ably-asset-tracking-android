@@ -10,6 +10,7 @@ import com.ably.tracking.Resolution
 import com.ably.tracking.test.common.UnitExpectation
 import com.ably.tracking.test.common.UnitResultExpectation
 import com.ably.tracking.test.common.testLogD
+import com.google.gson.Gson
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -20,6 +21,7 @@ private const val ABLY_API_KEY = BuildConfig.ABLY_API_KEY
 
 @RunWith(AndroidJUnit4::class)
 class PublisherIntegrationTests {
+    val gson = Gson()
 
     @Test
     fun createAndStartPublisherAndWaitUntilDataEnds() {
@@ -82,7 +84,7 @@ class PublisherIntegrationTests {
     private fun createAndStartPublisher(
         context: Context,
         resolution: Resolution = Resolution(Accuracy.BALANCED, 1000L, 0.0),
-        locationData: String,
+        locationData: LocationHistoryData,
         onLocationDataEnded: () -> Unit
     ) =
         Publisher.publishers()
@@ -94,6 +96,8 @@ class PublisherIntegrationTests {
             .debug(DebugConfiguration(locationSource = LocationSourceRaw(locationData, onLocationDataEnded)))
             .start()
 
-    private fun getLocationData(context: Context) =
-        context.assets.open("location_history_small.txt").use { String(it.readBytes()) }
+    private fun getLocationData(context: Context): LocationHistoryData {
+        val historyString = context.assets.open("location_history_small.txt").use { String(it.readBytes()) }
+        return gson.fromJson(historyString, LocationHistoryData::class.java)
+    }
 }

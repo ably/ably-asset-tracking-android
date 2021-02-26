@@ -218,7 +218,16 @@ data class Trackable(
     val metadata: String? = null,
     val destination: Destination? = null,
     val constraints: ResolutionConstraints? = null
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        when (other) {
+            null -> false
+            is Trackable -> other.id == id
+            else -> false
+        }
+
+    override fun hashCode(): Int = id.hashCode()
+}
 
 data class Subscriber(val id: String, val trackable: Trackable)
 
@@ -268,25 +277,25 @@ data class DefaultResolutionSet(
      * The resolution to select if above the [proximityThreshold][DefaultResolutionConstraints.proximityThreshold],
      * with no subscribers.
      */
-    val farWithoutSubscriber: Resolution,
+    val farWithoutSubscriber: Resolution?,
 
     /**
      * The resolution to select if above the [proximityThreshold][DefaultResolutionConstraints.proximityThreshold],
      * with one or more subscribers.
      */
-    val farWithSubscriber: Resolution,
+    val farWithSubscriber: Resolution?,
 
     /**
      * The resolution to select if below the [proximityThreshold][DefaultResolutionConstraints.proximityThreshold],
      * with no subscribers.
      */
-    val nearWithoutSubscriber: Resolution,
+    val nearWithoutSubscriber: Resolution?,
 
     /**
      * The resolution to select if below the [proximityThreshold][DefaultResolutionConstraints.proximityThreshold],
      * with one or more subscribers.
      */
-    val nearWithSubscriber: Resolution
+    val nearWithSubscriber: Resolution?
 ) {
     /**
      * Creates an instance of this class, using a single [Resolution] for all states.
@@ -294,9 +303,15 @@ data class DefaultResolutionSet(
      * @param resolution The resolution to be used to populate all fields.
      */
     constructor(resolution: Resolution) : this(resolution, resolution, resolution, resolution)
+
+    init {
+        if (farWithSubscriber == null && farWithoutSubscriber == null && nearWithSubscriber == null && nearWithoutSubscriber == null) {
+            throw NullPointerException("All resolutions may not be null. At least one must be specified.")
+        }
+    }
 }
 
-internal fun DefaultResolutionSet.getResolution(isNear: Boolean, hasSubscriber: Boolean): Resolution = when {
+internal fun DefaultResolutionSet.getResolution(isNear: Boolean, hasSubscriber: Boolean): Resolution? = when {
     isNear && hasSubscriber -> nearWithSubscriber
     isNear && !hasSubscriber -> nearWithoutSubscriber
     !isNear && hasSubscriber -> farWithSubscriber
@@ -366,9 +381,9 @@ enum class RoutingProfile {
 // https://github.com/ably/ably-asset-tracking-android/issues/19
 data class DebugConfiguration(
     val locationSource: LocationSource? = null,
-    val locationHistoryHandler: ((String) -> Unit)? = null
+    val locationHistoryHandler: ((LocationHistoryData) -> Unit)? = null
 )
 
 sealed class LocationSource
 data class LocationSourceAbly(val simulationChannelName: String) : LocationSource()
-data class LocationSourceRaw(val historyData: String, val onDataEnded: (() -> Unit)? = null) : LocationSource()
+data class LocationSourceRaw(val historyData: LocationHistoryData, val onDataEnded: (() -> Unit)? = null) : LocationSource()

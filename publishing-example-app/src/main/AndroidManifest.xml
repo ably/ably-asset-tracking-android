@@ -2,6 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
   package="com.ably.tracking.example.publisher">
 
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+
   <application
     android:name=".PublishingExampleApplication"
     android:allowBackup="true"
@@ -23,6 +25,8 @@
     <activity
       android:name=".SettingsActivity"
       android:screenOrientation="portrait" />
+
+    <service android:name=".PublisherService" />
   </application>
 
 </manifest>

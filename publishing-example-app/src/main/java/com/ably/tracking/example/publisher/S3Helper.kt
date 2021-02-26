@@ -1,10 +1,13 @@
 package com.ably.tracking.example.publisher
 
 import android.content.Context
+import com.ably.tracking.publisher.LOCATION_HISTORY_VERSION
+import com.ably.tracking.publisher.LocationHistoryData
 import com.amplifyframework.auth.cognito.AWSCognitoAuthPlugin
 import com.amplifyframework.core.Amplify
 import com.amplifyframework.core.AmplifyConfiguration
 import com.amplifyframework.storage.s3.AWSS3StoragePlugin
+import com.google.gson.Gson
 import timber.log.Timber
 import java.io.File
 import java.text.DecimalFormat
@@ -16,6 +19,7 @@ import kotlin.math.pow
 
 object S3Helper {
 
+    private lateinit var gson: Gson
     private var isInitialized = false
 
     fun init(context: Context) {
@@ -26,6 +30,7 @@ object S3Helper {
                 AmplifyConfiguration.builder(context).devMenuEnabled(false).build(),
                 context
             )
+            gson = Gson()
             isInitialized = true
         }
     }
@@ -66,14 +71,17 @@ object S3Helper {
     fun downloadHistoryData(
         context: Context,
         filename: String,
-        onHistoryDataDownloaded: (historyData: String) -> Unit,
+        onHistoryDataDownloaded: (historyData: LocationHistoryData) -> Unit,
         onUninitialized: (() -> Unit)? = null
     ) {
         if (isInitialized) {
             Amplify.Storage.downloadFile(
                 filename,
                 File(context.getExternalFilesDir(null), filename),
-                { result -> onHistoryDataDownloaded(result.file.readText()) },
+                { result ->
+                    val historyJson = result.file.readText()
+                    onHistoryDataDownloaded(gson.fromJson(historyJson, LocationHistoryData::class.java))
+                },
                 { error -> Timber.e(error, "Error when downloading S3 file") }
             )
         } else {
@@ -83,13 +91,14 @@ object S3Helper {
 
     fun uploadHistoryData(
         context: Context,
-        historyData: String,
+        historyData: LocationHistoryData,
         onUninitialized: (() -> Unit)? = null
     ) {
         if (isInitialized) {
-            val filename = SimpleDateFormat("yyyy-MM-dd_HH:mm:ss", Locale.US).format(Date())
+            val dateString = SimpleDateFormat("yyyy-MM-dd_HH:mm:ss", Locale.US).format(Date())
+            val filename = "${LOCATION_HISTORY_VERSION}_$dateString"
             File(context.getExternalFilesDir(null), filename).let { fileToUpload ->
-                fileToUpload.writeText(historyData)
+                fileToUpload.writeText(gson.toJson(historyData))
                 Amplify.Storage.uploadFile(
                     filename,
                     fileToUpload,

@@ -1,6 +1,9 @@
 package com.ably.tracking.common
 
 import android.location.Location
+import com.ably.tracking.GeoJsonGeometry
+import com.ably.tracking.GeoJsonMessage
+import com.ably.tracking.GeoJsonProperties
 import com.google.gson.Gson
 import io.ably.lib.types.Message
 

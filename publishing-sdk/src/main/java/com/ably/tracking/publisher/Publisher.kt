@@ -90,6 +90,11 @@ interface Publisher {
     val connectionStates: SharedFlow<ConnectionStateChange>
 
     /**
+     * The shared flow emitting all trackables tracked by the publisher.
+     */
+    val trackables: SharedFlow<Set<Trackable>>
+
+    /**
      * Stops this publisher from publishing locations. Once a publisher has been stopped, it cannot be restarted.
      */
     @JvmSynthetic

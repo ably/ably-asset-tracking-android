@@ -220,6 +220,125 @@ class DefaultResolutionPolicyTest {
         Assert.assertEquals(trackableResolutionSet.nearWithSubscriber, resolvedResolution)
     }
 
+    @Test
+    fun `resolving a request with resolution set should return default resolution if nearWithSubscriber resolution is null and when below threshold and at least one subscriber is present`() {
+        // given
+        val trackableResolutionSet = DefaultResolutionSet(
+            farWithoutSubscriber = anyResolution(),
+            farWithSubscriber = anyResolution(),
+            nearWithoutSubscriber = anyResolution(),
+            nearWithSubscriber = null
+        )
+        val trackable = createTrackable(trackableResolutionSet)
+        val resolutionRequest = TrackableResolutionRequest(trackable, emptySet())
+        mockBelowThresholdWithSubscribers(trackable)
+
+        // when
+        val resolvedResolution = policy.resolve(resolutionRequest)
+
+        // then
+        Assert.assertEquals(defaultResolution, resolvedResolution)
+    }
+
+    @Test
+    fun `resolving a request with resolution set should return default resolution if nearWithoutSubscriber resolution is null and when below threshold and no subscriber is present`() {
+        // given
+        val trackableResolutionSet = DefaultResolutionSet(
+            farWithoutSubscriber = anyResolution(),
+            farWithSubscriber = anyResolution(),
+            nearWithoutSubscriber = null,
+            nearWithSubscriber = anyResolution()
+        )
+        val trackable = createTrackable(trackableResolutionSet)
+        val resolutionRequest = TrackableResolutionRequest(trackable, emptySet())
+        mockBelowThresholdWithoutSubscribers(trackable)
+
+        // when
+        val resolvedResolution = policy.resolve(resolutionRequest)
+
+        // then
+        Assert.assertEquals(defaultResolution, resolvedResolution)
+    }
+
+    @Test
+    fun `resolving a request with resolution set should return nearWithSubscriber if farWithSubscriber resolution is null and when above threshold and at least one subscriber is present`() {
+        // given
+        val trackableResolutionSet = DefaultResolutionSet(
+            farWithoutSubscriber = defaultResolution,
+            farWithSubscriber = null,
+            nearWithoutSubscriber = defaultResolution,
+            nearWithSubscriber = anyResolution()
+        )
+        val trackable = createTrackable(trackableResolutionSet)
+        val resolutionRequest = TrackableResolutionRequest(trackable, emptySet())
+        mockAboveThresholdWithSubscribers(trackable)
+
+        // when
+        val resolvedResolution = policy.resolve(resolutionRequest)
+
+        // then
+        Assert.assertEquals(trackableResolutionSet.nearWithSubscriber, resolvedResolution)
+    }
+
+    @Test
+    fun `resolving a request with resolution set should return nearWithoutSubscriber if farWithoutSubscriber resolution is null and when above threshold and no subscriber is present`() {
+        // given
+        val trackableResolutionSet = DefaultResolutionSet(
+            farWithoutSubscriber = null,
+            farWithSubscriber = defaultResolution,
+            nearWithoutSubscriber = anyResolution(),
+            nearWithSubscriber = defaultResolution
+        )
+        val trackable = createTrackable(trackableResolutionSet)
+        val resolutionRequest = TrackableResolutionRequest(trackable, emptySet())
+
+        // when
+        val resolvedResolution = policy.resolve(resolutionRequest)
+
+        // then
+        Assert.assertEquals(trackableResolutionSet.nearWithoutSubscriber, resolvedResolution)
+    }
+
+    @Test
+    fun `resolving a request with resolution set should return default resolution if farWithSubscriber and nearWithSubscriber resolutions are null and when above threshold and at least one subscriber is present`() {
+
+        // given
+        val trackableResolutionSet = DefaultResolutionSet(
+            farWithoutSubscriber = anyResolution(),
+            farWithSubscriber = null,
+            nearWithoutSubscriber = anyResolution(),
+            nearWithSubscriber = null
+        )
+        val trackable = createTrackable(trackableResolutionSet)
+        val resolutionRequest = TrackableResolutionRequest(trackable, emptySet())
+        mockAboveThresholdWithSubscribers(trackable)
+
+        // when
+        val resolvedResolution = policy.resolve(resolutionRequest)
+
+        // then
+        Assert.assertEquals(defaultResolution, resolvedResolution)
+    }
+
+    @Test
+    fun `resolving a request with resolution set should return default resolution if farWithoutSubscriber and nearWithoutSubscriber resolutions are null and when above threshold and no subscriber is present`() {
+        // given
+        val trackableResolutionSet = DefaultResolutionSet(
+            farWithoutSubscriber = null,
+            farWithSubscriber = anyResolution(),
+            nearWithoutSubscriber = null,
+            nearWithSubscriber = anyResolution()
+        )
+        val trackable = createTrackable(trackableResolutionSet)
+        val resolutionRequest = TrackableResolutionRequest(trackable, emptySet())
+
+        // when
+        val resolvedResolution = policy.resolve(resolutionRequest)
+
+        // then
+        Assert.assertEquals(defaultResolution, resolvedResolution)
+    }
+
     /**
      * [level] should be between [DefaultBatteryDataProvider.MINIMUM_BATTERY_PERCENTAGE] and [DefaultBatteryDataProvider.MAXIMUM_BATTERY_PERCENTAGE]
      */
