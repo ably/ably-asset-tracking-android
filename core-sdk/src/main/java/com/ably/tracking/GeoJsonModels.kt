@@ -11,7 +11,6 @@ data class GeoJsonGeometry(val type: String, val coordinates: List<Double>)
 
 data class GeoJsonProperties(
     val accuracyHorizontal: Float,
-    val altitude: Double,
     val bearing: Float,
     val speed: Float,
     val time: Double

@@ -14,8 +14,8 @@ class GeoJsonMappersTest {
         val gson = Gson()
         val geoJsonMessage = GeoJsonMessage(
             GeoJsonTypes.FEATURE,
-            GeoJsonGeometry(GeoJsonTypes.POINT, listOf(1.0, 2.0)),
-            GeoJsonProperties(1F, 1.0, 2F, 3F, 2.0)
+            GeoJsonGeometry(GeoJsonTypes.POINT, listOf(1.0, 2.0, 1.0)),
+            GeoJsonProperties(1F, 2F, 3F, 2.0)
         )
 
         // when
@@ -23,7 +23,7 @@ class GeoJsonMappersTest {
 
         // then
         Assert.assertEquals(
-            "[{\"type\":\"Feature\",\"geometry\":{\"type\":\"Point\",\"coordinates\":[1.0,2.0]},\"properties\":{\"accuracyHorizontal\":1.0,\"altitude\":1.0,\"bearing\":2.0,\"speed\":3.0,\"time\":2.0}}]",
+            "[{\"type\":\"Feature\",\"geometry\":{\"type\":\"Point\",\"coordinates\":[1.0,2.0,1.0]},\"properties\":{\"accuracyHorizontal\":1.0,\"bearing\":2.0,\"speed\":3.0,\"time\":2.0}}]",
             jsonString
         )
     }
@@ -34,8 +34,8 @@ class GeoJsonMappersTest {
         val gson = Gson()
         val geoJsonMessage = GeoJsonMessage(
             GeoJsonTypes.FEATURE,
-            GeoJsonGeometry(GeoJsonTypes.POINT, listOf(1.0, 2.0)),
-            GeoJsonProperties(1F, 1.0, 2F, 3F, 2.0)
+            GeoJsonGeometry(GeoJsonTypes.POINT, listOf(1.0, 2.0, 1.0)),
+            GeoJsonProperties(1F, 2F, 3F, 2.0)
         )
         val geoJsonMessages = listOf(geoJsonMessage, geoJsonMessage)
 
@@ -45,8 +45,8 @@ class GeoJsonMappersTest {
         // then
         Assert.assertEquals(
             "[" +
-                "{\"type\":\"Feature\",\"geometry\":{\"type\":\"Point\",\"coordinates\":[1.0,2.0]},\"properties\":{\"accuracyHorizontal\":1.0,\"altitude\":1.0,\"bearing\":2.0,\"speed\":3.0,\"time\":2.0}}," +
-                "{\"type\":\"Feature\",\"geometry\":{\"type\":\"Point\",\"coordinates\":[1.0,2.0]},\"properties\":{\"accuracyHorizontal\":1.0,\"altitude\":1.0,\"bearing\":2.0,\"speed\":3.0,\"time\":2.0}}" +
+                "{\"type\":\"Feature\",\"geometry\":{\"type\":\"Point\",\"coordinates\":[1.0,2.0,1.0]},\"properties\":{\"accuracyHorizontal\":1.0,\"bearing\":2.0,\"speed\":3.0,\"time\":2.0}}," +
+                "{\"type\":\"Feature\",\"geometry\":{\"type\":\"Point\",\"coordinates\":[1.0,2.0,1.0]},\"properties\":{\"accuracyHorizontal\":1.0,\"bearing\":2.0,\"speed\":3.0,\"time\":2.0}}" +
                 "]",
             jsonString
         )

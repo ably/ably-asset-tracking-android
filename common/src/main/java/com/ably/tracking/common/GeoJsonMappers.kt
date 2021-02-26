@@ -10,10 +10,9 @@ import io.ably.lib.types.Message
 fun Location.toGeoJson(): GeoJsonMessage =
     GeoJsonMessage(
         GeoJsonTypes.FEATURE,
-        GeoJsonGeometry(GeoJsonTypes.POINT, listOf(longitude, latitude)),
+        GeoJsonGeometry(GeoJsonTypes.POINT, listOf(longitude, latitude, altitude)),
         GeoJsonProperties(
             accuracy,
-            altitude,
             bearing,
             speed,
             time.toDouble() / MILLISECONDS_PER_SECOND
@@ -30,8 +29,8 @@ fun GeoJsonMessage.toLocation(): Location =
     Location(LOCATION_TYPE_FUSED).apply {
         longitude = geometry.coordinates[GEOMETRY_LONG_INDEX]
         latitude = geometry.coordinates[GEOMETRY_LAT_INDEX]
+        altitude = geometry.coordinates[GEOMETRY_ALT_INDEX]
         accuracy = properties.accuracyHorizontal
-        altitude = properties.altitude
         bearing = properties.bearing
         speed = properties.speed
         time = (properties.time * MILLISECONDS_PER_SECOND).toLong()

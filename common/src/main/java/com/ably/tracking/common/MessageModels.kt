@@ -11,6 +11,7 @@ object GeoJsonTypes {
 
 const val GEOMETRY_LONG_INDEX = 0
 const val GEOMETRY_LAT_INDEX = 1
+const val GEOMETRY_ALT_INDEX = 2
 
 fun GeoJsonMessage.synopsis(): String =
     "[time:${properties.time}; lon:${geometry.coordinates[GEOMETRY_LONG_INDEX]} lat:${geometry.coordinates[GEOMETRY_LAT_INDEX]}; brg:${properties.bearing}]"
@@ -25,6 +26,7 @@ data class PresenceData(val type: String, val resolution: Resolution? = null)
 
 data class EnhancedLocationUpdateMessage(
     val location: GeoJsonMessage,
+    val batteryLevel: Float?,
     val intermediateLocations: List<GeoJsonMessage>,
     val type: LocationUpdateType
 )

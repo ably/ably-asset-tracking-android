@@ -10,8 +10,9 @@ internal interface BatteryDataProvider {
 
     /**
      * Returns current battery value in the range 0.0f (no battery) to 100.0f (full battery).
+     * If the battery status isn't available it returns null.
      *
-     * @return Current battery value in the range 0.0f to 100.0f
+     * @return Current battery value in the range 0.0f to 100.0f or null if data not available.
      */
     fun getCurrentBatteryPercentage(): Float?
 }

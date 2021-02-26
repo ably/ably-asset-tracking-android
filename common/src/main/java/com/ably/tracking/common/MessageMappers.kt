@@ -9,13 +9,21 @@ fun PresenceMessage.getPresenceData(gson: Gson): PresenceData =
     gson.fromJson(data as String, PresenceData::class.java)
 
 fun EnhancedLocationUpdate.toJson(gson: Gson): String =
-    gson.toJson(EnhancedLocationUpdateMessage(location.toGeoJson(), intermediateLocations.map { it.toGeoJson() }, type))
+    gson.toJson(
+        EnhancedLocationUpdateMessage(
+            location.toGeoJson(),
+            batteryLevel,
+            intermediateLocations.map { it.toGeoJson() },
+            type
+        )
+    )
 
 fun Message.getEnhancedLocationUpdate(gson: Gson): EnhancedLocationUpdate =
     gson.fromJson(data as String, EnhancedLocationUpdateMessage::class.java)
         .let { message ->
             EnhancedLocationUpdate(
                 message.location.toLocation(),
+                message.batteryLevel,
                 message.intermediateLocations.map { it.toLocation() },
                 message.type
             )
