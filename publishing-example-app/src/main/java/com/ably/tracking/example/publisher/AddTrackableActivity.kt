@@ -11,6 +11,7 @@ import com.ably.tracking.Resolution
 import com.ably.tracking.publisher.DefaultProximity
 import com.ably.tracking.publisher.DefaultResolutionConstraints
 import com.ably.tracking.publisher.DefaultResolutionSet
+import com.ably.tracking.publisher.LocationHistoryData
 import com.ably.tracking.publisher.LocationSource
 import com.ably.tracking.publisher.LocationSourceAbly
 import com.ably.tracking.publisher.LocationSourceRaw
@@ -74,7 +75,7 @@ class AddTrackableActivity : PublisherServiceActivity() {
     }
 
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
-    private fun startPublisherAndAddTrackable(trackableId: String, historyData: String? = null) {
+    private fun startPublisherAndAddTrackable(trackableId: String, historyData: LocationHistoryData? = null) {
         if (publisherService?.publisher == null) {
             publisherService?.startPublisher(
                 defaultResolution = Resolution(Accuracy.MINIMUM, 1000L, 1.0),
@@ -119,10 +120,10 @@ class AddTrackableActivity : PublisherServiceActivity() {
         }
     }
 
-    private fun createLocationSource(historyData: String? = null): LocationSource? =
+    private fun createLocationSource(historyData: LocationHistoryData? = null): LocationSource? =
         when (getLocationSourceType()) {
-            LocationSourceType.ABLY -> LocationSourceAbly(appPreferences.getSimulationChannel())
-            LocationSourceType.S3 -> LocationSourceRaw(historyData!!)
+            LocationSourceType.ABLY -> LocationSourceAbly.create(appPreferences.getSimulationChannel())
+            LocationSourceType.S3 -> LocationSourceRaw.create(historyData!!)
             LocationSourceType.PHONE -> null
         }
 
@@ -133,7 +134,7 @@ class AddTrackableActivity : PublisherServiceActivity() {
             else -> LocationSourceType.PHONE
         }
 
-    private fun downloadLocationHistoryData(onHistoryDataDownloaded: (historyData: String) -> Unit) {
+    private fun downloadLocationHistoryData(onHistoryDataDownloaded: (historyData: LocationHistoryData) -> Unit) {
         S3Helper.downloadHistoryData(
             this,
             appPreferences.getS3File(),

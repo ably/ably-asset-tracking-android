@@ -6,7 +6,7 @@ import android.os.Bundle
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.core.widget.ImageViewCompat
-import com.ably.tracking.ConnectionState
+import com.ably.tracking.AssetStatus
 import com.ably.tracking.publisher.Trackable
 import kotlinx.android.synthetic.main.activity_trackable_details.*
 import kotlinx.coroutines.CoroutineScope
@@ -48,9 +48,9 @@ class TrackableDetailsActivity : PublisherServiceActivity() {
 
     private fun listenForPublisherChanges(publisherService: PublisherService?) {
         publisherService?.publisher?.apply {
-            connectionStates
-                .onEach { updateAblyStateInfo(it.state) }
-                .launchIn(scope)
+            getAssetStatus(trackableId)
+                ?.onEach { updateAssetStatusInfo(it) }
+                ?.launchIn(scope)
             locations
                 .onEach { updateLocationInfo(it.location) }
                 .launchIn(scope)
@@ -88,24 +88,27 @@ class TrackableDetailsActivity : PublisherServiceActivity() {
         bearingValueTextView.text = if (bearing.length > 7) bearing.substring(0, 7) else bearing
     }
 
-    private fun updateAblyStateInfo(state: ConnectionState) {
-        val isAblyConnected = state == ConnectionState.CONNECTED
-        changeAblyStatusInfo(isAblyConnected)
-    }
-
-    private fun changeAblyStatusInfo(isConnected: Boolean) {
-        if (isConnected) {
-            ablyConnectionStatusValueTextView.text = getString(R.string.online)
-            ImageViewCompat.setImageTintList(
-                ablyConnectionStatusImageView,
-                ColorStateList.valueOf(ContextCompat.getColor(this, R.color.ably_status_online))
-            )
-        } else {
-            ablyConnectionStatusValueTextView.text = getString(R.string.offline)
-            ImageViewCompat.setImageTintList(
-                ablyConnectionStatusImageView,
-                ColorStateList.valueOf(ContextCompat.getColor(this, R.color.ably_status_offline))
-            )
+    private fun updateAssetStatusInfo(status: AssetStatus) {
+        val textId: Int
+        val colorId: Int
+        when (status) {
+            is AssetStatus.Online -> {
+                textId = R.string.online
+                colorId = R.color.asset_status_online
+            }
+            is AssetStatus.Offline -> {
+                textId = R.string.offline
+                colorId = R.color.asset_status_offline
+            }
+            is AssetStatus.Failed -> {
+                textId = R.string.failed
+                colorId = R.color.asset_status_failed
+            }
         }
+        assetStatusValueTextView.text = getString(textId)
+        ImageViewCompat.setImageTintList(
+            assetStatusImageView,
+            ColorStateList.valueOf(ContextCompat.getColor(this, colorId))
+        )
     }
 }
