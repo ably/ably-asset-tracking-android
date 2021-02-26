@@ -160,29 +160,41 @@ internal class DefaultAbly(
     override fun sendEnhancedLocation(trackableId: String, locationUpdate: EnhancedLocationUpdate) {
         val locationUpdateJson = locationUpdate.toJson(gson)
         Timber.d("sendEnhancedLocationMessage: publishing: $locationUpdateJson")
-        channels[trackableId]?.publish(EventNames.ENHANCED, locationUpdateJson)
+        try {
+            channels[trackableId]?.publish(EventNames.ENHANCED, locationUpdateJson)
+        } catch (exception: AblyException) {
+            Timber.e(exception, "sendEnhancedLocationMessage: publishing: $locationUpdateJson")
+        }
     }
 
     override fun subscribeForPresenceMessages(trackableId: String, listener: (PresenceMessage) -> Unit) {
         channels[trackableId]?.let { channel ->
             channel.presence.get(true).forEach { listener(it.toTracking(gson)) }
-            channel.presence.subscribe { listener(it.toTracking(gson)) }
+            try {
+                channel.presence.subscribe { listener(it.toTracking(gson)) }
+            } catch (exception: AblyException) {
+                Timber.e(exception, "subscribeForPresenceMessages: Cannot subscribe to presence messages")
+            }
         }
     }
 
     override fun updatePresenceData(trackableId: String, presenceData: PresenceData, callback: (Result<Unit>) -> Unit) {
-        channels[trackableId]?.presence?.update(
-            gson.toJson(presenceData),
-            object : CompletionListener {
-                override fun onSuccess() {
-                    callback(Result.success(Unit))
-                }
+        try {
+            channels[trackableId]?.presence?.update(
+                gson.toJson(presenceData),
+                object : CompletionListener {
+                    override fun onSuccess() {
+                        callback(Result.success(Unit))
+                    }
 
-                override fun onError(reason: ErrorInfo) {
-                    callback(Result.failure(Exception(reason.toTrackingException())))
+                    override fun onError(reason: ErrorInfo) {
+                        callback(Result.failure(Exception(reason.toTrackingException())))
+                    }
                 }
-            }
-        )
+            )
+        } catch (exception: AblyException) {
+            callback(Result.failure(exception))
+        }
     }
 
     override fun close(presenceData: PresenceData) {
