@@ -5,6 +5,7 @@ import android.os.Looper
 import android.os.SystemClock
 import com.ably.tracking.common.EventNames
 import com.ably.tracking.common.getGeoJsonMessages
+import com.ably.tracking.common.synopsis
 import com.ably.tracking.common.toLocation
 import com.google.gson.Gson
 import com.mapbox.android.core.location.LocationEngine

@@ -126,7 +126,11 @@ internal class DefaultMapbox(
         mapboxNavigation.apply {
             stopTripSession()
             mapboxReplayer?.finish()
-            debugConfiguration?.locationHistoryHandler?.invoke(retrieveHistory())
+            val tripHistoryString = retrieveHistory()
+            val historyEvents = ReplayHistoryMapper().mapToReplayEvents(tripHistoryString)
+            debugConfiguration?.locationHistoryHandler?.invoke(
+                LocationHistoryData(LOCATION_HISTORY_VERSION, historyEvents.toGeoJsonMessages())
+            )
             onDestroy()
         }
     }
@@ -211,7 +215,7 @@ internal class DefaultMapbox(
         mapboxReplayer = MapboxReplayer().apply {
             mapboxBuilder.locationEngine(ReplayLocationEngine(this))
             this.clearEvents()
-            val historyEvents = ReplayHistoryMapper().mapToReplayEvents(locationSource.historyData)
+            val historyEvents = locationSource.historyData.events.toReplayEvents()
             val lastHistoryEvent = historyEvents.last()
             this.pushEvents(historyEvents)
             this.play()

@@ -23,6 +23,7 @@ import com.ably.tracking.publisher.DefaultProximity
 import com.ably.tracking.publisher.DefaultResolutionConstraints
 import com.ably.tracking.publisher.DefaultResolutionPolicyFactory
 import com.ably.tracking.publisher.DefaultResolutionSet
+import com.ably.tracking.publisher.LocationHistoryData
 import com.ably.tracking.publisher.LocationSourceAbly
 import com.ably.tracking.publisher.LocationSourceRaw
 import com.ably.tracking.publisher.MapConfiguration
@@ -160,7 +161,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
-    private fun createAndStartAssetPublisher(trackingId: String, historyData: String? = null) {
+    private fun createAndStartAssetPublisher(trackingId: String, historyData: LocationHistoryData? = null) {
         clearLocationInfo()
         publisherService?.publisher = Publisher.publishers()
             .connection(ConnectionConfiguration(ABLY_API_KEY, CLIENT_ID))
@@ -205,7 +206,7 @@ class MainActivity : AppCompatActivity() {
         changeNavigationButtonState(true)
     }
 
-    private fun downloadLocationHistoryData(onHistoryDataDownloaded: (historyData: String) -> Unit) {
+    private fun downloadLocationHistoryData(onHistoryDataDownloaded: (historyData: LocationHistoryData) -> Unit) {
         S3Helper.downloadHistoryData(
             this,
             appPreferences.getS3File(),
@@ -214,7 +215,7 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    private fun createDebugConfiguration(historyData: String? = null): DebugConfiguration {
+    private fun createDebugConfiguration(historyData: LocationHistoryData? = null): DebugConfiguration {
         return DebugConfiguration(
             locationSource = when (getLocationSourceType()) {
                 LocationSourceType.ABLY -> LocationSourceAbly(appPreferences.getSimulationChannel())
@@ -225,7 +226,7 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    private fun uploadLocationHistoryData(historyData: String) {
+    private fun uploadLocationHistoryData(historyData: LocationHistoryData) {
         if (getLocationSourceType() == LocationSourceType.PHONE) {
             S3Helper.uploadHistoryData(
                 this,
