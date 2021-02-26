@@ -15,8 +15,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.widget.ImageViewCompat
 import com.ably.tracking.Accuracy
+import com.ably.tracking.AssetStatus
 import com.ably.tracking.ConnectionConfiguration
-import com.ably.tracking.ConnectionState
 import com.ably.tracking.Resolution
 import com.ably.tracking.publisher.DefaultProximity
 import com.ably.tracking.publisher.DefaultResolutionConstraints
@@ -63,10 +63,12 @@ class MainActivity : AppCompatActivity() {
                 } else {
                     changeNavigationButtonState(true)
                     service.publisher?.let { publisher ->
-                        trackingIdEditText.setText(publisher.active?.id)
-                        publisher.connectionStates
-                            .onEach { updateAblyStateInfo(it.state) }
-                            .launchIn(scope)
+                        publisher.active?.id?.let { trackableId ->
+                            trackingIdEditText.setText(trackableId)
+                            publisher.getAssetStatus(trackableId)
+                                ?.onEach { updateAssetStatusInfo(it) }
+                                ?.launchIn(scope)
+                        }
                         publisher.locations
                             .onEach { updateLocationInfo(it.location) }
                             .launchIn(scope)
@@ -174,7 +176,7 @@ class MainActivity : AppCompatActivity() {
             .apply {
                 scope.launch {
                     try {
-                        track(
+                        val assetStatus = track(
                             Trackable(
                                 trackingId,
                                 constraints = DefaultResolutionConstraints(
@@ -191,14 +193,14 @@ class MainActivity : AppCompatActivity() {
                                 )
                             )
                         )
+                        assetStatus
+                            .onEach { updateAssetStatusInfo(it) }
+                            .launchIn(scope)
                     } catch (exception: Exception) {
                         showToast("Error when tracking asset")
                         stopTracking()
                     }
                 }
-                connectionStates
-                    .onEach { updateAblyStateInfo(it.state) }
-                    .launchIn(scope)
                 locations
                     .onEach { updateLocationInfo(it.location) }
                     .launchIn(scope)
@@ -262,25 +264,28 @@ class MainActivity : AppCompatActivity() {
         bearingValueTextView.text = ""
     }
 
-    private fun updateAblyStateInfo(state: ConnectionState) {
-        val isAblyConnected = state == ConnectionState.CONNECTED
-        changeAblyStatusInfo(isAblyConnected)
-    }
-
-    private fun changeAblyStatusInfo(isConnected: Boolean) {
-        if (isConnected) {
-            ablyConnectionStatusValueTextView.text = getString(R.string.online)
-            ImageViewCompat.setImageTintList(
-                ablyConnectionStatusImageView,
-                ColorStateList.valueOf(ContextCompat.getColor(this, R.color.ably_status_online))
-            )
-        } else {
-            ablyConnectionStatusValueTextView.text = getString(R.string.offline)
-            ImageViewCompat.setImageTintList(
-                ablyConnectionStatusImageView,
-                ColorStateList.valueOf(ContextCompat.getColor(this, R.color.ably_status_offline))
-            )
+    private fun updateAssetStatusInfo(status: AssetStatus) {
+        val textId: Int
+        val colorId: Int
+        when (status) {
+            is AssetStatus.Online -> {
+                textId = R.string.online
+                colorId = R.color.asset_status_online
+            }
+            is AssetStatus.Offline -> {
+                textId = R.string.offline
+                colorId = R.color.asset_status_offline
+            }
+            is AssetStatus.Failed -> {
+                textId = R.string.failed
+                colorId = R.color.asset_status_failed
+            }
         }
+        assetStatusValueTextView.text = getString(textId)
+        ImageViewCompat.setImageTintList(
+            assetStatusImageView,
+            ColorStateList.valueOf(ContextCompat.getColor(this, colorId))
+        )
     }
 
     private fun changeNavigationButtonState(isPublishing: Boolean) {

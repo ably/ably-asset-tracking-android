@@ -10,14 +10,7 @@ typealias Handler<T> = (T) -> Unit
  * The state of connectivity to the Ably service.
  */
 enum class ConnectionState {
-    INITIALIZED,
-    CONNECTING,
-    CONNECTED,
-    DISCONNECTED,
-    SUSPENDED,
-    CLOSING,
-    CLOSED,
-    FAILED,
+    ONLINE, OFFLINE, FAILED,
 }
 
 /**

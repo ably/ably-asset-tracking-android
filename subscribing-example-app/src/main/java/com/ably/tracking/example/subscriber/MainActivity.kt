@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.ably.tracking.Accuracy
+import com.ably.tracking.AssetStatus
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.Resolution
 import com.ably.tracking.subscriber.Subscriber
@@ -37,6 +38,7 @@ class MainActivity : AppCompatActivity() {
     private var marker: Marker? = null
     private var resolution: Resolution =
         Resolution(Accuracy.MAXIMUM, desiredInterval = 1000L, minimumDisplacement = 1.0)
+
     // SupervisorJob() is used to keep the scope working after any of its children fail
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
@@ -146,9 +148,13 @@ class MainActivity : AppCompatActivity() {
         resolutionIntervalTextView.text = ""
     }
 
-    private fun updateAssetStatusInfo(isOnline: Boolean) {
-        assetStatusTextView.text =
-            getString(if (isOnline) R.string.asset_status_online else R.string.asset_status_offline)
+    private fun updateAssetStatusInfo(assetStatus: AssetStatus) {
+        val textId = when (assetStatus) {
+            is AssetStatus.Online -> R.string.asset_status_online
+            is AssetStatus.Offline -> R.string.asset_status_offline
+            is AssetStatus.Failed -> R.string.asset_status_failed
+        }
+        assetStatusTextView.text = getString(textId)
     }
 
     private fun stopSubscribing() {

@@ -5,6 +5,26 @@ data class ConnectionConfiguration(val apiKey: String, val clientId: String)
 data class LogConfiguration(val enabled: Boolean) // TODO - specify config
 
 /**
+ * Represents a status of an asset that's being tracked by a publisher.
+ */
+sealed class AssetStatus {
+    /**
+     * Asset status is [Online] when it's being actively tracked. This status can change to either [Offline] or [Failed].
+     */
+    class Online : AssetStatus()
+
+    /**
+     * Asset status is [Offline] when it's connecting or recovering from an error and hopefully will soon be back in the [Online]. This status can change to either [Online] or [Failed].
+     */
+    data class Offline(val errorInformation: ErrorInformation? = null) : AssetStatus()
+
+    /**
+     * Asset status is [Failed] when there was an error from which we cannot recover. This is a final status.
+     */
+    data class Failed(val errorInformation: ErrorInformation) : AssetStatus()
+}
+
+/**
  * The accuracy of a geographical coordinate.
  *
  * Presents a unified representation of location accuracy (Apple) and quality priority (Android).

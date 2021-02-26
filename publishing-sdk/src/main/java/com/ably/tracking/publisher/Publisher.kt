@@ -4,11 +4,12 @@ import android.Manifest.permission.ACCESS_COARSE_LOCATION
 import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.content.Context
 import androidx.annotation.RequiresPermission
+import com.ably.tracking.AssetStatus
 import com.ably.tracking.ConnectionConfiguration
-import com.ably.tracking.ConnectionStateChange
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.LogConfiguration
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
 
 /**
  * Represents a publisher. Publishers maintain the Ably connection, making use of navigation resources as required to
@@ -38,9 +39,10 @@ interface Publisher {
      *
      * @param trackable The object to be added to this publisher's tracked set, if it's not already there, and to be
      * made the actively tracked object.
+     * @return [StateFlow] that represents the [AssetStatus] of the added [Trackable].
      */
     @JvmSynthetic
-    suspend fun track(trackable: Trackable)
+    suspend fun track(trackable: Trackable): StateFlow<AssetStatus>
 
     /**
      * Adds a [Trackable] object, but does not make it the actively tracked object, meaning that the state of the
@@ -49,9 +51,10 @@ interface Publisher {
      * If this object was already in this publisher's tracked set then this method does nothing.
      *
      * @param trackable The object to be added to this publisher's tracked set, if it's not already there.
+     * @return [StateFlow] that represents the [AssetStatus] of the added [Trackable].
      */
     @JvmSynthetic
-    suspend fun add(trackable: Trackable)
+    suspend fun add(trackable: Trackable): StateFlow<AssetStatus>
 
     /**
      * Removes a [Trackable] object if it is known to this publisher, otherwise does nothing and returns false.
@@ -85,11 +88,6 @@ interface Publisher {
     val locations: SharedFlow<LocationUpdate>
 
     /**
-     * The shared flow emitting connection state change values when they become available.
-     */
-    val connectionStates: SharedFlow<ConnectionStateChange>
-
-    /**
      * The shared flow emitting all trackables tracked by the publisher.
      */
     val trackables: SharedFlow<Set<Trackable>>
@@ -99,6 +97,14 @@ interface Publisher {
      */
     val locationHistory: SharedFlow<LocationHistoryData>
         @JvmSynthetic get
+
+    /**
+     * Returns an asset status flow representing the [AssetStatus] for an already added [Trackable].
+     *
+     * @param trackableId The ID of an already added trackable.
+     * @return [StateFlow] that represents the [AssetStatus] of the added [Trackable]. If the trackable doesn't exist it returns null.
+     */
+    fun getAssetStatus(trackableId: String): StateFlow<AssetStatus>?
 
     /**
      * Stops this publisher from publishing locations. Once a publisher has been stopped, it cannot be restarted.

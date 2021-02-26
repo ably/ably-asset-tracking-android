@@ -3,6 +3,8 @@ package com.ably.tracking.publisher
 import android.Manifest
 import android.location.Location
 import androidx.annotation.RequiresPermission
+import com.ably.tracking.AssetStatus
+import com.ably.tracking.ConnectionState
 import com.ably.tracking.ConnectionStateChange
 import com.ably.tracking.EnhancedLocationUpdate
 import com.ably.tracking.LocationUpdate
@@ -21,8 +23,11 @@ import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
@@ -30,11 +35,11 @@ internal interface CorePublisher {
     fun enqueue(event: AdhocEvent)
     fun request(request: Request)
     val locations: SharedFlow<LocationUpdate>
-    val connectionStates: SharedFlow<ConnectionStateChange>
     val trackables: SharedFlow<Set<Trackable>>
     val locationHistory: SharedFlow<LocationHistoryData>
     val active: Trackable?
     val routingProfile: RoutingProfile
+    val assetStatusFlows: Map<String, StateFlow<AssetStatus>>
 }
 
 @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
@@ -60,7 +65,6 @@ constructor(
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private val sendEventChannel: SendChannel<Event>
     private val _locations = MutableSharedFlow<LocationUpdate>(replay = 1)
-    private val _connectionStates = MutableSharedFlow<ConnectionStateChange>(replay = 1)
     private val _trackables = MutableSharedFlow<Set<Trackable>>(replay = 1)
     private val _locationHistory = MutableSharedFlow<LocationHistoryData>()
     private val thresholdChecker = ThresholdChecker()
@@ -99,8 +103,6 @@ constructor(
     }
     override val locations: SharedFlow<LocationUpdate>
         get() = _locations.asSharedFlow()
-    override val connectionStates: SharedFlow<ConnectionStateChange>
-        get() = _connectionStates.asSharedFlow()
     override val trackables: SharedFlow<Set<Trackable>>
         get() = _trackables.asSharedFlow()
     override val locationHistory: SharedFlow<LocationHistoryData>
@@ -108,6 +110,7 @@ constructor(
 
     override var active: Trackable? = null
     override var routingProfile: RoutingProfile = routingProfile
+    override var assetStatusFlows: Map<String, StateFlow<AssetStatus>> = emptyMap()
 
     init {
         policy = resolutionPolicyFactory.createResolutionPolicy(
@@ -121,7 +124,7 @@ constructor(
                 sequenceEventsQueue(channel, routingProfile)
             }
         }
-        ably.subscribeForAblyStateChange { state -> scope.launch { _connectionStates.emit(state) } }
+        ably.subscribeForAblyStateChange { enqueue(AblyConnectionStateChangeEvent(it)) }
         mapbox.registerLocationObserver(locationObserver)
         mapbox.setLocationHistoryListener { historyData -> scope.launch { _locationHistory.emit(historyData) } }
     }
@@ -173,6 +176,7 @@ constructor(
                             ) {
                                 state.lastSentEnhancedLocations[trackable.id] = event.locationUpdate.location
                                 ably.sendEnhancedLocation(trackable.id, event.locationUpdate)
+                                updateAssetStatuses(state, trackable.id)
                             }
                         }
                         scope.launch { _locations.emit(event.locationUpdate) }
@@ -185,11 +189,11 @@ constructor(
                     is TrackTrackableEvent -> {
                         createChannelForTrackableIfNotExisits(
                             event.trackable,
-                            {
-                                if (it.isSuccess) {
-                                    request(SetActiveTrackableEvent(event.trackable, event.handler))
+                            { result ->
+                                if (result.isSuccess) {
+                                    request(SetActiveTrackableEvent(event.trackable) { event.handler(result) })
                                 } else {
-                                    event.handler(it)
+                                    event.handler(result)
                                 }
                             },
                             state
@@ -242,7 +246,13 @@ constructor(
                         scope.launch { _trackables.emit(state.trackables) }
                         resolveResolution(event.trackable, state)
                         hooks.trackables?.onTrackableAdded(event.trackable)
-                        event.handler(Result.success(Unit))
+                        val assetStatus = state.assetStatuses[event.trackable.id] ?: AssetStatus.Offline()
+                        val assetStatusFlow =
+                            state.assetStatusFlows[event.trackable.id] ?: MutableStateFlow(assetStatus)
+                        state.assetStatusFlows[event.trackable.id] = assetStatusFlow
+                        assetStatusFlows = state.assetStatusFlows
+                        state.assetStatuses[event.trackable.id] = assetStatus
+                        event.handler(Result.success(assetStatusFlow.asStateFlow()))
                     }
                     is ChangeLocationEngineResolutionEvent -> {
                         state.locationEngineResolution = policy.resolve(state.resolutions.values.toSet())
@@ -252,6 +262,9 @@ constructor(
                         val wasTrackablePresent = state.trackables.remove(event.trackable)
                         scope.launch { _trackables.emit(state.trackables) }
                         if (wasTrackablePresent) {
+                            state.assetStatusFlows.remove(event.trackable.id) // there is no way to stop the StateFlow so we just remove it
+                            assetStatusFlows = state.assetStatusFlows
+                            state.assetStatuses.remove(event.trackable.id)
                             hooks.trackables?.onTrackableRemoved(event.trackable)
                             removeAllSubscribers(event.trackable, state)
                             state.resolutions.remove(event.trackable.id)
@@ -296,8 +309,27 @@ constructor(
                         // TODO implement proper stopping strategy which only calls back once we're fully stopped (considering whether scope.cancel() is appropriate)
                         event.handler(Result.success(Unit))
                     }
+                    is AblyConnectionStateChangeEvent -> {
+                        state.lastConnectionStateChange = event.connectionStateChange
+                        state.trackables.forEach {
+                            updateAssetStatuses(state, it.id)
+                        }
+                    }
                 }
             }
+        }
+    }
+
+    private fun updateAssetStatuses(state: PublisherState, trackableId: String) {
+        val hasSentAtLeastOneLocation: Boolean = state.lastSentEnhancedLocations[trackableId] != null
+        val newStatus = when (state.lastConnectionStateChange.state) {
+            ConnectionState.ONLINE -> if (hasSentAtLeastOneLocation) AssetStatus.Online() else AssetStatus.Offline()
+            ConnectionState.OFFLINE -> AssetStatus.Offline()
+            ConnectionState.FAILED -> AssetStatus.Failed(state.lastConnectionStateChange.errorInformation!!) // are we sure error information will always be present?
+        }
+        if (newStatus != state.assetStatuses[trackableId]) {
+            state.assetStatuses[trackableId] = newStatus
+            scope.launch { state.assetStatusFlows[trackableId]?.emit(newStatus) }
         }
     }
 
@@ -315,16 +347,16 @@ constructor(
      */
     private fun createChannelForTrackableIfNotExisits(
         trackable: Trackable,
-        handler: ResultHandler<Unit>,
+        handler: ResultHandler<StateFlow<AssetStatus>>,
         state: PublisherState
     ) {
         ably.connect(trackable.id, state.presenceData) { result ->
-            if (result.isSuccess) {
+            try {
+                result.getOrThrow()
                 ably.subscribeForPresenceMessages(trackable.id) { enqueue(PresenceMessageEvent(trackable, it)) }
                 request(JoinPresenceSuccessEvent(trackable, handler))
-            } else {
-                // TODO - is this correct in case of an error?
-                handler(result)
+            } catch (exception: Exception) {
+                handler(Result.failure(exception))
             }
         }
     }
@@ -484,6 +516,11 @@ constructor(
         var locationEngineResolution: Resolution,
         var isTracking: Boolean = false,
         val trackables: MutableSet<Trackable> = mutableSetOf(),
+        val assetStatuses: MutableMap<String, AssetStatus> = mutableMapOf(),
+        val assetStatusFlows: MutableMap<String, MutableStateFlow<AssetStatus>> = mutableMapOf(),
+        var lastConnectionStateChange: ConnectionStateChange = ConnectionStateChange(
+            ConnectionState.OFFLINE, ConnectionState.OFFLINE, null
+        ),
         val resolutions: MutableMap<String, Resolution> = mutableMapOf(),
         val lastSentEnhancedLocations: MutableMap<String, Location> = mutableMapOf(),
         var estimatedArrivalTimeInMilliseconds: Long? = null,

@@ -4,9 +4,10 @@ import android.Manifest.permission.ACCESS_COARSE_LOCATION
 import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.annotation.SuppressLint
 import androidx.annotation.RequiresPermission
-import com.ably.tracking.ConnectionStateChange
+import com.ably.tracking.AssetStatus
 import com.ably.tracking.LocationUpdate
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
 import timber.log.Timber
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -32,8 +33,6 @@ constructor(
         set(value) = core.enqueue(ChangeRoutingProfileEvent(value))
     override val locations: SharedFlow<LocationUpdate>
         get() = core.locations
-    override val connectionStates: SharedFlow<ConnectionStateChange>
-        get() = core.connectionStates
     override val trackables: SharedFlow<Set<Trackable>>
         get() = core.trackables
     override val locationHistory: SharedFlow<LocationHistoryData>
@@ -47,8 +46,8 @@ constructor(
         core.enqueue(StartEvent())
     }
 
-    override suspend fun track(trackable: Trackable) {
-        suspendCoroutine<Unit> { continuation ->
+    override suspend fun track(trackable: Trackable): StateFlow<AssetStatus> {
+        return suspendCoroutine { continuation ->
             core.request(
                 TrackTrackableEvent(trackable) {
                     try {
@@ -61,8 +60,8 @@ constructor(
         }
     }
 
-    override suspend fun add(trackable: Trackable) {
-        suspendCoroutine<Unit> { continuation ->
+    override suspend fun add(trackable: Trackable): StateFlow<AssetStatus> {
+        return suspendCoroutine { continuation ->
             core.request(
                 AddTrackableEvent(trackable) {
                     try {
@@ -102,4 +101,6 @@ constructor(
             )
         }
     }
+
+    override fun getAssetStatus(trackableId: String): StateFlow<AssetStatus>? = core.assetStatusFlows[trackableId]
 }

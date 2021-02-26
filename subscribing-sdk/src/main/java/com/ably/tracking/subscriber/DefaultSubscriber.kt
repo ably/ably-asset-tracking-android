@@ -1,8 +1,10 @@
 package com.ably.tracking.subscriber
 
+import com.ably.tracking.AssetStatus
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.Resolution
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
 import timber.log.Timber
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -17,7 +19,7 @@ internal class DefaultSubscriber(
     override val locations: SharedFlow<LocationUpdate>
         get() = core.enhancedLocations
 
-    override val assetStatuses: SharedFlow<Boolean>
+    override val assetStatuses: StateFlow<AssetStatus>
         get() = core.assetStatuses
 
     init {

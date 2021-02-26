@@ -1,9 +1,12 @@
 package com.ably.tracking.publisher
 
+import com.ably.tracking.AssetStatus
+import com.ably.tracking.ConnectionStateChange
 import com.ably.tracking.EnhancedLocationUpdate
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.ResultHandler
 import com.ably.tracking.common.PresenceMessage
+import kotlinx.coroutines.flow.StateFlow
 
 internal sealed class Event
 
@@ -25,12 +28,12 @@ internal class StartEvent : AdhocEvent()
 
 internal data class AddTrackableEvent(
     val trackable: Trackable,
-    val handler: ResultHandler<Unit>
+    val handler: ResultHandler<StateFlow<AssetStatus>>
 ) : Request()
 
 internal data class TrackTrackableEvent(
     val trackable: Trackable,
-    val handler: ResultHandler<Unit>
+    val handler: ResultHandler<StateFlow<AssetStatus>>
 ) : Request()
 
 internal data class SetActiveTrackableEvent(
@@ -49,7 +52,7 @@ internal data class RemoveTrackableEvent(
 
 internal data class JoinPresenceSuccessEvent(
     val trackable: Trackable,
-    val handler: ResultHandler<Unit>
+    val handler: ResultHandler<StateFlow<AssetStatus>>
 ) : Request()
 
 internal data class RawLocationChangedEvent(
@@ -76,3 +79,5 @@ internal class ChangeLocationEngineResolutionEvent : AdhocEvent()
 internal data class ChangeRoutingProfileEvent(
     val routingProfile: RoutingProfile
 ) : AdhocEvent()
+
+internal data class AblyConnectionStateChangeEvent(val connectionStateChange: ConnectionStateChange) : AdhocEvent()
