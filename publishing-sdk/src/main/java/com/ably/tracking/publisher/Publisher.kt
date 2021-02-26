@@ -95,6 +95,12 @@ interface Publisher {
     val trackables: SharedFlow<Set<Trackable>>
 
     /**
+     * The shared flow emitting trip location history when it becomes available.
+     */
+    val locationHistory: SharedFlow<LocationHistoryData>
+        @JvmSynthetic get
+
+    /**
      * Stops this publisher from publishing locations. Once a publisher has been stopped, it cannot be restarted.
      */
     @JvmSynthetic
@@ -159,6 +165,15 @@ interface Publisher {
         fun resolutionPolicy(factory: ResolutionPolicy.Factory): Builder
 
         /**
+         * Sets the location source to be used instead of the GPS.
+         * The location source will be providing location updates for the [Publisher].
+         *
+         * @param locationSource The location source from which location updates will be received.
+         * @return A new instance of the builder with this property changed.
+         */
+        fun locationSource(locationSource: LocationSource?): Builder
+
+        /**
          * Creates a [Publisher] and starts publishing.
          *
          * The returned publisher instance does not start in a state whereby it is actively tracking anything. If
@@ -171,15 +186,5 @@ interface Publisher {
          */
         @RequiresPermission(anyOf = [ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION])
         fun start(): Publisher
-
-        /**
-         * Sets the debug configuration.
-         *
-         * @param configuration debug configuration object [DebugConfiguration]
-         * @return A new instance of the builder with this property changed.
-         */
-        // TODO - probably should be removed in the final version
-        // https://github.com/ably/ably-asset-tracking-android/issues/19
-        fun debug(configuration: DebugConfiguration?): Builder
     }
 }

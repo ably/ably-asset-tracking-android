@@ -18,12 +18,12 @@ import com.ably.tracking.Accuracy
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.ConnectionState
 import com.ably.tracking.Resolution
-import com.ably.tracking.publisher.DebugConfiguration
 import com.ably.tracking.publisher.DefaultProximity
 import com.ably.tracking.publisher.DefaultResolutionConstraints
 import com.ably.tracking.publisher.DefaultResolutionPolicyFactory
 import com.ably.tracking.publisher.DefaultResolutionSet
 import com.ably.tracking.publisher.LocationHistoryData
+import com.ably.tracking.publisher.LocationSource
 import com.ably.tracking.publisher.LocationSourceAbly
 import com.ably.tracking.publisher.LocationSourceRaw
 import com.ably.tracking.publisher.MapConfiguration
@@ -166,7 +166,7 @@ class MainActivity : AppCompatActivity() {
         publisherService?.publisher = Publisher.publishers()
             .connection(ConnectionConfiguration(ABLY_API_KEY, CLIENT_ID))
             .map(MapConfiguration(MAPBOX_ACCESS_TOKEN))
-            .debug(createDebugConfiguration(historyData))
+            .locationSource(createLocationSource(historyData))
             .resolutionPolicy(DefaultResolutionPolicyFactory(Resolution(Accuracy.MINIMUM, 1000L, 1.0), this))
             .androidContext(this)
             .profile(RoutingProfile.DRIVING)
@@ -202,6 +202,9 @@ class MainActivity : AppCompatActivity() {
                 locations
                     .onEach { updateLocationInfo(it.location) }
                     .launchIn(scope)
+                locationHistory
+                    .onEach { uploadLocationHistoryData(it) }
+                    .launchIn(scope)
             }
         changeNavigationButtonState(true)
     }
@@ -215,16 +218,12 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    private fun createDebugConfiguration(historyData: LocationHistoryData? = null): DebugConfiguration {
-        return DebugConfiguration(
-            locationSource = when (getLocationSourceType()) {
-                LocationSourceType.ABLY -> LocationSourceAbly(appPreferences.getSimulationChannel())
-                LocationSourceType.S3 -> LocationSourceRaw(historyData!!)
-                LocationSourceType.PHONE -> null
-            },
-            locationHistoryHandler = { uploadLocationHistoryData(it) }
-        )
-    }
+    private fun createLocationSource(historyData: LocationHistoryData? = null): LocationSource? =
+        when (getLocationSourceType()) {
+            LocationSourceType.ABLY -> LocationSourceAbly.create(appPreferences.getSimulationChannel())
+            LocationSourceType.S3 -> LocationSourceRaw.create(historyData!!)
+            LocationSourceType.PHONE -> null
+        }
 
     private fun uploadLocationHistoryData(historyData: LocationHistoryData) {
         if (getLocationSourceType() == LocationSourceType.PHONE) {

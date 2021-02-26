@@ -56,6 +56,11 @@ interface PublisherFacade {
     fun addListener(listener: LocationUpdateListener)
 
     /**
+     * Add a listener to receive trip's location history data when it becomes available.
+     */
+    fun addLocationHistoryListener(listener: LocationHistoryListener)
+
+    /**
      * Stops this publisher from publishing locations. Once a publisher has been stopped, it cannot be restarted.
      *
      * This method overload is provided for the convenient of those calling from Java.

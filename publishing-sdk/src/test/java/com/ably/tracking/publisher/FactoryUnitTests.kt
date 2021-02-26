@@ -90,13 +90,13 @@ class FactoryUnitTests {
     }
 
     @Test
-    fun `setting debug config returns a new copy of builder`() {
+    fun `setting location source returns a new copy of builder`() {
         // given
-        val configuration = DebugConfiguration()
+        val locationSource = LocationSourceRaw.create(LocationHistoryData("1.0", emptyList()))
         val originalBuilder = Publisher.publishers()
 
         // when
-        val newBuilder = originalBuilder.debug(configuration)
+        val newBuilder = originalBuilder.locationSource(locationSource)
 
         // then
         Assert.assertNotEquals(newBuilder, originalBuilder)

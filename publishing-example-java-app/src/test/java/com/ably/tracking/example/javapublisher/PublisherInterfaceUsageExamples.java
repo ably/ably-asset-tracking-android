@@ -11,6 +11,9 @@ import com.ably.tracking.publisher.DefaultProximity;
 import com.ably.tracking.publisher.DefaultResolutionConstraints;
 import com.ably.tracking.publisher.DefaultResolutionSet;
 import com.ably.tracking.publisher.Destination;
+import com.ably.tracking.publisher.LocationHistoryData;
+import com.ably.tracking.publisher.LocationSourceAbly;
+import com.ably.tracking.publisher.LocationSourceRaw;
 import com.ably.tracking.publisher.MapConfiguration;
 import com.ably.tracking.publisher.Publisher;
 import com.ably.tracking.publisher.ResolutionPolicy;
@@ -21,6 +24,7 @@ import com.ably.tracking.publisher.java.PublisherFacade;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
 
 import static org.mockito.Mockito.RETURNS_SELF;
@@ -54,6 +58,8 @@ public class PublisherInterfaceUsageExamples {
             .log(new LogConfiguration(true))
             .map(new MapConfiguration("API_KEY"))
             .resolutionPolicy(resolutionPolicyFactory)
+            .locationSource(LocationSourceRaw.createRaw(new LocationHistoryData("1.0", new ArrayList<>()), null))
+            .locationSource(LocationSourceAbly.create("CHANNEL_ID"))
             .start();
     }
 
