@@ -11,7 +11,7 @@ import java.util.concurrent.CompletableFuture
  *
  * Kotlin users will generally prefer to directly use the interfaces offered by [Publisher].
  */
-interface PublisherFacade {
+interface PublisherFacade : Publisher {
     /**
      * Adds a [Trackable] object and makes it the actively tracked object, meaning that the state of the [active] field
      * will be updated to this object, if that wasn't already the case.

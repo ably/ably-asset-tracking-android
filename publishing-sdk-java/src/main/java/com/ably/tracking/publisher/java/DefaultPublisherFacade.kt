@@ -14,7 +14,7 @@ import java.util.concurrent.CompletableFuture
 
 class DefaultPublisherFacade(
     private val publisher: Publisher
-) : PublisherFacade {
+) : PublisherFacade, Publisher by publisher {
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
     override fun trackAsync(trackable: Trackable, listener: AssetStatusListener?): CompletableFuture<Void> {

@@ -14,7 +14,7 @@ import java.util.concurrent.CompletableFuture
 
 internal class DefaultSubscriberFacade(
     private val subscriber: Subscriber
-) : SubscriberFacade {
+) : SubscriberFacade, Subscriber by subscriber {
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
     override fun sendChangeRequestAsync(resolution: Resolution): CompletableFuture<Void> {
