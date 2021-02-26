@@ -7,40 +7,66 @@ import com.ably.tracking.Resolution;
 import com.ably.tracking.subscriber.Subscriber;
 import com.ably.tracking.subscriber.java.SubscriberFacade;
 
+import org.junit.Before;
 import org.junit.Test;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.RETURNS_SELF;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.withSettings;
+
 public class UsageExamples {
+    SubscriberFacade subscriberFacade;
+    Subscriber nativeSubscriber;
+    Subscriber.Builder subscriberBuilder;
+
+    @Before
+    public void beforeEach() {
+        nativeSubscriber = mock(Subscriber.class);
+        subscriberBuilder = mock(Subscriber.Builder.class, withSettings().defaultAnswer(RETURNS_SELF));
+        when(subscriberBuilder.start()).thenReturn(nativeSubscriber);
+        subscriberFacade = mock(SubscriberFacade.class);
+        when(subscriberFacade.sendChangeRequestAsync(any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(subscriberFacade.stopAsync()).thenReturn(CompletableFuture.completedFuture(any()));
+    }
+
     @Test
-    public void publisherUsageExample() {
-        final Subscriber nativeSubscriber =
-            Subscriber.subscribers()
-                .connection(new ConnectionConfiguration("API_KEY", "CLIENT_ID"))
-                .log(new LogConfiguration(true))
-                .resolution(new Resolution(Accuracy.MAXIMUM, 1L, 1.0))
-                .trackingId("ID")
-                .start();
+    public void subscriberBuilderUsageExample() {
+        Subscriber nativeSubscriber = subscriberBuilder
+            .connection(new ConnectionConfiguration("API_KEY", "CLIENT_ID"))
+            .log(new LogConfiguration(true))
+            .trackingId("TRACKING_ID")
+            .resolution(new Resolution(Accuracy.BALANCED, 1000L, 1.0))
+            .start();
+    }
 
-        final SubscriberFacade subscriber = SubscriberFacade.wrap(nativeSubscriber);
+    @Test
+    public void subscriberFacadeWrapperUsageExample() {
+        SubscriberFacade subscriberFacade = SubscriberFacade.wrap(nativeSubscriber);
+    }
 
-        // TODO - uncomment when SubscriberFacade is implemented
-//        subscriber.addListener(isOnline -> {
-//            // handle isOnline
-//        });
-//
-//        subscriber.addEnhancedLocationListener(locationUpdate -> {
-//            // handle locationUpdate
-//        });
-//
+    @Test
+    public void subscriberFacadeUsageExample() {
+        subscriberFacade.addListener(assetStatus -> {
+            // handle assetStatus
+        });
+
+        subscriberFacade.addLocationListener(locationUpdate -> {
+            // handle locationUpdate
+        });
+
+        try {
 //        // use methods that return a completable future
-//        try {
-//            subscriber.sendChangeRequestAsync(new Resolution(Accuracy.MAXIMUM, 1L, 1.0)).get();
-//            subscriber.stopAsync().get();
-//        } catch (ExecutionException e) {
-//            // handle execution exception
-//        } catch (InterruptedException e) {
-//            // handle interruption exception
-//        }
+            subscriberFacade.sendChangeRequestAsync(new Resolution(Accuracy.MAXIMUM, 1L, 1.0)).get();
+            subscriberFacade.stopAsync().get();
+        } catch (ExecutionException e) {
+            // handle execution exception
+        } catch (InterruptedException e) {
+            // handle interruption exception
+        }
     }
 }

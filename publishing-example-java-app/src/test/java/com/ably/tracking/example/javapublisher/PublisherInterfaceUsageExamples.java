@@ -26,7 +26,9 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.RETURNS_SELF;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -47,7 +49,11 @@ public class PublisherInterfaceUsageExamples {
         publisherBuilder = mock(Publisher.Builder.class, withSettings().defaultAnswer(RETURNS_SELF));
         resolutionPolicyFactory = mock(ResolutionPolicy.Factory.class);
         when(publisherBuilder.start()).thenReturn(nativePublisher);
-        publisher = PublisherFacade.wrap(nativePublisher);
+        publisher = mock(PublisherFacade.class);
+        when(publisher.addAsync(any(), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(publisher.trackAsync(any(), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(publisher.removeAsync(any())).thenReturn(CompletableFuture.completedFuture(true));
+        when(publisher.stopAsync()).thenReturn(CompletableFuture.completedFuture(null));
     }
 
     @Test
@@ -64,18 +70,42 @@ public class PublisherInterfaceUsageExamples {
     }
 
     @Test
+    public void publisherFacadeWrapperUsageExample() {
+        PublisherFacade publisherFacade = PublisherFacade.wrap(nativePublisher);
+    }
+
+    @Test
     public void publisherUsageExample() {
         Trackable trackable = new Trackable("ID", null, null, null);
         Trackable activeTrackable = nativePublisher.getActive();
         nativePublisher.setRoutingProfile(RoutingProfile.CYCLING);
         RoutingProfile routingProfile = nativePublisher.getRoutingProfile();
-        // TODO - uncomment when PublisherFacade is implemented
-//        CompletableFuture<Void> trackResult = publisher.trackAsync(trackable);
-//        CompletableFuture<Void> addResult = publisher.addAsync(trackable);
-//        CompletableFuture<Boolean> removeResult = publisher.removeAsync(trackable);
-//        CompletableFuture<Void> stopResult = publisher.stopAsync();
-//        publisher.addListener(locationUpdate -> {
-//        });
+        try {
+            publisher.trackAsync(trackable, assetStatus -> {
+                // handle assetStatus
+            }).get();
+            publisher.addAsync(trackable, assetStatus -> {
+                // handle assetStatus
+            }).get();
+            Boolean wasRemoved = publisher.removeAsync(trackable).get();
+            publisher.stopAsync().get();
+        } catch (ExecutionException e) {
+            // handle execution exception
+        } catch (InterruptedException e) {
+            // handle interruption exception
+        }
+        publisher.addListener(locationUpdate -> {
+            // handle locationUpdate
+        });
+        publisher.addTrackablesListener(trackables -> {
+            // handle trackables
+        });
+        publisher.addLocationHistoryListener(locationHistory -> {
+            // handle locationHistory
+        });
+        publisher.addTrackableStatusListener("ID", assetStatus -> {
+            // handle assetStatus
+        });
     }
 
     @Test
