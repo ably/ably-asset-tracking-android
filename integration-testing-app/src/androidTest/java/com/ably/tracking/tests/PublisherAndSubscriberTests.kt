@@ -5,15 +5,11 @@ import android.content.Context
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ably.tracking.Accuracy
-import com.ably.tracking.AssetStatusHandler
 import com.ably.tracking.ConnectionConfiguration
-import com.ably.tracking.Handler
 import com.ably.tracking.LocationUpdate
-import com.ably.tracking.LocationUpdateHandler
 import com.ably.tracking.Resolution
-import com.ably.tracking.Result
-import com.ably.tracking.publisher.DebugConfiguration
 import com.ably.tracking.publisher.DefaultResolutionPolicyFactory
+import com.ably.tracking.publisher.LocationHistoryData
 import com.ably.tracking.publisher.LocationSourceRaw
 import com.ably.tracking.publisher.MapConfiguration
 import com.ably.tracking.publisher.Publisher
@@ -21,7 +17,15 @@ import com.ably.tracking.publisher.RoutingProfile
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.subscriber.Subscriber
 import com.ably.tracking.test.common.UnitExpectation
+import com.ably.tracking.test.common.UnitResultExpectation
 import com.ably.tracking.test.common.testLogD
+import com.google.gson.Gson
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -33,6 +37,7 @@ private const val ABLY_API_KEY = BuildConfig.ABLY_API_KEY
 
 @RunWith(AndroidJUnit4::class)
 class PublisherAndSubscriberTests {
+    val gson = Gson()
 
     @Test
     fun createAndStartPublisherAndSubscriberAndWaitUntilDataEnds() {
@@ -45,13 +50,15 @@ class PublisherAndSubscriberTests {
         val locationData = getLocationData(context)
         val publishedLocations = mutableListOf<LocationUpdate>()
         val receivedLocations = mutableListOf<LocationUpdate>()
-        var result: Result<Unit>? = null
+        val trackResultExpectation = UnitResultExpectation("track response")
+        val scope = CoroutineScope(Dispatchers.Default)
 
         // when
-        val subscriber = createAndStartSubscriber(
-            trackableId,
-            enhancedLocationHandler = { receivedLocations.add(it) }
-        )
+        val subscriber = createAndStartSubscriber(trackableId)
+
+        subscriber.locations
+            .onEach { receivedLocations.add(it) }
+            .launchIn(scope)
 
         // TODO replace this sleep with an await on an expectation that the subscriber is ready (connected and subscribed)
         Thread.sleep(4000)
@@ -61,13 +68,21 @@ class PublisherAndSubscriberTests {
             locationData = locationData,
             onLocationDataEnded = {
                 dataEndedExpectation.fulfill()
-            },
-            onLocationUpdated = { publishedLocations.add(it) }
-        ).apply {
-            track(
-                Trackable(trackableId),
-                { result = it }
-            )
+            }
+        )
+
+        publisher.locations
+            .onEach { publishedLocations.add(it) }
+            .launchIn(scope)
+
+        runBlocking {
+            try {
+                publisher.track(Trackable(trackableId))
+                testLogD("track success")
+                trackResultExpectation.fulfill(Result.success(Unit))
+            } catch (e: Exception) {
+                testLogD("track failed")
+            }
         }
 
         // await
@@ -80,16 +95,22 @@ class PublisherAndSubscriberTests {
         testLogD("COUNT received ${receivedLocations.size}") // observed 12
 
         // cleanup
-        publisher.stop { publisherStoppedExpectation.fulfill() }
-        subscriber.stop { subscriberStoppedExpectation.fulfill() }
+        scope.launch {
+            publisher.stop()
+            publisherStoppedExpectation.fulfill()
+        }
+        scope.launch {
+            subscriber.stop()
+            subscriberStoppedExpectation.fulfill()
+        }
         publisherStoppedExpectation.await()
         subscriberStoppedExpectation.await()
 
         // then
         dataEndedExpectation.assertFulfilled()
+        trackResultExpectation.assertSuccess()
         publisherStoppedExpectation.assertFulfilled()
         subscriberStoppedExpectation.assertFulfilled()
-        Assert.assertTrue("Expected success callback on track.", result?.isSuccess ?: false)
         Assert.assertTrue(
             "Subscriber should receive at least half the number of events published (received: ${receivedLocations.size}, published: ${publishedLocations.size})",
             receivedLocations.size >= publishedLocations.size / 2
@@ -107,36 +128,30 @@ class PublisherAndSubscriberTests {
     private fun createAndStartPublisher(
         context: Context,
         resolution: Resolution = Resolution(Accuracy.BALANCED, 1L, 0.0),
-        locationData: String,
-        onLocationDataEnded: Handler<Unit> = {},
-        onLocationUpdated: LocationUpdateHandler = {}
+        locationData: LocationHistoryData,
+        onLocationDataEnded: () -> Unit = {}
     ) =
         Publisher.publishers()
             .androidContext(context)
             .connection(ConnectionConfiguration(ABLY_API_KEY, CLIENT_ID))
             .map(MapConfiguration(MAPBOX_ACCESS_TOKEN))
-            .locations(onLocationUpdated)
             .resolutionPolicy(DefaultResolutionPolicyFactory(resolution, context))
             .profile(RoutingProfile.DRIVING)
-            .debug(
-                DebugConfiguration(locationSource = LocationSourceRaw(locationData, onLocationDataEnded))
-            )
+            .locationSource(LocationSourceRaw.create(locationData, onLocationDataEnded))
             .start()
 
     private fun createAndStartSubscriber(
         trackingId: String,
-        resolution: Resolution = Resolution(Accuracy.BALANCED, 1L, 0.0),
-        assetStatusHandler: AssetStatusHandler = {},
-        enhancedLocationHandler: LocationUpdateHandler = {}
+        resolution: Resolution = Resolution(Accuracy.BALANCED, 1L, 0.0)
     ) =
         Subscriber.subscribers()
-            .assetStatus(assetStatusHandler)
             .connection(ConnectionConfiguration(ABLY_API_KEY, CLIENT_ID))
-            .enhancedLocations(enhancedLocationHandler)
             .resolution(resolution)
             .trackingId(trackingId)
             .start()
 
-    private fun getLocationData(context: Context) =
-        context.assets.open("location_history_small.txt").use { String(it.readBytes()) }
+    private fun getLocationData(context: Context): LocationHistoryData {
+        val historyString = context.assets.open("location_history_small.txt").use { String(it.readBytes()) }
+        return gson.fromJson(historyString, LocationHistoryData::class.java)
+    }
 }
