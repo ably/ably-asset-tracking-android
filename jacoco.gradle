@@ -7,6 +7,8 @@ jacoco {
 
 tasks.withType(Test) {
     jacoco.includeNoLocationClasses = true
+    // Fixes failing tests when running on JDK 9 or above https://github.com/gradle/gradle/issues/5184#issuecomment-457865951
+    jacoco.excludes = ['jdk.internal.*']
 }
 
 project.afterEvaluate {
