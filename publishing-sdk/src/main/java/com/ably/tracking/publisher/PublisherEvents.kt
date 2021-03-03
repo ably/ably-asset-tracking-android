@@ -81,3 +81,8 @@ internal data class ChangeRoutingProfileEvent(
 ) : AdhocEvent()
 
 internal data class AblyConnectionStateChangeEvent(val connectionStateChange: ConnectionStateChange) : AdhocEvent()
+
+internal data class ChannelConnectionStateChangeEvent(
+    val connectionStateChange: ConnectionStateChange,
+    val trackableId: String
+) : AdhocEvent()
