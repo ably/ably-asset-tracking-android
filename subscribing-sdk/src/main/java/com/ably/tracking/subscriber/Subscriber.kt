@@ -71,7 +71,7 @@ interface Subscriber {
      */
     interface Builder {
         /**
-         * Sets the Ably connection configuration.
+         * **REQUIRED** Sets the Ably connection configuration.
          *
          * @param configuration The configuration to be used for Ably connection.
          * @return A new instance of the builder with this property changed.
@@ -79,7 +79,7 @@ interface Subscriber {
         fun connection(configuration: ConnectionConfiguration): Builder
 
         /**
-         * Sets the desired resolution of updates, to be requested from the remote publisher.
+         * **OPTIONAL** Sets the desired resolution of updates, to be requested from the remote publisher.
          *
          * @param resolution An indication of how often to this subscriber would like the publisher to sample locations,
          * at what level of positional accuracy, and how often to send them back.
@@ -88,7 +88,7 @@ interface Subscriber {
         fun resolution(resolution: Resolution): Builder
 
         /**
-         * Sets the asset to be tracked, using its unique tracking identifier.
+         * **REQUIRED** Sets the asset to be tracked, using its unique tracking identifier.
          *
          * @param trackingId The unique tracking identifier for the asset.
          * @return A new instance of the builder with this property changed.

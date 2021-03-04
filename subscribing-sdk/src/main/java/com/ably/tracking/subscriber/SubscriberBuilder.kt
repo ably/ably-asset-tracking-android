@@ -30,7 +30,6 @@ internal data class SubscriberBuilder(
         )
     }
 
-    // TODO - define which fields are required and which are optional (for now: only fields needed to create AssetSubscriber)
     private fun isMissingRequiredFields() =
         connectionConfiguration == null ||
             trackingId == null
