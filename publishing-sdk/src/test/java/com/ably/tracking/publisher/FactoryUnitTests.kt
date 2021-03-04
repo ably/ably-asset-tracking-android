@@ -5,7 +5,6 @@ import android.content.Context
 import android.location.Location
 import com.ably.tracking.BuilderConfigurationIncompleteException
 import com.ably.tracking.ConnectionConfiguration
-import com.ably.tracking.LogConfiguration
 import io.mockk.mockk
 import org.junit.Assert
 import org.junit.Test
@@ -65,31 +64,6 @@ class FactoryUnitTests {
     }
 
     @Test
-    fun `setting logging config updates builder field`() {
-        // given
-        val configuration = LogConfiguration(true)
-
-        // when
-        val builder = Publisher.publishers().log(configuration) as PublisherBuilder
-
-        // then
-        Assert.assertEquals(configuration, builder.logConfiguration)
-    }
-
-    @Test
-    fun `setting logging config returns a new copy of builder`() {
-        // given
-        val configuration = LogConfiguration(true)
-        val originalBuilder = Publisher.publishers()
-
-        // when
-        val newBuilder = originalBuilder.log(configuration)
-
-        // then
-        Assert.assertNotEquals(newBuilder, originalBuilder)
-    }
-
-    @Test
     fun `setting location source returns a new copy of builder`() {
         // given
         val locationSource = LocationSourceRaw.create(LocationHistoryData("1.0", emptyList()))
@@ -139,7 +113,6 @@ class FactoryUnitTests {
         val updatedBuilder = builder
             .connection(ConnectionConfiguration("", ""))
             .map(MapConfiguration(""))
-            .log(LogConfiguration(true))
             .androidContext(mockedContext)
 
         // then
@@ -155,14 +128,12 @@ class FactoryUnitTests {
     private fun assertAllBuilderFieldsAreNull(builder: PublisherBuilder) {
         Assert.assertNull(builder.connectionConfiguration)
         Assert.assertNull(builder.mapConfiguration)
-        Assert.assertNull(builder.logConfiguration)
         Assert.assertNull(builder.androidContext)
     }
 
     private fun assertAllBuilderFieldsAreNotNull(builder: PublisherBuilder) {
         Assert.assertNotNull(builder.connectionConfiguration)
         Assert.assertNotNull(builder.mapConfiguration)
-        Assert.assertNotNull(builder.logConfiguration)
         Assert.assertNotNull(builder.androidContext)
     }
 

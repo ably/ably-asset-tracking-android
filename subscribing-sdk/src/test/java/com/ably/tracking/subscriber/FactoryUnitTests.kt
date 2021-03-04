@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import com.ably.tracking.Accuracy
 import com.ably.tracking.BuilderConfigurationIncompleteException
 import com.ably.tracking.ConnectionConfiguration
-import com.ably.tracking.LogConfiguration
 import com.ably.tracking.Resolution
 import org.junit.Assert
 import org.junit.Test
@@ -31,32 +30,6 @@ class FactoryUnitTests {
 
         // when
         val newBuilder = originalBuilder.connection(configuration)
-
-        // then
-        Assert.assertNotEquals(newBuilder, originalBuilder)
-    }
-
-    @Test
-    fun `setting logging config updates builder field`() {
-        // given
-        val configuration = LogConfiguration(true)
-
-        // when
-        val builder =
-            Subscriber.subscribers().log(configuration) as SubscriberBuilder
-
-        // then
-        Assert.assertEquals(configuration, builder.logConfiguration)
-    }
-
-    @Test
-    fun `setting logging config returns a new copy of builder`() {
-        // given
-        val configuration = LogConfiguration(true)
-        val originalBuilder = Subscriber.subscribers()
-
-        // when
-        val newBuilder = originalBuilder.log(configuration)
 
         // then
         Assert.assertNotEquals(newBuilder, originalBuilder)
@@ -121,7 +94,6 @@ class FactoryUnitTests {
         // when
         val updatedBuilder = builder
             .connection(ConnectionConfiguration("", ""))
-            .log(LogConfiguration(true))
             .resolution(Resolution(Accuracy.BALANCED, 333, 666.6))
             .trackingId("")
 
@@ -137,14 +109,12 @@ class FactoryUnitTests {
 
     private fun assertAllBuilderFieldsAreNull(builder: SubscriberBuilder) {
         Assert.assertNull(builder.connectionConfiguration)
-        Assert.assertNull(builder.logConfiguration)
         Assert.assertNull(builder.resolution)
         Assert.assertNull(builder.trackingId)
     }
 
     private fun assertAllBuilderFieldsAreNotNull(builder: SubscriberBuilder) {
         Assert.assertNotNull(builder.connectionConfiguration)
-        Assert.assertNotNull(builder.logConfiguration)
         Assert.assertNotNull(builder.resolution)
         Assert.assertNotNull(builder.trackingId)
     }

@@ -5,7 +5,6 @@ import android.content.Context;
 
 import com.ably.tracking.Accuracy;
 import com.ably.tracking.ConnectionConfiguration;
-import com.ably.tracking.LogConfiguration;
 import com.ably.tracking.Resolution;
 import com.ably.tracking.publisher.DefaultProximity;
 import com.ably.tracking.publisher.DefaultResolutionConstraints;
@@ -61,7 +60,6 @@ public class PublisherInterfaceUsageExamples {
         publisherBuilder
             .androidContext(context)
             .connection(new ConnectionConfiguration("API_KEY", "CLIENT_ID"))
-            .log(new LogConfiguration(true))
             .map(new MapConfiguration("API_KEY"))
             .resolutionPolicy(resolutionPolicyFactory)
             .locationSource(LocationSourceRaw.createRaw(new LocationHistoryData("1.0", new ArrayList<>()), null))

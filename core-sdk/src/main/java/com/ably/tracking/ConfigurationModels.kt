@@ -2,8 +2,6 @@ package com.ably.tracking
 
 data class ConnectionConfiguration(val apiKey: String, val clientId: String)
 
-data class LogConfiguration(val enabled: Boolean) // TODO - specify config
-
 /**
  * Represents a status of an asset that's being tracked by a publisher.
  */

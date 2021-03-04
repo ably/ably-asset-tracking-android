@@ -3,7 +3,6 @@ package com.ably.tracking.subscriber
 import com.ably.tracking.AssetStatus
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.LocationUpdate
-import com.ably.tracking.LogConfiguration
 import com.ably.tracking.Resolution
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -78,14 +77,6 @@ interface Subscriber {
          * @return A new instance of the builder with this property changed.
          */
         fun connection(configuration: ConnectionConfiguration): Builder
-
-        /**
-         * Sets the logging configuration.
-         *
-         * @param configuration Logging configuration object [LogConfiguration]
-         * @return A new instance of the builder with this property changed.
-         */
-        fun log(configuration: LogConfiguration): Builder
 
         /**
          * Sets the desired resolution of updates, to be requested from the remote publisher.

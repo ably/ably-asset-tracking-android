@@ -2,21 +2,16 @@ package com.ably.tracking.subscriber
 
 import com.ably.tracking.BuilderConfigurationIncompleteException
 import com.ably.tracking.ConnectionConfiguration
-import com.ably.tracking.LogConfiguration
 import com.ably.tracking.Resolution
 
 internal data class SubscriberBuilder(
     val connectionConfiguration: ConnectionConfiguration? = null,
-    val logConfiguration: LogConfiguration? = null,
     val resolution: Resolution? = null,
     val trackingId: String? = null
 ) : Subscriber.Builder {
 
     override fun connection(configuration: ConnectionConfiguration): Subscriber.Builder =
         this.copy(connectionConfiguration = configuration)
-
-    override fun log(configuration: LogConfiguration): Subscriber.Builder =
-        this.copy(logConfiguration = configuration)
 
     override fun resolution(resolution: Resolution): Subscriber.Builder =
         this.copy(resolution = resolution)
