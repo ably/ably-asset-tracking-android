@@ -49,7 +49,6 @@ internal data class PublisherBuilder(
         )
     }
 
-    // TODO - define which fields are required and which are optional (for now: only fields needed to create Publisher)
     private fun isMissingRequiredFields() =
         connectionConfiguration == null ||
             mapConfiguration == null ||
