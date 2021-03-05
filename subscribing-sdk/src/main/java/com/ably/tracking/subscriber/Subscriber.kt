@@ -1,6 +1,6 @@
 package com.ably.tracking.subscriber
 
-import com.ably.tracking.AssetStatus
+import com.ably.tracking.AssetState
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.Resolution
@@ -49,9 +49,9 @@ interface Subscriber {
         @JvmSynthetic get
 
     /**
-     * The shared flow emitting values when the online status of the asset changes.
+     * The shared flow emitting values when the state of the asset changes.
      */
-    val assetStatuses: StateFlow<AssetStatus>
+    val assetStates: StateFlow<AssetState>
         @JvmSynthetic get
 
     /**

@@ -1,6 +1,6 @@
 package com.ably.tracking.subscriber
 
-import com.ably.tracking.AssetStatus
+import com.ably.tracking.AssetState
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.Resolution
 import com.ably.tracking.common.ClientTypes
@@ -25,7 +25,7 @@ internal interface CoreSubscriber {
     fun enqueue(event: AdhocEvent)
     fun request(request: Request)
     val enhancedLocations: SharedFlow<LocationUpdate>
-    val assetStatuses: StateFlow<AssetStatus>
+    val assetStates: StateFlow<AssetState>
 }
 
 internal fun createCoreSubscriber(
@@ -42,14 +42,14 @@ private class DefaultCoreSubscriber(
     CoreSubscriber {
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private val sendEventChannel: SendChannel<Event>
-    private val _assetStatuses: MutableStateFlow<AssetStatus> = MutableStateFlow(AssetStatus.Offline())
+    private val _assetStates: MutableStateFlow<AssetState> = MutableStateFlow(AssetState.Offline())
     private val _enhancedLocations: MutableSharedFlow<LocationUpdate> = MutableSharedFlow(replay = 1)
 
     override val enhancedLocations: SharedFlow<LocationUpdate>
         get() = _enhancedLocations.asSharedFlow()
 
-    override val assetStatuses: StateFlow<AssetStatus>
-        get() = _assetStatuses.asStateFlow()
+    override val assetStates: StateFlow<AssetState>
+        get() = _assetStates.asStateFlow()
 
     init {
         val channel = Channel<Event>()
@@ -127,10 +127,10 @@ private class DefaultCoreSubscriber(
     }
 
     private suspend fun notifyAssetIsOnline() {
-        _assetStatuses.emit(AssetStatus.Online())
+        _assetStates.emit(AssetState.Online())
     }
 
     private suspend fun notifyAssetIsOffline() {
-        _assetStatuses.emit(AssetStatus.Offline())
+        _assetStates.emit(AssetState.Offline())
     }
 }

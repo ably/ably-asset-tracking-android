@@ -1,7 +1,7 @@
 package com.ably.tracking.subscriber.java
 
 import com.ably.tracking.Resolution
-import com.ably.tracking.java.AssetStatusListener
+import com.ably.tracking.java.AssetStateListener
 import com.ably.tracking.java.LocationUpdateListener
 import com.ably.tracking.subscriber.Subscriber
 import com.ably.tracking.subscriber.Subscriber.Builder
@@ -38,11 +38,11 @@ interface SubscriberFacade : Subscriber {
     fun addLocationListener(listener: LocationUpdateListener)
 
     /**
-     * Adds a handler to be notified when the online status of the asset changes.
+     * Adds a handler to be notified when the online state of the asset changes.
      *
      * @param listener the listening function to be notified.
      */
-    fun addListener(listener: AssetStatusListener)
+    fun addListener(listener: AssetStateListener)
 
     /**
      * Stops this subscriber from listening to published locations. Once a subscriber has been stopped, it cannot be

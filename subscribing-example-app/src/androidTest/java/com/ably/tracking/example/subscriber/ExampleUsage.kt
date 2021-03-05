@@ -34,7 +34,7 @@ fun exampleUsage(trackingId: String) {
         }
         .launchIn(scope)
 
-    subscriber.assetStatuses
+    subscriber.assetStates
         .onEach {
             // provide a function to be called when the asset changes online/offline status
         }

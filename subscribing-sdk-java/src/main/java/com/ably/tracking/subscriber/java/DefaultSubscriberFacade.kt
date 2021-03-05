@@ -1,7 +1,7 @@
 package com.ably.tracking.subscriber.java
 
 import com.ably.tracking.Resolution
-import com.ably.tracking.java.AssetStatusListener
+import com.ably.tracking.java.AssetStateListener
 import com.ably.tracking.java.LocationUpdateListener
 import com.ably.tracking.subscriber.Subscriber
 import kotlinx.coroutines.CoroutineScope
@@ -27,9 +27,9 @@ internal class DefaultSubscriberFacade(
             .launchIn(scope)
     }
 
-    override fun addListener(listener: AssetStatusListener) {
-        subscriber.assetStatuses
-            .onEach { listener.onStatusChanged(it) }
+    override fun addListener(listener: AssetStateListener) {
+        subscriber.assetStates
+            .onEach { listener.onStateChanged(it) }
             .launchIn(scope)
     }
 

@@ -4,7 +4,7 @@ import android.Manifest.permission.ACCESS_COARSE_LOCATION
 import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.annotation.SuppressLint
 import androidx.annotation.RequiresPermission
-import com.ably.tracking.AssetStatus
+import com.ably.tracking.AssetState
 import com.ably.tracking.LocationUpdate
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -43,7 +43,7 @@ constructor(
         core.enqueue(StartEvent())
     }
 
-    override suspend fun track(trackable: Trackable): StateFlow<AssetStatus> {
+    override suspend fun track(trackable: Trackable): StateFlow<AssetState> {
         return suspendCoroutine { continuation ->
             core.request(
                 TrackTrackableEvent(trackable) {
@@ -57,7 +57,7 @@ constructor(
         }
     }
 
-    override suspend fun add(trackable: Trackable): StateFlow<AssetStatus> {
+    override suspend fun add(trackable: Trackable): StateFlow<AssetState> {
         return suspendCoroutine { continuation ->
             core.request(
                 AddTrackableEvent(trackable) {
@@ -99,5 +99,5 @@ constructor(
         }
     }
 
-    override fun getAssetStatus(trackableId: String): StateFlow<AssetStatus>? = core.assetStatusFlows[trackableId]
+    override fun getAssetState(trackableId: String): StateFlow<AssetState>? = core.assetStateFlows[trackableId]
 }

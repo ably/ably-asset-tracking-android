@@ -5,7 +5,7 @@ import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.content.Context
 import androidx.annotation.RequiresPermission
 import com.ably.tracking.AblyException
-import com.ably.tracking.AssetStatus
+import com.ably.tracking.AssetState
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.LocationUpdate
 import kotlinx.coroutines.flow.SharedFlow
@@ -39,12 +39,12 @@ interface Publisher {
      *
      * @param trackable The object to be added to this publisher's tracked set, if it's not already there, and to be
      * made the actively tracked object.
-     * @return [StateFlow] that represents the [AssetStatus] of the added [Trackable].
+     * @return [StateFlow] that represents the [AssetState] of the added [Trackable].
      *
      * @throws AblyException when something goes wrong with the Ably connection
      */
     @JvmSynthetic
-    suspend fun track(trackable: Trackable): StateFlow<AssetStatus>
+    suspend fun track(trackable: Trackable): StateFlow<AssetState>
 
     /**
      * Adds a [Trackable] object, but does not make it the actively tracked object, meaning that the state of the
@@ -53,12 +53,12 @@ interface Publisher {
      * If this object was already in this publisher's tracked set then this method does nothing.
      *
      * @param trackable The object to be added to this publisher's tracked set, if it's not already there.
-     * @return [StateFlow] that represents the [AssetStatus] of the added [Trackable].
+     * @return [StateFlow] that represents the [AssetState] of the added [Trackable].
      *
      * @throws AblyException when something goes wrong with the Ably connection
      */
     @JvmSynthetic
-    suspend fun add(trackable: Trackable): StateFlow<AssetStatus>
+    suspend fun add(trackable: Trackable): StateFlow<AssetState>
 
     /**
      * Removes a [Trackable] object if it is known to this publisher, otherwise does nothing and returns false.
@@ -106,13 +106,13 @@ interface Publisher {
         @JvmSynthetic get
 
     /**
-     * Returns an asset status flow representing the [AssetStatus] for an already added [Trackable].
+     * Returns an asset state flow representing the [AssetState] for an already added [Trackable].
      *
      * @param trackableId The ID of an already added trackable.
-     * @return [StateFlow] that represents the [AssetStatus] of the added [Trackable]. If the trackable doesn't exist it returns null.
+     * @return [StateFlow] that represents the [AssetState] of the added [Trackable]. If the trackable doesn't exist it returns null.
      */
     @JvmSynthetic
-    fun getAssetStatus(trackableId: String): StateFlow<AssetStatus>?
+    fun getAssetState(trackableId: String): StateFlow<AssetState>?
 
     /**
      * Stops this publisher from publishing locations. Once a publisher has been stopped, it cannot be restarted.

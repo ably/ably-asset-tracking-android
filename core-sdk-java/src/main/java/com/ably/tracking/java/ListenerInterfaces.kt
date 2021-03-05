@@ -1,6 +1,6 @@
 package com.ably.tracking.java
 
-import com.ably.tracking.AssetStatus
+import com.ably.tracking.AssetState
 import com.ably.tracking.LocationUpdate
 
 /**
@@ -13,8 +13,8 @@ interface LocationUpdateListener {
 
 /**
  * Defines an interface, to be implemented in Java code utilising the Ably Asset Tracking SDKs, allowing that code to
- * handle events indicating the online status of an asset.
+ * handle events indicating the state of an asset.
  */
-interface AssetStatusListener {
-    fun onStatusChanged(assetStatus: AssetStatus)
+interface AssetStateListener {
+    fun onStateChanged(assetState: AssetState)
 }

@@ -6,7 +6,7 @@ import android.os.Bundle
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.core.widget.ImageViewCompat
-import com.ably.tracking.AssetStatus
+import com.ably.tracking.AssetState
 import com.ably.tracking.publisher.Trackable
 import kotlinx.android.synthetic.main.activity_trackable_details.*
 import kotlinx.coroutines.CoroutineScope
@@ -48,8 +48,8 @@ class TrackableDetailsActivity : PublisherServiceActivity() {
 
     private fun listenForPublisherChanges(publisherService: PublisherService?) {
         publisherService?.publisher?.apply {
-            getAssetStatus(trackableId)
-                ?.onEach { updateAssetStatusInfo(it) }
+            getAssetState(trackableId)
+                ?.onEach { updateAssetStateInfo(it) }
                 ?.launchIn(scope)
             locations
                 .onEach { updateLocationInfo(it.location) }
@@ -88,26 +88,26 @@ class TrackableDetailsActivity : PublisherServiceActivity() {
         bearingValueTextView.text = if (bearing.length > 7) bearing.substring(0, 7) else bearing
     }
 
-    private fun updateAssetStatusInfo(status: AssetStatus) {
+    private fun updateAssetStateInfo(state: AssetState) {
         val textId: Int
         val colorId: Int
-        when (status) {
-            is AssetStatus.Online -> {
+        when (state) {
+            is AssetState.Online -> {
                 textId = R.string.online
                 colorId = R.color.asset_status_online
             }
-            is AssetStatus.Offline -> {
+            is AssetState.Offline -> {
                 textId = R.string.offline
                 colorId = R.color.asset_status_offline
             }
-            is AssetStatus.Failed -> {
+            is AssetState.Failed -> {
                 textId = R.string.failed
                 colorId = R.color.asset_status_failed
             }
         }
-        assetStatusValueTextView.text = getString(textId)
+        assetStateValueTextView.text = getString(textId)
         ImageViewCompat.setImageTintList(
-            assetStatusImageView,
+            assetStateImageView,
             ColorStateList.valueOf(ContextCompat.getColor(this, colorId))
         )
     }

@@ -1,6 +1,6 @@
 package com.ably.tracking.publisher
 
-import com.ably.tracking.AssetStatus
+import com.ably.tracking.AssetState
 import com.ably.tracking.ConnectionStateChange
 import com.ably.tracking.EnhancedLocationUpdate
 import com.ably.tracking.LocationUpdate
@@ -28,12 +28,12 @@ internal class StartEvent : AdhocEvent()
 
 internal data class AddTrackableEvent(
     val trackable: Trackable,
-    val handler: ResultHandler<StateFlow<AssetStatus>>
+    val handler: ResultHandler<StateFlow<AssetState>>
 ) : Request()
 
 internal data class TrackTrackableEvent(
     val trackable: Trackable,
-    val handler: ResultHandler<StateFlow<AssetStatus>>
+    val handler: ResultHandler<StateFlow<AssetState>>
 ) : Request()
 
 internal data class SetActiveTrackableEvent(
@@ -52,7 +52,7 @@ internal data class RemoveTrackableEvent(
 
 internal data class JoinPresenceSuccessEvent(
     val trackable: Trackable,
-    val handler: ResultHandler<StateFlow<AssetStatus>>
+    val handler: ResultHandler<StateFlow<AssetState>>
 ) : Request()
 
 internal data class RawLocationChangedEvent(
