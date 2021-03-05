@@ -144,7 +144,7 @@ constructor(
     ) {
         launch {
             // state
-            val state = PublisherState(routingProfile, policy.resolve(emptySet()))
+            val state = State(routingProfile, policy.resolve(emptySet()))
 
             // processing
             for (event in receiveEventChannel) {
@@ -326,7 +326,7 @@ constructor(
         }
     }
 
-    private fun updateAssetStatuses(state: PublisherState, trackableId: String) {
+    private fun updateAssetStatuses(state: State, trackableId: String) {
         val hasSentAtLeastOneLocation: Boolean = state.lastSentEnhancedLocations[trackableId] != null
         val lastChannelConnectionStateChange = getLastChannelConnectionStateChange(state, trackableId)
         val newStatus = when (state.lastConnectionStateChange.state) {
@@ -346,11 +346,11 @@ constructor(
         }
     }
 
-    private fun getLastChannelConnectionStateChange(state: PublisherState, trackableId: String): ConnectionStateChange =
+    private fun getLastChannelConnectionStateChange(state: State, trackableId: String): ConnectionStateChange =
         state.lastChannelConnectionStateChanges[trackableId]
             ?: ConnectionStateChange(ConnectionState.OFFLINE, ConnectionState.OFFLINE, null)
 
-    private fun removeAllSubscribers(trackable: Trackable, state: PublisherState) {
+    private fun removeAllSubscribers(trackable: Trackable, state: State) {
         state.subscribers[trackable.id]?.let { subscribers ->
             subscribers.forEach { hooks.subscribers?.onSubscriberRemoved(it) }
             subscribers.clear()
@@ -365,7 +365,7 @@ constructor(
     private fun createChannelForTrackableIfNotExisits(
         trackable: Trackable,
         handler: ResultHandler<StateFlow<AssetStatus>>,
-        state: PublisherState
+        state: State
     ) {
         ably.connect(trackable.id, state.presenceData) { result ->
             try {
@@ -385,7 +385,7 @@ constructor(
         }
     }
 
-    private fun addSubscriber(id: String, trackable: Trackable, data: PresenceData, state: PublisherState) {
+    private fun addSubscriber(id: String, trackable: Trackable, data: PresenceData, state: State) {
         val subscriber = Subscriber(id, trackable)
         if (state.subscribers[trackable.id] == null) {
             state.subscribers[trackable.id] = mutableSetOf()
@@ -396,7 +396,7 @@ constructor(
         resolveResolution(trackable, state)
     }
 
-    private fun updateSubscriber(id: String, trackable: Trackable, data: PresenceData, state: PublisherState) {
+    private fun updateSubscriber(id: String, trackable: Trackable, data: PresenceData, state: State) {
         state.subscribers[trackable.id]?.let { subscribers ->
             subscribers.find { it.id == id }?.let { subscriber ->
                 data.resolution.let { resolution ->
@@ -407,7 +407,7 @@ constructor(
         }
     }
 
-    private fun removeSubscriber(id: String, trackable: Trackable, state: PublisherState) {
+    private fun removeSubscriber(id: String, trackable: Trackable, state: State) {
         state.subscribers[trackable.id]?.let { subscribers ->
             subscribers.find { it.id == id }?.let { subscriber ->
                 subscribers.remove(subscriber)
@@ -422,7 +422,7 @@ constructor(
         resolution: Resolution?,
         trackable: Trackable,
         subscriber: Subscriber,
-        state: PublisherState
+        state: State
     ) {
         if (resolution != null) {
             if (state.requests[trackable.id] == null) {
@@ -434,7 +434,7 @@ constructor(
         }
     }
 
-    private fun resolveResolution(trackable: Trackable, state: PublisherState) {
+    private fun resolveResolution(trackable: Trackable, state: State) {
         val resolutionRequests: Set<Resolution> = state.requests[trackable.id]?.values?.toSet() ?: emptySet()
         policy.resolve(TrackableResolutionRequest(trackable, resolutionRequests)).let { resolution ->
             state.resolutions[trackable.id] = resolution
@@ -442,7 +442,7 @@ constructor(
         }
     }
 
-    private fun setDestination(destination: Destination, state: PublisherState) {
+    private fun setDestination(destination: Destination, state: State) {
         // TODO is there a way to ensure we're executing in the right thread?
         state.lastPublisherLocation.let { currentLocation ->
             if (currentLocation != null) {
@@ -458,7 +458,7 @@ constructor(
         }
     }
 
-    private fun removeCurrentDestination(state: PublisherState) {
+    private fun removeCurrentDestination(state: State) {
         mapbox.clearRoute()
         state.currentDestination = null
         state.estimatedArrivalTimeInMilliseconds = null
@@ -535,7 +535,7 @@ constructor(
         }
     }
 
-    private inner class PublisherState(
+    private inner class State(
         routingProfile: RoutingProfile,
         var locationEngineResolution: Resolution,
         var isTracking: Boolean = false,
