@@ -302,14 +302,22 @@ constructor(
                         state.currentDestination?.let { setDestination(it, state) }
                     }
                     is StopEvent -> {
-                        ably.close(state.presenceData)
-                        if (state.isTracking) {
-                            state.isTracking = false
-                            mapbox.unregisterLocationObserver(locationObserver)
-                            mapbox.stopAndClose()
+                        if (state.isStopped) {
+                            event.handler(Result.success(Unit))
+                        } else {
+                            if (state.isTracking) {
+                                state.isTracking = false
+                                mapbox.unregisterLocationObserver(locationObserver)
+                                mapbox.stopAndClose()
+                            }
+                            try {
+                                ably.close(state.presenceData)
+                                state.isStopped = true
+                                event.handler(Result.success(Unit))
+                            } catch (exception: AblyException) {
+                                event.handler(Result.failure(exception))
+                            }
                         }
-                        // TODO implement proper stopping strategy which only calls back once we're fully stopped (considering whether scope.cancel() is appropriate)
-                        event.handler(Result.success(Unit))
                     }
                     is AblyConnectionStateChangeEvent -> {
                         state.lastConnectionStateChange = event.connectionStateChange
@@ -539,6 +547,7 @@ constructor(
         routingProfile: RoutingProfile,
         var locationEngineResolution: Resolution,
         var isTracking: Boolean = false,
+        var isStopped: Boolean = false,
         val trackables: MutableSet<Trackable> = mutableSetOf(),
         val trackableStates: MutableMap<String, TrackableState> = mutableMapOf(),
         val trackableStateFlows: MutableMap<String, MutableStateFlow<TrackableState>> = mutableMapOf(),

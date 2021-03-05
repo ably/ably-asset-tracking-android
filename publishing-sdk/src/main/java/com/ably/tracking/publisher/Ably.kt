@@ -16,7 +16,12 @@ import io.ably.lib.realtime.Channel
 import io.ably.lib.realtime.CompletionListener
 import io.ably.lib.types.AblyException
 import io.ably.lib.types.ErrorInfo
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import timber.log.Timber
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.coroutines.suspendCoroutine
 
 /**
  * Wrapper for the [AblyRealtime] that's used to interact with the Ably SDK.
@@ -101,8 +106,10 @@ internal interface Ably {
      * Cleanups and closes all the connected channels and their presence. In the end closes Ably connection.
      *
      * @param presenceData The data that will be send via the presence channels.
+     *
+     * @throws com.ably.tracking.AblyException if something goes wrong.
      */
-    fun close(presenceData: PresenceData)
+    suspend fun close(presenceData: PresenceData)
 }
 
 internal class DefaultAbly(
@@ -176,6 +183,22 @@ internal class DefaultAbly(
         }
     }
 
+    /**
+     * A suspend version of the [DefaultAbly.disconnect] method. It waits until disconnection is completed.
+     * @throws com.ably.tracking.AblyException if something goes wrong during disconnect.
+     */
+    private suspend fun disconnect(trackableId: String, presenceData: PresenceData) {
+        suspendCoroutine<Unit> { continuation ->
+            disconnect(trackableId, presenceData) {
+                try {
+                    continuation.resume(it.getOrThrow())
+                } catch (exception: com.ably.tracking.AblyException) {
+                    continuation.resumeWithException(exception)
+                }
+            }
+        }
+    }
+
     override fun sendEnhancedLocation(trackableId: String, locationUpdate: EnhancedLocationUpdate) {
         val locationUpdateJson = locationUpdate.toJson(gson)
         Timber.d("sendEnhancedLocationMessage: publishing: $locationUpdateJson")
@@ -216,14 +239,31 @@ internal class DefaultAbly(
         }
     }
 
-    override fun close(presenceData: PresenceData) {
-        channels.apply {
-            values.forEach {
-                it.presence.unsubscribe()
-                // TODO leave channel presence
+    override suspend fun close(presenceData: PresenceData) {
+        // launches closing of all channels in parallel but waits for all channels to be closed
+        // TODO If any suspend function throws inside coroutineScope it will fail the whole scope, is it OK? If not we should use supervisorScope.
+        coroutineScope {
+            channels.keys.forEach { trackableId ->
+                launch { disconnect(trackableId, presenceData) }
             }
-            channels.clear()
         }
-        ably.close()
+        closeConnection()
+    }
+
+    /**
+     * Closes [AblyRealtime] and waits until it's either closed or failed.
+     * @throws com.ably.tracking.AblyException if the [AblyRealtime] state changes to [io.ably.lib.realtime.ConnectionState.failed].
+     */
+    private suspend fun closeConnection() {
+        suspendCoroutine<Unit> { continuation ->
+            ably.connection.on {
+                if (it.current == io.ably.lib.realtime.ConnectionState.closed) {
+                    continuation.resume(Unit)
+                } else if (it.current == io.ably.lib.realtime.ConnectionState.failed) {
+                    continuation.resumeWithException(it.reason.toTrackingException())
+                }
+            }
+            ably.close()
+        }
     }
 }
