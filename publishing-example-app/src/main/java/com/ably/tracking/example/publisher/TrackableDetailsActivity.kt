@@ -6,7 +6,7 @@ import android.os.Bundle
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.core.widget.ImageViewCompat
-import com.ably.tracking.AssetState
+import com.ably.tracking.TrackableState
 import com.ably.tracking.publisher.Trackable
 import kotlinx.android.synthetic.main.activity_trackable_details.*
 import kotlinx.coroutines.CoroutineScope
@@ -48,7 +48,7 @@ class TrackableDetailsActivity : PublisherServiceActivity() {
 
     private fun listenForPublisherChanges(publisherService: PublisherService?) {
         publisherService?.publisher?.apply {
-            getAssetState(trackableId)
+            getTrackableState(trackableId)
                 ?.onEach { updateAssetStateInfo(it) }
                 ?.launchIn(scope)
             locations
@@ -88,19 +88,19 @@ class TrackableDetailsActivity : PublisherServiceActivity() {
         bearingValueTextView.text = if (bearing.length > 7) bearing.substring(0, 7) else bearing
     }
 
-    private fun updateAssetStateInfo(state: AssetState) {
+    private fun updateAssetStateInfo(state: TrackableState) {
         val textId: Int
         val colorId: Int
         when (state) {
-            is AssetState.Online -> {
+            is TrackableState.Online -> {
                 textId = R.string.online
                 colorId = R.color.asset_status_online
             }
-            is AssetState.Offline -> {
+            is TrackableState.Offline -> {
                 textId = R.string.offline
                 colorId = R.color.asset_status_offline
             }
-            is AssetState.Failed -> {
+            is TrackableState.Failed -> {
                 textId = R.string.failed
                 colorId = R.color.asset_status_failed
             }

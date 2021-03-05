@@ -1,7 +1,7 @@
 package com.ably.tracking.publisher.java
 
-import com.ably.tracking.java.AssetStateListener
 import com.ably.tracking.java.LocationUpdateListener
+import com.ably.tracking.java.TrackableStateListener
 import com.ably.tracking.publisher.Publisher
 import com.ably.tracking.publisher.Trackable
 import kotlinx.coroutines.CoroutineScope
@@ -17,21 +17,21 @@ class DefaultPublisherFacade(
 ) : PublisherFacade, Publisher by publisher {
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
-    override fun trackAsync(trackable: Trackable, listener: AssetStateListener?): CompletableFuture<Void> {
+    override fun trackAsync(trackable: Trackable, listener: TrackableStateListener?): CompletableFuture<Void> {
         return scope.future {
             val flow = publisher.track(trackable)
-            listener?.let { assetStateListener ->
-                flow.onEach { assetState -> assetStateListener.onStateChanged(assetState) }
+            listener?.let { trackableStateListener ->
+                flow.onEach { trackableState -> trackableStateListener.onStateChanged(trackableState) }
                     .launchIn(scope)
             }
         }.thenRun { }
     }
 
-    override fun addAsync(trackable: Trackable, listener: AssetStateListener?): CompletableFuture<Void> {
+    override fun addAsync(trackable: Trackable, listener: TrackableStateListener?): CompletableFuture<Void> {
         return scope.future {
             val flow = publisher.add(trackable)
-            listener?.let { assetStateListener ->
-                flow.onEach { assetState -> assetStateListener.onStateChanged(assetState) }
+            listener?.let { trackableStateListener ->
+                flow.onEach { trackableState -> trackableStateListener.onStateChanged(trackableState) }
                     .launchIn(scope)
             }
         }.thenRun { }
@@ -59,8 +59,8 @@ class DefaultPublisherFacade(
             .launchIn(scope)
     }
 
-    override fun addTrackableStateListener(trackableId: String, listener: AssetStateListener) {
-        publisher.getAssetState(trackableId)
+    override fun addTrackableStateListener(trackableId: String, listener: TrackableStateListener) {
+        publisher.getTrackableState(trackableId)
             ?.onEach { listener.onStateChanged(it) }
             ?.launchIn(scope)
     }

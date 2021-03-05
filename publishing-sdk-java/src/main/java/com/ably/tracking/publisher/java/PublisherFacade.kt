@@ -1,7 +1,7 @@
 package com.ably.tracking.publisher.java
 
-import com.ably.tracking.java.AssetStateListener
 import com.ably.tracking.java.LocationUpdateListener
+import com.ably.tracking.java.TrackableStateListener
 import com.ably.tracking.publisher.Publisher
 import com.ably.tracking.publisher.Trackable
 import java.util.concurrent.CompletableFuture
@@ -21,11 +21,11 @@ interface PublisherFacade : Publisher {
      *
      * @param trackable The object to be added to this publisher's tracked set, if it's not already there, and to be
      * made the actively tracked object.
-     * @param listener The listener to be notified when the added asset state changes.
+     * @param listener The listener to be notified when the added trackable state changes.
      *
      * @return A [CompletableFuture] that completes when the object has been removed.
      */
-    fun trackAsync(trackable: Trackable, listener: AssetStateListener?): CompletableFuture<Void>
+    fun trackAsync(trackable: Trackable, listener: TrackableStateListener?): CompletableFuture<Void>
 
     /**
      * Adds a [Trackable] object, but does not make it the actively tracked object, meaning that the state of the
@@ -35,11 +35,11 @@ interface PublisherFacade : Publisher {
      * simply completing successfully.
      *
      * @param trackable The object to be added to this publisher's tracked set, if it's not already there.
-     * @param listener The listener to be notified when the added asset state changes.
+     * @param listener The listener to be notified when the added trackable state changes.
      *
      * @return A [CompletableFuture] that completes when the object has been added.
      */
-    fun addAsync(trackable: Trackable, listener: AssetStateListener?): CompletableFuture<Void>
+    fun addAsync(trackable: Trackable, listener: TrackableStateListener?): CompletableFuture<Void>
 
     /**
      * Removes a [Trackable] object if it is known to this publisher, otherwise does nothing and returns false.
@@ -75,7 +75,7 @@ interface PublisherFacade : Publisher {
      * @param trackableId The ID of the already added trackable.
      * @param listener The listener to be notified when the specified trackable state changes.
      */
-    fun addTrackableStateListener(trackableId: String, listener: AssetStateListener)
+    fun addTrackableStateListener(trackableId: String, listener: TrackableStateListener)
 
     /**
      * Stops this publisher from publishing locations. Once a publisher has been stopped, it cannot be restarted.

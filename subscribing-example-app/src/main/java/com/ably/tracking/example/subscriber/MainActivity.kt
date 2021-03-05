@@ -5,7 +5,7 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.ably.tracking.Accuracy
-import com.ably.tracking.AssetState
+import com.ably.tracking.TrackableState
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.Resolution
 import com.ably.tracking.subscriber.Subscriber
@@ -87,7 +87,7 @@ class MainActivity : AppCompatActivity() {
                 locations
                     .onEach { showMarkerOnMap(it.location) }
                     .launchIn(scope)
-                assetStates
+                trackableStates
                     .onEach { updateAssetState(it) }
                     .launchIn(scope)
             }
@@ -148,11 +148,11 @@ class MainActivity : AppCompatActivity() {
         resolutionIntervalTextView.text = ""
     }
 
-    private fun updateAssetState(assetState: AssetState) {
-        val textId = when (assetState) {
-            is AssetState.Online -> R.string.asset_status_online
-            is AssetState.Offline -> R.string.asset_status_offline
-            is AssetState.Failed -> R.string.asset_status_failed
+    private fun updateAssetState(trackableState: TrackableState) {
+        val textId = when (trackableState) {
+            is TrackableState.Online -> R.string.asset_status_online
+            is TrackableState.Offline -> R.string.asset_status_offline
+            is TrackableState.Failed -> R.string.asset_status_failed
         }
         assetStateTextView.text = getString(textId)
     }

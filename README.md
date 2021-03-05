@@ -78,7 +78,7 @@ val subscriber = Subscriber.subscribers() // Get an AssetSubscriber
         Resolution(Accuracy.MAXIMUM, desiredInterval = 1000L, minimumDisplacement = 1.0)
     )
     .trackingId(trackingId) // provide the tracking identifier for the asset that needs to be tracked
-    .assetStates { } // provide a function to be called when the asset changes its state
+    .trackableStates { } // provide a function to be called when the asset changes its state
     .start() // start listening for updates
 
 // Listen for location updates

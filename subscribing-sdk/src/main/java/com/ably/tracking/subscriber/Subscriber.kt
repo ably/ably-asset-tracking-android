@@ -1,9 +1,9 @@
 package com.ably.tracking.subscriber
 
-import com.ably.tracking.AssetState
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.Resolution
+import com.ably.tracking.TrackableState
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -49,9 +49,9 @@ interface Subscriber {
         @JvmSynthetic get
 
     /**
-     * The shared flow emitting values when the state of the asset changes.
+     * The shared flow emitting values when the state of the trackable changes.
      */
-    val assetStates: StateFlow<AssetState>
+    val trackableStates: StateFlow<TrackableState>
         @JvmSynthetic get
 
     /**
