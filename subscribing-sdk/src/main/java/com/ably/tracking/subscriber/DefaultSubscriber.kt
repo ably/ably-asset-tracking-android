@@ -1,8 +1,9 @@
 package com.ably.tracking.subscriber
 
-import com.ably.tracking.TrackableState
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.Resolution
+import com.ably.tracking.TrackableState
+import com.ably.tracking.common.Ably
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import timber.log.Timber
@@ -12,7 +13,8 @@ import kotlin.coroutines.suspendCoroutine
 
 internal class DefaultSubscriber(
     ably: Ably,
-    resolution: Resolution?
+    resolution: Resolution?,
+    trackableId: String
 ) : Subscriber {
     private val core: CoreSubscriber
 
@@ -25,7 +27,7 @@ internal class DefaultSubscriber(
     init {
         Timber.w("Started.")
 
-        core = createCoreSubscriber(ably, resolution)
+        core = createCoreSubscriber(ably, resolution, trackableId)
         core.enqueue(StartEvent())
     }
 

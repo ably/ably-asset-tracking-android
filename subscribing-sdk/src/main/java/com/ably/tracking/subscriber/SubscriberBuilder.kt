@@ -3,6 +3,7 @@ package com.ably.tracking.subscriber
 import com.ably.tracking.BuilderConfigurationIncompleteException
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.Resolution
+import com.ably.tracking.common.DefaultAbly
 
 internal data class SubscriberBuilder(
     val connectionConfiguration: ConnectionConfiguration? = null,
@@ -25,8 +26,9 @@ internal data class SubscriberBuilder(
         }
         // All below fields are required and above code checks if they are nulls, so using !! should be safe from NPE
         return DefaultSubscriber(
-            DefaultAbly(connectionConfiguration!!, trackingId!!),
-            resolution
+            DefaultAbly(connectionConfiguration!!),
+            resolution,
+            trackingId!!
         )
     }
 

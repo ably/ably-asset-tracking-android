@@ -1,8 +1,10 @@
 package com.ably.tracking.subscriber
 
+import com.ably.tracking.AblyException
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
+import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ClientTypes
 import com.ably.tracking.common.PresenceAction
 import com.ably.tracking.common.PresenceData
@@ -30,14 +32,16 @@ internal interface CoreSubscriber {
 
 internal fun createCoreSubscriber(
     ably: Ably,
-    initialResolution: Resolution? = null
+    initialResolution: Resolution? = null,
+    trackableId: String
 ): CoreSubscriber {
-    return DefaultCoreSubscriber(ably, initialResolution)
+    return DefaultCoreSubscriber(ably, initialResolution, trackableId)
 }
 
 private class DefaultCoreSubscriber(
     private val ably: Ably,
-    private val initialResolution: Resolution?
+    private val initialResolution: Resolution?,
+    private val trackableId: String
 ) :
     CoreSubscriber {
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
@@ -78,7 +82,7 @@ private class DefaultCoreSubscriber(
                         notifyAssetIsOffline()
                         subscribeForEnhancedEvents()
                         subscribeForPresenceMessages()
-                        ably.connect(presenceData) {
+                        ably.connect(trackableId, presenceData, useRewind = true) {
                             // TODO what should we do when connection fails?
                         }
                     }
@@ -99,14 +103,17 @@ private class DefaultCoreSubscriber(
                     }
                     is ChangeResolutionEvent -> {
                         presenceData = presenceData.copy(resolution = event.resolution)
-                        ably.updatePresenceData(presenceData) {
+                        ably.updatePresenceData(trackableId, presenceData) {
                             event.handler(it)
                         }
                     }
                     is StopEvent -> {
                         notifyAssetIsOffline()
-                        ably.close(presenceData) {
-                            event.handler(it)
+                        try {
+                            ably.close(presenceData)
+                            event.handler(Result.success(Unit))
+                        } catch (exception: AblyException) {
+                            event.handler(Result.failure(exception))
                         }
                     }
                 }
@@ -115,13 +122,13 @@ private class DefaultCoreSubscriber(
     }
 
     private fun subscribeForPresenceMessages() {
-        ably.subscribeForPresenceMessages {
+        ably.subscribeForPresenceMessages(trackableId) {
             enqueue(PresenceMessageEvent(it))
         }
     }
 
     private fun subscribeForEnhancedEvents() {
-        ably.subscribeForEnhancedEvents {
+        ably.subscribeForEnhancedEvents(trackableId) {
             scope.launch { _enhancedLocations.emit(it) }
         }
     }
