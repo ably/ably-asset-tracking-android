@@ -16,8 +16,8 @@ import io.ably.lib.realtime.Channel
 import io.ably.lib.realtime.CompletionListener
 import io.ably.lib.types.AblyException
 import io.ably.lib.types.ErrorInfo
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 import timber.log.Timber
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -241,8 +241,7 @@ internal class DefaultAbly(
 
     override suspend fun close(presenceData: PresenceData) {
         // launches closing of all channels in parallel but waits for all channels to be closed
-        // TODO If any suspend function throws inside coroutineScope it will fail the whole scope, is it OK? If not we should use supervisorScope.
-        coroutineScope {
+        supervisorScope {
             channels.keys.forEach { trackableId ->
                 launch { disconnect(trackableId, presenceData) }
             }
