@@ -402,7 +402,7 @@ class LocationSourceRaw private constructor(
             LocationSourceRaw(historyData, callback)
     }
 
-    private constructor() : this(historyData = LocationHistoryData("", emptyList()), onDataEnded = null)
+    private constructor() : this(historyData = LocationHistoryData(emptyList()), onDataEnded = null)
     private constructor(historyData: LocationHistoryData, callback: (DataEndedCallback)? = null) : this(
         historyData,
         { callback?.onDataEnded() }

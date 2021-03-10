@@ -62,7 +62,7 @@ public class PublisherInterfaceUsageExamples {
             .connection(new ConnectionConfiguration("API_KEY", "CLIENT_ID"))
             .map(new MapConfiguration("API_KEY"))
             .resolutionPolicy(resolutionPolicyFactory)
-            .locationSource(LocationSourceRaw.createRaw(new LocationHistoryData("1.0", new ArrayList<>()), null))
+            .locationSource(LocationSourceRaw.createRaw(new LocationHistoryData(new ArrayList<>()), null))
             .locationSource(LocationSourceAbly.create("CHANNEL_ID"))
             .start();
     }
