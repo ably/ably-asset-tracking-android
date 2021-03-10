@@ -1,10 +1,10 @@
 package com.ably.tracking.publisher
 
-import com.ably.tracking.TrackableState
 import com.ably.tracking.ConnectionStateChange
 import com.ably.tracking.EnhancedLocationUpdate
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.ResultHandler
+import com.ably.tracking.TrackableState
 import com.ably.tracking.common.PresenceMessage
 import kotlinx.coroutines.flow.StateFlow
 
@@ -18,42 +18,42 @@ internal sealed class AdhocEvent : Event()
 /**
  * Represents an event that invokes an action that calls a callback when it completes.
  */
-internal sealed class Request : Event()
+internal sealed class Request<T>(val handler: ResultHandler<T>) : Event()
 
 internal class StopEvent(
-    val handler: ResultHandler<Unit>
-) : Request()
+    handler: ResultHandler<Unit>
+) : Request<Unit>(handler)
 
 internal class StartEvent : AdhocEvent()
 
-internal data class AddTrackableEvent(
+internal class AddTrackableEvent(
     val trackable: Trackable,
-    val handler: ResultHandler<StateFlow<TrackableState>>
-) : Request()
+    handler: ResultHandler<StateFlow<TrackableState>>
+) : Request<StateFlow<TrackableState>>(handler)
 
-internal data class TrackTrackableEvent(
+internal class TrackTrackableEvent(
     val trackable: Trackable,
-    val handler: ResultHandler<StateFlow<TrackableState>>
-) : Request()
+    handler: ResultHandler<StateFlow<TrackableState>>
+) : Request<StateFlow<TrackableState>>(handler)
 
-internal data class SetActiveTrackableEvent(
+internal class SetActiveTrackableEvent(
     val trackable: Trackable,
-    val handler: ResultHandler<Unit>
-) : Request()
+    handler: ResultHandler<Unit>
+) : Request<Unit>(handler)
 
-internal data class RemoveTrackableEvent(
+internal class RemoveTrackableEvent(
     val trackable: Trackable,
 
     /**
      * On success, the handler is supplied `true` if the [Trackable] was already present.
      */
-    val handler: ResultHandler<Boolean>
-) : Request()
+    handler: ResultHandler<Boolean>
+) : Request<Boolean>(handler)
 
-internal data class JoinPresenceSuccessEvent(
+internal class JoinPresenceSuccessEvent(
     val trackable: Trackable,
-    val handler: ResultHandler<StateFlow<TrackableState>>
-) : Request()
+    handler: ResultHandler<StateFlow<TrackableState>>
+) : Request<StateFlow<TrackableState>>(handler)
 
 internal data class RawLocationChangedEvent(
     val locationUpdate: LocationUpdate

@@ -33,7 +33,7 @@ import kotlinx.coroutines.launch
 
 internal interface CorePublisher {
     fun enqueue(event: AdhocEvent)
-    fun request(request: Request)
+    fun request(request: Request<*>)
     val locations: SharedFlow<LocationUpdate>
     val trackables: SharedFlow<Set<Trackable>>
     val locationHistory: SharedFlow<LocationHistoryData>
@@ -133,7 +133,7 @@ constructor(
         scope.launch { sendEventChannel.send(event) }
     }
 
-    override fun request(request: Request) {
+    override fun request(request: Request<*>) {
         scope.launch { sendEventChannel.send(request) }
     }
 
