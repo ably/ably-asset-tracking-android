@@ -26,6 +26,14 @@
       android:name=".SettingsActivity"
       android:screenOrientation="portrait" />
 
+    <activity
+      android:name=".TrackableDetailsActivity"
+      android:screenOrientation="portrait" />
+
+    <activity
+      android:name=".AddTrackableActivity"
+      android:screenOrientation="portrait" />
+
     <service android:name=".PublisherService" />
   </application>
 
