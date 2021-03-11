@@ -2,6 +2,7 @@ package com.ably.tracking.common
 
 import com.ably.tracking.GeoJsonMessage
 import com.ably.tracking.Resolution
+import com.google.gson.annotations.SerializedName
 
 object GeoJsonTypes {
     const val FEATURE = "Feature"
@@ -32,14 +33,19 @@ data class ResolutionMessage(
 )
 
 enum class AccuracyMessage {
+    @SerializedName("MINIMUM")
     MINIMUM,
 
+    @SerializedName("LOW")
     LOW,
 
+    @SerializedName("BALANCED")
     BALANCED,
 
+    @SerializedName("HIGH")
     HIGH,
 
+    @SerializedName("MAXIMUM")
     MAXIMUM
 }
 
@@ -51,7 +57,9 @@ data class EnhancedLocationUpdateMessage(
 )
 
 enum class LocationUpdateTypeMessage {
+    @SerializedName("PREDICTED")
     PREDICTED,
 
+    @SerializedName("ACTUAL")
     ACTUAL
 }
