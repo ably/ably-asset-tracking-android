@@ -1,7 +1,6 @@
 package com.ably.tracking.common
 
 import com.ably.tracking.GeoJsonMessage
-import com.ably.tracking.LocationUpdateType
 import com.ably.tracking.Resolution
 
 object GeoJsonTypes {
@@ -24,9 +23,35 @@ enum class PresenceAction {
 
 data class PresenceData(val type: String, val resolution: Resolution? = null)
 
+data class PresenceDataMessage(val type: String, val resolution: ResolutionMessage? = null)
+
+data class ResolutionMessage(
+    val accuracy: AccuracyMessage,
+    val desiredInterval: Long,
+    val minimumDisplacement: Double
+)
+
+enum class AccuracyMessage {
+    MINIMUM,
+
+    LOW,
+
+    BALANCED,
+
+    HIGH,
+
+    MAXIMUM
+}
+
 data class EnhancedLocationUpdateMessage(
     val location: GeoJsonMessage,
     val batteryLevel: Float?,
     val intermediateLocations: List<GeoJsonMessage>,
-    val type: LocationUpdateType
+    val type: LocationUpdateTypeMessage
 )
+
+enum class LocationUpdateTypeMessage {
+    PREDICTED,
+
+    ACTUAL
+}
