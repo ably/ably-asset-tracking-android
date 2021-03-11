@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto"
+  xmlns:tools="http://schemas.android.com/tools"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent">
+
+  <TextView
+    android:id="@+id/appTitleTextView"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="24dp"
+    android:text="@string/add_trackable"
+    android:textColor="#DE7C31"
+    android:textSize="30sp"
+    android:textStyle="bold"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintTop_toTopOf="parent" />
+
+  <TextView
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="@string/tracking_id"
+    app:layout_constraintBottom_toTopOf="@+id/trackableIdEditText"
+    app:layout_constraintStart_toStartOf="@+id/trackableIdEditText" />
+
+  <androidx.appcompat.widget.AppCompatEditText
+    android:id="@+id/trackableIdEditText"
+    android:layout_width="match_parent"
+    android:layout_height="70dp"
+    android:layout_marginStart="32dp"
+    android:layout_marginEnd="32dp"
+    android:layout_marginBottom="32dp"
+    app:layout_constraintBottom_toTopOf="@+id/addTrackableButton"
+    tools:text="Here goes test ID" />
+
+  <androidx.appcompat.widget.AppCompatButton
+    android:id="@+id/addTrackableButton"
+    android:layout_width="match_parent"
+    android:layout_height="40dp"
+    android:layout_marginStart="40dp"
+    android:layout_marginEnd="40dp"
+    android:layout_marginBottom="35dp"
+    android:background="@drawable/rounded_ready"
+    android:text="@string/add_trackable_button"
+    android:textColor="@color/white"
+    app:layout_constraintBottom_toBottomOf="parent"
+    app:layout_constraintEnd_toEndOf="@id/trackableIdEditText"
+    app:layout_constraintStart_toStartOf="@id/trackableIdEditText" />
+
+  <ProgressBar
+    android:id="@+id/progressIndicator"
+    android:visibility="gone"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    app:layout_constraintBottom_toBottomOf="parent"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintTop_toTopOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

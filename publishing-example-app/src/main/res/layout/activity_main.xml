@@ -18,175 +18,74 @@
     app:layout_constraintStart_toStartOf="parent"
     app:layout_constraintTop_toTopOf="parent" />
 
-  <ImageView
-    android:id="@+id/assetStatusImageView"
-    android:layout_width="100dp"
-    android:layout_height="44dp"
-    android:layout_marginTop="16dp"
-    android:layout_marginEnd="50dp"
-    app:layout_constraintEnd_toEndOf="parent"
-    app:layout_constraintTop_toBottomOf="@+id/appTitleTextView"
-    app:srcCompat="@drawable/status_background"
-    app:tint="@color/asset_status_offline" />
-
-  <TextView
-    android:id="@+id/assetStatusValueTextView"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:text="@string/offline"
-    android:textAllCaps="true"
-    android:textColor="@color/black"
-    android:textSize="18sp"
-    android:textStyle="bold"
-    app:layout_constraintBottom_toBottomOf="@id/assetStatusImageView"
-    app:layout_constraintEnd_toEndOf="@id/assetStatusImageView"
-    app:layout_constraintStart_toStartOf="@id/assetStatusImageView"
-    app:layout_constraintTop_toTopOf="@id/assetStatusImageView" />
-
-  <TextView
-    android:id="@+id/assetStatusLabelTextView"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:gravity="center"
-    android:text="@string/asset_status_label"
-    android:textColor="@color/black"
-    android:textSize="16sp"
-    android:textStyle="bold"
-    app:layout_constraintBottom_toBottomOf="@id/assetStatusImageView"
-    app:layout_constraintStart_toStartOf="@id/trackingIdEditText"
-    app:layout_constraintTop_toTopOf="@id/assetStatusImageView" />
-
   <TextView
     android:id="@+id/locationSourceLabelTextView"
     android:layout_width="wrap_content"
-    android:layout_height="44dp"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="20dp"
     android:layout_marginTop="16dp"
     android:gravity="center"
     android:text="@string/location_source_label"
     android:textColor="@color/black"
     android:textSize="16sp"
     android:textStyle="bold"
-    app:layout_constraintStart_toStartOf="@+id/trackingIdEditText"
-    app:layout_constraintTop_toBottomOf="@+id/assetStatusLabelTextView" />
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintTop_toBottomOf="@id/appTitleTextView" />
 
   <TextView
     android:id="@+id/locationSourceMethodTextView"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
+    android:layout_marginStart="10dp"
     android:textColor="@color/black"
     android:textSize="16sp"
     android:textStyle="bold"
     app:layout_constraintBottom_toBottomOf="@id/locationSourceLabelTextView"
-    app:layout_constraintEnd_toEndOf="@id/assetStatusImageView"
-    app:layout_constraintStart_toStartOf="@id/assetStatusImageView"
+    app:layout_constraintStart_toEndOf="@id/locationSourceLabelTextView"
     app:layout_constraintTop_toTopOf="@id/locationSourceLabelTextView"
     tools:text="PHONE" />
 
   <TextView
-    android:id="@+id/currentLocationAndBearingTextView"
+    android:id="@+id/trackableListLabelTextView"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:layout_marginTop="30dp"
-    android:text="@string/current_location_and_bearing"
+    android:layout_marginTop="16dp"
+    android:gravity="center"
+    android:text="@string/trackable_list"
     android:textColor="@color/black"
     android:textSize="18sp"
     android:textStyle="bold"
-    app:layout_constraintStart_toStartOf="@id/trackingIdEditText"
-    app:layout_constraintTop_toBottomOf="@+id/locationSourceLabelTextView" />
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintTop_toBottomOf="@id/locationSourceLabelTextView" />
 
-  <TextView
-    android:id="@+id/latitudeLabelTextView"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:layout_marginTop="30dp"
-    android:text="@string/latitude_label"
-    app:layout_constraintStart_toStartOf="@+id/currentLocationAndBearingTextView"
-    app:layout_constraintTop_toBottomOf="@+id/currentLocationAndBearingTextView" />
-
-  <TextView
-    android:id="@+id/latitudeValueTextView"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:layout_marginTop="4dp"
-    android:textColor="@color/black"
-    app:layout_constraintStart_toStartOf="@+id/latitudeLabelTextView"
-    app:layout_constraintTop_toBottomOf="@+id/latitudeLabelTextView" />
-
-  <TextView
-    android:id="@+id/longitudeLabelTextView"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:layout_marginStart="152dp"
-    android:text="@string/longitude_label"
-    app:layout_constraintStart_toEndOf="@+id/latitudeLabelTextView"
-    app:layout_constraintTop_toTopOf="@+id/latitudeLabelTextView" />
-
-  <TextView
-    android:id="@+id/longitudeValueTextView"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:layout_marginTop="4dp"
-    android:textColor="@color/black"
-    app:layout_constraintStart_toStartOf="@+id/longitudeLabelTextView"
-    app:layout_constraintTop_toBottomOf="@+id/longitudeLabelTextView" />
-
-  <TextView
-    android:id="@+id/bearingLabelTextView"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:layout_marginTop="15dp"
-    android:text="@string/bearing_label"
-    app:layout_constraintStart_toStartOf="@+id/latitudeLabelTextView"
-    app:layout_constraintTop_toBottomOf="@+id/latitudeValueTextView" />
-
-  <TextView
-    android:id="@+id/bearingValueTextView"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:layout_marginTop="4dp"
-    android:textColor="@color/black"
-    app:layout_constraintStart_toStartOf="@+id/bearingLabelTextView"
-    app:layout_constraintTop_toBottomOf="@+id/bearingLabelTextView" />
-
-  <TextView
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:text="@string/tracking_id"
-    app:layout_constraintBottom_toTopOf="@+id/trackingIdEditText"
-    app:layout_constraintStart_toStartOf="@+id/trackingIdEditText" />
-
-  <androidx.appcompat.widget.AppCompatEditText
-    android:id="@+id/trackingIdEditText"
+  <androidx.recyclerview.widget.RecyclerView
+    android:id="@+id/trackablesRecyclerView"
     android:layout_width="match_parent"
-    android:layout_height="70dp"
-    android:layout_marginStart="32dp"
-    android:layout_marginEnd="32dp"
-    android:layout_marginBottom="32dp"
-    app:layout_constraintBottom_toTopOf="@+id/startNavigationButton"
-    tools:text="Here goes test ID" />
-
-  <androidx.appcompat.widget.AppCompatButton
-    android:id="@+id/startNavigationButton"
-    android:layout_width="match_parent"
-    android:layout_height="40dp"
-    android:layout_marginStart="40dp"
-    android:layout_marginEnd="40dp"
-    android:layout_marginBottom="35dp"
-    android:background="@drawable/rounded_ready"
-    android:text="@string/navigation_button_ready"
-    android:textColor="@color/white"
+    android:layout_height="0dp"
     app:layout_constraintBottom_toBottomOf="parent"
-    app:layout_constraintEnd_toEndOf="@id/trackingIdEditText"
-    app:layout_constraintStart_toStartOf="@id/trackingIdEditText" />
+    app:layout_constraintTop_toBottomOf="@id/trackableListLabelTextView" />
 
   <com.google.android.material.floatingactionbutton.FloatingActionButton
     android:id="@+id/settingsFab"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
+    android:layout_marginBottom="10dp"
+    app:elevation="0dp"
+    app:fabSize="mini"
+    app:layout_constraintBottom_toTopOf="@id/addTrackableFab"
+    app:layout_constraintEnd_toEndOf="@id/addTrackableFab"
+    app:srcCompat="@drawable/ic_settings" />
+
+  <com.google.android.material.floatingactionbutton.FloatingActionButton
+    android:id="@+id/addTrackableFab"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_margin="10dp"
     app:elevation="0dp"
     app:fabSize="mini"
     app:layout_constraintBottom_toBottomOf="parent"
     app:layout_constraintEnd_toEndOf="parent"
-    app:srcCompat="@drawable/ic_settings" />
+    app:srcCompat="@drawable/ic_add" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
