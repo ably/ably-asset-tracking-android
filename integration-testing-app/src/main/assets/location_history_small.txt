@@ -1,0 +1,131 @@
+{
+  "events": [
+    {
+      "geometry": {
+        "coordinates": [
+          -122.08400000000002,
+          37.421998333333335,
+          0.0
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "accuracyHorizontal": 20.0,
+        "altitude": 0.0,
+        "bearing": 0.0,
+        "speed": 0.0,
+        "time": 1.607347949669068E9
+      },
+      "type": "Feature"
+    },
+    {
+      "geometry": {
+        "coordinates": [
+          -122.08400000000002,
+          37.421998333333335,
+          0.0
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "accuracyHorizontal": 20.0,
+        "altitude": 5.0,
+        "bearing": 0.0,
+        "speed": 0.0,
+        "time": 1.607347950390277E9
+      },
+      "type": "Feature"
+    },
+    {
+      "geometry": {
+        "coordinates": [
+          -122.08400000000002,
+          37.421998333333335,
+          0.0
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "accuracyHorizontal": 20.0,
+        "altitude": 5.0,
+        "bearing": 0.0,
+        "speed": 0.0,
+        "time": 1.607347950392239E9
+      },
+      "type": "Feature"
+    },
+    {
+      "geometry": {
+        "coordinates": [
+          -122.08400000000002,
+          37.421998333333335,
+          0.0
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "accuracyHorizontal": 20.0,
+        "altitude": 0.0,
+        "bearing": 0.0,
+        "speed": 0.0,
+        "time": 1.607347951401546E9
+      },
+      "type": "Feature"
+    },
+    {
+      "geometry": {
+        "coordinates": [
+          -122.08400000000002,
+          37.421998333333335,
+          0.0
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "accuracyHorizontal": 20.0,
+        "altitude": 0.0,
+        "bearing": 0.0,
+        "speed": 0.0,
+        "time": 1.607347951403518E9
+      },
+      "type": "Feature"
+    },
+    {
+      "geometry": {
+        "coordinates": [
+          -122.08400000000002,
+          37.421998333333335,
+          0.0
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "accuracyHorizontal": 20.0,
+        "altitude": 0.0,
+        "bearing": 0.0,
+        "speed": 0.0,
+        "time": 1.607347952394775E9
+      },
+      "type": "Feature"
+    },
+    {
+      "geometry": {
+        "coordinates": [
+          -122.08400000000002,
+          37.421998333333335,
+          0.0
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "accuracyHorizontal": 20.0,
+        "altitude": 0.0,
+        "bearing": 0.0,
+        "speed": 0.0,
+        "time": 1.607347952397098E9
+      },
+      "type": "Feature"
+    }
+  ],
+  "version": "1.0"
+}
