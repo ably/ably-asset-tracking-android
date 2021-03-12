@@ -8,7 +8,7 @@ import android.widget.Toast
 import androidx.annotation.RequiresPermission
 import androidx.core.app.NotificationCompat
 import com.ably.tracking.Accuracy
-import com.ably.tracking.ConnectionConfiguration
+import com.ably.tracking.ConnectionConfigurationKey
 import com.ably.tracking.Resolution
 import com.ably.tracking.publisher.DefaultResolutionPolicyFactory
 import com.ably.tracking.publisher.LocationHistoryData
@@ -67,7 +67,7 @@ class PublisherService : Service() {
         locationSource: LocationSource? = null
     ) {
         publisher = Publisher.publishers()
-            .connection(ConnectionConfiguration(ABLY_API_KEY, CLIENT_ID))
+            .connection(ConnectionConfigurationKey(ABLY_API_KEY, CLIENT_ID))
             .map(MapConfiguration(MAPBOX_ACCESS_TOKEN))
             .locationSource(locationSource)
             .resolutionPolicy(DefaultResolutionPolicyFactory(defaultResolution, this))

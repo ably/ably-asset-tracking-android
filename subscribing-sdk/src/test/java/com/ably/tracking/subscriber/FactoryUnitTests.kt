@@ -3,7 +3,7 @@ package com.ably.tracking.subscriber
 import android.annotation.SuppressLint
 import com.ably.tracking.Accuracy
 import com.ably.tracking.BuilderConfigurationIncompleteException
-import com.ably.tracking.ConnectionConfiguration
+import com.ably.tracking.ConnectionConfigurationKey
 import com.ably.tracking.Resolution
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert
@@ -13,7 +13,7 @@ class FactoryUnitTests {
     @Test
     fun `setting Ably connection config updates builder field`() {
         // given
-        val configuration = ConnectionConfiguration("", "")
+        val configuration = ConnectionConfigurationKey("", "")
 
         // when
         val builder =
@@ -26,7 +26,7 @@ class FactoryUnitTests {
     @Test
     fun `setting Ably connection config returns a new copy of builder`() {
         // given
-        val configuration = ConnectionConfiguration("", "")
+        val configuration = ConnectionConfigurationKey("", "")
         val originalBuilder = Subscriber.subscribers()
 
         // when
@@ -94,7 +94,7 @@ class FactoryUnitTests {
 
         // when
         val updatedBuilder = builder
-            .connection(ConnectionConfiguration("", ""))
+            .connection(ConnectionConfigurationKey("", ""))
             .resolution(Resolution(Accuracy.BALANCED, 333, 666.6))
             .trackingId("")
 

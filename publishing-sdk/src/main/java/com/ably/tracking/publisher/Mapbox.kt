@@ -6,6 +6,7 @@ import android.location.Location
 import androidx.annotation.RequiresPermission
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.Resolution
+import com.ably.tracking.clientOptions
 import com.ably.tracking.common.MILLISECONDS_PER_SECOND
 import com.ably.tracking.publisher.debug.AblySimulationLocationEngine
 import com.ably.tracking.publisher.locationengine.FusedAndroidLocationEngine
@@ -24,7 +25,6 @@ import com.mapbox.navigation.core.replay.history.ReplayEventBase
 import com.mapbox.navigation.core.replay.history.ReplayEventsObserver
 import com.mapbox.navigation.core.replay.history.ReplayHistoryMapper
 import com.mapbox.navigation.core.trip.session.LocationObserver
-import io.ably.lib.types.ClientOptions
 import timber.log.Timber
 
 typealias LocationHistoryListener = (LocationHistoryData) -> Unit
@@ -209,8 +209,7 @@ internal class DefaultMapbox(
     ) {
         mapboxBuilder.locationEngine(
             AblySimulationLocationEngine(
-                // TODO should there be a clientId in use here?
-                ClientOptions(connectionConfiguration.apiKey),
+                connectionConfiguration.clientOptions,
                 locationSource.simulationChannelName
             )
         )

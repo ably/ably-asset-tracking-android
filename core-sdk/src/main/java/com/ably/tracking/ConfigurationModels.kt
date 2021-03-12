@@ -1,6 +1,26 @@
 package com.ably.tracking
 
-data class ConnectionConfiguration(val apiKey: String, val clientId: String)
+sealed class ConnectionConfiguration(val clientId: String)
+
+/**
+ *  Represents a [ConnectionConfiguration] that uses the basic authentication and requires to provide the API key for Ably.
+ */
+class ConnectionConfigurationKey
+/**
+ * @param apiKey Ably key string as obtained from the dashboard.
+ * @param clientId ID of the client
+ */
+constructor(val apiKey: String, clientId: String) : ConnectionConfiguration(clientId)
+
+/**
+ *  Represents a [ConnectionConfiguration] that uses the token authentication and requires to provide a callback that will be called each time a new token or token request is required.
+ */
+class ConnectionConfigurationToken
+/**
+ * @param callback Callback that will be called each time a token or token request needs to be obtained or renewed.
+ * @param clientId ID of the client
+ */
+constructor(val callback: () -> Any, clientId: String) : ConnectionConfiguration(clientId)
 
 /**
  * Represents a state of a trackable that's being tracked by a publisher.

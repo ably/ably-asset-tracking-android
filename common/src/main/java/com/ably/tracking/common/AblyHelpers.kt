@@ -5,6 +5,7 @@ import com.ably.tracking.common.PresenceMessage
 import com.ably.tracking.common.getPresenceData
 import com.google.gson.Gson
 import io.ably.lib.realtime.ChannelState
+import io.ably.lib.rest.Auth
 import io.ably.lib.types.ClientOptions
 
 /**
@@ -74,10 +75,14 @@ fun io.ably.lib.realtime.ConnectionStateListener.ConnectionStateChange.toTrackin
  * Extension vending Ably client library ClientOptions from a [ConnectionConfiguration] instance.
  */
 val ConnectionConfiguration.clientOptions: ClientOptions
-    get() {
-        val options = ClientOptions(this.apiKey)
-        options.clientId = this.clientId
-        return options
+    get() = when (this) {
+        is ConnectionConfigurationKey -> ClientOptions(this.apiKey).apply {
+            clientId = this@clientOptions.clientId
+        }
+        is ConnectionConfigurationToken -> ClientOptions().apply {
+            clientId = this@clientOptions.clientId
+            authCallback = Auth.TokenCallback { this@clientOptions.callback() }
+        }
     }
 
 /**
