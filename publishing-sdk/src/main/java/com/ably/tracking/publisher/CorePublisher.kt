@@ -3,6 +3,7 @@ package com.ably.tracking.publisher
 import android.Manifest
 import android.location.Location
 import androidx.annotation.RequiresPermission
+import com.ably.tracking.AblyException
 import com.ably.tracking.AssetStatus
 import com.ably.tracking.ConnectionState
 import com.ably.tracking.ConnectionStateChange
@@ -29,7 +30,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import timber.log.Timber
 
 internal interface CorePublisher {
     fun enqueue(event: AdhocEvent)
@@ -152,9 +152,6 @@ constructor(
                     is StartEvent -> {
                         if (!state.isTracking) {
                             state.isTracking = true
-
-                            Timber.e("startLocationUpdates")
-
                             mapbox.startTrip()
                         }
                     }
@@ -174,9 +171,13 @@ constructor(
                                     state.resolutions[trackable.id]
                                 )
                             ) {
-                                state.lastSentEnhancedLocations[trackable.id] = event.locationUpdate.location
-                                ably.sendEnhancedLocation(trackable.id, event.locationUpdate)
-                                updateAssetStatuses(state, trackable.id)
+                                try {
+                                    ably.sendEnhancedLocation(trackable.id, event.locationUpdate)
+                                    state.lastSentEnhancedLocations[trackable.id] = event.locationUpdate.location
+                                    updateAssetStatuses(state, trackable.id)
+                                } catch (exception: AblyException) {
+                                    // TODO - what to do here if sending enhanced location fails?
+                                }
                             }
                         }
                         scope.launch { _locations.emit(event.locationUpdate) }
@@ -343,7 +344,7 @@ constructor(
     /**
      * Creates a [Channel] for the [Trackable], joins the channel's presence and enqueues [SuccessEvent].
      * If a [Channel] for the given [Trackable] exists then it just enqueues [SuccessEvent].
-     * If during channel creation and joining presence an error occurs then it enqueues [FailureEvent] with the exception.
+     * If during channel creation and joining presence an error occurs then it enqueues [FailureEvent] with the [AblyException].
      */
     private fun createChannelForTrackableIfNotExisits(
         trackable: Trackable,
@@ -353,7 +354,11 @@ constructor(
         ably.connect(trackable.id, state.presenceData) { result ->
             try {
                 result.getOrThrow()
-                ably.subscribeForPresenceMessages(trackable.id) { enqueue(PresenceMessageEvent(trackable, it)) }
+                try {
+                    ably.subscribeForPresenceMessages(trackable.id) { enqueue(PresenceMessageEvent(trackable, it)) }
+                } catch (exception: AblyException) {
+                    // TODO - what to do here? should we fail the whole process when subscribing for presence fails? or should it continue?
+                }
                 request(JoinPresenceSuccessEvent(trackable, handler))
             } catch (exception: Exception) {
                 handler(Result.failure(exception))

@@ -78,8 +78,9 @@ private class DefaultCoreSubscriber(
                         notifyAssetIsOffline()
                         subscribeForEnhancedEvents()
                         subscribeForPresenceMessages()
-                        // TODO - listen for the response
-                        ably.connect(presenceData)
+                        ably.connect(presenceData) {
+                            // TODO what should we do when connection fails?
+                        }
                     }
                     is PresenceMessageEvent -> {
                         when (event.presenceMessage.action) {
@@ -103,10 +104,10 @@ private class DefaultCoreSubscriber(
                         }
                     }
                     is StopEvent -> {
-                        ably.close(presenceData)
                         notifyAssetIsOffline()
-                        // TODO add proper handling for callback when stopping the subscriber (handle success and failure)
-                        event.handler(Result.success(Unit))
+                        ably.close(presenceData) {
+                            event.handler(it)
+                        }
                     }
                 }
             }

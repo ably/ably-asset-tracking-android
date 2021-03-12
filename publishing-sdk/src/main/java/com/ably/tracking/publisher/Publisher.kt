@@ -5,6 +5,7 @@ import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.content.Context
 import androidx.annotation.RequiresPermission
 import com.ably.tracking.AssetStatus
+import com.ably.tracking.AblyException
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.LogConfiguration
@@ -40,6 +41,8 @@ interface Publisher {
      * @param trackable The object to be added to this publisher's tracked set, if it's not already there, and to be
      * made the actively tracked object.
      * @return [StateFlow] that represents the [AssetStatus] of the added [Trackable].
+     *
+     * @throws AblyException when something goes wrong with the Ably connection
      */
     @JvmSynthetic
     suspend fun track(trackable: Trackable): StateFlow<AssetStatus>
@@ -52,6 +55,8 @@ interface Publisher {
      *
      * @param trackable The object to be added to this publisher's tracked set, if it's not already there.
      * @return [StateFlow] that represents the [AssetStatus] of the added [Trackable].
+     *
+     * @throws AblyException when something goes wrong with the Ably connection
      */
     @JvmSynthetic
     suspend fun add(trackable: Trackable): StateFlow<AssetStatus>
@@ -65,6 +70,7 @@ interface Publisher {
      * @param trackable The object to be removed from this publisher's tracked set, it it's there.
      *
      * @return `true` if the object was known to this publisher, otherise `false`.
+     * @throws AblyException when something goes wrong with the Ably connection
      */
     @JvmSynthetic
     suspend fun remove(trackable: Trackable): Boolean

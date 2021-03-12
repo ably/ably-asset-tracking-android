@@ -8,7 +8,6 @@ import com.ably.tracking.AssetStatus
 import com.ably.tracking.LocationUpdate
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
-import timber.log.Timber
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
@@ -39,8 +38,6 @@ constructor(
         get() = core.locationHistory
 
     init {
-        Timber.w("Started.")
-
         core = createCorePublisher(ably, mapbox, resolutionPolicyFactory, routingProfile, batteryDataProvider)
 
         core.enqueue(StartEvent())

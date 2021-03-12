@@ -27,6 +27,8 @@ internal interface Ably {
      * Adds a listener for the enhanced location updates that are received from the channel.
      *
      * @param listener The function that will be called each time an enhanced location update event is received.
+     *
+     * @throws com.ably.tracking.AblyException if something goes wrong.
      */
     fun subscribeForEnhancedEvents(listener: (LocationUpdate) -> Unit)
 
@@ -34,13 +36,16 @@ internal interface Ably {
      * Joins the presence of the channel.
      *
      * @param presenceData The data that will be send via the presence channel.
+     * @param callback The function that will be called when connecting completes. If something goes wrong it will be called with [com.ably.tracking.AblyException].
      */
-    fun connect(presenceData: PresenceData)
+    fun connect(presenceData: PresenceData, callback: (Result<Unit>) -> Unit)
 
     /**
      * Adds a listener for the presence messages that are received from the channel's presence.
      *
      * @param listener The function that will be called each time a presence message is received.
+     *
+     * @throws com.ably.tracking.AblyException if something goes wrong.
      */
     fun subscribeForPresenceMessages(listener: (PresenceMessage) -> Unit)
 
@@ -48,7 +53,7 @@ internal interface Ably {
      * Updates presence data in the channel's presence.
      *
      * @param presenceData The data that will be send via the presence channel.
-     * @param callback The function that will be called when updating presence data completes.
+     * @param callback The function that will be called when updating presence data completes. If something goes wrong it will be called with [com.ably.tracking.AblyException].
      */
     fun updatePresenceData(presenceData: PresenceData, callback: (Result<Unit>) -> Unit)
 
@@ -56,8 +61,9 @@ internal interface Ably {
      * Cleanups and closes the channel, presence and Ably connections.
      *
      * @param presenceData The data that will be send via the presence channel.
+     * @param callback The function that will be called when updating presence data completes. If something goes wrong it will be called with [com.ably.tracking.AblyException].
      */
-    fun close(presenceData: PresenceData)
+    fun close(presenceData: PresenceData, callback: (Result<Unit>) -> Unit)
 }
 
 internal class DefaultAbly(
@@ -83,28 +89,26 @@ internal class DefaultAbly(
                 listener(message.getEnhancedLocationUpdate(gson))
             }
         } catch (exception: AblyException) {
-            Timber.e(exception, "subscribeForEnhancedEvents: Cannot subscribe to enhanced locations messages")
+            throw exception.errorInfo.toTrackingException()
         }
     }
 
-    override fun connect(presenceData: PresenceData) {
+    override fun connect(presenceData: PresenceData, callback: (Result<Unit>) -> Unit) {
         try {
             channel.presence.enter(
                 gson.toJson(presenceData),
                 object : CompletionListener {
-                    override fun onSuccess() = Unit
+                    override fun onSuccess() {
+                        callback(Result.success(Unit))
+                    }
 
                     override fun onError(reason: ErrorInfo) {
-                        // TODO - handle error
-                        // https://github.com/ably/ably-asset-tracking-android/issues/17
-                        Timber.e("Unable to enter presence: ${reason.message}")
+                        callback(Result.failure(Exception(reason.toTrackingException())))
                     }
                 }
             )
         } catch (ablyException: AblyException) {
-            // TODO - handle exception
-            // https://github.com/ably/ably-asset-tracking-android/issues/17
-            Timber.e(ablyException)
+            callback(Result.failure(Exception(ablyException.errorInfo.toTrackingException())))
         }
     }
 
@@ -112,7 +116,7 @@ internal class DefaultAbly(
         try {
             channel.presence.subscribe { listener(it.toTracking(gson)) }
         } catch (exception: AblyException) {
-            Timber.e(exception, "subscribeForPresenceMessages: Cannot subscribe to presence messages")
+            throw exception.errorInfo.toTrackingException()
         }
     }
 
@@ -131,35 +135,39 @@ internal class DefaultAbly(
                 }
             )
         } catch (exception: AblyException) {
-            callback(Result.failure(exception))
+            callback(Result.failure(exception.errorInfo.toTrackingException()))
         }
     }
 
-    override fun close(presenceData: PresenceData) {
+    override fun close(presenceData: PresenceData, callback: (Result<Unit>) -> Unit) {
         channel.unsubscribe()
-        leaveChannelPresence(presenceData)
-        ably.close()
+        leaveChannelPresence(presenceData) {
+            if (it.isSuccess) {
+                ably.close()
+                callback(Result.success(Unit))
+            } else {
+                callback(it)
+            }
+        }
     }
 
-    private fun leaveChannelPresence(presenceData: PresenceData) {
+    private fun leaveChannelPresence(presenceData: PresenceData, callback: (Result<Unit>) -> Unit) {
         try {
             channel.presence.unsubscribe()
             channel.presence.leave(
                 gson.toJson(presenceData),
                 object : CompletionListener {
-                    override fun onSuccess() = Unit
+                    override fun onSuccess() {
+                        callback(Result.success(Unit))
+                    }
 
                     override fun onError(reason: ErrorInfo) {
-                        // TODO - handle error
-                        // https://github.com/ably/ably-asset-tracking-android/issues/17
-                        Timber.e("Unable to leave presence: ${reason.message}")
+                        callback(Result.failure(reason.toTrackingException()))
                     }
                 }
             )
         } catch (ablyException: AblyException) {
-            // TODO - handle exception
-            // https://github.com/ably/ably-asset-tracking-android/issues/17
-            Timber.e(ablyException)
+            callback(Result.failure(ablyException.errorInfo.toTrackingException()))
         }
     }
 }
