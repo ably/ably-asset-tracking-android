@@ -4,11 +4,10 @@ import android.Manifest.permission.ACCESS_COARSE_LOCATION
 import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.content.Context
 import androidx.annotation.RequiresPermission
-import com.ably.tracking.AssetStatus
 import com.ably.tracking.AblyException
+import com.ably.tracking.AssetStatus
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.LocationUpdate
-import com.ably.tracking.LogConfiguration
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -131,7 +130,7 @@ interface Publisher {
      */
     interface Builder {
         /**
-         * Sets the Ably connection configuration.
+         * **REQUIRED** Sets the Ably connection configuration.
          *
          * @param configuration The configuration to be used for Ably connection.
          * @return A new instance of the builder with this property changed.
@@ -139,7 +138,7 @@ interface Publisher {
         fun connection(configuration: ConnectionConfiguration): Builder
 
         /**
-         * Sets the maps configuration.
+         * **REQUIRED** Sets the maps configuration.
          *
          * @param configuration The configuration to be used for maps.
          * @return A new instance of the builder with this property changed.
@@ -147,15 +146,7 @@ interface Publisher {
         fun map(configuration: MapConfiguration): Builder
 
         /**
-         * Sets the logging configuration.
-         *
-         * @param configuration The configuration to be used for logging.
-         * @return A new instance of the builder with this property changed.
-         */
-        fun log(configuration: LogConfiguration): Builder
-
-        /**
-         * Sets the Android Context.
+         * **REQUIRED** Sets the Android Context.
          *
          * @param context The context of the application.
          * @return A new instance of the builder with this property changed.
@@ -163,7 +154,8 @@ interface Publisher {
         fun androidContext(context: Context): Builder
 
         /**
-         * Set the means of transport being used for the initial state of publishers created from this builder.
+         * **OPTIONAL** Set the means of transport being used for the initial state of publishers created from this builder.
+         * If not set then the default value is [RoutingProfile.DRIVING].
          *
          * @param profile The means of transport.
          * @return A new instance of the builder with this property changed.
@@ -171,7 +163,7 @@ interface Publisher {
         fun profile(profile: RoutingProfile): Builder
 
         /**
-         * Sets the policy factory to be used to define the target resolution for publishers created from this builder.
+         * **REQUIRED** Sets the policy factory to be used to define the target resolution for publishers created from this builder.
          *
          * @param factory The factory, whose [createResolutionPolicy][ResolutionPolicy.Factory.createResolutionPolicy]
          * method will be called exactly once when [start] is called.
@@ -180,7 +172,7 @@ interface Publisher {
         fun resolutionPolicy(factory: ResolutionPolicy.Factory): Builder
 
         /**
-         * Sets the location source to be used instead of the GPS.
+         * **OPTIONAL** Sets the location source to be used instead of the GPS.
          * The location source will be providing location updates for the [Publisher].
          *
          * @param locationSource The location source from which location updates will be received.

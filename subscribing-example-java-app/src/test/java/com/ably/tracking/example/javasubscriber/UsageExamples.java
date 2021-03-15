@@ -2,7 +2,6 @@ package com.ably.tracking.example.javasubscriber;
 
 import com.ably.tracking.Accuracy;
 import com.ably.tracking.ConnectionConfiguration;
-import com.ably.tracking.LogConfiguration;
 import com.ably.tracking.Resolution;
 import com.ably.tracking.subscriber.Subscriber;
 import com.ably.tracking.subscriber.java.SubscriberFacade;
@@ -38,7 +37,6 @@ public class UsageExamples {
     public void subscriberBuilderUsageExample() {
         Subscriber nativeSubscriber = subscriberBuilder
             .connection(new ConnectionConfiguration("API_KEY", "CLIENT_ID"))
-            .log(new LogConfiguration(true))
             .trackingId("TRACKING_ID")
             .resolution(new Resolution(Accuracy.BALANCED, 1000L, 1.0))
             .start();

@@ -6,12 +6,10 @@ import android.content.Context
 import androidx.annotation.RequiresPermission
 import com.ably.tracking.BuilderConfigurationIncompleteException
 import com.ably.tracking.ConnectionConfiguration
-import com.ably.tracking.LogConfiguration
 
 internal data class PublisherBuilder(
     val connectionConfiguration: ConnectionConfiguration? = null,
     val mapConfiguration: MapConfiguration? = null,
-    val logConfiguration: LogConfiguration? = null,
     val androidContext: Context? = null,
     val routingProfile: RoutingProfile = RoutingProfile.DRIVING,
     val resolutionPolicyFactory: ResolutionPolicy.Factory? = null,
@@ -23,9 +21,6 @@ internal data class PublisherBuilder(
 
     override fun map(configuration: MapConfiguration): Publisher.Builder =
         this.copy(mapConfiguration = configuration)
-
-    override fun log(configuration: LogConfiguration): Publisher.Builder =
-        this.copy(logConfiguration = configuration)
 
     override fun androidContext(context: Context): Publisher.Builder =
         this.copy(androidContext = context)
@@ -54,7 +49,6 @@ internal data class PublisherBuilder(
         )
     }
 
-    // TODO - define which fields are required and which are optional (for now: only fields needed to create Publisher)
     private fun isMissingRequiredFields() =
         connectionConfiguration == null ||
             mapConfiguration == null ||
