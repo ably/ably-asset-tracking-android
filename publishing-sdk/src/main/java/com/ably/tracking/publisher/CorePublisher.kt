@@ -33,7 +33,7 @@ import kotlinx.coroutines.launch
 
 internal interface CorePublisher {
     fun enqueue(event: AdhocEvent)
-    fun request(request: Request)
+    fun request(request: Request<*>)
     val locations: SharedFlow<LocationUpdate>
     val trackables: SharedFlow<Set<Trackable>>
     val locationHistory: SharedFlow<LocationHistoryData>
@@ -133,7 +133,7 @@ constructor(
         scope.launch { sendEventChannel.send(event) }
     }
 
-    override fun request(request: Request) {
+    override fun request(request: Request<*>) {
         scope.launch { sendEventChannel.send(request) }
     }
 
@@ -148,6 +148,20 @@ constructor(
 
             // processing
             for (event in receiveEventChannel) {
+                // handle events after the publisher is stopped
+                if (state.isStopped) {
+                    if (event is Request<*>) {
+                        // when the event is a request then call its handler
+                        when (event) {
+                            is StopEvent -> event.handler(Result.success(Unit))
+                            else -> event.handler(Result.failure(PublisherStoppedException()))
+                        }
+                        continue
+                    } else if (event is AdhocEvent) {
+                        // when the event is an adhoc event then just ignore it
+                        continue
+                    }
+                }
                 when (event) {
                     is StartEvent -> {
                         if (!state.isTracking) {
@@ -302,14 +316,22 @@ constructor(
                         state.currentDestination?.let { setDestination(it, state) }
                     }
                     is StopEvent -> {
-                        ably.close(state.presenceData)
-                        if (state.isTracking) {
-                            state.isTracking = false
-                            mapbox.unregisterLocationObserver(locationObserver)
-                            mapbox.stopAndClose()
+                        if (state.isStopped) {
+                            event.handler(Result.success(Unit))
+                        } else {
+                            if (state.isTracking) {
+                                state.isTracking = false
+                                mapbox.unregisterLocationObserver(locationObserver)
+                                mapbox.stopAndClose()
+                            }
+                            try {
+                                ably.close(state.presenceData)
+                                state.isStopped = true
+                                event.handler(Result.success(Unit))
+                            } catch (exception: AblyException) {
+                                event.handler(Result.failure(exception))
+                            }
                         }
-                        // TODO implement proper stopping strategy which only calls back once we're fully stopped (considering whether scope.cancel() is appropriate)
-                        event.handler(Result.success(Unit))
                     }
                     is AblyConnectionStateChangeEvent -> {
                         state.lastConnectionStateChange = event.connectionStateChange
@@ -539,6 +561,7 @@ constructor(
         routingProfile: RoutingProfile,
         var locationEngineResolution: Resolution,
         var isTracking: Boolean = false,
+        var isStopped: Boolean = false,
         val trackables: MutableSet<Trackable> = mutableSetOf(),
         val trackableStates: MutableMap<String, TrackableState> = mutableMapOf(),
         val trackableStateFlows: MutableMap<String, MutableStateFlow<TrackableState>> = mutableMapOf(),
