@@ -79,11 +79,11 @@ public class PublisherInterfaceUsageExamples {
         publisher.setRoutingProfile(RoutingProfile.CYCLING);
         RoutingProfile routingProfile = publisher.getRoutingProfile();
         try {
-            publisher.trackAsync(trackable, assetStatus -> {
-                // handle assetStatus
+            publisher.trackAsync(trackable, trackableState -> {
+                // handle trackableState
             }).get();
-            publisher.addAsync(trackable, assetStatus -> {
-                // handle assetStatus
+            publisher.addAsync(trackable, trackableState -> {
+                // handle trackableState
             }).get();
             Boolean wasRemoved = publisher.removeAsync(trackable).get();
             publisher.stopAsync().get();
@@ -101,8 +101,8 @@ public class PublisherInterfaceUsageExamples {
         publisher.addLocationHistoryListener(locationHistory -> {
             // handle locationHistory
         });
-        publisher.addTrackableStatusListener("ID", assetStatus -> {
-            // handle assetStatus
+        publisher.addTrackableStateListener("ID", trackableState -> {
+            // handle trackableState
         });
     }
 

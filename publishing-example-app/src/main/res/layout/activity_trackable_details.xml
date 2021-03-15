@@ -19,7 +19,7 @@
     app:layout_constraintTop_toTopOf="parent" />
 
   <ImageView
-    android:id="@+id/assetStatusImageView"
+    android:id="@+id/assetStateImageView"
     android:layout_width="100dp"
     android:layout_height="44dp"
     android:layout_marginTop="16dp"
@@ -30,7 +30,7 @@
     app:tint="@color/asset_status_offline" />
 
   <TextView
-    android:id="@+id/assetStatusValueTextView"
+    android:id="@+id/assetStateValueTextView"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:text="@string/offline"
@@ -38,13 +38,13 @@
     android:textColor="@color/black"
     android:textSize="18sp"
     android:textStyle="bold"
-    app:layout_constraintBottom_toBottomOf="@id/assetStatusImageView"
-    app:layout_constraintEnd_toEndOf="@id/assetStatusImageView"
-    app:layout_constraintStart_toStartOf="@id/assetStatusImageView"
-    app:layout_constraintTop_toTopOf="@id/assetStatusImageView" />
+    app:layout_constraintBottom_toBottomOf="@id/assetStateImageView"
+    app:layout_constraintEnd_toEndOf="@id/assetStateImageView"
+    app:layout_constraintStart_toStartOf="@id/assetStateImageView"
+    app:layout_constraintTop_toTopOf="@id/assetStateImageView" />
 
   <TextView
-    android:id="@+id/ablyConnectionStatusLabelTextView"
+    android:id="@+id/ablyConnectionStateLabelTextView"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:gravity="center"
@@ -52,9 +52,9 @@
     android:textColor="@color/black"
     android:textSize="16sp"
     android:textStyle="bold"
-    app:layout_constraintBottom_toBottomOf="@id/assetStatusImageView"
+    app:layout_constraintBottom_toBottomOf="@id/assetStateImageView"
     app:layout_constraintStart_toStartOf="@id/stopTrackingButton"
-    app:layout_constraintTop_toTopOf="@id/assetStatusImageView" />
+    app:layout_constraintTop_toTopOf="@id/assetStateImageView" />
 
   <TextView
     android:id="@+id/locationSourceLabelTextView"
@@ -66,8 +66,8 @@
     android:textColor="@color/black"
     android:textSize="16sp"
     android:textStyle="bold"
-    app:layout_constraintStart_toStartOf="@+id/ablyConnectionStatusLabelTextView"
-    app:layout_constraintTop_toBottomOf="@+id/ablyConnectionStatusLabelTextView" />
+    app:layout_constraintStart_toStartOf="@+id/ablyConnectionStateLabelTextView"
+    app:layout_constraintTop_toBottomOf="@+id/ablyConnectionStateLabelTextView" />
 
   <TextView
     android:id="@+id/locationSourceMethodTextView"
@@ -77,8 +77,8 @@
     android:textSize="16sp"
     android:textStyle="bold"
     app:layout_constraintBottom_toBottomOf="@id/locationSourceLabelTextView"
-    app:layout_constraintEnd_toEndOf="@id/assetStatusImageView"
-    app:layout_constraintStart_toStartOf="@id/assetStatusImageView"
+    app:layout_constraintEnd_toEndOf="@id/assetStateImageView"
+    app:layout_constraintStart_toStartOf="@id/assetStateImageView"
     app:layout_constraintTop_toTopOf="@id/locationSourceLabelTextView"
     tools:text="PHONE" />
 

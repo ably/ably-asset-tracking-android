@@ -1,6 +1,6 @@
 package com.ably.tracking.subscriber
 
-import com.ably.tracking.AssetStatus
+import com.ably.tracking.TrackableState
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.Resolution
 import kotlinx.coroutines.flow.SharedFlow
@@ -19,8 +19,8 @@ internal class DefaultSubscriber(
     override val locations: SharedFlow<LocationUpdate>
         get() = core.enhancedLocations
 
-    override val assetStatuses: StateFlow<AssetStatus>
-        get() = core.assetStatuses
+    override val trackableStates: StateFlow<TrackableState>
+        get() = core.trackableStates
 
     init {
         Timber.w("Started.")

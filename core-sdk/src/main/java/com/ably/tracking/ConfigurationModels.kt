@@ -3,23 +3,23 @@ package com.ably.tracking
 data class ConnectionConfiguration(val apiKey: String, val clientId: String)
 
 /**
- * Represents a status of an asset that's being tracked by a publisher.
+ * Represents a state of a trackable that's being tracked by a publisher.
  */
-sealed class AssetStatus {
+sealed class TrackableState {
     /**
-     * Asset status is [Online] when it's being actively tracked. This status can change to either [Offline] or [Failed].
+     * Trackable state is [Online] when it's being actively tracked. This state can change to either [Offline] or [Failed].
      */
-    class Online : AssetStatus()
+    class Online : TrackableState()
 
     /**
-     * Asset status is [Offline] when it's connecting or recovering from an error and hopefully will soon be back in the [Online]. This status can change to either [Online] or [Failed].
+     * Trackable state is [Offline] when it's connecting or recovering from an error and hopefully will soon be back in the [Online]. This state can change to either [Online] or [Failed].
      */
-    data class Offline(val errorInformation: ErrorInformation? = null) : AssetStatus()
+    data class Offline(val errorInformation: ErrorInformation? = null) : TrackableState()
 
     /**
-     * Asset status is [Failed] when there was an error from which we cannot recover. This is a final status.
+     * Trackable state is [Failed] when there was an error from which we cannot recover. This is a final state.
      */
-    data class Failed(val errorInformation: ErrorInformation) : AssetStatus()
+    data class Failed(val errorInformation: ErrorInformation) : TrackableState()
 }
 
 /**

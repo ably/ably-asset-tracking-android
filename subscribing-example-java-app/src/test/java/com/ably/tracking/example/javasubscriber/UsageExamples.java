@@ -49,8 +49,8 @@ public class UsageExamples {
 
     @Test
     public void subscriberFacadeUsageExample() {
-        subscriberFacade.addListener(assetStatus -> {
-            // handle assetStatus
+        subscriberFacade.addListener(assetState -> {
+            // handle assetState
         });
 
         subscriberFacade.addLocationListener(locationUpdate -> {
