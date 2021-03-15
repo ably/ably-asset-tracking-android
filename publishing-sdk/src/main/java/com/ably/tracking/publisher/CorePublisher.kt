@@ -282,6 +282,7 @@ constructor(
 
                             // Leave Ably channel.
                             ably.disconnect(event.trackable.id, state.presenceData) {
+                                state.lastChannelConnectionStateChanges.remove(event.trackable.id)
                                 if (it.isSuccess) {
                                     event.handler(Result.success(true))
                                 } else {
@@ -316,6 +317,10 @@ constructor(
                             updateAssetStatuses(state, it.id)
                         }
                     }
+                    is ChannelConnectionStateChangeEvent -> {
+                        state.lastChannelConnectionStateChanges[event.trackableId] = event.connectionStateChange
+                        updateAssetStatuses(state, event.trackableId)
+                    }
                 }
             }
         }
@@ -323,8 +328,15 @@ constructor(
 
     private fun updateAssetStatuses(state: PublisherState, trackableId: String) {
         val hasSentAtLeastOneLocation: Boolean = state.lastSentEnhancedLocations[trackableId] != null
+        val lastChannelConnectionStateChange = getLastChannelConnectionStateChange(state, trackableId)
         val newStatus = when (state.lastConnectionStateChange.state) {
-            ConnectionState.ONLINE -> if (hasSentAtLeastOneLocation) AssetStatus.Online() else AssetStatus.Offline()
+            ConnectionState.ONLINE -> {
+                when (lastChannelConnectionStateChange.state) {
+                    ConnectionState.ONLINE -> if (hasSentAtLeastOneLocation) AssetStatus.Online() else AssetStatus.Offline()
+                    ConnectionState.OFFLINE -> AssetStatus.Offline()
+                    ConnectionState.FAILED -> AssetStatus.Failed(lastChannelConnectionStateChange.errorInformation!!) // are we sure error information will always be present?
+                }
+            }
             ConnectionState.OFFLINE -> AssetStatus.Offline()
             ConnectionState.FAILED -> AssetStatus.Failed(state.lastConnectionStateChange.errorInformation!!) // are we sure error information will always be present?
         }
@@ -333,6 +345,10 @@ constructor(
             scope.launch { state.assetStatusFlows[trackableId]?.emit(newStatus) }
         }
     }
+
+    private fun getLastChannelConnectionStateChange(state: PublisherState, trackableId: String): ConnectionStateChange =
+        state.lastChannelConnectionStateChanges[trackableId]
+            ?: ConnectionStateChange(ConnectionState.OFFLINE, ConnectionState.OFFLINE, null)
 
     private fun removeAllSubscribers(trackable: Trackable, state: PublisherState) {
         state.subscribers[trackable.id]?.let { subscribers ->
@@ -358,6 +374,9 @@ constructor(
                     ably.subscribeForPresenceMessages(trackable.id) { enqueue(PresenceMessageEvent(trackable, it)) }
                 } catch (exception: AblyException) {
                     // TODO - what to do here? should we fail the whole process when subscribing for presence fails? or should it continue?
+                }
+                ably.subscribeForChannelStateChange(trackable.id) {
+                    enqueue(ChannelConnectionStateChangeEvent(it, trackable.id))
                 }
                 request(JoinPresenceSuccessEvent(trackable, handler))
             } catch (exception: Exception) {
@@ -523,6 +542,7 @@ constructor(
         val trackables: MutableSet<Trackable> = mutableSetOf(),
         val assetStatuses: MutableMap<String, AssetStatus> = mutableMapOf(),
         val assetStatusFlows: MutableMap<String, MutableStateFlow<AssetStatus>> = mutableMapOf(),
+        val lastChannelConnectionStateChanges: MutableMap<String, ConnectionStateChange> = mutableMapOf(),
         var lastConnectionStateChange: ConnectionStateChange = ConnectionStateChange(
             ConnectionState.OFFLINE, ConnectionState.OFFLINE, null
         ),

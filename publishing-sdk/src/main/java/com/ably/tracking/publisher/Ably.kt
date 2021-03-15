@@ -31,6 +31,16 @@ internal interface Ably {
     fun subscribeForAblyStateChange(listener: (ConnectionStateChange) -> Unit)
 
     /**
+     * Adds a listener for the channel state updates.
+     * Should be called only when there's an existing channel for the [trackableId].
+     * If a channel for the [trackableId] doesn't exist then nothing happens.
+     *
+     * @param trackableId The ID of the trackable channel.
+     * @param listener The function that will be called each time a channel state changes.
+     */
+    fun subscribeForChannelStateChange(trackableId: String, listener: (ConnectionStateChange) -> Unit)
+
+    /**
      * Adds a listener for the presence messages that are received from the channel's presence.
      * After adding a listener it will emit [PresenceMessage] for each client that's currently in the presence.
      * Should be called only when there's an existing channel for the [trackableId].
@@ -110,6 +120,10 @@ internal class DefaultAbly(
         ably.connection.on { listener(it.toTracking()) }
     }
 
+    override fun subscribeForChannelStateChange(trackableId: String, listener: (ConnectionStateChange) -> Unit) {
+        channels[trackableId]?.on { listener(it.toTracking()) }
+    }
+
     override fun connect(trackableId: String, presenceData: PresenceData, callback: (Result<Unit>) -> Unit) {
         if (!channels.contains(trackableId)) {
             ably.channels.get(trackableId).apply {
@@ -139,6 +153,7 @@ internal class DefaultAbly(
     override fun disconnect(trackableId: String, presenceData: PresenceData, callback: (Result<Unit>) -> Unit) {
         val removedChannel = channels.remove(trackableId)
         if (removedChannel != null) {
+            removedChannel.unsubscribe()
             removedChannel.presence.unsubscribe()
             try {
                 removedChannel.presence.leave(

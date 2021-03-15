@@ -4,6 +4,7 @@ import com.ably.tracking.common.PresenceAction
 import com.ably.tracking.common.PresenceMessage
 import com.ably.tracking.common.getPresenceData
 import com.google.gson.Gson
+import io.ably.lib.realtime.ChannelState
 import io.ably.lib.types.ClientOptions
 
 /**
@@ -97,3 +98,28 @@ fun io.ably.lib.types.PresenceMessage.Action.toTracking(): PresenceAction = when
     io.ably.lib.types.PresenceMessage.Action.leave -> PresenceAction.LEAVE_OR_ABSENT
     io.ably.lib.types.PresenceMessage.Action.absent -> PresenceAction.LEAVE_OR_ABSENT
 }
+
+/**
+ * Extension converting Ably Realtime channel state to the equivalent [ConnectionState] API presented to users of
+ * the Ably Asset Tracking SDKs.
+ */
+fun ChannelState.toTracking() = when (this) {
+    ChannelState.initialized -> ConnectionState.OFFLINE
+    ChannelState.attaching -> ConnectionState.OFFLINE
+    ChannelState.attached -> ConnectionState.ONLINE
+    ChannelState.detaching -> ConnectionState.OFFLINE
+    ChannelState.detached -> ConnectionState.OFFLINE
+    ChannelState.failed -> ConnectionState.FAILED
+    ChannelState.suspended -> ConnectionState.OFFLINE
+}
+
+/**
+ * Extension converting Ably Realtime channel state change events to the equivalent [ConnectionStateChange] API
+ * presented to users of the Ably Asset Tracking SDKs.
+ */
+fun io.ably.lib.realtime.ChannelStateListener.ChannelStateChange.toTracking() =
+    ConnectionStateChange(
+        this.current.toTracking(),
+        this.previous.toTracking(),
+        this.reason.toTracking()
+    )
