@@ -138,7 +138,7 @@ internal class DefaultMapbox(
             mapboxReplayer?.finish()
             val tripHistoryString = retrieveHistory()
             val historyEvents = ReplayHistoryMapper().mapToReplayEvents(tripHistoryString)
-            locationHistoryListener?.invoke(LocationHistoryData(LOCATION_HISTORY_VERSION, historyEvents.toGeoJsonMessages()))
+            locationHistoryListener?.invoke(LocationHistoryData(historyEvents.toGeoJsonMessages()))
             onDestroy()
         }
     }

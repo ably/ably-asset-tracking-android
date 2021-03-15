@@ -11,12 +11,13 @@ import com.mapbox.navigation.core.replay.history.ReplayEventBase
 import com.mapbox.navigation.core.replay.history.ReplayEventLocation
 import com.mapbox.navigation.core.replay.history.ReplayEventUpdateLocation
 
-val LOCATION_HISTORY_VERSION = "1.0"
+val LOCATION_HISTORY_VERSION = 1
 
 data class LocationHistoryData(
-    val version: String,
     val events: List<GeoJsonMessage>
-)
+) {
+    val version: Int = LOCATION_HISTORY_VERSION
+}
 
 fun List<ReplayEventBase>.toGeoJsonMessages(): List<GeoJsonMessage> =
     filterIsInstance<ReplayEventUpdateLocation>()
