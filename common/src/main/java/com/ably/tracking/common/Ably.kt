@@ -1,20 +1,19 @@
-package com.ably.tracking.publisher
+package com.ably.tracking.common
 
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.ConnectionStateChange
 import com.ably.tracking.EnhancedLocationUpdate
+import com.ably.tracking.LocationUpdate
 import com.ably.tracking.clientOptions
-import com.ably.tracking.common.EventNames
-import com.ably.tracking.common.PresenceData
-import com.ably.tracking.common.PresenceMessage
-import com.ably.tracking.common.toJson
 import com.ably.tracking.toTracking
 import com.ably.tracking.toTrackingException
 import com.google.gson.Gson
 import io.ably.lib.realtime.AblyRealtime
 import io.ably.lib.realtime.Channel
 import io.ably.lib.realtime.CompletionListener
+import io.ably.lib.realtime.ConnectionState
 import io.ably.lib.types.AblyException
+import io.ably.lib.types.ChannelOptions
 import io.ably.lib.types.ErrorInfo
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
@@ -25,9 +24,8 @@ import kotlin.coroutines.suspendCoroutine
 
 /**
  * Wrapper for the [AblyRealtime] that's used to interact with the Ably SDK.
- * In the variant for the [Publisher] the service is created without any channels. They are created later when you call [connect].
  */
-internal interface Ably {
+interface Ably {
     /**
      * Adds a listener for the [AblyRealtime] state updates.
      *
@@ -71,15 +69,32 @@ internal interface Ably {
     fun sendEnhancedLocation(trackableId: String, locationUpdate: EnhancedLocationUpdate)
 
     /**
+     * Adds a listener for the enhanced location updates that are received from the channel.
+     * If a channel for the [trackableId] doesn't exist then nothing happens.
+     *
+     * @param trackableId The ID of the trackable channel.
+     * @param listener The function that will be called each time an enhanced location update event is received.
+     *
+     * @throws com.ably.tracking.AblyException if something goes wrong.
+     */
+    fun subscribeForEnhancedEvents(trackableId: String, listener: (LocationUpdate) -> Unit)
+
+    /**
      * Joins the presence of the channel for the given [trackableId] and add it to the connected channels.
      * If successfully joined the presence then the channel is added to the connected channels.
      * If a channel for the given [trackableId] exists then it just calls [callback] with success.
      *
      * @param trackableId The ID of the trackable channel.
      * @param presenceData The data that will be send via the presence channel.
+     * @param useRewind If set to true then after connecting the channel will replay the last event that was sent in it.
      * @param callback The function that will be called when connecting completes. If something goes wrong it will be called with [com.ably.tracking.AblyException].
      */
-    fun connect(trackableId: String, presenceData: PresenceData, callback: (Result<Unit>) -> Unit)
+    fun connect(
+        trackableId: String,
+        presenceData: PresenceData,
+        useRewind: Boolean = false,
+        callback: (Result<Unit>) -> Unit
+    )
 
     /**
      * Updates presence data in the [trackableId] channel's presence.
@@ -112,7 +127,7 @@ internal interface Ably {
     suspend fun close(presenceData: PresenceData)
 }
 
-internal class DefaultAbly(
+class DefaultAbly(
     connectionConfiguration: ConnectionConfiguration
 ) : Ably {
     private val gson = Gson()
@@ -131,9 +146,18 @@ internal class DefaultAbly(
         channels[trackableId]?.on { listener(it.toTracking()) }
     }
 
-    override fun connect(trackableId: String, presenceData: PresenceData, callback: (Result<Unit>) -> Unit) {
+    override fun connect(
+        trackableId: String,
+        presenceData: PresenceData,
+        useRewind: Boolean,
+        callback: (Result<Unit>) -> Unit
+    ) {
         if (!channels.contains(trackableId)) {
-            ably.channels.get(trackableId).apply {
+            val channel = if (useRewind)
+                ably.channels.get(trackableId, ChannelOptions().apply { params = mapOf("rewind" to "1") })
+            else
+                ably.channels.get(trackableId)
+            channel.apply {
                 try {
                     presence.enter(
                         gson.toJson(presenceData),
@@ -209,6 +233,18 @@ internal class DefaultAbly(
         }
     }
 
+    override fun subscribeForEnhancedEvents(trackableId: String, listener: (LocationUpdate) -> Unit) {
+        channels[trackableId]?.let { channel ->
+            try {
+                channel.subscribe(EventNames.ENHANCED) { message ->
+                    listener(message.getEnhancedLocationUpdate(gson))
+                }
+            } catch (exception: AblyException) {
+                throw exception.errorInfo.toTrackingException()
+            }
+        }
+    }
+
     override fun subscribeForPresenceMessages(trackableId: String, listener: (PresenceMessage) -> Unit) {
         channels[trackableId]?.let { channel ->
             try {
@@ -251,14 +287,14 @@ internal class DefaultAbly(
 
     /**
      * Closes [AblyRealtime] and waits until it's either closed or failed.
-     * @throws com.ably.tracking.AblyException if the [AblyRealtime] state changes to [io.ably.lib.realtime.ConnectionState.failed].
+     * @throws com.ably.tracking.AblyException if the [AblyRealtime] state changes to [ConnectionState.failed].
      */
     private suspend fun closeConnection() {
         suspendCoroutine<Unit> { continuation ->
             ably.connection.on {
-                if (it.current == io.ably.lib.realtime.ConnectionState.closed) {
+                if (it.current == ConnectionState.closed) {
                     continuation.resume(Unit)
-                } else if (it.current == io.ably.lib.realtime.ConnectionState.failed) {
+                } else if (it.current == ConnectionState.failed) {
                     continuation.resumeWithException(it.reason.toTrackingException())
                 }
             }
