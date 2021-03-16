@@ -46,7 +46,7 @@ enum class AccuracyMessage {
     HIGH,
 
     @SerializedName("MAXIMUM")
-    MAXIMUM
+    MAXIMUM,
 }
 
 data class EnhancedLocationUpdateMessage(
@@ -61,5 +61,5 @@ enum class LocationUpdateTypeMessage {
     PREDICTED,
 
     @SerializedName("ACTUAL")
-    ACTUAL
+    ACTUAL,
 }
