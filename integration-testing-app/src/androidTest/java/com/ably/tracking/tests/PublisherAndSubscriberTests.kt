@@ -5,7 +5,7 @@ import android.content.Context
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ably.tracking.Accuracy
-import com.ably.tracking.ConnectionConfiguration
+import com.ably.tracking.ConnectionConfigurationKey
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.Resolution
 import com.ably.tracking.publisher.DefaultResolutionPolicyFactory
@@ -136,7 +136,7 @@ class PublisherAndSubscriberTests {
     ) =
         Publisher.publishers()
             .androidContext(context)
-            .connection(ConnectionConfiguration(ABLY_API_KEY, CLIENT_ID))
+            .connection(ConnectionConfigurationKey.create(ABLY_API_KEY, CLIENT_ID))
             .map(MapConfiguration(MAPBOX_ACCESS_TOKEN))
             .resolutionPolicy(DefaultResolutionPolicyFactory(resolution, context))
             .profile(RoutingProfile.DRIVING)
@@ -148,7 +148,7 @@ class PublisherAndSubscriberTests {
         resolution: Resolution = Resolution(Accuracy.BALANCED, 1L, 0.0)
     ) =
         Subscriber.subscribers()
-            .connection(ConnectionConfiguration(ABLY_API_KEY, CLIENT_ID))
+            .connection(ConnectionConfigurationKey.create(ABLY_API_KEY, CLIENT_ID))
             .resolution(resolution)
             .trackingId(trackingId)
             .start()
