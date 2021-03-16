@@ -9,7 +9,7 @@ sealed class TrackableState {
     /**
      * Trackable state is [Online] when it's being actively tracked. This state can change to either [Offline] or [Failed].
      */
-    class Online : TrackableState()
+    object Online : TrackableState()
 
     /**
      * Trackable state is [Offline] when it's connecting or recovering from an error and hopefully will soon be back in the [Online]. This state can change to either [Online] or [Failed].

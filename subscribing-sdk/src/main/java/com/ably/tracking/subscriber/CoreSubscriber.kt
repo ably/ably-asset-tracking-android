@@ -134,7 +134,7 @@ private class DefaultCoreSubscriber(
     }
 
     private suspend fun notifyAssetIsOnline() {
-        _trackableStates.emit(TrackableState.Online())
+        _trackableStates.emit(TrackableState.Online)
     }
 
     private suspend fun notifyAssetIsOffline() {

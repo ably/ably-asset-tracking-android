@@ -355,7 +355,7 @@ constructor(
         val newTrackableState = when (state.lastConnectionStateChange.state) {
             ConnectionState.ONLINE -> {
                 when (lastChannelConnectionStateChange.state) {
-                    ConnectionState.ONLINE -> if (hasSentAtLeastOneLocation) TrackableState.Online() else TrackableState.Offline()
+                    ConnectionState.ONLINE -> if (hasSentAtLeastOneLocation) TrackableState.Online else TrackableState.Offline()
                     ConnectionState.OFFLINE -> TrackableState.Offline()
                     ConnectionState.FAILED -> TrackableState.Failed(lastChannelConnectionStateChange.errorInformation!!) // are we sure error information will always be present?
                 }
