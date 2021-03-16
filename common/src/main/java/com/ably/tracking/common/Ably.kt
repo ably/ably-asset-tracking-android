@@ -35,6 +35,7 @@ interface Ably {
 
     /**
      * Adds a listener for the channel state updates.
+     * After adding a listener it will emit the current state of the channel.
      * Should be called only when there's an existing channel for the [trackableId].
      * If a channel for the [trackableId] doesn't exist then nothing happens.
      *
@@ -143,7 +144,12 @@ class DefaultAbly(
     }
 
     override fun subscribeForChannelStateChange(trackableId: String, listener: (ConnectionStateChange) -> Unit) {
-        channels[trackableId]?.on { listener(it.toTracking()) }
+        channels[trackableId]?.let { channel ->
+            channel.state.toTracking().let { currentChannelState ->
+                listener(ConnectionStateChange(currentChannelState, currentChannelState, null))
+            }
+            channel.on { listener(it.toTracking()) }
+        }
     }
 
     override fun connect(
