@@ -80,7 +80,7 @@ class MainActivity : AppCompatActivity() {
     private fun createAndStartAssetSubscriber(trackingId: String) {
         scope.launch {
             subscriber = Subscriber.subscribers()
-                .connection(ConnectionConfigurationKey(ABLY_API_KEY, CLIENT_ID))
+                .connection(ConnectionConfigurationKey.create(ABLY_API_KEY, CLIENT_ID))
                 .trackingId(trackingId)
                 .resolution(resolution)
                 .start()

@@ -16,7 +16,7 @@ class FactoryUnitTests {
     @Test
     fun `setting Ably connection config updates builder field`() {
         // given
-        val configuration = ConnectionConfigurationKey("", "")
+        val configuration = ConnectionConfigurationKey.create("", "")
 
         // when
         val builder = Publisher.publishers().connection(configuration) as PublisherBuilder
@@ -28,7 +28,7 @@ class FactoryUnitTests {
     @Test
     fun `setting Ably connection config returns a new copy of builder`() {
         // given
-        val configuration = ConnectionConfigurationKey("", "")
+        val configuration = ConnectionConfigurationKey.create("", "")
         val originalBuilder = Publisher.publishers()
 
         // when
@@ -111,7 +111,7 @@ class FactoryUnitTests {
 
         // when
         val updatedBuilder = builder
-            .connection(ConnectionConfigurationKey("", ""))
+            .connection(ConnectionConfigurationKey.create("", ""))
             .map(MapConfiguration(""))
             .androidContext(mockedContext)
 

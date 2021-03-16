@@ -13,7 +13,7 @@ class FactoryUnitTests {
     @Test
     fun `setting Ably connection config updates builder field`() {
         // given
-        val configuration = ConnectionConfigurationKey("", "")
+        val configuration = ConnectionConfigurationKey.create("", "")
 
         // when
         val builder =
@@ -26,7 +26,7 @@ class FactoryUnitTests {
     @Test
     fun `setting Ably connection config returns a new copy of builder`() {
         // given
-        val configuration = ConnectionConfigurationKey("", "")
+        val configuration = ConnectionConfigurationKey.create("", "")
         val originalBuilder = Subscriber.subscribers()
 
         // when
@@ -94,7 +94,7 @@ class FactoryUnitTests {
 
         // when
         val updatedBuilder = builder
-            .connection(ConnectionConfigurationKey("", ""))
+            .connection(ConnectionConfigurationKey.create("", ""))
             .resolution(Resolution(Accuracy.BALANCED, 333, 666.6))
             .trackingId("")
 

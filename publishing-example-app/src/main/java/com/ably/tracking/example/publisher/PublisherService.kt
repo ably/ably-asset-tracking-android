@@ -67,7 +67,7 @@ class PublisherService : Service() {
         locationSource: LocationSource? = null
     ) {
         publisher = Publisher.publishers()
-            .connection(ConnectionConfigurationKey(ABLY_API_KEY, CLIENT_ID))
+            .connection(ConnectionConfigurationKey.create(ABLY_API_KEY, CLIENT_ID))
             .map(MapConfiguration(MAPBOX_ACCESS_TOKEN))
             .locationSource(locationSource)
             .resolutionPolicy(DefaultResolutionPolicyFactory(defaultResolution, this))

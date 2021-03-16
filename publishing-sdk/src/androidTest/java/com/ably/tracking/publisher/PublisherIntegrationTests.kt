@@ -89,7 +89,7 @@ class PublisherIntegrationTests {
     ) =
         Publisher.publishers()
             .androidContext(context)
-            .connection(ConnectionConfigurationKey(ABLY_API_KEY, CLIENT_ID))
+            .connection(ConnectionConfigurationKey.create(ABLY_API_KEY, CLIENT_ID))
             .map(MapConfiguration(MAPBOX_ACCESS_TOKEN))
             .resolutionPolicy(DefaultResolutionPolicyFactory(resolution, context))
             .profile(RoutingProfile.CYCLING)

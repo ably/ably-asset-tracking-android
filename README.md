@@ -46,7 +46,7 @@ val exampleConstraints = DefaultResolutionConstraints(
 
 // Initialise and Start the Publisher
 val publisher = Publisher.publishers() // get the Publisher builder in default state
-    .connection(ConnectionConfiguration(ABLY_API_KEY, CLIENT_ID)) // provide Ably configuration with credentials
+    .connection(ConnectionConfigurationKey.create(ABLY_API_KEY, CLIENT_ID)) // provide Ably configuration with credentials
     .map(MapConfiguration(MAPBOX_ACCESS_TOKEN)) // provide Mapbox configuration with credentials
     .androidContext(this) // provide Android runtime context
     .profile(RoutingProfile.DRIVING) // provide mode of transportation for better location enhancements
@@ -73,7 +73,7 @@ Here is an example of how Asset Subscribing SDK can be used:
 ```kotlin
 // Initialise and Start the Subscriber
 val subscriber = Subscriber.subscribers() // Get an AssetSubscriber
-    .connection(ConnectionConfiguration(ABLY_API_KEY, CLIENT_ID)) // provide Ably configuration with credentials
+    .connection(ConnectionConfigurationKey.create(ABLY_API_KEY, CLIENT_ID)) // provide Ably configuration with credentials
     .resolution( // request a specific resolution to be considered by the publisher
         Resolution(Accuracy.MAXIMUM, desiredInterval = 1000L, minimumDisplacement = 1.0)
     )
