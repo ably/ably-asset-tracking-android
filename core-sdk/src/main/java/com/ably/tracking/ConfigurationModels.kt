@@ -17,10 +17,33 @@ constructor(val apiKey: String, clientId: String) : ConnectionConfiguration(clie
  */
 class ConnectionConfigurationToken
 /**
- * @param callback Callback that will be called each time a token or token request needs to be obtained or renewed.
+ * @param callback Callback that will be called with [TokenRequestParameters] each time a token or token request needs to be obtained or renewed.
  * @param clientId ID of the client
  */
-constructor(val callback: () -> Any, clientId: String) : ConnectionConfiguration(clientId)
+constructor(val callback: (TokenRequestParameters) -> Any, clientId: String) : ConnectionConfiguration(clientId)
+
+/**
+ * Represents a set of parameters that are used when requesting an auth token.
+ */
+data class TokenRequestParameters(
+    /**
+     * Time to live of the token.
+     * If set to 0 then the default value will be used.
+     */
+    val ttl: Long,
+    /**
+     * Capabilities of the token.
+     */
+    val capability: String,
+    /**
+     * Client ID associated with the token.
+     */
+    val clientId: String,
+    /**
+     * Timestamp in milliseconds of this request.
+     */
+    val timestamp: Long
+)
 
 /**
  * Represents a state of a trackable that's being tracked by a publisher.
