@@ -81,7 +81,7 @@ val ConnectionConfiguration.clientOptions: ClientOptions
         }
         is ConnectionConfigurationToken -> ClientOptions().apply {
             clientId = this@clientOptions.clientId
-            authCallback = Auth.TokenCallback { this@clientOptions.callback(it.toTracking()) }
+            authCallback = Auth.TokenCallback { this@clientOptions.callback(it.toTracking()).toAbly() }
         }
     }
 
@@ -91,6 +91,20 @@ val ConnectionConfiguration.clientOptions: ClientOptions
  */
 fun Auth.TokenParams.toTracking(): TokenRequestParameters =
     TokenRequestParameters(ttl, capability, clientId, timestamp)
+
+/**
+ * Extension converting Asset Tracking SDK [TokenRequest] to the equivalent [Auth.TokenRequest] from Ably.
+ */
+fun TokenRequest.toAbly(): Auth.TokenRequest =
+    Auth.TokenRequest().apply {
+        ttl = this@toAbly.ttl
+        capability = this@toAbly.capability
+        clientId = this@toAbly.clientId
+        timestamp = this@toAbly.timestamp
+        keyName = this@toAbly.keyName
+        nonce = this@toAbly.nonce
+        mac = this@toAbly.mac
+    }
 
 /**
  * Extension converting Ably Realtime presence message to the equivalent [PresenceMessage] API

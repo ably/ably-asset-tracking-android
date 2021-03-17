@@ -5,6 +5,7 @@ import com.ably.tracking.ConnectionConfiguration;
 import com.ably.tracking.ConnectionConfigurationKey;
 import com.ably.tracking.ConnectionConfigurationToken;
 import com.ably.tracking.Resolution;
+import com.ably.tracking.TokenRequest;
 import com.ably.tracking.subscriber.Subscriber;
 import com.ably.tracking.subscriber.java.SubscriberFacade;
 
@@ -62,7 +63,7 @@ public class UsageExamples {
 
     @Test
     public void subscriberTokenAuthUsageExample() {
-        ConnectionConfiguration configuration = ConnectionConfigurationToken.create((params) -> "TOKEN", "CLIENT_ID");
+        ConnectionConfiguration configuration = ConnectionConfigurationToken.create((params) -> new TokenRequest(0, "", "", 0, "", "", ""), "CLIENT_ID");
     }
 
     @Test

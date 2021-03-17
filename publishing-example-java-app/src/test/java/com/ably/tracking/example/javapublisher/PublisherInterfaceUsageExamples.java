@@ -10,6 +10,7 @@ import com.ably.tracking.ConnectionConfiguration;
 import com.ably.tracking.ConnectionConfigurationKey;
 import com.ably.tracking.ConnectionConfigurationToken;
 import com.ably.tracking.Resolution;
+import com.ably.tracking.TokenRequest;
 import com.ably.tracking.publisher.DefaultProximity;
 import com.ably.tracking.publisher.DefaultResolutionConstraints;
 import com.ably.tracking.publisher.DefaultResolutionSet;
@@ -79,7 +80,7 @@ public class PublisherInterfaceUsageExamples {
 
     @Test
     public void publisherTokenAuthUsageExample() {
-        ConnectionConfiguration configuration = ConnectionConfigurationToken.create((params) -> "TOKEN", "CLIENT_ID");
+        ConnectionConfiguration configuration = ConnectionConfigurationToken.create((params) -> new TokenRequest(0, "", "", 0, "", "", ""), "CLIENT_ID");
     }
 
     @Test

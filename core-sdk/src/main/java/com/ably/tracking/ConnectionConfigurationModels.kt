@@ -20,22 +20,22 @@ private constructor(val apiKey: String, clientId: String) : ConnectionConfigurat
 }
 
 /**
- *  Represents a [ConnectionConfiguration] that uses the token authentication and requires to provide a callback that will be called each time a new token or token request is required.
+ *  Represents a [ConnectionConfiguration] that uses the token authentication and requires to provide a callback that will be called each time a new [TokenRequest] is required.
  */
 class ConnectionConfigurationToken
-private constructor(val callback: (TokenRequestParameters) -> Any, clientId: String) :
+private constructor(val callback: (TokenRequestParameters) -> TokenRequest, clientId: String) :
     ConnectionConfiguration(clientId) {
     companion object {
         /**
-         * @param callback Callback that will be called with [TokenRequestParameters] each time a token or token request needs to be obtained or renewed.
+         * @param callback Callback that will be called with [TokenRequestParameters] each time a [TokenRequest] needs to be obtained.
          * @param clientId ID of the client
          */
         @JvmSynthetic
-        fun create(callback: (TokenRequestParameters) -> Any, clientId: String) =
+        fun create(callback: (TokenRequestParameters) -> TokenRequest, clientId: String) =
             ConnectionConfigurationToken(callback, clientId)
 
         /**
-         * @param callback [TokenRequestCallback] that will be called each time a token or token request needs to be obtained or renewed.
+         * @param callback [TokenRequestCallback] that will be called each time a [TokenRequest] needs to be obtained.
          * @param clientId ID of the client
          */
         @JvmStatic
@@ -43,7 +43,7 @@ private constructor(val callback: (TokenRequestParameters) -> Any, clientId: Str
             ConnectionConfigurationToken(callback, clientId)
     }
 
-    private constructor() : this({}, "")
+    private constructor() : this({ TokenRequest(0, "", "", 0, "", "", "") }, "")
     private constructor(callback: TokenRequestCallback, clientId: String) : this(
         { callback.onRequestToken(it) },
         clientId
@@ -55,18 +55,18 @@ private constructor(val callback: (TokenRequestParameters) -> Any, clientId: Str
  */
 interface TokenRequestCallback {
     /**
-     * This method will be called each time a token or token request needs to be obtained or renewed.
+     * This method will be called each time a [TokenRequest] needs to be obtained.
      *
      * @param requestParameters Parameters of the token request
-     * @return signed TokenRequest, TokenDetails or a token string
+     * @return [TokenRequest] used to obtain the token
      */
-    fun onRequestToken(requestParameters: TokenRequestParameters): Any
+    fun onRequestToken(requestParameters: TokenRequestParameters): TokenRequest
 }
 
 /**
  * Represents a set of parameters that are used when requesting an auth token.
  */
-data class TokenRequestParameters(
+open class TokenRequestParameters(
     /**
      * Time to live of the token.
      * If set to 0 then the default value will be used.
@@ -85,3 +85,35 @@ data class TokenRequestParameters(
      */
     val timestamp: Long
 )
+
+class TokenRequest(
+    /**
+     * Time to live of the token.
+     * If set to 0 then the default value will be used.
+     */
+    ttl: Long,
+    /**
+     * Capabilities of the token.
+     */
+    capability: String,
+    /**
+     * Client ID associated with the token.
+     */
+    clientId: String,
+    /**
+     * Timestamp in milliseconds of this request.
+     */
+    timestamp: Long,
+    /**
+     * The keyName of the key against which this request is made.
+     */
+    var keyName: String,
+    /**
+     * An opaque nonce string of at least 16 characters to ensure uniqueness of this request. Any subsequent request using the same nonce will be rejected.
+     */
+    var nonce: String,
+    /**
+     * The Message Authentication Code for this request.
+     */
+    var mac: String
+) : TokenRequestParameters(ttl, capability, clientId, timestamp)
