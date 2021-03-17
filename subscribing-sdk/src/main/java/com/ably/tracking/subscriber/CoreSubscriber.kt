@@ -80,9 +80,9 @@ private class DefaultCoreSubscriber(
                 when (event) {
                     is StartEvent -> {
                         notifyAssetIsOffline()
-                        subscribeForEnhancedEvents()
-                        subscribeForPresenceMessages()
                         ably.connect(trackableId, presenceData, useRewind = true) {
+                            subscribeForEnhancedEvents()
+                            subscribeForPresenceMessages()
                             // TODO what should we do when connection fails?
                         }
                     }
