@@ -50,6 +50,11 @@ internal class RemoveTrackableEvent(
     handler: ResultHandler<Boolean>
 ) : Request<Boolean>(handler)
 
+internal class DisconnectSuccessEvent(
+    val trackable: Trackable,
+    handler: ResultHandler<Unit>
+) : Request<Unit>(handler)
+
 internal class JoinPresenceSuccessEvent(
     val trackable: Trackable,
     handler: ResultHandler<StateFlow<TrackableState>>

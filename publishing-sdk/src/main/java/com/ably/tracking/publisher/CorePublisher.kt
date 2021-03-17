@@ -296,18 +296,29 @@ constructor(
                             }
 
                             // Leave Ably channel.
-                            ably.disconnect(event.trackable.id, state.presenceData) {
-                                state.lastChannelConnectionStateChanges.remove(event.trackable.id)
-                                if (it.isSuccess) {
-                                    event.handler(Result.success(true))
+                            ably.disconnect(event.trackable.id, state.presenceData) { result ->
+                                if (result.isSuccess) {
+                                    request(
+                                        DisconnectSuccessEvent(event.trackable) {
+                                            if (it.isSuccess) {
+                                                event.handler(Result.success(true))
+                                            } else {
+                                                event.handler(Result.failure(it.exceptionOrNull()!!))
+                                            }
+                                        }
+                                    )
                                 } else {
-                                    event.handler(Result.failure(it.exceptionOrNull()!!))
+                                    event.handler(Result.failure(result.exceptionOrNull()!!))
                                 }
                             }
                         } else {
                             // notify with false to indicate that it was not removed
                             event.handler(Result.success(false))
                         }
+                    }
+                    is DisconnectSuccessEvent -> {
+                        state.lastChannelConnectionStateChanges.remove(event.trackable.id)
+                        event.handler(Result.success(Unit))
                     }
                     is RefreshResolutionPolicyEvent -> {
                         state.trackables.forEach { resolveResolution(it, state) }
