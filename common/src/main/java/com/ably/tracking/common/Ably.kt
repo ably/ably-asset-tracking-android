@@ -160,7 +160,7 @@ class DefaultAbly(
             channel.apply {
                 try {
                     presence.enter(
-                        gson.toJson(presenceData),
+                        gson.toJson(presenceData.toMessage()),
                         object : CompletionListener {
                             override fun onSuccess() {
                                 channels[trackableId] = this@apply
@@ -188,7 +188,7 @@ class DefaultAbly(
             removedChannel.presence.unsubscribe()
             try {
                 removedChannel.presence.leave(
-                    gson.toJson(presenceData),
+                    gson.toJson(presenceData.toMessage()),
                     object : CompletionListener {
                         override fun onSuccess() {
                             callback(Result.success(Unit))
@@ -259,7 +259,7 @@ class DefaultAbly(
     override fun updatePresenceData(trackableId: String, presenceData: PresenceData, callback: (Result<Unit>) -> Unit) {
         try {
             channels[trackableId]?.presence?.update(
-                gson.toJson(presenceData),
+                gson.toJson(presenceData.toMessage()),
                 object : CompletionListener {
                     override fun onSuccess() {
                         callback(Result.success(Unit))
