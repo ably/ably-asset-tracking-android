@@ -4,8 +4,9 @@ import android.Manifest.permission.ACCESS_COARSE_LOCATION
 import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.content.Context
 import androidx.annotation.RequiresPermission
-import com.ably.tracking.ConnectionException
+import com.ably.tracking.BuilderConfigurationIncompleteException
 import com.ably.tracking.ConnectionConfiguration
+import com.ably.tracking.ConnectionException
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.TrackableState
 import kotlinx.coroutines.flow.SharedFlow
@@ -192,6 +193,7 @@ interface Publisher {
          * @throws com.ably.tracking.BuilderConfigurationIncompleteException If all required params aren't set
          */
         @RequiresPermission(anyOf = [ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION])
+        @Throws(BuilderConfigurationIncompleteException::class)
         fun start(): Publisher
     }
 }

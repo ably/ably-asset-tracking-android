@@ -1,5 +1,6 @@
 package com.ably.tracking.subscriber
 
+import com.ably.tracking.BuilderConfigurationIncompleteException
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.Resolution
@@ -101,6 +102,7 @@ interface Subscriber {
          * @return A new subscriber instance.
          * @throws com.ably.tracking.BuilderConfigurationIncompleteException If all required params aren't set
          */
+        @Throws(BuilderConfigurationIncompleteException::class)
         fun start(): Subscriber
     }
 }
