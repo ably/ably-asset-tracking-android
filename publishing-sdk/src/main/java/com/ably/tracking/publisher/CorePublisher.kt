@@ -525,7 +525,7 @@ constructor(
         return if (resolution != null && lastSentLocation != null) {
             val timeSinceLastSentLocation = currentLocation.timeFrom(lastSentLocation)
             val distanceFromLastSentLocation = currentLocation.distanceInMetersFrom(lastSentLocation)
-            return distanceFromLastSentLocation >= resolution.minimumDisplacement &&
+            return distanceFromLastSentLocation >= resolution.minimumDisplacement ||
                 timeSinceLastSentLocation >= resolution.desiredInterval
         } else {
             true
