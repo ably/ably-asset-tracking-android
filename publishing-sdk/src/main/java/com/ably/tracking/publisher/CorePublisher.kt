@@ -3,7 +3,7 @@ package com.ably.tracking.publisher
 import android.Manifest
 import android.location.Location
 import androidx.annotation.RequiresPermission
-import com.ably.tracking.AblyException
+import com.ably.tracking.ConnectionException
 import com.ably.tracking.ConnectionState
 import com.ably.tracking.ConnectionStateChange
 import com.ably.tracking.EnhancedLocationUpdate
@@ -190,7 +190,7 @@ constructor(
                                     ably.sendEnhancedLocation(trackable.id, event.locationUpdate)
                                     state.lastSentEnhancedLocations[trackable.id] = event.locationUpdate.location
                                     updateTrackableState(state, trackable.id)
-                                } catch (exception: AblyException) {
+                                } catch (exception: ConnectionException) {
                                     // TODO - what to do here if sending enhanced location fails?
                                 }
                             }
@@ -340,7 +340,7 @@ constructor(
                                 ably.close(state.presenceData)
                                 state.isStopped = true
                                 event.handler(Result.success(Unit))
-                            } catch (exception: AblyException) {
+                            } catch (exception: ConnectionException) {
                                 event.handler(Result.failure(exception))
                             }
                         }
@@ -394,7 +394,7 @@ constructor(
     /**
      * Creates a [Channel] for the [Trackable], joins the channel's presence and enqueues [SuccessEvent].
      * If a [Channel] for the given [Trackable] exists then it just enqueues [SuccessEvent].
-     * If during channel creation and joining presence an error occurs then it enqueues [FailureEvent] with the [AblyException].
+     * If during channel creation and joining presence an error occurs then it enqueues [FailureEvent] with the [ConnectionException].
      */
     private fun createChannelForTrackableIfNotExisits(
         trackable: Trackable,
@@ -406,7 +406,7 @@ constructor(
                 result.getOrThrow()
                 try {
                     ably.subscribeForPresenceMessages(trackable.id) { enqueue(PresenceMessageEvent(trackable, it)) }
-                } catch (exception: AblyException) {
+                } catch (exception: ConnectionException) {
                     // TODO - what to do here? should we fail the whole process when subscribing for presence fails? or should it continue?
                 }
                 ably.subscribeForChannelStateChange(trackable.id) {

@@ -39,14 +39,14 @@ fun io.ably.lib.types.ErrorInfo.toTracking() =
     )
 
 /**
- * Extension converting Ably error info objects to the equivalent [AblyException] API presented to users of the Ably
+ * Extension converting Ably error info objects to the equivalent [ConnectionException] API presented to users of the Ably
  * Asset Tracking SDKs.
  *
  * The `requestId` field is yet to be implemented by ably-java, however even once it is available then the chances are
  * that it'll still not be exposed through to users of the Ably Asset Tracking SDKs in order to keep things simple.
  */
 fun io.ably.lib.types.ErrorInfo.toTrackingException() =
-    AblyException(
+    ConnectionException(
         ErrorInformation(
             this.code,
             this.statusCode,

@@ -1,6 +1,7 @@
 package com.ably.tracking.common
 
 import com.ably.tracking.ConnectionConfiguration
+import com.ably.tracking.ConnectionException
 import com.ably.tracking.ConnectionStateChange
 import com.ably.tracking.EnhancedLocationUpdate
 import com.ably.tracking.LocationUpdate
@@ -56,7 +57,7 @@ interface Ably {
      * @param trackableId The ID of the trackable channel.
      * @param listener The function that will be called each time a presence message is received.
      *
-     * @throws com.ably.tracking.AblyException if something goes wrong.
+     * @throws ConnectionException if something goes wrong.
      */
     fun subscribeForPresenceMessages(trackableId: String, listener: (PresenceMessage) -> Unit)
 
@@ -68,7 +69,7 @@ interface Ably {
      * @param trackableId The ID of the trackable channel.
      * @param locationUpdate The location update that is sent to the channel.
      *
-     * @throws com.ably.tracking.AblyException if something goes wrong.
+     * @throws ConnectionException if something goes wrong.
      */
     fun sendEnhancedLocation(trackableId: String, locationUpdate: EnhancedLocationUpdate)
 
@@ -79,7 +80,7 @@ interface Ably {
      * @param trackableId The ID of the trackable channel.
      * @param listener The function that will be called each time an enhanced location update event is received.
      *
-     * @throws com.ably.tracking.AblyException if something goes wrong.
+     * @throws ConnectionException if something goes wrong.
      */
     fun subscribeForEnhancedEvents(trackableId: String, listener: (LocationUpdate) -> Unit)
 
@@ -91,7 +92,7 @@ interface Ably {
      * @param trackableId The ID of the trackable channel.
      * @param presenceData The data that will be send via the presence channel.
      * @param useRewind If set to true then after connecting the channel will replay the last event that was sent in it.
-     * @param callback The function that will be called when connecting completes. If something goes wrong it will be called with [com.ably.tracking.AblyException].
+     * @param callback The function that will be called when connecting completes. If something goes wrong it will be called with [ConnectionException].
      */
     fun connect(
         trackableId: String,
@@ -107,7 +108,7 @@ interface Ably {
      *
      * @param trackableId The ID of the trackable channel.
      * @param presenceData The data that will be send via the presence channel.
-     * @param callback The function that will be called when updating presence data completes. If something goes wrong it will be called with [com.ably.tracking.AblyException].
+     * @param callback The function that will be called when updating presence data completes. If something goes wrong it will be called with [ConnectionException].
      */
     fun updatePresenceData(trackableId: String, presenceData: PresenceData, callback: (Result<Unit>) -> Unit)
 
@@ -117,7 +118,7 @@ interface Ably {
      *
      * @param trackableId The ID of the trackable channel.
      * @param presenceData The data that will be send via the presence channel.
-     * @param callback The function that will be called when disconnecting completes. If something goes wrong it will be called with [com.ably.tracking.AblyException].
+     * @param callback The function that will be called when disconnecting completes. If something goes wrong it will be called with [ConnectionException].
      */
     fun disconnect(trackableId: String, presenceData: PresenceData, callback: (Result<Unit>) -> Unit)
 
@@ -126,7 +127,7 @@ interface Ably {
      *
      * @param presenceData The data that will be send via the presence channels.
      *
-     * @throws com.ably.tracking.AblyException if something goes wrong.
+     * @throws ConnectionException if something goes wrong.
      */
     suspend fun close(presenceData: PresenceData)
 }
@@ -221,14 +222,14 @@ class DefaultAbly(
 
     /**
      * A suspend version of the [DefaultAbly.disconnect] method. It waits until disconnection is completed.
-     * @throws com.ably.tracking.AblyException if something goes wrong during disconnect.
+     * @throws ConnectionException if something goes wrong during disconnect.
      */
     private suspend fun disconnect(trackableId: String, presenceData: PresenceData) {
         suspendCoroutine<Unit> { continuation ->
             disconnect(trackableId, presenceData) {
                 try {
                     continuation.resume(it.getOrThrow())
-                } catch (exception: com.ably.tracking.AblyException) {
+                } catch (exception: ConnectionException) {
                     continuation.resumeWithException(exception)
                 }
             }
@@ -305,7 +306,7 @@ class DefaultAbly(
 
     /**
      * Closes [AblyRealtime] and waits until it's either closed or failed.
-     * @throws com.ably.tracking.AblyException if the [AblyRealtime] state changes to [ConnectionState.failed].
+     * @throws ConnectionException if the [AblyRealtime] state changes to [ConnectionState.failed].
      */
     private suspend fun closeConnection() {
         suspendCoroutine<Unit> { continuation ->
