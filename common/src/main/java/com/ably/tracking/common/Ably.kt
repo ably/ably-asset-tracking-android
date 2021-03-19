@@ -15,6 +15,9 @@ import io.ably.lib.realtime.ConnectionState
 import io.ably.lib.types.AblyException
 import io.ably.lib.types.ChannelOptions
 import io.ably.lib.types.ErrorInfo
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import timber.log.Timber
@@ -134,6 +137,7 @@ class DefaultAbly(
     private val gson = Gson()
     private val ably: AblyRealtime
     private val channels: MutableMap<String, Channel> = mutableMapOf()
+    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     init {
         ably = AblyRealtime(connectionConfiguration.clientOptions)
@@ -145,8 +149,10 @@ class DefaultAbly(
 
     override fun subscribeForChannelStateChange(trackableId: String, listener: (ConnectionStateChange) -> Unit) {
         channels[trackableId]?.let { channel ->
+            // Emit the current channel state
             channel.state.toTracking().let { currentChannelState ->
-                listener(ConnectionStateChange(currentChannelState, currentChannelState, null))
+                // Initial state is launched in a fire-and-forget manner to not block this method on the listener() call
+                scope.launch { listener(ConnectionStateChange(currentChannelState, currentChannelState, null)) }
             }
             channel.on { listener(it.toTracking()) }
         }
@@ -254,7 +260,13 @@ class DefaultAbly(
     override fun subscribeForPresenceMessages(trackableId: String, listener: (PresenceMessage) -> Unit) {
         channels[trackableId]?.let { channel ->
             try {
-                channel.presence.get(true).forEach { listener(it.toTracking(gson)) }
+                // Emit the current presence messages of the channel
+                channel.presence.get(true).let { messages ->
+                    messages.forEach {
+                        // Each message is launched in a fire-and-forget manner to not block this method on the listener() call
+                        scope.launch { listener(it.toTracking(gson)) }
+                    }
+                }
                 channel.presence.subscribe { listener(it.toTracking(gson)) }
             } catch (exception: AblyException) {
                 throw exception.errorInfo.toTrackingException()
