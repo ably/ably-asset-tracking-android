@@ -10,7 +10,6 @@ import com.ably.tracking.EnhancedLocationUpdate
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.LocationUpdateType
 import com.ably.tracking.Resolution
-import com.ably.tracking.ResultHandler
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ClientTypes
@@ -203,16 +202,14 @@ constructor(
                         )
                     }
                     is TrackTrackableEvent -> {
-                        createChannelForTrackableIfNotExisits(
-                            event.trackable,
-                            { result ->
+                        request(
+                            AddTrackableEvent(event.trackable) { result ->
                                 if (result.isSuccess) {
                                     request(SetActiveTrackableEvent(event.trackable) { event.handler(result) })
                                 } else {
                                     event.handler(result)
                                 }
-                            },
-                            state
+                            }
                         )
                     }
                     is SetActiveTrackableEvent -> {
@@ -226,7 +223,24 @@ constructor(
                         event.handler(Result.success(Unit))
                     }
                     is AddTrackableEvent -> {
-                        createChannelForTrackableIfNotExisits(event.trackable, event.handler, state)
+                        ably.connect(event.trackable.id, state.presenceData) { result ->
+                            try {
+                                result.getOrThrow()
+                                try {
+                                    ably.subscribeForPresenceMessages(event.trackable.id) {
+                                        enqueue(PresenceMessageEvent(event.trackable, it))
+                                    }
+                                } catch (exception: ConnectionException) {
+                                    // TODO - what to do here? should we fail the whole process when subscribing for presence fails? or should it continue?
+                                }
+                                ably.subscribeForChannelStateChange(event.trackable.id) {
+                                    enqueue(ChannelConnectionStateChangeEvent(it, event.trackable.id))
+                                }
+                                request(JoinPresenceSuccessEvent(event.trackable, event.handler))
+                            } catch (exception: ConnectionException) {
+                                event.handler(Result.failure(exception))
+                            }
+                        }
                     }
                     is PresenceMessageEvent -> {
                         when (event.presenceMessage.action) {
@@ -388,34 +402,6 @@ constructor(
         state.subscribers[trackable.id]?.let { subscribers ->
             subscribers.forEach { hooks.subscribers?.onSubscriberRemoved(it) }
             subscribers.clear()
-        }
-    }
-
-    /**
-     * Creates a [Channel] for the [Trackable], joins the channel's presence and enqueues [SuccessEvent].
-     * If a [Channel] for the given [Trackable] exists then it just enqueues [SuccessEvent].
-     * If during channel creation and joining presence an error occurs then it enqueues [FailureEvent] with the [ConnectionException].
-     */
-    private fun createChannelForTrackableIfNotExisits(
-        trackable: Trackable,
-        handler: ResultHandler<StateFlow<TrackableState>>,
-        state: State
-    ) {
-        ably.connect(trackable.id, state.presenceData) { result ->
-            try {
-                result.getOrThrow()
-                try {
-                    ably.subscribeForPresenceMessages(trackable.id) { enqueue(PresenceMessageEvent(trackable, it)) }
-                } catch (exception: ConnectionException) {
-                    // TODO - what to do here? should we fail the whole process when subscribing for presence fails? or should it continue?
-                }
-                ably.subscribeForChannelStateChange(trackable.id) {
-                    enqueue(ChannelConnectionStateChangeEvent(it, trackable.id))
-                }
-                request(JoinPresenceSuccessEvent(trackable, handler))
-            } catch (exception: Exception) {
-                handler(Result.failure(exception))
-            }
         }
     }
 
