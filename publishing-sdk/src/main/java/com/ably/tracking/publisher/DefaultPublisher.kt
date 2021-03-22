@@ -40,8 +40,6 @@ constructor(
 
     init {
         core = createCorePublisher(ably, mapbox, resolutionPolicyFactory, routingProfile, batteryDataProvider)
-
-        core.enqueue(StartEvent())
     }
 
     override suspend fun track(trackable: Trackable): StateFlow<TrackableState> {

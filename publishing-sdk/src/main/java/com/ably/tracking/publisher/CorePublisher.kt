@@ -163,12 +163,6 @@ constructor(
                     }
                 }
                 when (event) {
-                    is StartEvent -> {
-                        if (!state.isTracking) {
-                            state.isTracking = true
-                            mapbox.startTrip()
-                        }
-                    }
                     is SetDestinationSuccessEvent -> {
                         state.estimatedArrivalTimeInMilliseconds =
                             System.currentTimeMillis() + event.routeDurationInMilliseconds
@@ -272,6 +266,10 @@ constructor(
                         }
                     }
                     is ConnectionForTrackableCreatedEvent -> {
+                        if (!state.isTracking) {
+                            state.isTracking = true
+                            mapbox.startTrip()
+                        }
                         state.trackables.add(event.trackable)
                         scope.launch { _trackables.emit(state.trackables) }
                         resolveResolution(event.trackable, state)
