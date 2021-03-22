@@ -236,7 +236,7 @@ constructor(
                                 ably.subscribeForChannelStateChange(event.trackable.id) {
                                     enqueue(ChannelConnectionStateChangeEvent(it, event.trackable.id))
                                 }
-                                request(JoinPresenceSuccessEvent(event.trackable, event.handler))
+                                request(ConnectionForTrackableCreatedEvent(event.trackable, event.handler))
                             } catch (exception: ConnectionException) {
                                 event.handler(Result.failure(exception))
                             }
@@ -271,7 +271,7 @@ constructor(
                             }
                         }
                     }
-                    is JoinPresenceSuccessEvent -> {
+                    is ConnectionForTrackableCreatedEvent -> {
                         state.trackables.add(event.trackable)
                         scope.launch { _trackables.emit(state.trackables) }
                         resolveResolution(event.trackable, state)

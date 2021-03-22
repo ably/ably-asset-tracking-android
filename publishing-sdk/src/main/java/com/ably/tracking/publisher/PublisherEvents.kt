@@ -55,7 +55,7 @@ internal class DisconnectSuccessEvent(
     handler: ResultHandler<Unit>
 ) : Request<Unit>(handler)
 
-internal class JoinPresenceSuccessEvent(
+internal class ConnectionForTrackableCreatedEvent(
     val trackable: Trackable,
     handler: ResultHandler<StateFlow<TrackableState>>
 ) : Request<StateFlow<TrackableState>>(handler)
