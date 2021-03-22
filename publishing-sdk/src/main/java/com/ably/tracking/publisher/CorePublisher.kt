@@ -307,6 +307,11 @@ constructor(
                                 hooks.trackables?.onActiveTrackableChanged(null)
                             }
 
+                            // When we remove the last trackable then we should stop location updates
+                            if (state.trackables.isEmpty() && state.isTracking) {
+                                stopLocationUpdates(state)
+                            }
+
                             // Leave Ably channel.
                             ably.disconnect(event.trackable.id, state.presenceData) { result ->
                                 if (result.isSuccess) {
@@ -344,9 +349,7 @@ constructor(
                             event.handler(Result.success(Unit))
                         } else {
                             if (state.isTracking) {
-                                state.isTracking = false
-                                mapbox.unregisterLocationObserver(locationObserver)
-                                mapbox.stopAndClose()
+                                stopLocationUpdates(state)
                             }
                             try {
                                 ably.close(state.presenceData)
@@ -370,6 +373,12 @@ constructor(
                 }
             }
         }
+    }
+
+    private fun stopLocationUpdates(state: State) {
+        state.isTracking = false
+        mapbox.unregisterLocationObserver(locationObserver)
+        mapbox.stopAndClose()
     }
 
     private fun updateTrackableState(state: State, trackableId: String) {
