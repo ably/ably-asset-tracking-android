@@ -14,21 +14,21 @@ internal sealed class AdhocEvent : Event()
 /**
  * Represents an event that invokes an action that calls a callback when it completes.
  */
-internal sealed class Request : Event()
+internal sealed class Request<T>(val handler: ResultHandler<T>) : Event()
 
 internal class StartEvent(
-    val handler: ResultHandler<Unit>
-) : Request()
+    handler: ResultHandler<Unit>
+) : Request<Unit>(handler)
 
 internal class StopEvent(
-    val handler: ResultHandler<Unit>
-) : Request()
+    handler: ResultHandler<Unit>
+) : Request<Unit>(handler)
 
 internal data class PresenceMessageEvent(
     val presenceMessage: PresenceMessage
 ) : AdhocEvent()
 
-internal data class ChangeResolutionEvent(
+internal class ChangeResolutionEvent(
     val resolution: Resolution?,
-    val handler: ResultHandler<Unit>
-) : Request()
+    handler: ResultHandler<Unit>
+) : Request<Unit>(handler)

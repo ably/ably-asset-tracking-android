@@ -25,7 +25,7 @@ import kotlinx.coroutines.launch
 
 internal interface CoreSubscriber {
     fun enqueue(event: AdhocEvent)
-    fun request(request: Request)
+    fun request(request: Request<*>)
     val enhancedLocations: SharedFlow<LocationUpdate>
     val trackableStates: StateFlow<TrackableState>
 }
@@ -69,7 +69,7 @@ private class DefaultCoreSubscriber(
         scope.launch { sendEventChannel.send(event) }
     }
 
-    override fun request(request: Request) {
+    override fun request(request: Request<*>) {
         scope.launch { sendEventChannel.send(request) }
     }
 
