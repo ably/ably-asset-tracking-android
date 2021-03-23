@@ -4,7 +4,6 @@ import com.ably.tracking.Resolution
 import com.ably.tracking.java.LocationUpdateListener
 import com.ably.tracking.java.TrackableStateListener
 import com.ably.tracking.subscriber.Subscriber
-import com.ably.tracking.subscriber.Subscriber.Builder
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -52,13 +51,25 @@ interface SubscriberFacade : Subscriber {
      */
     fun stopAsync(): CompletableFuture<Void>
 
-    companion object {
-        /**
-         * Returns a facade for the given subscriber instance.
-         */
-        @JvmStatic
-        fun wrap(subscriber: Subscriber): SubscriberFacade {
-            return DefaultSubscriberFacade(subscriber)
+    /**
+     * Builder for providing [SubscriberFacade].
+     */
+    interface Builder {
+        companion object {
+            /**
+             * Returns a facade for the given subscriber builder instance.
+             */
+            @JvmStatic
+            fun wrap(builder: Subscriber.Builder): Builder {
+                return SubscriberFacadeBuilder(builder)
+            }
         }
+
+        /**
+         * Creates a [SubscriberFacade] and starts listening for location updates.
+         *
+         * @return A [CompletableFuture] with the created and started subscriber facade.
+         */
+        fun startAsync(): CompletableFuture<SubscriberFacade>
     }
 }

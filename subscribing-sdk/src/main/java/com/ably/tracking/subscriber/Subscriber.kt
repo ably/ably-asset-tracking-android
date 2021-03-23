@@ -102,6 +102,7 @@ interface Subscriber {
          * @return A new subscriber instance.
          * @throws com.ably.tracking.BuilderConfigurationIncompleteException If all required params aren't set
          */
+        @JvmSynthetic
         @Throws(BuilderConfigurationIncompleteException::class)
         suspend fun start(): Subscriber
     }

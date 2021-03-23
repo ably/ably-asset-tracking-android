@@ -9,6 +9,7 @@ import com.ably.tracking.subscriber.java.SubscriberFacade;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.MockedStatic;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -16,19 +17,22 @@ import java.util.concurrent.ExecutionException;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.RETURNS_SELF;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.withSettings;
 
 public class UsageExamples {
     SubscriberFacade subscriberFacade;
     Subscriber nativeSubscriber;
-    Subscriber.Builder subscriberBuilder;
+    Subscriber.Builder nativeSubscriberBuilder;
+    SubscriberFacade.Builder subscriberFacadeBuilder;
 
     @Before
-    public void beforeEach() throws BuilderConfigurationIncompleteException {
+    public void beforeEach() {
         nativeSubscriber = mock(Subscriber.class);
-        subscriberBuilder = mock(Subscriber.Builder.class, withSettings().defaultAnswer(RETURNS_SELF));
-        when(subscriberBuilder.start()).thenReturn(nativeSubscriber);
+        nativeSubscriberBuilder = mock(Subscriber.Builder.class, withSettings().defaultAnswer(RETURNS_SELF));
+        subscriberFacadeBuilder = mock(SubscriberFacade.Builder.class, withSettings().defaultAnswer(RETURNS_SELF));
+        when(subscriberFacadeBuilder.startAsync()).thenReturn(CompletableFuture.completedFuture(subscriberFacade));
         subscriberFacade = mock(SubscriberFacade.class);
         when(subscriberFacade.sendChangeRequestAsync(any())).thenReturn(CompletableFuture.completedFuture(null));
         when(subscriberFacade.stopAsync()).thenReturn(CompletableFuture.completedFuture(any()));
@@ -36,20 +40,24 @@ public class UsageExamples {
 
     @Test
     public void subscriberBuilderUsageExample() {
+        Subscriber.Builder nativeBuilder = Subscriber.subscribers()
+            .connection(new ConnectionConfiguration("API_KEY", "CLIENT_ID"))
+            .trackingId("TRACKING_ID")
+            .resolution(new Resolution(Accuracy.BALANCED, 1000L, 1.0));
+        SubscriberFacade.Builder wrappedSubscriberBuilder = SubscriberFacade.Builder.wrap(nativeBuilder);
         try {
-            Subscriber nativeSubscriber = subscriberBuilder
-                .connection(new ConnectionConfiguration("API_KEY", "CLIENT_ID"))
-                .trackingId("TRACKING_ID")
-                .resolution(new Resolution(Accuracy.BALANCED, 1000L, 1.0))
-                .start();
-        } catch (BuilderConfigurationIncompleteException e) {
-            // handle subscriber start error
+            // normally we'd use that wrapped builder from above, but we're not able to mock that static "wrap" method here
+            SubscriberFacade subscriberFacade = subscriberFacadeBuilder.startAsync().get();
+        } catch (ExecutionException e) {
+            // handle execution exception
+        } catch (InterruptedException e) {
+            // handle interruption exception
         }
     }
 
     @Test
-    public void subscriberFacadeWrapperUsageExample() {
-        SubscriberFacade subscriberFacade = SubscriberFacade.wrap(nativeSubscriber);
+    public void subscriberFacadeBuilderWrapperUsageExample() {
+        SubscriberFacade.Builder subscriberFacadeBuilder = SubscriberFacade.Builder.wrap(nativeSubscriberBuilder);
     }
 
     @Test
