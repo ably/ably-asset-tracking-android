@@ -75,12 +75,15 @@ private class DefaultCoreSubscriber(
 
     private fun CoroutineScope.sequenceEventsQueue(receiveEventChannel: ReceiveChannel<Event>) {
         launch {
-            var presenceData = PresenceData(ClientTypes.SUBSCRIBER, initialResolution)
+            // state
+            val state = State()
+
+            // processing
             for (event in receiveEventChannel) {
                 when (event) {
                     is StartEvent -> {
                         notifyAssetIsOffline()
-                        ably.connect(trackableId, presenceData, useRewind = true) {
+                        ably.connect(trackableId, state.presenceData, useRewind = true) {
                             if (it.isSuccess) {
                                 subscribeForEnhancedEvents()
                                 subscribeForPresenceMessages()
@@ -104,15 +107,15 @@ private class DefaultCoreSubscriber(
                         }
                     }
                     is ChangeResolutionEvent -> {
-                        presenceData = presenceData.copy(resolution = event.resolution)
-                        ably.updatePresenceData(trackableId, presenceData) {
+                        state.presenceData = state.presenceData.copy(resolution = event.resolution)
+                        ably.updatePresenceData(trackableId, state.presenceData) {
                             event.handler(it)
                         }
                     }
                     is StopEvent -> {
                         notifyAssetIsOffline()
                         try {
-                            ably.close(presenceData)
+                            ably.close(state.presenceData)
                             event.handler(Result.success(Unit))
                         } catch (exception: ConnectionException) {
                             event.handler(Result.failure(exception))
@@ -142,4 +145,8 @@ private class DefaultCoreSubscriber(
     private suspend fun notifyAssetIsOffline() {
         _trackableStates.emit(TrackableState.Offline())
     }
+
+    private inner class State(
+        var presenceData: PresenceData = PresenceData(ClientTypes.SUBSCRIBER, initialResolution)
+    )
 }
