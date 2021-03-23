@@ -80,6 +80,20 @@ private class DefaultCoreSubscriber(
 
             // processing
             for (event in receiveEventChannel) {
+                // handle events after the subscriber is stopped
+                if (state.isStopped) {
+                    if (event is Request<*>) {
+                        // when the event is a request then call its handler
+                        when (event) {
+                            is StopEvent -> event.handler(Result.success(Unit))
+                            else -> event.handler(Result.failure(SubscriberStoppedException()))
+                        }
+                        continue
+                    } else if (event is AdhocEvent) {
+                        // when the event is an adhoc event then just ignore it
+                        continue
+                    }
+                }
                 when (event) {
                     is StartEvent -> {
                         notifyAssetIsOffline()
@@ -116,6 +130,7 @@ private class DefaultCoreSubscriber(
                         notifyAssetIsOffline()
                         try {
                             ably.close(state.presenceData)
+                            state.isStopped = true
                             event.handler(Result.success(Unit))
                         } catch (exception: ConnectionException) {
                             event.handler(Result.failure(exception))
@@ -147,6 +162,7 @@ private class DefaultCoreSubscriber(
     }
 
     private inner class State(
+        var isStopped: Boolean = false,
         var presenceData: PresenceData = PresenceData(ClientTypes.SUBSCRIBER, initialResolution)
     )
 }
