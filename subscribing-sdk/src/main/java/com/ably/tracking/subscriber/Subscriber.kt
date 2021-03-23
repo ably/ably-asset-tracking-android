@@ -103,6 +103,6 @@ interface Subscriber {
          * @throws com.ably.tracking.BuilderConfigurationIncompleteException If all required params aren't set
          */
         @Throws(BuilderConfigurationIncompleteException::class)
-        fun start(): Subscriber
+        suspend fun start(): Subscriber
     }
 }

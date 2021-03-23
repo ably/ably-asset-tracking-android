@@ -5,6 +5,7 @@ import com.ably.tracking.Accuracy
 import com.ably.tracking.BuilderConfigurationIncompleteException
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.Resolution
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert
 import org.junit.Test
 
@@ -104,7 +105,9 @@ class FactoryUnitTests {
     @SuppressLint("MissingPermission")
     @Test(expected = BuilderConfigurationIncompleteException::class)
     fun `calling start with missing required fields should throw BuilderConfigurationIncompleteException`() {
-        Subscriber.subscribers().start()
+        runBlocking {
+            Subscriber.subscribers().start()
+        }
     }
 
     private fun assertAllBuilderFieldsAreNull(builder: SubscriberBuilder) {

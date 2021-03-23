@@ -28,7 +28,23 @@ internal class DefaultSubscriber(
         Timber.w("Started.")
 
         core = createCoreSubscriber(ably, resolution, trackableId)
-        core.enqueue(StartEvent())
+    }
+
+    /**
+     * This method must be run before running any other method from [DefaultSubscriber].
+     */
+    suspend fun start() {
+        suspendCoroutine<Unit> { continuation ->
+            core.request(
+                StartEvent {
+                    try {
+                        continuation.resume(it.getOrThrow())
+                    } catch (exception: Exception) {
+                        continuation.resumeWithException(exception)
+                    }
+                }
+            )
+        }
     }
 
     override suspend fun sendChangeRequest(resolution: Resolution) {

@@ -9,6 +9,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
 // PLACEHOLDERS:
 
@@ -20,13 +21,16 @@ fun exampleUsage(trackingId: String) {
     // EXAMPLE SNIPPET FROM HERE, WITH EXCESS INDENT REMOVED:
 
     // Initialise and Start the Subscriber
-    val subscriber = Subscriber.subscribers() // Get an AssetSubscriber
-        .connection(ConnectionConfiguration(ABLY_API_KEY, CLIENT_ID)) // provide Ably configuration with credentials
-        .resolution( // request a specific resolution to be considered by the publisher
-            Resolution(Accuracy.MAXIMUM, desiredInterval = 1000L, minimumDisplacement = 1.0)
-        )
-        .trackingId(trackingId) // provide the tracking identifier for the asset that needs to be tracked
-        .start() // start listening for updates
+    var subscriber: Subscriber
+    runBlocking {
+        subscriber = Subscriber.subscribers() // Get an AssetSubscriber
+            .connection(ConnectionConfiguration(ABLY_API_KEY, CLIENT_ID)) // provide Ably configuration with credentials
+            .resolution( // request a specific resolution to be considered by the publisher
+                Resolution(Accuracy.MAXIMUM, desiredInterval = 1000L, minimumDisplacement = 1.0)
+            )
+            .trackingId(trackingId) // provide the tracking identifier for the asset that needs to be tracked
+            .start() // start listening for updates
+    }
 
     subscriber.locations
         .onEach {

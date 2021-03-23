@@ -54,7 +54,10 @@ class PublisherAndSubscriberTests {
         val scope = CoroutineScope(Dispatchers.Default)
 
         // when
-        val subscriber = createAndStartSubscriber(trackableId)
+        var subscriber: Subscriber
+        runBlocking {
+            subscriber = createAndStartSubscriber(trackableId)
+        }
 
         subscriber.locations
             .onEach { receivedLocations.add(it) }
@@ -140,7 +143,7 @@ class PublisherAndSubscriberTests {
             .locationSource(LocationSourceRaw.create(locationData, onLocationDataEnded))
             .start()
 
-    private fun createAndStartSubscriber(
+    private suspend fun createAndStartSubscriber(
         trackingId: String,
         resolution: Resolution = Resolution(Accuracy.BALANCED, 1L, 0.0)
     ) =
