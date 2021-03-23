@@ -191,9 +191,10 @@ interface Publisher {
          *
          * @return A new publisher instance.
          * @throws com.ably.tracking.BuilderConfigurationIncompleteException If all required params aren't set
+         * @throws ConnectionException If something goes wrong during connection initialization
          */
         @RequiresPermission(anyOf = [ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION])
-        @Throws(BuilderConfigurationIncompleteException::class)
+        @Throws(BuilderConfigurationIncompleteException::class, ConnectionException::class)
         fun start(): Publisher
     }
 }

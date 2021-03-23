@@ -6,6 +6,7 @@ import android.content.Context;
 import com.ably.tracking.Accuracy;
 import com.ably.tracking.BuilderConfigurationIncompleteException;
 import com.ably.tracking.ConnectionConfiguration;
+import com.ably.tracking.ConnectionException;
 import com.ably.tracking.Resolution;
 import com.ably.tracking.publisher.DefaultProximity;
 import com.ably.tracking.publisher.DefaultResolutionConstraints;
@@ -43,7 +44,7 @@ public class PublisherInterfaceUsageExamples {
     PublisherFacade publisher;
 
     @Before
-    public void beforeEach() throws BuilderConfigurationIncompleteException {
+    public void beforeEach() throws BuilderConfigurationIncompleteException, ConnectionException {
         context = mock(Context.class);
         nativePublisher = mock(Publisher.class);
         publisherBuilder = mock(Publisher.Builder.class, withSettings().defaultAnswer(RETURNS_SELF));
@@ -68,6 +69,8 @@ public class PublisherInterfaceUsageExamples {
                 .locationSource(LocationSourceAbly.create("CHANNEL_ID"))
                 .start();
         } catch (BuilderConfigurationIncompleteException e) {
+            // handle publisher start error
+        } catch (ConnectionException e) {
             // handle publisher start error
         }
     }
