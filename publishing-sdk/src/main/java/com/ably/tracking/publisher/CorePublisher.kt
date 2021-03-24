@@ -345,19 +345,15 @@ constructor(
                         state.currentDestination?.let { setDestination(it, state) }
                     }
                     is StopEvent -> {
-                        if (state.isStopped) {
+                        if (state.isTracking) {
+                            stopLocationUpdates(state)
+                        }
+                        try {
+                            ably.close(state.presenceData)
+                            state.isStopped = true
                             event.handler(Result.success(Unit))
-                        } else {
-                            if (state.isTracking) {
-                                stopLocationUpdates(state)
-                            }
-                            try {
-                                ably.close(state.presenceData)
-                                state.isStopped = true
-                                event.handler(Result.success(Unit))
-                            } catch (exception: ConnectionException) {
-                                event.handler(Result.failure(exception))
-                            }
+                        } catch (exception: ConnectionException) {
+                            event.handler(Result.failure(exception))
                         }
                     }
                     is AblyConnectionStateChangeEvent -> {
