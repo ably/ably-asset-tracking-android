@@ -1,8 +1,8 @@
 package com.ably.tracking.subscriber.java
 
 import com.ably.tracking.Resolution
-import com.ably.tracking.java.TrackableStateListener
 import com.ably.tracking.java.LocationUpdateListener
+import com.ably.tracking.java.TrackableStateListener
 import com.ably.tracking.subscriber.Subscriber
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -17,8 +17,8 @@ internal class DefaultSubscriberFacade(
 ) : SubscriberFacade, Subscriber by subscriber {
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
-    override fun sendChangeRequestAsync(resolution: Resolution): CompletableFuture<Void> {
-        return scope.future { subscriber.sendChangeRequest(resolution) }.thenRun { }
+    override fun resolutionPreferenceAsync(resolution: Resolution?): CompletableFuture<Void> {
+        return scope.future { subscriber.resolutionPreference(resolution) }.thenRun { }
     }
 
     override fun addLocationListener(listener: LocationUpdateListener) {

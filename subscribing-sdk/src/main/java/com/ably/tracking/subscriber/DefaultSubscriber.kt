@@ -47,7 +47,7 @@ internal class DefaultSubscriber(
         }
     }
 
-    override suspend fun sendChangeRequest(resolution: Resolution) {
+    override suspend fun resolutionPreference(resolution: Resolution?) {
         // send change request over channel and wait for the result
         suspendCoroutine<Unit> { continuation ->
             core.request(
