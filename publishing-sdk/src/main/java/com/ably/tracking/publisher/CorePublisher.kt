@@ -350,6 +350,7 @@ constructor(
                         }
                         try {
                             ably.close(state.presenceData)
+                            state.clear()
                             state.isStopped = true
                             event.handler(Result.success(Unit))
                         } catch (exception: ConnectionException) {
@@ -591,5 +592,21 @@ constructor(
                 this@DefaultCorePublisher.routingProfile = value
                 field = value
             }
+
+        fun clear() {
+            trackables.clear()
+            trackableStates.clear()
+            trackableStateFlows.clear()
+            lastChannelConnectionStateChanges.clear()
+            resolutions.clear()
+            lastSentEnhancedLocations.clear()
+            estimatedArrivalTimeInMilliseconds = null
+            active = null
+            lastPublisherLocation = null
+            destinationToSet = null
+            currentDestination = null
+            subscribers.clear()
+            requests.clear()
+        }
     }
 }
