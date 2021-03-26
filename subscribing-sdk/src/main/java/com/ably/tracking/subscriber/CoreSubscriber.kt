@@ -1,6 +1,6 @@
 package com.ably.tracking.subscriber
 
-import com.ably.tracking.AblyException
+import com.ably.tracking.ConnectionException
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
@@ -112,7 +112,7 @@ private class DefaultCoreSubscriber(
                         try {
                             ably.close(presenceData)
                             event.handler(Result.success(Unit))
-                        } catch (exception: AblyException) {
+                        } catch (exception: ConnectionException) {
                             event.handler(Result.failure(exception))
                         }
                     }
