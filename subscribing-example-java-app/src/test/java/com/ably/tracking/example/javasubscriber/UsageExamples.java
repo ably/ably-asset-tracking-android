@@ -1,6 +1,7 @@
 package com.ably.tracking.example.javasubscriber;
 
 import com.ably.tracking.Accuracy;
+import com.ably.tracking.BuilderConfigurationIncompleteException;
 import com.ably.tracking.ConnectionConfiguration;
 import com.ably.tracking.Resolution;
 import com.ably.tracking.subscriber.Subscriber;
@@ -24,7 +25,7 @@ public class UsageExamples {
     Subscriber.Builder subscriberBuilder;
 
     @Before
-    public void beforeEach() {
+    public void beforeEach() throws BuilderConfigurationIncompleteException {
         nativeSubscriber = mock(Subscriber.class);
         subscriberBuilder = mock(Subscriber.Builder.class, withSettings().defaultAnswer(RETURNS_SELF));
         when(subscriberBuilder.start()).thenReturn(nativeSubscriber);
@@ -35,11 +36,15 @@ public class UsageExamples {
 
     @Test
     public void subscriberBuilderUsageExample() {
-        Subscriber nativeSubscriber = subscriberBuilder
-            .connection(new ConnectionConfiguration("API_KEY", "CLIENT_ID"))
-            .trackingId("TRACKING_ID")
-            .resolution(new Resolution(Accuracy.BALANCED, 1000L, 1.0))
-            .start();
+        try {
+            Subscriber nativeSubscriber = subscriberBuilder
+                .connection(new ConnectionConfiguration("API_KEY", "CLIENT_ID"))
+                .trackingId("TRACKING_ID")
+                .resolution(new Resolution(Accuracy.BALANCED, 1000L, 1.0))
+                .start();
+        } catch (BuilderConfigurationIncompleteException e) {
+            // handle subscriber start error
+        }
     }
 
     @Test
