@@ -24,8 +24,6 @@ internal class StopEvent(
     handler: ResultHandler<Unit>
 ) : Request<Unit>(handler)
 
-internal class StartEvent : AdhocEvent()
-
 internal class AddTrackableEvent(
     val trackable: Trackable,
     handler: ResultHandler<StateFlow<TrackableState>>
@@ -55,7 +53,7 @@ internal class DisconnectSuccessEvent(
     handler: ResultHandler<Unit>
 ) : Request<Unit>(handler)
 
-internal class JoinPresenceSuccessEvent(
+internal class ConnectionForTrackableCreatedEvent(
     val trackable: Trackable,
     handler: ResultHandler<StateFlow<TrackableState>>
 ) : Request<StateFlow<TrackableState>>(handler)
