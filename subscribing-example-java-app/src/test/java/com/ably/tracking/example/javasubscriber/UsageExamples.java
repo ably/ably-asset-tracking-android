@@ -35,7 +35,7 @@ public class UsageExamples {
         when(subscriberFacadeBuilder.startAsync()).thenReturn(CompletableFuture.completedFuture(subscriberFacade));
         subscriberFacade = mock(SubscriberFacade.class);
         when(subscriberFacade.sendChangeRequestAsync(any())).thenReturn(CompletableFuture.completedFuture(null));
-        when(subscriberFacade.stopAsync()).thenReturn(CompletableFuture.completedFuture(any()));
+        when(subscriberFacade.stopAsync()).thenReturn(CompletableFuture.completedFuture(null));
     }
 
     @Test
