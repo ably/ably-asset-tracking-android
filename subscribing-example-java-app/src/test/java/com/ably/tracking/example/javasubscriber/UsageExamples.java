@@ -1,7 +1,6 @@
 package com.ably.tracking.example.javasubscriber;
 
 import com.ably.tracking.Accuracy;
-import com.ably.tracking.BuilderConfigurationIncompleteException;
 import com.ably.tracking.ConnectionConfiguration;
 import com.ably.tracking.Resolution;
 import com.ably.tracking.subscriber.Subscriber;
@@ -9,7 +8,6 @@ import com.ably.tracking.subscriber.java.SubscriberFacade;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.MockedStatic;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -34,7 +32,7 @@ public class UsageExamples {
         subscriberFacadeBuilder = mock(SubscriberFacade.Builder.class, withSettings().defaultAnswer(RETURNS_SELF));
         when(subscriberFacadeBuilder.startAsync()).thenReturn(CompletableFuture.completedFuture(subscriberFacade));
         subscriberFacade = mock(SubscriberFacade.class);
-        when(subscriberFacade.sendChangeRequestAsync(any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(subscriberFacade.resolutionPreferenceAsync(any())).thenReturn(CompletableFuture.completedFuture(null));
         when(subscriberFacade.stopAsync()).thenReturn(CompletableFuture.completedFuture(null));
     }
 
@@ -72,7 +70,7 @@ public class UsageExamples {
 
         try {
 //        // use methods that return a completable future
-            subscriberFacade.sendChangeRequestAsync(new Resolution(Accuracy.MAXIMUM, 1L, 1.0)).get();
+            subscriberFacade.resolutionPreferenceAsync(new Resolution(Accuracy.MAXIMUM, 1L, 1.0)).get();
             subscriberFacade.stopAsync().get();
         } catch (ExecutionException e) {
             // handle execution exception

@@ -108,7 +108,7 @@ class MainActivity : AppCompatActivity() {
         // TODO - is this try/catch the best way to do it? maybe we should return the Result and let clients handle it their way?
         subscriber?.let {
             try {
-                it.sendChangeRequest(newResolution)
+                it.resolutionPreference(newResolution)
                 resolution = newResolution
                 updateResolutionInfo(newResolution)
             } catch (exception: Exception) {

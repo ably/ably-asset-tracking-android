@@ -47,7 +47,7 @@ fun exampleUsage(trackingId: String) {
     // Request a different resolution when needed.
     scope.launch {
         try {
-            subscriber.sendChangeRequest(
+            subscriber.resolutionPreference(
                 Resolution(Accuracy.MAXIMUM, desiredInterval = 100L, minimumDisplacement = 2.0)
             )
             // TODO change request submitted successfully

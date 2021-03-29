@@ -29,7 +29,7 @@ interface Subscriber {
     }
 
     /**
-     * Sends the desired resolution for updates, to be requested from the remote publisher.
+     * Sends the preferred resolution for updates, to be requested from the remote publisher.
      *
      * An initial resolution may be defined from the outset of a [Subscriber]'s lifespan by using the
      * [resolution][Builder.resolution] method on the [Builder] instance used to [start][Builder.start] it.
@@ -39,10 +39,10 @@ interface Subscriber {
      * The [handler] will be called once the request has been successfully registered with the server,
      * however this does not necessarily mean that the request has been received and actioned by the publisher.
      *
-     * @param resolution The resolution to request.
+     * @param resolution The preferred resolution or null if has no resolution preference.
      */
     @JvmSynthetic
-    suspend fun sendChangeRequest(resolution: Resolution)
+    suspend fun resolutionPreference(resolution: Resolution?)
 
     /**
      * The shared flow emitting enhanced location values when they become available.
@@ -81,7 +81,7 @@ interface Subscriber {
         fun connection(configuration: ConnectionConfiguration): Builder
 
         /**
-         * **OPTIONAL** Sets the desired resolution of updates, to be requested from the remote publisher.
+         * **OPTIONAL** Sets the preferred resolution of updates, to be requested from the remote publisher.
          *
          * @param resolution An indication of how often to this subscriber would like the publisher to sample locations,
          * at what level of positional accuracy, and how often to send them back.

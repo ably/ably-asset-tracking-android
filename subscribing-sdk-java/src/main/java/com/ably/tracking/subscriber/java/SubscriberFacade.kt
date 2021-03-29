@@ -13,7 +13,7 @@ import java.util.concurrent.CompletableFuture
  */
 interface SubscriberFacade : Subscriber {
     /**
-     * Sends the desired resolution for updates, to be requested from the remote publisher.
+     * Sends the preferred resolution for updates, to be requested from the remote publisher.
      *
      * An initial resolution may be defined from the outset of a [Subscriber]'s lifespan by using the
      * [resolution][Builder.resolution] method on the [Builder] instance used to [start][Builder.start] it.
@@ -23,11 +23,11 @@ interface SubscriberFacade : Subscriber {
      * The returned [CompletableFuture] will complete once the request has been successfully registered with the server,
      * however this does not necessarily mean that the request has been received and actioned by the publisher.
      *
-     * @param resolution The resolution to request.
+     * @param resolution The preferred resolution or null if has no resolution preference.
      *
-     * @return A [CompletableFuture] that completes when the object has been removed.
+     * @return A [CompletableFuture] that completes when the request has been completed.
      */
-    fun sendChangeRequestAsync(resolution: Resolution): CompletableFuture<Void>
+    fun resolutionPreferenceAsync(resolution: Resolution?): CompletableFuture<Void>
 
     /**
      * Adds a handler to be notified when an enhanced location update is available.
