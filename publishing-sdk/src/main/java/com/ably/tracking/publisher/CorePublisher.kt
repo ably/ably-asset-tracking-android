@@ -350,7 +350,7 @@ constructor(
                         }
                         try {
                             ably.close(state.presenceData)
-                            state.clear()
+                            state.dispose()
                             state.isStopped = true
                             event.handler(Result.success(Unit))
                         } catch (exception: ConnectionException) {
@@ -593,7 +593,7 @@ constructor(
                 field = value
             }
 
-        fun clear() {
+        fun dispose() {
             trackables.clear()
             trackableStates.clear()
             trackableStateFlows.clear()
