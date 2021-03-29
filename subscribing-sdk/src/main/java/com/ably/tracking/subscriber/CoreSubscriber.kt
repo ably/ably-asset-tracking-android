@@ -1,6 +1,8 @@
 package com.ably.tracking.subscriber
 
 import com.ably.tracking.ConnectionException
+import com.ably.tracking.ConnectionState
+import com.ably.tracking.ConnectionStateChange
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
@@ -63,6 +65,7 @@ private class DefaultCoreSubscriber(
                 sequenceEventsQueue(channel)
             }
         }
+        ably.subscribeForAblyStateChange { enqueue(AblyConnectionStateChangeEvent(it)) }
     }
 
     override fun enqueue(event: AdhocEvent) {
@@ -96,11 +99,12 @@ private class DefaultCoreSubscriber(
                 }
                 when (event) {
                     is StartEvent -> {
-                        notifyAssetIsOffline()
+                        updateTrackableState(state)
                         ably.connect(trackableId, state.presenceData, useRewind = true) {
                             if (it.isSuccess) {
                                 subscribeForEnhancedEvents()
                                 subscribeForPresenceMessages()
+                                subscribeForChannelState()
                             }
                             event.handler(it)
                         }
@@ -109,12 +113,14 @@ private class DefaultCoreSubscriber(
                         when (event.presenceMessage.action) {
                             PresenceAction.PRESENT_OR_ENTER -> {
                                 if (event.presenceMessage.data.type == ClientTypes.PUBLISHER) {
-                                    notifyAssetIsOnline()
+                                    state.isPublisherOnline = true
+                                    updateTrackableState(state)
                                 }
                             }
                             PresenceAction.LEAVE_OR_ABSENT -> {
                                 if (event.presenceMessage.data.type == ClientTypes.PUBLISHER) {
-                                    notifyAssetIsOffline()
+                                    state.isPublisherOnline = false
+                                    updateTrackableState(state)
                                 }
                             }
                             else -> Unit
@@ -127,17 +133,49 @@ private class DefaultCoreSubscriber(
                         }
                     }
                     is StopEvent -> {
-                        notifyAssetIsOffline()
                         try {
                             ably.close(state.presenceData)
                             state.isStopped = true
+                            notifyAssetIsOffline()
                             event.handler(Result.success(Unit))
                         } catch (exception: ConnectionException) {
                             event.handler(Result.failure(exception))
                         }
                     }
+                    is AblyConnectionStateChangeEvent -> {
+                        state.lastConnectionStateChange = event.connectionStateChange
+                        updateTrackableState(state)
+                    }
+                    is ChannelConnectionStateChangeEvent -> {
+                        state.lastChannelConnectionStateChange = event.connectionStateChange
+                        updateTrackableState(state)
+                    }
                 }
             }
+        }
+    }
+
+    private fun updateTrackableState(state: State) {
+        val newTrackableState = when (state.lastConnectionStateChange.state) {
+            ConnectionState.ONLINE -> {
+                when (state.lastChannelConnectionStateChange.state) {
+                    ConnectionState.ONLINE -> if (state.isPublisherOnline) TrackableState.Online else TrackableState.Offline()
+                    ConnectionState.OFFLINE -> TrackableState.Offline()
+                    ConnectionState.FAILED -> TrackableState.Failed(state.lastChannelConnectionStateChange.errorInformation!!) // are we sure error information will always be present?
+                }
+            }
+            ConnectionState.OFFLINE -> TrackableState.Offline()
+            ConnectionState.FAILED -> TrackableState.Failed(state.lastConnectionStateChange.errorInformation!!) // are we sure error information will always be present?
+        }
+        if (newTrackableState != state.trackableState) {
+            state.trackableState = newTrackableState
+            scope.launch { _trackableStates.emit(newTrackableState) }
+        }
+    }
+
+    private fun subscribeForChannelState() {
+        ably.subscribeForChannelStateChange(trackableId) {
+            enqueue(ChannelConnectionStateChangeEvent(it))
         }
     }
 
@@ -153,16 +191,20 @@ private class DefaultCoreSubscriber(
         }
     }
 
-    private suspend fun notifyAssetIsOnline() {
-        _trackableStates.emit(TrackableState.Online)
-    }
-
-    private suspend fun notifyAssetIsOffline() {
-        _trackableStates.emit(TrackableState.Offline())
+    private fun notifyAssetIsOffline() {
+        scope.launch { _trackableStates.emit(TrackableState.Offline()) }
     }
 
     private inner class State(
         var isStopped: Boolean = false,
+        var isPublisherOnline: Boolean = false,
+        var trackableState: TrackableState = TrackableState.Offline(),
+        var lastConnectionStateChange: ConnectionStateChange = ConnectionStateChange(
+            ConnectionState.OFFLINE, ConnectionState.OFFLINE, null
+        ),
+        var lastChannelConnectionStateChange: ConnectionStateChange = ConnectionStateChange(
+            ConnectionState.OFFLINE, ConnectionState.OFFLINE, null
+        ),
         var presenceData: PresenceData = PresenceData(ClientTypes.SUBSCRIBER, initialResolution)
     )
 }
