@@ -20,7 +20,7 @@ internal data class SubscriberBuilder(
     override fun trackingId(trackingId: String): Subscriber.Builder =
         this.copy(trackingId = trackingId)
 
-    override fun start(): Subscriber {
+    override suspend fun start(): Subscriber {
         if (isMissingRequiredFields()) {
             throw BuilderConfigurationIncompleteException()
         }
@@ -29,7 +29,9 @@ internal data class SubscriberBuilder(
             DefaultAbly(connectionConfiguration!!),
             resolution,
             trackingId!!
-        )
+        ).apply {
+            start()
+        }
     }
 
     private fun isMissingRequiredFields() =

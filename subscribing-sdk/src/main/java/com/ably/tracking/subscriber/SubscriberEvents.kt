@@ -16,7 +16,9 @@ internal sealed class AdhocEvent : Event()
  */
 internal sealed class Request : Event()
 
-internal class StartEvent : AdhocEvent()
+internal class StartEvent(
+    val handler: ResultHandler<Unit>
+) : Request()
 
 internal class StopEvent(
     val handler: ResultHandler<Unit>

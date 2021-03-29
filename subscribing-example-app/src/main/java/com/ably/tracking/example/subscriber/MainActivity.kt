@@ -78,19 +78,21 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun createAndStartAssetSubscriber(trackingId: String) {
-        subscriber = Subscriber.subscribers()
-            .connection(ConnectionConfiguration(ABLY_API_KEY, CLIENT_ID))
-            .trackingId(trackingId)
-            .resolution(resolution)
-            .start()
-            .apply {
-                locations
-                    .onEach { showMarkerOnMap(it.location) }
-                    .launchIn(scope)
-                trackableStates
-                    .onEach { updateAssetState(it) }
-                    .launchIn(scope)
-            }
+        scope.launch {
+            subscriber = Subscriber.subscribers()
+                .connection(ConnectionConfiguration(ABLY_API_KEY, CLIENT_ID))
+                .trackingId(trackingId)
+                .resolution(resolution)
+                .start()
+                .apply {
+                    locations
+                        .onEach { showMarkerOnMap(it.location) }
+                        .launchIn(scope)
+                    trackableStates
+                        .onEach { updateAssetState(it) }
+                        .launchIn(scope)
+                }
+        }
     }
 
     private fun updateResolutionBasedOnZoomLevel() {
