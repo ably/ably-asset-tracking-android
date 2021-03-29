@@ -132,7 +132,11 @@ interface Ably {
     suspend fun close(presenceData: PresenceData)
 }
 
-class DefaultAbly(
+class DefaultAbly
+/**
+ * @throws ConnectionException if something goes wrong during Ably SDK initialization.
+ */
+constructor(
     connectionConfiguration: ConnectionConfiguration
 ) : Ably {
     private val gson = Gson()
@@ -141,7 +145,11 @@ class DefaultAbly(
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     init {
-        ably = AblyRealtime(connectionConfiguration.clientOptions)
+        try {
+            ably = AblyRealtime(connectionConfiguration.clientOptions)
+        } catch (exception: AblyException) {
+            throw exception.errorInfo.toTrackingException()
+        }
     }
 
     override fun subscribeForAblyStateChange(listener: (ConnectionStateChange) -> Unit) {

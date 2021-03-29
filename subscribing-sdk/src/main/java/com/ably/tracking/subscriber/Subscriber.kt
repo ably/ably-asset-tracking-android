@@ -2,6 +2,7 @@ package com.ably.tracking.subscriber
 
 import com.ably.tracking.BuilderConfigurationIncompleteException
 import com.ably.tracking.ConnectionConfiguration
+import com.ably.tracking.ConnectionException
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
@@ -101,9 +102,10 @@ interface Subscriber {
          *
          * @return A new subscriber instance.
          * @throws com.ably.tracking.BuilderConfigurationIncompleteException If all required params aren't set
+         * @throws ConnectionException If something goes wrong during connection initialization
          */
         @JvmSynthetic
-        @Throws(BuilderConfigurationIncompleteException::class)
+        @Throws(BuilderConfigurationIncompleteException::class, ConnectionException::class)
         suspend fun start(): Subscriber
     }
 }
