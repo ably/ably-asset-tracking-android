@@ -25,7 +25,7 @@ import kotlinx.coroutines.launch
 
 internal interface CoreSubscriber {
     fun enqueue(event: AdhocEvent)
-    fun request(request: Request)
+    fun request(request: Request<*>)
     val enhancedLocations: SharedFlow<LocationUpdate>
     val trackableStates: StateFlow<TrackableState>
 }
@@ -69,18 +69,35 @@ private class DefaultCoreSubscriber(
         scope.launch { sendEventChannel.send(event) }
     }
 
-    override fun request(request: Request) {
+    override fun request(request: Request<*>) {
         scope.launch { sendEventChannel.send(request) }
     }
 
     private fun CoroutineScope.sequenceEventsQueue(receiveEventChannel: ReceiveChannel<Event>) {
         launch {
-            var presenceData = PresenceData(ClientTypes.SUBSCRIBER, initialResolution)
+            // state
+            val state = State()
+
+            // processing
             for (event in receiveEventChannel) {
+                // handle events after the subscriber is stopped
+                if (state.isStopped) {
+                    if (event is Request<*>) {
+                        // when the event is a request then call its handler
+                        when (event) {
+                            is StopEvent -> event.handler(Result.success(Unit))
+                            else -> event.handler(Result.failure(SubscriberStoppedException()))
+                        }
+                        continue
+                    } else if (event is AdhocEvent) {
+                        // when the event is an adhoc event then just ignore it
+                        continue
+                    }
+                }
                 when (event) {
                     is StartEvent -> {
                         notifyAssetIsOffline()
-                        ably.connect(trackableId, presenceData, useRewind = true) {
+                        ably.connect(trackableId, state.presenceData, useRewind = true) {
                             if (it.isSuccess) {
                                 subscribeForEnhancedEvents()
                                 subscribeForPresenceMessages()
@@ -104,15 +121,16 @@ private class DefaultCoreSubscriber(
                         }
                     }
                     is ChangeResolutionEvent -> {
-                        presenceData = presenceData.copy(resolution = event.resolution)
-                        ably.updatePresenceData(trackableId, presenceData) {
+                        state.presenceData = state.presenceData.copy(resolution = event.resolution)
+                        ably.updatePresenceData(trackableId, state.presenceData) {
                             event.handler(it)
                         }
                     }
                     is StopEvent -> {
                         notifyAssetIsOffline()
                         try {
-                            ably.close(presenceData)
+                            ably.close(state.presenceData)
+                            state.isStopped = true
                             event.handler(Result.success(Unit))
                         } catch (exception: ConnectionException) {
                             event.handler(Result.failure(exception))
@@ -142,4 +160,9 @@ private class DefaultCoreSubscriber(
     private suspend fun notifyAssetIsOffline() {
         _trackableStates.emit(TrackableState.Offline())
     }
+
+    private inner class State(
+        var isStopped: Boolean = false,
+        var presenceData: PresenceData = PresenceData(ClientTypes.SUBSCRIBER, initialResolution)
+    )
 }
