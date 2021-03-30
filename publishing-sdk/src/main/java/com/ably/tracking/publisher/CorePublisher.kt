@@ -287,31 +287,7 @@ constructor(
                         mapbox.changeResolution(state.locationEngineResolution)
                     }
                     is RemoveTrackableEvent -> {
-                        val wasTrackablePresent = state.trackables.remove(event.trackable)
-                        scope.launch { _trackables.emit(state.trackables) }
-                        if (wasTrackablePresent) {
-                            state.trackableStateFlows.remove(event.trackable.id) // there is no way to stop the StateFlow so we just remove it
-                            trackableStateFlows = state.trackableStateFlows
-                            state.trackableStates.remove(event.trackable.id)
-                            hooks.trackables?.onTrackableRemoved(event.trackable)
-                            removeAllSubscribers(event.trackable, state)
-                            state.resolutions.remove(event.trackable.id)
-                                ?.let { enqueue(ChangeLocationEngineResolutionEvent()) }
-                            state.requests.remove(event.trackable.id)
-                            state.lastSentEnhancedLocations.remove(event.trackable.id)
-
-                            // If this was the active Trackable then clear that state and remove destination.
-                            if (state.active == event.trackable) {
-                                removeCurrentDestination(state)
-                                state.active = null
-                                hooks.trackables?.onActiveTrackableChanged(null)
-                            }
-
-                            // When we remove the last trackable then we should stop location updates
-                            if (state.trackables.isEmpty() && state.isTracking) {
-                                stopLocationUpdates(state)
-                            }
-
+                        if (state.trackables.contains(event.trackable)) {
                             // Leave Ably channel.
                             ably.disconnect(event.trackable.id, state.presenceData) { result ->
                                 if (result.isSuccess) {
@@ -334,6 +310,27 @@ constructor(
                         }
                     }
                     is DisconnectSuccessEvent -> {
+                        state.trackables.remove(event.trackable)
+                        scope.launch { _trackables.emit(state.trackables) }
+                        state.trackableStateFlows.remove(event.trackable.id) // there is no way to stop the StateFlow so we just remove it
+                        trackableStateFlows = state.trackableStateFlows
+                        state.trackableStates.remove(event.trackable.id)
+                        hooks.trackables?.onTrackableRemoved(event.trackable)
+                        removeAllSubscribers(event.trackable, state)
+                        state.resolutions.remove(event.trackable.id)
+                            ?.let { enqueue(ChangeLocationEngineResolutionEvent()) }
+                        state.requests.remove(event.trackable.id)
+                        state.lastSentEnhancedLocations.remove(event.trackable.id)
+                        // If this was the active Trackable then clear that state and remove destination.
+                        if (state.active == event.trackable) {
+                            removeCurrentDestination(state)
+                            state.active = null
+                            hooks.trackables?.onActiveTrackableChanged(null)
+                        }
+                        // When we remove the last trackable then we should stop location updates
+                        if (state.trackables.isEmpty() && state.isTracking) {
+                            stopLocationUpdates(state)
+                        }
                         state.lastChannelConnectionStateChanges.remove(event.trackable.id)
                         event.handler(Result.success(Unit))
                     }
