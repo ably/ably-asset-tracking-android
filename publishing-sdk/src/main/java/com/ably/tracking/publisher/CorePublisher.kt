@@ -561,33 +561,52 @@ constructor(
 
     private inner class State(
         routingProfile: RoutingProfile,
-        var locationEngineResolution: Resolution,
-        var isTracking: Boolean = false,
-        var isStopped: Boolean = false,
-        val trackables: MutableSet<Trackable> = mutableSetOf(),
-        val trackableStates: MutableMap<String, TrackableState> = mutableMapOf(),
-        val trackableStateFlows: MutableMap<String, MutableStateFlow<TrackableState>> = mutableMapOf(),
-        val lastChannelConnectionStateChanges: MutableMap<String, ConnectionStateChange> = mutableMapOf(),
+        locationEngineResolution: Resolution
+    ) {
+        private var isDisposed: Boolean = false
+        var isStopped: Boolean = false
+        var locationEngineResolution: Resolution = locationEngineResolution
+            get() = if (isDisposed) throw PublisherStateDisposedException() else field
+        var isTracking: Boolean = false
+            get() = if (isDisposed) throw PublisherStateDisposedException() else field
+        val trackables: MutableSet<Trackable> = mutableSetOf()
+            get() = if (isDisposed) throw PublisherStateDisposedException() else field
+        val trackableStates: MutableMap<String, TrackableState> = mutableMapOf()
+            get() = if (isDisposed) throw PublisherStateDisposedException() else field
+        val trackableStateFlows: MutableMap<String, MutableStateFlow<TrackableState>> = mutableMapOf()
+            get() = if (isDisposed) throw PublisherStateDisposedException() else field
+        val lastChannelConnectionStateChanges: MutableMap<String, ConnectionStateChange> = mutableMapOf()
+            get() = if (isDisposed) throw PublisherStateDisposedException() else field
         var lastConnectionStateChange: ConnectionStateChange = ConnectionStateChange(
             ConnectionState.OFFLINE, ConnectionState.OFFLINE, null
-        ),
-        val resolutions: MutableMap<String, Resolution> = mutableMapOf(),
-        val lastSentEnhancedLocations: MutableMap<String, Location> = mutableMapOf(),
-        var estimatedArrivalTimeInMilliseconds: Long? = null,
-        active: Trackable? = null,
-        var lastPublisherLocation: Location? = null,
-        var destinationToSet: Destination? = null,
-        var currentDestination: Destination? = null,
-        val subscribers: MutableMap<String, MutableSet<Subscriber>> = mutableMapOf(),
-        val requests: MutableMap<String, MutableMap<Subscriber, Resolution>> = mutableMapOf(),
+        )
+            get() = if (isDisposed) throw PublisherStateDisposedException() else field
+        val resolutions: MutableMap<String, Resolution> = mutableMapOf()
+            get() = if (isDisposed) throw PublisherStateDisposedException() else field
+        val lastSentEnhancedLocations: MutableMap<String, Location> = mutableMapOf()
+            get() = if (isDisposed) throw PublisherStateDisposedException() else field
+        var estimatedArrivalTimeInMilliseconds: Long? = null
+            get() = if (isDisposed) throw PublisherStateDisposedException() else field
+        var lastPublisherLocation: Location? = null
+            get() = if (isDisposed) throw PublisherStateDisposedException() else field
+        var destinationToSet: Destination? = null
+            get() = if (isDisposed) throw PublisherStateDisposedException() else field
+        var currentDestination: Destination? = null
+            get() = if (isDisposed) throw PublisherStateDisposedException() else field
+        val subscribers: MutableMap<String, MutableSet<Subscriber>> = mutableMapOf()
+            get() = if (isDisposed) throw PublisherStateDisposedException() else field
+        val requests: MutableMap<String, MutableMap<Subscriber, Resolution>> = mutableMapOf()
+            get() = if (isDisposed) throw PublisherStateDisposedException() else field
         var presenceData: PresenceData = PresenceData(ClientTypes.PUBLISHER)
-    ) {
-        var active: Trackable? = active
+            get() = if (isDisposed) throw PublisherStateDisposedException() else field
+        var active: Trackable? = null
+            get() = if (isDisposed) throw PublisherStateDisposedException() else field
             set(value) {
                 this@DefaultCorePublisher.active = value
                 field = value
             }
         var routingProfile: RoutingProfile = routingProfile
+            get() = if (isDisposed) throw PublisherStateDisposedException() else field
             set(value) {
                 this@DefaultCorePublisher.routingProfile = value
                 field = value
@@ -607,6 +626,7 @@ constructor(
             currentDestination = null
             subscribers.clear()
             requests.clear()
+            isDisposed = true
         }
     }
 }
