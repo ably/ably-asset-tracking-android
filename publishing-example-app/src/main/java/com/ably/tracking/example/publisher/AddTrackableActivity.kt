@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
+import android.view.inputmethod.EditorInfo
 import android.widget.Toast
 import androidx.annotation.RequiresPermission
 import com.ably.tracking.Accuracy
@@ -35,6 +36,20 @@ class AddTrackableActivity : PublisherServiceActivity() {
         appPreferences = AppPreferences(this) // TODO - Add some DI (Koin)?
 
         addTrackableButton.setOnClickListener { beginAddingTrackable() }
+        setupTrackableInputAction()
+    }
+
+    @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
+    private fun setupTrackableInputAction() {
+        trackableIdEditText.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_DONE) {
+                hideKeyboard(trackableIdEditText)
+                beginAddingTrackable()
+                true
+            } else {
+                false
+            }
+        }
     }
 
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
