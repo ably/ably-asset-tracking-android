@@ -108,11 +108,9 @@ internal class DefaultMapbox(
     private var locationHistoryListener: (LocationHistoryListener)? = null
 
     init {
-        val mapboxBuilder = MapboxNavigation.defaultNavigationOptionsBuilder(
-            context,
-            mapConfiguration.apiKey
-        )
-        mapboxBuilder.locationEngine(getBestLocationEngine(context))
+        val mapboxBuilder = NavigationOptions.Builder(context)
+            .accessToken(mapConfiguration.apiKey)
+            .locationEngine(getBestLocationEngine(context))
         locationSource?.let {
             when (it) {
                 is LocationSourceAbly -> {
