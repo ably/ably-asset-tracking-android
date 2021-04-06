@@ -142,4 +142,17 @@
     app:layout_constraintBottom_toTopOf="@id/trackingIdLabel"
     app:layout_constraintTop_toBottomOf="@id/resolutionAccuracyTextView" />
 
+  <androidx.appcompat.widget.AppCompatImageView
+    android:id="@+id/centerButton"
+    android:layout_width="40dp"
+    android:layout_height="40dp"
+    android:layout_margin="10dp"
+    android:background="@color/navigation_light_grey"
+    android:padding="5dp"
+    android:src="@drawable/ic_location"
+    android:tint="@color/navigation_dark_grey"
+    android:visibility="gone"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintTop_toTopOf="@id/mapFragment" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

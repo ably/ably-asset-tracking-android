@@ -2,6 +2,7 @@ package com.ably.tracking.example.subscriber
 
 import android.location.Location
 import android.os.Bundle
+import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.ably.tracking.Accuracy
@@ -54,6 +55,9 @@ class MainActivity : AppCompatActivity() {
             } else {
                 stopSubscribing()
             }
+        }
+        centerButton.setOnClickListener {
+            centerMapOnMarker()
         }
     }
 
@@ -170,10 +174,17 @@ class MainActivity : AppCompatActivity() {
                 subscriber?.stop()
                 subscriber = null
                 changeStartButtonState(false)
+                changeCenterButtonVisibility(false)
                 marker = null
             } catch (exception: Exception) {
                 // TODO check Result (it) for failure and report accordingly
             }
+        }
+    }
+
+    private fun centerMapOnMarker() {
+        marker?.position?.let { currentMarkerPosition ->
+            googleMap?.moveCamera(CameraUpdateFactory.newLatLng(currentMarkerPosition))
         }
     }
 
@@ -188,6 +199,7 @@ class MainActivity : AppCompatActivity() {
                                 .icon(getMarkerIcon(location.bearing))
                         )
                         moveCamera(CameraUpdateFactory.newLatLngZoom(position, ZOOM_LEVEL_STREETS))
+                        changeCenterButtonVisibility(true)
                     } else {
                         currentMarker.setIcon(getMarkerIcon(location.bearing))
                         if (animationSwitch.isChecked) {
@@ -212,6 +224,10 @@ class MainActivity : AppCompatActivity() {
             startButton.text = getString(R.string.start_button_ready)
             startButton.setBackgroundResource(R.drawable.rounded_ready)
         }
+    }
+
+    private fun changeCenterButtonVisibility(isVisible: Boolean) {
+        centerButton.visibility = if (isVisible) View.VISIBLE else View.GONE
     }
 
     private fun showToast(message: String) {
