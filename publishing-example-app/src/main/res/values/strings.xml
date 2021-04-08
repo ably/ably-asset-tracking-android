@@ -22,6 +22,11 @@
   <string name="dialog_positive_button">OK</string>
   <string name="dialog_negative_button">Cancel</string>
   <string name="trackable_list">Trackable List</string>
+  <string name="resolution_section_label">Resolution</string>
+  <string name="accuracy_label">Accuracy</string>
+  <string name="desired_interval_label">Desired Interval [ms]</string>
+  <string name="minimum_displacement_label">Minimum Displacement [m]</string>
+  <string name="trackable_section_label">Trackable</string>
 
   <string name="preferences_general_category_title">Navigation Settings</string>
   <string name="preferences_location_source_key">location_source</string>

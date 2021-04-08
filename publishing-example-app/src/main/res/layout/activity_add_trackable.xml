@@ -18,7 +18,88 @@
     app:layout_constraintStart_toStartOf="parent"
     app:layout_constraintTop_toTopOf="parent" />
 
+  <!-- Resolution -->
   <TextView
+    android:id="@+id/resolutionSectionLabelTextView"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="20dp"
+    android:text="@string/resolution_section_label"
+    android:textSize="16sp"
+    android:textStyle="bold"
+    app:layout_constraintStart_toStartOf="@+id/trackableIdEditText"
+    app:layout_constraintTop_toBottomOf="@id/appTitleTextView" />
+
+  <TextView
+    android:id="@+id/accuracyLabelTextView"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="5dp"
+    android:text="@string/accuracy_label"
+    app:layout_constraintStart_toStartOf="@+id/trackableIdEditText"
+    app:layout_constraintTop_toBottomOf="@id/resolutionSectionLabelTextView" />
+
+  <androidx.appcompat.widget.AppCompatSpinner
+    android:id="@+id/accuracySpinner"
+    android:layout_width="match_parent"
+    android:layout_height="70dp"
+    android:layout_marginStart="32dp"
+    android:layout_marginEnd="32dp"
+    android:layout_marginBottom="32dp"
+    app:layout_constraintTop_toBottomOf="@id/accuracyLabelTextView" />
+
+  <TextView
+    android:id="@+id/desiredIntervalLabelTextView"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="@string/desired_interval_label"
+    app:layout_constraintStart_toStartOf="@+id/trackableIdEditText"
+    app:layout_constraintTop_toBottomOf="@id/accuracySpinner" />
+
+  <androidx.appcompat.widget.AppCompatEditText
+    android:id="@+id/desiredIntervalEditText"
+    android:layout_width="match_parent"
+    android:layout_height="70dp"
+    android:layout_marginStart="32dp"
+    android:layout_marginEnd="32dp"
+    android:layout_marginBottom="32dp"
+    android:inputType="number"
+    app:layout_constraintTop_toBottomOf="@id/desiredIntervalLabelTextView"
+    tools:text="1000" />
+
+  <TextView
+    android:id="@+id/minimumDisplacementLabelTextView"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="@string/minimum_displacement_label"
+    app:layout_constraintStart_toStartOf="@+id/trackableIdEditText"
+    app:layout_constraintTop_toBottomOf="@id/desiredIntervalEditText" />
+
+  <androidx.appcompat.widget.AppCompatEditText
+    android:id="@+id/minimumDisplacementEditText"
+    android:layout_width="match_parent"
+    android:layout_height="70dp"
+    android:layout_marginStart="32dp"
+    android:layout_marginEnd="32dp"
+    android:layout_marginBottom="32dp"
+    android:inputType="numberDecimal"
+    app:layout_constraintTop_toBottomOf="@id/minimumDisplacementLabelTextView"
+    tools:text="1.0" />
+
+  <!-- Trackable -->
+  <TextView
+    android:id="@+id/TrackableSectionLabelTextView"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="5dp"
+    android:text="@string/trackable_section_label"
+    android:textSize="16sp"
+    android:textStyle="bold"
+    app:layout_constraintBottom_toTopOf="@id/trackableIdLabelTextView"
+    app:layout_constraintStart_toStartOf="@+id/trackableIdEditText" />
+
+  <TextView
+    android:id="@+id/trackableIdLabelTextView"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:text="@string/tracking_id"
@@ -53,9 +134,9 @@
 
   <ProgressBar
     android:id="@+id/progressIndicator"
-    android:visibility="gone"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
+    android:visibility="gone"
     app:layout_constraintBottom_toBottomOf="parent"
     app:layout_constraintEnd_toEndOf="parent"
     app:layout_constraintStart_toStartOf="parent"
