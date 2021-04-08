@@ -7,6 +7,7 @@ import androidx.preference.EditTextPreference
 import androidx.preference.ListPreference
 import androidx.preference.PreferenceFragmentCompat
 import com.ably.tracking.Accuracy
+import java.util.Locale
 
 class SettingsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -46,7 +47,9 @@ class SettingsFragment : PreferenceFragmentCompat() {
     private fun setupResolutionPreferences() {
         val appPreferences = AppPreferences(requireContext())
         (findPreference(getString(R.string.preferences_resolution_accuracy_key)) as ListPreference?)?.apply {
-            entries = Accuracy.values().map { it.name.toLowerCase().capitalize() }.toTypedArray()
+            entries = Accuracy.values()
+                .map { it.name.toLowerCase(Locale.getDefault()).capitalize(Locale.getDefault()) }
+                .toTypedArray()
             entryValues = Accuracy.values().map { it.name }.toTypedArray()
             value = appPreferences.getResolutionAccuracy().name
         }
