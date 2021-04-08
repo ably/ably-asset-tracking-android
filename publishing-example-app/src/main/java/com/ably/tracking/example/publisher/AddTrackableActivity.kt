@@ -108,6 +108,14 @@ class AddTrackableActivity : PublisherServiceActivity() {
         addTrackableToThePublisher(trackableId)
     }
 
+    private fun createResolution(): Resolution {
+        return Resolution(
+            accuracySpinner.selectedItem as Accuracy,
+            desiredIntervalEditText.text.toString().toLong(),
+            minimumDisplacementEditText.text.toString().toDouble()
+        )
+    }
+
     private fun addTrackableToThePublisher(trackableId: String) {
         publisherService?.publisher?.apply {
             scope.launch {
@@ -116,13 +124,7 @@ class AddTrackableActivity : PublisherServiceActivity() {
                         Trackable(
                             trackableId,
                             constraints = DefaultResolutionConstraints(
-                                DefaultResolutionSet(
-                                    Resolution(
-                                        Accuracy.BALANCED,
-                                        desiredInterval = 1000L,
-                                        minimumDisplacement = 1.0
-                                    )
-                                ),
+                                DefaultResolutionSet(createResolution()),
                                 DefaultProximity(spatial = 1.0),
                                 batteryLevelThreshold = 10.0f,
                                 lowBatteryMultiplier = 2.0f
