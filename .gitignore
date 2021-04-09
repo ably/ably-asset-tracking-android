@@ -7,3 +7,5 @@ build/
 
 
 publishing-example-app/src/main/res/raw/amplifyconfiguration.json
+
+google-services.json

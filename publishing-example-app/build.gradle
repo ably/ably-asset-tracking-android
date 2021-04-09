@@ -4,6 +4,11 @@ plugins {
     id 'kotlin-android-extensions'
     id 'org.jlleitschuh.gradle.ktlint'
 }
+// Use Firebase plugins if the configuration file is present
+if (project.file('google-services.json').exists()) {
+    apply plugin: 'com.google.gms.google-services'
+    apply plugin: 'com.google.firebase.crashlytics'
+}
 
 android {
     defaultConfig {
@@ -18,4 +23,11 @@ dependencies {
     implementation 'androidx.preference:preference-ktx:1.1.1'
     implementation 'com.amplifyframework:aws-storage-s3:1.4.1'
     implementation 'com.amplifyframework:aws-auth-cognito:1.4.1'
+
+    if (project.file('google-services.json').exists()) {
+        // The BoM for the Firebase platform (it specifies the versions for Firebase dependencies)
+        implementation platform('com.google.firebase:firebase-bom:26.8.0')
+        // Firebase Crashlytics
+        implementation 'com.google.firebase:firebase-crashlytics'
+    }
 }
