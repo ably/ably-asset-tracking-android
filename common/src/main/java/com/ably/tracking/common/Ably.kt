@@ -203,15 +203,16 @@ constructor(
     }
 
     override fun disconnect(trackableId: String, presenceData: PresenceData, callback: (Result<Unit>) -> Unit) {
-        val removedChannel = channels.remove(trackableId)
-        if (removedChannel != null) {
-            removedChannel.unsubscribe()
-            removedChannel.presence.unsubscribe()
+        if (channels.contains(trackableId)) {
+            val channelToRemove = channels[trackableId]!!
             try {
-                removedChannel.presence.leave(
+                channelToRemove.presence.leave(
                     gson.toJson(presenceData.toMessage()),
                     object : CompletionListener {
                         override fun onSuccess() {
+                            channelToRemove.unsubscribe()
+                            channelToRemove.presence.unsubscribe()
+                            channels.remove(trackableId)
                             callback(Result.success(Unit))
                         }
 
