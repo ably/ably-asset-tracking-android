@@ -55,10 +55,10 @@ open class Expectation<T>(
         result ?: throw AssertionError("Expectation '$description' unfulfilled.")
 }
 
-class UnitResultExpectation(label: String) : Expectation<Result<Unit>>(label) {
+class BooleanExpectation(label: String) : Expectation<Boolean>(label) {
     fun assertSuccess() {
         assertFulfilled().let {
-            if (!it.isSuccess) {
+            if (!it) {
                 throw AssertionError("Expectation '$description' did not result in success.")
             }
         }

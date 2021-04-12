@@ -7,8 +7,8 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.ably.tracking.Accuracy
 import com.ably.tracking.ConnectionConfigurationKey
 import com.ably.tracking.Resolution
+import com.ably.tracking.test.common.BooleanExpectation
 import com.ably.tracking.test.common.UnitExpectation
-import com.ably.tracking.test.common.UnitResultExpectation
 import com.ably.tracking.test.common.testLogD
 import com.google.gson.Gson
 import kotlinx.coroutines.runBlocking
@@ -30,7 +30,7 @@ class PublisherIntegrationTests {
         // given
         testLogD("GIVEN")
         val dataEndedExpectation = UnitExpectation("data ended")
-        val trackResultExpectation = UnitResultExpectation("track response")
+        val trackExpectation = BooleanExpectation("track response")
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val locationData = getLocationData(context)
 
@@ -48,36 +48,38 @@ class PublisherIntegrationTests {
             try {
                 publisher.track(Trackable("ID"))
                 testLogD("track success")
-                trackResultExpectation.fulfill(Result.success(Unit))
+                trackExpectation.fulfill(true)
             } catch (e: Exception) {
                 testLogD("track failed")
+                trackExpectation.fulfill(false)
             }
         }
 
         // await asynchronous events
         testLogD("AWAIT")
         dataEndedExpectation.await()
-        trackResultExpectation.await()
+        trackExpectation.await()
 
         // cleanup
         testLogD("CLEANUP")
-        val stopResultExpectation = UnitResultExpectation("stop response")
+        val stopExpectation = BooleanExpectation("stop response")
         runBlocking {
             try {
                 publisher.stop()
                 testLogD("stop succes")
-                stopResultExpectation.fulfill(Result.success(Unit))
+                stopExpectation.fulfill(true)
             } catch (e: Exception) {
                 testLogD("stop failed")
+                stopExpectation.fulfill(true)
             }
         }
-        stopResultExpectation.await()
+        stopExpectation.await()
 
         // then
         testLogD("THEN")
         dataEndedExpectation.assertFulfilled()
-        trackResultExpectation.assertSuccess()
-        stopResultExpectation.assertSuccess()
+        trackExpectation.assertSuccess()
+        stopExpectation.assertSuccess()
     }
 
     @SuppressLint("MissingPermission")

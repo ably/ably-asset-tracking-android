@@ -5,7 +5,7 @@ import android.location.Location
 open class LocationUpdate(val location: Location, val batteryLevel: Float?) {
     override fun equals(other: Any?): Boolean =
         when (other) {
-            is LocationUpdate -> location == other.location
+            is LocationUpdate -> location == other.location && batteryLevel == other.batteryLevel
             else -> false
         }
 }

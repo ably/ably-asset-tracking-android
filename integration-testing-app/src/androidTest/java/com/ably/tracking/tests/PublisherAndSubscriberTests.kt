@@ -16,8 +16,8 @@ import com.ably.tracking.publisher.Publisher
 import com.ably.tracking.publisher.RoutingProfile
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.subscriber.Subscriber
+import com.ably.tracking.test.common.BooleanExpectation
 import com.ably.tracking.test.common.UnitExpectation
-import com.ably.tracking.test.common.UnitResultExpectation
 import com.ably.tracking.test.common.testLogD
 import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
@@ -50,7 +50,7 @@ class PublisherAndSubscriberTests {
         val locationData = getLocationData(context)
         val publishedLocations = mutableListOf<LocationUpdate>()
         val receivedLocations = mutableListOf<LocationUpdate>()
-        val trackResultExpectation = UnitResultExpectation("track response")
+        val trackExpectation = BooleanExpectation("track response")
         val scope = CoroutineScope(Dispatchers.Default)
 
         // when
@@ -82,9 +82,10 @@ class PublisherAndSubscriberTests {
             try {
                 publisher.track(Trackable(trackableId))
                 testLogD("track success")
-                trackResultExpectation.fulfill(Result.success(Unit))
+                trackExpectation.fulfill(true)
             } catch (e: Exception) {
                 testLogD("track failed")
+                trackExpectation.fulfill(false)
             }
         }
 
@@ -111,7 +112,7 @@ class PublisherAndSubscriberTests {
 
         // then
         dataEndedExpectation.assertFulfilled()
-        trackResultExpectation.assertSuccess()
+        trackExpectation.assertSuccess()
         publisherStoppedExpectation.assertFulfilled()
         subscriberStoppedExpectation.assertFulfilled()
         Assert.assertTrue(
