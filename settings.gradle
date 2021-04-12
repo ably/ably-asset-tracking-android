@@ -1,3 +1,12 @@
+// This block was added for Dokka, per the instructions here:
+// https://github.com/Kotlin/dokka#using-the-gradle-plugin
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        jcenter()
+    }
+}
+
 include ':android-test-common',
         ':common',
         ':core-sdk',
