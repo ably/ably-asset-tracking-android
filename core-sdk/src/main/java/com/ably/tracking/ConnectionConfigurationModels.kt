@@ -64,7 +64,7 @@ interface TokenRequestCallback {
 }
 
 /**
- * Represents a set of parameters that are used when requesting an auth token.
+ * Represents a set of parameters that are passed to [TokenRequestCallback.onRequestToken] when Ably SDK is requesting an auth token.
  */
 open class TokenRequestParameters(
     /**
@@ -89,6 +89,10 @@ open class TokenRequestParameters(
     val timestamp: Long
 )
 
+/**
+ * Represents a signed token request that should be created by the SDK user. It is used by Ably to get the authentication token.
+ * More info available here: https://ably.com/documentation/core-features/authentication#token-request-process
+ */
 class TokenRequest(
     /**
      * Time to live of the token.
