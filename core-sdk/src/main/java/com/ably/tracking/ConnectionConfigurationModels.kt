@@ -72,14 +72,17 @@ open class TokenRequestParameters(
      * If set to 0 then the default value will be used.
      */
     val ttl: Long,
+
     /**
      * Capabilities of the token.
      */
     val capability: String,
+
     /**
      * Client ID associated with the token.
      */
     val clientId: String,
+
     /**
      * Timestamp in milliseconds of this request.
      */
@@ -92,26 +95,32 @@ class TokenRequest(
      * If set to 0 then the default value will be used.
      */
     ttl: Long,
+
     /**
      * Capabilities of the token.
      */
     capability: String,
+
     /**
      * Client ID associated with the token.
      */
     clientId: String,
+
     /**
      * Timestamp in milliseconds of this request.
      */
     timestamp: Long,
+
     /**
      * The keyName of the key against which this request is made.
      */
     var keyName: String,
+
     /**
      * An opaque nonce string of at least 16 characters to ensure uniqueness of this request. Any subsequent request using the same nonce will be rejected.
      */
     var nonce: String,
+
     /**
      * The Message Authentication Code for this request.
      */
