@@ -126,7 +126,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set Deployment Status to Failure
-        if: ${{ steps.create_deployment.outcome == 'success' && steps.succeed_deployment.outcome == 'skipped' && failure() }}
+        if: ${{ steps.create_deployment.outcome == 'success' && steps.succeed_deployment.outcome != 'failure' && failure() }}
         uses: octokit/request-action@v2.x
         with:
           route: POST /repos/:repository/deployments/:deployment/statuses
