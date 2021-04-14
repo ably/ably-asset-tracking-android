@@ -6,6 +6,7 @@ import com.ably.tracking.ConnectionException
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
+import com.ably.tracking.UnsupportedConnectionConfigurationException
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -103,9 +104,14 @@ interface Subscriber {
          * @return A new subscriber instance.
          * @throws com.ably.tracking.BuilderConfigurationIncompleteException If all required params aren't set
          * @throws ConnectionException If something goes wrong during connection initialization
+         * @throws UnsupportedConnectionConfigurationException if an unsupported implementation of [ConnectionConfiguration] is used.
          */
         @JvmSynthetic
-        @Throws(BuilderConfigurationIncompleteException::class, ConnectionException::class)
+        @Throws(
+            BuilderConfigurationIncompleteException::class,
+            ConnectionException::class,
+            UnsupportedConnectionConfigurationException::class
+        )
         suspend fun start(): Subscriber
     }
 }

@@ -7,10 +7,10 @@ import com.ably.tracking.Accuracy;
 import com.ably.tracking.BuilderConfigurationIncompleteException;
 import com.ably.tracking.ConnectionException;
 import com.ably.tracking.ConnectionConfiguration;
-import com.ably.tracking.ConnectionConfigurationKey;
-import com.ably.tracking.ConnectionConfigurationToken;
 import com.ably.tracking.Resolution;
 import com.ably.tracking.TokenRequest;
+import com.ably.tracking.UnsupportedConnectionConfigurationException;
+import com.ably.tracking.java.ConnectionConfigurationFactory;
 import com.ably.tracking.publisher.DefaultProximity;
 import com.ably.tracking.publisher.DefaultResolutionConstraints;
 import com.ably.tracking.publisher.DefaultResolutionSet;
@@ -47,7 +47,7 @@ public class PublisherInterfaceUsageExamples {
     PublisherFacade publisher;
 
     @Before
-    public void beforeEach() throws BuilderConfigurationIncompleteException, ConnectionException {
+    public void beforeEach() throws BuilderConfigurationIncompleteException, ConnectionException, UnsupportedConnectionConfigurationException {
         context = mock(Context.class);
         nativePublisher = mock(Publisher.class);
         publisherBuilder = mock(Publisher.Builder.class, withSettings().defaultAnswer(RETURNS_SELF));
@@ -65,7 +65,7 @@ public class PublisherInterfaceUsageExamples {
         try {
             publisherBuilder
                 .androidContext(context)
-                .connection(ConnectionConfigurationKey.create("API_KEY", "CLIENT_ID"))
+                .connection(ConnectionConfigurationFactory.createKey("API_KEY", "CLIENT_ID"))
                 .map(new MapConfiguration("API_KEY"))
                 .resolutionPolicy(resolutionPolicyFactory)
                 .locationSource(LocationSourceRaw.createRaw(new LocationHistoryData(new ArrayList<>()), null))
@@ -75,12 +75,14 @@ public class PublisherInterfaceUsageExamples {
             // handle publisher start error
         } catch (ConnectionException e) {
             // handle publisher start error
+        } catch (UnsupportedConnectionConfigurationException e) {
+            // handle publisher start error
         }
     }
 
     @Test
     public void publisherTokenAuthUsageExample() {
-        ConnectionConfiguration configuration = ConnectionConfigurationToken.create((params) -> new TokenRequest(0, "", "", 0, "", "", ""), "CLIENT_ID");
+        ConnectionConfiguration configuration = ConnectionConfigurationFactory.createToken((params) -> new TokenRequest(0, "", "", 0, "", "", ""), "CLIENT_ID");
     }
 
     @Test
