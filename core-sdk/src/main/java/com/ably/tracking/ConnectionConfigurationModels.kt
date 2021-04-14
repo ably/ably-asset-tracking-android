@@ -88,7 +88,7 @@ open class TokenRequestParameters(
 
 /**
  * Represents a signed token request that should be created by the SDK user. It is used by Ably to get the authentication token.
- * More info available here: https://ably.com/documentation/core-features/authentication#token-request-process
+ * More info available [here](https://ably.com/documentation/core-features/authentication#token-request-process).
  */
 class TokenRequest(
     /**
