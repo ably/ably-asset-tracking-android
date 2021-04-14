@@ -15,8 +15,6 @@ private constructor(val apiKey: String, clientId: String) : ConnectionConfigurat
         @JvmStatic
         fun create(apiKey: String, clientId: String) = ConnectionConfigurationKey(apiKey, clientId)
     }
-
-    private constructor() : this("", "")
 }
 
 /**
@@ -43,7 +41,6 @@ private constructor(val callback: (TokenRequestParameters) -> TokenRequest, clie
             ConnectionConfigurationToken(callback, clientId)
     }
 
-    private constructor() : this({ TokenRequest(0, "", "", 0, "", "", "") }, "")
     private constructor(callback: TokenRequestCallback, clientId: String) : this(
         { callback.onRequestToken(it) },
         clientId
