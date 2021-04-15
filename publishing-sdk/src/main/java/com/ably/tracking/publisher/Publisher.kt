@@ -9,7 +9,6 @@ import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.ConnectionException
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.TrackableState
-import com.ably.tracking.UnsupportedConnectionConfigurationException
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -193,14 +192,9 @@ interface Publisher {
          * @return A new publisher instance.
          * @throws com.ably.tracking.BuilderConfigurationIncompleteException If all required params aren't set
          * @throws ConnectionException If something goes wrong during connection initialization
-         * @throws UnsupportedConnectionConfigurationException if an unsupported implementation of [ConnectionConfiguration] is used.
          */
         @RequiresPermission(anyOf = [ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION])
-        @Throws(
-            BuilderConfigurationIncompleteException::class,
-            ConnectionException::class,
-            UnsupportedConnectionConfigurationException::class
-        )
+        @Throws(BuilderConfigurationIncompleteException::class, ConnectionException::class)
         fun start(): Publisher
     }
 }

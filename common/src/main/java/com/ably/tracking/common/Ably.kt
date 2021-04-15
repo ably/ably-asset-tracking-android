@@ -5,7 +5,6 @@ import com.ably.tracking.ConnectionException
 import com.ably.tracking.ConnectionStateChange
 import com.ably.tracking.EnhancedLocationUpdate
 import com.ably.tracking.LocationUpdate
-import com.ably.tracking.UnsupportedConnectionConfigurationException
 import com.ably.tracking.clientOptions
 import com.ably.tracking.toTracking
 import com.ably.tracking.toTrackingException
@@ -136,7 +135,6 @@ interface Ably {
 class DefaultAbly
 /**
  * @throws ConnectionException if something goes wrong during Ably SDK initialization.
- * @throws UnsupportedConnectionConfigurationException if an unsupported implementation of [ConnectionConfiguration] is used.
  */
 constructor(
     connectionConfiguration: ConnectionConfiguration

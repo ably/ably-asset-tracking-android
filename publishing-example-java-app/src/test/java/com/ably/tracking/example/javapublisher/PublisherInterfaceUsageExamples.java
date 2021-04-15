@@ -9,7 +9,6 @@ import com.ably.tracking.ConnectionException;
 import com.ably.tracking.ConnectionConfiguration;
 import com.ably.tracking.Resolution;
 import com.ably.tracking.TokenRequest;
-import com.ably.tracking.UnsupportedConnectionConfigurationException;
 import com.ably.tracking.java.ConnectionConfigurationFactory;
 import com.ably.tracking.publisher.DefaultProximity;
 import com.ably.tracking.publisher.DefaultResolutionConstraints;
@@ -47,7 +46,7 @@ public class PublisherInterfaceUsageExamples {
     PublisherFacade publisher;
 
     @Before
-    public void beforeEach() throws BuilderConfigurationIncompleteException, ConnectionException, UnsupportedConnectionConfigurationException {
+    public void beforeEach() throws BuilderConfigurationIncompleteException, ConnectionException {
         context = mock(Context.class);
         nativePublisher = mock(Publisher.class);
         publisherBuilder = mock(Publisher.Builder.class, withSettings().defaultAnswer(RETURNS_SELF));
@@ -74,8 +73,6 @@ public class PublisherInterfaceUsageExamples {
         } catch (BuilderConfigurationIncompleteException e) {
             // handle publisher start error
         } catch (ConnectionException e) {
-            // handle publisher start error
-        } catch (UnsupportedConnectionConfigurationException e) {
             // handle publisher start error
         }
     }

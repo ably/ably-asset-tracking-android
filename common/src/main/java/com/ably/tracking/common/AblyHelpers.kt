@@ -73,7 +73,6 @@ fun io.ably.lib.realtime.ConnectionStateListener.ConnectionStateChange.toTrackin
 
 /**
  * Extension vending Ably client library ClientOptions from a [ConnectionConfiguration] instance.
- * @throws UnsupportedConnectionConfigurationException if an unsupported implementation of [ConnectionConfiguration] is used.
  */
 val ConnectionConfiguration.clientOptions: ClientOptions
     get() = when (this) {
@@ -84,7 +83,6 @@ val ConnectionConfiguration.clientOptions: ClientOptions
             clientId = this@clientOptions.clientId
             authCallback = Auth.TokenCallback { this@clientOptions.callback(it.toTracking()).toAuth() }
         }
-        else -> throw UnsupportedConnectionConfigurationException()
     }
 
 /**

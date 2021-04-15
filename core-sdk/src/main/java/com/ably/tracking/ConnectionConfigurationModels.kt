@@ -1,60 +1,37 @@
 package com.ably.tracking
 
-/**
- *  Base interface for connection configurations.
- */
-interface ConnectionConfiguration {
-    val clientId: String
-}
+sealed class ConnectionConfiguration(val clientId: String)
 
 /**
  *  Represents a [ConnectionConfiguration] that uses the basic authentication and requires to provide the API key for Ably.
  */
-interface ConnectionConfigurationKey : ConnectionConfiguration {
-    /**
-     * Ably key string as obtained from the dashboard.
-     **/
-    val apiKey: String
-
+class ConnectionConfigurationKey
+private constructor(val apiKey: String, clientId: String) : ConnectionConfiguration(clientId) {
     companion object {
         /**
          * @param apiKey Ably key string as obtained from the dashboard.
          * @param clientId ID of the client
          */
         @JvmSynthetic
-        fun create(apiKey: String, clientId: String): ConnectionConfigurationKey =
-            DefaultConfiguration(apiKey, clientId)
+        fun create(apiKey: String, clientId: String) = ConnectionConfigurationKey(apiKey, clientId)
     }
-
-    private class DefaultConfiguration(
-        override val apiKey: String,
-        override val clientId: String
-    ) : ConnectionConfigurationKey
 }
 
 /**
  *  Represents a [ConnectionConfiguration] that uses the token authentication and requires to provide a callback that will be called each time a new [TokenRequest] is required.
  */
-interface ConnectionConfigurationToken : ConnectionConfiguration {
-    /**
-     * Callback that will be called with [TokenRequestParameters] each time a [TokenRequest] needs to be obtained.
-     **/
-    val callback: (TokenRequestParameters) -> TokenRequest
-
+class ConnectionConfigurationToken
+private constructor(val callback: (TokenRequestParameters) -> TokenRequest, clientId: String) :
+    ConnectionConfiguration(clientId) {
     companion object {
         /**
          * @param callback Callback that will be called with [TokenRequestParameters] each time a [TokenRequest] needs to be obtained.
          * @param clientId ID of the client
          */
         @JvmSynthetic
-        fun create(callback: (TokenRequestParameters) -> TokenRequest, clientId: String): ConnectionConfigurationToken =
-            DefaultConfiguration(callback, clientId)
+        fun create(callback: (TokenRequestParameters) -> TokenRequest, clientId: String) =
+            ConnectionConfigurationToken(callback, clientId)
     }
-
-    private class DefaultConfiguration(
-        override val callback: (TokenRequestParameters) -> TokenRequest,
-        override val clientId: String
-    ) : ConnectionConfigurationToken
 }
 
 /**
