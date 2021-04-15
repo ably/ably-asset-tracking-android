@@ -3,7 +3,7 @@ package com.ably.tracking
 import com.ably.tracking.common.PresenceAction
 import com.ably.tracking.common.PresenceMessage
 import com.ably.tracking.common.getPresenceData
-import com.ably.tracking.connection.ConnectionConfiguration
+import com.ably.tracking.connection.AuthenticationConfiguration
 import com.ably.tracking.connection.ConnectionConfigurationKey
 import com.ably.tracking.connection.ConnectionConfigurationToken
 import com.ably.tracking.connection.TokenRequest
@@ -77,9 +77,9 @@ fun io.ably.lib.realtime.ConnectionStateListener.ConnectionStateChange.toTrackin
     )
 
 /**
- * Extension vending Ably client library ClientOptions from a [ConnectionConfiguration] instance.
+ * Extension vending Ably client library ClientOptions from a [AuthenticationConfiguration] instance.
  */
-val ConnectionConfiguration.clientOptions: ClientOptions
+val AuthenticationConfiguration.clientOptions: ClientOptions
     get() = when (this) {
         is ConnectionConfigurationKey -> ClientOptions(this.apiKey).apply {
             clientId = this@clientOptions.clientId

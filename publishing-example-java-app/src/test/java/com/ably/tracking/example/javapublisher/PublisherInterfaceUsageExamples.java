@@ -6,7 +6,7 @@ import android.content.Context;
 import com.ably.tracking.Accuracy;
 import com.ably.tracking.BuilderConfigurationIncompleteException;
 import com.ably.tracking.ConnectionException;
-import com.ably.tracking.connection.ConnectionConfiguration;
+import com.ably.tracking.connection.AuthenticationConfiguration;
 import com.ably.tracking.Resolution;
 import com.ably.tracking.connection.TokenRequest;
 import com.ably.tracking.java.ConnectionConfigurationFactory;
@@ -79,7 +79,7 @@ public class PublisherInterfaceUsageExamples {
 
     @Test
     public void publisherTokenAuthUsageExample() {
-        ConnectionConfiguration configuration = ConnectionConfigurationFactory.createToken((params) -> new TokenRequest(0, "", "", 0, "", "", ""), "CLIENT_ID");
+        AuthenticationConfiguration configuration = ConnectionConfigurationFactory.createToken((params) -> new TokenRequest(0, "", "", 0, "", "", ""), "CLIENT_ID");
     }
 
     @Test

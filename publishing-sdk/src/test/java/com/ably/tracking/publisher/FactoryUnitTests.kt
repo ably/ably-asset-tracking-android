@@ -22,7 +22,7 @@ class FactoryUnitTests {
         val builder = Publisher.publishers().connection(configuration) as PublisherBuilder
 
         // then
-        Assert.assertEquals(configuration, builder.connectionConfiguration)
+        Assert.assertEquals(configuration, builder.authenticationConfiguration)
     }
 
     @Test
@@ -126,13 +126,13 @@ class FactoryUnitTests {
     }
 
     private fun assertAllBuilderFieldsAreNull(builder: PublisherBuilder) {
-        Assert.assertNull(builder.connectionConfiguration)
+        Assert.assertNull(builder.authenticationConfiguration)
         Assert.assertNull(builder.mapConfiguration)
         Assert.assertNull(builder.androidContext)
     }
 
     private fun assertAllBuilderFieldsAreNotNull(builder: PublisherBuilder) {
-        Assert.assertNotNull(builder.connectionConfiguration)
+        Assert.assertNotNull(builder.authenticationConfiguration)
         Assert.assertNotNull(builder.mapConfiguration)
         Assert.assertNotNull(builder.androidContext)
     }

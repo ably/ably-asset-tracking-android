@@ -20,7 +20,7 @@ class FactoryUnitTests {
             Subscriber.subscribers().connection(configuration) as SubscriberBuilder
 
         // then
-        Assert.assertEquals(configuration, builder.connectionConfiguration)
+        Assert.assertEquals(configuration, builder.authenticationConfiguration)
     }
 
     @Test
@@ -111,13 +111,13 @@ class FactoryUnitTests {
     }
 
     private fun assertAllBuilderFieldsAreNull(builder: SubscriberBuilder) {
-        Assert.assertNull(builder.connectionConfiguration)
+        Assert.assertNull(builder.authenticationConfiguration)
         Assert.assertNull(builder.resolution)
         Assert.assertNull(builder.trackingId)
     }
 
     private fun assertAllBuilderFieldsAreNotNull(builder: SubscriberBuilder) {
-        Assert.assertNotNull(builder.connectionConfiguration)
+        Assert.assertNotNull(builder.authenticationConfiguration)
         Assert.assertNotNull(builder.resolution)
         Assert.assertNotNull(builder.trackingId)
     }

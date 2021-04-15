@@ -1,6 +1,6 @@
 package com.ably.tracking.common
 
-import com.ably.tracking.connection.ConnectionConfiguration
+import com.ably.tracking.connection.AuthenticationConfiguration
 import com.ably.tracking.ConnectionException
 import com.ably.tracking.ConnectionStateChange
 import com.ably.tracking.EnhancedLocationUpdate
@@ -137,7 +137,7 @@ class DefaultAbly
  * @throws ConnectionException if something goes wrong during Ably SDK initialization.
  */
 constructor(
-    connectionConfiguration: ConnectionConfiguration
+    authenticationConfiguration: AuthenticationConfiguration
 ) : Ably {
     private val gson = Gson()
     private val ably: AblyRealtime
@@ -146,7 +146,7 @@ constructor(
 
     init {
         try {
-            ably = AblyRealtime(connectionConfiguration.clientOptions)
+            ably = AblyRealtime(authenticationConfiguration.clientOptions)
         } catch (exception: AblyException) {
             throw exception.errorInfo.toTrackingException()
         }

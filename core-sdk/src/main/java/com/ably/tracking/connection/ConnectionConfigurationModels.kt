@@ -1,12 +1,12 @@
 package com.ably.tracking.connection
 
-sealed class ConnectionConfiguration(val clientId: String)
+sealed class AuthenticationConfiguration(val clientId: String)
 
 /**
- *  Represents a [ConnectionConfiguration] that uses the basic authentication and requires to provide the API key for Ably.
+ *  Represents a [AuthenticationConfiguration] that uses the basic authentication and requires to provide the API key for Ably.
  */
 class ConnectionConfigurationKey
-private constructor(val apiKey: String, clientId: String) : ConnectionConfiguration(clientId) {
+private constructor(val apiKey: String, clientId: String) : AuthenticationConfiguration(clientId) {
     companion object {
         /**
          * @param apiKey Ably key string as obtained from the dashboard.
@@ -18,11 +18,11 @@ private constructor(val apiKey: String, clientId: String) : ConnectionConfigurat
 }
 
 /**
- *  Represents a [ConnectionConfiguration] that uses the token authentication and requires to provide a callback that will be called each time a new [TokenRequest] is required.
+ *  Represents a [AuthenticationConfiguration] that uses the token authentication and requires to provide a callback that will be called each time a new [TokenRequest] is required.
  */
 class ConnectionConfigurationToken
 private constructor(val callback: (TokenRequestParameters) -> TokenRequest, clientId: String) :
-    ConnectionConfiguration(clientId) {
+    AuthenticationConfiguration(clientId) {
     companion object {
         /**
          * @param callback Callback that will be called with [TokenRequestParameters] each time a [TokenRequest] needs to be obtained.

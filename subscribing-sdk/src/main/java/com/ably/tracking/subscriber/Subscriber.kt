@@ -1,7 +1,7 @@
 package com.ably.tracking.subscriber
 
 import com.ably.tracking.BuilderConfigurationIncompleteException
-import com.ably.tracking.connection.ConnectionConfiguration
+import com.ably.tracking.connection.AuthenticationConfiguration
 import com.ably.tracking.ConnectionException
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.Resolution
@@ -78,7 +78,7 @@ interface Subscriber {
          * @param configuration The configuration to be used for Ably connection.
          * @return A new instance of the builder with this property changed.
          */
-        fun connection(configuration: ConnectionConfiguration): Builder
+        fun connection(configuration: AuthenticationConfiguration): Builder
 
         /**
          * **OPTIONAL** Sets the preferred resolution of updates, to be requested from the remote publisher.

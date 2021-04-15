@@ -1,7 +1,7 @@
 package com.ably.tracking.example.javasubscriber;
 
 import com.ably.tracking.Accuracy;
-import com.ably.tracking.connection.ConnectionConfiguration;
+import com.ably.tracking.connection.AuthenticationConfiguration;
 import com.ably.tracking.Resolution;
 import com.ably.tracking.connection.TokenRequest;
 import com.ably.tracking.java.ConnectionConfigurationFactory;
@@ -62,7 +62,7 @@ public class UsageExamples {
 
     @Test
     public void subscriberTokenAuthUsageExample() {
-        ConnectionConfiguration configuration = ConnectionConfigurationFactory.createToken((params) -> new TokenRequest(0, "", "", 0, "", "", ""), "CLIENT_ID");
+        AuthenticationConfiguration configuration = ConnectionConfigurationFactory.createToken((params) -> new TokenRequest(0, "", "", 0, "", "", ""), "CLIENT_ID");
     }
 
     @Test

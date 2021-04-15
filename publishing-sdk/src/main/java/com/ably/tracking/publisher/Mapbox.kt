@@ -4,7 +4,7 @@ import android.Manifest
 import android.content.Context
 import android.location.Location
 import androidx.annotation.RequiresPermission
-import com.ably.tracking.connection.ConnectionConfiguration
+import com.ably.tracking.connection.AuthenticationConfiguration
 import com.ably.tracking.Resolution
 import com.ably.tracking.clientOptions
 import com.ably.tracking.common.MILLISECONDS_PER_SECOND
@@ -97,7 +97,7 @@ internal interface Mapbox {
 internal class DefaultMapbox(
     context: Context,
     private val mapConfiguration: MapConfiguration,
-    connectionConfiguration: ConnectionConfiguration,
+    authenticationConfiguration: AuthenticationConfiguration,
     locationSource: LocationSource? = null
 ) : Mapbox {
     private val mapboxNavigation: MapboxNavigation
@@ -113,7 +113,7 @@ internal class DefaultMapbox(
         locationSource?.let {
             when (it) {
                 is LocationSourceAbly -> {
-                    useAblySimulationLocationEngine(mapboxBuilder, it, connectionConfiguration)
+                    useAblySimulationLocationEngine(mapboxBuilder, it, authenticationConfiguration)
                 }
                 is LocationSourceRaw -> {
                     useHistoryDataReplayerLocationEngine(mapboxBuilder, it)
@@ -205,11 +205,11 @@ internal class DefaultMapbox(
     private fun useAblySimulationLocationEngine(
         mapboxBuilder: NavigationOptions.Builder,
         locationSource: LocationSourceAbly,
-        connectionConfiguration: ConnectionConfiguration
+        authenticationConfiguration: AuthenticationConfiguration
     ) {
         mapboxBuilder.locationEngine(
             AblySimulationLocationEngine(
-                connectionConfiguration.clientOptions,
+                authenticationConfiguration.clientOptions,
                 locationSource.simulationChannelName
             )
         )
