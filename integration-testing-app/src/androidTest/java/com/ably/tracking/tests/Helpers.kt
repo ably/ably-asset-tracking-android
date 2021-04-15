@@ -16,8 +16,8 @@ import com.ably.tracking.subscriber.Subscriber
 import com.google.gson.Gson
 
 private const val MAPBOX_ACCESS_TOKEN = BuildConfig.MAPBOX_ACCESS_TOKEN
-private const val CLIENT_ID = "IntegrationTestsClient"
-private const val ABLY_API_KEY = BuildConfig.ABLY_API_KEY
+const val CLIENT_ID = "IntegrationTestsClient"
+const val ABLY_API_KEY = BuildConfig.ABLY_API_KEY
 
 private val defaultConnectionConfiguration = BasicAuthenticationConfiguration.create(ABLY_API_KEY, CLIENT_ID)
 
