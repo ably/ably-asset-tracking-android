@@ -111,6 +111,7 @@ jobs:
           aws s3 sync --acl public-read build/dokka/htmlMultiModule "s3://sdk.ably.com/builds/$GITHUB_REPOSITORY/$DEPLOYMENT_REMOTE_PATH"
 
       - name: Set Deployment Status to Success
+        id: succeed_deployment
         uses: octokit/request-action@v2.x
         with:
           route: POST /repos/:repository/deployments/:deployment/statuses
@@ -124,9 +125,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # If the previous step (set deployment status to success) FAILS then this step will ALSO get run.
       - name: Set Deployment Status to Failure
-        if: ${{ failure() }}
+        if: ${{ steps.create_deployment.outcome == 'success' && steps.succeed_deployment.outcome != 'failure' && failure() }}
         uses: octokit/request-action@v2.x
         with:
           route: POST /repos/:repository/deployments/:deployment/statuses
