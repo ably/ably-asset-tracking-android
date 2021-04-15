@@ -4,7 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.location.Location
 import com.ably.tracking.BuilderConfigurationIncompleteException
-import com.ably.tracking.ConnectionConfigurationKey
+import com.ably.tracking.connection.ConnectionConfigurationKey
 import io.mockk.mockk
 import org.junit.Assert
 import org.junit.Test

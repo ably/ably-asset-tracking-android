@@ -3,7 +3,7 @@ package com.ably.tracking.subscriber
 import android.annotation.SuppressLint
 import com.ably.tracking.Accuracy
 import com.ably.tracking.BuilderConfigurationIncompleteException
-import com.ably.tracking.ConnectionConfigurationKey
+import com.ably.tracking.connection.ConnectionConfigurationKey
 import com.ably.tracking.Resolution
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert

@@ -4,7 +4,7 @@ import android.Manifest
 import android.content.Context
 import android.location.Location
 import androidx.annotation.RequiresPermission
-import com.ably.tracking.ConnectionConfiguration
+import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.Resolution
 import com.ably.tracking.clientOptions
 import com.ably.tracking.common.MILLISECONDS_PER_SECOND

@@ -5,7 +5,7 @@ import android.content.Context
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ably.tracking.Accuracy
-import com.ably.tracking.ConnectionConfigurationKey
+import com.ably.tracking.connection.ConnectionConfigurationKey
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.Resolution
 import com.ably.tracking.publisher.DefaultResolutionPolicyFactory

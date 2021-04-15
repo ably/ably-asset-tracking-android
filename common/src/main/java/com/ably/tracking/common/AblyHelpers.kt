@@ -3,6 +3,11 @@ package com.ably.tracking
 import com.ably.tracking.common.PresenceAction
 import com.ably.tracking.common.PresenceMessage
 import com.ably.tracking.common.getPresenceData
+import com.ably.tracking.connection.ConnectionConfiguration
+import com.ably.tracking.connection.ConnectionConfigurationKey
+import com.ably.tracking.connection.ConnectionConfigurationToken
+import com.ably.tracking.connection.TokenRequest
+import com.ably.tracking.connection.TokenRequestParameters
 import com.google.gson.Gson
 import io.ably.lib.realtime.ChannelState
 import io.ably.lib.rest.Auth

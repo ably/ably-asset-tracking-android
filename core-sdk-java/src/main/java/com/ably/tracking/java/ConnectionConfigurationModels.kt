@@ -1,10 +1,10 @@
 package com.ably.tracking.java
 
-import com.ably.tracking.ConnectionConfiguration
-import com.ably.tracking.ConnectionConfigurationKey
-import com.ably.tracking.ConnectionConfigurationToken
-import com.ably.tracking.TokenRequest
-import com.ably.tracking.TokenRequestParameters
+import com.ably.tracking.connection.ConnectionConfiguration
+import com.ably.tracking.connection.ConnectionConfigurationKey
+import com.ably.tracking.connection.ConnectionConfigurationToken
+import com.ably.tracking.connection.TokenRequest
+import com.ably.tracking.connection.TokenRequestParameters
 
 /**
  * Static factory used to create supported [ConnectionConfiguration] from Java code.

@@ -1,7 +1,7 @@
 package com.ably.tracking.subscriber
 
 import com.ably.tracking.BuilderConfigurationIncompleteException
-import com.ably.tracking.ConnectionConfiguration
+import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.Resolution
 import com.ably.tracking.common.DefaultAbly
 

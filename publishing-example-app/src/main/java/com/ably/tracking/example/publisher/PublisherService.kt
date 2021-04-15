@@ -8,7 +8,7 @@ import android.widget.Toast
 import androidx.annotation.RequiresPermission
 import androidx.core.app.NotificationCompat
 import com.ably.tracking.Accuracy
-import com.ably.tracking.ConnectionConfigurationKey
+import com.ably.tracking.connection.ConnectionConfigurationKey
 import com.ably.tracking.Resolution
 import com.ably.tracking.publisher.DefaultResolutionPolicyFactory
 import com.ably.tracking.publisher.LocationHistoryData

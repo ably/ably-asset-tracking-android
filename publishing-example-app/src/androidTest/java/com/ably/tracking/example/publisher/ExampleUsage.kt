@@ -2,7 +2,7 @@ package com.ably.tracking.example.publisher
 
 import android.app.Activity
 import com.ably.tracking.Accuracy
-import com.ably.tracking.ConnectionConfigurationKey
+import com.ably.tracking.connection.ConnectionConfigurationKey
 import com.ably.tracking.Resolution
 import com.ably.tracking.publisher.DefaultProximity
 import com.ably.tracking.publisher.DefaultResolutionConstraints

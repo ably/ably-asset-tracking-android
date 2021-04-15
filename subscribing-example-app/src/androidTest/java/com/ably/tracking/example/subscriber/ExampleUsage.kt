@@ -1,7 +1,7 @@
 package com.ably.tracking.example.subscriber
 
 import com.ably.tracking.Accuracy
-import com.ably.tracking.ConnectionConfigurationKey
+import com.ably.tracking.connection.ConnectionConfigurationKey
 import com.ably.tracking.Resolution
 import com.ably.tracking.subscriber.Subscriber
 import kotlinx.coroutines.CoroutineScope

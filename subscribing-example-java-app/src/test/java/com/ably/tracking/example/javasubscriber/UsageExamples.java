@@ -1,9 +1,9 @@
 package com.ably.tracking.example.javasubscriber;
 
 import com.ably.tracking.Accuracy;
-import com.ably.tracking.ConnectionConfiguration;
+import com.ably.tracking.connection.ConnectionConfiguration;
 import com.ably.tracking.Resolution;
-import com.ably.tracking.TokenRequest;
+import com.ably.tracking.connection.TokenRequest;
 import com.ably.tracking.java.ConnectionConfigurationFactory;
 import com.ably.tracking.subscriber.Subscriber;
 import com.ably.tracking.subscriber.java.SubscriberFacade;

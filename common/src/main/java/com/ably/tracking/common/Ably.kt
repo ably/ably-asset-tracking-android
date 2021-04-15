@@ -1,6 +1,6 @@
 package com.ably.tracking.common
 
-import com.ably.tracking.ConnectionConfiguration
+import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.ConnectionException
 import com.ably.tracking.ConnectionStateChange
 import com.ably.tracking.EnhancedLocationUpdate

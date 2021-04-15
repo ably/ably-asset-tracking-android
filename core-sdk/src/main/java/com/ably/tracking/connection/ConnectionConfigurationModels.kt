@@ -1,4 +1,4 @@
-package com.ably.tracking
+package com.ably.tracking.connection
 
 sealed class ConnectionConfiguration(val clientId: String)
 
