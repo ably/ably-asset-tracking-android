@@ -9,14 +9,14 @@ import com.ably.tracking.connection.TokenRequestParameters
 /**
  * Static factory used to create supported [AuthenticationConfiguration] from Java code.
  */
-class ConnectionConfigurationFactory {
+class AuthenticationConfigurationFactory {
     companion object {
         /**
          * @param apiKey Ably key string as obtained from the dashboard.
          * @param clientId ID of the client
          */
         @JvmStatic
-        fun createKey(apiKey: String, clientId: String): BasicAuthenticationConfiguration {
+        fun createBasic(apiKey: String, clientId: String): BasicAuthenticationConfiguration {
             return BasicAuthenticationConfiguration.create(apiKey, clientId)
         }
 
