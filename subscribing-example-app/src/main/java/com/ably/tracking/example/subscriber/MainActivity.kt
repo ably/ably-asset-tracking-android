@@ -5,9 +5,9 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.ably.tracking.Accuracy
-import com.ably.tracking.TrackableState
 import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.Resolution
+import com.ably.tracking.TrackableState
 import com.ably.tracking.subscriber.Subscriber
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -59,7 +59,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun prepareMap() {
         (mapFragment as SupportMapFragment).let {
-            it.getMapAsync { map -> googleMap = map }
+            it.getMapAsync { map ->
+                map.uiSettings.isZoomControlsEnabled = true
+                googleMap = map
+            }
         }
     }
 
@@ -178,18 +181,21 @@ class MainActivity : AppCompatActivity() {
         googleMap?.apply {
             LatLng(location.latitude, location.longitude).let { position ->
                 marker.let { currentMarker ->
+                    val cameraPosition = CameraUpdateFactory.newLatLngZoom(position, ZOOM_LEVEL_STREETS)
                     if (currentMarker == null) {
                         marker = addMarker(
                             MarkerOptions()
                                 .position(position)
                                 .icon(getMarkerIcon(location.bearing))
                         )
-                        moveCamera(CameraUpdateFactory.newLatLngZoom(position, ZOOM_LEVEL_STREETS))
+                        moveCamera(cameraPosition)
                     } else {
                         currentMarker.setIcon(getMarkerIcon(location.bearing))
                         if (animationSwitch.isChecked) {
+                            animateCamera(cameraPosition)
                             animateMarkerMovement(currentMarker, position)
                         } else {
+                            moveCamera(cameraPosition)
                             currentMarker.position = position
                         }
                     }

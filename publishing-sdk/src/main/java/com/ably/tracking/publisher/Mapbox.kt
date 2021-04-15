@@ -25,6 +25,8 @@ import com.mapbox.navigation.core.replay.history.ReplayEventsObserver
 import com.mapbox.navigation.core.replay.history.ReplayHistoryMapper
 import com.mapbox.navigation.core.trip.session.LocationObserver
 import io.ably.lib.types.ClientOptions
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import timber.log.Timber
 
 typealias LocationHistoryListener = (LocationHistoryData) -> Unit
@@ -100,16 +102,15 @@ internal class DefaultMapbox(
     connectionConfiguration: ConnectionConfiguration,
     locationSource: LocationSource? = null
 ) : Mapbox {
-    private val mapboxNavigation: MapboxNavigation
+    private val mainDispatcher = Dispatchers.Main.immediate
+    private var mapboxNavigation: MapboxNavigation
     private var mapboxReplayer: MapboxReplayer? = null
     private var locationHistoryListener: (LocationHistoryListener)? = null
 
     init {
-        val mapboxBuilder = MapboxNavigation.defaultNavigationOptionsBuilder(
-            context,
-            mapConfiguration.apiKey
-        )
-        mapboxBuilder.locationEngine(getBestLocationEngine(context))
+        val mapboxBuilder = NavigationOptions.Builder(context)
+            .accessToken(mapConfiguration.apiKey)
+            .locationEngine(getBestLocationEngine(context))
         locationSource?.let {
             when (it) {
                 is LocationSourceAbly -> {
@@ -121,34 +122,44 @@ internal class DefaultMapbox(
             }
         }
 
-        mapboxNavigation = MapboxNavigation(mapboxBuilder.build())
+        runBlocking(mainDispatcher) {
+            mapboxNavigation = MapboxNavigation(mapboxBuilder.build())
+        }
     }
 
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
     override fun startTrip() {
-        mapboxNavigation.apply {
-            toggleHistory(true)
-            startTripSession()
+        runBlocking(mainDispatcher) {
+            mapboxNavigation.apply {
+                toggleHistory(true)
+                startTripSession()
+            }
         }
     }
 
     override fun stopAndClose() {
-        mapboxNavigation.apply {
-            stopTripSession()
-            mapboxReplayer?.finish()
-            val tripHistoryString = retrieveHistory()
-            val historyEvents = ReplayHistoryMapper().mapToReplayEvents(tripHistoryString)
-            locationHistoryListener?.invoke(LocationHistoryData(historyEvents.toGeoJsonMessages()))
-            onDestroy()
+        runBlocking(mainDispatcher) {
+            mapboxNavigation.apply {
+                stopTripSession()
+                mapboxReplayer?.finish()
+                val tripHistoryString = retrieveHistory()
+                val historyEvents = ReplayHistoryMapper().mapToReplayEvents(tripHistoryString)
+                locationHistoryListener?.invoke(LocationHistoryData(historyEvents.toGeoJsonMessages()))
+                onDestroy()
+            }
         }
     }
 
     override fun registerLocationObserver(locationObserver: LocationObserver) {
-        mapboxNavigation.registerLocationObserver(locationObserver)
+        runBlocking(mainDispatcher) {
+            mapboxNavigation.registerLocationObserver(locationObserver)
+        }
     }
 
     override fun unregisterLocationObserver(locationObserver: LocationObserver) {
-        mapboxNavigation.unregisterLocationObserver(locationObserver)
+        runBlocking(mainDispatcher) {
+            mapboxNavigation.unregisterLocationObserver(locationObserver)
+        }
     }
 
     override fun setRoute(
@@ -157,40 +168,46 @@ internal class DefaultMapbox(
         routingProfile: RoutingProfile,
         routeDurationCallback: (durationInMilliseconds: Long) -> Unit
     ) {
-        mapboxNavigation.requestRoutes(
-            RouteOptions.builder()
-                .applyDefaultParams()
-                .accessToken(mapConfiguration.apiKey)
-                .coordinates(getRouteCoordinates(currentLocation, destination))
-                .profile(routingProfile.toMapboxProfileName())
-                .build(),
-            object : RoutesRequestCallback {
-                override fun onRoutesReady(routes: List<DirectionsRoute>) {
-                    routes.firstOrNull()?.let {
-                        val routeDurationInMilliseconds =
-                            (it.durationTypical() ?: it.duration()) * MILLISECONDS_PER_SECOND
-                        routeDurationCallback(routeDurationInMilliseconds.toLong())
+        runBlocking(mainDispatcher) {
+            mapboxNavigation.requestRoutes(
+                RouteOptions.builder()
+                    .applyDefaultParams()
+                    .accessToken(mapConfiguration.apiKey)
+                    .coordinates(getRouteCoordinates(currentLocation, destination))
+                    .profile(routingProfile.toMapboxProfileName())
+                    .build(),
+                object : RoutesRequestCallback {
+                    override fun onRoutesReady(routes: List<DirectionsRoute>) {
+                        routes.firstOrNull()?.let {
+                            val routeDurationInMilliseconds =
+                                (it.durationTypical() ?: it.duration()) * MILLISECONDS_PER_SECOND
+                            routeDurationCallback(routeDurationInMilliseconds.toLong())
+                        }
+                    }
+
+                    override fun onRoutesRequestCanceled(routeOptions: RouteOptions) = Unit
+
+                    override fun onRoutesRequestFailure(throwable: Throwable, routeOptions: RouteOptions) {
+                        // We won't know the ETA for the active trackable and therefore we won't be able to check the temporal threshold.
+                        Timber.e(throwable, "Failed call to requestRoutes.")
                     }
                 }
-
-                override fun onRoutesRequestCanceled(routeOptions: RouteOptions) = Unit
-
-                override fun onRoutesRequestFailure(throwable: Throwable, routeOptions: RouteOptions) {
-                    // We won't know the ETA for the active trackable and therefore we won't be able to check the temporal threshold.
-                    Timber.e(throwable, "Failed call to requestRoutes.")
-                }
-            }
-        )
+            )
+        }
     }
 
     override fun clearRoute() {
-        mapboxNavigation.setRoutes(emptyList())
+        runBlocking(mainDispatcher) {
+            mapboxNavigation.setRoutes(emptyList())
+        }
     }
 
     override fun changeResolution(resolution: Resolution) {
-        mapboxNavigation.navigationOptions.locationEngine.let {
-            if (it is ResolutionLocationEngine) {
-                it.changeResolution(resolution)
+        runBlocking(mainDispatcher) {
+            mapboxNavigation.navigationOptions.locationEngine.let {
+                if (it is ResolutionLocationEngine) {
+                    it.changeResolution(resolution)
+                }
             }
         }
     }
