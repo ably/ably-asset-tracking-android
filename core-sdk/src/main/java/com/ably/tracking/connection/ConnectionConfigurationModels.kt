@@ -20,7 +20,7 @@ private constructor(val apiKey: String, clientId: String) : AuthenticationConfig
 /**
  *  Represents a [AuthenticationConfiguration] that uses the token authentication and requires to provide a callback that will be called each time a new [TokenRequest] is required.
  */
-class ConnectionConfigurationToken
+class TokenAuthenticationConfiguration
 private constructor(val callback: (TokenRequestParameters) -> TokenRequest, clientId: String) :
     AuthenticationConfiguration(clientId) {
     companion object {
@@ -30,7 +30,7 @@ private constructor(val callback: (TokenRequestParameters) -> TokenRequest, clie
          */
         @JvmSynthetic
         fun create(callback: (TokenRequestParameters) -> TokenRequest, clientId: String) =
-            ConnectionConfigurationToken(callback, clientId)
+            TokenAuthenticationConfiguration(callback, clientId)
     }
 }
 

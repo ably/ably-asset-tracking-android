@@ -2,7 +2,7 @@ package com.ably.tracking.java
 
 import com.ably.tracking.connection.AuthenticationConfiguration
 import com.ably.tracking.connection.BasicAuthenticationConfiguration
-import com.ably.tracking.connection.ConnectionConfigurationToken
+import com.ably.tracking.connection.TokenAuthenticationConfiguration
 import com.ably.tracking.connection.TokenRequest
 import com.ably.tracking.connection.TokenRequestParameters
 
@@ -25,14 +25,14 @@ class ConnectionConfigurationFactory {
          * @param clientId ID of the client
          */
         @JvmStatic
-        fun createToken(callback: TokenRequestCallback, clientId: String): ConnectionConfigurationToken {
-            return ConnectionConfigurationToken.create({ callback.onRequestToken(it) }, clientId)
+        fun createToken(callback: TokenRequestCallback, clientId: String): TokenAuthenticationConfiguration {
+            return TokenAuthenticationConfiguration.create({ callback.onRequestToken(it) }, clientId)
         }
     }
 }
 
 /**
- * Interface provided for those using the [ConnectionConfigurationToken] from Java code.
+ * Interface provided for those using the [TokenAuthenticationConfiguration] from Java code.
  */
 interface TokenRequestCallback {
     /**

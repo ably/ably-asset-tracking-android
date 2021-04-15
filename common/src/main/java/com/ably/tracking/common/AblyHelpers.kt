@@ -5,7 +5,7 @@ import com.ably.tracking.common.PresenceMessage
 import com.ably.tracking.common.getPresenceData
 import com.ably.tracking.connection.AuthenticationConfiguration
 import com.ably.tracking.connection.BasicAuthenticationConfiguration
-import com.ably.tracking.connection.ConnectionConfigurationToken
+import com.ably.tracking.connection.TokenAuthenticationConfiguration
 import com.ably.tracking.connection.TokenRequest
 import com.ably.tracking.connection.TokenRequestParameters
 import com.google.gson.Gson
@@ -84,7 +84,7 @@ val AuthenticationConfiguration.clientOptions: ClientOptions
         is BasicAuthenticationConfiguration -> ClientOptions(this.apiKey).apply {
             clientId = this@clientOptions.clientId
         }
-        is ConnectionConfigurationToken -> ClientOptions().apply {
+        is TokenAuthenticationConfiguration -> ClientOptions().apply {
             clientId = this@clientOptions.clientId
             authCallback = Auth.TokenCallback { this@clientOptions.callback(it.toTracking()).toAuth() }
         }
