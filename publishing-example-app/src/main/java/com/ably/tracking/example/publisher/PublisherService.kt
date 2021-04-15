@@ -62,15 +62,12 @@ class PublisherService : Service() {
      * Creates and starts the [Publisher].
      */
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
-    fun startPublisher(
-        defaultResolution: Resolution = DEFAULT_RESOLUTION,
-        locationSource: LocationSource? = null
-    ) {
+    fun startPublisher(locationSource: LocationSource? = null) {
         publisher = Publisher.publishers()
             .connection(ConnectionConfiguration(ABLY_API_KEY, CLIENT_ID))
             .map(MapConfiguration(MAPBOX_ACCESS_TOKEN))
             .locationSource(locationSource)
-            .resolutionPolicy(DefaultResolutionPolicyFactory(defaultResolution, this))
+            .resolutionPolicy(DefaultResolutionPolicyFactory(createDefaultResolution(), this))
             .androidContext(this)
             .profile(RoutingProfile.DRIVING)
             .start().apply {
@@ -79,6 +76,13 @@ class PublisherService : Service() {
                     .launchIn(scope)
             }
     }
+
+    private fun createDefaultResolution(): Resolution =
+        Resolution(
+            appPreferences.getResolutionAccuracy(),
+            appPreferences.getResolutionDesiredInterval(),
+            appPreferences.getResolutionMinimumDisplacement().toDouble()
+        )
 
     private fun uploadLocationHistoryData(historyData: LocationHistoryData) {
         if (getLocationSourceType() == LocationSourceType.PHONE) {
