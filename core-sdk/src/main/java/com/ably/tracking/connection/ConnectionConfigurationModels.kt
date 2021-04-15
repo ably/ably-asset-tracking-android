@@ -5,7 +5,7 @@ sealed class AuthenticationConfiguration(val clientId: String)
 /**
  *  Represents a [AuthenticationConfiguration] that uses the basic authentication and requires to provide the API key for Ably.
  */
-class ConnectionConfigurationKey
+class BasicAuthenticationConfiguration
 private constructor(val apiKey: String, clientId: String) : AuthenticationConfiguration(clientId) {
     companion object {
         /**
@@ -13,7 +13,7 @@ private constructor(val apiKey: String, clientId: String) : AuthenticationConfig
          * @param clientId ID of the client
          */
         @JvmSynthetic
-        fun create(apiKey: String, clientId: String) = ConnectionConfigurationKey(apiKey, clientId)
+        fun create(apiKey: String, clientId: String) = BasicAuthenticationConfiguration(apiKey, clientId)
     }
 }
 

@@ -1,7 +1,7 @@
 package com.ably.tracking.java
 
 import com.ably.tracking.connection.AuthenticationConfiguration
-import com.ably.tracking.connection.ConnectionConfigurationKey
+import com.ably.tracking.connection.BasicAuthenticationConfiguration
 import com.ably.tracking.connection.ConnectionConfigurationToken
 import com.ably.tracking.connection.TokenRequest
 import com.ably.tracking.connection.TokenRequestParameters
@@ -16,8 +16,8 @@ class ConnectionConfigurationFactory {
          * @param clientId ID of the client
          */
         @JvmStatic
-        fun createKey(apiKey: String, clientId: String): ConnectionConfigurationKey {
-            return ConnectionConfigurationKey.create(apiKey, clientId)
+        fun createKey(apiKey: String, clientId: String): BasicAuthenticationConfiguration {
+            return BasicAuthenticationConfiguration.create(apiKey, clientId)
         }
 
         /**

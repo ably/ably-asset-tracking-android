@@ -4,7 +4,7 @@ import com.ably.tracking.common.PresenceAction
 import com.ably.tracking.common.PresenceMessage
 import com.ably.tracking.common.getPresenceData
 import com.ably.tracking.connection.AuthenticationConfiguration
-import com.ably.tracking.connection.ConnectionConfigurationKey
+import com.ably.tracking.connection.BasicAuthenticationConfiguration
 import com.ably.tracking.connection.ConnectionConfigurationToken
 import com.ably.tracking.connection.TokenRequest
 import com.ably.tracking.connection.TokenRequestParameters
@@ -81,7 +81,7 @@ fun io.ably.lib.realtime.ConnectionStateListener.ConnectionStateChange.toTrackin
  */
 val AuthenticationConfiguration.clientOptions: ClientOptions
     get() = when (this) {
-        is ConnectionConfigurationKey -> ClientOptions(this.apiKey).apply {
+        is BasicAuthenticationConfiguration -> ClientOptions(this.apiKey).apply {
             clientId = this@clientOptions.clientId
         }
         is ConnectionConfigurationToken -> ClientOptions().apply {
