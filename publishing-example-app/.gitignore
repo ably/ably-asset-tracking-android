@@ -1,1 +1,3 @@
-/build
+# Secrets which should never be committed
+/src/main/res/raw/amplifyconfiguration.json
+/google-services.json

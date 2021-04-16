@@ -30,7 +30,7 @@ The Asset Publishing SDK is used to get the location of the assets that need to 
 Here is an example of how the Asset Publishing SDK can be used:
 
 ```kotlin
-// Prepare Resolution Constraints for the Resolution Policy
+// Prepare Resolution Constraints for an asset that will be used in the Resolution Policy
 val exampleConstraints = DefaultResolutionConstraints(
     DefaultResolutionSet( // this constructor provides one Resolution for all states
         Resolution(
@@ -44,11 +44,15 @@ val exampleConstraints = DefaultResolutionConstraints(
     lowBatteryMultiplier = 2.0f
 )
 
+// Prepare the default resolution for the Resolution Policy
+val defaultResolution = Resolution(Accuracy.BALANCED, desiredInterval = 1000L, minimumDisplacement = 1.0)
+
 // Initialise and Start the Publisher
 val publisher = Publisher.publishers() // get the Publisher builder in default state
     .connection(ConnectionConfigurationKey.create(ABLY_API_KEY, CLIENT_ID)) // provide Ably configuration with credentials
     .map(MapConfiguration(MAPBOX_ACCESS_TOKEN)) // provide Mapbox configuration with credentials
     .androidContext(this) // provide Android runtime context
+    .resolutionPolicy(DefaultResolutionPolicyFactory(defaultResolution, this)) // provide either the default resolution policy factory or your custom implementation
     .profile(RoutingProfile.DRIVING) // provide mode of transportation for better location enhancements
     .start()
 
@@ -78,7 +82,6 @@ val subscriber = Subscriber.subscribers() // Get an AssetSubscriber
         Resolution(Accuracy.MAXIMUM, desiredInterval = 1000L, minimumDisplacement = 1.0)
     )
     .trackingId(trackingId) // provide the tracking identifier for the asset that needs to be tracked
-    .trackableStates { } // provide a function to be called when the asset changes its state
     .start() // start listening for updates
 
 // Listen for location updates
@@ -86,9 +89,14 @@ locations
     .onEach { } // provide a function to be called when enhanced location updates are received
     .launchIn(scope) // coroutines scope on which the locations are received
 
+// Listen for asset state changes
+trackableStates
+    .onEach { } // provide a function to be called when the asset changes its state
+    .launchIn(scope) // coroutines scope on which the statuses are received
+
 // Request a different resolution when needed.
 try {
-    subscriber.sendChangeRequest(Resolution(Accuracy.MAXIMUM, desiredInterval = 100L, minimumDisplacement = 2.0))
+    subscriber.resolutionPreference(Resolution(Accuracy.MAXIMUM, desiredInterval = 100L, minimumDisplacement = 2.0))
     // TODO change request submitted successfully
 } catch (exception: Exception) {
     // TODO change request could not be submitted

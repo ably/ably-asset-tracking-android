@@ -9,6 +9,11 @@ buildscript {
         classpath "com.android.tools.build:gradle:4.1.0"
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
 
+        // Firebase Crashlytics
+        // see: https://firebase.google.com/docs/crashlytics/get-started?platform=android
+        classpath 'com.google.gms:google-services:4.3.5'
+        classpath 'com.google.firebase:firebase-crashlytics-gradle:2.5.2'
+
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
     }
@@ -112,6 +117,7 @@ subprojects {
                               'LockedOrientationActivity',
                               'IconLocation',
                               'StopShip',
+                              'DefaultLocale',
                               'ObsoleteSdkInt'
 
                 // Lint rules which are disabled by default (see: lint --show), but which we would

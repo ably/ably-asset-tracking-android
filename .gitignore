@@ -4,6 +4,3 @@ local.properties
 .idea/
 .DS_Store
 build/
-
-
-publishing-example-app/src/main/res/raw/amplifyconfiguration.json

@@ -22,6 +22,11 @@
   <string name="dialog_positive_button">OK</string>
   <string name="dialog_negative_button">Cancel</string>
   <string name="trackable_list">Trackable List</string>
+  <string name="resolution_section_label">Resolution</string>
+  <string name="accuracy_label">Accuracy</string>
+  <string name="desired_interval_label">Desired Interval [ms]</string>
+  <string name="minimum_displacement_label">Minimum Displacement [m]</string>
+  <string name="trackable_section_label">Trackable</string>
 
   <string name="preferences_general_category_title">Navigation Settings</string>
   <string name="preferences_location_source_key">location_source</string>
@@ -36,4 +41,15 @@
   <string name="default_simulation_channel">simulation_test</string>
   <string name="preferences_s3_file_key">s3_file</string>
   <string name="preferences_s3_file_label">S3 File</string>
+  <string name="preferences_resolution_category_title">Default resolution</string>
+  <string name="preferences_resolution_accuracy_key">default_resolution_accuracy</string>
+  <string name="preferences_resolution_accuracy_label">Accuracy</string>
+  <string name="preferences_resolution_desired_interval_key">default_resolution_desired_interval</string>
+  <string name="preferences_resolution_desired_interval_label">Desired interval</string>
+  <string name="preferences_update_resolution_desired_interval_message">Desired Interval [ms]</string>
+  <string name="preferences_update_resolution_desired_interval_title">Set Desired Interval</string>
+  <string name="preferences_resolution_minimum_displacement_key">default_resolution_minimum_displacement</string>
+  <string name="preferences_resolution_minimum_displacement_label">Minimum displacement</string>
+  <string name="preferences_update_resolution_minimum_displacement_message">Minimum Displacement [m]</string>
+  <string name="preferences_update_resolution_minimum_displacement_title">Set Minimum Displacement</string>
 </resources>

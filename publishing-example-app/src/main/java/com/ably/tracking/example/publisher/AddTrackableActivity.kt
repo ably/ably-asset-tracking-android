@@ -4,6 +4,8 @@ import android.Manifest
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
+import android.view.inputmethod.EditorInfo
+import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.annotation.RequiresPermission
 import com.ably.tracking.Accuracy
@@ -34,7 +36,31 @@ class AddTrackableActivity : PublisherServiceActivity() {
         setContentView(R.layout.activity_add_trackable)
         appPreferences = AppPreferences(this) // TODO - Add some DI (Koin)?
 
+        setupResolutionFields()
         addTrackableButton.setOnClickListener { beginAddingTrackable() }
+        setupTrackableInputAction()
+    }
+
+    private fun setupResolutionFields() {
+        accuracySpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, Accuracy.values()).apply {
+            setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        }
+        accuracySpinner.setSelection(appPreferences.getResolutionAccuracy().ordinal)
+        desiredIntervalEditText.setText(appPreferences.getResolutionDesiredInterval().toString())
+        minimumDisplacementEditText.setText(appPreferences.getResolutionMinimumDisplacement().toString())
+    }
+
+    @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
+    private fun setupTrackableInputAction() {
+        trackableIdEditText.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_DONE) {
+                hideKeyboard(trackableIdEditText)
+                beginAddingTrackable()
+                true
+            } else {
+                false
+            }
+        }
     }
 
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
@@ -77,12 +103,17 @@ class AddTrackableActivity : PublisherServiceActivity() {
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
     private fun startPublisherAndAddTrackable(trackableId: String, historyData: LocationHistoryData? = null) {
         if (publisherService?.publisher == null) {
-            publisherService?.startPublisher(
-                defaultResolution = Resolution(Accuracy.MINIMUM, 1000L, 1.0),
-                locationSource = createLocationSource(historyData)
-            )
+            publisherService?.startPublisher(createLocationSource(historyData))
         }
         addTrackableToThePublisher(trackableId)
+    }
+
+    private fun createResolution(): Resolution {
+        return Resolution(
+            accuracySpinner.selectedItem as Accuracy,
+            desiredIntervalEditText.text.toString().toLong(),
+            minimumDisplacementEditText.text.toString().toDouble()
+        )
     }
 
     private fun addTrackableToThePublisher(trackableId: String) {
@@ -93,13 +124,7 @@ class AddTrackableActivity : PublisherServiceActivity() {
                         Trackable(
                             trackableId,
                             constraints = DefaultResolutionConstraints(
-                                DefaultResolutionSet(
-                                    Resolution(
-                                        Accuracy.BALANCED,
-                                        desiredInterval = 1000L,
-                                        minimumDisplacement = 1.0
-                                    )
-                                ),
+                                DefaultResolutionSet(createResolution()),
                                 DefaultProximity(spatial = 1.0),
                                 batteryLevelThreshold = 10.0f,
                                 lowBatteryMultiplier = 2.0f
