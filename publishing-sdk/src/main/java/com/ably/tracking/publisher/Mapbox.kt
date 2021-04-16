@@ -4,10 +4,10 @@ import android.Manifest
 import android.content.Context
 import android.location.Location
 import androidx.annotation.RequiresPermission
-import com.ably.tracking.connection.AuthenticationConfiguration
 import com.ably.tracking.Resolution
 import com.ably.tracking.clientOptions
 import com.ably.tracking.common.MILLISECONDS_PER_SECOND
+import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.publisher.debug.AblySimulationLocationEngine
 import com.ably.tracking.publisher.locationengine.FusedAndroidLocationEngine
 import com.ably.tracking.publisher.locationengine.GoogleLocationEngine
@@ -99,7 +99,7 @@ internal interface Mapbox {
 internal class DefaultMapbox(
     context: Context,
     private val mapConfiguration: MapConfiguration,
-    authenticationConfiguration: AuthenticationConfiguration,
+    connectionConfiguration: ConnectionConfiguration,
     locationSource: LocationSource? = null
 ) : Mapbox {
     private val mainDispatcher = Dispatchers.Main.immediate
@@ -114,7 +114,7 @@ internal class DefaultMapbox(
         locationSource?.let {
             when (it) {
                 is LocationSourceAbly -> {
-                    useAblySimulationLocationEngine(mapboxBuilder, it, authenticationConfiguration)
+                    useAblySimulationLocationEngine(mapboxBuilder, it, connectionConfiguration)
                 }
                 is LocationSourceRaw -> {
                     useHistoryDataReplayerLocationEngine(mapboxBuilder, it)
@@ -222,11 +222,11 @@ internal class DefaultMapbox(
     private fun useAblySimulationLocationEngine(
         mapboxBuilder: NavigationOptions.Builder,
         locationSource: LocationSourceAbly,
-        authenticationConfiguration: AuthenticationConfiguration
+        connectionConfiguration: ConnectionConfiguration
     ) {
         mapboxBuilder.locationEngine(
             AblySimulationLocationEngine(
-                authenticationConfiguration.clientOptions,
+                connectionConfiguration.authentication.clientOptions,
                 locationSource.simulationChannelName
             )
         )

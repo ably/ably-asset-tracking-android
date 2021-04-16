@@ -5,11 +5,11 @@ import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.content.Context
 import androidx.annotation.RequiresPermission
 import com.ably.tracking.BuilderConfigurationIncompleteException
-import com.ably.tracking.connection.AuthenticationConfiguration
 import com.ably.tracking.common.DefaultAbly
+import com.ably.tracking.connection.ConnectionConfiguration
 
 internal data class PublisherBuilder(
-    val authenticationConfiguration: AuthenticationConfiguration? = null,
+    val connectionConfiguration: ConnectionConfiguration? = null,
     val mapConfiguration: MapConfiguration? = null,
     val androidContext: Context? = null,
     val routingProfile: RoutingProfile = RoutingProfile.DRIVING,
@@ -17,8 +17,8 @@ internal data class PublisherBuilder(
     val locationSource: LocationSource? = null
 ) : Publisher.Builder {
 
-    override fun connection(configuration: AuthenticationConfiguration): Publisher.Builder =
-        this.copy(authenticationConfiguration = configuration)
+    override fun connection(configuration: ConnectionConfiguration): Publisher.Builder =
+        this.copy(connectionConfiguration = configuration)
 
     override fun map(configuration: MapConfiguration): Publisher.Builder =
         this.copy(mapConfiguration = configuration)
@@ -42,8 +42,8 @@ internal data class PublisherBuilder(
         }
         // All below fields are required and above code checks if they are nulls, so using !! should be safe from NPE
         return DefaultPublisher(
-            DefaultAbly(authenticationConfiguration!!),
-            DefaultMapbox(androidContext!!, mapConfiguration!!, authenticationConfiguration, locationSource),
+            DefaultAbly(connectionConfiguration!!),
+            DefaultMapbox(androidContext!!, mapConfiguration!!, connectionConfiguration, locationSource),
             resolutionPolicyFactory!!,
             routingProfile,
             DefaultBatteryDataProvider(androidContext)
@@ -51,7 +51,7 @@ internal data class PublisherBuilder(
     }
 
     private fun isMissingRequiredFields() =
-        authenticationConfiguration == null ||
+        connectionConfiguration == null ||
             mapConfiguration == null ||
             androidContext == null ||
             resolutionPolicyFactory == null

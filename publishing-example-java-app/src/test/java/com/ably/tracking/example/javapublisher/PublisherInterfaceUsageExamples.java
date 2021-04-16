@@ -6,10 +6,10 @@ import android.content.Context;
 import com.ably.tracking.Accuracy;
 import com.ably.tracking.BuilderConfigurationIncompleteException;
 import com.ably.tracking.ConnectionException;
-import com.ably.tracking.connection.AuthenticationConfiguration;
 import com.ably.tracking.Resolution;
+import com.ably.tracking.connection.ConnectionConfiguration;
 import com.ably.tracking.connection.TokenRequest;
-import com.ably.tracking.java.AuthenticationConfigurationFactory;
+import com.ably.tracking.java.ConnectionConfigurationFactory;
 import com.ably.tracking.publisher.DefaultProximity;
 import com.ably.tracking.publisher.DefaultResolutionConstraints;
 import com.ably.tracking.publisher.DefaultResolutionSet;
@@ -64,7 +64,7 @@ public class PublisherInterfaceUsageExamples {
         try {
             publisherBuilder
                 .androidContext(context)
-                .connection(AuthenticationConfigurationFactory.createBasic("API_KEY", "CLIENT_ID"))
+                .connection(ConnectionConfigurationFactory.createBasic("API_KEY", "CLIENT_ID"))
                 .map(new MapConfiguration("API_KEY"))
                 .resolutionPolicy(resolutionPolicyFactory)
                 .locationSource(LocationSourceRaw.createRaw(new LocationHistoryData(new ArrayList<>()), null))
@@ -79,7 +79,7 @@ public class PublisherInterfaceUsageExamples {
 
     @Test
     public void publisherTokenAuthUsageExample() {
-        AuthenticationConfiguration configuration = AuthenticationConfigurationFactory.createToken((params) -> new TokenRequest(0, "", "", 0, "", "", ""), "CLIENT_ID");
+        ConnectionConfiguration configuration = ConnectionConfigurationFactory.createToken((params) -> new TokenRequest(0, "", "", 0, "", "", ""), "CLIENT_ID");
     }
 
     @Test

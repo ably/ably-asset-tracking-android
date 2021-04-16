@@ -1,11 +1,11 @@
 package com.ably.tracking.subscriber
 
 import com.ably.tracking.BuilderConfigurationIncompleteException
-import com.ably.tracking.connection.AuthenticationConfiguration
 import com.ably.tracking.ConnectionException
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
+import com.ably.tracking.connection.ConnectionConfiguration
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -78,7 +78,7 @@ interface Subscriber {
          * @param configuration The configuration to be used for Ably connection.
          * @return A new instance of the builder with this property changed.
          */
-        fun connection(configuration: AuthenticationConfiguration): Builder
+        fun connection(configuration: ConnectionConfiguration): Builder
 
         /**
          * **OPTIONAL** Sets the preferred resolution of updates, to be requested from the remote publisher.

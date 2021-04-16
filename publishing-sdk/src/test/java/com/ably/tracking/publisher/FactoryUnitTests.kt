@@ -5,6 +5,7 @@ import android.content.Context
 import android.location.Location
 import com.ably.tracking.BuilderConfigurationIncompleteException
 import com.ably.tracking.connection.BasicAuthenticationConfiguration
+import com.ably.tracking.connection.ConnectionConfiguration
 import io.mockk.mockk
 import org.junit.Assert
 import org.junit.Test
@@ -16,19 +17,19 @@ class FactoryUnitTests {
     @Test
     fun `setting Ably connection config updates builder field`() {
         // given
-        val configuration = BasicAuthenticationConfiguration.create("", "")
+        val configuration = ConnectionConfiguration(BasicAuthenticationConfiguration.create("", ""))
 
         // when
         val builder = Publisher.publishers().connection(configuration) as PublisherBuilder
 
         // then
-        Assert.assertEquals(configuration, builder.authenticationConfiguration)
+        Assert.assertEquals(configuration, builder.connectionConfiguration)
     }
 
     @Test
     fun `setting Ably connection config returns a new copy of builder`() {
         // given
-        val configuration = BasicAuthenticationConfiguration.create("", "")
+        val configuration = ConnectionConfiguration(BasicAuthenticationConfiguration.create("", ""))
         val originalBuilder = Publisher.publishers()
 
         // when
@@ -111,7 +112,7 @@ class FactoryUnitTests {
 
         // when
         val updatedBuilder = builder
-            .connection(BasicAuthenticationConfiguration.create("", ""))
+            .connection(ConnectionConfiguration(BasicAuthenticationConfiguration.create("", "")))
             .map(MapConfiguration(""))
             .androidContext(mockedContext)
 
@@ -126,13 +127,13 @@ class FactoryUnitTests {
     }
 
     private fun assertAllBuilderFieldsAreNull(builder: PublisherBuilder) {
-        Assert.assertNull(builder.authenticationConfiguration)
+        Assert.assertNull(builder.connectionConfiguration)
         Assert.assertNull(builder.mapConfiguration)
         Assert.assertNull(builder.androidContext)
     }
 
     private fun assertAllBuilderFieldsAreNotNull(builder: PublisherBuilder) {
-        Assert.assertNotNull(builder.authenticationConfiguration)
+        Assert.assertNotNull(builder.connectionConfiguration)
         Assert.assertNotNull(builder.mapConfiguration)
         Assert.assertNotNull(builder.androidContext)
     }

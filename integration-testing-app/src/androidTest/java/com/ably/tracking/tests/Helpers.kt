@@ -6,6 +6,7 @@ import com.ably.tracking.Accuracy
 import com.ably.tracking.Resolution
 import com.ably.tracking.connection.AuthenticationConfiguration
 import com.ably.tracking.connection.BasicAuthenticationConfiguration
+import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.publisher.DefaultResolutionPolicyFactory
 import com.ably.tracking.publisher.LocationHistoryData
 import com.ably.tracking.publisher.LocationSourceRaw
@@ -25,13 +26,13 @@ private val defaultConnectionConfiguration = BasicAuthenticationConfiguration.cr
 fun createAndStartPublisher(
     context: Context,
     resolution: Resolution = Resolution(Accuracy.BALANCED, 1L, 0.0),
-    connectionConfiguration: AuthenticationConfiguration = defaultConnectionConfiguration,
+    authenticationConfiguration: AuthenticationConfiguration = defaultConnectionConfiguration,
     locationData: LocationHistoryData = getLocationData(context),
     onLocationDataEnded: () -> Unit = {}
 ) =
     Publisher.publishers()
         .androidContext(context)
-        .connection(connectionConfiguration)
+        .connection(ConnectionConfiguration(authenticationConfiguration))
         .map(MapConfiguration(MAPBOX_ACCESS_TOKEN))
         .resolutionPolicy(DefaultResolutionPolicyFactory(resolution, context))
         .profile(RoutingProfile.DRIVING)
@@ -41,10 +42,10 @@ fun createAndStartPublisher(
 suspend fun createAndStartSubscriber(
     trackingId: String,
     resolution: Resolution = Resolution(Accuracy.BALANCED, 1L, 0.0),
-    connectionConfiguration: AuthenticationConfiguration = defaultConnectionConfiguration
+    authenticationConfiguration: AuthenticationConfiguration = defaultConnectionConfiguration
 ) =
     Subscriber.subscribers()
-        .connection(connectionConfiguration)
+        .connection(ConnectionConfiguration(authenticationConfiguration))
         .resolution(resolution)
         .trackingId(trackingId)
         .start()

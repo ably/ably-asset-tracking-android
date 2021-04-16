@@ -40,13 +40,13 @@ class TokenAuthenticationTests {
         runBlocking {
             subscriber = createAndStartSubscriber(
                 trackableId,
-                connectionConfiguration = createTokenAuthenticationConfiguration(ably)
+                authenticationConfiguration = createTokenAuthenticationConfiguration(ably)
             )
         }
 
         val publisher = createAndStartPublisher(
             context,
-            connectionConfiguration = createTokenAuthenticationConfiguration(ably)
+            authenticationConfiguration = createTokenAuthenticationConfiguration(ably)
         )
 
         // listen for location updates

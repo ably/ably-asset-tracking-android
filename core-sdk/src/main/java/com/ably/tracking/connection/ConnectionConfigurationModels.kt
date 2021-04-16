@@ -1,5 +1,7 @@
 package com.ably.tracking.connection
 
+data class ConnectionConfiguration(val authentication: AuthenticationConfiguration)
+
 sealed class AuthenticationConfiguration(val clientId: String)
 
 /**
