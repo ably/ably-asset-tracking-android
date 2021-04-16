@@ -28,6 +28,7 @@ class TokenAuthenticationTests {
     @Test
     fun tokenAuthenticationShouldCreateWorkingConnectionBetweenPublisherAndSubscriber() {
         // given
+        var hasNotReceivedLocationUpdate = true
         val subscriberReceivedLocationUpdateExpectation = UnitExpectation("subscriber received a location update")
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val trackableId = UUID.randomUUID().toString()
@@ -50,7 +51,13 @@ class TokenAuthenticationTests {
 
         // listen for location updates
         subscriber.locations
-            .onEach { subscriberReceivedLocationUpdateExpectation.fulfill() }
+            .onEach {
+                // UnitExpectation throws an error if it's fulfilled more than once so we need to have this check
+                if (hasNotReceivedLocationUpdate) {
+                    hasNotReceivedLocationUpdate = false
+                    subscriberReceivedLocationUpdateExpectation.fulfill()
+                }
+            }
             .launchIn(scope)
 
         // start publishing location updates
