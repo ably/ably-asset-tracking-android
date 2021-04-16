@@ -52,6 +52,7 @@ enum class AccuracyMessage {
 data class EnhancedLocationUpdateMessage(
     val location: GeoJsonMessage,
     val batteryLevel: Float?,
+    val skippedLocations: List<GeoJsonMessage>,
     val intermediateLocations: List<GeoJsonMessage>,
     val type: LocationUpdateTypeMessage
 )
