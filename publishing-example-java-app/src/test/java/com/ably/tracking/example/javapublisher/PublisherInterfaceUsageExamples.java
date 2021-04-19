@@ -24,6 +24,7 @@ import com.ably.tracking.publisher.RoutingProfile;
 import com.ably.tracking.publisher.Trackable;
 import com.ably.tracking.publisher.java.PublisherFacade;
 
+import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -77,9 +78,53 @@ public class PublisherInterfaceUsageExamples {
         }
     }
 
+    private TokenRequest createDummyTokenRequest() {
+        return new TokenRequest() {
+            @NotNull
+            @Override
+            public String getKeyName() {
+                return "";
+            }
+
+            @NotNull
+            @Override
+            public String getNonce() {
+                return "";
+            }
+
+            @NotNull
+            @Override
+            public String getMac() {
+                return "";
+            }
+
+            @Override
+            public long getTtl() {
+                return 0;
+            }
+
+            @NotNull
+            @Override
+            public String getCapability() {
+                return "";
+            }
+
+            @NotNull
+            @Override
+            public String getClientId() {
+                return "";
+            }
+
+            @Override
+            public long getTimestamp() {
+                return 0;
+            }
+        };
+    }
+
     @Test
     public void publisherTokenAuthUsageExample() {
-        ConnectionConfiguration configuration = ConnectionConfigurationFactory.createToken((params) -> new TokenRequest(0, "", "", 0, "", "", ""), "CLIENT_ID");
+        ConnectionConfiguration configuration = ConnectionConfigurationFactory.createToken((params) -> createDummyTokenRequest(), "CLIENT_ID");
     }
 
     @Test

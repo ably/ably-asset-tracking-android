@@ -95,7 +95,16 @@ val AuthenticationConfiguration.clientOptions: ClientOptions
  * presented to users of the Ably Asset Tracking SDKs.
  */
 fun Auth.TokenParams.toTracking(): TokenParams =
-    TokenParams(ttl, capability, clientId, timestamp)
+    object : TokenParams {
+        override val ttl: Long
+            get() = this@toTracking.ttl
+        override val capability: String
+            get() = this@toTracking.capability
+        override val clientId: String
+            get() = this@toTracking.clientId
+        override val timestamp: Long
+            get() = this@toTracking.timestamp
+    }
 
 /**
  * Extension converting Asset Tracking SDK [TokenRequest] to the equivalent [Auth.TokenRequest] from Ably.

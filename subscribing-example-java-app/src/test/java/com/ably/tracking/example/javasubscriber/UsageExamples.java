@@ -8,6 +8,7 @@ import com.ably.tracking.java.ConnectionConfigurationFactory;
 import com.ably.tracking.subscriber.Subscriber;
 import com.ably.tracking.subscriber.java.SubscriberFacade;
 
+import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -60,9 +61,53 @@ public class UsageExamples {
         SubscriberFacade.Builder subscriberFacadeBuilder = SubscriberFacade.Builder.wrap(nativeSubscriberBuilder);
     }
 
+    private TokenRequest createDummyTokenRequest() {
+        return new TokenRequest() {
+            @NotNull
+            @Override
+            public String getKeyName() {
+                return "";
+            }
+
+            @NotNull
+            @Override
+            public String getNonce() {
+                return "";
+            }
+
+            @NotNull
+            @Override
+            public String getMac() {
+                return "";
+            }
+
+            @Override
+            public long getTtl() {
+                return 0;
+            }
+
+            @NotNull
+            @Override
+            public String getCapability() {
+                return "";
+            }
+
+            @NotNull
+            @Override
+            public String getClientId() {
+                return "";
+            }
+
+            @Override
+            public long getTimestamp() {
+                return 0;
+            }
+        };
+    }
+
     @Test
     public void subscriberTokenAuthUsageExample() {
-        ConnectionConfiguration configuration = ConnectionConfigurationFactory.createToken((params) -> new TokenRequest(0, "", "", 0, "", "", ""), "CLIENT_ID");
+        ConnectionConfiguration configuration = ConnectionConfigurationFactory.createToken((params) -> createDummyTokenRequest(), "CLIENT_ID");
     }
 
     @Test
