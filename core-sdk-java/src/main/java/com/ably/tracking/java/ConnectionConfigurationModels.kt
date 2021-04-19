@@ -4,7 +4,7 @@ import com.ably.tracking.connection.BasicAuthenticationConfiguration
 import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.connection.TokenAuthenticationConfiguration
 import com.ably.tracking.connection.TokenRequest
-import com.ably.tracking.connection.TokenRequestParameters
+import com.ably.tracking.connection.TokenParams
 
 /**
  * Static factory used to create supported [ConnectionConfiguration] from Java code.
@@ -36,8 +36,8 @@ interface TokenRequestCallback {
     /**
      * This method will be called each time a [TokenRequest] needs to be obtained.
      *
-     * @param requestParameters Parameters of the token request
+     * @param tokenParams Parameters of the token request
      * @return [TokenRequest] used to obtain the token
      */
-    fun onRequestToken(requestParameters: TokenRequestParameters): TokenRequest
+    fun onRequestToken(tokenParams: TokenParams): TokenRequest
 }

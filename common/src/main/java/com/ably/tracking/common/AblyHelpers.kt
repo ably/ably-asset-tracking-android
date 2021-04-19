@@ -7,7 +7,7 @@ import com.ably.tracking.connection.AuthenticationConfiguration
 import com.ably.tracking.connection.BasicAuthenticationConfiguration
 import com.ably.tracking.connection.TokenAuthenticationConfiguration
 import com.ably.tracking.connection.TokenRequest
-import com.ably.tracking.connection.TokenRequestParameters
+import com.ably.tracking.connection.TokenParams
 import com.google.gson.Gson
 import io.ably.lib.realtime.ChannelState
 import io.ably.lib.rest.Auth
@@ -91,11 +91,11 @@ val AuthenticationConfiguration.clientOptions: ClientOptions
     }
 
 /**
- * Extension converting Ably Realtime auth token params to the equivalent [TokenRequestParameters] API
+ * Extension converting Ably Realtime auth token params to the equivalent [TokenParams] API
  * presented to users of the Ably Asset Tracking SDKs.
  */
-fun Auth.TokenParams.toTracking(): TokenRequestParameters =
-    TokenRequestParameters(ttl, capability, clientId, timestamp)
+fun Auth.TokenParams.toTracking(): TokenParams =
+    TokenParams(ttl, capability, clientId, timestamp)
 
 /**
  * Extension converting Asset Tracking SDK [TokenRequest] to the equivalent [Auth.TokenRequest] from Ably.

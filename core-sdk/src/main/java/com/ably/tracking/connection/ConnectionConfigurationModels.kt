@@ -23,15 +23,15 @@ private constructor(val apiKey: String, clientId: String) : AuthenticationConfig
  *  Represents a [AuthenticationConfiguration] that uses the token authentication and requires to provide a callback that will be called each time a new [TokenRequest] is required.
  */
 class TokenAuthenticationConfiguration
-private constructor(val callback: (TokenRequestParameters) -> TokenRequest, clientId: String) :
+private constructor(val callback: (TokenParams) -> TokenRequest, clientId: String) :
     AuthenticationConfiguration(clientId) {
     companion object {
         /**
-         * @param callback Callback that will be called with [TokenRequestParameters] each time a [TokenRequest] needs to be obtained.
+         * @param callback Callback that will be called with [TokenParams] each time a [TokenRequest] needs to be obtained.
          * @param clientId ID of the client
          */
         @JvmSynthetic
-        fun create(callback: (TokenRequestParameters) -> TokenRequest, clientId: String) =
+        fun create(callback: (TokenParams) -> TokenRequest, clientId: String) =
             TokenAuthenticationConfiguration(callback, clientId)
     }
 }
@@ -39,7 +39,7 @@ private constructor(val callback: (TokenRequestParameters) -> TokenRequest, clie
 /**
  * Represents a set of parameters that are passed to [TokenRequestCallback.onRequestToken] when Ably SDK is requesting an auth token.
  */
-open class TokenRequestParameters(
+open class TokenParams(
     /**
      * Time to live of the token.
      * If set to 0 then the default value will be used.
@@ -102,4 +102,4 @@ class TokenRequest(
      * The Message Authentication Code for this request.
      */
     var mac: String
-) : TokenRequestParameters(ttl, capability, clientId, timestamp)
+) : TokenParams(ttl, capability, clientId, timestamp)
