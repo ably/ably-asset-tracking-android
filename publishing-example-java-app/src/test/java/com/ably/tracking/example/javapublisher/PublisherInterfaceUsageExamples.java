@@ -82,7 +82,7 @@ public class PublisherInterfaceUsageExamples {
 
     @Test
     public void publisherUsageExample() {
-        Trackable trackable = new Trackable("ID", null, null, null);
+        Trackable trackable = new Trackable("ID", null, null);
         Trackable activeTrackable = publisher.getActive();
         publisher.setRoutingProfile(RoutingProfile.CYCLING);
         RoutingProfile routingProfile = publisher.getRoutingProfile();
@@ -118,7 +118,6 @@ public class PublisherInterfaceUsageExamples {
     public void trackableCreationExample() {
         Trackable trackable = new Trackable(
             "ID",
-            "METADATA",
             new Destination(1.0, 1.0),
             new DefaultResolutionConstraints(
                 new DefaultResolutionSet(new Resolution(Accuracy.MAXIMUM, 1L, 1.0)),

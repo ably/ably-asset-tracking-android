@@ -215,7 +215,6 @@ data class Destination(
 
 data class Trackable(
     val id: String,
-    val metadata: String? = null,
     val destination: Destination? = null,
     val constraints: ResolutionConstraints? = null
 ) {
