@@ -5,7 +5,7 @@ import android.content.Context
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ably.tracking.Accuracy
-import com.ably.tracking.connection.BasicAuthenticationConfiguration
+import com.ably.tracking.connection.Authentication
 import com.ably.tracking.Resolution
 import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.test.common.BooleanExpectation
@@ -67,7 +67,7 @@ class PublisherIntegrationTests {
         runBlocking {
             try {
                 publisher.stop()
-                testLogD("stop succes")
+                testLogD("stop success")
                 stopExpectation.fulfill(true)
             } catch (e: Exception) {
                 testLogD("stop failed")
@@ -92,7 +92,7 @@ class PublisherIntegrationTests {
     ) =
         Publisher.publishers()
             .androidContext(context)
-            .connection(ConnectionConfiguration(BasicAuthenticationConfiguration.create(ABLY_API_KEY, CLIENT_ID)))
+            .connection(ConnectionConfiguration(Authentication.basic(CLIENT_ID, ABLY_API_KEY)))
             .map(MapConfiguration(MAPBOX_ACCESS_TOKEN))
             .resolutionPolicy(DefaultResolutionPolicyFactory(resolution, context))
             .profile(RoutingProfile.CYCLING)

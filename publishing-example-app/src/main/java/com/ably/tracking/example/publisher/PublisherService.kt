@@ -9,7 +9,7 @@ import androidx.annotation.RequiresPermission
 import androidx.core.app.NotificationCompat
 import com.ably.tracking.Accuracy
 import com.ably.tracking.Resolution
-import com.ably.tracking.connection.BasicAuthenticationConfiguration
+import com.ably.tracking.connection.Authentication
 import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.publisher.DefaultResolutionPolicyFactory
 import com.ably.tracking.publisher.LocationHistoryData
@@ -65,7 +65,7 @@ class PublisherService : Service() {
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
     fun startPublisher(locationSource: LocationSource? = null) {
         publisher = Publisher.publishers()
-            .connection(ConnectionConfiguration(BasicAuthenticationConfiguration.create(ABLY_API_KEY, CLIENT_ID)))
+            .connection(ConnectionConfiguration(Authentication.basic(CLIENT_ID, ABLY_API_KEY)))
             .map(MapConfiguration(MAPBOX_ACCESS_TOKEN))
             .locationSource(locationSource)
             .resolutionPolicy(DefaultResolutionPolicyFactory(createDefaultResolution(), this))

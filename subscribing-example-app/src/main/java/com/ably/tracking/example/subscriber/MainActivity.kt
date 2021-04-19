@@ -7,7 +7,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.ably.tracking.Accuracy
 import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
-import com.ably.tracking.connection.BasicAuthenticationConfiguration
+import com.ably.tracking.connection.Authentication
 import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.subscriber.Subscriber
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -84,7 +84,7 @@ class MainActivity : AppCompatActivity() {
     private fun createAndStartAssetSubscriber(trackingId: String) {
         scope.launch {
             subscriber = Subscriber.subscribers()
-                .connection(ConnectionConfiguration(BasicAuthenticationConfiguration.create(ABLY_API_KEY, CLIENT_ID)))
+                .connection(ConnectionConfiguration(Authentication.basic(CLIENT_ID, ABLY_API_KEY)))
                 .trackingId(trackingId)
                 .resolution(resolution)
                 .start()

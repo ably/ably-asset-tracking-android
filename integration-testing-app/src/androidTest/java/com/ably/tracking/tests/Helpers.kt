@@ -4,8 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import com.ably.tracking.Accuracy
 import com.ably.tracking.Resolution
-import com.ably.tracking.connection.AuthenticationConfiguration
-import com.ably.tracking.connection.BasicAuthenticationConfiguration
+import com.ably.tracking.connection.Authentication
 import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.publisher.DefaultResolutionPolicyFactory
 import com.ably.tracking.publisher.LocationHistoryData
@@ -20,19 +19,19 @@ private const val MAPBOX_ACCESS_TOKEN = BuildConfig.MAPBOX_ACCESS_TOKEN
 const val CLIENT_ID = "IntegrationTestsClient"
 const val ABLY_API_KEY = BuildConfig.ABLY_API_KEY
 
-private val defaultConnectionConfiguration = BasicAuthenticationConfiguration.create(ABLY_API_KEY, CLIENT_ID)
+private val defaultConnectionConfiguration = Authentication.basic(CLIENT_ID, ABLY_API_KEY)
 
 @SuppressLint("MissingPermission")
 fun createAndStartPublisher(
     context: Context,
     resolution: Resolution = Resolution(Accuracy.BALANCED, 1L, 0.0),
-    authenticationConfiguration: AuthenticationConfiguration = defaultConnectionConfiguration,
+    authentication: Authentication = defaultConnectionConfiguration,
     locationData: LocationHistoryData = getLocationData(context),
     onLocationDataEnded: () -> Unit = {}
 ) =
     Publisher.publishers()
         .androidContext(context)
-        .connection(ConnectionConfiguration(authenticationConfiguration))
+        .connection(ConnectionConfiguration(authentication))
         .map(MapConfiguration(MAPBOX_ACCESS_TOKEN))
         .resolutionPolicy(DefaultResolutionPolicyFactory(resolution, context))
         .profile(RoutingProfile.DRIVING)
@@ -42,10 +41,10 @@ fun createAndStartPublisher(
 suspend fun createAndStartSubscriber(
     trackingId: String,
     resolution: Resolution = Resolution(Accuracy.BALANCED, 1L, 0.0),
-    authenticationConfiguration: AuthenticationConfiguration = defaultConnectionConfiguration
+    authentication: Authentication = defaultConnectionConfiguration
 ) =
     Subscriber.subscribers()
-        .connection(ConnectionConfiguration(authenticationConfiguration))
+        .connection(ConnectionConfiguration(authentication))
         .resolution(resolution)
         .trackingId(trackingId)
         .start()

@@ -7,9 +7,9 @@ import com.ably.tracking.Accuracy;
 import com.ably.tracking.BuilderConfigurationIncompleteException;
 import com.ably.tracking.ConnectionException;
 import com.ably.tracking.Resolution;
+import com.ably.tracking.connection.Authentication;
 import com.ably.tracking.connection.ConnectionConfiguration;
 import com.ably.tracking.connection.TokenRequest;
-import com.ably.tracking.java.ConnectionConfigurationFactory;
 import com.ably.tracking.publisher.DefaultProximity;
 import com.ably.tracking.publisher.DefaultResolutionConstraints;
 import com.ably.tracking.publisher.DefaultResolutionSet;
@@ -65,8 +65,8 @@ public class PublisherInterfaceUsageExamples {
         try {
             publisherBuilder
                 .androidContext(context)
-                .connection(ConnectionConfigurationFactory.createBasic("API_KEY", "CLIENT_ID"))
-                .map(new MapConfiguration("API_KEY"))
+                .connection(new ConnectionConfiguration(Authentication.basic("CLIENT_ID", "ABLY_API_KEY")))
+                .map(new MapConfiguration("MAPBOX_API_KEY"))
                 .resolutionPolicy(resolutionPolicyFactory)
                 .locationSource(LocationSourceRaw.createRaw(new LocationHistoryData(new ArrayList<>()), null))
                 .locationSource(LocationSourceAbly.create("CHANNEL_ID"))
@@ -124,7 +124,13 @@ public class PublisherInterfaceUsageExamples {
 
     @Test
     public void publisherTokenAuthUsageExample() {
-        ConnectionConfiguration configuration = ConnectionConfigurationFactory.createToken((params) -> createDummyTokenRequest(), "CLIENT_ID");
+        // TODO fix: Cannot access kotlin.jvm.functions.Function1
+
+        // encountered when this line is uncommented:
+        // ConnectionConfiguration configuration = new ConnectionConfiguration(Authentication.tokenRequest(tokenParams -> createDummyTokenRequest(), "CLIENT_ID"));
+
+        // possibly solved with:
+        // https://stackoverflow.com/questions/35161913/kotlin-cannot-access-kotlin-jvm-functions-function1-when-calling-kotlin-function/55742956
     }
 
     @Test

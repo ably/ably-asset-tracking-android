@@ -4,7 +4,7 @@ import android.annotation.SuppressLint
 import com.ably.tracking.Accuracy
 import com.ably.tracking.BuilderConfigurationIncompleteException
 import com.ably.tracking.Resolution
-import com.ably.tracking.connection.BasicAuthenticationConfiguration
+import com.ably.tracking.connection.Authentication
 import com.ably.tracking.connection.ConnectionConfiguration
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert
@@ -14,7 +14,7 @@ class FactoryUnitTests {
     @Test
     fun `setting Ably connection config updates builder field`() {
         // given
-        val configuration = ConnectionConfiguration(BasicAuthenticationConfiguration.create("", ""))
+        val configuration = ConnectionConfiguration(Authentication.basic("", ""))
 
         // when
         val builder =
@@ -27,7 +27,7 @@ class FactoryUnitTests {
     @Test
     fun `setting Ably connection config returns a new copy of builder`() {
         // given
-        val configuration = ConnectionConfiguration(BasicAuthenticationConfiguration.create("", ""))
+        val configuration = ConnectionConfiguration(Authentication.basic("", ""))
         val originalBuilder = Subscriber.subscribers()
 
         // when
@@ -95,7 +95,7 @@ class FactoryUnitTests {
 
         // when
         val updatedBuilder = builder
-            .connection(ConnectionConfiguration(BasicAuthenticationConfiguration.create("", "")))
+            .connection(ConnectionConfiguration(Authentication.basic("", "")))
             .resolution(Resolution(Accuracy.BALANCED, 333, 666.6))
             .trackingId("")
 

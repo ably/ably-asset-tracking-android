@@ -1,39 +1,48 @@
 package com.ably.tracking.connection
 
-data class ConnectionConfiguration(val authentication: AuthenticationConfiguration)
+data class ConnectionConfiguration(val authentication: Authentication)
 
-sealed class AuthenticationConfiguration(val clientId: String)
+typealias TokenRequestCallback = (TokenParams) -> TokenRequest
 
-/**
- *  Represents a [AuthenticationConfiguration] that uses the basic authentication and requires to provide the API key for Ably.
- */
-class BasicAuthenticationConfiguration
-private constructor(val apiKey: String, clientId: String) : AuthenticationConfiguration(clientId) {
+sealed class Authentication(val clientId: String) {
     companion object {
         /**
          * @param apiKey Ably key string as obtained from the dashboard.
          * @param clientId ID of the client
          */
-        @JvmSynthetic
-        fun create(apiKey: String, clientId: String) = BasicAuthenticationConfiguration(apiKey, clientId)
-    }
-}
+        @JvmStatic
+        fun basic(clientId: String, apiKey: String): Authentication =
+            BasicAuthentication(clientId, apiKey)
 
-/**
- *  Represents a [AuthenticationConfiguration] that uses the token authentication and requires to provide a callback that will be called each time a new [TokenRequest] is required.
- */
-class TokenAuthenticationConfiguration
-private constructor(val callback: (TokenParams) -> TokenRequest, clientId: String) :
-    AuthenticationConfiguration(clientId) {
-    companion object {
         /**
          * @param callback Callback that will be called with [TokenParams] each time a [TokenRequest] needs to be obtained.
          * @param clientId ID of the client
          */
-        @JvmSynthetic
-        fun create(callback: (TokenParams) -> TokenRequest, clientId: String) =
-            TokenAuthenticationConfiguration(callback, clientId)
+        @JvmStatic
+        fun tokenRequest(clientId: String, callback: TokenRequestCallback): Authentication =
+            TokenAuthentication(clientId, callback)
     }
+
+    abstract val basicApiKey: String?
+    abstract val tokenRequestCallback: TokenRequestCallback?
+}
+
+private class BasicAuthentication
+constructor(clientId: String, val apiKey: String) :
+    Authentication(clientId) {
+    override val basicApiKey: String?
+        get() = apiKey
+    override val tokenRequestCallback: TokenRequestCallback?
+        get() = null
+}
+
+private class TokenAuthentication
+constructor(clientId: String, val callback: TokenRequestCallback) :
+    Authentication(clientId) {
+    override val basicApiKey: String?
+        get() = null
+    override val tokenRequestCallback: TokenRequestCallback?
+        get() = callback
 }
 
 interface TokenParams {

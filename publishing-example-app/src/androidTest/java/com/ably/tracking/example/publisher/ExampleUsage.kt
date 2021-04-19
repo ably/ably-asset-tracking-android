@@ -2,7 +2,7 @@ package com.ably.tracking.example.publisher
 
 import android.app.Activity
 import com.ably.tracking.Accuracy
-import com.ably.tracking.connection.BasicAuthenticationConfiguration
+import com.ably.tracking.connection.Authentication
 import com.ably.tracking.Resolution
 import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.publisher.DefaultProximity
@@ -49,7 +49,14 @@ class ExampleUsage(
 
         // Initialise and Start the Publisher
         val publisher = Publisher.publishers() // get the Publisher builder in default state
-            .connection(ConnectionConfiguration(BasicAuthenticationConfiguration.create(ABLY_API_KEY, CLIENT_ID))) // provide Ably configuration with credentials
+            .connection(
+                ConnectionConfiguration(
+                    Authentication.basic(
+                        CLIENT_ID,
+                        ABLY_API_KEY,
+                    )
+                )
+            )
             .map(MapConfiguration(MAPBOX_ACCESS_TOKEN)) // provide Mapbox configuration with credentials
             .androidContext(this) // provide Android runtime context
             .profile(RoutingProfile.DRIVING) // provide mode of transportation for better location enhancements

@@ -2,7 +2,7 @@ package com.ably.tracking.tests
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import com.ably.tracking.connection.TokenAuthenticationConfiguration
+import com.ably.tracking.connection.Authentication
 import com.ably.tracking.connection.TokenRequest
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.subscriber.Subscriber
@@ -40,13 +40,13 @@ class TokenAuthenticationTests {
         runBlocking {
             subscriber = createAndStartSubscriber(
                 trackableId,
-                authenticationConfiguration = createTokenAuthenticationConfiguration(ably)
+                authentication = createTokenAuthenticationConfiguration(ably)
             )
         }
 
         val publisher = createAndStartPublisher(
             context,
-            authenticationConfiguration = createTokenAuthenticationConfiguration(ably)
+            authentication = createTokenAuthenticationConfiguration(ably)
         )
 
         // listen for location updates
@@ -80,38 +80,35 @@ class TokenAuthenticationTests {
         subscriberReceivedLocationUpdateExpectation.assertFulfilled()
     }
 
-    private fun createTokenAuthenticationConfiguration(ably: AblyRealtime): TokenAuthenticationConfiguration =
-        TokenAuthenticationConfiguration.create(
-            { requestParameters ->
-                // use Ably SDK to create a signed token request (this should normally be done by user auth servers)
-                val ablyTokenRequest = ably.auth.createTokenRequest(
-                    Auth.TokenParams().apply {
-                        ttl = requestParameters.ttl
-                        capability = requestParameters.capability
-                        clientId = requestParameters.clientId
-                        timestamp = requestParameters.timestamp
-                    },
-                    Auth.AuthOptions(ABLY_API_KEY)
-                )
+    private fun createTokenAuthenticationConfiguration(ably: AblyRealtime): Authentication =
+        Authentication.tokenRequest(CLIENT_ID) { requestParameters ->
+            // use Ably SDK to create a signed token request (this should normally be done by user auth servers)
+            val ablyTokenRequest = ably.auth.createTokenRequest(
+                Auth.TokenParams().apply {
+                    ttl = requestParameters.ttl
+                    capability = requestParameters.capability
+                    clientId = requestParameters.clientId
+                    timestamp = requestParameters.timestamp
+                },
+                Auth.AuthOptions(ABLY_API_KEY)
+            )
 
-                // map the Ably token request to the Asset Tracking token request
-                object : TokenRequest {
-                    override val keyName: String
-                        get() = ablyTokenRequest.keyName
-                    override val nonce: String
-                        get() = ablyTokenRequest.nonce
-                    override val mac: String
-                        get() = ablyTokenRequest.mac
-                    override val ttl: Long
-                        get() = ablyTokenRequest.ttl
-                    override val capability: String
-                        get() = ablyTokenRequest.capability
-                    override val clientId: String
-                        get() = ablyTokenRequest.clientId
-                    override val timestamp: Long
-                        get() = ablyTokenRequest.timestamp
-                }
-            },
-            CLIENT_ID
-        )
+            // map the Ably token request to the Asset Tracking token request
+            object : TokenRequest {
+                override val keyName: String
+                    get() = ablyTokenRequest.keyName
+                override val nonce: String
+                    get() = ablyTokenRequest.nonce
+                override val mac: String
+                    get() = ablyTokenRequest.mac
+                override val ttl: Long
+                    get() = ablyTokenRequest.ttl
+                override val capability: String
+                    get() = ablyTokenRequest.capability
+                override val clientId: String
+                    get() = ablyTokenRequest.clientId
+                override val timestamp: Long
+                    get() = ablyTokenRequest.timestamp
+            }
+        }
 }
