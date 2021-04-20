@@ -18,7 +18,7 @@ sealed class Authentication(val clientId: String) {
          * @param callback Callback that will be called with [TokenParams] each time a [TokenRequest] needs to be obtained.
          * @param clientId ID of the client
          */
-        @JvmStatic
+        @JvmSynthetic
         fun tokenRequest(clientId: String, callback: TokenRequestCallback): Authentication =
             TokenAuthentication(clientId, callback)
     }
