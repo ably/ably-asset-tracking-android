@@ -95,20 +95,13 @@ class TokenAuthenticationTests {
 
             // map the Ably token request to the Asset Tracking token request
             object : TokenRequest {
-                override val keyName: String
-                    get() = ablyTokenRequest.keyName
-                override val nonce: String
-                    get() = ablyTokenRequest.nonce
-                override val mac: String
-                    get() = ablyTokenRequest.mac
-                override val ttl: Long
-                    get() = ablyTokenRequest.ttl
-                override val capability: String
-                    get() = ablyTokenRequest.capability
-                override val clientId: String
-                    get() = ablyTokenRequest.clientId
-                override val timestamp: Long
-                    get() = ablyTokenRequest.timestamp
+                override val keyName: String = ablyTokenRequest.keyName
+                override val nonce: String = ablyTokenRequest.nonce
+                override val mac: String = ablyTokenRequest.mac
+                override val ttl: Long = ablyTokenRequest.ttl
+                override val capability: String = ablyTokenRequest.capability
+                override val clientId: String = ablyTokenRequest.clientId
+                override val timestamp: Long = ablyTokenRequest.timestamp
             }
         }
 }
