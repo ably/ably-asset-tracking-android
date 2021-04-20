@@ -4,7 +4,11 @@ data class ConnectionConfiguration(val authentication: Authentication)
 
 typealias TokenRequestCallback = (TokenParams) -> TokenRequest
 
-sealed class Authentication(val clientId: String) {
+sealed class Authentication(
+    val clientId: String,
+    val basicApiKey: String?,
+    val tokenRequestCallback: TokenRequestCallback?
+) {
     companion object {
         /**
          * @param apiKey Ably key string as obtained from the dashboard.
@@ -22,28 +26,13 @@ sealed class Authentication(val clientId: String) {
         fun tokenRequest(clientId: String, callback: TokenRequestCallback): Authentication =
             TokenAuthentication(clientId, callback)
     }
-
-    abstract val basicApiKey: String?
-    abstract val tokenRequestCallback: TokenRequestCallback?
 }
 
-private class BasicAuthentication
-constructor(clientId: String, val apiKey: String) :
-    Authentication(clientId) {
-    override val basicApiKey: String?
-        get() = apiKey
-    override val tokenRequestCallback: TokenRequestCallback?
-        get() = null
-}
+private class BasicAuthentication(clientId: String, apiKey: String) :
+    Authentication(clientId, apiKey, null)
 
-private class TokenAuthentication
-constructor(clientId: String, val callback: TokenRequestCallback) :
-    Authentication(clientId) {
-    override val basicApiKey: String?
-        get() = null
-    override val tokenRequestCallback: TokenRequestCallback?
-        get() = callback
-}
+private class TokenAuthentication(clientId: String, callback: TokenRequestCallback) :
+    Authentication(clientId, null, callback)
 
 interface TokenParams {
     /**
