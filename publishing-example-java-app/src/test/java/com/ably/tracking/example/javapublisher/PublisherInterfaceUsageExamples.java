@@ -123,17 +123,6 @@ public class PublisherInterfaceUsageExamples {
     }
 
     @Test
-    public void publisherTokenAuthUsageExample() {
-        // TODO fix: Cannot access kotlin.jvm.functions.Function1
-
-        // encountered when this line is uncommented:
-        // ConnectionConfiguration configuration = new ConnectionConfiguration(Authentication.tokenRequest(tokenParams -> createDummyTokenRequest(), "CLIENT_ID"));
-
-        // possibly solved with:
-        // https://stackoverflow.com/questions/35161913/kotlin-cannot-access-kotlin-jvm-functions-function1-when-calling-kotlin-function/55742956
-    }
-
-    @Test
     public void publisherFacadeWrapperUsageExample() {
         PublisherFacade publisherFacade = PublisherFacade.wrap(nativePublisher);
     }

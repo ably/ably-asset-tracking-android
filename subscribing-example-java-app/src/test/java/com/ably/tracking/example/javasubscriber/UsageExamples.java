@@ -106,11 +106,6 @@ public class UsageExamples {
     }
 
     @Test
-    public void subscriberTokenAuthUsageExample() {
-        // TODO reinstate once Java interop figured out
-    }
-
-    @Test
     public void subscriberFacadeUsageExample() {
         subscriberFacade.addListener(assetState -> {
             // handle assetState
