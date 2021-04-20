@@ -9,6 +9,20 @@ sealed class Authentication(
     val basicApiKey: String?,
     val tokenRequestCallback: TokenRequestCallback?
 ) {
+    init {
+        if (tokenRequestCallback != null && basicApiKey != null) {
+            // This indicates a mistake in the implementation of the Authentication class,
+            // therefore not caused by the application (i.e. internal to this library).
+            throw IllegalStateException("Multiple authentication methods.")
+        }
+
+        if (tokenRequestCallback == null && basicApiKey == null) {
+            // This indicates a mistake in the implementation of the Authentication class,
+            // therefore not caused by the application (i.e. internal to this library).
+            throw IllegalStateException("No authentication methods.")
+        }
+    }
+
     companion object {
         /**
          * @param apiKey Ably key string as obtained from the dashboard.

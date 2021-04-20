@@ -4,8 +4,8 @@ import com.ably.tracking.common.PresenceAction
 import com.ably.tracking.common.PresenceMessage
 import com.ably.tracking.common.getPresenceData
 import com.ably.tracking.connection.Authentication
-import com.ably.tracking.connection.TokenRequest
 import com.ably.tracking.connection.TokenParams
+import com.ably.tracking.connection.TokenRequest
 import com.google.gson.Gson
 import io.ably.lib.realtime.ChannelState
 import io.ably.lib.rest.Auth
@@ -78,35 +78,19 @@ fun io.ably.lib.realtime.ConnectionStateListener.ConnectionStateChange.toTrackin
  * Extension vending Ably client library ClientOptions from an [Authentication] instance.
  */
 val Authentication.clientOptions: ClientOptions
-    get() =
-        ClientOptions().apply {
-            clientId = this@clientOptions.clientId
+    get() = ClientOptions().apply {
+        clientId = this@clientOptions.clientId
 
-            val tokenRequestCallback = this@clientOptions.tokenRequestCallback
-            val basicApiKey = this@clientOptions.basicApiKey
-
-            if (tokenRequestCallback != null && basicApiKey != null) {
-                // This indicates a mistake in the implementation of the Authentication class,
-                // therefore not caused by the application (i.e. internal to this library).
-                throw IllegalStateException("Multiple authentication methods.")
-            }
-
-            if (tokenRequestCallback == null && basicApiKey == null) {
-                // This indicates a mistake in the implementation of the Authentication class,
-                // therefore not caused by the application (i.e. internal to this library).
-                throw java.lang.IllegalStateException("No authentication methods.")
-            }
-
-            if (basicApiKey != null) {
-                key = basicApiKey
-            }
-
-            if (tokenRequestCallback != null) {
-                authCallback = Auth.TokenCallback {
-                    tokenRequestCallback(it.toTracking()).toAuth()
-                }
+        this@clientOptions.tokenRequestCallback?.let { tokenRequestCallback ->
+            authCallback = Auth.TokenCallback {
+                tokenRequestCallback(it.toTracking()).toAuth()
             }
         }
+
+        this@clientOptions.basicApiKey?.let { basicApiKey ->
+            key = basicApiKey
+        }
+    }
 
 /**
  * Extension converting Ably Realtime auth token params to the equivalent [TokenParams] API
