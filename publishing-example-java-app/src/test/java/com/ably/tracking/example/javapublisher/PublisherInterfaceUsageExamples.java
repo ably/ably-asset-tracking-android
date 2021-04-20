@@ -78,50 +78,6 @@ public class PublisherInterfaceUsageExamples {
         }
     }
 
-    private TokenRequest createDummyTokenRequest() {
-        return new TokenRequest() {
-            @NotNull
-            @Override
-            public String getKeyName() {
-                return "";
-            }
-
-            @NotNull
-            @Override
-            public String getNonce() {
-                return "";
-            }
-
-            @NotNull
-            @Override
-            public String getMac() {
-                return "";
-            }
-
-            @Override
-            public long getTtl() {
-                return 0;
-            }
-
-            @NotNull
-            @Override
-            public String getCapability() {
-                return "";
-            }
-
-            @NotNull
-            @Override
-            public String getClientId() {
-                return "";
-            }
-
-            @Override
-            public long getTimestamp() {
-                return 0;
-            }
-        };
-    }
-
     @Test
     public void publisherFacadeWrapperUsageExample() {
         PublisherFacade publisherFacade = PublisherFacade.wrap(nativePublisher);
