@@ -49,7 +49,7 @@ val defaultResolution = Resolution(Accuracy.BALANCED, desiredInterval = 1000L, m
 
 // Initialise and Start the Publisher
 val publisher = Publisher.publishers() // get the Publisher builder in default state
-    .connection(ConnectionConfigurationKey.create(ABLY_API_KEY, CLIENT_ID)) // provide Ably configuration with credentials
+    .connection(ConnectionConfiguration(Authentication.basic(CLIENT_ID, ABLY_API_KEY))) // provide Ably configuration with credentials
     .map(MapConfiguration(MAPBOX_ACCESS_TOKEN)) // provide Mapbox configuration with credentials
     .androidContext(this) // provide Android runtime context
     .resolutionPolicy(DefaultResolutionPolicyFactory(defaultResolution, this)) // provide either the default resolution policy factory or your custom implementation
@@ -77,7 +77,7 @@ Here is an example of how Asset Subscribing SDK can be used:
 ```kotlin
 // Initialise and Start the Subscriber
 val subscriber = Subscriber.subscribers() // Get an AssetSubscriber
-    .connection(ConnectionConfigurationKey.create(ABLY_API_KEY, CLIENT_ID)) // provide Ably configuration with credentials
+    .connection(ConnectionConfiguration(Authentication.basic(CLIENT_ID, ABLY_API_KEY))) // provide Ably configuration with credentials
     .resolution( // request a specific resolution to be considered by the publisher
         Resolution(Accuracy.MAXIMUM, desiredInterval = 1000L, minimumDisplacement = 1.0)
     )
