@@ -1,11 +1,14 @@
 package com.ably.tracking.example.javasubscriber;
 
 import com.ably.tracking.Accuracy;
-import com.ably.tracking.ConnectionConfiguration;
 import com.ably.tracking.Resolution;
+import com.ably.tracking.connection.Authentication;
+import com.ably.tracking.connection.ConnectionConfiguration;
+import com.ably.tracking.connection.TokenRequest;
 import com.ably.tracking.subscriber.Subscriber;
 import com.ably.tracking.subscriber.java.SubscriberFacade;
 
+import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -39,7 +42,7 @@ public class UsageExamples {
     @Test
     public void subscriberBuilderUsageExample() {
         Subscriber.Builder nativeBuilder = Subscriber.subscribers()
-            .connection(new ConnectionConfiguration("API_KEY", "CLIENT_ID"))
+            .connection(new ConnectionConfiguration(Authentication.basic("CLIENT_ID", "API_KEY")))
             .trackingId("TRACKING_ID")
             .resolution(new Resolution(Accuracy.BALANCED, 1000L, 1.0));
         SubscriberFacade.Builder wrappedSubscriberBuilder = SubscriberFacade.Builder.wrap(nativeBuilder);

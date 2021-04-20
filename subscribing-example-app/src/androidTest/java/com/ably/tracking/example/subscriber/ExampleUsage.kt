@@ -1,8 +1,9 @@
 package com.ably.tracking.example.subscriber
 
 import com.ably.tracking.Accuracy
-import com.ably.tracking.ConnectionConfiguration
+import com.ably.tracking.connection.Authentication
 import com.ably.tracking.Resolution
+import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.subscriber.Subscriber
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -24,7 +25,14 @@ fun exampleUsage(trackingId: String) {
     var subscriber: Subscriber
     runBlocking {
         subscriber = Subscriber.subscribers() // Get an AssetSubscriber
-            .connection(ConnectionConfiguration(ABLY_API_KEY, CLIENT_ID)) // provide Ably configuration with credentials
+            .connection(
+                ConnectionConfiguration(
+                    Authentication.basic(
+                        CLIENT_ID,
+                        ABLY_API_KEY,
+                    )
+                )
+            ) // provide Ably configuration with credentials
             .resolution( // request a specific resolution to be considered by the publisher
                 Resolution(Accuracy.MAXIMUM, desiredInterval = 1000L, minimumDisplacement = 1.0)
             )

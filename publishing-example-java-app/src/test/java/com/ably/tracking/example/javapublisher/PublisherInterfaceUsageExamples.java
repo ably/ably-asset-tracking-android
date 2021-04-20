@@ -5,9 +5,11 @@ import android.content.Context;
 
 import com.ably.tracking.Accuracy;
 import com.ably.tracking.BuilderConfigurationIncompleteException;
-import com.ably.tracking.ConnectionConfiguration;
 import com.ably.tracking.ConnectionException;
 import com.ably.tracking.Resolution;
+import com.ably.tracking.connection.Authentication;
+import com.ably.tracking.connection.ConnectionConfiguration;
+import com.ably.tracking.connection.TokenRequest;
 import com.ably.tracking.publisher.DefaultProximity;
 import com.ably.tracking.publisher.DefaultResolutionConstraints;
 import com.ably.tracking.publisher.DefaultResolutionSet;
@@ -22,6 +24,7 @@ import com.ably.tracking.publisher.RoutingProfile;
 import com.ably.tracking.publisher.Trackable;
 import com.ably.tracking.publisher.java.PublisherFacade;
 
+import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -62,8 +65,8 @@ public class PublisherInterfaceUsageExamples {
         try {
             publisherBuilder
                 .androidContext(context)
-                .connection(new ConnectionConfiguration("API_KEY", "CLIENT_ID"))
-                .map(new MapConfiguration("API_KEY"))
+                .connection(new ConnectionConfiguration(Authentication.basic("CLIENT_ID", "ABLY_API_KEY")))
+                .map(new MapConfiguration("MAPBOX_API_KEY"))
                 .resolutionPolicy(resolutionPolicyFactory)
                 .locationSource(LocationSourceRaw.createRaw(new LocationHistoryData(new ArrayList<>()), null))
                 .locationSource(LocationSourceAbly.create("CHANNEL_ID"))

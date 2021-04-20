@@ -1,7 +1,5 @@
 package com.ably.tracking
 
-data class ConnectionConfiguration(val apiKey: String, val clientId: String)
-
 /**
  * Represents a state of a trackable that's being tracked by a publisher.
  */
