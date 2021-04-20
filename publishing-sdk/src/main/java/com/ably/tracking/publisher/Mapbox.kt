@@ -4,9 +4,10 @@ import android.Manifest
 import android.content.Context
 import android.location.Location
 import androidx.annotation.RequiresPermission
-import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.Resolution
+import com.ably.tracking.clientOptions
 import com.ably.tracking.common.MILLISECONDS_PER_SECOND
+import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.publisher.debug.AblySimulationLocationEngine
 import com.ably.tracking.publisher.locationengine.FusedAndroidLocationEngine
 import com.ably.tracking.publisher.locationengine.GoogleLocationEngine
@@ -24,7 +25,6 @@ import com.mapbox.navigation.core.replay.history.ReplayEventBase
 import com.mapbox.navigation.core.replay.history.ReplayEventsObserver
 import com.mapbox.navigation.core.replay.history.ReplayHistoryMapper
 import com.mapbox.navigation.core.trip.session.LocationObserver
-import io.ably.lib.types.ClientOptions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import timber.log.Timber
@@ -226,8 +226,7 @@ internal class DefaultMapbox(
     ) {
         mapboxBuilder.locationEngine(
             AblySimulationLocationEngine(
-                // TODO should there be a clientId in use here?
-                ClientOptions(connectionConfiguration.apiKey),
+                connectionConfiguration.authentication.clientOptions,
                 locationSource.simulationChannelName
             )
         )

@@ -1,11 +1,11 @@
 package com.ably.tracking.common
 
-import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.ConnectionException
 import com.ably.tracking.ConnectionStateChange
 import com.ably.tracking.EnhancedLocationUpdate
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.clientOptions
+import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.toTracking
 import com.ably.tracking.toTrackingException
 import com.google.gson.Gson
@@ -146,7 +146,7 @@ constructor(
 
     init {
         try {
-            ably = AblyRealtime(connectionConfiguration.clientOptions)
+            ably = AblyRealtime(connectionConfiguration.authentication.clientOptions)
         } catch (exception: AblyException) {
             throw exception.errorInfo.toTrackingException()
         }

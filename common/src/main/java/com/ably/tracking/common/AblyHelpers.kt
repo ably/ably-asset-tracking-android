@@ -3,8 +3,12 @@ package com.ably.tracking
 import com.ably.tracking.common.PresenceAction
 import com.ably.tracking.common.PresenceMessage
 import com.ably.tracking.common.getPresenceData
+import com.ably.tracking.connection.Authentication
+import com.ably.tracking.connection.TokenParams
+import com.ably.tracking.connection.TokenRequest
 import com.google.gson.Gson
 import io.ably.lib.realtime.ChannelState
+import io.ably.lib.rest.Auth
 import io.ably.lib.types.ClientOptions
 
 /**
@@ -71,13 +75,47 @@ fun io.ably.lib.realtime.ConnectionStateListener.ConnectionStateChange.toTrackin
     )
 
 /**
- * Extension vending Ably client library ClientOptions from a [ConnectionConfiguration] instance.
+ * Extension vending Ably client library ClientOptions from an [Authentication] instance.
  */
-val ConnectionConfiguration.clientOptions: ClientOptions
-    get() {
-        val options = ClientOptions(this.apiKey)
-        options.clientId = this.clientId
-        return options
+val Authentication.clientOptions: ClientOptions
+    get() = ClientOptions().apply {
+        clientId = this@clientOptions.clientId
+
+        this@clientOptions.tokenRequestCallback?.let { tokenRequestCallback ->
+            authCallback = Auth.TokenCallback {
+                tokenRequestCallback(it.toTracking()).toAuth()
+            }
+        }
+
+        this@clientOptions.basicApiKey?.let { basicApiKey ->
+            key = basicApiKey
+        }
+    }
+
+/**
+ * Extension converting Ably Realtime auth token params to the equivalent [TokenParams] API
+ * presented to users of the Ably Asset Tracking SDKs.
+ */
+fun Auth.TokenParams.toTracking(): TokenParams =
+    object : TokenParams {
+        override val ttl: Long = this@toTracking.ttl
+        override val capability: String = this@toTracking.capability
+        override val clientId: String = this@toTracking.clientId
+        override val timestamp: Long = this@toTracking.timestamp
+    }
+
+/**
+ * Extension converting Asset Tracking SDK [TokenRequest] to the equivalent [Auth.TokenRequest] from Ably.
+ */
+fun TokenRequest.toAuth(): Auth.TokenRequest =
+    Auth.TokenRequest().apply {
+        ttl = this@toAuth.ttl
+        capability = this@toAuth.capability
+        clientId = this@toAuth.clientId
+        timestamp = this@toAuth.timestamp
+        keyName = this@toAuth.keyName
+        nonce = this@toAuth.nonce
+        mac = this@toAuth.mac
     }
 
 /**
