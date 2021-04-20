@@ -5,8 +5,8 @@ import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.content.Context
 import androidx.annotation.RequiresPermission
 import com.ably.tracking.BuilderConfigurationIncompleteException
-import com.ably.tracking.ConnectionConfiguration
 import com.ably.tracking.common.DefaultAbly
+import com.ably.tracking.connection.ConnectionConfiguration
 
 internal data class PublisherBuilder(
     val connectionConfiguration: ConnectionConfiguration? = null,

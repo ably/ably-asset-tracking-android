@@ -4,7 +4,8 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.location.Location
 import com.ably.tracking.BuilderConfigurationIncompleteException
-import com.ably.tracking.ConnectionConfiguration
+import com.ably.tracking.connection.Authentication
+import com.ably.tracking.connection.ConnectionConfiguration
 import io.mockk.mockk
 import org.junit.Assert
 import org.junit.Test
@@ -16,7 +17,7 @@ class FactoryUnitTests {
     @Test
     fun `setting Ably connection config updates builder field`() {
         // given
-        val configuration = ConnectionConfiguration("", "")
+        val configuration = ConnectionConfiguration(Authentication.basic("", ""))
 
         // when
         val builder = Publisher.publishers().connection(configuration) as PublisherBuilder
@@ -28,7 +29,7 @@ class FactoryUnitTests {
     @Test
     fun `setting Ably connection config returns a new copy of builder`() {
         // given
-        val configuration = ConnectionConfiguration("", "")
+        val configuration = ConnectionConfiguration(Authentication.basic("", ""))
         val originalBuilder = Publisher.publishers()
 
         // when
@@ -111,7 +112,7 @@ class FactoryUnitTests {
 
         // when
         val updatedBuilder = builder
-            .connection(ConnectionConfiguration("", ""))
+            .connection(ConnectionConfiguration(Authentication.basic("", "")))
             .map(MapConfiguration(""))
             .androidContext(mockedContext)
 
