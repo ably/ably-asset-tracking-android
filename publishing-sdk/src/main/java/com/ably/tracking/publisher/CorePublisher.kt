@@ -75,10 +75,8 @@ constructor(
         override fun onRawLocationChanged(rawLocation: Location) {
             enqueue(
                 RawLocationChangedEvent(
-                    LocationUpdate(
-                        rawLocation,
-                        batteryDataProvider.getCurrentBatteryPercentage()
-                    )
+                    rawLocation,
+                    batteryDataProvider.getCurrentBatteryPercentage()
                 )
             )
         }
@@ -91,12 +89,10 @@ constructor(
                 if (keyPoints.size > 1) keyPoints.subList(0, keyPoints.size - 1) else emptyList()
             enqueue(
                 EnhancedLocationChangedEvent(
-                    EnhancedLocationUpdate(
-                        enhancedLocation,
-                        batteryDataProvider.getCurrentBatteryPercentage(),
-                        intermediateLocations,
-                        if (intermediateLocations.isEmpty()) LocationUpdateType.ACTUAL else LocationUpdateType.PREDICTED
-                    )
+                    enhancedLocation,
+                    batteryDataProvider.getCurrentBatteryPercentage(),
+                    intermediateLocations,
+                    if (intermediateLocations.isEmpty()) LocationUpdateType.ACTUAL else LocationUpdateType.PREDICTED
                 )
             )
         }
@@ -168,29 +164,52 @@ constructor(
                             System.currentTimeMillis() + event.routeDurationInMilliseconds
                     }
                     is RawLocationChangedEvent -> {
-                        state.lastPublisherLocation = event.locationUpdate.location
+                        state.lastPublisherLocation = event.location
                         state.destinationToSet?.let { setDestination(it, state) }
                     }
                     is EnhancedLocationChangedEvent -> {
                         for (trackable in state.trackables) {
                             if (shouldSendLocation(
-                                    event.locationUpdate.location,
+                                    event.location,
                                     state.lastSentEnhancedLocations[trackable.id],
                                     state.resolutions[trackable.id]
                                 )
                             ) {
                                 try {
-                                    ably.sendEnhancedLocation(trackable.id, event.locationUpdate)
-                                    state.lastSentEnhancedLocations[trackable.id] = event.locationUpdate.location
+                                    val locationUpdate = EnhancedLocationUpdate(
+                                        event.location,
+                                        event.batteryLevel,
+                                        state.skippedEnhancedLocations[trackable.id] ?: emptyList(),
+                                        event.intermediateLocations,
+                                        event.type
+                                    )
+                                    ably.sendEnhancedLocation(trackable.id, locationUpdate)
+                                    state.lastSentEnhancedLocations[trackable.id] = locationUpdate.location
+                                    state.skippedEnhancedLocations[trackable.id]?.clear()
                                     updateTrackableState(state, trackable.id)
                                 } catch (exception: ConnectionException) {
                                     // TODO - what to do here if sending enhanced location fails?
                                 }
+                            } else {
+                                if (state.skippedEnhancedLocations[trackable.id] == null) {
+                                    state.skippedEnhancedLocations[trackable.id] = mutableListOf()
+                                }
+                                state.skippedEnhancedLocations[trackable.id]!!.add(event.location)
                             }
                         }
-                        scope.launch { _locations.emit(event.locationUpdate) }
+                        scope.launch {
+                            _locations.emit(
+                                EnhancedLocationUpdate(
+                                    event.location,
+                                    event.batteryLevel,
+                                    emptyList(),
+                                    event.intermediateLocations,
+                                    event.type
+                                )
+                            )
+                        }
                         checkThreshold(
-                            event.locationUpdate.location,
+                            event.location,
                             state.active,
                             state.estimatedArrivalTimeInMilliseconds
                         )
@@ -321,6 +340,7 @@ constructor(
                             ?.let { enqueue(ChangeLocationEngineResolutionEvent()) }
                         state.requests.remove(event.trackable.id)
                         state.lastSentEnhancedLocations.remove(event.trackable.id)
+                        state.skippedEnhancedLocations.remove(event.trackable.id)
                         // If this was the active Trackable then clear that state and remove destination.
                         if (state.active == event.trackable) {
                             removeCurrentDestination(state)
@@ -582,6 +602,8 @@ constructor(
             get() = if (isDisposed) throw PublisherStateDisposedException() else field
         val lastSentEnhancedLocations: MutableMap<String, Location> = mutableMapOf()
             get() = if (isDisposed) throw PublisherStateDisposedException() else field
+        val skippedEnhancedLocations: MutableMap<String, MutableList<Location>> = mutableMapOf()
+            get() = if (isDisposed) throw PublisherStateDisposedException() else field
         var estimatedArrivalTimeInMilliseconds: Long? = null
             get() = if (isDisposed) throw PublisherStateDisposedException() else field
         var lastPublisherLocation: Location? = null
@@ -616,6 +638,7 @@ constructor(
             lastChannelConnectionStateChanges.clear()
             resolutions.clear()
             lastSentEnhancedLocations.clear()
+            skippedEnhancedLocations.clear()
             estimatedArrivalTimeInMilliseconds = null
             active = null
             lastPublisherLocation = null

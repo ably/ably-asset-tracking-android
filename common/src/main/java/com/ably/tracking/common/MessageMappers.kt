@@ -44,6 +44,7 @@ fun EnhancedLocationUpdate.toJson(gson: Gson): String =
         EnhancedLocationUpdateMessage(
             location.toGeoJson(),
             batteryLevel,
+            skippedLocations.map { it.toGeoJson() },
             intermediateLocations.map { it.toGeoJson() },
             type.toMessage()
         )
@@ -55,6 +56,7 @@ fun Message.getEnhancedLocationUpdate(gson: Gson): EnhancedLocationUpdate =
             EnhancedLocationUpdate(
                 message.location.toLocation(),
                 message.batteryLevel,
+                message.skippedLocations.map { it.toLocation() },
                 message.intermediateLocations.map { it.toLocation() },
                 message.type.toTracking()
             )
