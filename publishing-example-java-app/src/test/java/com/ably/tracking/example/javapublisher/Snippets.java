@@ -46,7 +46,7 @@ public class Snippets {
 
         // Call the policy in the same manner that the Kotlin-based pubisher would.
         final Resolution resolutionsResult = policy.resolve(new HashSet<Resolution>());
-        final Resolution requestsResult = policy.resolve(new TrackableResolutionRequest(new Trackable("", null, null, null), Collections.emptySet()));
+        final Resolution requestsResult = policy.resolve(new TrackableResolutionRequest(new Trackable("", null, null), Collections.emptySet()));
 
         // Validate that our policy returned what we told it to above.
         Assert.assertEquals(Accuracy.MINIMUM, resolutionsResult.getAccuracy());
@@ -78,7 +78,7 @@ public class Snippets {
             3.0f
         );
 
-        final Trackable trackable = new Trackable("Foo", null, null, constraints);
+        final Trackable trackable = new Trackable("Foo", null, constraints);
 
         Assert.assertEquals("Foo", trackable.getId());
 
