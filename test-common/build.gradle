@@ -7,4 +7,5 @@ plugins {
 dependencies {
     implementation project(':core-sdk')
     implementation project(':common')
+    implementation 'io.mockk:mockk:1.10.2'
 }
