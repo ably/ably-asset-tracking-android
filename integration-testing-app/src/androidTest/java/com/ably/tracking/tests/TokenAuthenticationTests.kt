@@ -6,7 +6,7 @@ import com.ably.tracking.connection.Authentication
 import com.ably.tracking.connection.TokenRequest
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.subscriber.Subscriber
-import com.ably.tracking.test.common.UnitExpectation
+import com.ably.tracking.test.android.common.UnitExpectation
 import io.ably.lib.realtime.AblyRealtime
 import io.ably.lib.rest.Auth
 import io.ably.lib.types.ClientOptions

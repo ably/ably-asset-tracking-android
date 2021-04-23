@@ -1,4 +1,4 @@
-package com.ably.tracking.test.common
+package com.ably.tracking.test.android.common
 
 import android.annotation.SuppressLint
 import android.os.Looper

@@ -5,9 +5,9 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.subscriber.Subscriber
-import com.ably.tracking.test.common.BooleanExpectation
-import com.ably.tracking.test.common.UnitExpectation
-import com.ably.tracking.test.common.testLogD
+import com.ably.tracking.test.android.common.BooleanExpectation
+import com.ably.tracking.test.android.common.UnitExpectation
+import com.ably.tracking.test.android.common.testLogD
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.launchIn
