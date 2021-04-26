@@ -24,14 +24,17 @@ enum class PresenceAction {
 
 data class PresenceData(val type: String, val resolution: Resolution? = null)
 
+@Dto
 data class PresenceDataMessage(val type: String, val resolution: ResolutionMessage? = null)
 
+@Dto
 data class ResolutionMessage(
     val accuracy: AccuracyMessage,
     val desiredInterval: Long,
     val minimumDisplacement: Double
 )
 
+@Dto
 enum class AccuracyMessage {
     @SerializedName("MINIMUM")
     MINIMUM,
@@ -49,6 +52,7 @@ enum class AccuracyMessage {
     MAXIMUM,
 }
 
+@Dto
 data class EnhancedLocationUpdateMessage(
     val location: GeoJsonMessage,
     val batteryLevel: Float?,
@@ -57,6 +61,7 @@ data class EnhancedLocationUpdateMessage(
     val type: LocationUpdateTypeMessage
 )
 
+@Dto
 enum class LocationUpdateTypeMessage {
     @SerializedName("PREDICTED")
     PREDICTED,
