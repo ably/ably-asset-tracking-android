@@ -5,8 +5,8 @@ import android.content.Context
 import android.location.Location
 import androidx.annotation.RequiresPermission
 import com.ably.tracking.Resolution
-import com.ably.tracking.clientOptions
 import com.ably.tracking.common.MILLISECONDS_PER_SECOND
+import com.ably.tracking.common.clientOptions
 import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.publisher.debug.AblySimulationLocationEngine
 import com.ably.tracking.publisher.locationengine.FusedAndroidLocationEngine

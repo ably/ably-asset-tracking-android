@@ -1,11 +1,11 @@
 package com.ably.tracking.publisher
 
 import android.location.Location
-import com.ably.tracking.ConnectionStateChange
 import com.ably.tracking.LocationUpdateType
-import com.ably.tracking.ResultHandler
 import com.ably.tracking.TrackableState
+import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.PresenceMessage
+import com.ably.tracking.common.ResultHandler
 import kotlinx.coroutines.flow.StateFlow
 
 internal sealed class Event

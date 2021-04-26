@@ -1,8 +1,7 @@
-package com.ably.tracking
+package com.ably.tracking.common
 
-import com.ably.tracking.common.PresenceAction
-import com.ably.tracking.common.PresenceMessage
-import com.ably.tracking.common.getPresenceData
+import com.ably.tracking.ConnectionException
+import com.ably.tracking.ErrorInformation
 import com.ably.tracking.connection.Authentication
 import com.ably.tracking.connection.TokenParams
 import com.ably.tracking.connection.TokenRequest
@@ -15,7 +14,7 @@ import io.ably.lib.types.ClientOptions
  * Extension converting Ably Realtime connection state to the equivalent [ConnectionState] API presented to users of
  * the Ably Asset Tracking SDKs.
  */
-fun io.ably.lib.realtime.ConnectionState.toTracking() = when (this) {
+fun io.ably.lib.realtime.ConnectionState.toTracking(): ConnectionState = when (this) {
     io.ably.lib.realtime.ConnectionState.initialized -> ConnectionState.OFFLINE
     io.ably.lib.realtime.ConnectionState.connecting -> ConnectionState.OFFLINE
     io.ably.lib.realtime.ConnectionState.connected -> ConnectionState.ONLINE
