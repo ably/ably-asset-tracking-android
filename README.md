@@ -112,27 +112,13 @@ This repository also contains example apps that showcase how the Ably Asset Trac
 
 To build these apps you will need to specify [credentials](#api-keys-and-access-tokens) in Gradle properties.
 
-## Development
+## Android Runtime Requirements
 
-This repository is structured as a Gradle [Multi-Project Build](https://docs.gradle.org/current/userguide/multi_project_builds.html).
-
-To run checks, tests and assemble all SDK and app projects from the command line use:
-
-- macOS: `./gradlew check assemble`
-- Windows: `gradle.bat check assemble`
-
-These are the same Gradle tasks that we [run in CI](.github/workflows).
-
-The recommended IDE for working on this project is [Android Studio](https://developer.android.com/studio).
-From the dialog presented by `File` > `Open...` / `Open an Existing Project`, select the repository root folder and Studio's built-in support for Gradle projects will do the rest.
-
-### Android Runtime Requirements
-
-#### Kotlin Users
+### Kotlin Users
 
 These SDKs require a minimum of Android API Level 21 at runtime for applications written in Kotlin.
 
-#### Java Users
+### Java Users
 
 We also provide support for applications written in Java, however the requirements differ in that case:
 - must wrap using the appropriate Java facade for the SDK they are using:
@@ -141,34 +127,14 @@ We also provide support for applications written in Java, however the requiremen
 - require Java 1.8 or later
 - require a minimum of Android API Level 24 at runtime
 
-### MapBox SDK dependency
-
-After cloning this repository for the first time, you will likely find that opening it in Android Studio or attempting to use Gradle from the command line (e.g. `./gradlew tasks`) will produce the following **FAILURE**:
-
-    Could not get unknown property 'MAPBOX_DOWNLOADS_TOKEN' for project ':publishing-sdk' of type org.gradle.api.Project.
-
-This is normal, and is easy to fix.
-
-MapBox's Maps SDK for Android documentation [suggests](https://docs.mapbox.com/android/maps/overview/#configure-credentials) configuring your secret token in `~/.gradle/gradle.properties`, which makes sense as it keeps it well away from the repository itself to avoid accidental checkin.
-
-There are, of course, [many other ways](https://docs.gradle.org/current/userguide/build_environment.html) to inject project properties into Gradle builds - all of which should work for this `MAPBOX_DOWNLOADS_TOKEN` property.
-
-### API Keys and Access Tokens
-
-The following secrets need configuring in a similar manner to that described above for the MapBox SDK Dependency `MAPBOX_DOWNLOADS_TOKEN`:
-
-- `ABLY_API_KEY`
-- `MAPBOX_ACCESS_TOKEN`
-- `GOOGLE_MAPS_API_KEY`
-
-### Resolution Policies
+## Resolution Policies
 
 In order to provide application developers with flexibility when it comes to choosing their own balance between higher frequency of updates and optimal battery usage, we provide several ways for them to define the logic used to determine the frequency of updates:
 
 - by implementing a custom `ResolutionPolicy` - providing the greatest flexibility
 - by using the default `ResolutionPolicy` implementation - with the controls provided by `DefaultResolutionPolicyFactory` and `DefaultResolutionConstraints`
 
-#### Using the Default Resolution Policy
+### Using the Default Resolution Policy
 
 The simplest way to control the frequency of updates is by providing parameters in the form of `DefaultResolutionConstraints`, assigned to the `constraints` property of the `Trackable` object:
 
@@ -189,22 +155,8 @@ val exampleConstraints = DefaultResolutionConstraints(
 
 These values are then used in the default `ResolutionPolicy`, created by the `DefaultResolutionPolicyFactory`. This default policy implementation uses a simple decision algorithm to determine the `Resolution` for a certain state, relative to proximity threshold, battery threshold and the presence of subscribers.
 
-#### Providing a Custom Resolution Policy Implementation
+### Providing a Custom Resolution Policy Implementation
 
 For the greatest flexibility it is possible to provide a custom implementation of the `ResolutionPolicy` interface. In this implementation the application developer can define which logic will be applied to their own parameters, including how resolution is to be determined based on the those parameters and requests from subscribers.
 
 Please see `DefaultResolutionPolicy` [implementation](publishing-sdk/src/main/java/com/ably/tracking/publisher/DefaultResolutionPolicyFactory.kt) for an example.
-
-### Debugging Gradle Task Dependencies
-
-There isn't an out-of-the-box command provided by Gradle to provide a readable breakdown of which tasks in the build are configured to rely upon which other tasks. The `--dry-run` switch helps a bit, but it provides a flat view which doesn't provide the full picture.
-
-We could have taken the option to include some Groovy code or a plugin in the root project configuration to provide a full task tree view, however it's strictly not needed to be part of the sources within this repository to build the projects as it's only a tool to help with debugging Gradle's configuration.
-
-If such a view is required then we suggest installing [this Gradle-global, user-level init script](https://github.com/dorongold/gradle-task-tree#init-script-snippet), within `~/.gradle/init.gradle` as [described in the Gradle documentation](https://docs.gradle.org/current/userguide/init_scripts.html#sec:using_an_init_script). Once the init script is in place then, for example, the Gradle `check` task can be examined using:
-
-    ./gradlew check taskTree --no-repeat
-
-The `taskTree` task requires a preceding task name and can be run per project, a fact that's visible with:
-
-    ./gradlew tasks --all | grep taskTree
