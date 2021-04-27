@@ -47,3 +47,27 @@ If such a view is required then we suggest installing [this Gradle-global, user-
 The `taskTree` task requires a preceding task name and can be run per project, a fact that's visible with:
 
     ./gradlew tasks --all | grep taskTree
+
+## Release Process
+
+Releases should always be made through a release pull request (PR), which needs to bump the version number and add to the [change log](CHANGELOG.md).
+For an example of a previous release PR, see [#298](https://github.com/ably/ably-asset-tracking-android/pull/298).
+
+The release process must include the following steps:
+
+1. Ensure that all work intended for this release has landed to `main`
+2. Create a release branch named like `release/1.2.3`
+3. Add a commit to bump the version number
+4. Add a commit to update the change log
+5. Push the release branch to GitHub
+6. Open a PR for the release against the release branch you just pushed
+7. Gain approval(s) for the release PR from maintainer(s)
+8. Land the release PR to `main`
+9. Create a tag named like `v1.2.3` and push it to GitHub
+
+We don't currently push this product to any package managers but will be working on this under [#286](https://github.com/ably/ably-asset-tracking-android/issues/286).
+
+We tend to use [github_changelog_generator](https://github.com/skywinder/Github-Changelog-Generator) to collate the information required for a change log update.
+Your mileage may vary, but it seems the most reliable method to invoke the generator is something like:
+`github_changelog_generator -u ably -p ably-asset-tracking-android --since-tag v1.0.0 --output delta.md`
+and then manually merge the delta contents in to the main change log (where `v1.0.0` in this case is the tag for the previous release).
