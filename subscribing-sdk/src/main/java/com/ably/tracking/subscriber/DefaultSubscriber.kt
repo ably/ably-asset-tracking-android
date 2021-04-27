@@ -11,6 +11,9 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 
+// TODO - set this value to 'true' to receive raw locations
+private val USE_RAW_LOCATIONS = false
+
 internal class DefaultSubscriber(
     ably: Ably,
     resolution: Resolution?,
@@ -19,7 +22,7 @@ internal class DefaultSubscriber(
     private val core: CoreSubscriber
 
     override val locations: SharedFlow<LocationUpdate>
-        get() = core.enhancedLocations
+        get() = if (USE_RAW_LOCATIONS) core.rawLocations else core.enhancedLocations
 
     override val trackableStates: StateFlow<TrackableState>
         get() = core.trackableStates

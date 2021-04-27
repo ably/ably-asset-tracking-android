@@ -73,6 +73,9 @@ interface Ably {
      */
     fun sendEnhancedLocation(trackableId: String, locationUpdate: EnhancedLocationUpdate)
 
+
+    fun sendRawLocation(trackableId: String, locationUpdate: LocationUpdate)
+
     /**
      * Adds a listener for the enhanced location updates that are received from the channel.
      * If a channel for the [trackableId] doesn't exist then nothing happens.
@@ -83,6 +86,8 @@ interface Ably {
      * @throws ConnectionException if something goes wrong.
      */
     fun subscribeForEnhancedEvents(trackableId: String, listener: (LocationUpdate) -> Unit)
+
+    fun subscribeForRawEvents(trackableId: String, listener: (LocationUpdate) -> Unit)
 
     /**
      * Joins the presence of the channel for the given [trackableId] and add it to the connected channels.
@@ -255,11 +260,33 @@ constructor(
         }
     }
 
+    override fun sendRawLocation(trackableId: String, locationUpdate: LocationUpdate) {
+        val locationUpdateJson = locationUpdate.toJson(gson)
+        Timber.d("sendRawLocationMessage: publishing: $locationUpdateJson")
+        try {
+            channels[trackableId]?.publish(EventNames.RAW, locationUpdateJson)
+        } catch (exception: AblyException) {
+            throw exception.errorInfo.toTrackingException()
+        }
+    }
+
     override fun subscribeForEnhancedEvents(trackableId: String, listener: (LocationUpdate) -> Unit) {
         channels[trackableId]?.let { channel ->
             try {
                 channel.subscribe(EventNames.ENHANCED) { message ->
                     listener(message.getEnhancedLocationUpdate(gson))
+                }
+            } catch (exception: AblyException) {
+                throw exception.errorInfo.toTrackingException()
+            }
+        }
+    }
+
+    override fun subscribeForRawEvents(trackableId: String, listener: (LocationUpdate) -> Unit) {
+        channels[trackableId]?.let { channel ->
+            try {
+                channel.subscribe(EventNames.RAW) { message ->
+                    listener(message.getRawLocationUpdate(gson))
                 }
             } catch (exception: AblyException) {
                 throw exception.errorInfo.toTrackingException()

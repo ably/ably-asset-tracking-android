@@ -10,6 +10,7 @@ const val LOCATION_TYPE_FUSED = "fused"
 
 object EventNames {
     const val ENHANCED = "enhanced"
+    const val RAW = "raw"
 }
 
 object ClientTypes {

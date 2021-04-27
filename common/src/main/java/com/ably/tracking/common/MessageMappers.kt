@@ -2,6 +2,7 @@ package com.ably.tracking.common
 
 import com.ably.tracking.Accuracy
 import com.ably.tracking.EnhancedLocationUpdate
+import com.ably.tracking.LocationUpdate
 import com.ably.tracking.LocationUpdateType
 import com.ably.tracking.Resolution
 import com.google.gson.Gson
@@ -50,6 +51,15 @@ fun EnhancedLocationUpdate.toJson(gson: Gson): String =
         )
     )
 
+fun LocationUpdate.toJson(gson: Gson): String =
+    gson.toJson(
+        LocationUpdateMessage(
+            location.toGeoJson(),
+            batteryLevel,
+            skippedLocations.map { it.toGeoJson() }
+        )
+    )
+
 fun Message.getEnhancedLocationUpdate(gson: Gson): EnhancedLocationUpdate =
     gson.fromJson(data as String, EnhancedLocationUpdateMessage::class.java)
         .let { message ->
@@ -59,6 +69,16 @@ fun Message.getEnhancedLocationUpdate(gson: Gson): EnhancedLocationUpdate =
                 message.skippedLocations.map { it.toLocation() },
                 message.intermediateLocations.map { it.toLocation() },
                 message.type.toTracking()
+            )
+        }
+
+fun Message.getRawLocationUpdate(gson: Gson): LocationUpdate =
+    gson.fromJson(data as String, LocationUpdateMessage::class.java)
+        .let { message ->
+            LocationUpdate(
+                message.location.toLocation(),
+                message.batteryLevel,
+                message.skippedLocations.map { it.toLocation() }
             )
         }
 

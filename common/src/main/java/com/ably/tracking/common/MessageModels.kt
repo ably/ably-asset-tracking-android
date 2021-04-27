@@ -64,3 +64,9 @@ enum class LocationUpdateTypeMessage {
     @SerializedName("ACTUAL")
     ACTUAL,
 }
+
+data class LocationUpdateMessage(
+    val location: GeoJsonMessage,
+    val batteryLevel: Float?,
+    val skippedLocations: List<GeoJsonMessage>
+)

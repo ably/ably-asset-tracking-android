@@ -166,6 +166,22 @@ constructor(
                     is RawLocationChangedEvent -> {
                         state.lastPublisherLocation = event.location
                         state.destinationToSet?.let { setDestination(it, state) }
+                        for (trackable in state.trackables) {
+                            if (shouldSendLocation(
+                                    event.location,
+                                    state.lastSentRawLocations[trackable.id],
+                                    state.resolutions[trackable.id]
+                                )
+                            ) {
+                                try {
+                                    val locationUpdate = LocationUpdate(event.location, event.batteryLevel, emptyList())
+                                    ably.sendRawLocation(trackable.id, locationUpdate)
+                                    state.lastSentRawLocations[trackable.id] = locationUpdate.location
+                                } catch (exception: ConnectionException) {
+                                    // TODO - what to do here if sending enhanced location fails?
+                                }
+                            }
+                        }
                     }
                     is EnhancedLocationChangedEvent -> {
                         for (trackable in state.trackables) {
@@ -601,6 +617,8 @@ constructor(
         val resolutions: MutableMap<String, Resolution> = mutableMapOf()
             get() = if (isDisposed) throw PublisherStateDisposedException() else field
         val lastSentEnhancedLocations: MutableMap<String, Location> = mutableMapOf()
+            get() = if (isDisposed) throw PublisherStateDisposedException() else field
+        val lastSentRawLocations: MutableMap<String, Location> = mutableMapOf()
             get() = if (isDisposed) throw PublisherStateDisposedException() else field
         val skippedEnhancedLocations: MutableMap<String, MutableList<Location>> = mutableMapOf()
             get() = if (isDisposed) throw PublisherStateDisposedException() else field
