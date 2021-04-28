@@ -244,7 +244,10 @@ constructor(
                                         enqueue(PresenceMessageEvent(event.trackable, it))
                                     }
                                 } catch (exception: ConnectionException) {
-                                    // TODO - what to do here? should we fail the whole process when subscribing for presence fails? or should it continue?
+                                    ably.disconnect(event.trackable.id, state.presenceData) {
+                                        event.handler(Result.failure(exception))
+                                    }
+                                    return@connect
                                 }
                                 ably.subscribeForChannelStateChange(event.trackable.id) {
                                     enqueue(ChannelConnectionStateChangeEvent(it, event.trackable.id))
