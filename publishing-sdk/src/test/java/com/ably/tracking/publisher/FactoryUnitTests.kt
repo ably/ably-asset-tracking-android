@@ -2,7 +2,6 @@ package com.ably.tracking.publisher
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.location.Location
 import com.ably.tracking.BuilderConfigurationIncompleteException
 import com.ably.tracking.connection.Authentication
 import com.ably.tracking.connection.ConnectionConfiguration
@@ -137,6 +136,4 @@ class FactoryUnitTests {
         Assert.assertNotNull(builder.mapConfiguration)
         Assert.assertNotNull(builder.androidContext)
     }
-
-    private fun anyLocation() = Location("fused")
 }

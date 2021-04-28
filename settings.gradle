@@ -8,6 +8,7 @@ pluginManagement {
 }
 
 include ':android-test-common',
+        ':test-common',
         ':common',
         ':core-sdk',
         ':core-sdk-java',

@@ -1,8 +1,7 @@
 package com.ably.tracking.publisher
 
-import android.location.Location
-import io.mockk.every
-import io.mockk.mockk
+import com.ably.tracking.test.common.anyLocation
+import com.ably.tracking.test.common.createLocation
 import org.junit.Assert
 import org.junit.Test
 
@@ -193,15 +192,5 @@ internal class ThresholdCheckerTest {
 
         // then
         Assert.assertFalse(isThresholdReached)
-    }
-
-    private fun createLocation(lat: Double, lng: Double): Location = mockk<Location>().apply {
-        every { longitude } returns lng
-        every { latitude } returns lat
-    }
-
-    private fun anyLocation(): Location = mockk<Location>().apply {
-        every { longitude } returns 1.0
-        every { latitude } returns 1.0
     }
 }
