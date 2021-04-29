@@ -494,7 +494,11 @@ constructor(
                 removeCurrentDestination(state)
                 state.currentDestination = destination
                 mapbox.setRoute(currentLocation, destination, state.routingProfile) {
-                    enqueue(SetDestinationSuccessEvent(it))
+                    try {
+                        enqueue(SetDestinationSuccessEvent(it.getOrThrow()))
+                    } catch (exception: MapException) {
+                        // TODO - what to do here if setting destination fails
+                    }
                 }
             } else {
                 state.destinationToSet = destination
