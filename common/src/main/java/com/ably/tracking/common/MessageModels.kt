@@ -1,5 +1,6 @@
 package com.ably.tracking.common
 
+import com.ably.tracking.Dto
 import com.ably.tracking.GeoJsonMessage
 import com.ably.tracking.Resolution
 import com.google.gson.annotations.SerializedName

@@ -1,4 +1,4 @@
-package com.ably.tracking.common
+package com.ably.tracking
 
 @Target(AnnotationTarget.CLASS)
 annotation class Dto
