@@ -1,8 +1,8 @@
 package com.ably.tracking.subscriber
 
-import com.ably.tracking.ConnectionStateChange
+import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.Resolution
-import com.ably.tracking.ResultHandler
+import com.ably.tracking.common.ResultHandler
 import com.ably.tracking.common.PresenceMessage
 
 internal sealed class Event

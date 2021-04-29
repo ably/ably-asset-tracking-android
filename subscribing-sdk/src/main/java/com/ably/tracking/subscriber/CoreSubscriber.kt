@@ -1,8 +1,8 @@
 package com.ably.tracking.subscriber
 
 import com.ably.tracking.ConnectionException
-import com.ably.tracking.ConnectionState
-import com.ably.tracking.ConnectionStateChange
+import com.ably.tracking.common.ConnectionState
+import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState

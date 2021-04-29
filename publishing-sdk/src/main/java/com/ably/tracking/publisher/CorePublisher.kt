@@ -4,8 +4,6 @@ import android.Manifest
 import android.location.Location
 import androidx.annotation.RequiresPermission
 import com.ably.tracking.ConnectionException
-import com.ably.tracking.ConnectionState
-import com.ably.tracking.ConnectionStateChange
 import com.ably.tracking.EnhancedLocationUpdate
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.LocationUpdateType
@@ -13,6 +11,8 @@ import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ClientTypes
+import com.ably.tracking.common.ConnectionState
+import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.PresenceAction
 import com.ably.tracking.common.PresenceData
 import com.mapbox.navigation.core.trip.session.LocationObserver
