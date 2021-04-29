@@ -182,15 +182,15 @@ class MainActivity : AppCompatActivity() {
         googleMap?.apply {
             LatLng(location.latitude, location.longitude).let { position ->
                 marker.let { currentMarker ->
-                    val cameraPosition = CameraUpdateFactory.newLatLngZoom(position, ZOOM_LEVEL_STREETS)
                     if (currentMarker == null) {
                         marker = addMarker(
                             MarkerOptions()
                                 .position(position)
                                 .icon(getMarkerIcon(location.bearing))
                         )
-                        moveCamera(cameraPosition)
+                        moveCamera(CameraUpdateFactory.newLatLngZoom(position, ZOOM_LEVEL_STREETS))
                     } else {
+                        val cameraPosition = CameraUpdateFactory.newLatLng(position)
                         currentMarker.setIcon(getMarkerIcon(location.bearing))
                         if (animationSwitch.isChecked) {
                             animateCamera(cameraPosition)
