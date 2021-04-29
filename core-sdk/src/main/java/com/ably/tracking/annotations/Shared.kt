@@ -1,4 +1,4 @@
-package com.ably.tracking
+package com.ably.tracking.annotations
 
 /**
  * An immutable data structure (a.k.a. DTO) which is received by or transmitted from the local library

@@ -1,5 +1,7 @@
 package com.ably.tracking
 
+import com.ably.tracking.annotations.Shared
+
 // WARNING: Don't add fields to this class because they will be serialized and present in JSON
 @Shared
 data class GeoJsonMessage(
