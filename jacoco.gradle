@@ -39,7 +39,7 @@ project.afterEvaluate {
                 def kotlinDebugTree = fileTree(dir: "${buildDir}/tmp/kotlin-classes/$sourceName")
                 classDirectories.from = files([debugTree], [kotlinDebugTree])
                 def coverageSourceDirs = [
-                    "src/main/java",
+                    'src/main/java',
                     "src/$productFlavorName/java",
                     "src/$buildTypeName/java"
                 ]

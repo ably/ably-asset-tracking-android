@@ -14,12 +14,12 @@ if (useCrashlytics) {
 android {
     defaultConfig {
         vectorDrawables.useSupportLibrary = true
-        applicationId "com.ably.tracking.example.publisher"
+        applicationId 'com.ably.tracking.example.publisher'
     }
 }
 
 dependencies {
-    implementation project(":publishing-sdk")
+    implementation project(':publishing-sdk')
     implementation 'io.ably:ably-android:1.2.2'
     implementation 'androidx.preference:preference-ktx:1.1.1'
     implementation 'com.amplifyframework:aws-storage-s3:1.4.1'
