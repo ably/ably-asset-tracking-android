@@ -1,5 +1,6 @@
 package com.ably.tracking.common
 
+import com.ably.tracking.annotations.Shared
 import com.ably.tracking.GeoJsonMessage
 import com.ably.tracking.Resolution
 import com.google.gson.annotations.SerializedName
@@ -24,14 +25,17 @@ enum class PresenceAction {
 
 data class PresenceData(val type: String, val resolution: Resolution? = null)
 
+@Shared
 data class PresenceDataMessage(val type: String, val resolution: ResolutionMessage? = null)
 
+@Shared
 data class ResolutionMessage(
     val accuracy: AccuracyMessage,
     val desiredInterval: Long,
     val minimumDisplacement: Double
 )
 
+@Shared
 enum class AccuracyMessage {
     @SerializedName("MINIMUM")
     MINIMUM,
@@ -49,6 +53,7 @@ enum class AccuracyMessage {
     MAXIMUM,
 }
 
+@Shared
 data class EnhancedLocationUpdateMessage(
     val location: GeoJsonMessage,
     val batteryLevel: Float?,
@@ -57,6 +62,7 @@ data class EnhancedLocationUpdateMessage(
     val type: LocationUpdateTypeMessage
 )
 
+@Shared
 enum class LocationUpdateTypeMessage {
     @SerializedName("PREDICTED")
     PREDICTED,
