@@ -103,7 +103,14 @@ private class DefaultCoreSubscriber(
                         ably.connect(trackableId, state.presenceData, useRewind = true) {
                             if (it.isSuccess) {
                                 subscribeForEnhancedEvents()
-                                subscribeForPresenceMessages()
+                                try {
+                                    subscribeForPresenceMessages()
+                                } catch (exception: ConnectionException) {
+                                    ably.disconnect(trackableId, state.presenceData) {
+                                        event.handler(Result.failure(exception))
+                                    }
+                                    return@connect
+                                }
                                 subscribeForChannelState()
                             }
                             event.handler(it)
