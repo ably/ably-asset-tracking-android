@@ -11,8 +11,8 @@ android {
 }
 
 dependencies {
-    implementation project(":subscribing-sdk")
-    implementation project(":publishing-sdk")
+    implementation project(':subscribing-sdk')
+    implementation project(':publishing-sdk')
     implementation 'com.google.code.gson:gson:2.8.6'
     implementation 'io.ably:ably-android:1.2.2'
 }

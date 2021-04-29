@@ -4,10 +4,10 @@ plugins {
 
 android {
     defaultConfig {
-        applicationId "com.ably.tracking.example.javasubscriber"
+        applicationId 'com.ably.tracking.example.javasubscriber'
     }
 }
 
 dependencies {
-    implementation project(":subscribing-sdk-java")
+    implementation project(':subscribing-sdk-java')
 }
