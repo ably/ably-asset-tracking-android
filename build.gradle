@@ -3,7 +3,7 @@ buildscript {
     ext.kotlin_version = '1.4.32'
     repositories {
         google()
-        jcenter()
+        mavenCentral()
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:4.1.0'
@@ -21,13 +21,13 @@ buildscript {
 
 plugins {
     id 'org.jlleitschuh.gradle.ktlint' version '9.4.1'
-    id 'org.jetbrains.dokka' version '1.4.30'
+    id 'org.jetbrains.dokka' version '1.4.32'
 }
 
 allprojects {
     repositories {
         google()
-        jcenter()
+        mavenCentral()
         maven {
             url 'https://api.mapbox.com/downloads/v2/releases/maven'
             authentication {
@@ -198,7 +198,6 @@ subprojects {
             if (evaluatedSubProjectIsAnApp) {
                 implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
                 implementation 'androidx.multidex:multidex:2.0.1'
-                implementation 'pub.devrel:easypermissions:2.0.1'
             }
 
             testImplementation 'junit:junit:4.13.1'

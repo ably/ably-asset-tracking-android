@@ -24,6 +24,7 @@ dependencies {
     implementation 'androidx.preference:preference-ktx:1.1.1'
     implementation 'com.amplifyframework:aws-storage-s3:1.4.1'
     implementation 'com.amplifyframework:aws-auth-cognito:1.4.1'
+    implementation 'pub.devrel:easypermissions:3.0.0'
 
     if (useCrashlytics) {
         // The BoM for the Firebase platform (it specifies the versions for Firebase dependencies).
