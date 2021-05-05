@@ -1,9 +1,11 @@
 package com.ably.tracking.example.subscriber
 
+import android.content.res.ColorStateList
 import android.location.Location
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.widget.addTextChangedListener
 import com.ably.tracking.Accuracy
 import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
@@ -48,6 +50,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         prepareMap()
+        setTrackableIdEditTextListener()
 
         startButton.setOnClickListener {
             if (subscriber == null) {
@@ -55,6 +58,12 @@ class MainActivity : AppCompatActivity() {
             } else {
                 stopSubscribing()
             }
+        }
+    }
+
+    private fun setTrackableIdEditTextListener() {
+        trackableIdEditText.addTextChangedListener { trackableId ->
+            trackableId?.trim()?.let { changeStartButtonColor(it.isNotEmpty()) }
         }
     }
 
@@ -214,6 +223,14 @@ class MainActivity : AppCompatActivity() {
             startButton.text = getString(R.string.start_button_working)
         } else {
             startButton.text = getString(R.string.start_button_ready)
+        }
+    }
+
+    private fun changeStartButtonColor(isActive: Boolean) {
+        if (isActive) {
+            startButton.backgroundTintList = ColorStateList.valueOf(getColor(R.color.button_active))
+        } else {
+            startButton.backgroundTintList = ColorStateList.valueOf(getColor(R.color.button_inactive))
         }
     }
 
