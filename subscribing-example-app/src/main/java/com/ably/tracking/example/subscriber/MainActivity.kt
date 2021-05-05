@@ -184,7 +184,13 @@ class MainActivity : AppCompatActivity() {
             is TrackableState.Offline -> R.string.asset_status_offline
             is TrackableState.Failed -> R.string.asset_status_failed
         }
+        val backgroundColorId = when (trackableState) {
+            is TrackableState.Online -> R.color.asset_online
+            is TrackableState.Offline -> R.color.asset_offline
+            is TrackableState.Failed -> R.color.asset_failed
+        }
         assetStateTextView.text = getString(textId)
+        assetStateTextView.backgroundTintList = ColorStateList.valueOf(getColor(backgroundColorId))
     }
 
     private fun stopSubscribing() {
