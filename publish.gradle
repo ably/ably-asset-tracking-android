@@ -1,8 +1,5 @@
 apply plugin: 'maven-publish'
 
-final ossrhUsername = findProperty('ossrh.username');
-final ossrhPassword = findProperty('ossrh.password');
-
 afterEvaluate {
     // Based on: https://developer.android.com/studio/build/maven-publish-plugin
     // See: https://docs.gradle.org/current/dsl/org.gradle.api.publish.PublishingExtension.html
@@ -14,19 +11,7 @@ afterEvaluate {
         }
 
         repositories {
-            if (ossrhUsername != null && ossrhPassword != null) {
-                maven {
-                    // https://issues.sonatype.org/browse/OSSRH-52871?focusedCommentId=862908&page=com.atlassian.jira.plugin.system.issuetabpanels%3Acomment-tabpanel#comment-862908
-                    url = 'https://oss.sonatype.org/service/local/staging/deploy/maven2'
 
-                    credentials {
-                        username ossrhUsername
-                        password ossrhPassword
-                    }
-                }
-            } else {
-                logger.warn 'Warning: OSSRH username or password not configured so unable to publish to Sonatype Staging for Maven Central.'
-            }
         }
     }
 }
