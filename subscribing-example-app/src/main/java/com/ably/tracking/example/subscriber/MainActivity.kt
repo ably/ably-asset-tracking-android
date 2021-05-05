@@ -3,6 +3,7 @@ package com.ably.tracking.example.subscriber
 import android.content.res.ColorStateList
 import android.location.Location
 import android.os.Bundle
+import android.view.inputmethod.EditorInfo
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.widget.addTextChangedListener
@@ -51,6 +52,7 @@ class MainActivity : AppCompatActivity() {
 
         prepareMap()
         setTrackableIdEditTextListener()
+        setupTrackableInputAction()
 
         startButton.setOnClickListener {
             if (subscriber == null) {
@@ -64,6 +66,17 @@ class MainActivity : AppCompatActivity() {
     private fun setTrackableIdEditTextListener() {
         trackableIdEditText.addTextChangedListener { trackableId ->
             trackableId?.trim()?.let { changeStartButtonColor(it.isNotEmpty()) }
+        }
+    }
+
+    private fun setupTrackableInputAction() {
+        trackableIdEditText.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_DONE) {
+                startSubscribing()
+                true
+            } else {
+                false
+            }
         }
     }
 

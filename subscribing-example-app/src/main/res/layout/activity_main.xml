@@ -183,6 +183,8 @@
     android:layout_width="0dp"
     android:layout_height="50dp"
     android:layout_marginBottom="10dp"
+    android:imeOptions="actionDone"
+    android:inputType="text"
     app:layout_constraintBottom_toTopOf="@id/startButton"
     app:layout_constraintEnd_toEndOf="@id/startButton"
     app:layout_constraintStart_toStartOf="@id/startButton" />
