@@ -6,7 +6,9 @@ import android.os.Bundle
 import android.view.inputmethod.EditorInfo
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.widget.addTextChangedListener
+import androidx.transition.TransitionManager
 import com.ably.tracking.Accuracy
 import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
@@ -94,7 +96,7 @@ class MainActivity : AppCompatActivity() {
             if (trackableId.isNotEmpty()) {
                 googleMap?.clear()
                 googleMap?.setOnCameraIdleListener { updateResolutionBasedOnZoomLevel() }
-                createAndStartAssetSubscriber(trackingId)
+                showAssetInformation()
                 trackableIdEditText.isEnabled = false
                 createAndStartAssetSubscriber(trackableId)
                 updateResolutionInfo(resolution)
@@ -196,6 +198,7 @@ class MainActivity : AppCompatActivity() {
     private fun stopSubscribing() {
         googleMap?.setOnCameraIdleListener { }
         clearResolutionInfo()
+        hideAssetInformation()
         trackableIdEditText.isEnabled = true
         scope.launch {
             try {
@@ -257,5 +260,22 @@ class MainActivity : AppCompatActivity() {
 
     private fun showToast(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+    }
+
+    private fun showAssetInformation() {
+        animateAssetInformationVisibility(true)
+    }
+
+    private fun hideAssetInformation() {
+        animateAssetInformationVisibility(false)
+    }
+
+    private fun animateAssetInformationVisibility(isShowing: Boolean) {
+        TransitionManager.beginDelayedTransition(rootContainer)
+        ConstraintSet().apply {
+            clone(rootContainer)
+            setVisibility(assetInformationContainer.id, if (isShowing) ConstraintSet.VISIBLE else ConstraintSet.GONE)
+            applyTo(rootContainer)
+        }
     }
 }
