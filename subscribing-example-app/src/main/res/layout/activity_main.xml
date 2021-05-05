@@ -6,118 +6,183 @@
   android:layout_height="match_parent"
   tools:context=".MainActivity">
 
-  <TextView
-    android:id="@+id/appTitleTextView"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:paddingTop="24dp"
-    android:paddingBottom="24dp"
-    android:text="@string/ably_asset_tracking"
-    android:textColor="#DE7C31"
-    android:textSize="30sp"
-    android:textStyle="bold"
-    app:layout_constraintEnd_toEndOf="parent"
-    app:layout_constraintStart_toStartOf="parent"
+  <View
+    android:id="@+id/headerBackground"
+    android:layout_width="match_parent"
+    android:layout_height="70dp"
+    android:background="@color/header_background"
     app:layout_constraintTop_toTopOf="parent" />
 
+  <androidx.appcompat.widget.AppCompatImageView
+    android:id="@+id/headerIconImageView"
+    android:layout_width="wrap_content"
+    android:layout_height="30dp"
+    android:layout_marginStart="16dp"
+    android:src="@drawable/header_logo_with_title"
+    app:layout_constraintBottom_toBottomOf="@id/headerBackground"
+    app:layout_constraintStart_toStartOf="@id/headerBackground"
+    app:layout_constraintTop_toTopOf="@id/headerBackground" />
+
+  <fragment
+    android:id="@+id/mapFragment"
+    android:name="com.google.android.gms.maps.SupportMapFragment"
+    android:layout_width="match_parent"
+    android:layout_height="0dp"
+    app:layout_constraintBottom_toTopOf="@id/assetInformationContainer"
+    app:layout_constraintTop_toBottomOf="@id/headerBackground" />
+
+  <androidx.constraintlayout.widget.ConstraintLayout
+    android:id="@+id/assetInformationContainer"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/asset_information_container_height"
+    android:background="@color/asset_information_background"
+    android:visibility="gone"
+    app:layout_constraintBottom_toTopOf="@id/trackableIdLabel">
+
+    <TextView
+      android:id="@+id/assetStateLabelTextView"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginStart="16dp"
+      android:text="@string/asset_status_label"
+      android:textColor="@color/asset_information_label"
+      app:layout_constraintBottom_toBottomOf="@id/animationSwitch"
+      app:layout_constraintStart_toStartOf="parent"
+      app:layout_constraintTop_toTopOf="@id/animationSwitch" />
+
+    <TextView
+      android:id="@+id/assetStateTextView"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginStart="8dp"
+      android:background="@drawable/round_rectangle"
+      android:backgroundTint="@color/asset_offline"
+      android:paddingHorizontal="12dp"
+      android:paddingVertical="7dp"
+      android:text="@string/asset_status_offline"
+      android:textColor="@color/asset_information_label"
+      android:textSize="8sp"
+      app:layout_constraintBottom_toBottomOf="@id/assetStateLabelTextView"
+      app:layout_constraintStart_toEndOf="@id/assetStateLabelTextView"
+      app:layout_constraintTop_toTopOf="@id/assetStateLabelTextView" />
+
+    <TextView
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginEnd="12dp"
+      android:text="@string/animation"
+      android:textColor="@color/asset_information_label"
+      app:layout_constraintBottom_toBottomOf="@id/animationSwitch"
+      app:layout_constraintEnd_toStartOf="@id/animationSwitch"
+      app:layout_constraintTop_toTopOf="@id/animationSwitch" />
+
+    <androidx.appcompat.widget.SwitchCompat
+      android:id="@+id/animationSwitch"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginEnd="16dp"
+      android:checked="true"
+      app:layout_constraintEnd_toEndOf="parent"
+      app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+      android:id="@+id/resolutionAccuracyLabelTextView"
+      android:layout_width="0dp"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="22dp"
+      android:text="@string/resolution_accuracy"
+      android:textAlignment="center"
+      android:textColor="@color/asset_information_label"
+      app:layout_constraintEnd_toStartOf="@id/resolutionDisplacementLabelTextView"
+      app:layout_constraintStart_toStartOf="parent"
+      app:layout_constraintTop_toBottomOf="@id/assetStateLabelTextView" />
+
+    <View
+      android:id="@+id/accuracyDisplacementDividerView"
+      android:layout_width="1dp"
+      android:layout_height="0dp"
+      android:background="@color/asset_information_divider"
+      app:layout_constraintBottom_toBottomOf="@id/resolutionAccuracyTextView"
+      app:layout_constraintEnd_toStartOf="@id/resolutionDisplacementLabelTextView"
+      app:layout_constraintStart_toEndOf="@id/resolutionAccuracyLabelTextView"
+      app:layout_constraintTop_toTopOf="@id/resolutionAccuracyLabelTextView" />
+
+    <TextView
+      android:id="@+id/resolutionDisplacementLabelTextView"
+      android:layout_width="0dp"
+      android:layout_height="wrap_content"
+      android:text="@string/resolution_minimum_displacement"
+      android:textAlignment="center"
+      android:textColor="@color/asset_information_label"
+      app:layout_constraintEnd_toStartOf="@id/resolutionIntervalLabelTextView"
+      app:layout_constraintStart_toEndOf="@id/resolutionAccuracyLabelTextView"
+      app:layout_constraintTop_toTopOf="@id/resolutionAccuracyLabelTextView" />
+
+    <View
+      android:id="@+id/displacementIntervalDividerView"
+      android:layout_width="1dp"
+      android:layout_height="0dp"
+      android:background="@color/asset_information_divider"
+      app:layout_constraintBottom_toBottomOf="@id/accuracyDisplacementDividerView"
+      app:layout_constraintEnd_toStartOf="@id/resolutionIntervalLabelTextView"
+      app:layout_constraintStart_toEndOf="@id/resolutionDisplacementLabelTextView"
+      app:layout_constraintTop_toTopOf="@id/accuracyDisplacementDividerView" />
+
+    <TextView
+      android:id="@+id/resolutionIntervalLabelTextView"
+      android:layout_width="0dp"
+      android:layout_height="wrap_content"
+      android:text="@string/resolution_desired_interval"
+      android:textAlignment="center"
+      android:textColor="@color/asset_information_label"
+      app:layout_constraintEnd_toEndOf="parent"
+      app:layout_constraintStart_toEndOf="@id/resolutionDisplacementLabelTextView"
+      app:layout_constraintTop_toTopOf="@id/resolutionAccuracyLabelTextView" />
+
+    <TextView
+      android:id="@+id/resolutionAccuracyTextView"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      app:layout_constraintEnd_toEndOf="@id/resolutionAccuracyLabelTextView"
+      app:layout_constraintStart_toStartOf="@id/resolutionAccuracyLabelTextView"
+      app:layout_constraintTop_toBottomOf="@id/resolutionAccuracyLabelTextView"
+      tools:text="Balanced" />
+
+    <TextView
+      android:id="@+id/resolutionDisplacementTextView"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      app:layout_constraintEnd_toEndOf="@id/resolutionDisplacementLabelTextView"
+      app:layout_constraintStart_toStartOf="@id/resolutionDisplacementLabelTextView"
+      app:layout_constraintTop_toTopOf="@id/resolutionAccuracyTextView"
+      tools:text="10.0m" />
+
+    <TextView
+      android:id="@+id/resolutionIntervalTextView"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      app:layout_constraintEnd_toEndOf="@id/resolutionIntervalLabelTextView"
+      app:layout_constraintStart_toStartOf="@id/resolutionIntervalLabelTextView"
+      app:layout_constraintTop_toTopOf="@id/resolutionAccuracyTextView"
+      tools:text="100ms" />
+
+  </androidx.constraintlayout.widget.ConstraintLayout>
+
   <TextView
-    android:id="@+id/assetStateTextView"
+    android:id="@+id/trackableIdLabel"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:layout_marginStart="30dp"
-    android:text="@string/asset_status_offline"
-    app:layout_constraintBottom_toBottomOf="@id/animationSwitch"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintTop_toTopOf="@id/animationSwitch" />
-
-  <TextView
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:layout_marginEnd="10dp"
-    android:text="@string/animation"
-    app:layout_constraintBottom_toBottomOf="@id/animationSwitch"
-    app:layout_constraintEnd_toStartOf="@id/animationSwitch"
-    app:layout_constraintTop_toTopOf="@id/animationSwitch" />
-
-  <androidx.appcompat.widget.SwitchCompat
-    android:id="@+id/animationSwitch"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:checked="true"
-    app:layout_constraintEnd_toEndOf="parent"
-    app:layout_constraintTop_toBottomOf="@id/appTitleTextView" />
-
-  <TextView
-    android:id="@+id/resolutionAccuracyLabelTextView"
-    android:layout_width="0dp"
-    android:layout_height="wrap_content"
-    android:text="@string/resolution_accuracy"
-    android:textAlignment="center"
-    app:layout_constraintEnd_toStartOf="@id/resolutionDisplacementLabelTextView"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintTop_toBottomOf="@id/animationSwitch" />
-
-  <TextView
-    android:id="@+id/resolutionDisplacementLabelTextView"
-    android:layout_width="0dp"
-    android:layout_height="wrap_content"
-    android:text="@string/resolution_minimum_displacement"
-    android:textAlignment="center"
-    app:layout_constraintEnd_toStartOf="@id/resolutionIntervalLabelTextView"
-    app:layout_constraintStart_toEndOf="@id/resolutionAccuracyLabelTextView"
-    app:layout_constraintTop_toTopOf="@id/resolutionAccuracyLabelTextView" />
-
-  <TextView
-    android:id="@+id/resolutionIntervalLabelTextView"
-    android:layout_width="0dp"
-    android:layout_height="wrap_content"
-    android:text="@string/resolution_desired_interval"
-    android:textAlignment="center"
-    app:layout_constraintEnd_toEndOf="parent"
-    app:layout_constraintStart_toEndOf="@id/resolutionDisplacementLabelTextView"
-    app:layout_constraintTop_toTopOf="@id/resolutionAccuracyLabelTextView" />
-
-  <TextView
-    android:id="@+id/resolutionAccuracyTextView"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:paddingBottom="10dp"
-    app:layout_constraintEnd_toEndOf="@id/resolutionAccuracyLabelTextView"
-    app:layout_constraintStart_toStartOf="@id/resolutionAccuracyLabelTextView"
-    app:layout_constraintTop_toBottomOf="@id/resolutionAccuracyLabelTextView"
-    tools:text="balanced" />
-
-  <TextView
-    android:id="@+id/resolutionDisplacementTextView"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    app:layout_constraintEnd_toEndOf="@id/resolutionDisplacementLabelTextView"
-    app:layout_constraintStart_toStartOf="@id/resolutionDisplacementLabelTextView"
-    app:layout_constraintTop_toTopOf="@id/resolutionAccuracyTextView"
-    tools:text="10.0m" />
-
-  <TextView
-    android:id="@+id/resolutionIntervalTextView"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    app:layout_constraintEnd_toEndOf="@id/resolutionIntervalLabelTextView"
-    app:layout_constraintStart_toStartOf="@id/resolutionIntervalLabelTextView"
-    app:layout_constraintTop_toTopOf="@id/resolutionAccuracyTextView"
-    tools:text="100s" />
-
-  <TextView
-    android:id="@+id/trackingIdLabel"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:paddingTop="10dp"
-    android:text="@string/tracking_id"
-    app:layout_constraintBottom_toTopOf="@+id/trackingIdEditText"
-    app:layout_constraintStart_toStartOf="@+id/trackingIdEditText" />
+    android:paddingTop="12dp"
+    android:paddingBottom="6dp"
+    android:text="@string/trackable_id"
+    app:layout_constraintBottom_toTopOf="@+id/trackableIdEditText"
+    app:layout_constraintStart_toStartOf="@+id/trackableIdEditText" />
 
   <androidx.appcompat.widget.AppCompatEditText
-    android:id="@+id/trackingIdEditText"
+    android:id="@+id/trackableIdEditText"
     android:layout_width="0dp"
     android:layout_height="50dp"
+    android:layout_marginBottom="10dp"
     app:layout_constraintBottom_toTopOf="@id/startButton"
     app:layout_constraintEnd_toEndOf="@id/startButton"
     app:layout_constraintStart_toStartOf="@id/startButton" />
@@ -126,20 +191,13 @@
     android:id="@+id/startButton"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginStart="30dp"
-    android:layout_marginEnd="30dp"
-    android:layout_marginBottom="10dp"
-    android:background="@drawable/rounded_ready"
+    android:layout_marginStart="@dimen/start_button_margin"
+    android:layout_marginEnd="@dimen/start_button_margin"
+    android:layout_marginBottom="@dimen/start_button_margin"
+    android:background="@drawable/rounded_rectangle"
+    android:backgroundTint="@color/button_inactive"
     android:text="@string/start_button_ready"
     android:textColor="@color/white"
     app:layout_constraintBottom_toBottomOf="parent" />
-
-  <fragment
-    android:id="@+id/mapFragment"
-    android:name="com.google.android.gms.maps.SupportMapFragment"
-    android:layout_width="match_parent"
-    android:layout_height="0dp"
-    app:layout_constraintBottom_toTopOf="@id/trackingIdLabel"
-    app:layout_constraintTop_toBottomOf="@id/resolutionAccuracyTextView" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

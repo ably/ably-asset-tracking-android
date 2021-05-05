@@ -68,24 +68,25 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startSubscribing() {
-        trackingIdEditText.text.toString().trim().let { trackingId ->
-            if (trackingId.isNotEmpty()) {
+        trackableIdEditText.text.toString().trim().let { trackableId ->
+            if (trackableId.isNotEmpty()) {
                 googleMap?.clear()
                 googleMap?.setOnCameraIdleListener { updateResolutionBasedOnZoomLevel() }
                 createAndStartAssetSubscriber(trackingId)
+                createAndStartAssetSubscriber(trackableId)
                 updateResolutionInfo(resolution)
-                changeStartButtonState(true)
+                changeStartButtonText(true)
             } else {
-                showToast("Insert tracking ID")
+                showToast("Insert trackable ID")
             }
         }
     }
 
-    private fun createAndStartAssetSubscriber(trackingId: String) {
+    private fun createAndStartAssetSubscriber(trackableId: String) {
         scope.launch {
             subscriber = Subscriber.subscribers()
                 .connection(ConnectionConfiguration(Authentication.basic(CLIENT_ID, ABLY_API_KEY)))
-                .trackingId(trackingId)
+                .trackingId(trackableId)
                 .resolution(resolution)
                 .start()
                 .apply {
@@ -170,7 +171,7 @@ class MainActivity : AppCompatActivity() {
             try {
                 subscriber?.stop()
                 subscriber = null
-                changeStartButtonState(false)
+                changeStartButtonText(false)
                 marker = null
             } catch (exception: Exception) {
                 // TODO check Result (it) for failure and report accordingly
@@ -208,13 +209,11 @@ class MainActivity : AppCompatActivity() {
     private fun getMarkerIcon(bearing: Float) =
         BitmapDescriptorFactory.fromResource(getMarkerResourceIdByBearing(bearing))
 
-    private fun changeStartButtonState(isSubscribing: Boolean) {
+    private fun changeStartButtonText(isSubscribing: Boolean) {
         if (isSubscribing) {
             startButton.text = getString(R.string.start_button_working)
-            startButton.setBackgroundResource(R.drawable.rounded_working)
         } else {
             startButton.text = getString(R.string.start_button_ready)
-            startButton.setBackgroundResource(R.drawable.rounded_ready)
         }
     }
 
