@@ -7,6 +7,7 @@ import android.view.inputmethod.EditorInfo
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintSet
+import androidx.core.content.ContextCompat
 import androidx.core.widget.addTextChangedListener
 import androidx.transition.TransitionManager
 import com.ably.tracking.Accuracy
@@ -192,7 +193,7 @@ class MainActivity : AppCompatActivity() {
             is TrackableState.Failed -> R.color.asset_failed
         }
         assetStateTextView.text = getString(textId)
-        assetStateTextView.backgroundTintList = ColorStateList.valueOf(getColor(backgroundColorId))
+        assetStateTextView.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this, backgroundColorId))
     }
 
     private fun stopSubscribing() {
@@ -252,9 +253,11 @@ class MainActivity : AppCompatActivity() {
 
     private fun changeStartButtonColor(isActive: Boolean) {
         if (isActive) {
-            startButton.backgroundTintList = ColorStateList.valueOf(getColor(R.color.button_active))
+            startButton.backgroundTintList =
+                ColorStateList.valueOf(ContextCompat.getColor(this, R.color.button_active))
         } else {
-            startButton.backgroundTintList = ColorStateList.valueOf(getColor(R.color.button_inactive))
+            startButton.backgroundTintList =
+                ColorStateList.valueOf(ContextCompat.getColor(this, R.color.button_inactive))
         }
     }
 

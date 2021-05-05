@@ -5,7 +5,8 @@
   android:id="@+id/rootContainer"
   android:layout_width="match_parent"
   android:layout_height="match_parent"
-  tools:context=".MainActivity">
+  tools:context=".MainActivity"
+  tools:ignore="UnusedIds">
 
   <View
     android:id="@+id/headerBackground"
@@ -65,7 +66,8 @@
       android:textSize="8sp"
       app:layout_constraintBottom_toBottomOf="@id/assetStateLabelTextView"
       app:layout_constraintStart_toEndOf="@id/assetStateLabelTextView"
-      app:layout_constraintTop_toTopOf="@id/assetStateLabelTextView" />
+      app:layout_constraintTop_toTopOf="@id/assetStateLabelTextView"
+      tools:ignore="SmallSp" />
 
     <TextView
       android:layout_width="wrap_content"
