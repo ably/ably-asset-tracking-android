@@ -1,5 +1,38 @@
 # Change log
 
+## [1.0.0-beta.3](https://github.com/ably/ably-asset-tracking-android/tree/v1.0.0-beta.3)
+
+[Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.0.0-beta.2...v1.0.0-beta.3)
+
+**Fixed bugs:**
+
+- Keep zoom level when auto centering in the subscriber example app [\#306](https://github.com/ably/ably-asset-tracking-android/issues/306)
+- Handle exception thrown when subscribing for presence messages fails in publisher [\#214](https://github.com/ably/ably-asset-tracking-android/issues/214)
+
+**Closed issues:**
+
+- Change names of client type values from presence data [\#300](https://github.com/ably/ably-asset-tracking-android/issues/300)
+- Release to package manager [\#286](https://github.com/ably/ably-asset-tracking-android/issues/286)
+- Add tests that check if different resolutions have impact on the number of sent locations [\#280](https://github.com/ably/ably-asset-tracking-android/issues/280)
+- Move internal classes to the common module [\#271](https://github.com/ably/ably-asset-tracking-android/issues/271)
+- Make DTO class definitions easier to identify in the codebase [\#165](https://github.com/ably/ably-asset-tracking-android/issues/165)
+
+**Merged pull requests:**
+
+- Publish to Maven GitHub Packages [\#317](https://github.com/ably/ably-asset-tracking-android/pull/317) ([QuintinWillison](https://github.com/QuintinWillison))
+- Replace jCenter repository with maven Central [\#316](https://github.com/ably/ably-asset-tracking-android/pull/316) ([QuintinWillison](https://github.com/QuintinWillison))
+- Replace interpolated string definitions with plain literals [\#314](https://github.com/ably/ably-asset-tracking-android/pull/314) ([QuintinWillison](https://github.com/QuintinWillison))
+- Remove empty proguard configuration files to reduce noise [\#312](https://github.com/ably/ably-asset-tracking-android/pull/312) ([QuintinWillison](https://github.com/QuintinWillison))
+- Change presence client types values to match naming convention [\#310](https://github.com/ably/ably-asset-tracking-android/pull/310) ([KacperKluka](https://github.com/KacperKluka))
+- Handle error when subscribing for presence messages fails [\#308](https://github.com/ably/ably-asset-tracking-android/pull/308) ([KacperKluka](https://github.com/KacperKluka))
+- Keep the zoom level when auto centering the camera position [\#307](https://github.com/ably/ably-asset-tracking-android/pull/307) ([KacperKluka](https://github.com/KacperKluka))
+- Split out contributing guide [\#304](https://github.com/ably/ably-asset-tracking-android/pull/304) ([QuintinWillison](https://github.com/QuintinWillison))
+- Add tests for publisher resolution and frequency of sent messages [\#303](https://github.com/ably/ably-asset-tracking-android/pull/303) ([KacperKluka](https://github.com/KacperKluka))
+- Annotate DTO classes [\#302](https://github.com/ably/ably-asset-tracking-android/pull/302) ([KacperKluka](https://github.com/KacperKluka))
+- Move shared classes that shouldn't be exposed to the common module [\#301](https://github.com/ably/ably-asset-tracking-android/pull/301) ([KacperKluka](https://github.com/KacperKluka))
+- Remove the metadata field from the Trackable class [\#294](https://github.com/ably/ably-asset-tracking-android/pull/294) ([KacperKluka](https://github.com/KacperKluka))
+- Create a test-common module for shared unit tests code [\#282](https://github.com/ably/ably-asset-tracking-android/pull/282) ([KacperKluka](https://github.com/KacperKluka))
+
 ## [1.0.0-beta.2](https://github.com/ably/ably-asset-tracking-android/tree/v1.0.0-beta.2)
 
 [Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.0.0-beta.1...v1.0.0-beta.2)
