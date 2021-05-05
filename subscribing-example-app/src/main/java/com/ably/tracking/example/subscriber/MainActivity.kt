@@ -165,7 +165,7 @@ class MainActivity : AppCompatActivity() {
         }
 
     private fun updateResolutionInfo(resolution: Resolution) {
-        resolutionAccuracyTextView.text = resolution.accuracy.name
+        resolutionAccuracyTextView.text = resolution.accuracy.name.toLowerCase().capitalize()
         resolutionDisplacementTextView.text =
             getString(R.string.resolution_minimum_displacement_value, resolution.minimumDisplacement)
         resolutionIntervalTextView.text =
