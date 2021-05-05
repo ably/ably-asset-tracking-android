@@ -11,3 +11,5 @@ dependencies {
     api project(':core-sdk-java')
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.4.2'
 }
+
+apply from: '../publish.gradle'

@@ -1,0 +1,29 @@
+apply plugin: 'maven-publish'
+
+final githubActor = findProperty('GITHUB_ACTOR')
+final githubToken = findProperty('GITHUB_TOKEN')
+
+afterEvaluate {
+    // Based on: https://developer.android.com/studio/build/maven-publish-plugin
+    // See: https://docs.gradle.org/current/dsl/org.gradle.api.publish.PublishingExtension.html
+    publishing {
+        publications {
+            release(MavenPublication) {
+                from components.release
+            }
+        }
+
+        repositories {
+            if (githubActor != null && githubToken != null) {
+                // per: https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-gradle-registry
+                maven {
+                    url = uri("https://maven.pkg.github.com/ably/ably-asset-tracking-android")
+                    credentials {
+                        username = githubActor
+                        password = githubToken
+                    }
+                }
+            }
+        }
+    }
+}
