@@ -7,5 +7,3 @@ plugins {
 dependencies {
     implementation project(':core-sdk')
 }
-
-apply from: '../publish.gradle'
