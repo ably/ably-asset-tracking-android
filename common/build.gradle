@@ -13,3 +13,5 @@ android {
         kotlinOptions.freeCompilerArgs += ['-module-name', 'com.ably.tracking.common']
     }
 }
+
+apply from: '../publish.gradle'

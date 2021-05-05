@@ -1,10 +1,11 @@
-// Top-level build file where you can add configuration options common to all sub-projects/modules.
 buildscript {
     ext.kotlin_version = '1.4.32'
+
     repositories {
         google()
         mavenCentral()
     }
+
     dependencies {
         classpath 'com.android.tools.build:gradle:4.1.0'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
@@ -25,6 +26,13 @@ plugins {
 }
 
 allprojects {
+    // group and version properties are configured here as they're inherited by the maven-publish plugin.
+    group = 'com.ably.tracking'
+
+    // version MUST conform to the Semantic Versioning Specification (https://semver.org/) version 2.0.0
+    // on incrementing this value, ensure to also increment versionCode in android defaultConfig (also in this file)
+    version = '1.0.0-beta.2'
+
     repositories {
         google()
         mavenCentral()
@@ -69,9 +77,8 @@ subprojects {
                 // projects in this repository. Therefore, this same version number is used for SDK and
                 // example app projects alike.
                 // - versionCode MUST be incremented by 1 for each release from the main branch
-                // - versionName MUST conform to the Semantic Versioning Specification (https://semver.org/) version 2.0.0
                 versionCode 4
-                versionName '1.0.0-beta.2'
+                versionName version
 
                 testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
 

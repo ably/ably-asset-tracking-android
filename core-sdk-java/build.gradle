@@ -9,3 +9,5 @@ apply from: '../jacoco.gradle'
 dependencies {
     api project(':core-sdk')
 }
+
+apply from: '../publish.gradle'
