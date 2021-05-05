@@ -95,6 +95,7 @@ class MainActivity : AppCompatActivity() {
                 googleMap?.clear()
                 googleMap?.setOnCameraIdleListener { updateResolutionBasedOnZoomLevel() }
                 createAndStartAssetSubscriber(trackingId)
+                trackableIdEditText.isEnabled = false
                 createAndStartAssetSubscriber(trackableId)
                 updateResolutionInfo(resolution)
                 changeStartButtonText(true)
@@ -189,6 +190,7 @@ class MainActivity : AppCompatActivity() {
     private fun stopSubscribing() {
         googleMap?.setOnCameraIdleListener { }
         clearResolutionInfo()
+        trackableIdEditText.isEnabled = true
         scope.launch {
             try {
                 subscriber?.stop()
