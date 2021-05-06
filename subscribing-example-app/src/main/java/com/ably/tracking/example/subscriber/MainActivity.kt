@@ -3,6 +3,7 @@ package com.ably.tracking.example.subscriber
 import android.content.res.ColorStateList
 import android.location.Location
 import android.os.Bundle
+import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -24,6 +25,8 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.android.synthetic.main.asset_information_view.*
+import kotlinx.android.synthetic.main.trackable_input_controls_view.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -267,10 +270,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun showAssetInformation() {
         animateAssetInformationVisibility(true)
+        draggingAreaView.visibility = View.VISIBLE
     }
 
     private fun hideAssetInformation() {
         animateAssetInformationVisibility(false)
+        draggingAreaView.visibility = View.GONE
     }
 
     private fun animateAssetInformationVisibility(isShowing: Boolean) {
