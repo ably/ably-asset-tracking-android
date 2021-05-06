@@ -2,12 +2,15 @@ package com.ably.tracking.example.publisher
 
 import android.Manifest
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.os.Bundle
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.annotation.RequiresPermission
+import androidx.core.content.ContextCompat
+import androidx.core.widget.addTextChangedListener
 import com.ably.tracking.Accuracy
 import com.ably.tracking.Resolution
 import com.ably.tracking.publisher.DefaultProximity
@@ -36,6 +39,7 @@ class AddTrackableActivity : PublisherServiceActivity() {
         setContentView(R.layout.activity_add_trackable)
         appPreferences = AppPreferences(this) // TODO - Add some DI (Koin)?
 
+        setTrackableIdEditTextListener()
         setupResolutionFields()
         addTrackableButton.setOnClickListener { beginAddingTrackable() }
         setupTrackableInputAction()
@@ -185,4 +189,22 @@ class AddTrackableActivity : PublisherServiceActivity() {
     }
 
     private fun getTrackableId(): String = trackableIdEditText.text.toString().trim()
+
+    private fun setTrackableIdEditTextListener() {
+        trackableIdEditText.addTextChangedListener { trackableId ->
+            trackableId?.trim()?.let { changeAddButtonColor(it.isNotEmpty()) }
+        }
+    }
+
+    private fun changeAddButtonColor(isActive: Boolean) {
+        if (isActive) {
+            addTrackableButton.backgroundTintList =
+                ColorStateList.valueOf(ContextCompat.getColor(this, R.color.button_active))
+            addTrackableButton.setTextColor(ContextCompat.getColor(this, R.color.white))
+        } else {
+            addTrackableButton.backgroundTintList =
+                ColorStateList.valueOf(ContextCompat.getColor(this, R.color.button_inactive))
+            addTrackableButton.setTextColor(ContextCompat.getColor(this, R.color.mid_grey))
+        }
+    }
 }

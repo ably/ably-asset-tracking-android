@@ -7,7 +7,7 @@
   <string name="ably_asset_tracking">Ably Asset Tracking</string>
   <string name="asset_status_label">Asset status:</string>
   <string name="trackable_details">Trackable Details</string>
-  <string name="add_trackable">Add Trackable</string>
+  <string name="add_trackable">Add trackable</string>
   <string name="location_source_label">Location Source:</string>
   <string name="current_location_and_bearing">Current Location and Bearing</string>
   <string name="latitude_label">Lat:</string>
