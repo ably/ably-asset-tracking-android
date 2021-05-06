@@ -52,4 +52,6 @@
   <string name="preferences_resolution_minimum_displacement_label">Minimum displacement</string>
   <string name="preferences_update_resolution_minimum_displacement_message">Minimum Displacement [m]</string>
   <string name="preferences_update_resolution_minimum_displacement_title">Set Minimum Displacement</string>
+  <string name="trackable_list_empty_state_header">No assets</string>
+  <string name="trackable_list_empty_state_message">Trackable assets will be listed here when added</string>
 </resources>

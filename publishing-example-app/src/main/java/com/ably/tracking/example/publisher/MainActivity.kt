@@ -3,6 +3,7 @@ package com.ably.tracking.example.publisher
 import android.Manifest
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
 import android.widget.Toast
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -37,7 +38,7 @@ class MainActivity : PublisherServiceActivity() {
 
         requestLocationPermission()
 
-        settingsFab.setOnClickListener {
+        settingsImageView.setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
 
@@ -57,6 +58,7 @@ class MainActivity : PublisherServiceActivity() {
                 .onEach {
                     trackablesAdapter.trackables = it.toList()
                     if (it.isEmpty() && publisherService.publisher != null) {
+                        hideTrackablesList()
                         try {
                             publisherService.publisher?.stop()
                             publisherService.publisher = null
@@ -64,6 +66,8 @@ class MainActivity : PublisherServiceActivity() {
                             // TODO check Result (it) for failure and report accordingly
                         }
                         stopPublisherService()
+                    } else {
+                        showTrackablesList()
                     }
                 }
                 .launchIn(scope)
@@ -88,7 +92,7 @@ class MainActivity : PublisherServiceActivity() {
     }
 
     private fun updateLocationSourceMethodInfo() {
-        locationSourceMethodTextView.text = appPreferences.getLocationSource()
+        locationSourceMethodTextView.text = appPreferences.getLocationSource().toLowerCase().capitalize()
     }
 
     private fun requestLocationPermission() {
@@ -127,5 +131,15 @@ class MainActivity : PublisherServiceActivity() {
 
     private fun showToast(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+    }
+
+    private fun showTrackablesList() {
+        trackablesRecyclerView.visibility = View.VISIBLE
+        emptyStateContainer.visibility = View.GONE
+    }
+
+    private fun hideTrackablesList() {
+        trackablesRecyclerView.visibility = View.GONE
+        emptyStateContainer.visibility = View.VISIBLE
     }
 }
