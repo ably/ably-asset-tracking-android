@@ -30,13 +30,12 @@
 
   <TextView
     android:id="@+id/assetStateTextView"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
+    android:layout_width="52dp"
+    android:layout_height="20dp"
     android:layout_marginStart="8dp"
     android:background="@drawable/round_rectangle"
     android:backgroundTint="@color/asset_offline"
-    android:paddingHorizontal="12dp"
-    android:paddingVertical="7dp"
+    android:gravity="center"
     android:text="@string/asset_status_offline"
     android:textColor="@color/mid_grey"
     android:textSize="8sp"
