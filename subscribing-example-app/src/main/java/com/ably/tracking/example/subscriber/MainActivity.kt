@@ -190,12 +190,18 @@ class MainActivity : AppCompatActivity() {
             is TrackableState.Offline -> R.string.asset_status_offline
             is TrackableState.Failed -> R.string.asset_status_failed
         }
+        val textColorId = when (trackableState) {
+            is TrackableState.Online -> R.color.black
+            is TrackableState.Offline -> R.color.mid_grey
+            is TrackableState.Failed -> R.color.black
+        }
         val backgroundColorId = when (trackableState) {
             is TrackableState.Online -> R.color.asset_online
             is TrackableState.Offline -> R.color.asset_offline
             is TrackableState.Failed -> R.color.asset_failed
         }
         assetStateTextView.text = getString(textId)
+        assetStateTextView.setTextColor(ContextCompat.getColor(this, textColorId))
         assetStateTextView.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this, backgroundColorId))
     }
 
@@ -258,9 +264,11 @@ class MainActivity : AppCompatActivity() {
         if (isActive) {
             startButton.backgroundTintList =
                 ColorStateList.valueOf(ContextCompat.getColor(this, R.color.button_active))
+            startButton.setTextColor(ContextCompat.getColor(this, R.color.white))
         } else {
             startButton.backgroundTintList =
                 ColorStateList.valueOf(ContextCompat.getColor(this, R.color.button_inactive))
+            startButton.setTextColor(ContextCompat.getColor(this, R.color.mid_grey))
         }
     }
 

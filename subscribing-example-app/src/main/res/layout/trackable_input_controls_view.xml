@@ -34,7 +34,7 @@
     android:background="@drawable/rounded_rectangle"
     android:backgroundTint="@color/button_inactive"
     android:text="@string/start_button_ready"
-    android:textColor="@color/white"
+    android:textColor="@color/mid_grey"
     app:layout_constraintBottom_toBottomOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

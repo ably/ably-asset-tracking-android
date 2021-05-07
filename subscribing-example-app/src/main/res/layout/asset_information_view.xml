@@ -38,7 +38,7 @@
     android:paddingHorizontal="12dp"
     android:paddingVertical="7dp"
     android:text="@string/asset_status_offline"
-    android:textColor="@color/asset_information_label"
+    android:textColor="@color/mid_grey"
     android:textSize="8sp"
     app:layout_constraintBottom_toBottomOf="@id/assetStateLabelTextView"
     app:layout_constraintStart_toEndOf="@id/assetStateLabelTextView"
