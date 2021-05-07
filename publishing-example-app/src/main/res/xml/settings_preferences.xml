@@ -7,9 +7,6 @@
   <PreferenceCategory android:title="@string/preferences_general_category_title">
 
     <ListPreference
-      android:defaultValue="@string/default_location_source"
-      android:entries="@array/location_source_entries"
-      android:entryValues="@array/location_source_values"
       android:key="@string/preferences_location_source_key"
       android:title="@string/preferences_location_source_label"
       app:useSimpleSummaryProvider="true" />
@@ -34,8 +31,6 @@
   <PreferenceCategory android:title="@string/preferences_resolution_category_title">
 
     <ListPreference
-      android:entries="@array/location_source_entries"
-      android:entryValues="@array/location_source_values"
       android:key="@string/preferences_resolution_accuracy_key"
       android:title="@string/preferences_resolution_accuracy_label"
       app:useSimpleSummaryProvider="true" />

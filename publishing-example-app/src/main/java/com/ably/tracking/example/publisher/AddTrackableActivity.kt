@@ -94,7 +94,7 @@ class AddTrackableActivity : PublisherServiceActivity() {
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
     private fun addTrackable(trackableId: String) {
         if (publisherService?.publisher == null) {
-            if (getLocationSourceType() == LocationSourceType.S3) {
+            if (appPreferences.getLocationSource() == LocationSourceType.S3_FILE) {
                 downloadLocationHistoryData { startPublisherAndAddTrackable(trackableId, it) }
             } else {
                 startPublisherAndAddTrackable(trackableId)
@@ -150,17 +150,10 @@ class AddTrackableActivity : PublisherServiceActivity() {
     }
 
     private fun createLocationSource(historyData: LocationHistoryData? = null): LocationSource? =
-        when (getLocationSourceType()) {
-            LocationSourceType.ABLY -> LocationSourceAbly.create(appPreferences.getSimulationChannel())
-            LocationSourceType.S3 -> LocationSourceRaw.create(historyData!!)
-            LocationSourceType.PHONE -> null
-        }
-
-    private fun getLocationSourceType() =
         when (appPreferences.getLocationSource()) {
-            getString(R.string.location_source_ably) -> LocationSourceType.ABLY
-            getString(R.string.location_source_s3) -> LocationSourceType.S3
-            else -> LocationSourceType.PHONE
+            LocationSourceType.PHONE -> null
+            LocationSourceType.ABLY_CHANNEL -> LocationSourceAbly.create(appPreferences.getSimulationChannel())
+            LocationSourceType.S3_FILE -> LocationSourceRaw.create(historyData!!)
         }
 
     private fun downloadLocationHistoryData(onHistoryDataDownloaded: (historyData: LocationHistoryData) -> Unit) {

@@ -60,7 +60,7 @@ class TrackableDetailsActivity : PublisherServiceActivity() {
     }
 
     private fun updateLocationSourceMethodInfo() {
-        locationSourceMethodTextView.text = appPreferences.getLocationSource().toLowerCase().capitalize()
+        locationSourceMethodTextView.text = appPreferences.getLocationSource().displayName
     }
 
     private fun stopTracking() {
