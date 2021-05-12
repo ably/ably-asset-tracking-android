@@ -8,7 +8,7 @@ import com.amplifyframework.core.Amplify
 import com.amplifyframework.core.AmplifyConfiguration
 import com.amplifyframework.storage.s3.AWSS3StoragePlugin
 import com.google.gson.Gson
-import timber.log.Timber
+import org.slf4j.LoggerFactory
 import java.io.File
 import java.text.DecimalFormat
 import java.text.SimpleDateFormat
@@ -21,6 +21,7 @@ object S3Helper {
 
     private lateinit var gson: Gson
     private var isInitialized = false
+    private val logger = LoggerFactory.getLogger(this::class.simpleName)
 
     fun init(context: Context) {
         if (isConfigFileProvided(context)) {
@@ -54,7 +55,7 @@ object S3Helper {
                     }
                     onListLoaded(filenamesWithSizes, filenames)
                 },
-                { error -> Timber.e(error, "Error when listing S3 files") }
+                { error -> logger.error("Error when listing S3 files", error) }
             )
         } else {
             onUninitialized?.invoke()
@@ -82,7 +83,7 @@ object S3Helper {
                     val historyJson = result.file.readText()
                     onHistoryDataDownloaded(gson.fromJson(historyJson, LocationHistoryData::class.java))
                 },
-                { error -> Timber.e(error, "Error when downloading S3 file") }
+                { error -> logger.error("Error when downloading S3 file", error) }
             )
         } else {
             onUninitialized?.invoke()
@@ -102,8 +103,8 @@ object S3Helper {
                 Amplify.Storage.uploadFile(
                     filename,
                     fileToUpload,
-                    { result -> Timber.i("Uploaded history data to S3: ${result.key}") },
-                    { error -> Timber.e(error, "Error when uploading S3 file") }
+                    { result -> logger.info("Uploaded history data to S3: ${result.key}") },
+                    { error -> logger.error("Error when uploading S3 file", error) }
                 )
             }
         } else {

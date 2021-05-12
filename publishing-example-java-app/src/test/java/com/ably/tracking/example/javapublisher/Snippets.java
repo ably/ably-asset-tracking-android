@@ -1,5 +1,7 @@
 package com.ably.tracking.example.javapublisher;
 
+import androidx.annotation.NonNull;
+
 import com.ably.tracking.Accuracy;
 import com.ably.tracking.Resolution;
 import com.ably.tracking.publisher.DefaultProximity;
@@ -10,7 +12,6 @@ import com.ably.tracking.publisher.ResolutionPolicy;
 import com.ably.tracking.publisher.Trackable;
 import com.ably.tracking.publisher.TrackableResolutionRequest;
 
-import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -29,16 +30,16 @@ public class Snippets {
     public void implementingResolutionPolicy() {
         // Implement the ResolutionPolicy interface.
         final ResolutionPolicy policy = new ResolutionPolicy() {
-            @NotNull
+            @NonNull
             @Override
-            public Resolution resolve(@NotNull Set<Resolution> resolutions) {
+            public Resolution resolve(@NonNull Set<Resolution> resolutions) {
                 // Return nonsense values, so we can validate them at the end of this test.
                 return new Resolution(Accuracy.MINIMUM, -666, -999);
             }
 
-            @NotNull
+            @NonNull
             @Override
-            public Resolution resolve(@NotNull TrackableResolutionRequest request) {
+            public Resolution resolve(@NonNull TrackableResolutionRequest request) {
                 // Return nonsense values, so we can validate them at the end of this test.
                 return new Resolution(Accuracy.MAXIMUM, -1666, -1999);
             }
@@ -118,7 +119,7 @@ public class Snippets {
         // Implement the ProximityHandler interface.
         final ResolutionPolicy.Methods.ProximityHandler handler = new ResolutionPolicy.Methods.ProximityHandler() {
             @Override
-            public void onProximityReached(@NotNull Proximity threshold) {
+            public void onProximityReached(@NonNull Proximity threshold) {
                 log.add("reached");
                 Assert.assertTrue(threshold instanceof DefaultProximity);
                 final DefaultProximity dp = (DefaultProximity) threshold;

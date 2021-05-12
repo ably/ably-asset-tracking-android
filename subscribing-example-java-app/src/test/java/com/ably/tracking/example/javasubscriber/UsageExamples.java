@@ -8,7 +8,6 @@ import com.ably.tracking.connection.TokenRequest;
 import com.ably.tracking.subscriber.Subscriber;
 import com.ably.tracking.subscriber.java.SubscriberFacade;
 
-import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
 

@@ -24,7 +24,6 @@ import com.ably.tracking.publisher.RoutingProfile;
 import com.ably.tracking.publisher.Trackable;
 import com.ably.tracking.publisher.java.PublisherFacade;
 
-import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
 

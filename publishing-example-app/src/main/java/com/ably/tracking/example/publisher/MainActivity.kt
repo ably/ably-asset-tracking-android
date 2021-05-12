@@ -15,7 +15,6 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import pub.devrel.easypermissions.AfterPermissionGranted
 import pub.devrel.easypermissions.EasyPermissions
-import timber.log.Timber
 
 private val REQUIRED_PERMISSIONS = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
 private const val REQUEST_LOCATION_PERMISSION = 1
@@ -30,7 +29,6 @@ class MainActivity : PublisherServiceActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Timber.d("Hello via Timber")
         setContentView(R.layout.activity_main)
         appPreferences = AppPreferences(this)
         updateLocationSourceMethodInfo()

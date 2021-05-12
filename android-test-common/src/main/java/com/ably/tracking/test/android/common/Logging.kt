@@ -7,7 +7,7 @@ import android.util.Log
 private val TAG = "PUBLISHING SDK IT"
 private val encounteredThreadIds = HashSet<Long>()
 
-@SuppressLint("LogNotTimber", "LogConditional")
+@SuppressLint("LogConditional")
 fun testLogD(message: String) {
     val thread = Thread.currentThread()
     val currentThreadId = thread.id
