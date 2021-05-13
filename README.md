@@ -112,6 +112,21 @@ This repository also contains example apps that showcase how the Ably Asset Trac
 
 To build these apps you will need to specify [credentials](#api-keys-and-access-tokens) in Gradle properties.
 
+## Logging
+
+The SDKs use `slf4j` for logging. By default the logs aren't visible anywhere. In order to see logs, users have to include a library that implements the `slf4j-api` interface.
+In the example apps we are using `logback-android` which allows to easily log to the Logcat and create custom log handlers.
+For information on how to add `logback-android` to your project please check its [github page](https://github.com/tony19/logback-android).
+
+### Custom log handler
+
+To create your custom log handler you have to create a class that implements the `Appender` interface.
+There are a few base classes that you can extend to make things easier, two most important of them are `AppenderBase` and `UnsynchronizedAppenderBase`.
+For more detailed information about appenders check the [official logback docs](http://logback.qos.ch/manual/appenders.html).
+A sample [custom log handler](publishing-example-app/src/main/java/com/ably/tracking/example/publisher/CustomLogsAppender.kt) is implemented in the publishing example app.
+After creating your custom log handler you need to include it in the [logback configuration file](publishing-example-app/src/main/assets/logback.xml).
+The `name` attribute of the `appender` tag can be anything but it must match the `ref` attribute of the `appender-ref` tag.
+
 ## Android Runtime Requirements
 
 ### Kotlin Users
