@@ -27,7 +27,7 @@ import com.mapbox.navigation.core.replay.history.ReplayHistoryMapper
 import com.mapbox.navigation.core.trip.session.LocationObserver
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 
 typealias LocationHistoryListener = (LocationHistoryData) -> Unit
 
@@ -106,7 +106,7 @@ internal class DefaultMapbox(
     private var mapboxNavigation: MapboxNavigation
     private var mapboxReplayer: MapboxReplayer? = null
     private var locationHistoryListener: (LocationHistoryListener)? = null
-    private val logger = LoggerFactory.getLogger(this::class.simpleName)
+    private val logger = KotlinLogging.logger { }
 
     init {
         val mapboxBuilder = NavigationOptions.Builder(context)
@@ -190,7 +190,7 @@ internal class DefaultMapbox(
 
                     override fun onRoutesRequestFailure(throwable: Throwable, routeOptions: RouteOptions) {
                         // We won't know the ETA for the active trackable and therefore we won't be able to check the temporal threshold.
-                        logger.error("Failed call to requestRoutes.", throwable)
+                        logger.error(throwable) { "Failed call to requestRoutes." }
                     }
                 }
             )
