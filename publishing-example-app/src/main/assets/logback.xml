@@ -8,7 +8,10 @@
     </encoder>
   </appender>
 
+  <appender name="custom" class="com.ably.tracking.example.publisher.CustomLogsAppender" />
+
   <root level="DEBUG">
     <appender-ref ref="logcat" />
+    <appender-ref ref="custom" />
   </root>
 </configuration>
