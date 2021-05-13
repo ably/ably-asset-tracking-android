@@ -29,7 +29,7 @@ In this repository there are two SDKs for Android devices:
 
 Visit the [Ably Asset Tracking](https://ably.com/documentation/asset-tracking) documentation for a complete API reference and code examples.
 
-###  Useful Resources
+### Useful Resources
 
 - [Introducing Ably Asset Tracking - public beta now available](https://ably.com/blog/ably-asset-tracking-beta)
 - [Accurate Delivery Tracking with Navigation SDK + Ably Realtime Network](https://www.mapbox.com/blog/accurate-delivery-tracking)
