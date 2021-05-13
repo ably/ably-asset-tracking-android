@@ -12,6 +12,7 @@ import io.ably.lib.realtime.ConnectionState
 import io.ably.lib.types.AblyException
 import io.ably.lib.types.ChannelOptions
 import io.ably.lib.types.ErrorInfo
+import io.ably.lib.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -143,9 +144,23 @@ constructor(
 
     init {
         try {
-            ably = AblyRealtime(connectionConfiguration.authentication.clientOptions)
+            val clientOptions = connectionConfiguration.authentication.clientOptions.apply {
+                logLevel = Log.DEBUG
+                logHandler = Log.LogHandler { severity, tag, msg, tr -> logMessage(severity, tag, msg, tr) }
+            }
+            ably = AblyRealtime(clientOptions)
         } catch (exception: AblyException) {
             throw exception.errorInfo.toTrackingException()
+        }
+    }
+
+    private fun logMessage(severity: Int, tag: String?, message: String?, throwable: Throwable?) {
+        val messageToLog = "$tag: $message"
+        when (severity) {
+            Log.DEBUG -> logger.debug(throwable) { messageToLog }
+            Log.INFO -> logger.info(throwable) { messageToLog }
+            Log.WARN -> logger.warn(throwable) { messageToLog }
+            Log.ERROR -> logger.error(throwable) { messageToLog }
         }
     }
 
