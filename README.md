@@ -112,6 +112,16 @@ This repository also contains example apps that showcase how the Ably Asset Trac
 
 To build these apps you will need to specify [credentials](#api-keys-and-access-tokens) in Gradle properties.
 
+There are, of course, [many other ways](https://docs.gradle.org/current/userguide/build_environment.html) to inject project properties into Gradle builds
+
+## API Keys and Access Tokens
+
+The following secrets need to be injected into Gradle by either storing them in `~/.gradle/gradle.properties`, or by using one of [many other ways](https://docs.gradle.org/current/userguide/build_environment.html) to do this:
+
+ - `ABLY_API_KEY`
+ - `MAPBOX_ACCESS_TOKEN`
+ - `GOOGLE_MAPS_API_KEY`
+
 ## Android Runtime Requirements
 
 ### Kotlin Users
