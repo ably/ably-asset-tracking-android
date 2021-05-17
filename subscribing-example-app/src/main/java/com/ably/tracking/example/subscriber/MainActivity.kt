@@ -1,9 +1,16 @@
 package com.ably.tracking.example.subscriber
 
+import android.content.res.ColorStateList
 import android.location.Location
 import android.os.Bundle
+import android.view.View
+import android.view.inputmethod.EditorInfo
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.constraintlayout.widget.ConstraintSet
+import androidx.core.content.ContextCompat
+import androidx.core.widget.addTextChangedListener
+import androidx.transition.TransitionManager
 import com.ably.tracking.Accuracy
 import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
@@ -18,6 +25,8 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.android.synthetic.main.asset_information_view.*
+import kotlinx.android.synthetic.main.trackable_input_controls_view.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -48,12 +57,31 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         prepareMap()
+        setTrackableIdEditTextListener()
+        setupTrackableInputAction()
 
         startButton.setOnClickListener {
             if (subscriber == null) {
                 startSubscribing()
             } else {
                 stopSubscribing()
+            }
+        }
+    }
+
+    private fun setTrackableIdEditTextListener() {
+        trackableIdEditText.addTextChangedListener { trackableId ->
+            trackableId?.trim()?.let { changeStartButtonColor(it.isNotEmpty()) }
+        }
+    }
+
+    private fun setupTrackableInputAction() {
+        trackableIdEditText.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_DONE) {
+                startSubscribing()
+                true
+            } else {
+                false
             }
         }
     }
@@ -68,24 +96,26 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startSubscribing() {
-        trackingIdEditText.text.toString().trim().let { trackingId ->
-            if (trackingId.isNotEmpty()) {
+        trackableIdEditText.text.toString().trim().let { trackableId ->
+            if (trackableId.isNotEmpty()) {
                 googleMap?.clear()
                 googleMap?.setOnCameraIdleListener { updateResolutionBasedOnZoomLevel() }
-                createAndStartAssetSubscriber(trackingId)
+                showAssetInformation()
+                trackableIdEditText.isEnabled = false
+                createAndStartAssetSubscriber(trackableId)
                 updateResolutionInfo(resolution)
-                changeStartButtonState(true)
+                changeStartButtonText(true)
             } else {
-                showToast("Insert tracking ID")
+                showToast("Insert trackable ID")
             }
         }
     }
 
-    private fun createAndStartAssetSubscriber(trackingId: String) {
+    private fun createAndStartAssetSubscriber(trackableId: String) {
         scope.launch {
             subscriber = Subscriber.subscribers()
                 .connection(ConnectionConfiguration(Authentication.basic(CLIENT_ID, ABLY_API_KEY)))
-                .trackingId(trackingId)
+                .trackingId(trackableId)
                 .resolution(resolution)
                 .start()
                 .apply {
@@ -141,7 +171,7 @@ class MainActivity : AppCompatActivity() {
         }
 
     private fun updateResolutionInfo(resolution: Resolution) {
-        resolutionAccuracyTextView.text = resolution.accuracy.name
+        resolutionAccuracyTextView.text = resolution.accuracy.name.toLowerCase().capitalize()
         resolutionDisplacementTextView.text =
             getString(R.string.resolution_minimum_displacement_value, resolution.minimumDisplacement)
         resolutionIntervalTextView.text =
@@ -160,17 +190,31 @@ class MainActivity : AppCompatActivity() {
             is TrackableState.Offline -> R.string.asset_status_offline
             is TrackableState.Failed -> R.string.asset_status_failed
         }
+        val textColorId = when (trackableState) {
+            is TrackableState.Online -> R.color.black
+            is TrackableState.Offline -> R.color.mid_grey
+            is TrackableState.Failed -> R.color.black
+        }
+        val backgroundColorId = when (trackableState) {
+            is TrackableState.Online -> R.color.asset_online
+            is TrackableState.Offline -> R.color.asset_offline
+            is TrackableState.Failed -> R.color.asset_failed
+        }
         assetStateTextView.text = getString(textId)
+        assetStateTextView.setTextColor(ContextCompat.getColor(this, textColorId))
+        assetStateTextView.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this, backgroundColorId))
     }
 
     private fun stopSubscribing() {
         googleMap?.setOnCameraIdleListener { }
         clearResolutionInfo()
+        hideAssetInformation()
+        trackableIdEditText.isEnabled = true
         scope.launch {
             try {
                 subscriber?.stop()
                 subscriber = null
-                changeStartButtonState(false)
+                changeStartButtonText(false)
                 marker = null
             } catch (exception: Exception) {
                 // TODO check Result (it) for failure and report accordingly
@@ -208,17 +252,46 @@ class MainActivity : AppCompatActivity() {
     private fun getMarkerIcon(bearing: Float) =
         BitmapDescriptorFactory.fromResource(getMarkerResourceIdByBearing(bearing))
 
-    private fun changeStartButtonState(isSubscribing: Boolean) {
+    private fun changeStartButtonText(isSubscribing: Boolean) {
         if (isSubscribing) {
             startButton.text = getString(R.string.start_button_working)
-            startButton.setBackgroundResource(R.drawable.rounded_working)
         } else {
             startButton.text = getString(R.string.start_button_ready)
-            startButton.setBackgroundResource(R.drawable.rounded_ready)
+        }
+    }
+
+    private fun changeStartButtonColor(isActive: Boolean) {
+        if (isActive) {
+            startButton.backgroundTintList =
+                ColorStateList.valueOf(ContextCompat.getColor(this, R.color.button_active))
+            startButton.setTextColor(ContextCompat.getColor(this, R.color.white))
+        } else {
+            startButton.backgroundTintList =
+                ColorStateList.valueOf(ContextCompat.getColor(this, R.color.button_inactive))
+            startButton.setTextColor(ContextCompat.getColor(this, R.color.mid_grey))
         }
     }
 
     private fun showToast(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+    }
+
+    private fun showAssetInformation() {
+        animateAssetInformationVisibility(true)
+        draggingAreaView.visibility = View.VISIBLE
+    }
+
+    private fun hideAssetInformation() {
+        animateAssetInformationVisibility(false)
+        draggingAreaView.visibility = View.GONE
+    }
+
+    private fun animateAssetInformationVisibility(isShowing: Boolean) {
+        TransitionManager.beginDelayedTransition(rootContainer)
+        ConstraintSet().apply {
+            clone(rootContainer)
+            setVisibility(assetInformationContainer.id, if (isShowing) ConstraintSet.VISIBLE else ConstraintSet.GONE)
+            applyTo(rootContainer)
+        }
     }
 }

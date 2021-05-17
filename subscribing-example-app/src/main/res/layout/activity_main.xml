@@ -1,145 +1,49 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.motion.widget.MotionLayout xmlns:android="http://schemas.android.com/apk/res/android"
   xmlns:app="http://schemas.android.com/apk/res-auto"
   xmlns:tools="http://schemas.android.com/tools"
+  android:id="@+id/rootContainer"
   android:layout_width="match_parent"
   android:layout_height="match_parent"
-  tools:context=".MainActivity">
+  app:layoutDescription="@xml/enlarge_map_motion_scene"
+  tools:context=".MainActivity"
+  tools:ignore="UnusedIds">
 
-  <TextView
-    android:id="@+id/appTitleTextView"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:paddingTop="24dp"
-    android:paddingBottom="24dp"
-    android:text="@string/ably_asset_tracking"
-    android:textColor="#DE7C31"
-    android:textSize="30sp"
-    android:textStyle="bold"
-    app:layout_constraintEnd_toEndOf="parent"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintTop_toTopOf="parent" />
-
-  <TextView
-    android:id="@+id/assetStateTextView"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:layout_marginStart="30dp"
-    android:text="@string/asset_status_offline"
-    app:layout_constraintBottom_toBottomOf="@id/animationSwitch"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintTop_toTopOf="@id/animationSwitch" />
-
-  <TextView
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:layout_marginEnd="10dp"
-    android:text="@string/animation"
-    app:layout_constraintBottom_toBottomOf="@id/animationSwitch"
-    app:layout_constraintEnd_toStartOf="@id/animationSwitch"
-    app:layout_constraintTop_toTopOf="@id/animationSwitch" />
-
-  <androidx.appcompat.widget.SwitchCompat
-    android:id="@+id/animationSwitch"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:checked="true"
-    app:layout_constraintEnd_toEndOf="parent"
-    app:layout_constraintTop_toBottomOf="@id/appTitleTextView" />
-
-  <TextView
-    android:id="@+id/resolutionAccuracyLabelTextView"
-    android:layout_width="0dp"
-    android:layout_height="wrap_content"
-    android:text="@string/resolution_accuracy"
-    android:textAlignment="center"
-    app:layout_constraintEnd_toStartOf="@id/resolutionDisplacementLabelTextView"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintTop_toBottomOf="@id/animationSwitch" />
-
-  <TextView
-    android:id="@+id/resolutionDisplacementLabelTextView"
-    android:layout_width="0dp"
-    android:layout_height="wrap_content"
-    android:text="@string/resolution_minimum_displacement"
-    android:textAlignment="center"
-    app:layout_constraintEnd_toStartOf="@id/resolutionIntervalLabelTextView"
-    app:layout_constraintStart_toEndOf="@id/resolutionAccuracyLabelTextView"
-    app:layout_constraintTop_toTopOf="@id/resolutionAccuracyLabelTextView" />
-
-  <TextView
-    android:id="@+id/resolutionIntervalLabelTextView"
-    android:layout_width="0dp"
-    android:layout_height="wrap_content"
-    android:text="@string/resolution_desired_interval"
-    android:textAlignment="center"
-    app:layout_constraintEnd_toEndOf="parent"
-    app:layout_constraintStart_toEndOf="@id/resolutionDisplacementLabelTextView"
-    app:layout_constraintTop_toTopOf="@id/resolutionAccuracyLabelTextView" />
-
-  <TextView
-    android:id="@+id/resolutionAccuracyTextView"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:paddingBottom="10dp"
-    app:layout_constraintEnd_toEndOf="@id/resolutionAccuracyLabelTextView"
-    app:layout_constraintStart_toStartOf="@id/resolutionAccuracyLabelTextView"
-    app:layout_constraintTop_toBottomOf="@id/resolutionAccuracyLabelTextView"
-    tools:text="balanced" />
-
-  <TextView
-    android:id="@+id/resolutionDisplacementTextView"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    app:layout_constraintEnd_toEndOf="@id/resolutionDisplacementLabelTextView"
-    app:layout_constraintStart_toStartOf="@id/resolutionDisplacementLabelTextView"
-    app:layout_constraintTop_toTopOf="@id/resolutionAccuracyTextView"
-    tools:text="10.0m" />
-
-  <TextView
-    android:id="@+id/resolutionIntervalTextView"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    app:layout_constraintEnd_toEndOf="@id/resolutionIntervalLabelTextView"
-    app:layout_constraintStart_toStartOf="@id/resolutionIntervalLabelTextView"
-    app:layout_constraintTop_toTopOf="@id/resolutionAccuracyTextView"
-    tools:text="100s" />
-
-  <TextView
-    android:id="@+id/trackingIdLabel"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:paddingTop="10dp"
-    android:text="@string/tracking_id"
-    app:layout_constraintBottom_toTopOf="@+id/trackingIdEditText"
-    app:layout_constraintStart_toStartOf="@+id/trackingIdEditText" />
-
-  <androidx.appcompat.widget.AppCompatEditText
-    android:id="@+id/trackingIdEditText"
-    android:layout_width="0dp"
-    android:layout_height="50dp"
-    app:layout_constraintBottom_toTopOf="@id/startButton"
-    app:layout_constraintEnd_toEndOf="@id/startButton"
-    app:layout_constraintStart_toStartOf="@id/startButton" />
-
-  <androidx.appcompat.widget.AppCompatButton
-    android:id="@+id/startButton"
+  <View
+    android:id="@+id/headerBackground"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:layout_marginStart="30dp"
-    android:layout_marginEnd="30dp"
-    android:layout_marginBottom="10dp"
-    android:background="@drawable/rounded_ready"
-    android:text="@string/start_button_ready"
-    android:textColor="@color/white"
-    app:layout_constraintBottom_toBottomOf="parent" />
+    android:layout_height="@dimen/header_full_height"
+    android:background="@color/header_background" />
+
+  <androidx.appcompat.widget.AppCompatImageView
+    android:id="@+id/headerIconImageView"
+    android:layout_width="wrap_content"
+    android:layout_height="@dimen/header_logo_full_height"
+    android:src="@drawable/header_logo_with_title" />
 
   <fragment
     android:id="@+id/mapFragment"
     android:name="com.google.android.gms.maps.SupportMapFragment"
     android:layout_width="match_parent"
-    android:layout_height="0dp"
-    app:layout_constraintBottom_toTopOf="@id/trackingIdLabel"
-    app:layout_constraintTop_toBottomOf="@id/resolutionAccuracyTextView" />
+    android:layout_height="0dp" />
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+  <androidx.viewpager.widget.ViewPager
+    android:id="@+id/draggingAreaView"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/dragging_area_height"
+    android:visibility="gone" />
+
+  <include
+    android:id="@+id/assetInformationContainer"
+    layout="@layout/asset_information_view"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/asset_information_container_height"
+    android:visibility="gone" />
+
+  <include
+    android:id="@+id/controlsContainer"
+    layout="@layout/trackable_input_controls_view"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content" />
+
+</androidx.constraintlayout.motion.widget.MotionLayout>
