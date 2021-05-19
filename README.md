@@ -114,18 +114,18 @@ To build these apps you will need to specify [credentials](#api-keys-and-access-
 
 ## Logging
 
-The SDKs use `slf4j` for logging. By default the logs aren't visible anywhere. In order to see logs, users have to include a library that implements the `slf4j-api` interface.
-In the example apps we are using `logback-android` which allows to easily log to the Logcat and create custom log handlers.
-For information on how to add `logback-android` to your project please check its [github page](https://github.com/tony19/logback-android).
+The SDKs use [SLF4J](http://www.slf4j.org/) for logging, which by default has a
+no-operation implementation meaning that logs will not be visible anywhere at runtime.
+An SLF4J implementation (the "binding") needs to be included on your app's class path for logs to be
+seen or otherwise consumed somewhere. The example apps in this repository use [logback-android]((https://github.com/tony19/logback-android)) as their implementation.
 
-### Custom log handler
+### Writing Your Own Log Implementation
 
-To create your custom log handler you have to create a class that implements the `Appender` interface.
-There are a few base classes that you can extend to make things easier, two most important of them are `AppenderBase` and `UnsynchronizedAppenderBase`.
-For more detailed information about appenders check the [official logback docs](http://logback.qos.ch/manual/appenders.html).
-A sample [custom log handler](publishing-example-app/src/main/java/com/ably/tracking/example/publisher/CustomLogsAppender.kt) is implemented in the publishing example app.
-After creating your custom log handler you need to include it in the [logback configuration file](publishing-example-app/src/main/assets/logback.xml).
-The `name` attribute of the `appender` tag can be anything but it must match the `ref` attribute of the `appender-ref` tag.
+To create your own custom log handler, based on the approach we've taken in our example apps, we suggest you create a class implementing [Logback](http://logback.qos.ch/)'s [Appender](http://logback.qos.ch/apidocs/ch/qos/logback/core/Appender.html) interface. There are a few base classes that you can extend to make things easier. The most important of them are `AppenderBase` and `UnsynchronizedAppenderBase`.
+
+Our publishing example app provides a reference [custom log handler](publishing-example-app/src/main/java/com/ably/tracking/example/publisher/CustomLogsAppender.kt) implementation.
+
+Your custom log handler needs to be included in the [logback configuration file](publishing-example-app/src/main/assets/logback.xml). The `name` attribute of the `appender` tag can be anything but it must match the `ref` attribute of the `appender-ref` tag.
 
 ## Android Runtime Requirements
 
