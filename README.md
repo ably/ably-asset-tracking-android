@@ -117,7 +117,7 @@ To build these apps you will need to specify [credentials](#api-keys-and-access-
 The SDKs use [SLF4J](http://www.slf4j.org/) for logging, which by default has a
 no-operation implementation meaning that logs will not be visible anywhere at runtime.
 An SLF4J implementation (the "binding") needs to be included on your app's class path for logs to be
-seen or otherwise consumed somewhere. The example apps in this repository use [logback-android]((https://github.com/tony19/logback-android)) as their implementation.
+seen or otherwise consumed somewhere. The example apps in this repository use [logback-android](https://github.com/tony19/logback-android) as their implementation.
 
 ### Writing Your Own Log Implementation
 
