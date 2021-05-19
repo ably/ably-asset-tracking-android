@@ -5,7 +5,7 @@ import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.UnsynchronizedAppenderBase
 
 /**
- * Example of a simple custom logs handler for the logback library.
+ * Example of a simple custom logs handler for the Logback library.
  * For more information see http://logback.qos.ch/manual/appenders.html
  */
 class CustomLogsAppender : UnsynchronizedAppenderBase<ILoggingEvent>() {
@@ -13,22 +13,8 @@ class CustomLogsAppender : UnsynchronizedAppenderBase<ILoggingEvent>() {
         if (event == null) {
             return
         }
-        when (event.level.levelInt) {
-            Level.TRACE_INT -> {
-                // handle TRACE/VERBOSE logs
-            }
-            Level.DEBUG_INT -> {
-                // handle DEBUG logs
-            }
-            Level.INFO_INT -> {
-                // handle INFO logs
-            }
-            Level.WARN_INT -> {
-                // handle WARN logs
-            }
-            Level.ERROR_INT -> {
-                // handle ERROR logs
-            }
-        }
+
+        // TODO log the message somewhere meaningful for your app
+        // e.g. FirebaseCrashlytics.getInstance().log("${event.level}: ${event.message}");
     }
 }
