@@ -22,6 +22,7 @@ class SettingsActivity : AppCompatActivity() {
 class SettingsFragment : PreferenceFragmentCompat() {
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         addPreferencesFromResource(R.xml.settings_preferences)
+        setupLocationSourcePreference()
         setupResolutionPreferences()
         setupS3Preference()
     }
@@ -41,6 +42,17 @@ class SettingsFragment : PreferenceFragmentCompat() {
                     ).show()
                 }
             )
+        }
+    }
+
+    private fun setupLocationSourcePreference() {
+        val appPreferences = AppPreferences(requireContext())
+        (findPreference(getString(R.string.preferences_location_source_key)) as ListPreference?)?.apply {
+            entries = LocationSourceType.values()
+                .map { it.displayName }
+                .toTypedArray()
+            entryValues = LocationSourceType.values().map { it.name }.toTypedArray()
+            value = appPreferences.getLocationSource().name
         }
     }
 

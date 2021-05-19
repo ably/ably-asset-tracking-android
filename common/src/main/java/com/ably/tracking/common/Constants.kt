@@ -13,6 +13,6 @@ object EventNames {
 }
 
 object ClientTypes {
-    const val SUBSCRIBER = "subscriber"
-    const val PUBLISHER = "publisher"
+    const val SUBSCRIBER = "SUBSCRIBER"
+    const val PUBLISHER = "PUBLISHER"
 }

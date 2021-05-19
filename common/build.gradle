@@ -10,6 +10,8 @@ dependencies {
 
 android {
     compileOptions {
-        kotlinOptions.freeCompilerArgs += ['-module-name', "com.ably.tracking.common"]
+        kotlinOptions.freeCompilerArgs += ['-module-name', 'com.ably.tracking.common']
     }
 }
+
+apply from: '../publish.gradle'

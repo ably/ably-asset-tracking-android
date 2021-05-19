@@ -4,10 +4,10 @@ plugins {
 
 android {
     defaultConfig {
-        applicationId "com.ably.tracking.example.javapublisher"
+        applicationId 'com.ably.tracking.example.javapublisher'
     }
 }
 
 dependencies {
-    implementation project(":publishing-sdk-java")
+    implementation project(':publishing-sdk-java')
 }

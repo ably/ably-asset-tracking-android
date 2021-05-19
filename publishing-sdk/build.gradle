@@ -29,3 +29,5 @@ dependencies {
     // https://developers.google.com/android/reference/com/google/android/gms/location/FusedLocationProviderClient
     implementation 'com.google.android.gms:play-services-location:17.1.0'
 }
+
+apply from: '../publish.gradle'

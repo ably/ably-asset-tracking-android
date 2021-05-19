@@ -11,3 +11,5 @@ dependencies {
     api project(':core-sdk')
     implementation project(':common')
 }
+
+apply from: '../publish.gradle'
