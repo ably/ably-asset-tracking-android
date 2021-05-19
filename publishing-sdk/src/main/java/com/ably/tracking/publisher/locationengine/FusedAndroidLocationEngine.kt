@@ -14,14 +14,14 @@ import com.ably.tracking.common.MILLISECONDS_PER_SECOND
 import com.mapbox.android.core.location.LocationEngineCallback
 import com.mapbox.android.core.location.LocationEngineRequest
 import com.mapbox.android.core.location.LocationEngineResult
-import mu.KotlinLogging
+import org.slf4j.LoggerFactory
 
 open class FusedAndroidLocationEngine(context: Context) : ResolutionLocationEngine {
     private val listeners: MutableMap<LocationEngineCallback<LocationEngineResult>, LocationListener> = mutableMapOf()
     private val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
     private val DEFAULT_PROVIDER = LocationManager.PASSIVE_PROVIDER
     private var currentProvider = DEFAULT_PROVIDER
-    private val logger = KotlinLogging.logger { }
+    private val logger = LoggerFactory.getLogger(this::class.simpleName)
 
     @SuppressLint("MissingPermission")
     override fun changeResolution(resolution: Resolution) {
@@ -57,7 +57,7 @@ open class FusedAndroidLocationEngine(context: Context) : ResolutionLocationEngi
         try {
             locationManager.getLastKnownLocation(provider)
         } catch (exception: IllegalArgumentException) {
-            logger.error(exception) { "Could not get last location for $provider" }
+            logger.error("Could not get last location for $provider", exception)
             null
         }
 
@@ -79,7 +79,7 @@ open class FusedAndroidLocationEngine(context: Context) : ResolutionLocationEngi
                     LocationManager.NETWORK_PROVIDER, request.interval, request.displacement, listener, looper
                 )
             } catch (exception: IllegalArgumentException) {
-                logger.error(exception) { "Could not request location updates" }
+                logger.error("Could not request location updates", exception)
             }
         }
     }
@@ -96,7 +96,7 @@ open class FusedAndroidLocationEngine(context: Context) : ResolutionLocationEngi
                         LocationManager.NETWORK_PROVIDER, request.interval, request.displacement, pendingIntent
                     )
                 } catch (exception: IllegalArgumentException) {
-                    logger.error(exception) { "Could not request location updates" }
+                    logger.error("Could not request location updates", exception)
                 }
             }
         }
@@ -161,15 +161,15 @@ open class FusedAndroidLocationEngine(context: Context) : ResolutionLocationEngi
         }
 
         override fun onStatusChanged(provider: String, status: Int, extras: Bundle) {
-            logger.debug { "onStatusChanged: $provider" }
+            logger.debug("onStatusChanged: $provider")
         }
 
         override fun onProviderEnabled(provider: String) {
-            logger.debug { "onProviderEnabled: $provider" }
+            logger.debug("onProviderEnabled: $provider")
         }
 
         override fun onProviderDisabled(provider: String) {
-            logger.debug { "onProviderDisabled: $provider" }
+            logger.debug("onProviderDisabled: $provider")
         }
     }
 

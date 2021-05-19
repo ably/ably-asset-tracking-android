@@ -18,7 +18,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
-import mu.KotlinLogging
+import org.slf4j.LoggerFactory
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
@@ -140,7 +140,7 @@ constructor(
     private val ably: AblyRealtime
     private val channels: MutableMap<String, Channel> = mutableMapOf()
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-    private val logger = KotlinLogging.logger { }
+    private val logger = LoggerFactory.getLogger(this::class.simpleName)
 
     init {
         try {
@@ -157,10 +157,10 @@ constructor(
     private fun logMessage(severity: Int, tag: String?, message: String?, throwable: Throwable?) {
         val messageToLog = "$tag: $message"
         when (severity) {
-            Log.DEBUG -> logger.debug(throwable) { messageToLog }
-            Log.INFO -> logger.info(throwable) { messageToLog }
-            Log.WARN -> logger.warn(throwable) { messageToLog }
-            Log.ERROR -> logger.error(throwable) { messageToLog }
+            Log.DEBUG -> logger.debug(messageToLog, throwable)
+            Log.INFO -> logger.info(messageToLog, throwable)
+            Log.WARN -> logger.warn(messageToLog, throwable)
+            Log.ERROR -> logger.error(messageToLog, throwable)
         }
     }
 
@@ -259,7 +259,7 @@ constructor(
 
     override fun sendEnhancedLocation(trackableId: String, locationUpdate: EnhancedLocationUpdate) {
         val locationUpdateJson = locationUpdate.toJson(gson)
-        logger.debug { "sendEnhancedLocationMessage: publishing: $locationUpdateJson" }
+        logger.debug("sendEnhancedLocationMessage: publishing: $locationUpdateJson")
         try {
             channels[trackableId]?.publish(EventNames.ENHANCED, locationUpdateJson)
         } catch (exception: AblyException) {

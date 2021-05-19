@@ -14,11 +14,11 @@ import com.mapbox.android.core.location.LocationEngineRequest
 import com.mapbox.android.core.location.LocationEngineResult
 import io.ably.lib.realtime.AblyRealtime
 import io.ably.lib.types.ClientOptions
-import mu.KotlinLogging
+import org.slf4j.LoggerFactory
 
 internal class AblySimulationLocationEngine(ablyOptions: ClientOptions, simulationTrackingId: String) :
     LocationEngine {
-    private val logger = KotlinLogging.logger { }
+    private val logger = LoggerFactory.getLogger(this::class.simpleName)
     private val gson = Gson()
     private var lastLocationResult: LocationEngineResult? = null
     private val registeredListeners = mutableListOf<LocationEngineCallback<LocationEngineResult>>()
@@ -29,13 +29,13 @@ internal class AblySimulationLocationEngine(ablyOptions: ClientOptions, simulati
         val ably = AblyRealtime(ablyOptions)
         val simulationChannel = ably.channels.get(simulationTrackingId)
 
-        ably.connection.on { logger.debug { "Ably connection state change: $it" } }
-        simulationChannel.on { logger.debug { "Ably channel state change: $it" } }
+        ably.connection.on { logger.debug("Ably connection state change: $it") }
+        simulationChannel.on { logger.debug("Ably channel state change: $it") }
 
         simulationChannel.subscribe(EventNames.ENHANCED) { message ->
-            logger.debug { "Ably channel message: $message" }
+            logger.debug("Ably channel message: $message")
             message.getGeoJsonMessages(gson).forEach {
-                logger.debug { "Received enhanced location: ${it.synopsis()}" }
+                logger.debug("Received enhanced location: ${it.synopsis()}")
                 val loc = it.toLocation()
                 loc.elapsedRealtimeNanos = SystemClock.elapsedRealtimeNanos()
                 onLocationEngineResult(LocationEngineResult.create(loc))
