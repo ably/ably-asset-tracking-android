@@ -10,6 +10,8 @@ import com.ably.tracking.test.android.common.UnitExpectation
 import io.ably.lib.realtime.AblyRealtime
 import io.ably.lib.rest.Auth
 import io.ably.lib.types.ClientOptions
+import io.jsonwebtoken.Jwts
+import io.jsonwebtoken.SignatureAlgorithm
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
@@ -19,6 +21,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.util.Date
 import java.util.UUID
 
 @RunWith(AndroidJUnit4::class)
@@ -33,6 +36,11 @@ class AuthenticationTests {
     @Test
     fun tokenAuthenticationShouldCreateWorkingConnectionBetweenPublisherAndSubscriber() {
         testConnectionBetweenPublisherAndSubscriber(createTokenAuthenticationConfiguration(ably))
+    }
+
+    @Test
+    fun jwtAuthenticationShouldCreateWorkingConnectionBetweenPublisherAndSubscriber() {
+        testConnectionBetweenPublisherAndSubscriber(createJwtAuthenticationConfiguration())
     }
 
     private fun createBasicAuthenticationConfiguration(): Authentication =
@@ -61,6 +69,28 @@ class AuthenticationTests {
                 override val clientId: String = ablyTokenRequest.clientId
                 override val timestamp: Long = ablyTokenRequest.timestamp
             }
+        }
+
+    private fun createJwtAuthenticationConfiguration(): Authentication =
+        Authentication.jwt(CLIENT_ID) { tokenParams ->
+            // use TokenParams to create a signed JWT (this should normally be done by user auth servers)
+            val keyParts = ABLY_API_KEY.split(":")
+            val keyName = keyParts[0]
+            val keySecret = keyParts[1]
+            val tokenValidityInSeconds = if (tokenParams.ttl > 0L) tokenParams.ttl else 3600L
+            val currentTimestampInSeconds = (Date().time / 1000L)
+            val tokenExpirationTimestampInSeconds = currentTimestampInSeconds + tokenValidityInSeconds
+            val tokenCapability =
+                if (!tokenParams.capability.isNullOrEmpty()) tokenParams.capability else "{\"*\":[\"*\"]}"
+            Jwts.builder()
+                .setHeaderParam("typ", "JWT")
+                .setHeaderParam("kid", keyName)
+                .claim("iat", currentTimestampInSeconds)
+                .claim("exp", tokenExpirationTimestampInSeconds)
+                .claim("x-ably-capability", tokenCapability)
+                .claim("x-ably-clientId", tokenParams.clientId)
+                .signWith(SignatureAlgorithm.HS256, keySecret.toByteArray())
+                .compact()
         }
 
     private fun testConnectionBetweenPublisherAndSubscriber(authentication: Authentication) {
