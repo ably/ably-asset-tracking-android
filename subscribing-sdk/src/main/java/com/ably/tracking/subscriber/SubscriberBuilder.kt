@@ -31,7 +31,7 @@ internal data class SubscriberBuilder(
         }
         // All below fields are required and above code checks if they are nulls, so using !! should be safe from NPE
         return DefaultSubscriber(
-            DefaultAbly(connectionConfiguration!!),
+            DefaultAbly(connectionConfiguration!!, logHandler),
             resolution,
             trackingId!!
         ).apply {

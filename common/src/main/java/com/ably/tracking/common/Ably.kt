@@ -3,7 +3,9 @@ package com.ably.tracking.common
 import com.ably.tracking.ConnectionException
 import com.ably.tracking.EnhancedLocationUpdate
 import com.ably.tracking.LocationUpdate
+import com.ably.tracking.common.logging.d
 import com.ably.tracking.connection.ConnectionConfiguration
+import com.ably.tracking.logging.LogHandler
 import com.google.gson.Gson
 import io.ably.lib.realtime.AblyRealtime
 import io.ably.lib.realtime.Channel
@@ -17,7 +19,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
-import timber.log.Timber
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
@@ -133,7 +134,8 @@ class DefaultAbly
  * @throws ConnectionException if something goes wrong during Ably SDK initialization.
  */
 constructor(
-    connectionConfiguration: ConnectionConfiguration
+    connectionConfiguration: ConnectionConfiguration,
+    private val logHandler: LogHandler?,
 ) : Ably {
     private val gson = Gson()
     private val ably: AblyRealtime
@@ -243,7 +245,7 @@ constructor(
 
     override fun sendEnhancedLocation(trackableId: String, locationUpdate: EnhancedLocationUpdate) {
         val locationUpdateJson = locationUpdate.toJson(gson)
-        Timber.d("sendEnhancedLocationMessage: publishing: $locationUpdateJson")
+        logHandler?.d("sendEnhancedLocationMessage: publishing: $locationUpdateJson")
         try {
             channels[trackableId]?.publish(EventNames.ENHANCED, locationUpdateJson)
         } catch (exception: AblyException) {
