@@ -11,12 +11,17 @@ import android.os.Bundle
 import android.os.Looper
 import com.ably.tracking.Resolution
 import com.ably.tracking.common.MILLISECONDS_PER_SECOND
+import com.ably.tracking.common.logging.d
+import com.ably.tracking.common.logging.e
+import com.ably.tracking.logging.LogHandler
 import com.mapbox.android.core.location.LocationEngineCallback
 import com.mapbox.android.core.location.LocationEngineRequest
 import com.mapbox.android.core.location.LocationEngineResult
-import timber.log.Timber
 
-open class FusedAndroidLocationEngine(context: Context) : ResolutionLocationEngine {
+open class FusedAndroidLocationEngine(
+    context: Context,
+    private val logHandler: LogHandler?
+) : ResolutionLocationEngine {
     private val listeners: MutableMap<LocationEngineCallback<LocationEngineResult>, LocationListener> = mutableMapOf()
     private val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
     private val DEFAULT_PROVIDER = LocationManager.PASSIVE_PROVIDER
@@ -56,7 +61,7 @@ open class FusedAndroidLocationEngine(context: Context) : ResolutionLocationEngi
         try {
             locationManager.getLastKnownLocation(provider)
         } catch (exception: IllegalArgumentException) {
-            Timber.e(exception)
+            logHandler?.e(exception)
             null
         }
 
@@ -78,7 +83,7 @@ open class FusedAndroidLocationEngine(context: Context) : ResolutionLocationEngi
                     LocationManager.NETWORK_PROVIDER, request.interval, request.displacement, listener, looper
                 )
             } catch (exception: IllegalArgumentException) {
-                Timber.e(exception)
+                logHandler?.e(exception)
             }
         }
     }
@@ -95,7 +100,7 @@ open class FusedAndroidLocationEngine(context: Context) : ResolutionLocationEngi
                         LocationManager.NETWORK_PROVIDER, request.interval, request.displacement, pendingIntent
                     )
                 } catch (exception: IllegalArgumentException) {
-                    Timber.e(exception)
+                    logHandler?.e(exception)
                 }
             }
         }
@@ -160,15 +165,15 @@ open class FusedAndroidLocationEngine(context: Context) : ResolutionLocationEngi
         }
 
         override fun onStatusChanged(provider: String, status: Int, extras: Bundle) {
-            Timber.d("onStatusChanged: $provider")
+            logHandler?.d("onStatusChanged: $provider")
         }
 
         override fun onProviderEnabled(provider: String) {
-            Timber.d("onProviderEnabled: $provider")
+            logHandler?.d("onProviderEnabled: $provider")
         }
 
         override fun onProviderDisabled(provider: String) {
-            Timber.d("onProviderDisabled: $provider")
+            logHandler?.d("onProviderDisabled: $provider")
         }
     }
 
