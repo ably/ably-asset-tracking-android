@@ -1,6 +1,7 @@
 package com.ably.tracking.subscriber
 
 import com.ably.tracking.BuilderConfigurationIncompleteException
+import com.ably.tracking.logging.LogHandler
 import com.ably.tracking.Resolution
 import com.ably.tracking.common.DefaultAbly
 import com.ably.tracking.connection.ConnectionConfiguration
@@ -8,6 +9,7 @@ import com.ably.tracking.connection.ConnectionConfiguration
 internal data class SubscriberBuilder(
     val connectionConfiguration: ConnectionConfiguration? = null,
     val resolution: Resolution? = null,
+    val logHandler: LogHandler? = null,
     val trackingId: String? = null
 ) : Subscriber.Builder {
 
@@ -19,6 +21,9 @@ internal data class SubscriberBuilder(
 
     override fun trackingId(trackingId: String): Subscriber.Builder =
         this.copy(trackingId = trackingId)
+
+    override fun logHandler(logHandler: LogHandler): Subscriber.Builder =
+        this.copy(logHandler = logHandler)
 
     override suspend fun start(): Subscriber {
         if (isMissingRequiredFields()) {

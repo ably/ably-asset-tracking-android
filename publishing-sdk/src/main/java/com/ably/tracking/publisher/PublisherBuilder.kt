@@ -7,6 +7,7 @@ import androidx.annotation.RequiresPermission
 import com.ably.tracking.BuilderConfigurationIncompleteException
 import com.ably.tracking.common.DefaultAbly
 import com.ably.tracking.connection.ConnectionConfiguration
+import com.ably.tracking.logging.LogHandler
 
 internal data class PublisherBuilder(
     val connectionConfiguration: ConnectionConfiguration? = null,
@@ -14,6 +15,7 @@ internal data class PublisherBuilder(
     val androidContext: Context? = null,
     val routingProfile: RoutingProfile = RoutingProfile.DRIVING,
     val resolutionPolicyFactory: ResolutionPolicy.Factory? = null,
+    val logHandler: LogHandler? = null,
     val locationSource: LocationSource? = null
 ) : Publisher.Builder {
 
@@ -34,6 +36,9 @@ internal data class PublisherBuilder(
 
     override fun locationSource(locationSource: LocationSource?): Publisher.Builder =
         this.copy(locationSource = locationSource)
+
+    override fun logHandler(logHandler: LogHandler): Publisher.Builder =
+        this.copy(logHandler = logHandler)
 
     @RequiresPermission(anyOf = [ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION])
     override fun start(): Publisher {
