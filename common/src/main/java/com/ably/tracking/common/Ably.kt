@@ -4,6 +4,10 @@ import com.ably.tracking.ConnectionException
 import com.ably.tracking.EnhancedLocationUpdate
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.common.logging.d
+import com.ably.tracking.common.logging.e
+import com.ably.tracking.common.logging.i
+import com.ably.tracking.common.logging.v
+import com.ably.tracking.common.logging.w
 import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.logging.LogHandler
 import com.google.gson.Gson
@@ -14,6 +18,7 @@ import io.ably.lib.realtime.ConnectionState
 import io.ably.lib.types.AblyException
 import io.ably.lib.types.ChannelOptions
 import io.ably.lib.types.ErrorInfo
+import io.ably.lib.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -144,9 +149,24 @@ constructor(
 
     init {
         try {
-            ably = AblyRealtime(connectionConfiguration.authentication.clientOptions)
+            val clientOptions = connectionConfiguration.authentication.clientOptions.apply {
+                this.logLevel = Log.VERBOSE
+                this.logHandler = Log.LogHandler { severity, tag, msg, tr -> logMessage(severity, tag, msg, tr) }
+            }
+            ably = AblyRealtime(clientOptions)
         } catch (exception: AblyException) {
             throw exception.errorInfo.toTrackingException()
+        }
+    }
+
+    private fun logMessage(severity: Int, tag: String?, message: String?, throwable: Throwable?) {
+        val messageToLog = "$tag: $message"
+        when (severity) {
+            Log.VERBOSE -> logHandler?.v(messageToLog, throwable)
+            Log.DEBUG -> logHandler?.d(messageToLog, throwable)
+            Log.INFO -> logHandler?.i(messageToLog, throwable)
+            Log.WARN -> logHandler?.w(messageToLog, throwable)
+            Log.ERROR -> logHandler?.e(messageToLog, throwable)
         }
     }
 
