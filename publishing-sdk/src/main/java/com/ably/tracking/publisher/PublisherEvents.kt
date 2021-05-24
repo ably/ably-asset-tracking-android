@@ -60,12 +60,10 @@ internal class ConnectionForTrackableCreatedEvent(
 
 internal data class RawLocationChangedEvent(
     val location: Location,
-    val batteryLevel: Float?
 ) : AdhocEvent()
 
 internal data class EnhancedLocationChangedEvent(
     val location: Location,
-    val batteryLevel: Float?,
     val intermediateLocations: List<Location>,
     val type: LocationUpdateType
 ) : AdhocEvent()

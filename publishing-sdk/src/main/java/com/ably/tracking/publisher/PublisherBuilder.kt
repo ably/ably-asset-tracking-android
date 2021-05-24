@@ -46,7 +46,6 @@ internal data class PublisherBuilder(
             DefaultMapbox(androidContext!!, mapConfiguration!!, connectionConfiguration, locationSource),
             resolutionPolicyFactory!!,
             routingProfile,
-            DefaultBatteryDataProvider(androidContext)
         )
     }
 

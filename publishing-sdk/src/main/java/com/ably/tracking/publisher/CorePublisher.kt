@@ -49,9 +49,8 @@ internal fun createCorePublisher(
     mapbox: Mapbox,
     resolutionPolicyFactory: ResolutionPolicy.Factory,
     routingProfile: RoutingProfile,
-    batteryDataProvider: BatteryDataProvider
 ): CorePublisher {
-    return DefaultCorePublisher(ably, mapbox, resolutionPolicyFactory, routingProfile, batteryDataProvider)
+    return DefaultCorePublisher(ably, mapbox, resolutionPolicyFactory, routingProfile)
 }
 
 private class DefaultCorePublisher
@@ -61,7 +60,6 @@ constructor(
     private val mapbox: Mapbox,
     resolutionPolicyFactory: ResolutionPolicy.Factory,
     routingProfile: RoutingProfile,
-    private val batteryDataProvider: BatteryDataProvider
 ) : CorePublisher {
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private val sendEventChannel: SendChannel<Event>
@@ -75,10 +73,7 @@ constructor(
     private val locationObserver = object : LocationObserver {
         override fun onRawLocationChanged(rawLocation: android.location.Location) {
             enqueue(
-                RawLocationChangedEvent(
-                    rawLocation.toAssetTracking(),
-                    batteryDataProvider.getCurrentBatteryPercentage()
-                )
+                RawLocationChangedEvent(rawLocation.toAssetTracking())
             )
         }
 
@@ -91,7 +86,6 @@ constructor(
             enqueue(
                 EnhancedLocationChangedEvent(
                     enhancedLocation.toAssetTracking(),
-                    batteryDataProvider.getCurrentBatteryPercentage(),
                     intermediateLocations.map { it.toAssetTracking() },
                     if (intermediateLocations.isEmpty()) LocationUpdateType.ACTUAL else LocationUpdateType.PREDICTED
                 )
@@ -179,7 +173,6 @@ constructor(
                                 try {
                                     val locationUpdate = EnhancedLocationUpdate(
                                         event.location,
-                                        event.batteryLevel,
                                         state.skippedEnhancedLocations[trackable.id] ?: emptyList(),
                                         event.intermediateLocations,
                                         event.type
@@ -202,7 +195,6 @@ constructor(
                             _locations.emit(
                                 EnhancedLocationUpdate(
                                     event.location,
-                                    event.batteryLevel,
                                     emptyList(),
                                     event.intermediateLocations,
                                     event.type
