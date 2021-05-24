@@ -1,7 +1,6 @@
 package com.ably.tracking.example.subscriber
 
 import android.content.res.ColorStateList
-import android.location.Location
 import android.os.Bundle
 import android.view.View
 import android.view.inputmethod.EditorInfo
@@ -12,6 +11,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.widget.addTextChangedListener
 import androidx.transition.TransitionManager
 import com.ably.tracking.Accuracy
+import com.ably.tracking.Location
 import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
 import com.ably.tracking.connection.Authentication

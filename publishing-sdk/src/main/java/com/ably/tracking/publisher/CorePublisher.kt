@@ -1,10 +1,10 @@
 package com.ably.tracking.publisher
 
 import android.Manifest
-import android.location.Location
 import androidx.annotation.RequiresPermission
 import com.ably.tracking.ConnectionException
 import com.ably.tracking.EnhancedLocationUpdate
+import com.ably.tracking.Location
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.LocationUpdateType
 import com.ably.tracking.Resolution
@@ -15,6 +15,7 @@ import com.ably.tracking.common.ConnectionState
 import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.PresenceAction
 import com.ably.tracking.common.PresenceData
+import com.ably.tracking.common.toAssetTracking
 import com.mapbox.navigation.core.trip.session.LocationObserver
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -72,26 +73,26 @@ constructor(
     private val hooks = Hooks()
     private val methods = Methods()
     private val locationObserver = object : LocationObserver {
-        override fun onRawLocationChanged(rawLocation: Location) {
+        override fun onRawLocationChanged(rawLocation: android.location.Location) {
             enqueue(
                 RawLocationChangedEvent(
-                    rawLocation,
+                    rawLocation.toAssetTracking(),
                     batteryDataProvider.getCurrentBatteryPercentage()
                 )
             )
         }
 
         override fun onEnhancedLocationChanged(
-            enhancedLocation: Location,
-            keyPoints: List<Location>
+            enhancedLocation: android.location.Location,
+            keyPoints: List<android.location.Location>
         ) {
             val intermediateLocations =
                 if (keyPoints.size > 1) keyPoints.subList(0, keyPoints.size - 1) else emptyList()
             enqueue(
                 EnhancedLocationChangedEvent(
-                    enhancedLocation,
+                    enhancedLocation.toAssetTracking(),
                     batteryDataProvider.getCurrentBatteryPercentage(),
-                    intermediateLocations,
+                    intermediateLocations.map { it.toAssetTracking() },
                     if (intermediateLocations.isEmpty()) LocationUpdateType.ACTUAL else LocationUpdateType.PREDICTED
                 )
             )

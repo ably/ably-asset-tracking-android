@@ -1,8 +1,8 @@
 package com.ably.tracking.publisher
 
 import android.annotation.SuppressLint
-import android.location.Location
 import com.ably.tracking.Accuracy
+import com.ably.tracking.Location
 import com.ably.tracking.LocationUpdateType
 import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState

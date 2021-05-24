@@ -6,8 +6,6 @@ const val MILLISECONDS_PER_MINUTE = MILLISECONDS_PER_SECOND * 60
 
 const val METERS_PER_KILOMETER = 1000
 
-const val LOCATION_TYPE_FUSED = "fused"
-
 object EventNames {
     const val ENHANCED = "enhanced"
 }

@@ -35,7 +35,7 @@ internal class AblySimulationLocationEngine(ablyOptions: ClientOptions, simulati
             Timber.i("Ably channel message: $message")
             message.getGeoJsonMessages(gson).forEach {
                 Timber.d("Received enhanced location: ${it.synopsis()}")
-                val loc = it.toLocation()
+                val loc = it.toLocation().toAndroid()
                 loc.elapsedRealtimeNanos = SystemClock.elapsedRealtimeNanos()
                 onLocationEngineResult(LocationEngineResult.create(loc))
             }

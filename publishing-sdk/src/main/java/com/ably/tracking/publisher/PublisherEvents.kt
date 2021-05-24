@@ -1,6 +1,6 @@
 package com.ably.tracking.publisher
 
-import android.location.Location
+import com.ably.tracking.Location
 import com.ably.tracking.LocationUpdateType
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.ConnectionStateChange
