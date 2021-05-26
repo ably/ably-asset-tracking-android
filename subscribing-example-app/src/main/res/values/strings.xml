@@ -3,11 +3,12 @@
   <string name="ably_asset_tracking">Ably Asset Tracking</string>
   <string name="start_button_ready">Start</string>
   <string name="start_button_working">Stop</string>
-  <string name="tracking_id">Tracking ID</string>
+  <string name="trackable_id">Trackable ID</string>
   <string name="animation">Animation</string>
-  <string name="asset_status_offline">The asset is offline</string>
-  <string name="asset_status_online">The asset is online</string>
-  <string name="asset_status_failed">The asset failed</string>
+  <string name="asset_status_label">The asset is</string>
+  <string name="asset_status_offline">OFFLINE</string>
+  <string name="asset_status_online">ONLINE</string>
+  <string name="asset_status_failed">FAILED</string>
   <string name="resolution_accuracy">Accuracy</string>
   <string name="resolution_minimum_displacement">Min displacement</string>
   <string name="resolution_minimum_displacement_value">%.1fm</string>

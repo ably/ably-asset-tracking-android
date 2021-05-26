@@ -6,8 +6,10 @@ import android.location.Location
 import androidx.annotation.RequiresPermission
 import com.ably.tracking.Resolution
 import com.ably.tracking.common.MILLISECONDS_PER_SECOND
+import com.ably.tracking.common.ResultHandler
 import com.ably.tracking.common.clientOptions
 import com.ably.tracking.connection.ConnectionConfiguration
+import com.ably.tracking.logging.LogHandler
 import com.ably.tracking.publisher.debug.AblySimulationLocationEngine
 import com.ably.tracking.publisher.locationengine.FusedAndroidLocationEngine
 import com.ably.tracking.publisher.locationengine.GoogleLocationEngine
@@ -27,7 +29,6 @@ import com.mapbox.navigation.core.replay.history.ReplayHistoryMapper
 import com.mapbox.navigation.core.trip.session.LocationObserver
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
-import timber.log.Timber
 
 typealias LocationHistoryListener = (LocationHistoryData) -> Unit
 
@@ -79,13 +80,13 @@ internal interface Mapbox {
      * @param currentLocation The current location of the [Publisher].
      * @param destination The destination of the [Trackable].
      * @param routingProfile The routing profile for the route.
-     * @param routeDurationCallback The function that's called with the ETA of the route in milliseconds.
+     * @param routeDurationCallback The function that's called with the ETA of the route in milliseconds. If something goes wrong it will be called with [MapException].
      */
     fun setRoute(
         currentLocation: Location,
         destination: Destination,
         routingProfile: RoutingProfile,
-        routeDurationCallback: (durationInMilliseconds: Long) -> Unit
+        routeDurationCallback: ResultHandler<Long>
     )
 
     /**
@@ -100,7 +101,8 @@ internal class DefaultMapbox(
     context: Context,
     private val mapConfiguration: MapConfiguration,
     connectionConfiguration: ConnectionConfiguration,
-    locationSource: LocationSource? = null
+    locationSource: LocationSource? = null,
+    logHandler: LogHandler?,
 ) : Mapbox {
     private val mainDispatcher = Dispatchers.Main.immediate
     private var mapboxNavigation: MapboxNavigation
@@ -110,11 +112,11 @@ internal class DefaultMapbox(
     init {
         val mapboxBuilder = NavigationOptions.Builder(context)
             .accessToken(mapConfiguration.apiKey)
-            .locationEngine(getBestLocationEngine(context))
+            .locationEngine(getBestLocationEngine(context, logHandler))
         locationSource?.let {
             when (it) {
                 is LocationSourceAbly -> {
-                    useAblySimulationLocationEngine(mapboxBuilder, it, connectionConfiguration)
+                    useAblySimulationLocationEngine(mapboxBuilder, it, connectionConfiguration, logHandler)
                 }
                 is LocationSourceRaw -> {
                     useHistoryDataReplayerLocationEngine(mapboxBuilder, it)
@@ -166,7 +168,7 @@ internal class DefaultMapbox(
         currentLocation: Location,
         destination: Destination,
         routingProfile: RoutingProfile,
-        routeDurationCallback: (durationInMilliseconds: Long) -> Unit
+        routeDurationCallback: ResultHandler<Long>
     ) {
         runBlocking(mainDispatcher) {
             mapboxNavigation.requestRoutes(
@@ -181,7 +183,7 @@ internal class DefaultMapbox(
                         routes.firstOrNull()?.let {
                             val routeDurationInMilliseconds =
                                 (it.durationTypical() ?: it.duration()) * MILLISECONDS_PER_SECOND
-                            routeDurationCallback(routeDurationInMilliseconds.toLong())
+                            routeDurationCallback(Result.success(routeDurationInMilliseconds.toLong()))
                         }
                     }
 
@@ -189,7 +191,7 @@ internal class DefaultMapbox(
 
                     override fun onRoutesRequestFailure(throwable: Throwable, routeOptions: RouteOptions) {
                         // We won't know the ETA for the active trackable and therefore we won't be able to check the temporal threshold.
-                        Timber.e(throwable, "Failed call to requestRoutes.")
+                        routeDurationCallback(Result.failure(MapException(throwable)))
                     }
                 }
             )
@@ -212,22 +214,24 @@ internal class DefaultMapbox(
         }
     }
 
-    private fun getBestLocationEngine(context: Context): ResolutionLocationEngine =
+    private fun getBestLocationEngine(context: Context, logHandler: LogHandler?): ResolutionLocationEngine =
         if (LocationEngineUtils.hasGoogleLocationServices(context)) {
             GoogleLocationEngine(context)
         } else {
-            FusedAndroidLocationEngine(context)
+            FusedAndroidLocationEngine(context, logHandler)
         }
 
     private fun useAblySimulationLocationEngine(
         mapboxBuilder: NavigationOptions.Builder,
         locationSource: LocationSourceAbly,
-        connectionConfiguration: ConnectionConfiguration
+        connectionConfiguration: ConnectionConfiguration,
+        logHandler: LogHandler?
     ) {
         mapboxBuilder.locationEngine(
             AblySimulationLocationEngine(
                 connectionConfiguration.authentication.clientOptions,
-                locationSource.simulationChannelName
+                locationSource.simulationChannelName,
+                logHandler
             )
         )
     }

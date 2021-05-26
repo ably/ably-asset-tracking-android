@@ -5,85 +5,120 @@
   android:layout_width="match_parent"
   android:layout_height="match_parent">
 
-  <TextView
-    android:id="@+id/appTitleTextView"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:layout_marginTop="24dp"
-    android:text="@string/ably_asset_tracking"
-    android:textColor="#DE7C31"
-    android:textSize="30sp"
-    android:textStyle="bold"
-    app:layout_constraintEnd_toEndOf="parent"
-    app:layout_constraintStart_toStartOf="parent"
+  <View
+    android:id="@+id/headerBackground"
+    android:layout_width="match_parent"
+    android:layout_height="57dp"
+    android:background="@color/header_background"
     app:layout_constraintTop_toTopOf="parent" />
+
+  <androidx.appcompat.widget.AppCompatImageView
+    android:layout_width="wrap_content"
+    android:layout_height="20dp"
+    android:layout_marginStart="@dimen/medium_margin"
+    android:src="@drawable/header_logo_with_title"
+    app:layout_constraintBottom_toBottomOf="@id/headerBackground"
+    app:layout_constraintStart_toStartOf="@id/headerBackground"
+    app:layout_constraintTop_toTopOf="@id/headerBackground" />
+
+  <androidx.appcompat.widget.AppCompatImageView
+    android:id="@+id/settingsImageView"
+    android:layout_width="19dp"
+    android:layout_height="19dp"
+    android:layout_marginEnd="@dimen/medium_margin"
+    android:src="@drawable/ic_settings"
+    app:layout_constraintBottom_toBottomOf="@id/headerBackground"
+    app:layout_constraintEnd_toEndOf="@id/headerBackground"
+    app:layout_constraintTop_toTopOf="@id/headerBackground" />
+
+  <View
+    android:id="@+id/locationSourceBackground"
+    android:layout_width="match_parent"
+    android:layout_height="48dp"
+    android:background="@color/location_source_background"
+    app:layout_constraintTop_toBottomOf="@id/headerBackground" />
 
   <TextView
     android:id="@+id/locationSourceLabelTextView"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:layout_marginStart="20dp"
-    android:layout_marginTop="16dp"
-    android:gravity="center"
+    android:layout_marginStart="@dimen/medium_margin"
     android:text="@string/location_source_label"
     android:textColor="@color/black"
-    android:textSize="16sp"
-    android:textStyle="bold"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintTop_toBottomOf="@id/appTitleTextView" />
+    android:textSize="14sp"
+    app:layout_constraintBottom_toBottomOf="@id/locationSourceBackground"
+    app:layout_constraintStart_toStartOf="@id/locationSourceBackground"
+    app:layout_constraintTop_toTopOf="@id/locationSourceBackground" />
 
   <TextView
     android:id="@+id/locationSourceMethodTextView"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:layout_marginStart="10dp"
+    android:layout_marginStart="@dimen/medium_margin"
     android:textColor="@color/black"
-    android:textSize="16sp"
+    android:textSize="14sp"
     android:textStyle="bold"
     app:layout_constraintBottom_toBottomOf="@id/locationSourceLabelTextView"
     app:layout_constraintStart_toEndOf="@id/locationSourceLabelTextView"
     app:layout_constraintTop_toTopOf="@id/locationSourceLabelTextView"
-    tools:text="PHONE" />
+    tools:text="Phone" />
 
   <TextView
     android:id="@+id/trackableListLabelTextView"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:layout_marginTop="16dp"
-    android:gravity="center"
+    android:layout_marginStart="@dimen/medium_margin"
+    android:layout_marginTop="@dimen/big_margin"
     android:text="@string/trackable_list"
     android:textColor="@color/black"
-    android:textSize="18sp"
+    android:textSize="32sp"
     android:textStyle="bold"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintTop_toBottomOf="@id/locationSourceBackground" />
+
+  <LinearLayout
+    android:id="@+id/emptyStateContainer"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:gravity="center"
+    android:orientation="vertical"
+    app:layout_constraintBottom_toBottomOf="parent"
     app:layout_constraintEnd_toEndOf="parent"
     app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintTop_toBottomOf="@id/locationSourceLabelTextView" />
+    app:layout_constraintTop_toTopOf="parent">
+
+    <TextView
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="@string/trackable_list_empty_state_header"
+      android:textColor="@color/grey"
+      android:textSize="24sp" />
+
+    <TextView
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="6dp"
+      android:gravity="center"
+      android:text="@string/trackable_list_empty_state_message"
+      android:textColor="@color/grey"
+      android:textSize="14sp" />
+
+  </LinearLayout>
 
   <androidx.recyclerview.widget.RecyclerView
     android:id="@+id/trackablesRecyclerView"
     android:layout_width="match_parent"
     android:layout_height="0dp"
+    android:layout_marginTop="16dp"
+    android:visibility="gone"
     app:layout_constraintBottom_toBottomOf="parent"
     app:layout_constraintTop_toBottomOf="@id/trackableListLabelTextView" />
 
   <com.google.android.material.floatingactionbutton.FloatingActionButton
-    android:id="@+id/settingsFab"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:layout_marginBottom="10dp"
-    app:elevation="0dp"
-    app:fabSize="mini"
-    app:layout_constraintBottom_toTopOf="@id/addTrackableFab"
-    app:layout_constraintEnd_toEndOf="@id/addTrackableFab"
-    app:srcCompat="@drawable/ic_settings" />
-
-  <com.google.android.material.floatingactionbutton.FloatingActionButton
     android:id="@+id/addTrackableFab"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:layout_margin="10dp"
-    app:elevation="0dp"
-    app:fabSize="mini"
+    android:layout_width="56dp"
+    android:layout_height="56dp"
+    android:layout_margin="@dimen/medium_margin"
     app:layout_constraintBottom_toBottomOf="parent"
     app:layout_constraintEnd_toEndOf="parent"
     app:srcCompat="@drawable/ic_add" />
