@@ -58,7 +58,7 @@ interface TokenParams {
     /**
      * Capabilities of the token.
      */
-    val capability: String
+    val capability: String?
 
     /**
      * Client ID associated with the token.

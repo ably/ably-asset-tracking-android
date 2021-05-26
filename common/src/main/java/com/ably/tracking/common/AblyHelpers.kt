@@ -98,7 +98,7 @@ val Authentication.clientOptions: ClientOptions
 fun Auth.TokenParams.toTracking(): TokenParams =
     object : TokenParams {
         override val ttl: Long = this@toTracking.ttl
-        override val capability: String = this@toTracking.capability
+        override val capability: String? = this@toTracking.capability
         override val clientId: String = this@toTracking.clientId
         override val timestamp: Long = this@toTracking.timestamp
     }
