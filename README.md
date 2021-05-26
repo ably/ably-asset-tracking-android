@@ -121,7 +121,13 @@ This repository also contains example apps that showcase how the Ably Asset Trac
 - the [Asset Publishing example app](publishing-example-app/)
 - the [Asset Subscribing example app](subscribing-example-app/)
 
-To build these apps you will need to specify [credentials](#api-keys-and-access-tokens) in Gradle properties.
+To build these apps from source you will need to specify credentials in Gradle properties.
+
+The following secrets need to be injected into Gradle by either storing them in `~/.gradle/gradle.properties`, or by using one of [many other ways](https://docs.gradle.org/current/userguide/build_environment.html) to do this:
+
+ - `ABLY_API_KEY`
+ - `MAPBOX_ACCESS_TOKEN`
+ - `GOOGLE_MAPS_API_KEY`
 
 ## Android Runtime Requirements
 
