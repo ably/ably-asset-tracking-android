@@ -99,7 +99,7 @@ class TokenAuthenticationTests {
                 override val nonce: String = ablyTokenRequest.nonce
                 override val mac: String = ablyTokenRequest.mac
                 override val ttl: Long = ablyTokenRequest.ttl
-                override val capability: String = ablyTokenRequest.capability
+                override val capability: String? = ablyTokenRequest.capability
                 override val clientId: String = ablyTokenRequest.clientId
                 override val timestamp: Long = ablyTokenRequest.timestamp
             }
