@@ -3,6 +3,7 @@ package com.ably.tracking.subscriber
 import com.ably.tracking.BuilderConfigurationIncompleteException
 import com.ably.tracking.ConnectionException
 import com.ably.tracking.LocationUpdate
+import com.ably.tracking.logging.LogHandler
 import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
 import com.ably.tracking.connection.ConnectionConfiguration
@@ -96,6 +97,15 @@ interface Subscriber {
          * @return A new instance of the builder with this property changed.
          */
         fun trackingId(trackingId: String): Builder
+
+        /**
+         * EXPERIMENTAL API
+         * **OPTIONAL** Sets the log handler.
+         *
+         * @param logHandler The class that will handle log messages.
+         * @return A new instance of the builder with this property changed.
+         */
+        fun logHandler(logHandler: LogHandler): Builder
 
         /**
          * Creates a [Subscriber] and starts listening for location updates.
