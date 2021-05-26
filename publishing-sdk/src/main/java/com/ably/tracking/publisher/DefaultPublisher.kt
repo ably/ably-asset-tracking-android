@@ -21,7 +21,6 @@ constructor(
     mapbox: Mapbox,
     resolutionPolicyFactory: ResolutionPolicy.Factory,
     routingProfile: RoutingProfile,
-    batteryDataProvider: BatteryDataProvider
 ) :
     Publisher {
     private val core: CorePublisher
@@ -39,7 +38,7 @@ constructor(
         get() = core.locationHistory
 
     init {
-        core = createCorePublisher(ably, mapbox, resolutionPolicyFactory, routingProfile, batteryDataProvider)
+        core = createCorePublisher(ably, mapbox, resolutionPolicyFactory, routingProfile)
     }
 
     override suspend fun track(trackable: Trackable): StateFlow<TrackableState> {
