@@ -10,6 +10,7 @@ apply from: '../jacoco.gradle'
 dependencies {
     api project(':core-sdk')
     implementation project(':common')
+    implementation "io.ably:ably-android:$ably_core_version"
 
     // The MapBox Navigation SDK for Android.
     // We're not using the pre-built UI components, so just need the core dependency.

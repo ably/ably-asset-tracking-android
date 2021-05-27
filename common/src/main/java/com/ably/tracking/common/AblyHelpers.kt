@@ -86,6 +86,12 @@ val Authentication.clientOptions: ClientOptions
             }
         }
 
+        this@clientOptions.jwtCallback?.let { jwtCallback ->
+            authCallback = Auth.TokenCallback {
+                jwtCallback(it.toTracking())
+            }
+        }
+
         this@clientOptions.basicApiKey?.let { basicApiKey ->
             key = basicApiKey
         }
