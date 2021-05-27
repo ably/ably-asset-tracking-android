@@ -15,4 +15,5 @@ dependencies {
     implementation project(':publishing-sdk')
     implementation 'com.google.code.gson:gson:2.8.6'
     implementation 'io.ably:ably-android:1.2.2'
+    implementation 'io.jsonwebtoken:jjwt:0.7.0'
 }
