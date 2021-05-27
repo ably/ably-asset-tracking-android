@@ -16,6 +16,8 @@ import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
 import com.ably.tracking.connection.Authentication
 import com.ably.tracking.connection.ConnectionConfiguration
+import com.ably.tracking.logging.LogHandler
+import com.ably.tracking.logging.LogLevel
 import com.ably.tracking.subscriber.Subscriber
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -33,6 +35,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 private const val CLIENT_ID = "<INSERT_CLIENT_ID_HERE>"
 private const val ABLY_API_KEY = BuildConfig.ABLY_API_KEY
@@ -117,6 +120,17 @@ class MainActivity : AppCompatActivity() {
                 .connection(ConnectionConfiguration(Authentication.basic(CLIENT_ID, ABLY_API_KEY)))
                 .trackingId(trackableId)
                 .resolution(resolution)
+                .logHandler(object : LogHandler {
+                    override fun logMessage(level: LogLevel, message: String, throwable: Throwable?) {
+                        when (level) {
+                            LogLevel.VERBOSE -> Timber.v(throwable, message)
+                            LogLevel.INFO -> Timber.i(throwable, message)
+                            LogLevel.DEBUG -> Timber.d(throwable, message)
+                            LogLevel.WARN -> Timber.w(throwable, message)
+                            LogLevel.ERROR -> Timber.e(throwable, message)
+                        }
+                    }
+                })
                 .start()
                 .apply {
                     locations

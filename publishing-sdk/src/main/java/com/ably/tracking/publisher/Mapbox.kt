@@ -9,6 +9,7 @@ import com.ably.tracking.common.MILLISECONDS_PER_SECOND
 import com.ably.tracking.common.ResultHandler
 import com.ably.tracking.common.clientOptions
 import com.ably.tracking.connection.ConnectionConfiguration
+import com.ably.tracking.logging.LogHandler
 import com.ably.tracking.publisher.debug.AblySimulationLocationEngine
 import com.ably.tracking.publisher.locationengine.FusedAndroidLocationEngine
 import com.ably.tracking.publisher.locationengine.GoogleLocationEngine
@@ -100,7 +101,8 @@ internal class DefaultMapbox(
     context: Context,
     private val mapConfiguration: MapConfiguration,
     connectionConfiguration: ConnectionConfiguration,
-    locationSource: LocationSource? = null
+    locationSource: LocationSource? = null,
+    logHandler: LogHandler?,
 ) : Mapbox {
     private val mainDispatcher = Dispatchers.Main.immediate
     private var mapboxNavigation: MapboxNavigation
@@ -110,11 +112,11 @@ internal class DefaultMapbox(
     init {
         val mapboxBuilder = NavigationOptions.Builder(context)
             .accessToken(mapConfiguration.apiKey)
-            .locationEngine(getBestLocationEngine(context))
+            .locationEngine(getBestLocationEngine(context, logHandler))
         locationSource?.let {
             when (it) {
                 is LocationSourceAbly -> {
-                    useAblySimulationLocationEngine(mapboxBuilder, it, connectionConfiguration)
+                    useAblySimulationLocationEngine(mapboxBuilder, it, connectionConfiguration, logHandler)
                 }
                 is LocationSourceRaw -> {
                     useHistoryDataReplayerLocationEngine(mapboxBuilder, it)
@@ -212,22 +214,24 @@ internal class DefaultMapbox(
         }
     }
 
-    private fun getBestLocationEngine(context: Context): ResolutionLocationEngine =
+    private fun getBestLocationEngine(context: Context, logHandler: LogHandler?): ResolutionLocationEngine =
         if (LocationEngineUtils.hasGoogleLocationServices(context)) {
             GoogleLocationEngine(context)
         } else {
-            FusedAndroidLocationEngine(context)
+            FusedAndroidLocationEngine(context, logHandler)
         }
 
     private fun useAblySimulationLocationEngine(
         mapboxBuilder: NavigationOptions.Builder,
         locationSource: LocationSourceAbly,
-        connectionConfiguration: ConnectionConfiguration
+        connectionConfiguration: ConnectionConfiguration,
+        logHandler: LogHandler?
     ) {
         mapboxBuilder.locationEngine(
             AblySimulationLocationEngine(
                 connectionConfiguration.authentication.clientOptions,
-                locationSource.simulationChannelName
+                locationSource.simulationChannelName,
+                logHandler
             )
         )
     }

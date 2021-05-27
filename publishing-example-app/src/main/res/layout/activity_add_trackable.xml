@@ -5,130 +5,144 @@
   android:layout_width="match_parent"
   android:layout_height="match_parent">
 
-  <TextView
-    android:id="@+id/screenTitleTextView"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:layout_marginStart="@dimen/medium_margin"
-    android:layout_marginTop="@dimen/big_margin"
-    android:text="@string/add_trackable"
-    android:textColor="@color/black"
-    android:textSize="32sp"
-    android:textStyle="bold"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintTop_toTopOf="parent" />
-
-  <!-- Resolution -->
-  <TextView
-    android:id="@+id/resolutionSectionLabelTextView"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:layout_marginStart="@dimen/medium_margin"
-    android:layout_marginTop="@dimen/big_margin"
-    android:text="@string/resolution_section_label"
-    android:textColor="@color/black"
-    android:textSize="18sp"
-    android:textStyle="bold"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintTop_toBottomOf="@id/screenTitleTextView" />
-
-  <TextView
-    android:id="@+id/accuracyLabelTextView"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:layout_marginStart="@dimen/medium_margin"
-    android:layout_marginTop="@dimen/medium_margin"
-    android:text="@string/accuracy_label"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintTop_toBottomOf="@id/resolutionSectionLabelTextView" />
-
-  <androidx.appcompat.widget.AppCompatSpinner
-    android:id="@+id/accuracySpinner"
+  <ScrollView
+    app:layout_constraintTop_toTopOf="parent"
+    app:layout_constraintBottom_toTopOf="@id/addTrackableButton"
     android:layout_width="match_parent"
-    android:layout_height="70dp"
-    android:layout_marginHorizontal="@dimen/medium_margin"
-    app:layout_constraintTop_toBottomOf="@id/accuracyLabelTextView" />
+    android:layout_height="0dp">
 
-  <View
-    android:layout_width="0dp"
-    android:layout_height="1dp"
-    android:layout_marginBottom="6dp"
-    android:background="@color/dark_grey"
-    app:layout_constraintBottom_toBottomOf="@id/accuracySpinner"
-    app:layout_constraintEnd_toEndOf="@id/accuracySpinner"
-    app:layout_constraintStart_toStartOf="@id/accuracySpinner" />
+    <androidx.constraintlayout.widget.ConstraintLayout
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:paddingBottom="@dimen/medium_margin"
+      android:orientation="vertical">
 
-  <TextView
-    android:id="@+id/desiredIntervalLabelTextView"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:layout_marginStart="@dimen/medium_margin"
-    android:layout_marginTop="@dimen/medium_margin"
-    android:text="@string/desired_interval_label"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintTop_toBottomOf="@id/accuracySpinner" />
+      <TextView
+        android:id="@+id/screenTitleTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/medium_margin"
+        android:layout_marginTop="@dimen/big_margin"
+        android:text="@string/add_trackable"
+        android:textColor="@color/black"
+        android:textSize="32sp"
+        android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
-  <androidx.appcompat.widget.AppCompatEditText
-    android:id="@+id/desiredIntervalEditText"
-    android:layout_width="match_parent"
-    android:layout_height="70dp"
-    android:layout_marginHorizontal="@dimen/medium_margin"
-    android:inputType="number"
-    app:layout_constraintTop_toBottomOf="@id/desiredIntervalLabelTextView"
-    tools:text="1000" />
+      <!-- Resolution -->
+      <TextView
+        android:id="@+id/resolutionSectionLabelTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/medium_margin"
+        android:layout_marginTop="@dimen/big_margin"
+        android:text="@string/resolution_section_label"
+        android:textColor="@color/black"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/screenTitleTextView" />
 
-  <TextView
-    android:id="@+id/minimumDisplacementLabelTextView"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:layout_marginStart="@dimen/medium_margin"
-    android:layout_marginTop="@dimen/medium_margin"
-    android:text="@string/minimum_displacement_label"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintTop_toBottomOf="@id/desiredIntervalEditText" />
+      <TextView
+        android:id="@+id/accuracyLabelTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/medium_margin"
+        android:layout_marginTop="@dimen/medium_margin"
+        android:text="@string/accuracy_label"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/resolutionSectionLabelTextView" />
 
-  <androidx.appcompat.widget.AppCompatEditText
-    android:id="@+id/minimumDisplacementEditText"
-    android:layout_width="match_parent"
-    android:layout_height="70dp"
-    android:layout_marginHorizontal="@dimen/medium_margin"
-    android:inputType="numberDecimal"
-    app:layout_constraintTop_toBottomOf="@id/minimumDisplacementLabelTextView"
-    tools:text="1.0" />
+      <androidx.appcompat.widget.AppCompatSpinner
+        android:id="@+id/accuracySpinner"
+        android:layout_width="match_parent"
+        android:layout_height="70dp"
+        android:layout_marginHorizontal="@dimen/medium_margin"
+        app:layout_constraintTop_toBottomOf="@id/accuracyLabelTextView" />
 
-  <!-- Trackable -->
-  <TextView
-    android:id="@+id/trackableSectionLabelTextView"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:layout_marginStart="@dimen/medium_margin"
-    android:layout_marginTop="@dimen/medium_margin"
-    android:text="@string/trackable_section_label"
-    android:textColor="@color/black"
-    android:textSize="18sp"
-    android:textStyle="bold"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintTop_toBottomOf="@id/minimumDisplacementEditText" />
+      <View
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:layout_marginBottom="6dp"
+        android:background="@color/dark_grey"
+        app:layout_constraintBottom_toBottomOf="@id/accuracySpinner"
+        app:layout_constraintEnd_toEndOf="@id/accuracySpinner"
+        app:layout_constraintStart_toStartOf="@id/accuracySpinner" />
 
-  <TextView
-    android:id="@+id/trackableIdLabelTextView"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:layout_marginStart="@dimen/medium_margin"
-    android:layout_marginTop="@dimen/medium_margin"
-    android:text="@string/tracking_id"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintTop_toBottomOf="@id/trackableSectionLabelTextView" />
+      <TextView
+        android:id="@+id/desiredIntervalLabelTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/medium_margin"
+        android:layout_marginTop="@dimen/medium_margin"
+        android:text="@string/desired_interval_label"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/accuracySpinner" />
 
-  <androidx.appcompat.widget.AppCompatEditText
-    android:id="@+id/trackableIdEditText"
-    android:layout_width="match_parent"
-    android:layout_height="70dp"
-    android:layout_marginHorizontal="@dimen/medium_margin"
-    android:imeOptions="actionDone"
-    android:inputType="text"
-    app:layout_constraintTop_toBottomOf="@id/trackableIdLabelTextView"
-    tools:text="Here goes test ID" />
+      <androidx.appcompat.widget.AppCompatEditText
+        android:id="@+id/desiredIntervalEditText"
+        android:layout_width="match_parent"
+        android:layout_height="70dp"
+        android:layout_marginHorizontal="@dimen/medium_margin"
+        android:inputType="number"
+        app:layout_constraintTop_toBottomOf="@id/desiredIntervalLabelTextView"
+        tools:text="1000" />
+
+      <TextView
+        android:id="@+id/minimumDisplacementLabelTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/medium_margin"
+        android:layout_marginTop="@dimen/medium_margin"
+        android:text="@string/minimum_displacement_label"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/desiredIntervalEditText" />
+
+      <androidx.appcompat.widget.AppCompatEditText
+        android:id="@+id/minimumDisplacementEditText"
+        android:layout_width="match_parent"
+        android:layout_height="70dp"
+        android:layout_marginHorizontal="@dimen/medium_margin"
+        android:inputType="numberDecimal"
+        app:layout_constraintTop_toBottomOf="@id/minimumDisplacementLabelTextView"
+        tools:text="1.0" />
+
+      <!-- Trackable -->
+      <TextView
+        android:id="@+id/trackableSectionLabelTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/medium_margin"
+        android:layout_marginTop="@dimen/medium_margin"
+        android:text="@string/trackable_section_label"
+        android:textColor="@color/black"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/minimumDisplacementEditText" />
+
+      <TextView
+        android:id="@+id/trackableIdLabelTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/medium_margin"
+        android:layout_marginTop="@dimen/medium_margin"
+        android:text="@string/tracking_id"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/trackableSectionLabelTextView" />
+
+      <androidx.appcompat.widget.AppCompatEditText
+        android:id="@+id/trackableIdEditText"
+        android:layout_width="match_parent"
+        android:layout_height="70dp"
+        android:layout_marginHorizontal="@dimen/medium_margin"
+        android:imeOptions="actionDone"
+        android:inputType="text"
+        app:layout_constraintTop_toBottomOf="@id/trackableIdLabelTextView"
+        tools:text="Here goes test ID" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+  </ScrollView>
 
   <androidx.appcompat.widget.AppCompatButton
     android:id="@+id/addTrackableButton"
