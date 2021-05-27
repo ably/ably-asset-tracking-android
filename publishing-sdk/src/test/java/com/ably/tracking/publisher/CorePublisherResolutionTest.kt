@@ -207,7 +207,7 @@ class CorePublisherResolutionTest(
         // calculating a point that is distant from the old location by the specified distance
         val newLocationPoint = TurfMeasurement.along(
             movementLine,
-            distanceInMeters + 0.0001, // we're adding a small distance value to compensate the inaccuracy of this method
+            distanceInMeters + 0.01, // we're adding a small distance value to compensate the inaccuracy of this method
             TurfConstants.UNIT_METRES
         )
         return createLocation(newLocationPoint.latitude(), newLocationPoint.longitude(), timestamp)
