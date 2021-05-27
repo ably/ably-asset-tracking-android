@@ -11,6 +11,8 @@ import com.ably.tracking.Accuracy
 import com.ably.tracking.Resolution
 import com.ably.tracking.connection.Authentication
 import com.ably.tracking.connection.ConnectionConfiguration
+import com.ably.tracking.logging.LogHandler
+import com.ably.tracking.logging.LogLevel
 import com.ably.tracking.publisher.DefaultResolutionPolicyFactory
 import com.ably.tracking.publisher.LocationHistoryData
 import com.ably.tracking.publisher.LocationSource
@@ -22,6 +24,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import timber.log.Timber
 
 private const val MAPBOX_ACCESS_TOKEN = BuildConfig.MAPBOX_ACCESS_TOKEN
 private const val CLIENT_ID = "<INSERT_CLIENT_ID_HERE>"
@@ -71,6 +74,17 @@ class PublisherService : Service() {
             .resolutionPolicy(DefaultResolutionPolicyFactory(createDefaultResolution(), this))
             .androidContext(this)
             .profile(RoutingProfile.DRIVING)
+            .logHandler(object : LogHandler {
+                override fun logMessage(level: LogLevel, message: String, throwable: Throwable?) {
+                    when (level) {
+                        LogLevel.VERBOSE -> Timber.v(throwable, message)
+                        LogLevel.INFO -> Timber.i(throwable, message)
+                        LogLevel.DEBUG -> Timber.d(throwable, message)
+                        LogLevel.WARN -> Timber.w(throwable, message)
+                        LogLevel.ERROR -> Timber.e(throwable, message)
+                    }
+                }
+            })
             .start().apply {
                 locationHistory
                     .onEach { uploadLocationHistoryData(it) }
@@ -86,7 +100,7 @@ class PublisherService : Service() {
         )
 
     private fun uploadLocationHistoryData(historyData: LocationHistoryData) {
-        if (getLocationSourceType() == LocationSourceType.PHONE) {
+        if (appPreferences.getLocationSource() == LocationSourceType.PHONE) {
             S3Helper.uploadHistoryData(
                 this,
                 historyData
@@ -94,16 +108,7 @@ class PublisherService : Service() {
         }
     }
 
-    private fun getLocationSourceType() =
-        when (appPreferences.getLocationSource()) {
-            getString(R.string.location_source_ably) -> LocationSourceType.ABLY
-            getString(R.string.location_source_s3) -> LocationSourceType.S3
-            else -> LocationSourceType.PHONE
-        }
-
     private fun showToast(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 }
-
-enum class LocationSourceType { PHONE, ABLY, S3 }

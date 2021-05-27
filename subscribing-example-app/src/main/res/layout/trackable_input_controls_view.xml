@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent">
+
+  <TextView
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:paddingTop="12dp"
+    android:paddingBottom="6dp"
+    android:text="@string/trackable_id"
+    app:layout_constraintBottom_toTopOf="@+id/trackableIdEditText"
+    app:layout_constraintStart_toStartOf="@+id/trackableIdEditText" />
+
+  <androidx.appcompat.widget.AppCompatEditText
+    android:id="@+id/trackableIdEditText"
+    android:layout_width="0dp"
+    android:layout_height="50dp"
+    android:layout_marginBottom="10dp"
+    android:imeOptions="actionDone"
+    android:inputType="text"
+    app:layout_constraintBottom_toTopOf="@id/startButton"
+    app:layout_constraintEnd_toEndOf="@id/startButton"
+    app:layout_constraintStart_toStartOf="@id/startButton" />
+
+  <androidx.appcompat.widget.AppCompatButton
+    android:id="@+id/startButton"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="@dimen/start_button_margin"
+    android:layout_marginEnd="@dimen/start_button_margin"
+    android:layout_marginBottom="@dimen/start_button_margin"
+    android:background="@drawable/rounded_rectangle"
+    android:backgroundTint="@color/button_inactive"
+    android:text="@string/start_button_ready"
+    android:textColor="@color/mid_grey"
+    app:layout_constraintBottom_toBottomOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

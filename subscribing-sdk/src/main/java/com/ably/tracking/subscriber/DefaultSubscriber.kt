@@ -6,7 +6,6 @@ import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
-import timber.log.Timber
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
@@ -25,8 +24,6 @@ internal class DefaultSubscriber(
         get() = core.trackableStates
 
     init {
-        Timber.w("Started.")
-
         core = createCoreSubscriber(ably, resolution, trackableId)
     }
 

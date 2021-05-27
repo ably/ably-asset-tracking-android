@@ -4,13 +4,13 @@
   android:layout_width="match_parent"
   android:layout_height="match_parent">
 
-  <PreferenceCategory android:title="@string/preferences_general_category_title">
+  <PreferenceCategory
+    android:layout="@layout/preference_category_layout"
+    android:title="@string/preferences_general_category_title">
 
     <ListPreference
-      android:defaultValue="@string/default_location_source"
-      android:entries="@array/location_source_entries"
-      android:entryValues="@array/location_source_values"
       android:key="@string/preferences_location_source_key"
+      android:layout="@layout/preference_with_summary_layout"
       android:title="@string/preferences_location_source_label"
       app:useSimpleSummaryProvider="true" />
 
@@ -20,23 +20,26 @@
       android:dialogTitle="@string/preferences_update_simulation_channel_name_label"
       android:inputType="text"
       android:key="@string/preferences_simulation_channel_name_key"
+      android:layout="@layout/preference_with_summary_layout"
       android:persistent="true"
       android:title="@string/preferences_update_simulation_channel_name_label"
       app:useSimpleSummaryProvider="true" />
 
     <ListPreference
       android:key="@string/preferences_s3_file_key"
+      android:layout="@layout/preference_with_summary_layout"
       android:title="@string/preferences_s3_file_label"
       app:useSimpleSummaryProvider="true" />
 
   </PreferenceCategory>
 
-  <PreferenceCategory android:title="@string/preferences_resolution_category_title">
+  <PreferenceCategory
+    android:layout="@layout/preference_category_layout"
+    android:title="@string/preferences_resolution_category_title">
 
     <ListPreference
-      android:entries="@array/location_source_entries"
-      android:entryValues="@array/location_source_values"
       android:key="@string/preferences_resolution_accuracy_key"
+      android:layout="@layout/preference_with_summary_layout"
       android:title="@string/preferences_resolution_accuracy_label"
       app:useSimpleSummaryProvider="true" />
 
@@ -44,6 +47,7 @@
       android:dialogMessage="@string/preferences_update_resolution_desired_interval_message"
       android:dialogTitle="@string/preferences_update_resolution_desired_interval_title"
       android:key="@string/preferences_resolution_desired_interval_key"
+      android:layout="@layout/preference_with_summary_layout"
       android:title="@string/preferences_resolution_desired_interval_label"
       app:useSimpleSummaryProvider="true" />
 
@@ -51,6 +55,7 @@
       android:dialogMessage="@string/preferences_update_resolution_minimum_displacement_message"
       android:dialogTitle="@string/preferences_update_resolution_minimum_displacement_title"
       android:key="@string/preferences_resolution_minimum_displacement_key"
+      android:layout="@layout/preference_with_summary_layout"
       android:title="@string/preferences_resolution_minimum_displacement_label"
       app:useSimpleSummaryProvider="true" />
 
