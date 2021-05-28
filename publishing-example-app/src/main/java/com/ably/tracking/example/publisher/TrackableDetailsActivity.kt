@@ -1,10 +1,10 @@
 package com.ably.tracking.example.publisher
 
 import android.content.res.ColorStateList
-import android.location.Location
 import android.os.Bundle
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
+import com.ably.tracking.Location
 import com.ably.tracking.TrackableState
 import com.ably.tracking.publisher.Trackable
 import kotlinx.android.synthetic.main.activity_trackable_details.*

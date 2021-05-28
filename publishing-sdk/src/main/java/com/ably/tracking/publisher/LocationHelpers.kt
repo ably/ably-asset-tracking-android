@@ -1,6 +1,6 @@
 package com.ably.tracking.publisher
 
-import android.location.Location
+import com.ably.tracking.Location
 import com.ably.tracking.common.METERS_PER_KILOMETER
 import com.mapbox.geojson.Point
 import com.mapbox.turf.TurfMeasurement
