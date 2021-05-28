@@ -74,5 +74,5 @@ jobs:
 
       # The Java app variants are not functional as they are just used to validate build and run tests.
       # So just validate that something got assembled for them.
-      - run: ls -lR publishing-example-java-app/build/outputs/apk/
-      - run: ls -lR subscribing-example-java-app/build/outputs/apk/
+      - run: ls -lR publishing-java-testing/build/outputs/apk/
+      - run: ls -lR subscribing-java-testing/build/outputs/apk/
