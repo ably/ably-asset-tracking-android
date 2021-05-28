@@ -2,8 +2,8 @@ package com.ably.tracking.publisher
 
 import android.Manifest
 import android.content.Context
-import android.location.Location
 import androidx.annotation.RequiresPermission
+import com.ably.tracking.Location
 import com.ably.tracking.Resolution
 import com.ably.tracking.common.MILLISECONDS_PER_SECOND
 import com.ably.tracking.common.ResultHandler

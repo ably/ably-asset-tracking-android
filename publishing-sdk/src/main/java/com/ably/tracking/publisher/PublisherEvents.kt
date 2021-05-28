@@ -1,6 +1,6 @@
 package com.ably.tracking.publisher
 
-import android.location.Location
+import com.ably.tracking.Location
 import com.ably.tracking.LocationUpdateType
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.ConnectionStateChange
@@ -60,12 +60,10 @@ internal class ConnectionForTrackableCreatedEvent(
 
 internal data class RawLocationChangedEvent(
     val location: Location,
-    val batteryLevel: Float?
 ) : AdhocEvent()
 
 internal data class EnhancedLocationChangedEvent(
     val location: Location,
-    val batteryLevel: Float?,
     val intermediateLocations: List<Location>,
     val type: LocationUpdateType
 ) : AdhocEvent()

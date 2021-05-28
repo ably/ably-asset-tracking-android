@@ -1,8 +1,8 @@
 package com.ably.tracking.publisher
 
 import android.annotation.SuppressLint
-import android.location.Location
 import com.ably.tracking.Accuracy
+import com.ably.tracking.Location
 import com.ably.tracking.LocationUpdateType
 import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
@@ -107,11 +107,10 @@ class CorePublisherResolutionTest(
         override fun createResolutionPolicy(hooks: ResolutionPolicy.Hooks, methods: ResolutionPolicy.Methods) =
             resolutionPolicy
     }
-    private val batteryDataProvider = mockk<BatteryDataProvider>(relaxed = true)
 
     @SuppressLint("MissingPermission")
     private val corePublisher: CorePublisher =
-        createCorePublisher(ably, mapbox, resolutionPolicyFactory, RoutingProfile.DRIVING, batteryDataProvider)
+        createCorePublisher(ably, mapbox, resolutionPolicyFactory, RoutingProfile.DRIVING)
 
     @Test
     fun `Should send limited location updates`() {
@@ -140,7 +139,7 @@ class CorePublisherResolutionTest(
     }
 
     private fun createEnhancedLocationChangedEvent(location: Location) =
-        EnhancedLocationChangedEvent(location, null, emptyList(), LocationUpdateType.ACTUAL)
+        EnhancedLocationChangedEvent(location, emptyList(), LocationUpdateType.ACTUAL)
 
     private fun mockAllTrackablesResolution(resolution: Resolution) {
         every { resolutionPolicy.resolve(any<TrackableResolutionRequest>()) } returns resolution

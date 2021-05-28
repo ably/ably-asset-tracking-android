@@ -1,10 +1,10 @@
 package com.ably.tracking.publisher
 
 import android.Manifest
-import android.location.Location
 import androidx.annotation.RequiresPermission
 import com.ably.tracking.ConnectionException
 import com.ably.tracking.EnhancedLocationUpdate
+import com.ably.tracking.Location
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.LocationUpdateType
 import com.ably.tracking.Resolution
@@ -15,6 +15,7 @@ import com.ably.tracking.common.ConnectionState
 import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.PresenceAction
 import com.ably.tracking.common.PresenceData
+import com.ably.tracking.common.toAssetTracking
 import com.mapbox.navigation.core.trip.session.LocationObserver
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -48,9 +49,8 @@ internal fun createCorePublisher(
     mapbox: Mapbox,
     resolutionPolicyFactory: ResolutionPolicy.Factory,
     routingProfile: RoutingProfile,
-    batteryDataProvider: BatteryDataProvider
 ): CorePublisher {
-    return DefaultCorePublisher(ably, mapbox, resolutionPolicyFactory, routingProfile, batteryDataProvider)
+    return DefaultCorePublisher(ably, mapbox, resolutionPolicyFactory, routingProfile)
 }
 
 private class DefaultCorePublisher
@@ -60,7 +60,6 @@ constructor(
     private val mapbox: Mapbox,
     resolutionPolicyFactory: ResolutionPolicy.Factory,
     routingProfile: RoutingProfile,
-    private val batteryDataProvider: BatteryDataProvider
 ) : CorePublisher {
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private val sendEventChannel: SendChannel<Event>
@@ -72,26 +71,22 @@ constructor(
     private val hooks = Hooks()
     private val methods = Methods()
     private val locationObserver = object : LocationObserver {
-        override fun onRawLocationChanged(rawLocation: Location) {
+        override fun onRawLocationChanged(rawLocation: android.location.Location) {
             enqueue(
-                RawLocationChangedEvent(
-                    rawLocation,
-                    batteryDataProvider.getCurrentBatteryPercentage()
-                )
+                RawLocationChangedEvent(rawLocation.toAssetTracking())
             )
         }
 
         override fun onEnhancedLocationChanged(
-            enhancedLocation: Location,
-            keyPoints: List<Location>
+            enhancedLocation: android.location.Location,
+            keyPoints: List<android.location.Location>
         ) {
             val intermediateLocations =
                 if (keyPoints.size > 1) keyPoints.subList(0, keyPoints.size - 1) else emptyList()
             enqueue(
                 EnhancedLocationChangedEvent(
-                    enhancedLocation,
-                    batteryDataProvider.getCurrentBatteryPercentage(),
-                    intermediateLocations,
+                    enhancedLocation.toAssetTracking(),
+                    intermediateLocations.map { it.toAssetTracking() },
                     if (intermediateLocations.isEmpty()) LocationUpdateType.ACTUAL else LocationUpdateType.PREDICTED
                 )
             )
@@ -178,7 +173,6 @@ constructor(
                                 try {
                                     val locationUpdate = EnhancedLocationUpdate(
                                         event.location,
-                                        event.batteryLevel,
                                         state.skippedEnhancedLocations[trackable.id] ?: emptyList(),
                                         event.intermediateLocations,
                                         event.type
@@ -201,7 +195,6 @@ constructor(
                             _locations.emit(
                                 EnhancedLocationUpdate(
                                     event.location,
-                                    event.batteryLevel,
                                     emptyList(),
                                     event.intermediateLocations,
                                     event.type
