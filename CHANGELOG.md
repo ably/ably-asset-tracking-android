@@ -1,5 +1,13 @@
 # Change log
 
+## [1.0.0-beta.4](https://github.com/ably/ably-asset-tracking-android/tree/v1.0.0-beta.4)
+
+[Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.0.0-beta.3...v1.0.0-beta.4)
+
+**Merged pull requests:**
+
+- Fix crash when presence data is missing or in wrong format [\#354](https://github.com/ably/ably-asset-tracking-android/pull/354) ([KacperKluka](https://github.com/KacperKluka))
+
 ## [1.0.0-beta.3](https://github.com/ably/ably-asset-tracking-android/tree/v1.0.0-beta.3)
 
 [Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.0.0-beta.2...v1.0.0-beta.3)
