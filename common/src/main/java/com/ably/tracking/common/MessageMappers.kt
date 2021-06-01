@@ -8,11 +8,17 @@ import com.google.gson.Gson
 import io.ably.lib.types.Message
 import io.ably.lib.types.PresenceMessage
 
-fun PresenceMessage.getPresenceData(gson: Gson): PresenceData =
-    gson.fromJson(data as String, PresenceDataMessage::class.java).toTracking()
+/**
+ * Returns parsed data or null if data is missing or in wrong format.
+ */
+fun PresenceMessage.getPresenceData(gson: Gson): PresenceData? =
+    gson.fromJson(data as? String, PresenceDataMessage::class.java)?.toTracking()
 
-fun PresenceDataMessage.toTracking(): PresenceData =
-    PresenceData(type, resolution?.toTracking())
+/**
+ * Returns parsed data or null if data is in wrong format.
+ */
+fun PresenceDataMessage.toTracking(): PresenceData? =
+    type?.let { PresenceData(it, resolution?.toTracking()) }
 
 fun PresenceData.toMessage(): PresenceDataMessage =
     PresenceDataMessage(type, resolution?.toMessage())

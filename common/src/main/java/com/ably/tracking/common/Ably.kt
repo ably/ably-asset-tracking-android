@@ -268,12 +268,26 @@ constructor(
             try {
                 // Emit the current presence messages of the channel
                 channel.presence.get(true).let { messages ->
-                    messages.forEach {
+                    messages.forEach { presenceMessage ->
                         // Each message is launched in a fire-and-forget manner to not block this method on the listener() call
-                        scope.launch { listener(it.toTracking(gson)) }
+                        scope.launch {
+                            val parsedMessage = presenceMessage.toTracking(gson)
+                            if (parsedMessage != null) {
+                                listener(parsedMessage)
+                            } else {
+                                Timber.w("Presence message in unexpected format: $presenceMessage")
+                            }
+                        }
                     }
                 }
-                channel.presence.subscribe { listener(it.toTracking(gson)) }
+                channel.presence.subscribe {
+                    val parsedMessage = it.toTracking(gson)
+                    if (parsedMessage != null) {
+                        listener(parsedMessage)
+                    } else {
+                        Timber.w("Presence message in unexpected format: $it")
+                    }
+                }
             } catch (exception: AblyException) {
                 throw exception.errorInfo.toTrackingException()
             }
