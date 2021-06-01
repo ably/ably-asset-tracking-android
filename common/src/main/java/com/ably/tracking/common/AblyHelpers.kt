@@ -124,7 +124,6 @@ fun TokenRequest.toAuth(): Auth.TokenRequest =
  */
 fun io.ably.lib.types.PresenceMessage.toTracking(gson: Gson): PresenceMessage? =
     this.getPresenceData(gson)?.let { presenceData ->
-
         PresenceMessage(
             this.action.toTracking(),
             presenceData,
