@@ -275,7 +275,7 @@ constructor(
                             if (parsedMessage != null) {
                                 listener(parsedMessage)
                             } else {
-                                Timber.w("Presence message in unexpected format: $presenceMessage")
+                                logHandler?.w("Presence message in unexpected format: $presenceMessage")
                             }
                         }
                     }
@@ -285,7 +285,7 @@ constructor(
                     if (parsedMessage != null) {
                         listener(parsedMessage)
                     } else {
-                        Timber.w("Presence message in unexpected format: $it")
+                        logHandler?.w("Presence message in unexpected format: $it")
                     }
                 }
             } catch (exception: AblyException) {
