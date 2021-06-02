@@ -91,3 +91,11 @@ internal data class ChannelConnectionStateChangeEvent(
     val connectionStateChange: ConnectionStateChange,
     val trackableId: String
 ) : AdhocEvent()
+
+internal data class TripStartedEvent(
+    val trackable: Trackable,
+) : AdhocEvent()
+
+internal data class TripEndedEvent(
+    val trackable: Trackable,
+) : AdhocEvent()

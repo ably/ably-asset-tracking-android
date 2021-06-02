@@ -15,6 +15,8 @@ import com.ably.tracking.common.ConnectionState
 import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.PresenceAction
 import com.ably.tracking.common.PresenceData
+import com.ably.tracking.common.TripMetadata
+import com.ably.tracking.common.logging.w
 import com.ably.tracking.common.toAssetTracking
 import com.ably.tracking.logging.LogHandler
 import com.mapbox.navigation.core.trip.session.LocationObserver
@@ -253,7 +255,12 @@ constructor(
                                 ably.subscribeForChannelStateChange(event.trackable.id) {
                                     enqueue(ChannelConnectionStateChangeEvent(it, event.trackable.id))
                                 }
-                                request(ConnectionForTrackableCreatedEvent(event.trackable, event.handler))
+                                request(
+                                    ConnectionForTrackableCreatedEvent(event.trackable) {
+                                        enqueue(TripStartedEvent(event.trackable))
+                                        event.handler(it)
+                                    }
+                                )
                             } catch (exception: ConnectionException) {
                                 event.handler(Result.failure(exception))
                             }
@@ -317,6 +324,7 @@ constructor(
                                     request(
                                         DisconnectSuccessEvent(event.trackable) {
                                             if (it.isSuccess) {
+                                                enqueue(TripEndedEvent(event.trackable))
                                                 event.handler(Result.success(true))
                                             } else {
                                                 event.handler(Result.failure(it.exceptionOrNull()!!))
@@ -388,10 +396,50 @@ constructor(
                         state.lastChannelConnectionStateChanges[event.trackableId] = event.connectionStateChange
                         updateTrackableState(state, event.trackableId)
                     }
+                    is TripStartedEvent -> {
+                        sendStartTripMetadata(event.trackable, state)
+                    }
+                    is TripEndedEvent -> {
+                        sendEndTripMetadata(event.trackable, state)
+                    }
                 }
             }
         }
     }
+
+    private fun sendStartTripMetadata(trackable: Trackable, state: State) {
+        val currentLocation = state.lastPublisherLocation
+        if (currentLocation != null) {
+            try {
+                ably.sendTripStartMetadata(createTripMetadata(trackable, currentLocation, state))
+            } catch (exception: ConnectionException) {
+                logHandler?.w("Sending start trip metadata failed", exception)
+            }
+        } else {
+            state.rawLocationChangedCommands.add { updatedState -> sendStartTripMetadata(trackable, updatedState) }
+        }
+    }
+
+    private fun sendEndTripMetadata(trackable: Trackable, state: State) {
+        val currentLocation = state.lastPublisherLocation
+        if (currentLocation != null) {
+            try {
+                ably.sendTripEndMetadata(createTripMetadata(trackable, currentLocation, state))
+            } catch (exception: ConnectionException) {
+                logHandler?.w("Sending end trip metadata failed", exception)
+            }
+        } else {
+            state.rawLocationChangedCommands.add { updatedState -> sendEndTripMetadata(trackable, updatedState) }
+        }
+    }
+
+    private fun createTripMetadata(trackable: Trackable, currentLocation: Location, state: State) =
+        TripMetadata(
+            trackable.id,
+            System.currentTimeMillis(),
+            currentLocation,
+            state.active?.destination?.toLocation()
+        )
 
     private fun stopLocationUpdates(state: State) {
         state.isTracking = false
