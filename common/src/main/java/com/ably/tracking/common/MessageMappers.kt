@@ -77,3 +77,14 @@ fun LocationUpdateType.toMessage(): LocationUpdateTypeMessage =
         LocationUpdateType.PREDICTED -> LocationUpdateTypeMessage.PREDICTED
         LocationUpdateType.ACTUAL -> LocationUpdateTypeMessage.ACTUAL
     }
+
+fun TripMetadata.toMessageJson(gson: Gson): String = gson.toJson(
+    TripMetadataMessage(
+        trackingId,
+        timestamp,
+        TripDataMessage(
+            originLocation.toGeoJson(),
+            destinationLocation?.toGeoJson()
+        )
+    )
+)
