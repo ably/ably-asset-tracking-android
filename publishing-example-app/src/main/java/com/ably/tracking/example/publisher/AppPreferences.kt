@@ -15,15 +15,15 @@ class AppPreferences(context: Context) {
         context.getString(R.string.preferences_resolution_desired_interval_key)
     private val RESOLUTION_MINIMUM_DISPLACEMENT_KEY =
         context.getString(R.string.preferences_resolution_minimum_displacement_key)
-    private val DEFAULT_LOCATION_SOURCE = context.getString(R.string.default_location_source)
+    private val DEFAULT_LOCATION_SOURCE = LocationSourceType.PHONE.name
     private val DEFAULT_SIMULATION_CHANNEL = context.getString(R.string.default_simulation_channel)
     private val DEFAULT_S3_FILE = ""
     private val DEFAULT_RESULTION_ACCURACY = Accuracy.BALANCED.name
     private val DEFAULT_RESULTION_DESIRED_INTERVAL = 1000L
     private val DEFAULT_RESULTION_MINIMUM_DISPLACEMENT = 1.0f
 
-    fun getLocationSource(): String =
-        preferences.getString(LOCATION_SOURCE_KEY, DEFAULT_LOCATION_SOURCE)!!
+    fun getLocationSource(): LocationSourceType =
+        LocationSourceType.valueOf(preferences.getString(LOCATION_SOURCE_KEY, DEFAULT_LOCATION_SOURCE)!!)
 
     fun getSimulationChannel() =
         preferences.getString(SIMULATION_CHANNEL_KEY, DEFAULT_SIMULATION_CHANNEL)!!

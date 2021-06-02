@@ -15,8 +15,8 @@ include ':android-test-common',
         ':publishing-sdk',
         ':publishing-sdk-java',
         ':publishing-example-app',
-        ':publishing-example-java-app',
+        ':publishing-java-testing',
         ':subscribing-sdk',
         ':subscribing-sdk-java',
         ':subscribing-example-app',
-        ':subscribing-example-java-app'
+        ':subscribing-java-testing'

@@ -20,11 +20,10 @@ class DefaultPublisherTest {
         override fun createResolutionPolicy(hooks: ResolutionPolicy.Hooks, methods: ResolutionPolicy.Methods) =
             resolutionPolicy
     }
-    private val batteryDataProvider = mockk<BatteryDataProvider>(relaxed = true)
 
     @SuppressLint("MissingPermission")
     private val publisher: Publisher =
-        DefaultPublisher(ably, mapbox, resolutionPolicyFactory, RoutingProfile.DRIVING, batteryDataProvider)
+        DefaultPublisher(ably, mapbox, resolutionPolicyFactory, RoutingProfile.DRIVING)
 
     @Test(expected = ConnectionException::class)
     fun `should return an error when adding a trackable with subscribing to presence error`() {

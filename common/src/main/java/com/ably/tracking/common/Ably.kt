@@ -3,7 +3,13 @@ package com.ably.tracking.common
 import com.ably.tracking.ConnectionException
 import com.ably.tracking.EnhancedLocationUpdate
 import com.ably.tracking.LocationUpdate
+import com.ably.tracking.common.logging.d
+import com.ably.tracking.common.logging.e
+import com.ably.tracking.common.logging.i
+import com.ably.tracking.common.logging.v
+import com.ably.tracking.common.logging.w
 import com.ably.tracking.connection.ConnectionConfiguration
+import com.ably.tracking.logging.LogHandler
 import com.google.gson.Gson
 import io.ably.lib.realtime.AblyRealtime
 import io.ably.lib.realtime.Channel
@@ -12,12 +18,12 @@ import io.ably.lib.realtime.ConnectionState
 import io.ably.lib.types.AblyException
 import io.ably.lib.types.ChannelOptions
 import io.ably.lib.types.ErrorInfo
+import io.ably.lib.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
-import timber.log.Timber
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
@@ -128,12 +134,15 @@ interface Ably {
     suspend fun close(presenceData: PresenceData)
 }
 
+private const val CHANNEL_NAME_PREFIX = "tracking:"
+
 class DefaultAbly
 /**
  * @throws ConnectionException if something goes wrong during Ably SDK initialization.
  */
 constructor(
-    connectionConfiguration: ConnectionConfiguration
+    connectionConfiguration: ConnectionConfiguration,
+    private val logHandler: LogHandler?,
 ) : Ably {
     private val gson = Gson()
     private val ably: AblyRealtime
@@ -142,9 +151,24 @@ constructor(
 
     init {
         try {
-            ably = AblyRealtime(connectionConfiguration.authentication.clientOptions)
+            val clientOptions = connectionConfiguration.authentication.clientOptions.apply {
+                this.logLevel = Log.VERBOSE
+                this.logHandler = Log.LogHandler { severity, tag, msg, tr -> logMessage(severity, tag, msg, tr) }
+            }
+            ably = AblyRealtime(clientOptions)
         } catch (exception: AblyException) {
             throw exception.errorInfo.toTrackingException()
+        }
+    }
+
+    private fun logMessage(severity: Int, tag: String?, message: String?, throwable: Throwable?) {
+        val messageToLog = "$tag: $message"
+        when (severity) {
+            Log.VERBOSE -> logHandler?.v(messageToLog, throwable)
+            Log.DEBUG -> logHandler?.d(messageToLog, throwable)
+            Log.INFO -> logHandler?.i(messageToLog, throwable)
+            Log.WARN -> logHandler?.w(messageToLog, throwable)
+            Log.ERROR -> logHandler?.e(messageToLog, throwable)
         }
     }
 
@@ -170,10 +194,11 @@ constructor(
         callback: (Result<Unit>) -> Unit
     ) {
         if (!channels.contains(trackableId)) {
+            val channelName = "$CHANNEL_NAME_PREFIX$trackableId"
             val channel = if (useRewind)
-                ably.channels.get(trackableId, ChannelOptions().apply { params = mapOf("rewind" to "1") })
+                ably.channels.get(channelName, ChannelOptions().apply { params = mapOf("rewind" to "1") })
             else
-                ably.channels.get(trackableId)
+                ably.channels.get(channelName)
             channel.apply {
                 try {
                     presence.enter(
@@ -243,7 +268,7 @@ constructor(
 
     override fun sendEnhancedLocation(trackableId: String, locationUpdate: EnhancedLocationUpdate) {
         val locationUpdateJson = locationUpdate.toJson(gson)
-        Timber.d("sendEnhancedLocationMessage: publishing: $locationUpdateJson")
+        logHandler?.d("sendEnhancedLocationMessage: publishing: $locationUpdateJson")
         try {
             channels[trackableId]?.publish(EventNames.ENHANCED, locationUpdateJson)
         } catch (exception: AblyException) {

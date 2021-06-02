@@ -1,6 +1,6 @@
 package com.ably.tracking.publisher
 
-import android.location.Location
+import com.ably.tracking.Location
 
 internal class ThresholdChecker {
     fun isThresholdReached(

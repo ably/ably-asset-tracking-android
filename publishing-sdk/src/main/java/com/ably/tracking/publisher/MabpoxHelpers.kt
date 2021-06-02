@@ -1,6 +1,6 @@
 package com.ably.tracking.publisher
 
-import android.location.Location
+import com.ably.tracking.Location
 import com.mapbox.api.directions.v5.DirectionsCriteria
 import com.mapbox.geojson.Point
 

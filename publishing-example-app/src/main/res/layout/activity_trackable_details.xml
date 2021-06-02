@@ -6,146 +6,138 @@
   android:layout_height="match_parent">
 
   <TextView
-    android:id="@+id/appTitleTextView"
+    android:id="@+id/screenTitleTextView"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:layout_marginTop="24dp"
+    android:layout_marginStart="@dimen/medium_margin"
+    android:layout_marginTop="@dimen/big_margin"
     android:text="@string/trackable_details"
-    android:textColor="#DE7C31"
-    android:textSize="30sp"
+    android:textColor="@color/black"
+    android:textSize="32sp"
     android:textStyle="bold"
-    app:layout_constraintEnd_toEndOf="parent"
     app:layout_constraintStart_toStartOf="parent"
     app:layout_constraintTop_toTopOf="parent" />
 
-  <ImageView
-    android:id="@+id/assetStateImageView"
-    android:layout_width="100dp"
-    android:layout_height="44dp"
-    android:layout_marginTop="16dp"
-    android:layout_marginEnd="50dp"
-    app:layout_constraintEnd_toEndOf="parent"
-    app:layout_constraintTop_toBottomOf="@+id/appTitleTextView"
-    app:srcCompat="@drawable/status_background"
-    app:tint="@color/asset_status_offline" />
-
   <TextView
     android:id="@+id/assetStateValueTextView"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
+    android:layout_width="105dp"
+    android:layout_height="40dp"
+    android:layout_marginTop="@dimen/big_margin"
+    android:background="@drawable/round_rectangle"
+    android:backgroundTint="@color/asset_status_offline"
+    android:gravity="center"
     android:text="@string/offline"
     android:textAllCaps="true"
-    android:textColor="@color/black"
-    android:textSize="18sp"
-    android:textStyle="bold"
-    app:layout_constraintBottom_toBottomOf="@id/assetStateImageView"
-    app:layout_constraintEnd_toEndOf="@id/assetStateImageView"
-    app:layout_constraintStart_toStartOf="@id/assetStateImageView"
-    app:layout_constraintTop_toTopOf="@id/assetStateImageView" />
+    android:textColor="@color/mid_grey"
+    android:textSize="14sp"
+    app:layout_constraintStart_toStartOf="@id/locationSourceMethodTextView"
+    app:layout_constraintTop_toBottomOf="@id/screenTitleTextView" />
 
   <TextView
     android:id="@+id/ablyConnectionStateLabelTextView"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
+    android:layout_marginStart="@dimen/medium_margin"
     android:gravity="center"
     android:text="@string/asset_status_label"
     android:textColor="@color/black"
     android:textSize="16sp"
-    android:textStyle="bold"
-    app:layout_constraintBottom_toBottomOf="@id/assetStateImageView"
-    app:layout_constraintStart_toStartOf="@id/stopTrackingButton"
-    app:layout_constraintTop_toTopOf="@id/assetStateImageView" />
+    app:layout_constraintBottom_toBottomOf="@id/assetStateValueTextView"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintTop_toTopOf="@id/assetStateValueTextView" />
 
   <TextView
     android:id="@+id/locationSourceLabelTextView"
     android:layout_width="wrap_content"
-    android:layout_height="44dp"
-    android:layout_marginTop="16dp"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="@dimen/medium_margin"
+    android:layout_marginTop="@dimen/big_margin"
     android:gravity="center"
     android:text="@string/location_source_label"
     android:textColor="@color/black"
     android:textSize="16sp"
-    android:textStyle="bold"
-    app:layout_constraintStart_toStartOf="@+id/ablyConnectionStateLabelTextView"
+    app:layout_constraintStart_toStartOf="parent"
     app:layout_constraintTop_toBottomOf="@+id/ablyConnectionStateLabelTextView" />
 
   <TextView
     android:id="@+id/locationSourceMethodTextView"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
+    android:layout_marginStart="@dimen/medium_plus_margin"
     android:textColor="@color/black"
     android:textSize="16sp"
     android:textStyle="bold"
     app:layout_constraintBottom_toBottomOf="@id/locationSourceLabelTextView"
-    app:layout_constraintEnd_toEndOf="@id/assetStateImageView"
-    app:layout_constraintStart_toStartOf="@id/assetStateImageView"
+    app:layout_constraintStart_toEndOf="@id/locationSourceLabelTextView"
     app:layout_constraintTop_toTopOf="@id/locationSourceLabelTextView"
-    tools:text="PHONE" />
+    tools:text="Phone" />
 
   <TextView
     android:id="@+id/currentLocationAndBearingTextView"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:layout_marginTop="30dp"
+    android:layout_marginStart="@dimen/medium_margin"
+    android:layout_marginTop="@dimen/medium_plus_margin"
     android:text="@string/current_location_and_bearing"
     android:textColor="@color/black"
     android:textSize="18sp"
     android:textStyle="bold"
-    app:layout_constraintStart_toStartOf="@id/locationSourceLabelTextView"
+    app:layout_constraintStart_toStartOf="parent"
     app:layout_constraintTop_toBottomOf="@+id/locationSourceLabelTextView" />
 
   <TextView
     android:id="@+id/latitudeLabelTextView"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:layout_marginTop="15dp"
+    android:layout_marginStart="@dimen/medium_margin"
+    android:layout_marginTop="@dimen/medium_margin"
     android:text="@string/latitude_label"
-    app:layout_constraintStart_toStartOf="@+id/currentLocationAndBearingTextView"
+    app:layout_constraintStart_toStartOf="parent"
     app:layout_constraintTop_toBottomOf="@+id/currentLocationAndBearingTextView" />
 
   <TextView
     android:id="@+id/latitudeValueTextView"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:layout_marginStart="10dp"
     android:textColor="@color/black"
     app:layout_constraintBottom_toBottomOf="@+id/latitudeLabelTextView"
-    app:layout_constraintStart_toEndOf="@+id/latitudeLabelTextView"
+    app:layout_constraintStart_toStartOf="@+id/bearingValueTextView"
     tools:text="10.234" />
 
   <TextView
     android:id="@+id/longitudeLabelTextView"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:layout_marginTop="15dp"
+    android:layout_marginStart="@dimen/medium_margin"
+    android:layout_marginTop="@dimen/medium_margin"
     android:text="@string/longitude_label"
-    app:layout_constraintStart_toStartOf="@+id/latitudeLabelTextView"
+    app:layout_constraintStart_toStartOf="parent"
     app:layout_constraintTop_toBottomOf="@+id/latitudeLabelTextView" />
 
   <TextView
     android:id="@+id/longitudeValueTextView"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:layout_marginStart="10dp"
     android:textColor="@color/black"
     app:layout_constraintBottom_toBottomOf="@+id/longitudeLabelTextView"
-    app:layout_constraintStart_toEndOf="@+id/longitudeLabelTextView"
+    app:layout_constraintStart_toStartOf="@+id/bearingValueTextView"
     tools:text="51.125" />
 
   <TextView
     android:id="@+id/bearingLabelTextView"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:layout_marginTop="15dp"
+    android:layout_marginStart="@dimen/medium_margin"
+    android:layout_marginTop="@dimen/medium_margin"
     android:text="@string/bearing_label"
-    app:layout_constraintStart_toStartOf="@+id/longitudeLabelTextView"
+    app:layout_constraintStart_toStartOf="parent"
     app:layout_constraintTop_toBottomOf="@+id/longitudeLabelTextView" />
 
   <TextView
     android:id="@+id/bearingValueTextView"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:layout_marginStart="10dp"
+    android:layout_marginStart="@dimen/medium_margin"
     android:textColor="@color/black"
     app:layout_constraintBottom_toBottomOf="@+id/bearingLabelTextView"
     app:layout_constraintStart_toEndOf="@+id/bearingLabelTextView"
@@ -155,7 +147,7 @@
     android:id="@+id/trackableDetailsSectionTextView"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:layout_marginTop="30dp"
+    android:layout_marginTop="@dimen/medium_plus_margin"
     android:text="@string/trackable_details"
     android:textColor="@color/black"
     android:textSize="18sp"
@@ -167,16 +159,17 @@
     android:id="@+id/trackableIdLabelTextView"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:layout_marginTop="15dp"
+    android:layout_marginStart="@dimen/medium_margin"
+    android:layout_marginTop="@dimen/medium_margin"
     android:text="@string/tracking_id"
-    app:layout_constraintStart_toStartOf="@+id/trackableDetailsSectionTextView"
+    app:layout_constraintStart_toStartOf="parent"
     app:layout_constraintTop_toBottomOf="@id/trackableDetailsSectionTextView" />
 
   <TextView
     android:id="@+id/trackableIdTextView"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:layout_marginStart="10dp"
+    android:layout_marginStart="@dimen/medium_margin"
     android:textColor="@color/black"
     app:layout_constraintBottom_toBottomOf="@id/trackableIdLabelTextView"
     app:layout_constraintStart_toEndOf="@id/trackableIdLabelTextView"
@@ -185,11 +178,11 @@
   <androidx.appcompat.widget.AppCompatButton
     android:id="@+id/stopTrackingButton"
     android:layout_width="match_parent"
-    android:layout_height="40dp"
-    android:layout_marginStart="40dp"
-    android:layout_marginEnd="40dp"
-    android:layout_marginBottom="35dp"
-    android:background="@drawable/rounded_working"
+    android:layout_height="wrap_content"
+    android:layout_margin="@dimen/medium_margin"
+    android:background="@drawable/rounded_rectangle"
+    android:backgroundTint="@color/button_active"
+    android:paddingVertical="@dimen/medium_margin"
     android:text="@string/stop_tracking_button"
     android:textColor="@color/white"
     app:layout_constraintBottom_toBottomOf="parent" />

@@ -5,8 +5,11 @@ import android.os.Looper
 import android.os.SystemClock
 import com.ably.tracking.common.EventNames
 import com.ably.tracking.common.getGeoJsonMessages
+import com.ably.tracking.common.logging.d
+import com.ably.tracking.common.logging.i
 import com.ably.tracking.common.synopsis
 import com.ably.tracking.common.toLocation
+import com.ably.tracking.logging.LogHandler
 import com.google.gson.Gson
 import com.mapbox.android.core.location.LocationEngine
 import com.mapbox.android.core.location.LocationEngineCallback
@@ -14,9 +17,12 @@ import com.mapbox.android.core.location.LocationEngineRequest
 import com.mapbox.android.core.location.LocationEngineResult
 import io.ably.lib.realtime.AblyRealtime
 import io.ably.lib.types.ClientOptions
-import timber.log.Timber
 
-internal class AblySimulationLocationEngine(ablyOptions: ClientOptions, simulationTrackingId: String) :
+internal class AblySimulationLocationEngine(
+    ablyOptions: ClientOptions,
+    simulationTrackingId: String,
+    logHandler: LogHandler?
+) :
     LocationEngine {
     private val gson = Gson()
     private var lastLocationResult: LocationEngineResult? = null
@@ -28,14 +34,14 @@ internal class AblySimulationLocationEngine(ablyOptions: ClientOptions, simulati
         val ably = AblyRealtime(ablyOptions)
         val simulationChannel = ably.channels.get(simulationTrackingId)
 
-        ably.connection.on { Timber.i("Ably connection state change: $it") }
-        simulationChannel.on { Timber.i("Ably channel state change: $it") }
+        ably.connection.on { logHandler?.i("Ably connection state change: $it") }
+        simulationChannel.on { logHandler?.i("Ably channel state change: $it") }
 
         simulationChannel.subscribe(EventNames.ENHANCED) { message ->
-            Timber.i("Ably channel message: $message")
+            logHandler?.i("Ably channel message: $message")
             message.getGeoJsonMessages(gson).forEach {
-                Timber.d("Received enhanced location: ${it.synopsis()}")
-                val loc = it.toLocation()
+                logHandler?.d("Received enhanced location: ${it.synopsis()}")
+                val loc = it.toLocation().toAndroid()
                 loc.elapsedRealtimeNanos = SystemClock.elapsedRealtimeNanos()
                 onLocationEngineResult(LocationEngineResult.create(loc))
             }

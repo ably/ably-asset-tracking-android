@@ -1,11 +1,10 @@
 package com.ably.tracking.example.publisher
 
 import android.content.res.ColorStateList
-import android.location.Location
 import android.os.Bundle
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
-import androidx.core.widget.ImageViewCompat
+import com.ably.tracking.Location
 import com.ably.tracking.TrackableState
 import com.ably.tracking.publisher.Trackable
 import kotlinx.android.synthetic.main.activity_trackable_details.*
@@ -61,7 +60,7 @@ class TrackableDetailsActivity : PublisherServiceActivity() {
     }
 
     private fun updateLocationSourceMethodInfo() {
-        locationSourceMethodTextView.text = appPreferences.getLocationSource()
+        locationSourceMethodTextView.text = appPreferences.getLocationSource().displayName
     }
 
     private fun stopTracking() {
@@ -90,25 +89,27 @@ class TrackableDetailsActivity : PublisherServiceActivity() {
 
     private fun updateAssetStateInfo(state: TrackableState) {
         val textId: Int
+        val textColor: Int
         val colorId: Int
         when (state) {
             is TrackableState.Online -> {
                 textId = R.string.online
                 colorId = R.color.asset_status_online
+                textColor = R.color.black
             }
             is TrackableState.Offline -> {
                 textId = R.string.offline
                 colorId = R.color.asset_status_offline
+                textColor = R.color.mid_grey
             }
             is TrackableState.Failed -> {
                 textId = R.string.failed
                 colorId = R.color.asset_status_failed
+                textColor = R.color.black
             }
         }
         assetStateValueTextView.text = getString(textId)
-        ImageViewCompat.setImageTintList(
-            assetStateImageView,
-            ColorStateList.valueOf(ContextCompat.getColor(this, colorId))
-        )
+        assetStateValueTextView.setTextColor(ContextCompat.getColor(this, textColor))
+        assetStateValueTextView.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this, colorId))
     }
 }

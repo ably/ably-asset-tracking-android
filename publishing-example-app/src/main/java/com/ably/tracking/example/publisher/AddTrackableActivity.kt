@@ -2,12 +2,15 @@ package com.ably.tracking.example.publisher
 
 import android.Manifest
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.os.Bundle
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.annotation.RequiresPermission
+import androidx.core.content.ContextCompat
+import androidx.core.widget.addTextChangedListener
 import com.ably.tracking.Accuracy
 import com.ably.tracking.Resolution
 import com.ably.tracking.publisher.DefaultProximity
@@ -36,6 +39,7 @@ class AddTrackableActivity : PublisherServiceActivity() {
         setContentView(R.layout.activity_add_trackable)
         appPreferences = AppPreferences(this) // TODO - Add some DI (Koin)?
 
+        setTrackableIdEditTextListener()
         setupResolutionFields()
         addTrackableButton.setOnClickListener { beginAddingTrackable() }
         setupTrackableInputAction()
@@ -90,7 +94,7 @@ class AddTrackableActivity : PublisherServiceActivity() {
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
     private fun addTrackable(trackableId: String) {
         if (publisherService?.publisher == null) {
-            if (getLocationSourceType() == LocationSourceType.S3) {
+            if (appPreferences.getLocationSource() == LocationSourceType.S3_FILE) {
                 downloadLocationHistoryData { startPublisherAndAddTrackable(trackableId, it) }
             } else {
                 startPublisherAndAddTrackable(trackableId)
@@ -146,17 +150,10 @@ class AddTrackableActivity : PublisherServiceActivity() {
     }
 
     private fun createLocationSource(historyData: LocationHistoryData? = null): LocationSource? =
-        when (getLocationSourceType()) {
-            LocationSourceType.ABLY -> LocationSourceAbly.create(appPreferences.getSimulationChannel())
-            LocationSourceType.S3 -> LocationSourceRaw.create(historyData!!)
-            LocationSourceType.PHONE -> null
-        }
-
-    private fun getLocationSourceType() =
         when (appPreferences.getLocationSource()) {
-            getString(R.string.location_source_ably) -> LocationSourceType.ABLY
-            getString(R.string.location_source_s3) -> LocationSourceType.S3
-            else -> LocationSourceType.PHONE
+            LocationSourceType.PHONE -> null
+            LocationSourceType.ABLY_CHANNEL -> LocationSourceAbly.create(appPreferences.getSimulationChannel())
+            LocationSourceType.S3_FILE -> LocationSourceRaw.create(historyData!!)
         }
 
     private fun downloadLocationHistoryData(onHistoryDataDownloaded: (historyData: LocationHistoryData) -> Unit) {
@@ -185,4 +182,22 @@ class AddTrackableActivity : PublisherServiceActivity() {
     }
 
     private fun getTrackableId(): String = trackableIdEditText.text.toString().trim()
+
+    private fun setTrackableIdEditTextListener() {
+        trackableIdEditText.addTextChangedListener { trackableId ->
+            trackableId?.trim()?.let { changeAddButtonColor(it.isNotEmpty()) }
+        }
+    }
+
+    private fun changeAddButtonColor(isActive: Boolean) {
+        if (isActive) {
+            addTrackableButton.backgroundTintList =
+                ColorStateList.valueOf(ContextCompat.getColor(this, R.color.button_active))
+            addTrackableButton.setTextColor(ContextCompat.getColor(this, R.color.white))
+        } else {
+            addTrackableButton.backgroundTintList =
+                ColorStateList.valueOf(ContextCompat.getColor(this, R.color.button_inactive))
+            addTrackableButton.setTextColor(ContextCompat.getColor(this, R.color.mid_grey))
+        }
+    }
 }
