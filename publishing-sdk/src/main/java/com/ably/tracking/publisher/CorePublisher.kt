@@ -377,6 +377,7 @@ constructor(
                         if (state.isTracking) {
                             stopLocationUpdates(state)
                         }
+                        state.trackables.forEach { sendEndTripMetadata(it, state) }
                         try {
                             ably.close(state.presenceData)
                             state.dispose()
