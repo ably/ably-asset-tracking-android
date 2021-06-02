@@ -7,6 +7,7 @@ import androidx.annotation.RequiresPermission
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
+import com.ably.tracking.logging.LogHandler
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlin.coroutines.resume
@@ -21,6 +22,7 @@ constructor(
     mapbox: Mapbox,
     resolutionPolicyFactory: ResolutionPolicy.Factory,
     routingProfile: RoutingProfile,
+    logHandler: LogHandler?,
 ) :
     Publisher {
     private val core: CorePublisher
@@ -38,7 +40,7 @@ constructor(
         get() = core.locationHistory
 
     init {
-        core = createCorePublisher(ably, mapbox, resolutionPolicyFactory, routingProfile)
+        core = createCorePublisher(ably, mapbox, resolutionPolicyFactory, routingProfile, logHandler)
     }
 
     override suspend fun track(trackable: Trackable): StateFlow<TrackableState> {

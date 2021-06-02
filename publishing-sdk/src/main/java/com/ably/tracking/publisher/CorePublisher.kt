@@ -16,6 +16,7 @@ import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.PresenceAction
 import com.ably.tracking.common.PresenceData
 import com.ably.tracking.common.toAssetTracking
+import com.ably.tracking.logging.LogHandler
 import com.mapbox.navigation.core.trip.session.LocationObserver
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -49,8 +50,9 @@ internal fun createCorePublisher(
     mapbox: Mapbox,
     resolutionPolicyFactory: ResolutionPolicy.Factory,
     routingProfile: RoutingProfile,
+    logHandler: LogHandler?,
 ): CorePublisher {
-    return DefaultCorePublisher(ably, mapbox, resolutionPolicyFactory, routingProfile)
+    return DefaultCorePublisher(ably, mapbox, resolutionPolicyFactory, routingProfile, logHandler)
 }
 
 private class DefaultCorePublisher
@@ -60,6 +62,7 @@ constructor(
     private val mapbox: Mapbox,
     resolutionPolicyFactory: ResolutionPolicy.Factory,
     routingProfile: RoutingProfile,
+    private val logHandler: LogHandler?,
 ) : CorePublisher {
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private val sendEventChannel: SendChannel<Event>
