@@ -26,7 +26,7 @@ enum class PresenceAction {
 data class PresenceData(val type: String, val resolution: Resolution? = null)
 
 @Shared
-data class PresenceDataMessage(val type: String, val resolution: ResolutionMessage? = null)
+data class PresenceDataMessage(val type: String?, val resolution: ResolutionMessage? = null)
 
 @Shared
 data class ResolutionMessage(

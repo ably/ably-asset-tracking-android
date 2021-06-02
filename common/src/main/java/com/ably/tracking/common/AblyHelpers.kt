@@ -126,13 +126,16 @@ fun TokenRequest.toAuth(): Auth.TokenRequest =
 /**
  * Extension converting Ably Realtime presence message to the equivalent [PresenceMessage] API
  * presented to users of the Ably Asset Tracking SDKs.
+ * If presence data is missing or in wrong format it returns null.
  */
-fun io.ably.lib.types.PresenceMessage.toTracking(gson: Gson) =
-    PresenceMessage(
-        this.action.toTracking(),
-        this.getPresenceData(gson),
-        this.clientId
-    )
+fun io.ably.lib.types.PresenceMessage.toTracking(gson: Gson): PresenceMessage? =
+    this.getPresenceData(gson)?.let { presenceData ->
+        PresenceMessage(
+            this.action.toTracking(),
+            presenceData,
+            this.clientId
+        )
+    }
 
 fun io.ably.lib.types.PresenceMessage.Action.toTracking(): PresenceAction = when (this) {
     io.ably.lib.types.PresenceMessage.Action.present -> PresenceAction.PRESENT_OR_ENTER
