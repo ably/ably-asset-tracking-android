@@ -160,7 +160,12 @@ constructor(
                     }
                     is RawLocationChangedEvent -> {
                         state.lastPublisherLocation = event.location
-                        state.destinationToSet?.let { setDestination(it, state) }
+                        state.rawLocationChangedCommands.apply {
+                            if (isNotEmpty()) {
+                                forEach { command -> command(state) }
+                                clear()
+                            }
+                        }
                     }
                     is EnhancedLocationChangedEvent -> {
                         for (trackable in state.trackables) {
@@ -483,7 +488,6 @@ constructor(
         // TODO is there a way to ensure we're executing in the right thread?
         state.lastPublisherLocation.let { currentLocation ->
             if (currentLocation != null) {
-                state.destinationToSet = null
                 removeCurrentDestination(state)
                 state.currentDestination = destination
                 mapbox.setRoute(currentLocation, destination, state.routingProfile) {
@@ -494,7 +498,7 @@ constructor(
                     }
                 }
             } else {
-                state.destinationToSet = destination
+                state.rawLocationChangedCommands.add { updatedState -> setDestination(destination, updatedState) }
             }
         }
     }
@@ -608,8 +612,6 @@ constructor(
             get() = if (isDisposed) throw PublisherStateDisposedException() else field
         var lastPublisherLocation: Location? = null
             get() = if (isDisposed) throw PublisherStateDisposedException() else field
-        var destinationToSet: Destination? = null
-            get() = if (isDisposed) throw PublisherStateDisposedException() else field
         var currentDestination: Destination? = null
             get() = if (isDisposed) throw PublisherStateDisposedException() else field
         val subscribers: MutableMap<String, MutableSet<Subscriber>> = mutableMapOf()
@@ -630,6 +632,8 @@ constructor(
                 this@DefaultCorePublisher.routingProfile = value
                 field = value
             }
+        val rawLocationChangedCommands: MutableList<(State) -> Unit> = mutableListOf()
+            get() = if (isDisposed) throw PublisherStateDisposedException() else field
 
         fun dispose() {
             trackables.clear()
@@ -642,10 +646,10 @@ constructor(
             estimatedArrivalTimeInMilliseconds = null
             active = null
             lastPublisherLocation = null
-            destinationToSet = null
             currentDestination = null
             subscribers.clear()
             requests.clear()
+            rawLocationChangedCommands.clear()
             isDisposed = true
         }
     }
