@@ -128,6 +128,8 @@ interface Ably {
     suspend fun close(presenceData: PresenceData)
 }
 
+private const val CHANNEL_NAME_PREFIX = "tracking:"
+
 class DefaultAbly
 /**
  * @throws ConnectionException if something goes wrong during Ably SDK initialization.
@@ -170,10 +172,11 @@ constructor(
         callback: (Result<Unit>) -> Unit
     ) {
         if (!channels.contains(trackableId)) {
+            val channelName = "$CHANNEL_NAME_PREFIX$trackableId"
             val channel = if (useRewind)
-                ably.channels.get(trackableId, ChannelOptions().apply { params = mapOf("rewind" to "1") })
+                ably.channels.get(channelName, ChannelOptions().apply { params = mapOf("rewind" to "1") })
             else
-                ably.channels.get(trackableId)
+                ably.channels.get(channelName)
             channel.apply {
                 try {
                     presence.enter(
