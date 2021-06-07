@@ -1,5 +1,46 @@
 # Change log
 
+## [1.0.0-beta.6](https://github.com/ably/ably-asset-tracking-android/tree/v1.0.0-beta.6)
+
+[Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.0.0-beta.5...v1.0.0-beta.6)
+
+**Implemented enhancements:**
+
+- Channel Namespace [\#327](https://github.com/ably/ably-asset-tracking-android/issues/327)
+
+**Fixed bugs:**
+
+- Exceptions are not routed meaningfully [\#201](https://github.com/ably/ably-asset-tracking-android/issues/201)
+
+**Closed issues:**
+
+- Simple Log Handler [\#347](https://github.com/ably/ably-asset-tracking-android/issues/347)
+- Replace Android Location type with our own location type [\#337](https://github.com/ably/ably-asset-tracking-android/issues/337)
+- Make a decision regarding wether we expose portable type in addition to Android specific Location type via our APIs [\#287](https://github.com/ably/ably-asset-tracking-android/issues/287)
+-  add capability to the SDK to support JWT flow + examples [\#285](https://github.com/ably/ably-asset-tracking-android/issues/285)
+- Lint Gradle Groovy scripts [\#8](https://github.com/ably/ably-asset-tracking-android/issues/8)
+
+**Merged pull requests:**
+
+- Merge hotfix release to the main branch [\#364](https://github.com/ably/ably-asset-tracking-android/pull/364) ([KacperKluka](https://github.com/KacperKluka))
+- Apply presence data hotfix to the main branch [\#356](https://github.com/ably/ably-asset-tracking-android/pull/356) ([KacperKluka](https://github.com/KacperKluka))
+- Increase the distance value compensation added to mocked locations in tests [\#351](https://github.com/ably/ably-asset-tracking-android/pull/351) ([KacperKluka](https://github.com/KacperKluka))
+- Use ScrollView in publisher kotlin app to fix entering tracking ID [\#344](https://github.com/ably/ably-asset-tracking-android/pull/344) ([ben-xD](https://github.com/ben-xD))
+- Remove battery level from LocationUpdate [\#343](https://github.com/ably/ably-asset-tracking-android/pull/343) ([KacperKluka](https://github.com/KacperKluka))
+- Replace Android location type with our own location type [\#341](https://github.com/ably/ably-asset-tracking-android/pull/341) ([KacperKluka](https://github.com/KacperKluka))
+- Add JWT authentication support [\#340](https://github.com/ably/ably-asset-tracking-android/pull/340) ([KacperKluka](https://github.com/KacperKluka))
+- Add simple log handler [\#339](https://github.com/ably/ably-asset-tracking-android/pull/339) ([KacperKluka](https://github.com/KacperKluka))
+- Rename and refactor java example apps modules [\#333](https://github.com/ably/ably-asset-tracking-android/pull/333) ([KacperKluka](https://github.com/KacperKluka))
+- Allow TokenParams and TokenRequest capability to be null [\#331](https://github.com/ably/ably-asset-tracking-android/pull/331) ([KacperKluka](https://github.com/KacperKluka))
+- Bring back section about secrets to the readme. [\#330](https://github.com/ably/ably-asset-tracking-android/pull/330) ([kavalerov](https://github.com/kavalerov))
+- Add prefix to Ably channel names [\#329](https://github.com/ably/ably-asset-tracking-android/pull/329) ([KacperKluka](https://github.com/KacperKluka))
+- Redesign publisher example app [\#323](https://github.com/ably/ably-asset-tracking-android/pull/323) ([KacperKluka](https://github.com/KacperKluka))
+- Redesign subscriber example app [\#322](https://github.com/ably/ably-asset-tracking-android/pull/322) ([KacperKluka](https://github.com/KacperKluka))
+- Links to Asset Tracking content - ably-asset-tracking-android [\#321](https://github.com/ably/ably-asset-tracking-android/pull/321) ([ramiro-nd](https://github.com/ramiro-nd))
+- Fix publish workflow [\#320](https://github.com/ably/ably-asset-tracking-android/pull/320) ([QuintinWillison](https://github.com/QuintinWillison))
+- Upgrade ably-android version [\#315](https://github.com/ably/ably-asset-tracking-android/pull/315) ([QuintinWillison](https://github.com/QuintinWillison))
+- Add missing error routing [\#311](https://github.com/ably/ably-asset-tracking-android/pull/311) ([KacperKluka](https://github.com/KacperKluka))
+
 ## [1.0.0-beta.5](https://github.com/ably/ably-asset-tracking-android/tree/v1.0.0-beta.5)
 
 [Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.0.0-beta.4...v1.0.0-beta.5)
