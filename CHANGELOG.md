@@ -1,5 +1,13 @@
 # Change log
 
+## [1.0.0-beta.5](https://github.com/ably/ably-asset-tracking-android/tree/v1.0.0-beta.5)
+
+[Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.0.0-beta.4...v1.0.0-beta.5)
+
+**Merged pull requests:**
+
+- Hotfix to add prefix to Ably channel names [\#361](https://github.com/ably/ably-asset-tracking-android/pull/361) ([kavalerov](https://github.com/kavalerov))
+
 ## [1.0.0-beta.4](https://github.com/ably/ably-asset-tracking-android/tree/v1.0.0-beta.4)
 
 [Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.0.0-beta.3...v1.0.0-beta.4)
