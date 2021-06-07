@@ -36,6 +36,16 @@ Visit the [Ably Asset Tracking](https://ably.com/documentation/asset-tracking) d
 
 ## Usage
 
+### Maven / Gradle Dependencies
+
+We publish to [GitHub Packages](https://github.com/ably/ably-asset-tracking-android/packages/) for this repository.
+
+Kotlin users will want to add either `publishing-sdk` or `subscribing-sdk`, according to the needs of their project.
+Java users should add either `publishing-sdk-java` or `subscribing-sdk-java`.
+See [Android Runtime Requirements](#android-runtime-requirements) for more details.
+
+### Publishing SDK
+
 The Asset Publishing SDK is used to get the location of the assets that need to be tracked.
 
 Here is an example of how the Asset Publishing SDK can be used:
@@ -80,6 +90,8 @@ try {
     // TODO handle asset tracking could not be started
 }
 ```
+
+### Subscribing SDK
 
 Asset Subscribing SDK is used to receive the location of the required assets.
 
