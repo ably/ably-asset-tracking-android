@@ -22,7 +22,6 @@
 
 **Merged pull requests:**
 
-- Merge hotfix release to the main branch [\#364](https://github.com/ably/ably-asset-tracking-android/pull/364) ([KacperKluka](https://github.com/KacperKluka))
 - Apply presence data hotfix to the main branch [\#356](https://github.com/ably/ably-asset-tracking-android/pull/356) ([KacperKluka](https://github.com/KacperKluka))
 - Increase the distance value compensation added to mocked locations in tests [\#351](https://github.com/ably/ably-asset-tracking-android/pull/351) ([KacperKluka](https://github.com/KacperKluka))
 - Use ScrollView in publisher kotlin app to fix entering tracking ID [\#344](https://github.com/ably/ably-asset-tracking-android/pull/344) ([ben-xD](https://github.com/ben-xD))
@@ -37,7 +36,6 @@
 - Redesign publisher example app [\#323](https://github.com/ably/ably-asset-tracking-android/pull/323) ([KacperKluka](https://github.com/KacperKluka))
 - Redesign subscriber example app [\#322](https://github.com/ably/ably-asset-tracking-android/pull/322) ([KacperKluka](https://github.com/KacperKluka))
 - Links to Asset Tracking content - ably-asset-tracking-android [\#321](https://github.com/ably/ably-asset-tracking-android/pull/321) ([ramiro-nd](https://github.com/ramiro-nd))
-- Fix publish workflow [\#320](https://github.com/ably/ably-asset-tracking-android/pull/320) ([QuintinWillison](https://github.com/QuintinWillison))
 - Upgrade ably-android version [\#315](https://github.com/ably/ably-asset-tracking-android/pull/315) ([QuintinWillison](https://github.com/QuintinWillison))
 - Add missing error routing [\#311](https://github.com/ably/ably-asset-tracking-android/pull/311) ([KacperKluka](https://github.com/KacperKluka))
 
