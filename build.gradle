@@ -1,5 +1,5 @@
 buildscript {
-    ext.kotlin_version = '1.4.32'
+    ext.kotlin_version = '1.5.10'
 
     // The version of Ably's client library for Java that we're using.
     // Source code: https://github.com/ably/ably-java
