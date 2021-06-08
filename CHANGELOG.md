@@ -7,8 +7,6 @@
 **Merged pull requests:**
 
 - Downgrade Mapbox to 1.6.1 [\#369](https://github.com/ably/ably-asset-tracking-android/pull/369) ([KacperKluka](https://github.com/KacperKluka))
-- Update Mapbox to beta.12 [\#368](https://github.com/ably/ably-asset-tracking-android/pull/368) ([KacperKluka](https://github.com/KacperKluka))
-- Add publish to release process [\#367](https://github.com/ably/ably-asset-tracking-android/pull/367) ([QuintinWillison](https://github.com/QuintinWillison))
 - Send trip start and trip end events on a meta channel from Publisher SDK [\#357](https://github.com/ably/ably-asset-tracking-android/pull/357) ([KacperKluka](https://github.com/KacperKluka))
 
 ## [1.0.0-beta.6](https://github.com/ably/ably-asset-tracking-android/tree/v1.0.0-beta.6)
