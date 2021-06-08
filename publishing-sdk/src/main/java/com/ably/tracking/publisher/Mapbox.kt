@@ -17,7 +17,7 @@ import com.ably.tracking.publisher.locationengine.LocationEngineUtils
 import com.ably.tracking.publisher.locationengine.ResolutionLocationEngine
 import com.mapbox.api.directions.v5.models.DirectionsRoute
 import com.mapbox.api.directions.v5.models.RouteOptions
-import com.mapbox.navigation.base.extensions.applyDefaultNavigationOptions
+import com.mapbox.navigation.base.internal.extensions.applyDefaultParams
 import com.mapbox.navigation.base.options.NavigationOptions
 import com.mapbox.navigation.core.MapboxNavigation
 import com.mapbox.navigation.core.directions.session.RoutesRequestCallback
@@ -110,8 +110,7 @@ internal class DefaultMapbox(
     private var locationHistoryListener: (LocationHistoryListener)? = null
 
     init {
-        val mapboxBuilder = NavigationOptions.Builder(context)
-            .accessToken(mapConfiguration.apiKey)
+        val mapboxBuilder = MapboxNavigation.defaultNavigationOptionsBuilder(context, mapConfiguration.apiKey)
             .locationEngine(getBestLocationEngine(context, logHandler))
         locationSource?.let {
             when (it) {
@@ -173,7 +172,7 @@ internal class DefaultMapbox(
         runBlocking(mainDispatcher) {
             mapboxNavigation.requestRoutes(
                 RouteOptions.builder()
-                    .applyDefaultNavigationOptions()
+                    .applyDefaultParams()
                     .accessToken(mapConfiguration.apiKey)
                     .coordinates(getRouteCoordinates(currentLocation, destination))
                     .profile(routingProfile.toMapboxProfileName())
