@@ -1,6 +1,6 @@
 # Change log
 
-## [1.0.0-beta.7](https://github.com/ably/ably-asset-tracking-android/tree/HEAD)
+## [1.0.0-beta.7](https://github.com/ably/ably-asset-tracking-android/tree/v1.0.0-beta.7)
 
 [Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.0.0-beta.6...v1.0.0-beta.7)
 
