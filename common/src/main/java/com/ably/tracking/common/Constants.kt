@@ -17,6 +17,13 @@ object ChannelNames {
     const val METADATA_TRIP = "[meta]asset-tracking:trip-lifecycle"
 }
 
+/**
+ * The trip event naming approach (e.g. `trip.start`) is similar to what we use in
+ * lifecycle events on Ably metachannels (see
+ * [Lifecycle Events](https://ably.com/documentation/realtime/metachannels#lifecycle-events)).
+ *
+ * This way we align the metachannel message format.
+ */
 object EventNames {
     const val ENHANCED = "enhanced"
     const val TRIP_START = "trip.start"
