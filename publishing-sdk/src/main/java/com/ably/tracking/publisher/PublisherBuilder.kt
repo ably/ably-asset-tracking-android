@@ -51,6 +51,7 @@ internal data class PublisherBuilder(
             DefaultMapbox(androidContext!!, mapConfiguration!!, connectionConfiguration, locationSource, logHandler),
             resolutionPolicyFactory!!,
             routingProfile,
+            logHandler,
         )
     }
 

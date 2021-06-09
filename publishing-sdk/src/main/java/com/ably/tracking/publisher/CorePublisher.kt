@@ -15,7 +15,10 @@ import com.ably.tracking.common.ConnectionState
 import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.PresenceAction
 import com.ably.tracking.common.PresenceData
+import com.ably.tracking.common.TripMetadata
+import com.ably.tracking.common.logging.w
 import com.ably.tracking.common.toAssetTracking
+import com.ably.tracking.logging.LogHandler
 import com.mapbox.navigation.core.trip.session.LocationObserver
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -49,8 +52,9 @@ internal fun createCorePublisher(
     mapbox: Mapbox,
     resolutionPolicyFactory: ResolutionPolicy.Factory,
     routingProfile: RoutingProfile,
+    logHandler: LogHandler?,
 ): CorePublisher {
-    return DefaultCorePublisher(ably, mapbox, resolutionPolicyFactory, routingProfile)
+    return DefaultCorePublisher(ably, mapbox, resolutionPolicyFactory, routingProfile, logHandler)
 }
 
 private class DefaultCorePublisher
@@ -60,6 +64,7 @@ constructor(
     private val mapbox: Mapbox,
     resolutionPolicyFactory: ResolutionPolicy.Factory,
     routingProfile: RoutingProfile,
+    private val logHandler: LogHandler?,
 ) : CorePublisher {
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private val sendEventChannel: SendChannel<Event>
@@ -160,7 +165,12 @@ constructor(
                     }
                     is RawLocationChangedEvent -> {
                         state.lastPublisherLocation = event.location
-                        state.destinationToSet?.let { setDestination(it, state) }
+                        state.rawLocationChangedCommands.apply {
+                            if (isNotEmpty()) {
+                                forEach { command -> command(state) }
+                                clear()
+                            }
+                        }
                     }
                     is EnhancedLocationChangedEvent -> {
                         for (trackable in state.trackables) {
@@ -245,7 +255,12 @@ constructor(
                                 ably.subscribeForChannelStateChange(event.trackable.id) {
                                     enqueue(ChannelConnectionStateChangeEvent(it, event.trackable.id))
                                 }
-                                request(ConnectionForTrackableCreatedEvent(event.trackable, event.handler))
+                                request(
+                                    ConnectionForTrackableCreatedEvent(event.trackable) {
+                                        enqueue(TripStartedEvent(event.trackable))
+                                        event.handler(it)
+                                    }
+                                )
                             } catch (exception: ConnectionException) {
                                 event.handler(Result.failure(exception))
                             }
@@ -309,6 +324,7 @@ constructor(
                                     request(
                                         DisconnectSuccessEvent(event.trackable) {
                                             if (it.isSuccess) {
+                                                enqueue(TripEndedEvent(event.trackable))
                                                 event.handler(Result.success(true))
                                             } else {
                                                 event.handler(Result.failure(it.exceptionOrNull()!!))
@@ -361,6 +377,7 @@ constructor(
                         if (state.isTracking) {
                             stopLocationUpdates(state)
                         }
+                        state.trackables.forEach { sendEndTripMetadata(it, state) }
                         try {
                             ably.close(state.presenceData)
                             state.dispose()
@@ -380,10 +397,50 @@ constructor(
                         state.lastChannelConnectionStateChanges[event.trackableId] = event.connectionStateChange
                         updateTrackableState(state, event.trackableId)
                     }
+                    is TripStartedEvent -> {
+                        sendStartTripMetadata(event.trackable, state)
+                    }
+                    is TripEndedEvent -> {
+                        sendEndTripMetadata(event.trackable, state)
+                    }
                 }
             }
         }
     }
+
+    private fun sendStartTripMetadata(trackable: Trackable, state: State) {
+        val currentLocation = state.lastPublisherLocation
+        if (currentLocation != null) {
+            try {
+                ably.sendTripStartMetadata(createTripMetadata(trackable, currentLocation, state))
+            } catch (exception: ConnectionException) {
+                logHandler?.w("Sending start trip metadata failed", exception)
+            }
+        } else {
+            state.rawLocationChangedCommands.add { updatedState -> sendStartTripMetadata(trackable, updatedState) }
+        }
+    }
+
+    private fun sendEndTripMetadata(trackable: Trackable, state: State) {
+        val currentLocation = state.lastPublisherLocation
+        if (currentLocation != null) {
+            try {
+                ably.sendTripEndMetadata(createTripMetadata(trackable, currentLocation, state))
+            } catch (exception: ConnectionException) {
+                logHandler?.w("Sending end trip metadata failed", exception)
+            }
+        } else {
+            state.rawLocationChangedCommands.add { updatedState -> sendEndTripMetadata(trackable, updatedState) }
+        }
+    }
+
+    private fun createTripMetadata(trackable: Trackable, currentLocation: Location, state: State) =
+        TripMetadata(
+            trackable.id,
+            System.currentTimeMillis(),
+            currentLocation,
+            state.active?.destination?.toLocation()
+        )
 
     private fun stopLocationUpdates(state: State) {
         state.isTracking = false
@@ -483,7 +540,6 @@ constructor(
         // TODO is there a way to ensure we're executing in the right thread?
         state.lastPublisherLocation.let { currentLocation ->
             if (currentLocation != null) {
-                state.destinationToSet = null
                 removeCurrentDestination(state)
                 state.currentDestination = destination
                 mapbox.setRoute(currentLocation, destination, state.routingProfile) {
@@ -494,7 +550,7 @@ constructor(
                     }
                 }
             } else {
-                state.destinationToSet = destination
+                state.rawLocationChangedCommands.add { updatedState -> setDestination(destination, updatedState) }
             }
         }
     }
@@ -608,8 +664,6 @@ constructor(
             get() = if (isDisposed) throw PublisherStateDisposedException() else field
         var lastPublisherLocation: Location? = null
             get() = if (isDisposed) throw PublisherStateDisposedException() else field
-        var destinationToSet: Destination? = null
-            get() = if (isDisposed) throw PublisherStateDisposedException() else field
         var currentDestination: Destination? = null
             get() = if (isDisposed) throw PublisherStateDisposedException() else field
         val subscribers: MutableMap<String, MutableSet<Subscriber>> = mutableMapOf()
@@ -630,6 +684,8 @@ constructor(
                 this@DefaultCorePublisher.routingProfile = value
                 field = value
             }
+        val rawLocationChangedCommands: MutableList<(State) -> Unit> = mutableListOf()
+            get() = if (isDisposed) throw PublisherStateDisposedException() else field
 
         fun dispose() {
             trackables.clear()
@@ -642,10 +698,10 @@ constructor(
             estimatedArrivalTimeInMilliseconds = null
             active = null
             lastPublisherLocation = null
-            destinationToSet = null
             currentDestination = null
             subscribers.clear()
             requests.clear()
+            rawLocationChangedCommands.clear()
             isDisposed = true
         }
     }

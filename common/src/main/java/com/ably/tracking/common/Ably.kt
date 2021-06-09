@@ -132,6 +132,24 @@ interface Ably {
      * @throws ConnectionException if something goes wrong.
      */
     suspend fun close(presenceData: PresenceData)
+
+    /**
+     * Sends trip metadata when the trip starts.
+     *
+     * @param metadata The metadata of a tracked trackable.
+     *
+     * @throws ConnectionException if something goes wrong.
+     */
+    fun sendTripStartMetadata(metadata: TripMetadata)
+
+    /**
+     * Sends trip metadata when the trip ends.
+     *
+     * @param metadata The metadata of a tracked trackable.
+     *
+     * @throws ConnectionException if something goes wrong.
+     */
+    fun sendTripEndMetadata(metadata: TripMetadata)
 }
 
 private const val CHANNEL_NAME_PREFIX = "tracking:"
@@ -362,6 +380,24 @@ constructor(
                 }
             }
             ably.close()
+        }
+    }
+
+    private fun getTripMetadataChannel(): Channel = ably.channels.get(ChannelNames.METADATA_TRIP)
+
+    override fun sendTripStartMetadata(metadata: TripMetadata) {
+        try {
+            getTripMetadataChannel().publish(EventNames.TRIP_START, metadata.toMessageJson(gson))
+        } catch (exception: AblyException) {
+            throw exception.errorInfo.toTrackingException()
+        }
+    }
+
+    override fun sendTripEndMetadata(metadata: TripMetadata) {
+        try {
+            getTripMetadataChannel().publish(EventNames.TRIP_END, metadata.toMessageJson(gson))
+        } catch (exception: AblyException) {
+            throw exception.errorInfo.toTrackingException()
         }
     }
 }

@@ -1,8 +1,8 @@
 package com.ably.tracking.common
 
-import com.ably.tracking.annotations.Shared
 import com.ably.tracking.GeoJsonMessage
 import com.ably.tracking.Resolution
+import com.ably.tracking.annotations.Shared
 import com.google.gson.annotations.SerializedName
 
 object GeoJsonTypes {
@@ -69,3 +69,16 @@ enum class LocationUpdateTypeMessage {
     @SerializedName("ACTUAL")
     ACTUAL,
 }
+
+@Shared
+data class TripMetadataMessage(
+    val trackingId: String,
+    val timestamp: Long,
+    val tripData: TripDataMessage
+)
+
+@Shared
+data class TripDataMessage(
+    val originLocation: GeoJsonMessage,
+    val destinationLocation: GeoJsonMessage?
+)
