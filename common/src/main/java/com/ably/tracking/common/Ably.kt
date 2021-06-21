@@ -18,6 +18,7 @@ import io.ably.lib.realtime.ConnectionState
 import io.ably.lib.types.AblyException
 import io.ably.lib.types.ChannelOptions
 import io.ably.lib.types.ErrorInfo
+import io.ably.lib.types.Message
 import io.ably.lib.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -173,6 +174,7 @@ constructor(
     init {
         try {
             val clientOptions = connectionConfiguration.authentication.clientOptions.apply {
+                this.idempotentRestPublishing = true
                 this.logLevel = Log.VERBOSE
                 this.logHandler = Log.LogHandler { severity, tag, msg, tr -> logMessage(severity, tag, msg, tr) }
             }
@@ -298,8 +300,9 @@ constructor(
             logHandler?.d("sendEnhancedLocationMessage: publishing: $locationUpdateJson")
             try {
                 trackableChannel.publish(
-                    EventNames.ENHANCED,
-                    locationUpdateJson,
+                    Message(EventNames.ENHANCED, locationUpdateJson).apply {
+                        id = "$trackableId${locationUpdate.hashCode()}"
+                    },
                     object : CompletionListener {
                         override fun onSuccess() {
                             callback(Result.success(Unit))
