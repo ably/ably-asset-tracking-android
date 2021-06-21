@@ -326,6 +326,7 @@ constructor(
                         state.requests.remove(event.trackable.id)
                         state.lastSentEnhancedLocations.remove(event.trackable.id)
                         state.skippedEnhancedLocations.clear(event.trackable.id)
+                        state.enhancedLocationsPublishingState.clear(event.trackable.id)
                         // If this was the active Trackable then clear that state and remove destination.
                         if (state.active == event.trackable) {
                             removeCurrentDestination(state)
@@ -377,13 +378,14 @@ constructor(
                         sendEndTripMetadata(event.trackable, state)
                     }
                     is SendEnhancedLocationSuccessEvent -> {
-                        unmarkMessageAsPending(state, event.trackableId)
+                        state.enhancedLocationsPublishingState.unmarkMessageAsPending(event.trackableId)
                         state.lastSentEnhancedLocations[event.trackableId] = event.location
                         state.skippedEnhancedLocations.clear(event.trackableId)
                         updateTrackableState(state, event.trackableId)
                         processNextWaitingEnhancedLocationUpdate(state, event.trackableId)
                     }
                     is SendEnhancedLocationFailureEvent -> {
+                        state.enhancedLocationsPublishingState.unmarkMessageAsPending(event.trackableId)
                         saveLocationForFurtherSending(state, event.trackableId, event.location)
                         logHandler?.w(
                             "Sending location update failed. Location saved for further sending",
@@ -402,8 +404,8 @@ constructor(
         trackableId: String
     ) {
         when {
-            hasPendingMessage(state, trackableId) -> {
-                addEnhancedLocationUpdateToWaiting(event, state, trackableId)
+            state.enhancedLocationsPublishingState.hasPendingMessage(trackableId) -> {
+                state.enhancedLocationsPublishingState.addToWaiting(trackableId, event)
             }
             shouldSendLocation(
                 event.location,
@@ -420,20 +422,9 @@ constructor(
     }
 
     private fun processNextWaitingEnhancedLocationUpdate(state: State, trackableId: String) {
-        state.waitingEnhancedLocationUpdates[trackableId]?.removeFirstOrNull()?.let {
+        state.enhancedLocationsPublishingState.getNextWaiting(trackableId)?.let {
             processEnhancedLocationUpdate(it, state, trackableId)
         }
-    }
-
-    private fun addEnhancedLocationUpdateToWaiting(
-        event: EnhancedLocationChangedEvent,
-        state: State,
-        trackableId: String
-    ) {
-        if (state.waitingEnhancedLocationUpdates[trackableId] == null) {
-            state.waitingEnhancedLocationUpdates[trackableId] = mutableListOf()
-        }
-        state.waitingEnhancedLocationUpdates[trackableId]!!.add(event)
     }
 
     private fun sendEnhancedLocationUpdate(
@@ -447,7 +438,7 @@ constructor(
             event.intermediateLocations,
             event.type
         )
-        markMessageAsPending(state, trackableId)
+        state.enhancedLocationsPublishingState.markMessageAsPending(trackableId)
         ably.sendEnhancedLocation(trackableId, locationUpdate) {
             if (it.isSuccess) {
                 enqueue(SendEnhancedLocationSuccessEvent(locationUpdate.location, trackableId))
@@ -460,17 +451,6 @@ constructor(
     private fun saveLocationForFurtherSending(state: State, trackableId: String, location: Location) {
         state.skippedEnhancedLocations.add(trackableId, location)
     }
-
-    private fun markMessageAsPending(state: State, trackableId: String) {
-        state.ongoingEnhancedLocationUpdates.add(trackableId)
-    }
-
-    private fun unmarkMessageAsPending(state: State, trackableId: String) {
-        state.ongoingEnhancedLocationUpdates.remove(trackableId)
-    }
-
-    private fun hasPendingMessage(state: State, trackableId: String): Boolean =
-        state.ongoingEnhancedLocationUpdates.contains(trackableId)
 
     private fun sendStartTripMetadata(trackable: Trackable, state: State) {
         val currentLocation = state.lastPublisherLocation
@@ -750,10 +730,7 @@ constructor(
             }
         val rawLocationChangedCommands: MutableList<(State) -> Unit> = mutableListOf()
             get() = if (isDisposed) throw PublisherStateDisposedException() else field
-        val ongoingEnhancedLocationUpdates: MutableSet<String> = mutableSetOf()
-            get() = if (isDisposed) throw PublisherStateDisposedException() else field
-        val waitingEnhancedLocationUpdates: MutableMap<String, MutableList<EnhancedLocationChangedEvent>> =
-            mutableMapOf()
+        val enhancedLocationsPublishingState: LocationsPublishingState = LocationsPublishingState()
             get() = if (isDisposed) throw PublisherStateDisposedException() else field
 
         fun dispose() {
@@ -771,8 +748,7 @@ constructor(
             subscribers.clear()
             requests.clear()
             rawLocationChangedCommands.clear()
-            ongoingEnhancedLocationUpdates.clear()
-            waitingEnhancedLocationUpdates.clear()
+            enhancedLocationsPublishingState.clearAll()
             isDisposed = true
         }
     }
