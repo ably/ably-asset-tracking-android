@@ -384,6 +384,7 @@ constructor(
                         processNextWaitingEnhancedLocationUpdate(state, event.trackableId)
                     }
                     is SendEnhancedLocationFailureEvent -> {
+                        saveLocationForFurtherSending(state, event.trackableId, event.location)
                         logHandler?.w(
                             "Sending location update failed. Location saved for further sending",
                             event.exception
