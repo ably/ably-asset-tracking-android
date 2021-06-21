@@ -385,17 +385,38 @@ constructor(
                         processNextWaitingEnhancedLocationUpdate(state, event.trackableId)
                     }
                     is SendEnhancedLocationFailureEvent -> {
-                        state.enhancedLocationsPublishingState.unmarkMessageAsPending(event.trackableId)
-                        saveLocationForFurtherSending(state, event.trackableId, event.location)
-                        logHandler?.w(
-                            "Sending location update failed. Location saved for further sending",
-                            event.exception
-                        )
-                        processNextWaitingEnhancedLocationUpdate(state, event.trackableId)
+                        if (state.enhancedLocationsPublishingState.shouldRetryPublishing(event.trackableId)) {
+                            retrySendingEnhancedLocation(state, event.trackableId, event.locationUpdate)
+                        } else {
+                            state.enhancedLocationsPublishingState.unmarkMessageAsPending(event.trackableId)
+                            saveLocationForFurtherSending(state, event.trackableId, event.locationUpdate.location)
+                            logHandler?.w(
+                                "Sending location update failed. Location saved for further sending",
+                                event.exception
+                            )
+                            processNextWaitingEnhancedLocationUpdate(state, event.trackableId)
+                        }
                     }
                 }
             }
         }
+    }
+
+    private fun retrySendingEnhancedLocation(
+        state: State,
+        trackableId: String,
+        locationUpdate: EnhancedLocationUpdate
+    ) {
+        state.enhancedLocationsPublishingState.incrementRetryCount(trackableId)
+        sendEnhancedLocationUpdate(
+            EnhancedLocationChangedEvent(
+                locationUpdate.location,
+                locationUpdate.intermediateLocations,
+                locationUpdate.type
+            ),
+            state,
+            trackableId
+        )
     }
 
     private fun processEnhancedLocationUpdate(
@@ -443,7 +464,7 @@ constructor(
             if (it.isSuccess) {
                 enqueue(SendEnhancedLocationSuccessEvent(locationUpdate.location, trackableId))
             } else {
-                enqueue(SendEnhancedLocationFailureEvent(locationUpdate.location, trackableId, it.exceptionOrNull()))
+                enqueue(SendEnhancedLocationFailureEvent(locationUpdate, trackableId, it.exceptionOrNull()))
             }
         }
     }

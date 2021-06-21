@@ -1,5 +1,6 @@
 package com.ably.tracking.publisher
 
+import com.ably.tracking.EnhancedLocationUpdate
 import com.ably.tracking.Location
 import com.ably.tracking.LocationUpdateType
 import com.ably.tracking.TrackableState
@@ -74,7 +75,7 @@ internal data class SendEnhancedLocationSuccessEvent(
 ) : AdhocEvent()
 
 internal data class SendEnhancedLocationFailureEvent(
-    val location: Location,
+    val locationUpdate: EnhancedLocationUpdate,
     val trackableId: String,
     val exception: Throwable?,
 ) : AdhocEvent()
