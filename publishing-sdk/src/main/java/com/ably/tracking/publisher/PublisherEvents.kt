@@ -68,6 +68,17 @@ internal data class EnhancedLocationChangedEvent(
     val type: LocationUpdateType
 ) : AdhocEvent()
 
+internal data class SendEnhancedLocationSuccessEvent(
+    val location: Location,
+    val trackableId: String,
+) : AdhocEvent()
+
+internal data class SendEnhancedLocationFailureEvent(
+    val location: Location,
+    val trackableId: String,
+    val exception: Throwable?,
+) : AdhocEvent()
+
 internal class RefreshResolutionPolicyEvent : AdhocEvent()
 
 internal data class SetDestinationSuccessEvent(

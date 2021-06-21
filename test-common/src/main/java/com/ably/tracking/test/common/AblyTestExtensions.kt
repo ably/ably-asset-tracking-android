@@ -27,3 +27,12 @@ fun Ably.mockDisconnectSuccess(trackableId: String) {
         callbackSlot.captured(Result.success(Unit))
     }
 }
+
+fun Ably.mockSendEnhancedLocationSuccess(trackableId: String) {
+    val callbackSlot = slot<(Result<Unit>) -> Unit>()
+    every {
+        sendEnhancedLocation(trackableId, any(), capture(callbackSlot))
+    } answers {
+        callbackSlot.captured(Result.success(Unit))
+    }
+}

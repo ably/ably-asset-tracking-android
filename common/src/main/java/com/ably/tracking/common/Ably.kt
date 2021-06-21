@@ -66,14 +66,17 @@ interface Ably {
     /**
      * Sends an enhanced location update to the channel.
      * Should be called only when there's an existing channel for the [trackableId].
-     * If a channel for the [trackableId] doesn't exist then nothing happens.
+     * If a channel for the [trackableId] doesn't exist then it just calls [callback] with success.
      *
      * @param trackableId The ID of the trackable channel.
      * @param locationUpdate The location update that is sent to the channel.
-     *
-     * @throws ConnectionException if something goes wrong.
+     * @param callback The function that will be called when sending completes. If something goes wrong it will be called with [ConnectionException].
      */
-    fun sendEnhancedLocation(trackableId: String, locationUpdate: EnhancedLocationUpdate)
+    fun sendEnhancedLocation(
+        trackableId: String,
+        locationUpdate: EnhancedLocationUpdate,
+        callback: (Result<Unit>) -> Unit
+    )
 
     /**
      * Adds a listener for the enhanced location updates that are received from the channel.
@@ -284,13 +287,34 @@ constructor(
         }
     }
 
-    override fun sendEnhancedLocation(trackableId: String, locationUpdate: EnhancedLocationUpdate) {
-        val locationUpdateJson = locationUpdate.toJson(gson)
-        logHandler?.d("sendEnhancedLocationMessage: publishing: $locationUpdateJson")
-        try {
-            channels[trackableId]?.publish(EventNames.ENHANCED, locationUpdateJson)
-        } catch (exception: AblyException) {
-            throw exception.errorInfo.toTrackingException()
+    override fun sendEnhancedLocation(
+        trackableId: String,
+        locationUpdate: EnhancedLocationUpdate,
+        callback: (Result<Unit>) -> Unit
+    ) {
+        val trackableChannel = channels[trackableId]
+        if (trackableChannel != null) {
+            val locationUpdateJson = locationUpdate.toJson(gson)
+            logHandler?.d("sendEnhancedLocationMessage: publishing: $locationUpdateJson")
+            try {
+                trackableChannel.publish(
+                    EventNames.ENHANCED,
+                    locationUpdateJson,
+                    object : CompletionListener {
+                        override fun onSuccess() {
+                            callback(Result.success(Unit))
+                        }
+
+                        override fun onError(reason: ErrorInfo) {
+                            callback(Result.failure(reason.toTrackingException()))
+                        }
+                    }
+                )
+            } catch (exception: AblyException) {
+                callback(Result.failure(exception.errorInfo.toTrackingException()))
+            }
+        } else {
+            callback(Result.success(Unit))
         }
     }
 
