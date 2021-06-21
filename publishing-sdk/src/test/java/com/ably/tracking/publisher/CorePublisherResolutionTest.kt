@@ -134,7 +134,7 @@ class CorePublisherResolutionTest(
 
         // then
         runBlocking {
-            delay(200) // we're assuming that within this time all events will be processed or at least placed in the queue in the final order
+            delay(500) // we're assuming that within this time all events will be processed or at least placed in the queue in the final order
             stopCorePublisher()
         }
         verify(exactly = expectedNumberOfSentMessages) {
