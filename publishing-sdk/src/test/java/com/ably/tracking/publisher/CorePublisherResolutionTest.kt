@@ -9,6 +9,7 @@ import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
 import com.ably.tracking.test.common.createLocation
 import com.ably.tracking.test.common.mockConnectSuccess
+import com.ably.tracking.test.common.mockSendEnhancedLocationSuccess
 import com.mapbox.geojson.LineString
 import com.mapbox.geojson.Point
 import com.mapbox.turf.TurfConstants
@@ -17,6 +18,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
@@ -120,6 +122,7 @@ class CorePublisherResolutionTest(
         addTrackable(Trackable(trackableId))
         var locationTimestamp = 1000L
         var location: Location? = null
+        ably.mockSendEnhancedLocationSuccess(trackableId)
 
         // when
         repeat(numberOfLocationUpdates) {
@@ -131,10 +134,11 @@ class CorePublisherResolutionTest(
 
         // then
         runBlocking {
+            delay(500) // we're assuming that within this time all events will be processed or at least placed in the queue in the final order
             stopCorePublisher()
         }
         verify(exactly = expectedNumberOfSentMessages) {
-            ably.sendEnhancedLocation(trackableId, any())
+            ably.sendEnhancedLocation(trackableId, any(), any())
         }
     }
 
