@@ -19,11 +19,6 @@ data class ConnectionStateChange(
     val state: ConnectionState,
 
     /**
-     * The previous state.
-     */
-    val previousState: ConnectionState,
-
-    /**
      * Information about what went wrong, if [state] is failed or failing in some way.
      */
     val errorInformation: ErrorInformation?
