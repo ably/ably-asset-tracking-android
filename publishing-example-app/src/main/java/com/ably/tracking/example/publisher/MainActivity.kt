@@ -63,7 +63,7 @@ class MainActivity : PublisherServiceActivity() {
                             publisherService.publisher?.stop()
                             publisherService.publisher = null
                         } catch (e: Exception) {
-                            // TODO check Result (it) for failure and report accordingly
+                            showToast("Stopping publisher error")
                         }
                         stopPublisherService()
                     } else {
