@@ -45,6 +45,7 @@ class PublisherAndSubscriberTests {
             .launchIn(scope)
 
         // TODO replace this sleep with an await on an expectation that the subscriber is ready (connected and subscribed)
+        // https://github.com/ably/ably-asset-tracking-android/issues/211
         Thread.sleep(4000)
 
         val publisher = createAndStartPublisher(
@@ -73,6 +74,7 @@ class PublisherAndSubscriberTests {
         dataEndedExpectation.await()
 
         // TODO replace this sleep with an await on an expectation
+        // https://github.com/ably/ably-asset-tracking-android/issues/212
         Thread.sleep(6000)
 
         testLogD("COUNT published ${publishedLocations.size}") // observed 15

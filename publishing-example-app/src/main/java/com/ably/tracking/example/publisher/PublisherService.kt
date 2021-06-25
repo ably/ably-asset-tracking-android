@@ -41,7 +41,7 @@ class PublisherService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        appPreferences = AppPreferences(this) // TODO - Add some DI (Koin)?
+        appPreferences = AppPreferences(this)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
