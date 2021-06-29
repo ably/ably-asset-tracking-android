@@ -17,8 +17,10 @@ import com.ably.tracking.publisher.locationengine.LocationEngineUtils
 import com.ably.tracking.publisher.locationengine.ResolutionLocationEngine
 import com.mapbox.api.directions.v5.models.DirectionsRoute
 import com.mapbox.api.directions.v5.models.RouteOptions
+import com.mapbox.module.Mapbox_TripNotificationModuleConfiguration
 import com.mapbox.navigation.base.internal.extensions.applyDefaultParams
 import com.mapbox.navigation.base.options.NavigationOptions
+import com.mapbox.navigation.base.trip.notification.TripNotification
 import com.mapbox.navigation.core.MapboxNavigation
 import com.mapbox.navigation.core.directions.session.RoutesRequestCallback
 import com.mapbox.navigation.core.replay.MapboxReplayer
@@ -103,6 +105,7 @@ internal class DefaultMapbox(
     connectionConfiguration: ConnectionConfiguration,
     locationSource: LocationSource? = null,
     logHandler: LogHandler?,
+    notification: AssetTrackingNotification?,
 ) : Mapbox {
     private val mainDispatcher = Dispatchers.Main.immediate
     private var mapboxNavigation: MapboxNavigation
@@ -110,6 +113,7 @@ internal class DefaultMapbox(
     private var locationHistoryListener: (LocationHistoryListener)? = null
 
     init {
+        setupTripNotification(notification, context)
         val mapboxBuilder = MapboxNavigation.defaultNavigationOptionsBuilder(context, mapConfiguration.apiKey)
             .locationEngine(getBestLocationEngine(context, logHandler))
         locationSource?.let {
@@ -126,6 +130,15 @@ internal class DefaultMapbox(
         runBlocking(mainDispatcher) {
             mapboxNavigation = MapboxNavigation(mapboxBuilder.build())
         }
+    }
+
+    private fun setupTripNotification(notification: AssetTrackingNotification?, context: Context) {
+        Mapbox_TripNotificationModuleConfiguration.moduleProvider =
+            object : Mapbox_TripNotificationModuleConfiguration.ModuleProvider {
+                override fun createTripNotification(): TripNotification =
+                    if (notification != null) MapboxTripNotification(notification)
+                    else DefaultMapboxTripNotification(context)
+            }
     }
 
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])

@@ -16,6 +16,7 @@ internal data class PublisherBuilder(
     val routingProfile: RoutingProfile = RoutingProfile.DRIVING,
     val resolutionPolicyFactory: ResolutionPolicy.Factory? = null,
     val logHandler: LogHandler? = null,
+    val notification: AssetTrackingNotification? = null,
     val locationSource: LocationSource? = null
 ) : Publisher.Builder {
 
@@ -40,6 +41,9 @@ internal data class PublisherBuilder(
     override fun logHandler(logHandler: LogHandler): Publisher.Builder =
         this.copy(logHandler = logHandler)
 
+    override fun notification(notification: AssetTrackingNotification): Publisher.Builder =
+        this.copy(notification = notification)
+
     @RequiresPermission(anyOf = [ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION])
     override fun start(): Publisher {
         if (isMissingRequiredFields()) {
@@ -48,7 +52,7 @@ internal data class PublisherBuilder(
         // All below fields are required and above code checks if they are nulls, so using !! should be safe from NPE
         return DefaultPublisher(
             DefaultAbly(connectionConfiguration!!, logHandler),
-            DefaultMapbox(androidContext!!, mapConfiguration!!, connectionConfiguration, locationSource, logHandler),
+            DefaultMapbox(androidContext!!, mapConfiguration!!, connectionConfiguration, locationSource, logHandler, notification),
             resolutionPolicyFactory!!,
             routingProfile,
             logHandler,

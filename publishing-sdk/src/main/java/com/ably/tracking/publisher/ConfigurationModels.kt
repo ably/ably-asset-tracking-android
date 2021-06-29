@@ -1,8 +1,24 @@
 package com.ably.tracking.publisher
 
+import android.app.Notification
 import com.ably.tracking.Resolution
 
 data class MapConfiguration(val apiKey: String)
+
+/**
+ * Represents necessary data to display a notification that will be shown when the [Publisher] is running.
+ */
+interface AssetTrackingNotification {
+    /**
+     * Returns the notification that will be displayed.
+     */
+    fun getNotification(): Notification
+
+    /**
+     * Returns the ID of the notification that will be displayed.
+     */
+    fun getNotificationId(): Int
+}
 
 /**
  * Defines the strategy by which the various [ResolutionRequest]s and preferences are translated by [Publisher]

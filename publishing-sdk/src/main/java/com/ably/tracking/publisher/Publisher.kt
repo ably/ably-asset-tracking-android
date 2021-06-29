@@ -192,6 +192,15 @@ interface Publisher {
         fun logHandler(logHandler: LogHandler): Builder
 
         /**
+         * **OPTIONAL** Sets the foreground service notification.
+         * If not set then the default notification is displayed.
+         *
+         * @param notification The notification that will be displayed.
+         * @return A new instance of the builder with this property changed.
+         */
+        fun notification(notification: AssetTrackingNotification): Builder
+
+        /**
          * Creates a [Publisher] and starts publishing.
          *
          * The returned publisher instance does not start in a state whereby it is actively tracking anything. If
