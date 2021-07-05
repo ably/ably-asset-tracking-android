@@ -611,7 +611,7 @@ constructor(
                     try {
                         enqueue(SetDestinationSuccessEvent(it.getOrThrow()))
                     } catch (exception: MapException) {
-                        // TODO - what to do here if setting destination fails
+                        logHandler?.w("Setting trackable destination failed", exception)
                     }
                 }
             } else {
