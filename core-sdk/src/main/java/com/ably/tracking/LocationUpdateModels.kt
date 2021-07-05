@@ -6,6 +6,12 @@ open class LocationUpdate(val location: Location, val skippedLocations: List<Loc
             is LocationUpdate -> location == other.location && skippedLocations == other.skippedLocations
             else -> false
         }
+
+    override fun hashCode(): Int {
+        var result = location.hashCode()
+        result = 31 * result + skippedLocations.hashCode()
+        return result
+    }
 }
 
 class EnhancedLocationUpdate(
@@ -20,6 +26,13 @@ class EnhancedLocationUpdate(
             is EnhancedLocationUpdate -> intermediateLocations == other.intermediateLocations && type == other.type
             else -> false
         }
+
+    override fun hashCode(): Int {
+        var result = super.hashCode()
+        result = 31 * result + intermediateLocations.hashCode()
+        result = 31 * result + type.hashCode()
+        return result
+    }
 }
 
 enum class LocationUpdateType {
