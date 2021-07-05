@@ -69,7 +69,6 @@ fun io.ably.lib.types.ErrorInfo.toTrackingException() =
 fun io.ably.lib.realtime.ConnectionStateListener.ConnectionStateChange.toTracking() =
     ConnectionStateChange(
         this.current.toTracking(),
-        this.previous.toTracking(),
         this.reason?.toTracking()
     )
 
@@ -166,6 +165,5 @@ fun ChannelState.toTracking() = when (this) {
 fun io.ably.lib.realtime.ChannelStateListener.ChannelStateChange.toTracking() =
     ConnectionStateChange(
         this.current.toTracking(),
-        this.previous.toTracking(),
         this.reason.toTracking()
     )

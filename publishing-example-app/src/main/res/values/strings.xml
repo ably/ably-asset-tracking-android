@@ -27,6 +27,7 @@
   <string name="desired_interval_label">Desired Interval [ms]</string>
   <string name="minimum_displacement_label">Minimum Displacement [m]</string>
   <string name="trackable_section_label">Trackable</string>
+  <string name="show_map_button">Show map</string>
 
   <string name="preferences_general_category_title">Navigation Settings</string>
   <string name="preferences_location_source_key">location_source</string>
