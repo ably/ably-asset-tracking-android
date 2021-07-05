@@ -176,6 +176,18 @@
     tools:text="SOME ID" />
 
   <androidx.appcompat.widget.AppCompatButton
+    android:id="@+id/showMapButton"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="@dimen/medium_margin"
+    android:background="@drawable/rounded_rectangle"
+    android:backgroundTint="@color/green"
+    android:paddingVertical="@dimen/medium_margin"
+    android:text="@string/show_map_button"
+    android:textColor="@color/white"
+    app:layout_constraintBottom_toTopOf="@id/stopTrackingButton" />
+
+  <androidx.appcompat.widget.AppCompatButton
     android:id="@+id/stopTrackingButton"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"

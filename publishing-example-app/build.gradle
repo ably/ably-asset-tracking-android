@@ -25,6 +25,7 @@ dependencies {
     implementation 'com.amplifyframework:aws-storage-s3:1.4.1'
     implementation 'com.amplifyframework:aws-auth-cognito:1.4.1'
     implementation 'pub.devrel:easypermissions:3.0.0'
+    implementation 'com.mapbox.mapboxsdk:mapbox-android-sdk:8.6.6'
 
     if (useCrashlytics) {
         // The BoM for the Firebase platform (it specifies the versions for Firebase dependencies).
