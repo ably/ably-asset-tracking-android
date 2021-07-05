@@ -109,12 +109,12 @@ val subscriber = Subscriber.subscribers() // Get an AssetSubscriber
 
 // Listen for location updates
 locations
-    .onEach { } // provide a function to be called when enhanced location updates are received
+    .onEach { locationUpdate -> print(locationUpdate } // provide a function to be called when enhanced location updates are received
     .launchIn(scope) // coroutines scope on which the locations are received
 
 // Listen for asset state changes
 trackableStates
-    .onEach { } // provide a function to be called when the asset changes its state
+    .onEach { trackableState -> print(trackableState) } // provide a function to be called when the asset changes its state
     .launchIn(scope) // coroutines scope on which the statuses are received
 
 // Request a different resolution when needed.

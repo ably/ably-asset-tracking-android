@@ -535,7 +535,7 @@ constructor(
 
     private fun getLastChannelConnectionStateChange(state: State, trackableId: String): ConnectionStateChange =
         state.lastChannelConnectionStateChanges[trackableId]
-            ?: ConnectionStateChange(ConnectionState.OFFLINE, ConnectionState.OFFLINE, null)
+            ?: ConnectionStateChange(ConnectionState.OFFLINE, null)
 
     private fun removeAllSubscribers(trackable: Trackable, state: State) {
         state.subscribers[trackable.id]?.let { subscribers ->
@@ -610,7 +610,7 @@ constructor(
                     try {
                         enqueue(SetDestinationSuccessEvent(it.getOrThrow()))
                     } catch (exception: MapException) {
-                        // TODO - what to do here if setting destination fails
+                        logHandler?.w("Setting trackable destination failed", exception)
                     }
                 }
             } else {
@@ -715,7 +715,7 @@ constructor(
         val lastChannelConnectionStateChanges: MutableMap<String, ConnectionStateChange> = mutableMapOf()
             get() = if (isDisposed) throw PublisherStateDisposedException() else field
         var lastConnectionStateChange: ConnectionStateChange = ConnectionStateChange(
-            ConnectionState.OFFLINE, ConnectionState.OFFLINE, null
+            ConnectionState.OFFLINE, null
         )
             get() = if (isDisposed) throw PublisherStateDisposedException() else field
         val resolutions: MutableMap<String, Resolution> = mutableMapOf()

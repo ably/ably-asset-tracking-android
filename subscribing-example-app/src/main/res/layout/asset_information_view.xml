@@ -123,7 +123,7 @@
     android:layout_height="wrap_content"
     app:layout_constraintEnd_toEndOf="@id/resolutionAccuracyLabelTextView"
     app:layout_constraintStart_toStartOf="@id/resolutionAccuracyLabelTextView"
-    app:layout_constraintTop_toBottomOf="@id/resolutionAccuracyLabelTextView"
+    app:layout_constraintTop_toTopOf="@id/resolutionDisplacementTextView"
     tools:text="Balanced" />
 
   <TextView
@@ -132,7 +132,7 @@
     android:layout_height="wrap_content"
     app:layout_constraintEnd_toEndOf="@id/resolutionDisplacementLabelTextView"
     app:layout_constraintStart_toStartOf="@id/resolutionDisplacementLabelTextView"
-    app:layout_constraintTop_toTopOf="@id/resolutionAccuracyTextView"
+    app:layout_constraintTop_toBottomOf="@id/resolutionDisplacementLabelTextView"
     tools:text="10.0m" />
 
   <TextView
@@ -141,7 +141,7 @@
     android:layout_height="wrap_content"
     app:layout_constraintEnd_toEndOf="@id/resolutionIntervalLabelTextView"
     app:layout_constraintStart_toStartOf="@id/resolutionIntervalLabelTextView"
-    app:layout_constraintTop_toTopOf="@id/resolutionAccuracyTextView"
+    app:layout_constraintTop_toTopOf="@id/resolutionDisplacementTextView"
     tools:text="100ms" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

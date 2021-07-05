@@ -1,13 +1,13 @@
 package com.ably.tracking.subscriber
 
 import com.ably.tracking.ConnectionException
-import com.ably.tracking.common.ConnectionState
-import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ClientTypes
+import com.ably.tracking.common.ConnectionState
+import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.PresenceAction
 import com.ably.tracking.common.PresenceData
 import kotlinx.coroutines.CoroutineScope
@@ -207,10 +207,10 @@ private class DefaultCoreSubscriber(
         var isPublisherOnline: Boolean = false,
         var trackableState: TrackableState = TrackableState.Offline(),
         var lastConnectionStateChange: ConnectionStateChange = ConnectionStateChange(
-            ConnectionState.OFFLINE, ConnectionState.OFFLINE, null
+            ConnectionState.OFFLINE, null
         ),
         var lastChannelConnectionStateChange: ConnectionStateChange = ConnectionStateChange(
-            ConnectionState.OFFLINE, ConnectionState.OFFLINE, null
+            ConnectionState.OFFLINE, null
         ),
         var presenceData: PresenceData = PresenceData(ClientTypes.SUBSCRIBER, initialResolution)
     )

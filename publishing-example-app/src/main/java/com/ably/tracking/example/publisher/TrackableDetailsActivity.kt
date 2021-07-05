@@ -1,5 +1,6 @@
 package com.ably.tracking.example.publisher
 
+import android.content.Intent
 import android.content.res.ColorStateList
 import android.os.Bundle
 import androidx.appcompat.app.AlertDialog
@@ -38,6 +39,9 @@ class TrackableDetailsActivity : PublisherServiceActivity() {
 
         stopTrackingButton.setOnClickListener {
             stopTracking()
+        }
+        showMapButton.setOnClickListener {
+            showMapScreen()
         }
     }
 
@@ -111,5 +115,9 @@ class TrackableDetailsActivity : PublisherServiceActivity() {
         assetStateValueTextView.text = getString(textId)
         assetStateValueTextView.setTextColor(ContextCompat.getColor(this, textColor))
         assetStateValueTextView.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this, colorId))
+    }
+
+    private fun showMapScreen() {
+        startActivity(Intent(this, MapActivity::class.java))
     }
 }
