@@ -204,7 +204,7 @@ constructor(
             // Emit the current channel state
             channel.state.toTracking().let { currentChannelState ->
                 // Initial state is launched in a fire-and-forget manner to not block this method on the listener() call
-                scope.launch { listener(ConnectionStateChange(currentChannelState, currentChannelState, null)) }
+                scope.launch { listener(ConnectionStateChange(currentChannelState, null)) }
             }
             channel.on { listener(it.toTracking()) }
         }

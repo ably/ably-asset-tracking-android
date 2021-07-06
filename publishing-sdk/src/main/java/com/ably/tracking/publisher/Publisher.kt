@@ -25,9 +25,6 @@ interface Publisher {
          */
         @JvmStatic
         fun publishers(): Builder {
-            // TODO ensure this can be called from Java - may need @JvmStatic annotation
-            // https://kotlinlang.org/docs/tutorials/kotlin-for-py/objects-and-companion-objects.html#companion-objects
-            // TODO return a static singleton in default state instead of creating an "empty" new one every time
             return PublisherBuilder()
         }
     }
