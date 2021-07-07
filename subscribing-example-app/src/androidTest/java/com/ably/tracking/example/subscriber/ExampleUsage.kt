@@ -58,9 +58,9 @@ fun exampleUsage(trackingId: String) {
             subscriber.resolutionPreference(
                 Resolution(Accuracy.MAXIMUM, desiredInterval = 100L, minimumDisplacement = 2.0)
             )
-            // TODO change request submitted successfully
+            // change request submitted successfully
         } catch (exception: Exception) {
-            // TODO change request could not be submitted
+            // change request could not be submitted
         }
     }
 }

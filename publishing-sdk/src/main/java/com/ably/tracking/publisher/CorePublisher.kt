@@ -602,7 +602,6 @@ constructor(
     }
 
     private fun setDestination(destination: Destination, state: State) {
-        // TODO is there a way to ensure we're executing in the right thread?
         state.lastPublisherLocation.let { currentLocation ->
             if (currentLocation != null) {
                 removeCurrentDestination(state)
