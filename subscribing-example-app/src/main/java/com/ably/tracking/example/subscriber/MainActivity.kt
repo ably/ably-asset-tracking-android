@@ -153,7 +153,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private suspend fun changeResolution(newResolution: Resolution) {
-        // TODO - is this try/catch the best way to do it? maybe we should return the Result and let clients handle it their way?
         subscriber?.let {
             try {
                 it.resolutionPreference(newResolution)
@@ -231,7 +230,7 @@ class MainActivity : AppCompatActivity() {
                 changeStartButtonText(false)
                 marker = null
             } catch (exception: Exception) {
-                // TODO check Result (it) for failure and report accordingly
+                showToast("Stopping subscriber error")
             }
         }
     }

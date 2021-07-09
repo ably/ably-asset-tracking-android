@@ -86,10 +86,10 @@ class ExampleUsage(
                         constraints = exampleConstraints // provide a set of Resolution Constraints
                     )
                 )
-                // TODO handle asset tracking started successfully
+                // handle asset tracking started successfully
                 // it's safe to update the UI directly here (see [scope])
             } catch (exception: Exception) {
-                // TODO handle asset tracking could not be started
+                // handle asset tracking could not be started
             }
         }
     }

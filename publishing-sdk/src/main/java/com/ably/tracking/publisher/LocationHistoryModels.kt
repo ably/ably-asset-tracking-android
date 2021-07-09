@@ -29,6 +29,7 @@ fun List<ReplayEventBase>.toGeoJsonMessages(): List<GeoJsonMessage> =
                 ),
                 GeoJsonProperties(
                     // TODO - check if those default values are OK
+                    // https://github.com/ably/ably-asset-tracking-android/issues/191
                     event.location.accuracyHorizontal?.toFloat() ?: 0f,
                     event.location.bearing?.toFloat() ?: 0f,
                     event.location.speed?.toFloat() ?: 0f,
