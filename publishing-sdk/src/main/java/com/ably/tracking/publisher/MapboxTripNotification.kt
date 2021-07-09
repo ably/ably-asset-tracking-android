@@ -9,9 +9,9 @@ import com.mapbox.navigation.base.trip.notification.TripNotification
 
 @MapboxModule(MapboxModuleType.NavigationTripNotification, enableConfiguration = true)
 @Keep
-internal class MapboxTripNotification(private val notification: AssetTrackingNotification) : TripNotification {
-    override fun getNotification(): Notification = notification.getNotification()
-    override fun getNotificationId(): Int = notification.getNotificationId()
+internal class MapboxTripNotification(private val notificationProvider: PublisherNotificationProvider) : TripNotification {
+    override fun getNotification(): Notification = notificationProvider.getNotification()
+    override fun getNotificationId(): Int = notificationProvider.getNotificationId()
     override fun onTripSessionStarted() = Unit
     override fun onTripSessionStopped() = Unit
     override fun updateNotification(routeProgress: RouteProgress?) = Unit

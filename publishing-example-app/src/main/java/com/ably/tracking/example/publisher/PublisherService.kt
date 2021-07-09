@@ -14,12 +14,12 @@ import com.ably.tracking.connection.Authentication
 import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.logging.LogHandler
 import com.ably.tracking.logging.LogLevel
-import com.ably.tracking.publisher.AssetTrackingNotification
 import com.ably.tracking.publisher.DefaultResolutionPolicyFactory
 import com.ably.tracking.publisher.LocationHistoryData
 import com.ably.tracking.publisher.LocationSource
 import com.ably.tracking.publisher.MapConfiguration
 import com.ably.tracking.publisher.Publisher
+import com.ably.tracking.publisher.PublisherNotificationProvider
 import com.ably.tracking.publisher.RoutingProfile
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -88,7 +88,7 @@ class PublisherService : Service() {
                     }
                 }
             })
-            .notification(object : AssetTrackingNotification {
+            .notification(object : PublisherNotificationProvider {
                 override fun getNotification(): Notification = notification
                 override fun getNotificationId(): Int = NOTIFICATION_ID
             })

@@ -191,10 +191,10 @@ interface Publisher {
         /**
          * Sets the foreground service notification.
          *
-         * @param notification The notification that will be displayed.
+         * @param notificationProvider The notification that will be displayed.
          * @return A new instance of the builder with this property changed.
          */
-        fun notification(notification: AssetTrackingNotification): Builder
+        fun notification(notificationProvider: PublisherNotificationProvider): Builder
 
         /**
          * Creates a [Publisher] and starts publishing.

@@ -8,7 +8,7 @@ data class MapConfiguration(val apiKey: String)
 /**
  * Represents necessary data to display a notification that will be shown when the [Publisher] is running.
  */
-interface AssetTrackingNotification {
+interface PublisherNotificationProvider {
     /**
      * Returns the notification that will be displayed.
      */
