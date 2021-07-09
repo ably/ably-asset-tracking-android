@@ -52,7 +52,14 @@ internal data class PublisherBuilder(
         // All below fields are required and above code checks if they are nulls, so using !! should be safe from NPE
         return DefaultPublisher(
             DefaultAbly(connectionConfiguration!!, logHandler),
-            DefaultMapbox(androidContext!!, mapConfiguration!!, connectionConfiguration, locationSource, logHandler, notification),
+            DefaultMapbox(
+                androidContext!!,
+                mapConfiguration!!,
+                connectionConfiguration,
+                locationSource,
+                logHandler,
+                notification!!
+            ),
             resolutionPolicyFactory!!,
             routingProfile,
             logHandler,
@@ -63,5 +70,6 @@ internal data class PublisherBuilder(
         connectionConfiguration == null ||
             mapConfiguration == null ||
             androidContext == null ||
+            notification == null ||
             resolutionPolicyFactory == null
 }

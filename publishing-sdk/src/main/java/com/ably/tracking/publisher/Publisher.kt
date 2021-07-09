@@ -189,8 +189,7 @@ interface Publisher {
         fun logHandler(logHandler: LogHandler): Builder
 
         /**
-         * **OPTIONAL** Sets the foreground service notification.
-         * If not set then the default notification is displayed.
+         * Sets the foreground service notification.
          *
          * @param notification The notification that will be displayed.
          * @return A new instance of the builder with this property changed.

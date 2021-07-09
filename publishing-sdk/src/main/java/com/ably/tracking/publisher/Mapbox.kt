@@ -105,7 +105,7 @@ internal class DefaultMapbox(
     connectionConfiguration: ConnectionConfiguration,
     locationSource: LocationSource? = null,
     logHandler: LogHandler?,
-    notification: AssetTrackingNotification?,
+    notification: AssetTrackingNotification,
 ) : Mapbox {
     private val mainDispatcher = Dispatchers.Main.immediate
     private var mapboxNavigation: MapboxNavigation
@@ -113,7 +113,7 @@ internal class DefaultMapbox(
     private var locationHistoryListener: (LocationHistoryListener)? = null
 
     init {
-        setupTripNotification(notification, context)
+        setupTripNotification(notification)
         val mapboxBuilder = MapboxNavigation.defaultNavigationOptionsBuilder(context, mapConfiguration.apiKey)
             .locationEngine(getBestLocationEngine(context, logHandler))
         locationSource?.let {
@@ -132,12 +132,10 @@ internal class DefaultMapbox(
         }
     }
 
-    private fun setupTripNotification(notification: AssetTrackingNotification?, context: Context) {
+    private fun setupTripNotification(notification: AssetTrackingNotification) {
         Mapbox_TripNotificationModuleConfiguration.moduleProvider =
             object : Mapbox_TripNotificationModuleConfiguration.ModuleProvider {
-                override fun createTripNotification(): TripNotification =
-                    if (notification != null) MapboxTripNotification(notification)
-                    else DefaultMapboxTripNotification(context)
+                override fun createTripNotification(): TripNotification = MapboxTripNotification(notification)
             }
     }
 
