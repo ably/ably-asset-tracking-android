@@ -88,7 +88,7 @@ class PublisherService : Service() {
                     }
                 }
             })
-            .notification(
+            .backgroundTrackingNotificationProvider(
                 object : PublisherNotificationProvider {
                     override fun getNotification(): Notification = notification
                 },

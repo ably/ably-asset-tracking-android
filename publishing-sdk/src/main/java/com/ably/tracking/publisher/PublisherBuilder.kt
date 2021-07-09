@@ -42,7 +42,7 @@ internal data class PublisherBuilder(
     override fun logHandler(logHandler: LogHandler): Publisher.Builder =
         this.copy(logHandler = logHandler)
 
-    override fun notification(
+    override fun backgroundTrackingNotificationProvider(
         notificationProvider: PublisherNotificationProvider,
         notificationId: Int
     ): Publisher.Builder =

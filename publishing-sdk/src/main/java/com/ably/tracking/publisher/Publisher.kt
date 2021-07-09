@@ -189,12 +189,16 @@ interface Publisher {
         fun logHandler(logHandler: LogHandler): Builder
 
         /**
-         * Sets the foreground service notification.
+         * Sets the notification that will be displayed for the background tracking service.
          *
-         * @param notificationProvider The notification that will be displayed.
+         * @param notificationProvider It will be used to create the notification.
+         * @param notificationId The ID of the notification used by the Android OS to display it.
          * @return A new instance of the builder with this property changed.
          */
-        fun notification(notificationProvider: PublisherNotificationProvider, notificationId: Int): Builder
+        fun backgroundTrackingNotificationProvider(
+            notificationProvider: PublisherNotificationProvider,
+            notificationId: Int
+        ): Builder
 
         /**
          * Creates a [Publisher] and starts publishing.
