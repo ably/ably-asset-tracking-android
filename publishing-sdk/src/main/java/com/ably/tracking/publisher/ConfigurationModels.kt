@@ -6,11 +6,11 @@ import com.ably.tracking.Resolution
 data class MapConfiguration(val apiKey: String)
 
 /**
- * Represents necessary data to display a notification that will be shown when the [Publisher] is running.
+ * Provides the notification that will be used for the background tracking service.
  */
 interface PublisherNotificationProvider {
     /**
-     * Returns the notification that will be displayed.
+     * Returns the notification that will be displayed. This method can be called multiple times.
      */
     fun getNotification(): Notification
 }
