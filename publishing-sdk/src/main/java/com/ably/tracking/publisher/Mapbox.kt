@@ -106,6 +106,7 @@ internal class DefaultMapbox(
     locationSource: LocationSource? = null,
     logHandler: LogHandler?,
     notificationProvider: PublisherNotificationProvider,
+    notificationId: Int
 ) : Mapbox {
     private val mainDispatcher = Dispatchers.Main.immediate
     private var mapboxNavigation: MapboxNavigation
@@ -113,7 +114,7 @@ internal class DefaultMapbox(
     private var locationHistoryListener: (LocationHistoryListener)? = null
 
     init {
-        setupTripNotification(notificationProvider)
+        setupTripNotification(notificationProvider, notificationId)
         val mapboxBuilder = MapboxNavigation.defaultNavigationOptionsBuilder(context, mapConfiguration.apiKey)
             .locationEngine(getBestLocationEngine(context, logHandler))
         locationSource?.let {
@@ -132,10 +133,11 @@ internal class DefaultMapbox(
         }
     }
 
-    private fun setupTripNotification(notificationProvider: PublisherNotificationProvider) {
+    private fun setupTripNotification(notificationProvider: PublisherNotificationProvider, notificationId: Int) {
         Mapbox_TripNotificationModuleConfiguration.moduleProvider =
             object : Mapbox_TripNotificationModuleConfiguration.ModuleProvider {
-                override fun createTripNotification(): TripNotification = MapboxTripNotification(notificationProvider)
+                override fun createTripNotification(): TripNotification =
+                    MapboxTripNotification(notificationProvider, notificationId)
             }
     }
 

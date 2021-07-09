@@ -88,10 +88,12 @@ class PublisherService : Service() {
                     }
                 }
             })
-            .notification(object : PublisherNotificationProvider {
-                override fun getNotification(): Notification = notification
-                override fun getNotificationId(): Int = NOTIFICATION_ID
-            })
+            .notification(
+                object : PublisherNotificationProvider {
+                    override fun getNotification(): Notification = notification
+                },
+                NOTIFICATION_ID
+            )
             .start().apply {
                 locationHistory
                     .onEach { uploadLocationHistoryData(it) }

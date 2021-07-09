@@ -13,11 +13,6 @@ interface PublisherNotificationProvider {
      * Returns the notification that will be displayed.
      */
     fun getNotification(): Notification
-
-    /**
-     * Returns the ID of the notification that will be displayed.
-     */
-    fun getNotificationId(): Int
 }
 
 /**

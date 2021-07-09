@@ -17,6 +17,7 @@ internal data class PublisherBuilder(
     val resolutionPolicyFactory: ResolutionPolicy.Factory? = null,
     val logHandler: LogHandler? = null,
     val notificationProvider: PublisherNotificationProvider? = null,
+    val notificationId: Int? = null,
     val locationSource: LocationSource? = null
 ) : Publisher.Builder {
 
@@ -41,8 +42,11 @@ internal data class PublisherBuilder(
     override fun logHandler(logHandler: LogHandler): Publisher.Builder =
         this.copy(logHandler = logHandler)
 
-    override fun notification(notificationProvider: PublisherNotificationProvider): Publisher.Builder =
-        this.copy(notificationProvider = notificationProvider)
+    override fun notification(
+        notificationProvider: PublisherNotificationProvider,
+        notificationId: Int
+    ): Publisher.Builder =
+        this.copy(notificationProvider = notificationProvider, notificationId = notificationId)
 
     @RequiresPermission(anyOf = [ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION])
     override fun start(): Publisher {
@@ -58,7 +62,8 @@ internal data class PublisherBuilder(
                 connectionConfiguration,
                 locationSource,
                 logHandler,
-                notificationProvider!!
+                notificationProvider!!,
+                notificationId!!
             ),
             resolutionPolicyFactory!!,
             routingProfile,
@@ -71,5 +76,6 @@ internal data class PublisherBuilder(
             mapConfiguration == null ||
             androidContext == null ||
             notificationProvider == null ||
+            notificationId == null ||
             resolutionPolicyFactory == null
 }

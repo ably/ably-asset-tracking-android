@@ -194,7 +194,7 @@ interface Publisher {
          * @param notificationProvider The notification that will be displayed.
          * @return A new instance of the builder with this property changed.
          */
-        fun notification(notificationProvider: PublisherNotificationProvider): Builder
+        fun notification(notificationProvider: PublisherNotificationProvider, notificationId: Int): Builder
 
         /**
          * Creates a [Publisher] and starts publishing.
