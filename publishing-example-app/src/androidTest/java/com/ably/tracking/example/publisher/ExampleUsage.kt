@@ -1,15 +1,18 @@
 package com.ably.tracking.example.publisher
 
 import android.app.Activity
+import android.app.Notification
+import androidx.core.app.NotificationCompat
 import com.ably.tracking.Accuracy
-import com.ably.tracking.connection.Authentication
 import com.ably.tracking.Resolution
+import com.ably.tracking.connection.Authentication
 import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.publisher.DefaultProximity
 import com.ably.tracking.publisher.DefaultResolutionConstraints
 import com.ably.tracking.publisher.DefaultResolutionSet
 import com.ably.tracking.publisher.MapConfiguration
 import com.ably.tracking.publisher.Publisher
+import com.ably.tracking.publisher.PublisherNotificationProvider
 import com.ably.tracking.publisher.RoutingProfile
 import com.ably.tracking.publisher.Trackable
 import kotlinx.coroutines.CoroutineScope
@@ -22,6 +25,7 @@ import kotlinx.coroutines.launch
 val ABLY_API_KEY = ""
 val CLIENT_ID = ""
 val MAPBOX_ACCESS_TOKEN = ""
+val NOTIFICATION_ID = 1
 
 class ExampleUsage(
     val trackingId: String
@@ -60,6 +64,17 @@ class ExampleUsage(
             .map(MapConfiguration(MAPBOX_ACCESS_TOKEN)) // provide Mapbox configuration with credentials
             .androidContext(this) // provide Android runtime context
             .profile(RoutingProfile.DRIVING) // provide mode of transportation for better location enhancements
+            .backgroundTrackingNotificationProvider(
+                object : PublisherNotificationProvider {
+                    override fun getNotification(): Notification =
+                        NotificationCompat.Builder(this@ExampleUsage, "test-channel")
+                            .setContentTitle("Title")
+                            .setContentText("Text")
+                            .setSmallIcon(R.drawable.aat_logo)
+                            .build()
+                },
+                NOTIFICATION_ID
+            )
             .start()
 
         // Start tracking an asset

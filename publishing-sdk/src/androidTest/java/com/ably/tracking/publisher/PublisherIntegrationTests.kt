@@ -1,12 +1,14 @@
 package com.ably.tracking.publisher
 
 import android.annotation.SuppressLint
+import android.app.Notification
 import android.content.Context
+import androidx.core.app.NotificationCompat
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ably.tracking.Accuracy
-import com.ably.tracking.connection.Authentication
 import com.ably.tracking.Resolution
+import com.ably.tracking.connection.Authentication
 import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.test.android.common.BooleanExpectation
 import com.ably.tracking.test.android.common.UnitExpectation
@@ -97,6 +99,17 @@ class PublisherIntegrationTests {
             .resolutionPolicy(DefaultResolutionPolicyFactory(resolution, context))
             .profile(RoutingProfile.CYCLING)
             .locationSource(LocationSourceRaw.create(locationData, onLocationDataEnded))
+            .backgroundTrackingNotificationProvider(
+                object : PublisherNotificationProvider {
+                    override fun getNotification(): Notification =
+                        NotificationCompat.Builder(context, "test-channel")
+                            .setContentTitle("TEST")
+                            .setContentText("Test")
+                            .setSmallIcon(R.drawable.aat_logo)
+                            .build()
+                },
+                12345
+            )
             .start()
 
     private fun getLocationData(context: Context): LocationHistoryData {
