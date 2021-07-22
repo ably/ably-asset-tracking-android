@@ -189,6 +189,18 @@ interface Publisher {
         fun logHandler(logHandler: LogHandler): Builder
 
         /**
+         * Sets the notification that will be displayed for the background tracking service.
+         *
+         * @param notificationProvider It will be used to create the notification.
+         * @param notificationId The ID of the notification used by the Android OS to display it.
+         * @return A new instance of the builder with this property changed.
+         */
+        fun backgroundTrackingNotificationProvider(
+            notificationProvider: PublisherNotificationProvider,
+            notificationId: Int
+        ): Builder
+
+        /**
          * Creates a [Publisher] and starts publishing.
          *
          * The returned publisher instance does not start in a state whereby it is actively tracking anything. If

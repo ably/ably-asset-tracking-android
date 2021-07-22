@@ -1,7 +1,15 @@
 package com.ably.tracking.example.javapublisher;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.RETURNS_SELF;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.withSettings;
+
 import android.annotation.SuppressLint;
 import android.content.Context;
+
+import androidx.core.app.NotificationCompat;
 
 import com.ably.tracking.Accuracy;
 import com.ably.tracking.BuilderConfigurationIncompleteException;
@@ -9,7 +17,6 @@ import com.ably.tracking.ConnectionException;
 import com.ably.tracking.Resolution;
 import com.ably.tracking.connection.Authentication;
 import com.ably.tracking.connection.ConnectionConfiguration;
-import com.ably.tracking.connection.TokenRequest;
 import com.ably.tracking.publisher.DefaultProximity;
 import com.ably.tracking.publisher.DefaultResolutionConstraints;
 import com.ably.tracking.publisher.DefaultResolutionSet;
@@ -24,19 +31,12 @@ import com.ably.tracking.publisher.RoutingProfile;
 import com.ably.tracking.publisher.Trackable;
 import com.ably.tracking.publisher.java.PublisherFacade;
 
-import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.RETURNS_SELF;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.withSettings;
 
 @SuppressLint("MissingPermission")
 public class PublisherInterfaceUsageExamples {
@@ -70,6 +70,14 @@ public class PublisherInterfaceUsageExamples {
                 .resolutionPolicy(resolutionPolicyFactory)
                 .locationSource(LocationSourceRaw.createRaw(new LocationHistoryData(new ArrayList<>()), null))
                 .locationSource(LocationSourceAbly.create("CHANNEL_ID"))
+                .backgroundTrackingNotificationProvider(
+                    () -> new NotificationCompat.Builder(context, "test-channel")
+                        .setContentTitle("Title")
+                        .setContentText("Text")
+                        .setSmallIcon(R.drawable.aat_logo)
+                        .build(),
+                    123
+                )
                 .start();
         } catch (BuilderConfigurationIncompleteException e) {
             // handle publisher start error

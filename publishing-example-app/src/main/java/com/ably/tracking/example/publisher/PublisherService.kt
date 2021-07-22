@@ -1,6 +1,7 @@
 package com.ably.tracking.example.publisher
 
 import android.Manifest
+import android.app.Notification
 import android.app.Service
 import android.content.Intent
 import android.os.IBinder
@@ -18,6 +19,7 @@ import com.ably.tracking.publisher.LocationHistoryData
 import com.ably.tracking.publisher.LocationSource
 import com.ably.tracking.publisher.MapConfiguration
 import com.ably.tracking.publisher.Publisher
+import com.ably.tracking.publisher.PublisherNotificationProvider
 import com.ably.tracking.publisher.RoutingProfile
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -35,6 +37,7 @@ class PublisherService : Service() {
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     private val DEFAULT_RESOLUTION = Resolution(Accuracy.MINIMUM, 1000L, 1.0)
     private val NOTIFICATION_ID = 5235
+    private lateinit var notification: Notification
     private val binder = Binder()
     var publisher: Publisher? = null
     private lateinit var appPreferences: AppPreferences
@@ -45,7 +48,7 @@ class PublisherService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val notification = NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
+        notification = NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
             .setContentTitle("Asset Tracking")
             .setContentText("Publisher is working")
             .setSmallIcon(R.drawable.ic_launcher_foreground)
@@ -85,6 +88,12 @@ class PublisherService : Service() {
                     }
                 }
             })
+            .backgroundTrackingNotificationProvider(
+                object : PublisherNotificationProvider {
+                    override fun getNotification(): Notification = notification
+                },
+                NOTIFICATION_ID
+            )
             .start().apply {
                 locationHistory
                     .onEach { uploadLocationHistoryData(it) }

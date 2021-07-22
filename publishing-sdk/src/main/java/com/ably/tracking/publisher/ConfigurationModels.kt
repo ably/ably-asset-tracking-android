@@ -1,8 +1,19 @@
 package com.ably.tracking.publisher
 
+import android.app.Notification
 import com.ably.tracking.Resolution
 
 data class MapConfiguration(val apiKey: String)
+
+/**
+ * Provides the notification that will be used for the background tracking service.
+ */
+interface PublisherNotificationProvider {
+    /**
+     * Returns the notification that will be displayed. This method can be called multiple times.
+     */
+    fun getNotification(): Notification
+}
 
 /**
  * Defines the strategy by which the various [ResolutionRequest]s and preferences are translated by [Publisher]

@@ -16,6 +16,8 @@ internal data class PublisherBuilder(
     val routingProfile: RoutingProfile = RoutingProfile.DRIVING,
     val resolutionPolicyFactory: ResolutionPolicy.Factory? = null,
     val logHandler: LogHandler? = null,
+    val notificationProvider: PublisherNotificationProvider? = null,
+    val notificationId: Int? = null,
     val locationSource: LocationSource? = null
 ) : Publisher.Builder {
 
@@ -40,6 +42,12 @@ internal data class PublisherBuilder(
     override fun logHandler(logHandler: LogHandler): Publisher.Builder =
         this.copy(logHandler = logHandler)
 
+    override fun backgroundTrackingNotificationProvider(
+        notificationProvider: PublisherNotificationProvider,
+        notificationId: Int
+    ): Publisher.Builder =
+        this.copy(notificationProvider = notificationProvider, notificationId = notificationId)
+
     @RequiresPermission(anyOf = [ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION])
     override fun start(): Publisher {
         if (isMissingRequiredFields()) {
@@ -48,7 +56,15 @@ internal data class PublisherBuilder(
         // All below fields are required and above code checks if they are nulls, so using !! should be safe from NPE
         return DefaultPublisher(
             DefaultAbly(connectionConfiguration!!, logHandler),
-            DefaultMapbox(androidContext!!, mapConfiguration!!, connectionConfiguration, locationSource, logHandler),
+            DefaultMapbox(
+                androidContext!!,
+                mapConfiguration!!,
+                connectionConfiguration,
+                locationSource,
+                logHandler,
+                notificationProvider!!,
+                notificationId!!
+            ),
             resolutionPolicyFactory!!,
             routingProfile,
             logHandler,
@@ -59,5 +75,7 @@ internal data class PublisherBuilder(
         connectionConfiguration == null ||
             mapConfiguration == null ||
             androidContext == null ||
+            notificationProvider == null ||
+            notificationId == null ||
             resolutionPolicyFactory == null
 }
