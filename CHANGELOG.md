@@ -1,5 +1,40 @@
 # Change log
 
+## [1.0.0-beta.8](https://github.com/ably/ably-asset-tracking-android/tree/v1.0.0-beta.8)
+
+[Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.0.0-beta.7...v1.0.0-beta.8)
+
+**Implemented enhancements:**
+
+- Add a map to the Android Publisher example  [\#377](https://github.com/ably/ably-asset-tracking-android/issues/377)
+- Explore a way to not have 2 background notifications when SDK is used on Android 9+ [\#358](https://github.com/ably/ably-asset-tracking-android/issues/358)
+
+**Fixed bugs:**
+
+- Publishing app crashes on Android API 21 [\#359](https://github.com/ably/ably-asset-tracking-android/issues/359)
+- Subscriber app tracking UI text overlapping [\#345](https://github.com/ably/ably-asset-tracking-android/issues/345)
+- Missing emit to log from within MapException catch block [\#338](https://github.com/ably/ably-asset-tracking-android/issues/338)
+- When an invalid Ably key is used when building an example app there is no log message explaining what is not working [\#335](https://github.com/ably/ably-asset-tracking-android/issues/335)
+- Handle exception thrown when sending enhanced location update fails [\#213](https://github.com/ably/ably-asset-tracking-android/issues/213)
+
+**Closed issues:**
+
+- Send trip start and trip end events on a meta channel from Publisher SDK \(Android\) [\#374](https://github.com/ably/ably-asset-tracking-android/issues/374)
+- Check if we should pass client ID when using the AblySimulationLocationEngine [\#232](https://github.com/ably/ably-asset-tracking-android/issues/232)
+- Start using the new Kotlin JVM IR Backend [\#202](https://github.com/ably/ably-asset-tracking-android/issues/202)
+- Improve CorePublisher active Trackable state management [\#195](https://github.com/ably/ably-asset-tracking-android/issues/195)
+
+**Merged pull requests:**
+
+- Show custom notification for Mapbox trip service [\#389](https://github.com/ably/ably-asset-tracking-android/pull/389) ([KacperKluka](https://github.com/KacperKluka))
+- Remove previousState from ConnectionStateChange [\#385](https://github.com/ably/ably-asset-tracking-android/pull/385) ([KacperKluka](https://github.com/KacperKluka))
+- Log mapbox exception when setting destination fails [\#384](https://github.com/ably/ably-asset-tracking-android/pull/384) ([KacperKluka](https://github.com/KacperKluka))
+- Add a map to the Android Publisher example [\#382](https://github.com/ably/ably-asset-tracking-android/pull/382) ([KacperKluka](https://github.com/KacperKluka))
+- Fix overlapping text in subscriber example app [\#381](https://github.com/ably/ably-asset-tracking-android/pull/381) ([KacperKluka](https://github.com/KacperKluka))
+- Increase minSdk to 24 for example apps [\#380](https://github.com/ably/ably-asset-tracking-android/pull/380) ([KacperKluka](https://github.com/KacperKluka))
+- Send failed location updates [\#379](https://github.com/ably/ably-asset-tracking-android/pull/379) ([KacperKluka](https://github.com/KacperKluka))
+- Update Kotlin to 1.5.0 [\#370](https://github.com/ably/ably-asset-tracking-android/pull/370) ([KacperKluka](https://github.com/KacperKluka))
+
 ## [1.0.0-beta.7](https://github.com/ably/ably-asset-tracking-android/tree/v1.0.0-beta.7)
 
 [Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.0.0-beta.6...v1.0.0-beta.7)
