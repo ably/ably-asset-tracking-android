@@ -2,6 +2,8 @@ package com.ably.tracking.common
 
 import com.ably.tracking.ConnectionException
 import com.ably.tracking.ErrorInformation
+import com.ably.tracking.common.message.PresenceDataMessage
+import com.ably.tracking.common.message.toTracking
 import com.ably.tracking.connection.Authentication
 import com.ably.tracking.connection.TokenParams
 import com.ably.tracking.connection.TokenRequest
@@ -167,3 +169,9 @@ fun io.ably.lib.realtime.ChannelStateListener.ChannelStateChange.toTracking() =
         this.current.toTracking(),
         this.reason.toTracking()
     )
+
+/**
+ * Returns parsed data or null if data is missing or in wrong format.
+ */
+fun io.ably.lib.types.PresenceMessage.getPresenceData(gson: Gson): PresenceData? =
+    gson.fromJson(data as? String, PresenceDataMessage::class.java)?.toTracking()

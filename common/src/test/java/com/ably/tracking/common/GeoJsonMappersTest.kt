@@ -3,6 +3,7 @@ package com.ably.tracking.common
 import com.ably.tracking.GeoJsonGeometry
 import com.ably.tracking.GeoJsonMessage
 import com.ably.tracking.GeoJsonProperties
+import com.ably.tracking.common.message.GeoJsonTypes
 import com.google.gson.Gson
 import org.junit.Assert
 import org.junit.Test

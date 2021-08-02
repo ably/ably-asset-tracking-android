@@ -4,11 +4,11 @@ import android.app.PendingIntent
 import android.os.Looper
 import android.os.SystemClock
 import com.ably.tracking.common.EventNames
-import com.ably.tracking.common.getLocationMessages
+import com.ably.tracking.common.message.getLocationMessages
 import com.ably.tracking.common.logging.d
 import com.ably.tracking.common.logging.i
-import com.ably.tracking.common.synopsis
-import com.ably.tracking.common.toTracking
+import com.ably.tracking.common.message.synopsis
+import com.ably.tracking.common.message.toTracking
 import com.ably.tracking.logging.LogHandler
 import com.google.gson.Gson
 import com.mapbox.android.core.location.LocationEngine
