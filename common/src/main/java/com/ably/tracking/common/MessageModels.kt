@@ -25,13 +25,16 @@ enum class PresenceAction {
 data class PresenceData(val type: String, val resolution: Resolution? = null)
 
 @Shared
-data class PresenceDataMessage(val type: String?, val resolution: ResolutionMessage? = null)
+data class PresenceDataMessage(
+    @SerializedName("type") val type: String?,
+    @SerializedName("resolution") val resolution: ResolutionMessage? = null
+)
 
 @Shared
 data class ResolutionMessage(
-    val accuracy: AccuracyMessage,
-    val desiredInterval: Long,
-    val minimumDisplacement: Double
+    @SerializedName("accuracy") val accuracy: AccuracyMessage,
+    @SerializedName("desiredInterval") val desiredInterval: Long,
+    @SerializedName("minimumDisplacement") val minimumDisplacement: Double
 )
 
 @Shared
@@ -54,10 +57,10 @@ enum class AccuracyMessage {
 
 @Shared
 data class EnhancedLocationUpdateMessage(
-    val location: LocationMessage,
-    val skippedLocations: List<LocationMessage>,
-    val intermediateLocations: List<LocationMessage>,
-    val type: LocationUpdateTypeMessage
+    @SerializedName("location") val location: LocationMessage,
+    @SerializedName("skippedLocations") val skippedLocations: List<LocationMessage>,
+    @SerializedName("intermediateLocations") val intermediateLocations: List<LocationMessage>,
+    @SerializedName("type") val type: LocationUpdateTypeMessage
 )
 
 @Shared
@@ -71,31 +74,34 @@ enum class LocationUpdateTypeMessage {
 
 @Shared
 data class TripMetadataMessage(
-    val trackingId: String,
-    val timestamp: Long,
-    val tripData: TripDataMessage
+    @SerializedName("trackingId") val trackingId: String,
+    @SerializedName("timestamp") val timestamp: Long,
+    @SerializedName("tripData") val tripData: TripDataMessage
 )
 
 @Shared
 data class TripDataMessage(
-    val originLocation: LocationMessage,
-    val destinationLocation: LocationMessage?
+    @SerializedName("originLocation") val originLocation: LocationMessage,
+    @SerializedName("destinationLocation") val destinationLocation: LocationMessage?
 )
 
 @Shared
 data class LocationMessage(
-    val type: String,
-    val geometry: LocationGeometry,
-    val properties: LocationProperties
+    @SerializedName("type") val type: String,
+    @SerializedName("geometry") val geometry: LocationGeometry,
+    @SerializedName("properties") val properties: LocationProperties
 )
 
 @Shared
-data class LocationGeometry(val type: String, val coordinates: List<Double>)
+data class LocationGeometry(
+    @SerializedName("type") val type: String,
+    @SerializedName("coordinates") val coordinates: List<Double>
+)
 
 @Shared
 data class LocationProperties(
-    val accuracyHorizontal: Float,
-    val bearing: Float,
-    val speed: Float,
-    val time: Double
+    @SerializedName("accuracyHorizontal") val accuracyHorizontal: Float,
+    @SerializedName("bearing") val bearing: Float,
+    @SerializedName("speed") val speed: Float,
+    @SerializedName("time") val time: Double
 )
