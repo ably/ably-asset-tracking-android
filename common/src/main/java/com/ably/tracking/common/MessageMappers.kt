@@ -48,9 +48,9 @@ fun Accuracy.toMessage(): AccuracyMessage = when (this) {
 fun EnhancedLocationUpdate.toJson(gson: Gson): String =
     gson.toJson(
         EnhancedLocationUpdateMessage(
-            location.toGeoJson(),
-            skippedLocations.map { it.toGeoJson() },
-            intermediateLocations.map { it.toGeoJson() },
+            location.toMessage(),
+            skippedLocations.map { it.toMessage() },
+            intermediateLocations.map { it.toMessage() },
             type.toMessage()
         )
     )
@@ -59,9 +59,9 @@ fun Message.getEnhancedLocationUpdate(gson: Gson): EnhancedLocationUpdate =
     gson.fromJson(data as String, EnhancedLocationUpdateMessage::class.java)
         .let { message ->
             EnhancedLocationUpdate(
-                message.location.toLocation(),
-                message.skippedLocations.map { it.toLocation() },
-                message.intermediateLocations.map { it.toLocation() },
+                message.location.toTracking(),
+                message.skippedLocations.map { it.toTracking() },
+                message.intermediateLocations.map { it.toTracking() },
                 message.type.toTracking()
             )
         }
@@ -83,8 +83,8 @@ fun TripMetadata.toMessageJson(gson: Gson): String = gson.toJson(
         trackingId,
         timestamp,
         TripDataMessage(
-            originLocation.toGeoJson(),
-            destinationLocation?.toGeoJson()
+            originLocation.toMessage(),
+            destinationLocation?.toMessage()
         )
     )
 )

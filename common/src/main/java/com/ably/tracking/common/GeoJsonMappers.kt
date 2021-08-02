@@ -1,17 +1,15 @@
 package com.ably.tracking.common
 
-import com.ably.tracking.GeoJsonGeometry
-import com.ably.tracking.GeoJsonMessage
-import com.ably.tracking.GeoJsonProperties
 import com.ably.tracking.Location
 import com.google.gson.Gson
 import io.ably.lib.types.Message
 
-fun Location.toGeoJson(): GeoJsonMessage =
-    GeoJsonMessage(
+
+fun Location.toMessage(): LocationMessage =
+    LocationMessage(
         GeoJsonTypes.FEATURE,
-        GeoJsonGeometry(GeoJsonTypes.POINT, listOf(longitude, latitude, altitude)),
-        GeoJsonProperties(
+        LocationGeometry(GeoJsonTypes.POINT, listOf(longitude, latitude, altitude)),
+        LocationProperties(
             accuracy,
             bearing,
             speed,
@@ -19,13 +17,7 @@ fun Location.toGeoJson(): GeoJsonMessage =
         )
     )
 
-fun GeoJsonMessage.toJsonArray(gson: Gson): String =
-    gson.toJson(listOf(this))
-
-fun List<GeoJsonMessage>.toJsonArray(gson: Gson): String =
-    gson.toJson(this)
-
-fun GeoJsonMessage.toLocation(): Location =
+fun LocationMessage.toTracking(): Location =
     Location(
         longitude = geometry.coordinates[GEOMETRY_LONG_INDEX],
         latitude = geometry.coordinates[GEOMETRY_LAT_INDEX],
@@ -36,5 +28,5 @@ fun GeoJsonMessage.toLocation(): Location =
         time = (properties.time * MILLISECONDS_PER_SECOND).toLong()
     )
 
-fun Message.getGeoJsonMessages(gson: Gson): List<GeoJsonMessage> =
-    gson.fromJson(data as String, Array<GeoJsonMessage>::class.java).toList()
+fun Message.getLocationMessages(gson: Gson): List<LocationMessage> =
+    gson.fromJson(data as String, Array<LocationMessage>::class.java).toList()

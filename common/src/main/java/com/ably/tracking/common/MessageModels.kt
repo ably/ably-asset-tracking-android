@@ -1,6 +1,5 @@
 package com.ably.tracking.common
 
-import com.ably.tracking.GeoJsonMessage
 import com.ably.tracking.Resolution
 import com.ably.tracking.annotations.Shared
 import com.google.gson.annotations.SerializedName
@@ -14,7 +13,7 @@ const val GEOMETRY_LONG_INDEX = 0
 const val GEOMETRY_LAT_INDEX = 1
 const val GEOMETRY_ALT_INDEX = 2
 
-fun GeoJsonMessage.synopsis(): String =
+fun LocationMessage.synopsis(): String =
     "[time:${properties.time}; lon:${geometry.coordinates[GEOMETRY_LONG_INDEX]} lat:${geometry.coordinates[GEOMETRY_LAT_INDEX]}; brg:${properties.bearing}]"
 
 data class PresenceMessage(val action: PresenceAction, val data: PresenceData, val clientId: String)
@@ -55,9 +54,9 @@ enum class AccuracyMessage {
 
 @Shared
 data class EnhancedLocationUpdateMessage(
-    val location: GeoJsonMessage,
-    val skippedLocations: List<GeoJsonMessage>,
-    val intermediateLocations: List<GeoJsonMessage>,
+    val location: LocationMessage,
+    val skippedLocations: List<LocationMessage>,
+    val intermediateLocations: List<LocationMessage>,
     val type: LocationUpdateTypeMessage
 )
 
@@ -79,6 +78,24 @@ data class TripMetadataMessage(
 
 @Shared
 data class TripDataMessage(
-    val originLocation: GeoJsonMessage,
-    val destinationLocation: GeoJsonMessage?
+    val originLocation: LocationMessage,
+    val destinationLocation: LocationMessage?
+)
+
+@Shared
+data class LocationMessage(
+    val type: String,
+    val geometry: LocationGeometry,
+    val properties: LocationProperties
+)
+
+@Shared
+data class LocationGeometry(val type: String, val coordinates: List<Double>)
+
+@Shared
+data class LocationProperties(
+    val accuracyHorizontal: Float,
+    val bearing: Float,
+    val speed: Float,
+    val time: Double
 )
