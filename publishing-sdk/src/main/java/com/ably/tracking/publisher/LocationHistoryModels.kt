@@ -1,8 +1,5 @@
 package com.ably.tracking.publisher
 
-import com.ably.tracking.GeoJsonGeometry
-import com.ably.tracking.GeoJsonMessage
-import com.ably.tracking.GeoJsonProperties
 import com.ably.tracking.common.message.GEOMETRY_ALT_INDEX
 import com.ably.tracking.common.message.GEOMETRY_LAT_INDEX
 import com.ably.tracking.common.message.GEOMETRY_LONG_INDEX
