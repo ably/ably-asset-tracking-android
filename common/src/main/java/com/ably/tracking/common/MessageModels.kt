@@ -1,6 +1,5 @@
 package com.ably.tracking.common
 
-import com.ably.tracking.GeoJsonMessage
 import com.ably.tracking.Resolution
 import com.ably.tracking.annotations.Shared
 import com.google.gson.annotations.SerializedName
@@ -14,7 +13,7 @@ const val GEOMETRY_LONG_INDEX = 0
 const val GEOMETRY_LAT_INDEX = 1
 const val GEOMETRY_ALT_INDEX = 2
 
-fun GeoJsonMessage.synopsis(): String =
+fun LocationMessage.synopsis(): String =
     "[time:${properties.time}; lon:${geometry.coordinates[GEOMETRY_LONG_INDEX]} lat:${geometry.coordinates[GEOMETRY_LAT_INDEX]}; brg:${properties.bearing}]"
 
 data class PresenceMessage(val action: PresenceAction, val data: PresenceData, val clientId: String)
@@ -26,13 +25,16 @@ enum class PresenceAction {
 data class PresenceData(val type: String, val resolution: Resolution? = null)
 
 @Shared
-data class PresenceDataMessage(val type: String?, val resolution: ResolutionMessage? = null)
+data class PresenceDataMessage(
+    @SerializedName("type") val type: String?,
+    @SerializedName("resolution") val resolution: ResolutionMessage? = null
+)
 
 @Shared
 data class ResolutionMessage(
-    val accuracy: AccuracyMessage,
-    val desiredInterval: Long,
-    val minimumDisplacement: Double
+    @SerializedName("accuracy") val accuracy: AccuracyMessage,
+    @SerializedName("desiredInterval") val desiredInterval: Long,
+    @SerializedName("minimumDisplacement") val minimumDisplacement: Double
 )
 
 @Shared
@@ -55,10 +57,10 @@ enum class AccuracyMessage {
 
 @Shared
 data class EnhancedLocationUpdateMessage(
-    val location: GeoJsonMessage,
-    val skippedLocations: List<GeoJsonMessage>,
-    val intermediateLocations: List<GeoJsonMessage>,
-    val type: LocationUpdateTypeMessage
+    @SerializedName("location") val location: LocationMessage,
+    @SerializedName("skippedLocations") val skippedLocations: List<LocationMessage>,
+    @SerializedName("intermediateLocations") val intermediateLocations: List<LocationMessage>,
+    @SerializedName("type") val type: LocationUpdateTypeMessage
 )
 
 @Shared
@@ -72,13 +74,34 @@ enum class LocationUpdateTypeMessage {
 
 @Shared
 data class TripMetadataMessage(
-    val trackingId: String,
-    val timestamp: Long,
-    val tripData: TripDataMessage
+    @SerializedName("trackingId") val trackingId: String,
+    @SerializedName("timestamp") val timestamp: Long,
+    @SerializedName("tripData") val tripData: TripDataMessage
 )
 
 @Shared
 data class TripDataMessage(
-    val originLocation: GeoJsonMessage,
-    val destinationLocation: GeoJsonMessage?
+    @SerializedName("originLocation") val originLocation: LocationMessage,
+    @SerializedName("destinationLocation") val destinationLocation: LocationMessage?
+)
+
+@Shared
+data class LocationMessage(
+    @SerializedName("type") val type: String,
+    @SerializedName("geometry") val geometry: LocationGeometry,
+    @SerializedName("properties") val properties: LocationProperties
+)
+
+@Shared
+data class LocationGeometry(
+    @SerializedName("type") val type: String,
+    @SerializedName("coordinates") val coordinates: List<Double>
+)
+
+@Shared
+data class LocationProperties(
+    @SerializedName("accuracyHorizontal") val accuracyHorizontal: Float,
+    @SerializedName("bearing") val bearing: Float,
+    @SerializedName("speed") val speed: Float,
+    @SerializedName("time") val time: Double
 )

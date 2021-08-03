@@ -19,7 +19,7 @@ class GeoJsonMappersTest {
         )
 
         // when
-        val jsonString = geoJsonMessage.toJsonArray(gson)
+        val jsonString = gson.toJson(listOf(geoJsonMessage))
 
         // then
         Assert.assertEquals(
@@ -40,7 +40,7 @@ class GeoJsonMappersTest {
         val geoJsonMessages = listOf(geoJsonMessage, geoJsonMessage)
 
         // when
-        val jsonString = geoJsonMessages.toJsonArray(gson)
+        val jsonString = gson.toJson(geoJsonMessages)
 
         // then
         Assert.assertEquals(
