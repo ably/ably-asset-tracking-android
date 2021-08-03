@@ -1,19 +1,15 @@
-package com.ably.tracking.common
+package com.ably.tracking.common.message
 
 import com.ably.tracking.Accuracy
 import com.ably.tracking.EnhancedLocationUpdate
 import com.ably.tracking.Location
 import com.ably.tracking.LocationUpdateType
 import com.ably.tracking.Resolution
+import com.ably.tracking.common.MILLISECONDS_PER_SECOND
+import com.ably.tracking.common.PresenceData
+import com.ably.tracking.common.TripMetadata
 import com.google.gson.Gson
 import io.ably.lib.types.Message
-import io.ably.lib.types.PresenceMessage
-
-/**
- * Returns parsed data or null if data is missing or in wrong format.
- */
-fun PresenceMessage.getPresenceData(gson: Gson): PresenceData? =
-    gson.fromJson(data as? String, PresenceDataMessage::class.java)?.toTracking()
 
 /**
  * Returns parsed data or null if data is in wrong format.

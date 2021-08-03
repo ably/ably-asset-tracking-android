@@ -1,12 +1,10 @@
 package com.ably.tracking.publisher
 
-import com.ably.tracking.GeoJsonGeometry
-import com.ably.tracking.GeoJsonMessage
-import com.ably.tracking.GeoJsonProperties
-import com.ably.tracking.common.GEOMETRY_ALT_INDEX
-import com.ably.tracking.common.GEOMETRY_LAT_INDEX
-import com.ably.tracking.common.GEOMETRY_LONG_INDEX
-import com.ably.tracking.common.GeoJsonTypes
+import com.ably.tracking.common.message.GEOMETRY_ALT_INDEX
+import com.ably.tracking.common.message.GEOMETRY_LAT_INDEX
+import com.ably.tracking.common.message.GEOMETRY_LONG_INDEX
+import com.ably.tracking.common.message.GeoJsonTypes
+import com.google.gson.annotations.SerializedName
 import com.mapbox.navigation.core.replay.history.ReplayEventBase
 import com.mapbox.navigation.core.replay.history.ReplayEventLocation
 import com.mapbox.navigation.core.replay.history.ReplayEventUpdateLocation
@@ -14,9 +12,9 @@ import com.mapbox.navigation.core.replay.history.ReplayEventUpdateLocation
 val LOCATION_HISTORY_VERSION = 1
 
 data class LocationHistoryData(
-    val events: List<GeoJsonMessage>
+    @SerializedName("events") val events: List<GeoJsonMessage>
 ) {
-    val version: Int = LOCATION_HISTORY_VERSION
+    @SerializedName("version") val version: Int = LOCATION_HISTORY_VERSION
 }
 
 fun List<ReplayEventBase>.toGeoJsonMessages(): List<GeoJsonMessage> =

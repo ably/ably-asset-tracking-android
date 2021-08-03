@@ -7,6 +7,12 @@ plugins {
 
 apply from: '../jacoco.gradle'
 
+android {
+    defaultConfig {
+        consumerProguardFiles 'consumer-rules.pro'
+    }
+}
+
 dependencies {
     api project(':core-sdk')
     implementation project(':common')

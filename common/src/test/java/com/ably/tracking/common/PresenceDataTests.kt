@@ -1,5 +1,6 @@
 package com.ably.tracking.common
 
+import com.ably.tracking.common.message.PresenceDataMessage
 import com.google.gson.Gson
 import io.ably.lib.types.PresenceMessage
 import org.junit.Assert

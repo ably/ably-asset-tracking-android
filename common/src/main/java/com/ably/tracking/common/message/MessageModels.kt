@@ -1,6 +1,5 @@
-package com.ably.tracking.common
+package com.ably.tracking.common.message
 
-import com.ably.tracking.Resolution
 import com.ably.tracking.annotations.Shared
 import com.google.gson.annotations.SerializedName
 
@@ -15,14 +14,6 @@ const val GEOMETRY_ALT_INDEX = 2
 
 fun LocationMessage.synopsis(): String =
     "[time:${properties.time}; lon:${geometry.coordinates[GEOMETRY_LONG_INDEX]} lat:${geometry.coordinates[GEOMETRY_LAT_INDEX]}; brg:${properties.bearing}]"
-
-data class PresenceMessage(val action: PresenceAction, val data: PresenceData, val clientId: String)
-
-enum class PresenceAction {
-    PRESENT_OR_ENTER, LEAVE_OR_ABSENT, UPDATE;
-}
-
-data class PresenceData(val type: String, val resolution: Resolution? = null)
 
 @Shared
 data class PresenceDataMessage(
