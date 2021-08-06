@@ -1,5 +1,24 @@
 # Change log
 
+## [1.0.0-beta.9](https://github.com/ably/ably-asset-tracking-android/tree/v1.0.0-beta.9)
+
+[Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.0.0-beta.8...v1.0.0-beta.9)
+
+**Implemented enhancements:**
+
+- Update ably-android library [\#404](https://github.com/ably/ably-asset-tracking-android/issues/404)
+- App Obfuscation causes invalid keys to be serialised into transmitted JSON [\#396](https://github.com/ably/ably-asset-tracking-android/issues/396)
+
+**Closed issues:**
+
+- Prepare Proguard configuration [\#50](https://github.com/ably/ably-asset-tracking-android/issues/50)
+
+**Merged pull requests:**
+
+- Update Ably SDK to 1.2.7 [\#405](https://github.com/ably/ably-asset-tracking-android/pull/405) ([KacperKluka](https://github.com/KacperKluka))
+- Add proguard configuration [\#399](https://github.com/ably/ably-asset-tracking-android/pull/399) ([KacperKluka](https://github.com/KacperKluka))
+- Explicitly specify DTO field names during serialization [\#398](https://github.com/ably/ably-asset-tracking-android/pull/398) ([KacperKluka](https://github.com/KacperKluka))
+
 ## [1.0.0-beta.8](https://github.com/ably/ably-asset-tracking-android/tree/v1.0.0-beta.8)
 
 [Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.0.0-beta.7...v1.0.0-beta.8)
