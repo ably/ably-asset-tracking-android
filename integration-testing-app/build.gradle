@@ -8,6 +8,13 @@ android {
     defaultConfig {
         applicationId "com.ably.tracking.tests"
     }
+
+    buildTypes {
+        debug {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
 }
 
 dependencies {
