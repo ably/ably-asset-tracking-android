@@ -11,3 +11,6 @@
 # This is needed for AuthenticationTests.jwtAuthenticationShouldCreateWorkingConnectionBetweenPublisherAndSubscriber()
 # test which needs to create a JWT authentication config.
 -keep,allowobfuscation class io.jsonwebtoken.** { *; }
+
+# This is needed for ObfuscationTest to receive messages from the Ably SDK
+-keep,allowobfuscation class io.ably.** { *; }
