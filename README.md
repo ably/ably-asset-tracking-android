@@ -137,7 +137,7 @@ To build these apps from source you will need to specify credentials in Gradle p
 
 The following secrets need to be injected into Gradle by either storing them in `~/.gradle/gradle.properties`, or by using one of [many other ways](https://docs.gradle.org/current/userguide/build_environment.html) to do this:
 
- - `ABLY_API_KEY`: On your [Ably accounts page](https://ably.com/accounts/), select your application, and paste an API Key from the API Keys tab (with relevant capabilities for either subscriber/ publisher). TODO clarify which capabilities.
+ - `ABLY_API_KEY`: On your [Ably accounts page](https://ably.com/accounts/), select your application, and paste an API Key from the API Keys tab (with relevant capabilities for either subscriber/ publisher). This API key needs the following capabilities: `publish`, `subscribe`, `history` and `presence`.
  - `MAPBOX_DOWNLOADS_TOKEN`: On the [Mapbox Access Tokens page](https://account.mapbox.com/access-tokens/), create a token with the `DOWNLOADS:READ` secret scope.
  - `MAPBOX_ACCESS_TOKEN`: On the [Mapbox Access Tokens page](https://account.mapbox.com/access-tokens/), create a token with all public scopes or use the default public token automatically generated for you.
  - `GOOGLE_MAPS_API_KEY`: Create an API key in Google Cloud, ensuring it has both `Geolocation` and `Maps SDK for Android` API.
