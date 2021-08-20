@@ -17,6 +17,12 @@ jobs:
       with:
         ref: v${{ github.event.inputs.version }}
 
+      # Gradle 7 requires Java 11 to run
+      - uses: actions/setup-java@v2
+        with:
+          distribution: 'zulu'
+          java-version: '11'
+
     - name: Publish to Repositories
       env:
         ORG_GRADLE_PROJECT_MAPBOX_DOWNLOADS_TOKEN: ${{ secrets.MAPBOX_DOWNLOADS_TOKEN }}
