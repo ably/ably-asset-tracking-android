@@ -7,8 +7,6 @@ import android.os.IBinder
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 
-private const val NO_FLAGS = 0
-
 /**
  * The activity to extend when connection to the publisher service is needed.
  */
@@ -70,7 +68,7 @@ abstract class PublisherServiceActivity : AppCompatActivity() {
     }
 
     private fun bindPublisherService() {
-        bindService(createServiceIntent(), publisherServiceConnection, NO_FLAGS)
+        bindService(createServiceIntent(), publisherServiceConnection, 0)
     }
 
     private fun unbindPublisherService() {
