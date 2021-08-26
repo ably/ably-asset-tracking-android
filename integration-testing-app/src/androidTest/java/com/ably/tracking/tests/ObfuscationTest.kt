@@ -16,6 +16,17 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.UUID
 
+/**
+ * This test assumes that this integration testing app has been built with obfuscation
+ * enabled for the Ably Asset Tracking classes with a proguard rule something like:
+ *
+ *     -keep,allowobfuscation class com.ably.tracking.** { *; }
+ *
+ * If tests in this suite fail then it may be a sign that obfuscation is affecting the
+ * serialisation of messages being sent over the Ably network. See
+ * [ably/ably-asset-tracking-android#396](https://github.com/ably/ably-asset-tracking-android/issues/396)
+ * for full details.
+ */
 @RunWith(AndroidJUnit4::class)
 class ObfuscationTest {
     private val gson = Gson()
