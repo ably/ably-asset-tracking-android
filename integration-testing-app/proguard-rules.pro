@@ -14,3 +14,6 @@
 
 # This is needed for ObfuscationTest to receive messages from the Ably SDK
 -keep,allowobfuscation class io.ably.** { *; }
+
+# This is needed for ChannelModesTest to make HTTP request to Ably REST API
+-keep,allowobfuscation class okhttp3.** { *; }
