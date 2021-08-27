@@ -161,6 +161,7 @@ interface Ably {
 }
 
 private const val CHANNEL_NAME_PREFIX = "tracking:"
+private const val AGENT_HEADER_NAME = "ably-asset-tracking-android"
 
 class DefaultAbly
 /**
@@ -178,6 +179,7 @@ constructor(
     init {
         try {
             val clientOptions = connectionConfiguration.authentication.clientOptions.apply {
+                this.agents = mapOf(AGENT_HEADER_NAME to BuildConfig.VERSION_NAME)
                 this.idempotentRestPublishing = true
                 this.logLevel = Log.VERBOSE
                 this.logHandler = Log.LogHandler { severity, tag, msg, tr -> logMessage(severity, tag, msg, tr) }
