@@ -147,15 +147,25 @@ subprojects {
                 // This configuration is, however, required for Android's connectedCheck task (which uses the androidTest source set
                 // with the debug variant/buildType).
                 // TODO drop buildType param by using closure delegate, which might be cleaner, or find alternative
-                // https://developer.android.com/reference/tools/gradle-api/4.1/com/android/build/api/dsl/VariantDimension#buildConfigField(kotlin.String,%20kotlin.String,%20kotlin.String)
+                // https://github.com/ably/ably-asset-tracking-android/issues/411
                 buildType.buildConfigField 'String', 'ABLY_API_KEY', "\"${property('ABLY_API_KEY')}\""
                 buildType.buildConfigField 'String', 'MAPBOX_ACCESS_TOKEN', "\"${property('MAPBOX_ACCESS_TOKEN')}\""
+            }
+
+            def applyVersionBuildConfigFields = { buildType ->
+                // Android library modules don't have access to both versionName and versionCode fields
+                // so we're adding them by ourselves.
+                // TODO drop buildType param by using closure delegate, which might be cleaner, or find alternative
+                // https://github.com/ably/ably-asset-tracking-android/issues/411
+                buildType.buildConfigField("String", "VERSION_NAME", "\"${defaultConfig.versionName}\"")
+                buildType.buildConfigField("long", "VERSION_CODE", "${defaultConfig.versionCode}")
             }
 
             // https://developer.android.com/studio/build/build-variants#build-types
             buildTypes {
                 debug {
                     applySecretBuildConfigFields delegate
+                    applyVersionBuildConfigFields delegate
                 }
 
                 release {
@@ -164,6 +174,9 @@ subprojects {
                     // variant/buildType.
                     if (evaluatedSubProjectIsAnApp) {
                         applySecretBuildConfigFields delegate
+                    }
+                    if (evaluatedSubProjectIsALibrary) {
+                        applyVersionBuildConfigFields delegate
                     }
 
                     minifyEnabled false
