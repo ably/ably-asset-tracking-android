@@ -8,6 +8,7 @@ import com.ably.tracking.Resolution
 import com.ably.tracking.common.MILLISECONDS_PER_SECOND
 import com.ably.tracking.common.ResultHandler
 import com.ably.tracking.common.clientOptions
+import com.ably.tracking.common.toAssetTracking
 import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.logging.LogHandler
 import com.ably.tracking.publisher.debug.AblySimulationLocationEngine
@@ -35,6 +36,26 @@ import kotlinx.coroutines.runBlocking
 typealias LocationHistoryListener = (LocationHistoryData) -> Unit
 
 /**
+ * An interface which enables observing location updates.
+ */
+internal interface LocationUpdatesObserver {
+    /**
+     * Called when a new raw location update is ready.
+     *
+     * @param rawLocation the current raw location.
+     */
+    fun onRawLocationChanged(rawLocation: Location)
+
+    /**
+     * Called when a new enhanced location update is ready.
+     *
+     * @param enhancedLocation the current enhanced location.
+     * @param intermediateLocations a list (can be empty) of predicted location points leading up to the current update.
+     */
+    fun onEnhancedLocationChanged(enhancedLocation: Location, intermediateLocations: List<Location>)
+}
+
+/**
  * Wrapper for the [MapboxNavigation] that's used to interact with the Mapbox SDK.
  */
 internal interface Mapbox {
@@ -50,18 +71,17 @@ internal interface Mapbox {
     fun stopAndClose()
 
     /**
-     * Adds a location observer that gets notified when a new raw or enhanced location is received.
+     * Sets a location observer that gets notified when a new raw or enhanced location is received.
+     * If there is already a registered location observer it will be replaced by the [locationUpdatesObserver].
      *
-     * @param locationObserver The location observer to register.
+     * @param locationUpdatesObserver The location observer to register.
      */
-    fun registerLocationObserver(locationObserver: LocationObserver)
+    fun registerLocationObserver(locationUpdatesObserver: LocationUpdatesObserver)
 
     /**
-     * Removes a location observer if it was previously added with [registerLocationObserver].
-     *
-     * @param locationObserver The location observer to remove.
+     * Removes a location observer if it was previously set with [registerLocationObserver].
      */
-    fun unregisterLocationObserver(locationObserver: LocationObserver)
+    fun unregisterLocationObserver()
 
     /**
      * Changes the [resolution] of the location engine if it's a subtype of the [ResolutionLocationEngine].
@@ -112,6 +132,7 @@ internal class DefaultMapbox(
     private var mapboxNavigation: MapboxNavigation
     private var mapboxReplayer: MapboxReplayer? = null
     private var locationHistoryListener: (LocationHistoryListener)? = null
+    private var locationObserver: LocationObserver? = null
 
     init {
         setupTripNotification(notificationProvider, notificationId)
@@ -164,15 +185,39 @@ internal class DefaultMapbox(
         }
     }
 
-    override fun registerLocationObserver(locationObserver: LocationObserver) {
+    private fun createLocationObserver(locationUpdatesObserver: LocationUpdatesObserver) =
+        object : LocationObserver {
+            override fun onRawLocationChanged(rawLocation: android.location.Location) {
+                locationUpdatesObserver.onRawLocationChanged(rawLocation.toAssetTracking())
+            }
+
+            override fun onEnhancedLocationChanged(
+                enhancedLocation: android.location.Location,
+                keyPoints: List<android.location.Location>
+            ) {
+                val intermediateLocations =
+                    if (keyPoints.size > 1) keyPoints.subList(0, keyPoints.size - 1)
+                    else emptyList()
+                locationUpdatesObserver.onEnhancedLocationChanged(
+                    enhancedLocation.toAssetTracking(),
+                    intermediateLocations.map { it.toAssetTracking() }
+                )
+            }
+        }
+
+    override fun registerLocationObserver(locationUpdatesObserver: LocationUpdatesObserver) {
+        unregisterLocationObserver()
         runBlocking(mainDispatcher) {
-            mapboxNavigation.registerLocationObserver(locationObserver)
+            locationObserver = createLocationObserver(locationUpdatesObserver)
+            locationObserver?.let { mapboxNavigation.registerLocationObserver(it) }
         }
     }
 
-    override fun unregisterLocationObserver(locationObserver: LocationObserver) {
-        runBlocking(mainDispatcher) {
-            mapboxNavigation.unregisterLocationObserver(locationObserver)
+    override fun unregisterLocationObserver() {
+        locationObserver?.let {
+            runBlocking(mainDispatcher) {
+                mapboxNavigation.unregisterLocationObserver(it)
+            }
         }
     }
 
