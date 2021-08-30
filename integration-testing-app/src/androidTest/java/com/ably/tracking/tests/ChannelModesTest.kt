@@ -2,6 +2,7 @@ package com.ably.tracking.tests
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.ably.tracking.publisher.Publisher
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.subscriber.Subscriber
 import com.ably.tracking.test.android.common.UnitExpectation
@@ -30,8 +31,9 @@ class ChannelModesTest {
         val trackableId = UUID.randomUUID().toString()
 
         // when
-        testConnectionBetweenPublisherAndSubscriber(trackableId)
+        val connectionData = setupPublisherAndSubscriberConnectionAndWaitForLocationUpdate(trackableId)
         val metricsJson = getChannelMetricsJson(trackableId)
+        cleanupPublisherAndSubscriberConnection(connectionData)
 
         // then
         Assert.assertEquals(1, metricsJson.get("publishers").asInt)
@@ -52,7 +54,7 @@ class ChannelModesTest {
             .getAsJsonObject("metrics")
     }
 
-    private fun testConnectionBetweenPublisherAndSubscriber(trackableId: String) {
+    private fun setupPublisherAndSubscriberConnectionAndWaitForLocationUpdate(trackableId: String): PublisherAndSubscriberConnectionData {
         // given
         var hasNotReceivedLocationUpdate = true
         val subscriberReceivedLocationUpdateExpectation = UnitExpectation("subscriber received a location update")
@@ -87,6 +89,12 @@ class ChannelModesTest {
         // await for at least one received location update
         subscriberReceivedLocationUpdateExpectation.await()
 
+        return PublisherAndSubscriberConnectionData(publisher, subscriber, subscriberReceivedLocationUpdateExpectation)
+    }
+
+    private fun cleanupPublisherAndSubscriberConnection(publisherAndSubscriberConnectionData: PublisherAndSubscriberConnectionData) {
+        val (publisher, subscriber, subscriberReceivedLocationUpdateExpectation) = publisherAndSubscriberConnectionData
+
         // cleanup
         runBlocking {
             coroutineScope {
@@ -98,4 +106,10 @@ class ChannelModesTest {
         // then
         subscriberReceivedLocationUpdateExpectation.assertFulfilled()
     }
+
+    private data class PublisherAndSubscriberConnectionData(
+        val publisher: Publisher,
+        val subscriber: Subscriber,
+        val subscriberReceivedLocationUpdateExpectation: UnitExpectation
+    )
 }
