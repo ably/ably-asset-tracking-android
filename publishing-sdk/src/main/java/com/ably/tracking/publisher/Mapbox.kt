@@ -198,9 +198,15 @@ internal class DefaultMapbox(
                 val intermediateLocations =
                     if (keyPoints.size > 1) keyPoints.subList(0, keyPoints.size - 1)
                     else emptyList()
+                val currentTimeInMilliseconds = System.currentTimeMillis()
                 locationUpdatesObserver.onEnhancedLocationChanged(
-                    enhancedLocation.toAssetTracking(),
-                    intermediateLocations.map { it.toAssetTracking() }
+                    // Enhanced locations don't have real world timestamps so we use the current device time
+                    enhancedLocation.toAssetTracking(currentTimeInMilliseconds),
+                    // Intermediate locations should have timestamps in relation to the enhanced location time
+                    intermediateLocations.map { location ->
+                        val timeDifference = enhancedLocation.time - location.time
+                        location.toAssetTracking(currentTimeInMilliseconds - timeDifference)
+                    }
                 )
             }
         }
