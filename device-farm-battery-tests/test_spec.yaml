@@ -1,0 +1,51 @@
+version: 0.1
+
+# Phases are collection of commands that get executed on Device Farm.
+phases:
+  # The install phase includes commands that install dependencies that your tests use.
+  # Default dependencies for testing frameworks supported on Device Farm are already installed.
+  install:
+    commands:
+
+  # The pre-test phase includes commands that setup your test environment.
+  pre_test:
+    commands:
+      # Prepare the command that will run tests and save it in a file (should help with “Service name too long” error)
+      # We are specifying a single test to be run with "-e class" but this command can run as many tests as needed.
+      # Replace the dummy data after "-e class" to match your test class or change the am command to your needs.
+      - echo "am instrument -w --no-window-animation -e class 'com.your.package.name.YourTestClassName#yourTestMethodName' $DEVICEFARM_TEST_PACKAGE_NAME/$DEVICEFARM_TEST_PACKAGE_RUNNER" > ./test.sh
+      # Move the test command file to the device
+      - adb -s $DEVICEFARM_DEVICE_UDID push ./test.sh /data/local/tmp
+      # Remove the test command file from the local machine
+      - rm -rf ./test.sh
+      # Reset device's battery stats so we can measure battery usage
+      - adb -s $DEVICEFARM_DEVICE_UDID shell dumpsys batterystats --reset
+      # Make the device think that it is unplugged so it will report battery usage
+      - adb shell dumpsys battery unplug
+
+  # The test phase includes commands that run your test suite execution.
+  test:
+    commands:
+      # Please refer "https://developer.android.com/studio/test/command-line#RunTestsDevice" for more options on running instrumentation tests from the command line.
+      - echo "Start Instrumentation test"
+      - adb -s $DEVICEFARM_DEVICE_UDID shell sh /data/local/tmp/test.sh 2>&1 | tee $DEVICEFARM_LOG_DIR/instrument.log
+      # The below command is used to detect if any of the instrumentation tests have failed and therefore is used in marking the tests result as PASSED/FAILED
+      - "! grep -i INSTRUMENTATION_STATUS_CODE $DEVICEFARM_LOG_DIR/instrument.log | grep -Ev ': 0|: 1'"
+
+  # The post test phase includes are commands that are run after your tests are executed.
+  post_test:
+    commands:
+      # Remove the test script from the device
+      - adb -s $DEVICEFARM_DEVICE_UDID shell rm -f /data/local/tmp/test.sh
+      # Get the battery data from the device
+      - adb -s $DEVICEFARM_DEVICE_UDID shell dumpsys batterystats > $DEVICEFARM_LOG_DIR/batterystats.txt
+      - adb -s $DEVICEFARM_DEVICE_UDID bugreport $DEVICEFARM_LOG_DIR/bugreport.zip
+      # Reset battery status so it will not think that the device is unplugged
+      - adb shell dumpsys battery reset
+
+# The artifacts phase lets you specify the location where your tests logs, device logs will be stored.
+# And also let you specify the location of your test logs and artifacts which you want to be collected by Device Farm.
+# These logs and artifacts will be available through ListArtifacts API in Device Farm.
+artifacts:
+  # By default, Device Farm will collect your artifacts from following directories
+  - $DEVICEFARM_LOG_DIR
