@@ -7,6 +7,9 @@ on:
 jobs:
   check:
     runs-on: macos-latest
+    strategy:
+      matrix:
+        api-level: [24, 27, 29]
     steps:
       - uses: actions/checkout@v2
 
@@ -18,7 +21,7 @@ jobs:
 
       - uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 24
+          api-level: ${{ matrix.api-level }}
           script: ./gradlew connectedCheck
         env:
           ORG_GRADLE_PROJECT_MAPBOX_DOWNLOADS_TOKEN: ${{ secrets.MAPBOX_DOWNLOADS_TOKEN }}
