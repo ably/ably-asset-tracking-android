@@ -1,5 +1,25 @@
 # Change log
 
+## [1.0.0-beta.10](https://github.com/ably/ably-asset-tracking-android/tree/v1.0.0-beta.10)
+
+[Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.0.0-beta.9...v1.0.0-beta.10)
+
+**Implemented enhancements:**
+
+- Implement `RSC7d` \(Ably-Agent header\) [\#395](https://github.com/ably/ably-asset-tracking-android/issues/395)
+
+**Fixed bugs:**
+
+- Specify channel modes to limit the amount of unnecessary data being sent and received over Ably [\#412](https://github.com/ably/ably-asset-tracking-android/issues/412)
+- EnhancedLocationUpdate timestamps do not represent real world time [\#387](https://github.com/ably/ably-asset-tracking-android/issues/387)
+
+**Merged pull requests:**
+
+- Update Ably SDK to 1.2.8 [\#420](https://github.com/ably/ably-asset-tracking-android/pull/420) ([KacperKluka](https://github.com/KacperKluka))
+- Use real world timestamps for enhanced location updates [\#416](https://github.com/ably/ably-asset-tracking-android/pull/416) ([KacperKluka](https://github.com/KacperKluka))
+- Use channel modes to avoid unnecessary channel attachements [\#413](https://github.com/ably/ably-asset-tracking-android/pull/413) ([KacperKluka](https://github.com/KacperKluka))
+- Report AAT version through Ably Agent Header [\#410](https://github.com/ably/ably-asset-tracking-android/pull/410) ([KacperKluka](https://github.com/KacperKluka))
+
 ## [1.0.0-beta.9](https://github.com/ably/ably-asset-tracking-android/tree/v1.0.0-beta.9)
 
 [Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.0.0-beta.8...v1.0.0-beta.9)
