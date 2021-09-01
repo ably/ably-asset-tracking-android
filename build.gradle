@@ -4,7 +4,7 @@ buildscript {
     // The version of Ably's client library for Java that we're using.
     // Source code: https://github.com/ably/ably-java
     // Maven coordinates: groupId 'io.ably', artifactId ':'ably-android'.
-    ext.ably_core_version = '1.2.7'
+    ext.ably_core_version = '1.2.8'
 
     repositories {
         google()
