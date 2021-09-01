@@ -9,7 +9,7 @@ import io.mockk.slot
 fun Ably.mockConnectSuccess(trackableId: String) {
     val callbackSlot = slot<(Result<Unit>) -> Unit>()
     every {
-        connect(trackableId, any(), any(), capture(callbackSlot))
+        connect(trackableId, any(), any(), any(), any(), capture(callbackSlot))
     } answers {
         callbackSlot.captured(Result.success(Unit))
     }
