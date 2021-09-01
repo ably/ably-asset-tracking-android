@@ -99,6 +99,11 @@ internal interface Mapbox {
     fun setLocationHistoryListener(listener: LocationHistoryListener?)
 }
 
+/**
+ * The default implementation of the [Mapbox] wrapper.
+ * The [MapboxNavigation] needs to be called from the main thread. To achieve that we use the [runBlocking] method with the [mainDispatcher].
+ * This enables us to switch threads and run the required method in the main thread.
+ */
 internal class DefaultMapbox(
     context: Context,
     private val mapConfiguration: MapConfiguration,
@@ -108,6 +113,11 @@ internal class DefaultMapbox(
     notificationProvider: PublisherNotificationProvider,
     notificationId: Int
 ) : Mapbox {
+    /**
+     * Dispatcher used to run [mapboxNavigation] methods on the main thread.
+     * It has to be the "immediate" version of the main dispatcher to not
+     * block the code execution when it's already called from the main thread.
+     */
     private val mainDispatcher = Dispatchers.Main.immediate
     private var mapboxNavigation: MapboxNavigation
     private var mapboxReplayer: MapboxReplayer? = null

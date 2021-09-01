@@ -100,7 +100,7 @@ private class DefaultCoreSubscriber(
                 when (event) {
                     is StartEvent -> {
                         updateTrackableState(state)
-                        ably.connect(trackableId, state.presenceData, useRewind = true) {
+                        ably.connect(trackableId, state.presenceData, useRewind = true, willSubscribe = true) {
                             if (it.isSuccess) {
                                 subscribeForEnhancedEvents()
                                 try {
