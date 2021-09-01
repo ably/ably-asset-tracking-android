@@ -17,9 +17,7 @@ import com.ably.tracking.common.PresenceAction
 import com.ably.tracking.common.PresenceData
 import com.ably.tracking.common.TripMetadata
 import com.ably.tracking.common.logging.w
-import com.ably.tracking.common.toAssetTracking
 import com.ably.tracking.logging.LogHandler
-import com.mapbox.navigation.core.trip.session.LocationObserver
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -75,28 +73,6 @@ constructor(
     private val policy: ResolutionPolicy
     private val hooks = Hooks()
     private val methods = Methods()
-    private val locationObserver = object : LocationObserver {
-        override fun onRawLocationChanged(rawLocation: android.location.Location) {
-            enqueue(
-                RawLocationChangedEvent(rawLocation.toAssetTracking())
-            )
-        }
-
-        override fun onEnhancedLocationChanged(
-            enhancedLocation: android.location.Location,
-            keyPoints: List<android.location.Location>
-        ) {
-            val intermediateLocations =
-                if (keyPoints.size > 1) keyPoints.subList(0, keyPoints.size - 1) else emptyList()
-            enqueue(
-                EnhancedLocationChangedEvent(
-                    enhancedLocation.toAssetTracking(),
-                    intermediateLocations.map { it.toAssetTracking() },
-                    if (intermediateLocations.isEmpty()) LocationUpdateType.ACTUAL else LocationUpdateType.PREDICTED
-                )
-            )
-        }
-    }
     override val locations: SharedFlow<LocationUpdate>
         get() = _locations.asSharedFlow()
     override val trackables: SharedFlow<Set<Trackable>>
@@ -121,7 +97,17 @@ constructor(
             }
         }
         ably.subscribeForAblyStateChange { enqueue(AblyConnectionStateChangeEvent(it)) }
-        mapbox.registerLocationObserver(locationObserver)
+        mapbox.registerLocationObserver(object : LocationUpdatesObserver {
+            override fun onRawLocationChanged(rawLocation: Location) {
+                enqueue(RawLocationChangedEvent(rawLocation))
+            }
+
+            override fun onEnhancedLocationChanged(enhancedLocation: Location, intermediateLocations: List<Location>) {
+                val locationUpdateType =
+                    if (intermediateLocations.isEmpty()) LocationUpdateType.ACTUAL else LocationUpdateType.PREDICTED
+                enqueue(EnhancedLocationChangedEvent(enhancedLocation, intermediateLocations, locationUpdateType))
+            }
+        })
         mapbox.setLocationHistoryListener { historyData -> scope.launch { _locationHistory.emit(historyData) } }
     }
 
@@ -509,7 +495,7 @@ constructor(
 
     private fun stopLocationUpdates(state: State) {
         state.isTracking = false
-        mapbox.unregisterLocationObserver(locationObserver)
+        mapbox.unregisterLocationObserver()
         mapbox.stopAndClose()
     }
 
