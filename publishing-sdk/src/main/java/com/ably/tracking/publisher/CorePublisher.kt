@@ -212,7 +212,7 @@ constructor(
                         event.handler(Result.success(Unit))
                     }
                     is AddTrackableEvent -> {
-                        ably.connect(event.trackable.id, state.presenceData) { result ->
+                        ably.connect(event.trackable.id, state.presenceData, willPublish = true) { result ->
                             try {
                                 result.getOrThrow()
                                 try {

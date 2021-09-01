@@ -20,6 +20,7 @@ import io.ably.lib.realtime.Channel
 import io.ably.lib.realtime.CompletionListener
 import io.ably.lib.realtime.ConnectionState
 import io.ably.lib.types.AblyException
+import io.ably.lib.types.ChannelMode
 import io.ably.lib.types.ChannelOptions
 import io.ably.lib.types.ErrorInfo
 import io.ably.lib.types.Message
@@ -102,12 +103,16 @@ interface Ably {
      * @param trackableId The ID of the trackable channel.
      * @param presenceData The data that will be send via the presence channel.
      * @param useRewind If set to true then after connecting the channel will replay the last event that was sent in it.
+     * @param willPublish If set to true then the connection will allow sending data.
+     * @param willSubscribe If set to true then the connection will allow listening for data.
      * @param callback The function that will be called when connecting completes. If something goes wrong it will be called with [ConnectionException].
      */
     fun connect(
         trackableId: String,
         presenceData: PresenceData,
         useRewind: Boolean = false,
+        willPublish: Boolean = false,
+        willSubscribe: Boolean = false,
         callback: (Result<Unit>) -> Unit
     )
 
@@ -220,14 +225,26 @@ constructor(
         trackableId: String,
         presenceData: PresenceData,
         useRewind: Boolean,
+        willPublish: Boolean,
+        willSubscribe: Boolean,
         callback: (Result<Unit>) -> Unit
     ) {
         if (!channels.contains(trackableId)) {
             val channelName = "$CHANNEL_NAME_PREFIX$trackableId"
+            val channelOptions = ChannelOptions().apply {
+                val modesList = mutableListOf(ChannelMode.presence, ChannelMode.presence_subscribe)
+                if (willPublish) {
+                    modesList.add(ChannelMode.publish)
+                }
+                if (willSubscribe) {
+                    modesList.add(ChannelMode.subscribe)
+                }
+                modes = modesList.toTypedArray()
+            }
             val channel = if (useRewind)
-                ably.channels.get(channelName, ChannelOptions().apply { params = mapOf("rewind" to "1") })
+                ably.channels.get(channelName, channelOptions.apply { params = mapOf("rewind" to "1") })
             else
-                ably.channels.get(channelName)
+                ably.channels.get(channelName, channelOptions)
             channel.apply {
                 try {
                     presence.enter(
