@@ -16,6 +16,8 @@ import com.ably.tracking.publisher.Publisher
 import com.ably.tracking.publisher.PublisherNotificationProvider
 import com.ably.tracking.publisher.RoutingProfile
 import com.ably.tracking.subscriber.Subscriber
+import com.ably.tracking.test.android.common.NOTIFICATION_CHANNEL_ID
+import com.ably.tracking.test.android.common.createNotificationChannel
 import com.google.gson.Gson
 
 private const val MAPBOX_ACCESS_TOKEN = BuildConfig.MAPBOX_ACCESS_TOKEN
@@ -31,8 +33,9 @@ fun createAndStartPublisher(
     authentication: Authentication = defaultConnectionConfiguration,
     locationData: LocationHistoryData = getLocationData(context),
     onLocationDataEnded: () -> Unit = {}
-) =
-    Publisher.publishers()
+): Publisher {
+    createNotificationChannel(context)
+    return Publisher.publishers()
         .androidContext(context)
         .connection(ConnectionConfiguration(authentication))
         .map(MapConfiguration(MAPBOX_ACCESS_TOKEN))
@@ -42,7 +45,7 @@ fun createAndStartPublisher(
         .backgroundTrackingNotificationProvider(
             object : PublisherNotificationProvider {
                 override fun getNotification(): Notification =
-                    NotificationCompat.Builder(context, "test-channel")
+                    NotificationCompat.Builder(context, NOTIFICATION_CHANNEL_ID)
                         .setContentTitle("Title")
                         .setContentText("Text")
                         .setSmallIcon(R.drawable.aat_logo)
@@ -51,6 +54,7 @@ fun createAndStartPublisher(
             1234
         )
         .start()
+}
 
 suspend fun createAndStartSubscriber(
     trackingId: String,

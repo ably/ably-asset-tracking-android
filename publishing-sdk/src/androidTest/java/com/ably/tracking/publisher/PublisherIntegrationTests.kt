@@ -11,7 +11,9 @@ import com.ably.tracking.Resolution
 import com.ably.tracking.connection.Authentication
 import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.test.android.common.BooleanExpectation
+import com.ably.tracking.test.android.common.NOTIFICATION_CHANNEL_ID
 import com.ably.tracking.test.android.common.UnitExpectation
+import com.ably.tracking.test.android.common.createNotificationChannel
 import com.ably.tracking.test.android.common.testLogD
 import com.google.gson.Gson
 import kotlinx.coroutines.runBlocking
@@ -36,6 +38,7 @@ class PublisherIntegrationTests {
         val trackExpectation = BooleanExpectation("track response")
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val locationData = getLocationData(context)
+        createNotificationChannel(context)
 
         // when
         testLogD("WHEN")
@@ -102,7 +105,7 @@ class PublisherIntegrationTests {
             .backgroundTrackingNotificationProvider(
                 object : PublisherNotificationProvider {
                     override fun getNotification(): Notification =
-                        NotificationCompat.Builder(context, "test-channel")
+                        NotificationCompat.Builder(context, NOTIFICATION_CHANNEL_ID)
                             .setContentTitle("TEST")
                             .setContentText("Test")
                             .setSmallIcon(R.drawable.aat_logo)
