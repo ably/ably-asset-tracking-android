@@ -26,6 +26,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 import timber.log.Timber
 
 private const val MAPBOX_ACCESS_TOKEN = BuildConfig.MAPBOX_ACCESS_TOKEN
@@ -64,6 +65,11 @@ class PublisherService : Service() {
     }
 
     override fun onBind(intent: Intent?): IBinder = binder
+
+    override fun onDestroy() {
+        scope.launch { publisher?.stop() }
+        super.onDestroy()
+    }
 
     /**
      * Creates and starts the [Publisher].
