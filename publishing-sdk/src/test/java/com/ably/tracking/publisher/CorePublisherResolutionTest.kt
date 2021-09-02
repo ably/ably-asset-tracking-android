@@ -128,6 +128,9 @@ class CorePublisherResolutionTest(
         repeat(numberOfLocationUpdates) {
             val nextLocation = createNextPublisherLocation(location, distanceBetweenLocationUpdates, locationTimestamp)
             corePublisher.enqueue(createEnhancedLocationChangedEvent(nextLocation))
+            runBlocking {
+                delay(3) // without this small delay the enqueue() method from above sometimes puts events in wrong order
+            }
             location = nextLocation
             locationTimestamp += intervalBetweenLocationUpdates
         }
