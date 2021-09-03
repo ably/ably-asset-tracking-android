@@ -22,9 +22,16 @@ import kotlinx.coroutines.launch
 
 // PLACEHOLDERS:
 
+// The API KEY for the Ably SDK. For more details see the README.
 val ABLY_API_KEY = ""
+
+// The client ID for the Ably SDK instance.
 val CLIENT_ID = ""
+
+// The public token for the Mapbox SDK. For more details see the README.
 val MAPBOX_ACCESS_TOKEN = ""
+
+// The ID of the foreground service notification. For more details see https://developer.android.com/guide/components/foreground-services#start.
 val NOTIFICATION_ID = 1
 
 class ExampleUsage(
