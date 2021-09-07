@@ -16,6 +16,3 @@ internal fun Location.distanceInMetersFrom(lat: Double, lng: Double): Double =
     TurfMeasurement.distance(Point.fromLngLat(longitude, latitude), Point.fromLngLat(lng, lat)) * METERS_PER_KILOMETER
 
 internal fun Location.timeFrom(location: Location): Long = abs(time - location.time)
-
-internal fun Destination.toLocation(): Location =
-    Location(latitude, longitude, 0.0, 0f, 0f, 0f, 0)
