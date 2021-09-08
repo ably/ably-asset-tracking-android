@@ -179,11 +179,13 @@ internal class DefaultMapbox(
                 toggleHistory(true)
                 startTripSession()
             }
+            mapboxReplayer?.play()
         }
     }
 
     override fun stopAndClose() {
         runBlocking(mainDispatcher) {
+            mapboxReplayer?.stop()
             mapboxNavigation.apply {
                 stopTripSession()
                 mapboxReplayer?.finish()
@@ -319,7 +321,6 @@ internal class DefaultMapbox(
             val historyEvents = locationSource.historyData.events.toReplayEvents()
             val lastHistoryEvent = historyEvents.last()
             this.pushEvents(historyEvents)
-            this.play()
             this.registerObserver(object : ReplayEventsObserver {
                 override fun replayEvents(events: List<ReplayEventBase>) {
                     if (events.last() == lastHistoryEvent) {
