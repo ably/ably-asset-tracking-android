@@ -190,8 +190,10 @@ internal class DefaultMapbox(
                 stopTripSession()
                 mapboxReplayer?.finish()
                 val tripHistoryString = retrieveHistory()
-                val historyEvents = ReplayHistoryMapper().mapToReplayEvents(tripHistoryString)
-                locationHistoryListener?.invoke(LocationHistoryData(historyEvents.toGeoJsonMessages()))
+                if (tripHistoryString.isNotEmpty()) {
+                    val historyEvents = ReplayHistoryMapper().mapToReplayEvents(tripHistoryString)
+                    locationHistoryListener?.invoke(LocationHistoryData(historyEvents.toGeoJsonMessages()))
+                }
                 onDestroy()
             }
         }
