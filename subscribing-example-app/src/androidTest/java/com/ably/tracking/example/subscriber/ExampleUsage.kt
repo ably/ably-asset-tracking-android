@@ -14,7 +14,10 @@ import kotlinx.coroutines.runBlocking
 
 // PLACEHOLDERS:
 
+// The API KEY for the Ably SDK. For more details see the README.
 val ABLY_API_KEY = ""
+
+// The client ID for the Ably SDK instance.
 val CLIENT_ID = ""
 
 fun exampleUsage(trackingId: String) {
