@@ -8,7 +8,10 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
+      # Checkout HEAD, don't create merge commit. See https://github.com/ably/sdk-upload-action/issues/19
       - uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
 
       # Gradle 7 requires Java 11 to run
       - uses: actions/setup-java@v2
