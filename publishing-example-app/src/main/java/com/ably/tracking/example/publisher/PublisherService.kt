@@ -26,6 +26,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 import timber.log.Timber
 
 // The public token for the Mapbox SDK. For more details see the README.
@@ -69,6 +70,13 @@ class PublisherService : Service() {
     }
 
     override fun onBind(intent: Intent?): IBinder = binder
+
+    override fun onDestroy() {
+        // We want to be sure that after the service is stopped the publisher is stopped too.
+        // Otherwise we could end up with multiple active publishers.
+        scope.launch { publisher?.stop() }
+        super.onDestroy()
+    }
 
     /**
      * Creates and starts the [Publisher].
