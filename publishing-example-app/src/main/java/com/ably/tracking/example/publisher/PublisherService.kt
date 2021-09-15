@@ -29,8 +29,13 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
+// The public token for the Mapbox SDK. For more details see the README.
 private const val MAPBOX_ACCESS_TOKEN = BuildConfig.MAPBOX_ACCESS_TOKEN
+
+// The client ID for the Ably SDK instance.
 private const val CLIENT_ID = "<INSERT_CLIENT_ID_HERE>"
+
+// The API KEY for the Ably SDK. For more details see the README.
 private const val ABLY_API_KEY = BuildConfig.ABLY_API_KEY
 
 class PublisherService : Service() {
