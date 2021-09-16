@@ -141,30 +141,34 @@ subprojects {
                       'UnusedIds'
             }
 
-            def applySecretBuildConfigFields = { buildType ->
-                // Configuration that must not be applied to SDK project main source set builds for the release variant/buildType.
-                // This configuration is, however, required for Android's connectedCheck task (which uses the androidTest source set
-                // with the debug variant/buildType).
-                // TODO drop buildType param by using closure delegate, which might be cleaner, or find alternative
-                // https://github.com/ably/ably-asset-tracking-android/issues/411
-                buildType.buildConfigField 'String', 'ABLY_API_KEY', "\"${property('ABLY_API_KEY')}\""
-                buildType.buildConfigField 'String', 'MAPBOX_ACCESS_TOKEN', "\"${property('MAPBOX_ACCESS_TOKEN')}\""
-            }
-
-            def applyVersionBuildConfigFields = { buildType ->
-                // Android library modules don't have access to both versionName and versionCode fields
-                // so we're adding them by ourselves.
-                // TODO drop buildType param by using closure delegate, which might be cleaner, or find alternative
-                // https://github.com/ably/ably-asset-tracking-android/issues/411
-                buildType.buildConfigField("String", "VERSION_NAME", "\"${defaultConfig.versionName}\"")
-                buildType.buildConfigField("long", "VERSION_CODE", "${defaultConfig.versionCode}")
-            }
-
             // https://developer.android.com/studio/build/build-variants#build-types
             buildTypes {
+                // Helper function allowing to create our custom DSL and hide setting the delegate
+                def apply = { action ->
+                    [on: { delegateObject ->
+                        action.delegate = delegateObject
+                        action()
+                    }]
+                }
+
+                def secretConfigFields = {
+                    // Configuration that must not be applied to SDK project main source set builds for the release variant/buildType.
+                    // This configuration is, however, required for Android's connectedCheck task (which uses the androidTest source set
+                    // with the debug variant/buildType).
+                    buildConfigField 'String', 'ABLY_API_KEY', "\"${property('ABLY_API_KEY')}\""
+                    buildConfigField 'String', 'MAPBOX_ACCESS_TOKEN', "\"${property('MAPBOX_ACCESS_TOKEN')}\""
+                }
+
+                def versionConfigFields = {
+                    // Android library modules don't have access to both versionName and versionCode fields
+                    // so we're adding them by ourselves.
+                    buildConfigField "String", "VERSION_NAME", "\"${defaultConfig.versionName}\""
+                    buildConfigField "long", "VERSION_CODE", "${defaultConfig.versionCode}"
+                }
+
                 debug {
-                    applySecretBuildConfigFields delegate
-                    applyVersionBuildConfigFields delegate
+                    apply secretConfigFields on it
+                    apply versionConfigFields on it
                 }
 
                 release {
@@ -172,10 +176,10 @@ subprojects {
                     // integration tests (via Android's `connectedCheck` task), which are testing using the debug
                     // variant/buildType.
                     if (evaluatedSubProjectIsAnApp) {
-                        applySecretBuildConfigFields delegate
+                        apply secretConfigFields on it
                     }
                     if (evaluatedSubProjectIsALibrary) {
-                        applyVersionBuildConfigFields delegate
+                        apply versionConfigFields on it
                     }
 
                     minifyEnabled false
