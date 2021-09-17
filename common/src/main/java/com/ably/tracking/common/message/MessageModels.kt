@@ -64,19 +64,6 @@ enum class LocationUpdateTypeMessage {
 }
 
 @Shared
-data class TripMetadataMessage(
-    @SerializedName("trackingId") val trackingId: String,
-    @SerializedName("timestamp") val timestamp: Long,
-    @SerializedName("tripData") val tripData: TripDataMessage
-)
-
-@Shared
-data class TripDataMessage(
-    @SerializedName("originLocation") val originLocation: LocationMessage,
-    @SerializedName("destinationLocation") val destinationLocation: LocationMessage?
-)
-
-@Shared
 data class LocationMessage(
     @SerializedName("type") val type: String,
     @SerializedName("geometry") val geometry: LocationGeometry,
