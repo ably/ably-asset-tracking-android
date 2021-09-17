@@ -10,9 +10,10 @@ import com.ably.tracking.common.ConnectionState
 import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.PresenceAction
 import com.ably.tracking.common.PresenceData
+import java.util.concurrent.Executors
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
@@ -40,13 +41,25 @@ internal fun createCoreSubscriber(
     return DefaultCoreSubscriber(ably, initialResolution, trackableId)
 }
 
+/**
+ * This is a private static single thread dispatcher that will be used for all the [Subscriber] instances.
+ * To assure that we process our events in the FIFO order we need to use a single threaded dispatcher.
+ * Because of that, all calls to the [launch] will execute in the order of invocation. Because threads
+ * are expensive resources we don't want to create a separate one for each instance. Therefore, we
+ * have one dispatcher shared across all [Subscriber] instances. In an edge case scenario where multiple
+ * instances are active at the same time, this may lead to some slowdowns, as all the work performed
+ * by all the instance will be handled on the same thread. Because the dispatcher is shared it is never
+ * explicitly stopped by the SDK but it will be implicitly stopped by the OS when the app is killed.
+ */
+private val singleThreadDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
+
 private class DefaultCoreSubscriber(
     private val ably: Ably,
     private val initialResolution: Resolution?,
     private val trackableId: String
 ) :
     CoreSubscriber {
-    private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+    private val scope = CoroutineScope(singleThreadDispatcher + SupervisorJob())
     private val sendEventChannel: SendChannel<Event>
     private val _trackableStates: MutableStateFlow<TrackableState> = MutableStateFlow(TrackableState.Offline())
     private val _enhancedLocations: MutableSharedFlow<LocationUpdate> = MutableSharedFlow(replay = 1)
