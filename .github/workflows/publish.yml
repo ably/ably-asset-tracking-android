@@ -8,6 +8,10 @@ on:
         description: 'Version, without v prefix, appended to v to locate tag'
         required: true
 
+permissions:
+  contents: read
+  metadata: read
+
 jobs:
   publish:
     runs-on: ubuntu-latest

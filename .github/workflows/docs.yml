@@ -3,6 +3,11 @@ on:
   push:
     branches:
       - main
+
+permissions:
+  contents: read
+  metadata: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
