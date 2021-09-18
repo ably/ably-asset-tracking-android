@@ -5,7 +5,6 @@ on:
       - main
 
 permissions:
-  contents: read
   deployments: write
 
 jobs:
