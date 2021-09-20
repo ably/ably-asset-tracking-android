@@ -190,8 +190,13 @@ internal class DefaultMapbox(
                 stopTripSession()
                 mapboxReplayer?.finish()
                 val tripHistoryString = retrieveHistory()
-                val historyEvents = ReplayHistoryMapper().mapToReplayEvents(tripHistoryString)
-                locationHistoryListener?.invoke(LocationHistoryData(historyEvents.toGeoJsonMessages()))
+                // MapBox's mapToReplayEvents method crashes if passed an empty string,
+                // so check it's not empty to prevent that.
+                // (see: https://github.com/ably/ably-asset-tracking-android/issues/434)
+                if (tripHistoryString.isNotEmpty()) {
+                    val historyEvents = ReplayHistoryMapper().mapToReplayEvents(tripHistoryString)
+                    locationHistoryListener?.invoke(LocationHistoryData(historyEvents.toGeoJsonMessages()))
+                }
                 onDestroy()
             }
         }
