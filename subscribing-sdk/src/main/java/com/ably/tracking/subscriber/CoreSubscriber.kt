@@ -10,10 +10,9 @@ import com.ably.tracking.common.ConnectionState
 import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.PresenceAction
 import com.ably.tracking.common.PresenceData
-import java.util.concurrent.Executors
+import com.ably.tracking.common.createSingleThreadDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
@@ -43,15 +42,8 @@ internal fun createCoreSubscriber(
 
 /**
  * This is a private static single thread dispatcher that will be used for all the [Subscriber] instances.
- * To assure that we process our events in the FIFO order we need to use a single threaded dispatcher.
- * Because of that, all calls to the [launch] will execute in the order of invocation. Because threads
- * are expensive resources we don't want to create a separate one for each instance. Therefore, we
- * have one dispatcher shared across all [Subscriber] instances. In an edge case scenario where multiple
- * instances are active at the same time, this may lead to some slowdowns, as all the work performed
- * by all the instance will be handled on the same thread. Because the dispatcher is shared it is never
- * explicitly stopped by the SDK but it will be implicitly stopped by the OS when the app is killed.
  */
-private val singleThreadDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
+private val singleThreadDispatcher = createSingleThreadDispatcher()
 
 private class DefaultCoreSubscriber(
     private val ably: Ably,
