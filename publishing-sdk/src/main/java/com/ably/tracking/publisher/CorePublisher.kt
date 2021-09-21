@@ -15,10 +15,10 @@ import com.ably.tracking.common.ConnectionState
 import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.PresenceAction
 import com.ably.tracking.common.PresenceData
+import com.ably.tracking.common.createSingleThreadDispatcher
 import com.ably.tracking.common.logging.w
 import com.ably.tracking.logging.LogHandler
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
@@ -54,6 +54,11 @@ internal fun createCorePublisher(
     return DefaultCorePublisher(ably, mapbox, resolutionPolicyFactory, routingProfile, logHandler)
 }
 
+/**
+ * This is a private static single thread dispatcher that will be used for all the [Publisher] instances.
+ */
+private val singleThreadDispatcher = createSingleThreadDispatcher()
+
 private class DefaultCorePublisher
 @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
 constructor(
@@ -63,7 +68,7 @@ constructor(
     routingProfile: RoutingProfile,
     private val logHandler: LogHandler?,
 ) : CorePublisher {
-    private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+    private val scope = CoroutineScope(singleThreadDispatcher + SupervisorJob())
     private val sendEventChannel: SendChannel<Event>
     private val _locations = MutableSharedFlow<LocationUpdate>(replay = 1)
     private val _trackables = MutableSharedFlow<Set<Trackable>>(replay = 1)
