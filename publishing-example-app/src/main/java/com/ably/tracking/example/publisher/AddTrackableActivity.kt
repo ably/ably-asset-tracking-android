@@ -106,9 +106,7 @@ class AddTrackableActivity : PublisherServiceActivity() {
 
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
     private fun startPublisherAndAddTrackable(trackableId: String, historyData: LocationHistoryData? = null) {
-        if (publisherService?.publisher == null) {
-            publisherService?.startPublisher(createLocationSource(historyData))
-        }
+        publisherService?.startPublisher(createLocationSource(historyData))
         addTrackableToThePublisher(trackableId)
     }
 
