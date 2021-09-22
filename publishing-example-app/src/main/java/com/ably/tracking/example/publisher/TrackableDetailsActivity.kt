@@ -31,7 +31,7 @@ class TrackableDetailsActivity : PublisherServiceActivity() {
         setContentView(R.layout.activity_trackable_details)
         trackableId = intent.extras?.getString(TRACKABLE_ID_EXTRA)
             ?: throw Exception("Cannot open details activity without a Trackable ID")
-        appPreferences = AppPreferences(this)
+        appPreferences = AppPreferences.getInstance(this)
         updateLocationSourceMethodInfo()
 
         trackableIdTextView.text = trackableId

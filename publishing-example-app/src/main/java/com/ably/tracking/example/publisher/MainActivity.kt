@@ -33,7 +33,7 @@ class MainActivity : PublisherServiceActivity() {
         super.onCreate(savedInstanceState)
         Timber.d("Hello via Timber")
         setContentView(R.layout.activity_main)
-        appPreferences = AppPreferences(this)
+        appPreferences = AppPreferences.getInstance(this)
         updateLocationSourceMethodInfo()
 
         requestLocationPermission()

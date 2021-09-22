@@ -50,7 +50,7 @@ class PublisherService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        appPreferences = AppPreferences(this)
+        appPreferences = AppPreferences.getInstance(this)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
