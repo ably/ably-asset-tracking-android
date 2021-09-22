@@ -83,7 +83,18 @@ class PublisherService : Service() {
      */
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
     fun startPublisher(locationSource: LocationSource? = null) {
-        publisher = Publisher.publishers()
+        if (publisher == null) {
+            publisher = createPublisher(locationSource).apply {
+                locationHistory
+                    .onEach { uploadLocationHistoryData(it) }
+                    .launchIn(scope)
+            }
+        }
+    }
+
+    @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
+    private fun createPublisher(locationSource: LocationSource?): Publisher =
+        Publisher.publishers()
             .connection(ConnectionConfiguration(Authentication.basic(CLIENT_ID, ABLY_API_KEY)))
             .map(MapConfiguration(MAPBOX_ACCESS_TOKEN))
             .locationSource(locationSource)
@@ -107,12 +118,7 @@ class PublisherService : Service() {
                 },
                 NOTIFICATION_ID
             )
-            .start().apply {
-                locationHistory
-                    .onEach { uploadLocationHistoryData(it) }
-                    .launchIn(scope)
-            }
-    }
+            .start()
 
     private fun createDefaultResolution(): Resolution =
         Resolution(
