@@ -260,8 +260,16 @@ constructor(
                         override fun onSuccess() {
                             channelToRemove.unsubscribe()
                             channelToRemove.presence.unsubscribe()
-                            channels.remove(trackableId)
-                            callback(Result.success(Unit))
+                            channelToRemove.detach(object : CompletionListener {
+                                override fun onSuccess() {
+                                    channels.remove(trackableId)
+                                    callback(Result.success(Unit))
+                                }
+
+                                override fun onError(reason: ErrorInfo) {
+                                    callback(Result.failure(reason.toTrackingException()))
+                                }
+                            })
                         }
 
                         override fun onError(reason: ErrorInfo) {

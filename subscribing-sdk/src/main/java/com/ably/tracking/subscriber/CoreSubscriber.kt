@@ -10,8 +10,8 @@ import com.ably.tracking.common.ConnectionState
 import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.PresenceAction
 import com.ably.tracking.common.PresenceData
+import com.ably.tracking.common.createSingleThreadDispatcher
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
@@ -40,13 +40,18 @@ internal fun createCoreSubscriber(
     return DefaultCoreSubscriber(ably, initialResolution, trackableId)
 }
 
+/**
+ * This is a private static single thread dispatcher that will be used for all the [Subscriber] instances.
+ */
+private val singleThreadDispatcher = createSingleThreadDispatcher()
+
 private class DefaultCoreSubscriber(
     private val ably: Ably,
     private val initialResolution: Resolution?,
     private val trackableId: String
 ) :
     CoreSubscriber {
-    private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+    private val scope = CoroutineScope(singleThreadDispatcher + SupervisorJob())
     private val sendEventChannel: SendChannel<Event>
     private val _trackableStates: MutableStateFlow<TrackableState> = MutableStateFlow(TrackableState.Offline())
     private val _enhancedLocations: MutableSharedFlow<LocationUpdate> = MutableSharedFlow(replay = 1)
