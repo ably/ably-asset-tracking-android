@@ -4,9 +4,21 @@ import android.content.Context
 import androidx.preference.PreferenceManager
 import com.ably.tracking.Accuracy
 
-// TODO - refactor this class to the singleton pattern
-// https://github.com/ably/ably-asset-tracking-android/issues/234
-class AppPreferences(context: Context) {
+class AppPreferences private constructor(context: Context) {
+    companion object {
+        private var instance: AppPreferences? = null
+        fun getInstance(context: Context): AppPreferences {
+            if (instance == null) {
+                synchronized(this) {
+                    if (instance == null) {
+                        instance = AppPreferences(context.applicationContext)
+                    }
+                }
+            }
+            return instance!!
+        }
+    }
+
     private val preferences = PreferenceManager.getDefaultSharedPreferences(context)
     private val LOCATION_SOURCE_KEY = context.getString(R.string.preferences_location_source_key)
     private val SIMULATION_CHANNEL_KEY =

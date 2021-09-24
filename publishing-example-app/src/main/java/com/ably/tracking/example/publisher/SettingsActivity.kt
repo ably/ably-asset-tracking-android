@@ -47,7 +47,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
     }
 
     private fun setupLocationSourcePreference() {
-        val appPreferences = AppPreferences(requireContext())
+        val appPreferences = AppPreferences.getInstance(requireContext())
         (findPreference(getString(R.string.preferences_location_source_key)) as ListPreference?)?.apply {
             entries = LocationSourceType.values()
                 .map { it.displayName }
@@ -58,7 +58,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
     }
 
     private fun setupResolutionPreferences() {
-        val appPreferences = AppPreferences(requireContext())
+        val appPreferences = AppPreferences.getInstance(requireContext())
         (findPreference(getString(R.string.preferences_resolution_accuracy_key)) as ListPreference?)?.apply {
             entries = Accuracy.values()
                 .map { accuracy -> accuracy.name.lowercase().replaceFirstChar { it.uppercase() } }
