@@ -28,6 +28,8 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
     private fun setupS3Preference() {
         (findPreference(getString(R.string.preferences_s3_file_key)) as ListPreference?)?.let { s3Preference ->
+            s3Preference.entries = emptyArray()
+            s3Preference.entryValues = emptyArray()
             S3Helper.fetchLocationHistoryFilenames(
                 onListLoaded = { filenamesWithSizes, filenames ->
                     s3Preference.entries = filenamesWithSizes.toTypedArray()
