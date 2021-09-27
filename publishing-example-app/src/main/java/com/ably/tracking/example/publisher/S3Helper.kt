@@ -6,9 +6,9 @@ import com.ably.tracking.publisher.LocationHistoryData
 import com.amplifyframework.auth.cognito.AWSCognitoAuthPlugin
 import com.amplifyframework.core.Amplify
 import com.amplifyframework.core.AmplifyConfiguration
+import com.amplifyframework.storage.StorageException
 import com.amplifyframework.storage.s3.AWSS3StoragePlugin
 import com.google.gson.Gson
-import timber.log.Timber
 import java.io.File
 import java.text.DecimalFormat
 import java.text.SimpleDateFormat
@@ -16,6 +16,7 @@ import java.util.Date
 import java.util.Locale
 import kotlin.math.log10
 import kotlin.math.pow
+import timber.log.Timber
 
 object S3Helper {
 
@@ -72,6 +73,7 @@ object S3Helper {
         context: Context,
         filename: String,
         onHistoryDataDownloaded: (historyData: LocationHistoryData) -> Unit,
+        onError: (exception: StorageException) -> Unit,
         onUninitialized: (() -> Unit)? = null
     ) {
         if (isInitialized) {
@@ -82,7 +84,10 @@ object S3Helper {
                     val historyJson = result.file.readText()
                     onHistoryDataDownloaded(gson.fromJson(historyJson, LocationHistoryData::class.java))
                 },
-                { error -> Timber.e(error, "Error when downloading S3 file") }
+                { error ->
+                    Timber.e(error, "Error when downloading S3 file")
+                    onError.invoke(error)
+                }
             )
         } else {
             onUninitialized?.invoke()
