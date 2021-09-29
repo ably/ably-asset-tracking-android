@@ -4,10 +4,13 @@ import android.Manifest
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
-import android.widget.Toast
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
-import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.android.synthetic.main.activity_main.addTrackableFab
+import kotlinx.android.synthetic.main.activity_main.emptyStateContainer
+import kotlinx.android.synthetic.main.activity_main.locationSourceMethodTextView
+import kotlinx.android.synthetic.main.activity_main.settingsImageView
+import kotlinx.android.synthetic.main.activity_main.trackablesRecyclerView
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -63,7 +66,7 @@ class MainActivity : PublisherServiceActivity() {
                             publisherService.publisher?.stop()
                             publisherService.publisher = null
                         } catch (e: Exception) {
-                            showToast("Stopping publisher error")
+                            showLongToast("Stopping publisher error")
                         }
                         stopPublisherService()
                     } else {
@@ -108,7 +111,7 @@ class MainActivity : PublisherServiceActivity() {
 
     @AfterPermissionGranted(REQUEST_LOCATION_PERMISSION)
     fun onLocationPermissionGranted() {
-        showToast("Permission granted")
+        showLongToast("Permission granted")
     }
 
     private fun showAddTrackableScreen() {
@@ -127,10 +130,6 @@ class MainActivity : PublisherServiceActivity() {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         // Forward results to EasyPermissions
         EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this)
-    }
-
-    private fun showToast(message: String) {
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 
     private fun showTrackablesList() {
