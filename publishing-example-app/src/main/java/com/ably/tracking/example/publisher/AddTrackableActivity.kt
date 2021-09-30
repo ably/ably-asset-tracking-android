@@ -108,7 +108,7 @@ class AddTrackableActivity : PublisherServiceActivity() {
                     }
                     publisherService.startPublisher(createLocationSource(locationHistoryData))
                 }
-                publisherService.publisher?.track(createTrackable(trackableId))
+                publisherService.publisher!!.track(createTrackable(trackableId))
                 showTrackableDetailsScreen(trackableId)
                 finish()
             }
