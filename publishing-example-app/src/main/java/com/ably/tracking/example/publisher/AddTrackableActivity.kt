@@ -97,7 +97,11 @@ class AddTrackableActivity : PublisherServiceActivity() {
 
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
     private fun startPublisherAndAddTrackable(trackableId: String) {
-        publisherService?.let { publisherService ->
+        publisherService.let { publisherService ->
+            if (publisherService == null) {
+                onAddTrackableFailed()
+                return
+            }
             scope.launch(
                 CoroutineExceptionHandler { _, _ -> onAddTrackableFailed() }
             ) {
