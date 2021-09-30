@@ -151,7 +151,12 @@ class AddTrackableActivity : PublisherServiceActivity() {
         when (appPreferences.getLocationSource()) {
             LocationSourceType.PHONE -> null
             LocationSourceType.ABLY_CHANNEL -> LocationSourceAbly.create(appPreferences.getSimulationChannel())
-            LocationSourceType.S3_FILE -> LocationSourceRaw.create(historyData!!)
+            LocationSourceType.S3_FILE -> {
+                if (historyData != null)
+                    LocationSourceRaw.create(historyData)
+                else
+                    throw Exception("Location history data cannot be null")
+            }
         }
 
     private suspend fun downloadLocationHistoryData(): LocationHistoryData {
