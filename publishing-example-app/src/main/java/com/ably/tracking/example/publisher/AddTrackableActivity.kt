@@ -45,7 +45,7 @@ class AddTrackableActivity : PublisherServiceActivity() {
 
         setTrackableIdEditTextListener()
         setupResolutionFields()
-        addTrackableButton.setOnClickListener { onAddTrackableClicked() }
+        addTrackableButton.setOnClickListener { addTrackableClicked() }
         setupTrackableInputAction()
     }
 
@@ -63,7 +63,7 @@ class AddTrackableActivity : PublisherServiceActivity() {
         trackableIdEditText.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_DONE) {
                 hideKeyboard(trackableIdEditText)
-                onAddTrackableClicked()
+                addTrackableClicked()
                 true
             } else {
                 false
@@ -80,7 +80,7 @@ class AddTrackableActivity : PublisherServiceActivity() {
     }
 
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
-    private fun onAddTrackableClicked() {
+    private fun addTrackableClicked() {
         getTrackableId().let { trackableId ->
             if (trackableId.isNotEmpty()) {
                 showLoading()
