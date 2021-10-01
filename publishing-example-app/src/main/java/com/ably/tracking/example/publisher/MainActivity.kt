@@ -70,7 +70,6 @@ class MainActivity : PublisherServiceActivity() {
                         } catch (e: Exception) {
                             showLongToast("Stopping publisher error")
                         }
-                        stopPublisherService()
                     } else {
                         showTrackablesList()
                     }
