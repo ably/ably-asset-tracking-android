@@ -5,7 +5,6 @@ import android.app.Notification
 import android.app.Service
 import android.content.Intent
 import android.os.IBinder
-import android.widget.Toast
 import androidx.annotation.RequiresPermission
 import androidx.core.app.NotificationCompat
 import com.ably.tracking.Accuracy
@@ -135,11 +134,7 @@ class PublisherService : Service() {
             S3Helper.uploadHistoryData(
                 this,
                 historyData
-            ) { showToast("S3 not initialized - cannot upload history data") }
+            ) { showShortToast("S3 not initialized - cannot upload history data") }
         }
-    }
-
-    private fun showToast(message: String) {
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 }

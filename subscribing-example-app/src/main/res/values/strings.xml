@@ -1,5 +1,5 @@
 <resources>
-  <string name="app_name">Subscriber</string>
+  <string name="app_name">Asset Subscriber</string>
   <string name="ably_asset_tracking">Ably Asset Tracking</string>
   <string name="start_button_ready">Start</string>
   <string name="start_button_working">Stop</string>
