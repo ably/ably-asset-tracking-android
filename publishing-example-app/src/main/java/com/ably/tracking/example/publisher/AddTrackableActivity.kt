@@ -7,7 +7,6 @@ import android.os.Bundle
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.widget.ArrayAdapter
-import android.widget.Toast
 import androidx.annotation.RequiresPermission
 import androidx.core.content.ContextCompat
 import androidx.core.widget.addTextChangedListener
@@ -86,7 +85,7 @@ class AddTrackableActivity : PublisherServiceActivity() {
                     addTrackable(trackableId)
                 }
             } else {
-                showToast("Insert tracking ID")
+                showLongToast("Insert tracking ID")
             }
         }
     }
@@ -140,7 +139,7 @@ class AddTrackableActivity : PublisherServiceActivity() {
                     )
                     finish()
                 } catch (exception: Exception) {
-                    showToast("Error when adding the trackable")
+                    showLongToast("Error when adding the trackable")
                     hideLoading()
                 }
             }
@@ -159,7 +158,7 @@ class AddTrackableActivity : PublisherServiceActivity() {
             this,
             appPreferences.getS3File(),
             onHistoryDataDownloaded = { onHistoryDataDownloaded(it) },
-            onUninitialized = { showToast("S3 not initialized - cannot download history data") }
+            onUninitialized = { showLongToast("S3 not initialized - cannot download history data") }
         )
     }
 
@@ -173,10 +172,6 @@ class AddTrackableActivity : PublisherServiceActivity() {
         progressIndicator.visibility = View.GONE
         addTrackableButton.isEnabled = true
         trackableIdEditText.isEnabled = true
-    }
-
-    private fun showToast(message: String) {
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 
     private fun getTrackableId(): String = trackableIdEditText.text.toString().trim()
