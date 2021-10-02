@@ -53,6 +53,11 @@ abstract class PublisherServiceActivity : AppCompatActivity() {
     protected open fun onPublisherServiceDisconnected() {}
 
     /**
+     * Returns "true" if service is already started.
+     */
+    protected fun isPublisherServiceStarted(): Boolean = publisherService != null
+
+    /**
      * Creates and starts the [PublisherService].
      */
     protected fun startAndBindPublisherService() {
