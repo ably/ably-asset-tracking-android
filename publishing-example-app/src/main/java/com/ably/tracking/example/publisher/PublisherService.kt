@@ -77,12 +77,15 @@ class PublisherService : Service() {
         super.onDestroy()
     }
 
+    val isPublisherStarted: Boolean
+        get() = publisher != null
+
     /**
      * Creates and starts the [Publisher].
      */
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
     fun startPublisher(locationSource: LocationSource? = null) {
-        if (publisher == null) {
+        if (!isPublisherStarted) {
             publisher = createPublisher(locationSource).apply {
                 locationHistory
                     .onEach { uploadLocationHistoryData(it) }
