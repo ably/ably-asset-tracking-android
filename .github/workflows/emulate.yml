@@ -9,7 +9,10 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        api-level: [24, 27, 29]
+        api-level: [21, 24, 27, 29]
+        include:
+          - api: 21
+            excludeModules: true
     steps:
       - uses: actions/checkout@v2
 
@@ -22,7 +25,8 @@ jobs:
       - uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: ${{ matrix.api-level }}
-          script: ./gradlew connectedCheck
+          # ${{ condition && 'ifTrue' || 'ifFalse' }} is a workaround for a ternary operator https://github.com/actions/runner/issues/409#issuecomment-752775072
+          script: ${{ matrix.excludeModules && './gradlew connectedCheck -x :publishing-java-testing:connectedCheck -x :subscribing-java-testing:connectedCheck -x :publishing-example-app:connectedCheck -x :subscribing-example-app:connectedCheck' || './gradlew connectedCheck' }}
         env:
           ORG_GRADLE_PROJECT_MAPBOX_DOWNLOADS_TOKEN: ${{ secrets.MAPBOX_DOWNLOADS_TOKEN }}
           ORG_GRADLE_PROJECT_MAPBOX_ACCESS_TOKEN: ${{ secrets.MAPBOX_ACCESS_TOKEN }}
