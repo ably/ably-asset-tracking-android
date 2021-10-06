@@ -5,7 +5,7 @@ on:
       - main
 
 jobs:
-  check:
+  emulate:
     runs-on: macos-latest
     strategy:
       matrix:
