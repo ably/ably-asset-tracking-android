@@ -8,6 +8,7 @@ jobs:
   check:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         # Java 11 is the minimum for Gradle 7, Java 16 is the newest STS, Java 17 is the newest LTS
         java-version: [ 11, 16, 17 ]
