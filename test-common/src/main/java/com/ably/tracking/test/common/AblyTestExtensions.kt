@@ -16,7 +16,7 @@ fun Ably.mockConnectSuccess(trackableId: String) {
 }
 
 fun Ably.mockSubscribeToPresenceError(trackableId: String) {
-    every { subscribeForPresenceMessages(trackableId, any()) } throws ConnectionException(ErrorInformation(""))
+    every { subscribeForPresenceMessages(trackableId, any()) } throws anyConnectionException()
 }
 
 fun Ably.mockDisconnectSuccess(trackableId: String) {
@@ -42,7 +42,7 @@ fun Ably.mockSendEnhancedLocationFailure(trackableId: String) {
     every {
         sendEnhancedLocation(trackableId, any(), capture(callbackSlot))
     } answers {
-        callbackSlot.captured(Result.failure(Exception("Test")))
+        callbackSlot.captured(Result.failure(anyConnectionException()))
     }
 }
 
@@ -56,7 +56,9 @@ fun Ably.mockSendEnhancedLocationFailureThenSuccess(trackableId: String) {
             callbackSlot.captured(Result.success(Unit))
         } else {
             hasFailed = true
-            callbackSlot.captured(Result.failure(Exception("Test")))
+            callbackSlot.captured(Result.failure(anyConnectionException()))
         }
     }
 }
+
+private fun anyConnectionException() = ConnectionException(ErrorInformation("Test"))
