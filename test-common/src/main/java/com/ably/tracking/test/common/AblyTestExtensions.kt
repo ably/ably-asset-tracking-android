@@ -15,6 +15,21 @@ fun Ably.mockConnectSuccess(trackableId: String) {
     }
 }
 
+fun Ably.mockConnectFailureThenSuccess(trackableId: String) {
+    var hasFailed = false
+    val callbackSlot = slot<(Result<Unit>) -> Unit>()
+    every {
+        connect(trackableId, any(), any(), any(), any(), capture(callbackSlot))
+    } answers {
+        if (hasFailed) {
+            callbackSlot.captured(Result.success(Unit))
+        } else {
+            hasFailed = true
+            callbackSlot.captured(Result.failure(anyConnectionException()))
+        }
+    }
+}
+
 fun Ably.mockSubscribeToPresenceError(trackableId: String) {
     every { subscribeForPresenceMessages(trackableId, any()) } throws anyConnectionException()
 }

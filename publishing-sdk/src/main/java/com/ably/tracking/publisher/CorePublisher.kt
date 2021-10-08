@@ -203,10 +203,14 @@ constructor(
                     }
                     is AddTrackableEvent -> {
                         when {
+                            state.trackablesAddingState.isCurrentlyAddingTrackable(event.trackable) -> {
+                                state.trackablesAddingState.saveDuplicateAddHandler(event.trackable, event.handler)
+                            }
                             state.trackables.contains(event.trackable) -> {
                                 event.handler(Result.success(state.trackableStateFlows[event.trackable.id]!!))
                             }
                             else -> {
+                                state.trackablesAddingState.startAddingTrackable(event.trackable)
                                 ably.connect(event.trackable.id, state.presenceData, willPublish = true) { result ->
                                     try {
                                         result.getOrThrow()
@@ -216,7 +220,7 @@ constructor(
                                             }
                                         } catch (exception: ConnectionException) {
                                             ably.disconnect(event.trackable.id, state.presenceData) {
-                                                event.handler(Result.failure(exception))
+                                                throw exception
                                             }
                                             return@connect
                                         }
@@ -225,11 +229,16 @@ constructor(
                                         }
                                         request(ConnectionForTrackableCreatedEvent(event.trackable, event.handler))
                                     } catch (exception: ConnectionException) {
-                                        event.handler(Result.failure(exception))
+                                        request(AddTrackableFailedEvent(event.trackable, event.handler, exception))
                                     }
                                 }
                             }
                         }
+                    }
+                    is AddTrackableFailedEvent -> {
+                        val failureResult = Result.failure<AddTrackableResult>(event.exception)
+                        event.handler(failureResult)
+                        state.trackablesAddingState.finishAddingTrackable(event.trackable, failureResult)
                     }
                     is PresenceMessageEvent -> {
                         when (event.presenceMessage.action) {
@@ -275,7 +284,9 @@ constructor(
                         state.trackableStateFlows[event.trackable.id] = trackableStateFlow
                         trackableStateFlows = state.trackableStateFlows
                         state.trackableStates[event.trackable.id] = trackableState
-                        event.handler(Result.success(trackableStateFlow.asStateFlow()))
+                        val successResult = Result.success(trackableStateFlow.asStateFlow())
+                        event.handler(successResult)
+                        state.trackablesAddingState.finishAddingTrackable(event.trackable, successResult)
                     }
                     is ChangeLocationEngineResolutionEvent -> {
                         state.locationEngineResolution = policy.resolve(state.resolutions.values.toSet())
@@ -318,6 +329,7 @@ constructor(
                         state.lastSentEnhancedLocations.remove(event.trackable.id)
                         state.skippedEnhancedLocations.clear(event.trackable.id)
                         state.enhancedLocationsPublishingState.clear(event.trackable.id)
+                        state.trackablesAddingState.clear(event.trackable)
                         // If this was the active Trackable then clear that state and remove destination.
                         if (state.active == event.trackable) {
                             removeCurrentDestination(state)
@@ -702,6 +714,8 @@ constructor(
             get() = if (isDisposed) throw PublisherStateDisposedException() else field
         val enhancedLocationsPublishingState: LocationsPublishingState = LocationsPublishingState()
             get() = if (isDisposed) throw PublisherStateDisposedException() else field
+        val trackablesAddingState: TrackableAddingState = TrackableAddingState()
+            get() = if (isDisposed) throw PublisherStateDisposedException() else field
 
         fun dispose() {
             trackables.clear()
@@ -719,6 +733,7 @@ constructor(
             requests.clear()
             rawLocationChangedCommands.clear()
             enhancedLocationsPublishingState.clearAll()
+            trackablesAddingState.clearAll()
             isDisposed = true
         }
     }
