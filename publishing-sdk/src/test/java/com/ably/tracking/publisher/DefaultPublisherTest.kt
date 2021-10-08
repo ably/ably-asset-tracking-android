@@ -8,9 +8,9 @@ import com.ably.tracking.test.common.mockDisconnectSuccess
 import com.ably.tracking.test.common.mockSubscribeToPresenceError
 import io.mockk.mockk
 import io.mockk.verify
+import java.util.UUID
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
-import java.util.UUID
 
 class DefaultPublisherTest {
     private val ably = mockk<Ably>(relaxed = true)
@@ -61,6 +61,48 @@ class DefaultPublisherTest {
         // then
         verify(exactly = 1) {
             ably.disconnect(trackableId, any(), any())
+        }
+    }
+
+    @Test()
+    fun `should not repeat adding process when adding a trackable that is already added`() {
+        // given
+        val trackableId = UUID.randomUUID().toString()
+        val trackable = Trackable(trackableId)
+        ably.mockConnectSuccess(trackableId)
+
+        // when
+        runBlocking {
+            publisher.add(trackable)
+            publisher.add(trackable)
+        }
+
+        // then
+        verify(exactly = 1) {
+            ably.connect(trackableId, any(), any(), any(), any(), any())
+        }
+    }
+
+    @Test()
+    fun `should repeat adding process when adding the first trackable has failed before starting to add the second one`() {
+        // given
+        val trackableId = UUID.randomUUID().toString()
+        val trackable = Trackable(trackableId)
+        ably.mockConnectFailureThenSuccess(trackableId)
+
+        // when
+        runBlocking {
+            try {
+                publisher.add(trackable)
+            } catch (exception: Exception) {
+                // ignoring exception in this test
+            }
+            publisher.add(trackable)
+        }
+
+        // then
+        verify(exactly = 2) {
+            ably.connect(trackableId, any(), any(), any(), any(), any())
         }
     }
 }

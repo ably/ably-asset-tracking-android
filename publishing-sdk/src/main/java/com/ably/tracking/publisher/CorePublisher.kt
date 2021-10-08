@@ -202,25 +202,32 @@ constructor(
                         event.handler(Result.success(Unit))
                     }
                     is AddTrackableEvent -> {
-                        ably.connect(event.trackable.id, state.presenceData, willPublish = true) { result ->
-                            try {
-                                result.getOrThrow()
-                                try {
-                                    ably.subscribeForPresenceMessages(event.trackable.id) {
-                                        enqueue(PresenceMessageEvent(event.trackable, it))
-                                    }
-                                } catch (exception: ConnectionException) {
-                                    ably.disconnect(event.trackable.id, state.presenceData) {
+                        when {
+                            state.trackables.contains(event.trackable) -> {
+                                event.handler(Result.success(state.trackableStateFlows[event.trackable.id]!!))
+                            }
+                            else -> {
+                                ably.connect(event.trackable.id, state.presenceData, willPublish = true) { result ->
+                                    try {
+                                        result.getOrThrow()
+                                        try {
+                                            ably.subscribeForPresenceMessages(event.trackable.id) {
+                                                enqueue(PresenceMessageEvent(event.trackable, it))
+                                            }
+                                        } catch (exception: ConnectionException) {
+                                            ably.disconnect(event.trackable.id, state.presenceData) {
+                                                event.handler(Result.failure(exception))
+                                            }
+                                            return@connect
+                                        }
+                                        ably.subscribeForChannelStateChange(event.trackable.id) {
+                                            enqueue(ChannelConnectionStateChangeEvent(it, event.trackable.id))
+                                        }
+                                        request(ConnectionForTrackableCreatedEvent(event.trackable, event.handler))
+                                    } catch (exception: ConnectionException) {
                                         event.handler(Result.failure(exception))
                                     }
-                                    return@connect
                                 }
-                                ably.subscribeForChannelStateChange(event.trackable.id) {
-                                    enqueue(ChannelConnectionStateChangeEvent(it, event.trackable.id))
-                                }
-                                request(ConnectionForTrackableCreatedEvent(event.trackable, event.handler))
-                            } catch (exception: ConnectionException) {
-                                event.handler(Result.failure(exception))
                             }
                         }
                     }
