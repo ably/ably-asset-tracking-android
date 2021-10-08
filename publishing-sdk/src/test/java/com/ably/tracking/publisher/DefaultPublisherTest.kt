@@ -138,7 +138,8 @@ class DefaultPublisherTest {
         val trackable = Trackable(trackableId)
         var didFirstAddFail = false
         var didSecondAddFail = false
-        ably.mockConnectFailureThenSuccess(trackableId)
+        // without the callback delay sometimes the first add() ends before the second one begins
+        ably.mockConnectFailureThenSuccess(trackableId, callbackDelayInMilliseconds = 100L)
 
         // when
         runBlocking {

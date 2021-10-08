@@ -15,12 +15,13 @@ fun Ably.mockConnectSuccess(trackableId: String) {
     }
 }
 
-fun Ably.mockConnectFailureThenSuccess(trackableId: String) {
+fun Ably.mockConnectFailureThenSuccess(trackableId: String, callbackDelayInMilliseconds: Long? = null) {
     var hasFailed = false
     val callbackSlot = slot<(Result<Unit>) -> Unit>()
     every {
         connect(trackableId, any(), any(), any(), any(), capture(callbackSlot))
     } answers {
+        callbackDelayInMilliseconds?.let { Thread.sleep(it) }
         if (hasFailed) {
             callbackSlot.captured(Result.success(Unit))
         } else {
