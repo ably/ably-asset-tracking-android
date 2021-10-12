@@ -2,6 +2,7 @@ package com.ably.tracking.publisher
 
 /**
  * Class that protects from adding duplicates of a trackable that is currently being added to the publisher.
+ * This class is not safe to access from multiple threads at the same time.
  */
 class DuplicateTrackableGuard {
     /**
