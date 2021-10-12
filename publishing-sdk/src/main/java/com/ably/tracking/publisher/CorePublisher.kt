@@ -203,14 +203,14 @@ constructor(
                     }
                     is AddTrackableEvent -> {
                         when {
-                            state.trackablesAddingState.isCurrentlyAddingTrackable(event.trackable) -> {
-                                state.trackablesAddingState.saveDuplicateAddHandler(event.trackable, event.handler)
+                            state.duplicateTrackableGuard.isCurrentlyAddingTrackable(event.trackable) -> {
+                                state.duplicateTrackableGuard.saveDuplicateAddHandler(event.trackable, event.handler)
                             }
                             state.trackables.contains(event.trackable) -> {
                                 event.handler(Result.success(state.trackableStateFlows[event.trackable.id]!!))
                             }
                             else -> {
-                                state.trackablesAddingState.startAddingTrackable(event.trackable)
+                                state.duplicateTrackableGuard.startAddingTrackable(event.trackable)
                                 ably.connect(event.trackable.id, state.presenceData, willPublish = true) { result ->
                                     try {
                                         result.getOrThrow()
@@ -238,7 +238,7 @@ constructor(
                     is AddTrackableFailedEvent -> {
                         val failureResult = Result.failure<AddTrackableResult>(event.exception)
                         event.handler(failureResult)
-                        state.trackablesAddingState.finishAddingTrackable(event.trackable, failureResult)
+                        state.duplicateTrackableGuard.finishAddingTrackable(event.trackable, failureResult)
                     }
                     is PresenceMessageEvent -> {
                         when (event.presenceMessage.action) {
@@ -286,7 +286,7 @@ constructor(
                         state.trackableStates[event.trackable.id] = trackableState
                         val successResult = Result.success(trackableStateFlow.asStateFlow())
                         event.handler(successResult)
-                        state.trackablesAddingState.finishAddingTrackable(event.trackable, successResult)
+                        state.duplicateTrackableGuard.finishAddingTrackable(event.trackable, successResult)
                     }
                     is ChangeLocationEngineResolutionEvent -> {
                         state.locationEngineResolution = policy.resolve(state.resolutions.values.toSet())
@@ -329,7 +329,7 @@ constructor(
                         state.lastSentEnhancedLocations.remove(event.trackable.id)
                         state.skippedEnhancedLocations.clear(event.trackable.id)
                         state.enhancedLocationsPublishingState.clear(event.trackable.id)
-                        state.trackablesAddingState.clear(event.trackable)
+                        state.duplicateTrackableGuard.clear(event.trackable)
                         // If this was the active Trackable then clear that state and remove destination.
                         if (state.active == event.trackable) {
                             removeCurrentDestination(state)
@@ -714,7 +714,7 @@ constructor(
             get() = if (isDisposed) throw PublisherStateDisposedException() else field
         val enhancedLocationsPublishingState: LocationsPublishingState = LocationsPublishingState()
             get() = if (isDisposed) throw PublisherStateDisposedException() else field
-        val trackablesAddingState: TrackableAddingState = TrackableAddingState()
+        val duplicateTrackableGuard: DuplicateTrackableGuard = DuplicateTrackableGuard()
             get() = if (isDisposed) throw PublisherStateDisposedException() else field
 
         fun dispose() {
@@ -733,7 +733,7 @@ constructor(
             requests.clear()
             rawLocationChangedCommands.clear()
             enhancedLocationsPublishingState.clearAll()
-            trackablesAddingState.clearAll()
+            duplicateTrackableGuard.clearAll()
             isDisposed = true
         }
     }

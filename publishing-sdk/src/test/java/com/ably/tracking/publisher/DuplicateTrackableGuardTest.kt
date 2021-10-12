@@ -6,12 +6,12 @@ import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 
-class TrackableAddingStateTest {
-    private lateinit var trackableAddingState: TrackableAddingState
+class DuplicateTrackableGuardTest {
+    private lateinit var duplicateTrackableGuard: DuplicateTrackableGuard
 
     @Before
     fun setup() {
-        trackableAddingState = TrackableAddingState()
+        duplicateTrackableGuard = DuplicateTrackableGuard()
     }
 
     @Test
@@ -20,7 +20,7 @@ class TrackableAddingStateTest {
         val trackable = anyTrackable()
 
         // when
-        val isAddingTrackable = trackableAddingState.isCurrentlyAddingTrackable(trackable)
+        val isAddingTrackable = duplicateTrackableGuard.isCurrentlyAddingTrackable(trackable)
 
         // then
         Assert.assertFalse(isAddingTrackable)
@@ -32,8 +32,8 @@ class TrackableAddingStateTest {
         val trackable = anyTrackable()
 
         // when
-        trackableAddingState.startAddingTrackable(trackable)
-        val isAddingTrackable = trackableAddingState.isCurrentlyAddingTrackable(trackable)
+        duplicateTrackableGuard.startAddingTrackable(trackable)
+        val isAddingTrackable = duplicateTrackableGuard.isCurrentlyAddingTrackable(trackable)
 
         // then
         Assert.assertTrue(isAddingTrackable)
@@ -45,9 +45,9 @@ class TrackableAddingStateTest {
         val trackable = anyTrackable()
 
         // when
-        trackableAddingState.startAddingTrackable(trackable)
-        trackableAddingState.finishAddingTrackable(trackable, anyResult())
-        val isAddingTrackable = trackableAddingState.isCurrentlyAddingTrackable(trackable)
+        duplicateTrackableGuard.startAddingTrackable(trackable)
+        duplicateTrackableGuard.finishAddingTrackable(trackable, anyResult())
+        val isAddingTrackable = duplicateTrackableGuard.isCurrentlyAddingTrackable(trackable)
 
         // then
         Assert.assertFalse(isAddingTrackable)
@@ -59,9 +59,9 @@ class TrackableAddingStateTest {
         val trackable = anyTrackable()
 
         // when
-        trackableAddingState.startAddingTrackable(trackable)
-        trackableAddingState.clear(trackable)
-        val isAddingTrackable = trackableAddingState.isCurrentlyAddingTrackable(trackable)
+        duplicateTrackableGuard.startAddingTrackable(trackable)
+        duplicateTrackableGuard.clear(trackable)
+        val isAddingTrackable = duplicateTrackableGuard.isCurrentlyAddingTrackable(trackable)
 
         // then
         Assert.assertFalse(isAddingTrackable)
@@ -74,9 +74,9 @@ class TrackableAddingStateTest {
         var wasDuplicateHandlerCalled = false
 
         // when
-        trackableAddingState.startAddingTrackable(trackable)
-        trackableAddingState.saveDuplicateAddHandler(trackable) { wasDuplicateHandlerCalled = true }
-        trackableAddingState.finishAddingTrackable(trackable, anyResult())
+        duplicateTrackableGuard.startAddingTrackable(trackable)
+        duplicateTrackableGuard.saveDuplicateAddHandler(trackable) { wasDuplicateHandlerCalled = true }
+        duplicateTrackableGuard.finishAddingTrackable(trackable, anyResult())
 
         // then
         Assert.assertTrue(wasDuplicateHandlerCalled)
@@ -90,9 +90,9 @@ class TrackableAddingStateTest {
         var duplicateHandlerResult: Result<AddTrackableResult>? = null
 
         // when
-        trackableAddingState.startAddingTrackable(trackable)
-        trackableAddingState.saveDuplicateAddHandler(trackable) { duplicateHandlerResult = it }
-        trackableAddingState.finishAddingTrackable(trackable, addingResult)
+        duplicateTrackableGuard.startAddingTrackable(trackable)
+        duplicateTrackableGuard.saveDuplicateAddHandler(trackable) { duplicateHandlerResult = it }
+        duplicateTrackableGuard.finishAddingTrackable(trackable, addingResult)
 
         // then
         Assert.assertNotNull(duplicateHandlerResult)
@@ -106,11 +106,11 @@ class TrackableAddingStateTest {
         var duplicateHandlerCallCounter = 0
 
         // when
-        trackableAddingState.startAddingTrackable(trackable)
-        trackableAddingState.saveDuplicateAddHandler(trackable) { duplicateHandlerCallCounter++ }
-        trackableAddingState.finishAddingTrackable(trackable, anyResult())
-        trackableAddingState.finishAddingTrackable(trackable, anyResult())
-        trackableAddingState.finishAddingTrackable(trackable, anyResult())
+        duplicateTrackableGuard.startAddingTrackable(trackable)
+        duplicateTrackableGuard.saveDuplicateAddHandler(trackable) { duplicateHandlerCallCounter++ }
+        duplicateTrackableGuard.finishAddingTrackable(trackable, anyResult())
+        duplicateTrackableGuard.finishAddingTrackable(trackable, anyResult())
+        duplicateTrackableGuard.finishAddingTrackable(trackable, anyResult())
 
         // then
         Assert.assertEquals(1, duplicateHandlerCallCounter)
@@ -123,10 +123,10 @@ class TrackableAddingStateTest {
         var wasDuplicateHandlerCalled = false
 
         // when
-        trackableAddingState.startAddingTrackable(trackable)
-        trackableAddingState.saveDuplicateAddHandler(trackable) { wasDuplicateHandlerCalled = true }
-        trackableAddingState.clear(trackable)
-        trackableAddingState.finishAddingTrackable(trackable, anyResult())
+        duplicateTrackableGuard.startAddingTrackable(trackable)
+        duplicateTrackableGuard.saveDuplicateAddHandler(trackable) { wasDuplicateHandlerCalled = true }
+        duplicateTrackableGuard.clear(trackable)
+        duplicateTrackableGuard.finishAddingTrackable(trackable, anyResult())
 
         // then
         Assert.assertFalse(wasDuplicateHandlerCalled)

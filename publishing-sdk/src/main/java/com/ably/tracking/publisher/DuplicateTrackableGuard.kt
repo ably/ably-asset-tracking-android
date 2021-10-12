@@ -1,9 +1,9 @@
 package com.ably.tracking.publisher
 
 /**
- * Class responsible for managing state of the trackables that are currently being added and their duplicates.
+ * Class that protects from adding duplicates of a trackable that is currently being added to the publisher.
  */
-class TrackableAddingState {
+class DuplicateTrackableGuard {
     /**
      * Stores trackables that are currently being added (the adding process has started but hasn't finished yet).
      */
