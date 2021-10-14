@@ -168,6 +168,7 @@
       android:layout_gravity="center"
       android:elevation="8dp"
       android:visibility="gone"
+      android:indeterminateTint="@color/black"
       tools:visibility="visible" />
   </FrameLayout>
 
