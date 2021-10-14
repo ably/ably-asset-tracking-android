@@ -187,7 +187,7 @@ class AddTrackableActivity : PublisherServiceActivity() {
         accuracySpinner.isEnabled = false
         desiredIntervalEditText.isEnabled = false
         minimumDisplacementEditText.isEnabled = false
-        addTrackableButton.textScaleX = 0f
+        addTrackableButton.hideText()
     }
 
     private fun hideLoading() {
@@ -197,7 +197,7 @@ class AddTrackableActivity : PublisherServiceActivity() {
         accuracySpinner.isEnabled = true
         desiredIntervalEditText.isEnabled = true
         minimumDisplacementEditText.isEnabled = true
-        addTrackableButton.textScaleX = 1f
+        addTrackableButton.showText()
     }
 
     private fun getTrackableId(): String = trackableIdEditText.text.toString().trim()
