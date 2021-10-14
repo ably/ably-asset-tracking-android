@@ -49,12 +49,15 @@ class AddTrackableActivity : PublisherServiceActivity() {
     }
 
     private fun setupResolutionFields() {
-        accuracySpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, Accuracy.values()).apply {
-            setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        }
+        accuracySpinner.adapter =
+            ArrayAdapter(this, android.R.layout.simple_spinner_item, Accuracy.values()).apply {
+                setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            }
         accuracySpinner.setSelection(appPreferences.getResolutionAccuracy().ordinal)
         desiredIntervalEditText.setText(appPreferences.getResolutionDesiredInterval().toString())
-        minimumDisplacementEditText.setText(appPreferences.getResolutionMinimumDisplacement().toString())
+        minimumDisplacementEditText.setText(
+            appPreferences.getResolutionMinimumDisplacement().toString()
+        )
     }
 
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
@@ -181,7 +184,9 @@ class AddTrackableActivity : PublisherServiceActivity() {
         progressIndicator.visibility = View.VISIBLE
         addTrackableButton.isEnabled = false
         trackableIdEditText.isEnabled = false
-        //hide text on the button
+        accuracySpinner.isEnabled = false
+        desiredIntervalEditText.isEnabled = false
+        minimumDisplacementEditText.isEnabled = false
         addTrackableButton.textScaleX = 0f
     }
 
@@ -189,7 +194,9 @@ class AddTrackableActivity : PublisherServiceActivity() {
         progressIndicator.visibility = View.GONE
         addTrackableButton.isEnabled = true
         trackableIdEditText.isEnabled = true
-        //show text on the button again
+        accuracySpinner.isEnabled = true
+        desiredIntervalEditText.isEnabled = true
+        minimumDisplacementEditText.isEnabled = true
         addTrackableButton.textScaleX = 1f
     }
 
