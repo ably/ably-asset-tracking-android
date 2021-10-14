@@ -181,12 +181,16 @@ class AddTrackableActivity : PublisherServiceActivity() {
         progressIndicator.visibility = View.VISIBLE
         addTrackableButton.isEnabled = false
         trackableIdEditText.isEnabled = false
+        //hide text on the button
+        addTrackableButton.textScaleX = 0f
     }
 
     private fun hideLoading() {
         progressIndicator.visibility = View.GONE
         addTrackableButton.isEnabled = true
         trackableIdEditText.isEnabled = true
+        //show text on the button again
+        addTrackableButton.textScaleX = 1f
     }
 
     private fun getTrackableId(): String = trackableIdEditText.text.toString().trim()
