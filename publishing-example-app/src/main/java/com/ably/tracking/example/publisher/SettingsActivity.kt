@@ -41,6 +41,13 @@ class SettingsFragment : PreferenceFragmentCompat() {
     }
 
     private fun loadS3Preferences() {
+        (findPreference(getString(R.string.preferences_s3_file_key)) as ListPreference?)?.let { s3Preference ->
+            /* Please note that this is not an ideal solution.
+              It would be better if UI would be uninteractable when in this state
+              I tried isEnabled and isSelectable with no success so I'm setting them to emptyArrays*/
+            s3Preference.entryValues = emptyArray()
+            s3Preference.entries = emptyArray()
+        }
         S3Helper.fetchLocationHistoryFilenames(
             onListLoaded = { filenamesWithSizes, filenames ->
                 setupS3Preference(filenamesWithSizes, filenames)
