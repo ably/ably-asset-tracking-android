@@ -49,10 +49,9 @@ class AddTrackableActivity : PublisherServiceActivity() {
     }
 
     private fun setupResolutionFields() {
-        accuracySpinner.adapter =
-            ArrayAdapter(this, android.R.layout.simple_spinner_item, Accuracy.values()).apply {
-                setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-            }
+        accuracySpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, Accuracy.values()).apply {
+            setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        }
         accuracySpinner.setSelection(appPreferences.getResolutionAccuracy().ordinal)
         desiredIntervalEditText.setText(appPreferences.getResolutionDesiredInterval().toString())
         minimumDisplacementEditText.setText(appPreferences.getResolutionMinimumDisplacement().toString())
