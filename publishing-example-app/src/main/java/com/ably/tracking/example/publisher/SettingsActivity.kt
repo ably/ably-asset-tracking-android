@@ -23,27 +23,36 @@ class SettingsFragment : PreferenceFragmentCompat() {
         addPreferencesFromResource(R.xml.settings_preferences)
         setupLocationSourcePreference()
         setupResolutionPreferences()
-        setupS3Preference()
+        loadS3Preferences()
     }
 
-    private fun setupS3Preference() {
+    private fun setupS3Preference(
+        filenamesWithSizes: List<CharSequence>,
+        filenames: List<CharSequence>
+    ) {
+        val appPreferences = AppPreferences.getInstance(requireContext())
         (findPreference(getString(R.string.preferences_s3_file_key)) as ListPreference?)?.let { s3Preference ->
-            s3Preference.entries = emptyArray()
-            s3Preference.entryValues = emptyArray()
-            S3Helper.fetchLocationHistoryFilenames(
-                onListLoaded = { filenamesWithSizes, filenames ->
-                    s3Preference.entries = filenamesWithSizes.toTypedArray()
-                    s3Preference.entryValues = filenames.toTypedArray()
-                },
-                onUninitialized = {
-                    Toast.makeText(
-                        requireContext(),
-                        "S3 not initialized - cannot fetch files",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            )
+            preferenceScreen.removePreference(s3Preference)
+            s3Preference.entries = filenamesWithSizes.toTypedArray()
+            s3Preference.entryValues = filenames.toTypedArray()
+            s3Preference.value = appPreferences.getS3File()
+            s3Preference.parent?.addPreference(s3Preference)
         }
+    }
+
+    private fun loadS3Preferences() {
+        S3Helper.fetchLocationHistoryFilenames(
+            onListLoaded = { filenamesWithSizes, filenames ->
+                setupS3Preference(filenamesWithSizes, filenames)
+            },
+            onUninitialized = {
+                Toast.makeText(
+                    requireContext(),
+                    "S3 not initialized - cannot fetch files",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        )
     }
 
     private fun setupLocationSourcePreference() {
