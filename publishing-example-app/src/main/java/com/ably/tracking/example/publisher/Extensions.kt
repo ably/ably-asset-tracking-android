@@ -23,9 +23,10 @@ fun Context.showLongToast(message: String) {
     Toast.makeText(this, message, Toast.LENGTH_LONG).show()
 }
 
-fun Button.hideText(){
+fun Button.hideText() {
     textScaleX = 0f
 }
-fun Button.showText(){
+
+fun Button.showText() {
     textScaleX = 1f
 }
