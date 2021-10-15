@@ -55,9 +55,7 @@ class AddTrackableActivity : PublisherServiceActivity() {
             }
         accuracySpinner.setSelection(appPreferences.getResolutionAccuracy().ordinal)
         desiredIntervalEditText.setText(appPreferences.getResolutionDesiredInterval().toString())
-        minimumDisplacementEditText.setText(
-            appPreferences.getResolutionMinimumDisplacement().toString()
-        )
+        minimumDisplacementEditText.setText(appPreferences.getResolutionMinimumDisplacement().toString())
     }
 
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
