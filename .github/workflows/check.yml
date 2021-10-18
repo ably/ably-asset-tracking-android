@@ -7,14 +7,18 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Java 11 is the minimum for Gradle 7, Java 16 is the maximum for Gradle 7
+        java-version: [ 11, 16 ]
     steps:
       - uses: actions/checkout@v2
 
-      # Gradle 7 requires Java 11 to run
       - uses: actions/setup-java@v2
         with:
           distribution: 'zulu'
-          java-version: '11'
+          java-version: ${{ matrix.java-version }}
 
       - run: ./gradlew check testDebugUnitTestCoverage testReleaseUnitTestCoverage --profile
         env:
