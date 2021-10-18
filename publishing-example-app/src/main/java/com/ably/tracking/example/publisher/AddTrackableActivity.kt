@@ -181,12 +181,20 @@ class AddTrackableActivity : PublisherServiceActivity() {
         progressIndicator.visibility = View.VISIBLE
         addTrackableButton.isEnabled = false
         trackableIdEditText.isEnabled = false
+        accuracySpinner.isEnabled = false
+        desiredIntervalEditText.isEnabled = false
+        minimumDisplacementEditText.isEnabled = false
+        addTrackableButton.hideText()
     }
 
     private fun hideLoading() {
         progressIndicator.visibility = View.GONE
         addTrackableButton.isEnabled = true
         trackableIdEditText.isEnabled = true
+        accuracySpinner.isEnabled = true
+        desiredIntervalEditText.isEnabled = true
+        minimumDisplacementEditText.isEnabled = true
+        addTrackableButton.showText()
     }
 
     private fun getTrackableId(): String = trackableIdEditText.text.toString().trim()
