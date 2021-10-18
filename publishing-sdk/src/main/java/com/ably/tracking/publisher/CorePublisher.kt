@@ -202,27 +202,43 @@ constructor(
                         event.handler(Result.success(Unit))
                     }
                     is AddTrackableEvent -> {
-                        ably.connect(event.trackable.id, state.presenceData, willPublish = true) { result ->
-                            try {
-                                result.getOrThrow()
-                                try {
-                                    ably.subscribeForPresenceMessages(event.trackable.id) {
-                                        enqueue(PresenceMessageEvent(event.trackable, it))
+                        when {
+                            state.duplicateTrackableGuard.isCurrentlyAddingTrackable(event.trackable) -> {
+                                state.duplicateTrackableGuard.saveDuplicateAddHandler(event.trackable, event.handler)
+                            }
+                            state.trackables.contains(event.trackable) -> {
+                                event.handler(Result.success(state.trackableStateFlows[event.trackable.id]!!))
+                            }
+                            else -> {
+                                state.duplicateTrackableGuard.startAddingTrackable(event.trackable)
+                                ably.connect(event.trackable.id, state.presenceData, willPublish = true) { result ->
+                                    try {
+                                        result.getOrThrow()
+                                        try {
+                                            ably.subscribeForPresenceMessages(event.trackable.id) {
+                                                enqueue(PresenceMessageEvent(event.trackable, it))
+                                            }
+                                        } catch (exception: ConnectionException) {
+                                            ably.disconnect(event.trackable.id, state.presenceData) {
+                                                throw exception
+                                            }
+                                            return@connect
+                                        }
+                                        ably.subscribeForChannelStateChange(event.trackable.id) {
+                                            enqueue(ChannelConnectionStateChangeEvent(it, event.trackable.id))
+                                        }
+                                        request(ConnectionForTrackableCreatedEvent(event.trackable, event.handler))
+                                    } catch (exception: ConnectionException) {
+                                        request(AddTrackableFailedEvent(event.trackable, event.handler, exception))
                                     }
-                                } catch (exception: ConnectionException) {
-                                    ably.disconnect(event.trackable.id, state.presenceData) {
-                                        event.handler(Result.failure(exception))
-                                    }
-                                    return@connect
                                 }
-                                ably.subscribeForChannelStateChange(event.trackable.id) {
-                                    enqueue(ChannelConnectionStateChangeEvent(it, event.trackable.id))
-                                }
-                                request(ConnectionForTrackableCreatedEvent(event.trackable, event.handler))
-                            } catch (exception: ConnectionException) {
-                                event.handler(Result.failure(exception))
                             }
                         }
+                    }
+                    is AddTrackableFailedEvent -> {
+                        val failureResult = Result.failure<AddTrackableResult>(event.exception)
+                        event.handler(failureResult)
+                        state.duplicateTrackableGuard.finishAddingTrackable(event.trackable, failureResult)
                     }
                     is PresenceMessageEvent -> {
                         when (event.presenceMessage.action) {
@@ -268,7 +284,9 @@ constructor(
                         state.trackableStateFlows[event.trackable.id] = trackableStateFlow
                         trackableStateFlows = state.trackableStateFlows
                         state.trackableStates[event.trackable.id] = trackableState
-                        event.handler(Result.success(trackableStateFlow.asStateFlow()))
+                        val successResult = Result.success(trackableStateFlow.asStateFlow())
+                        event.handler(successResult)
+                        state.duplicateTrackableGuard.finishAddingTrackable(event.trackable, successResult)
                     }
                     is ChangeLocationEngineResolutionEvent -> {
                         state.locationEngineResolution = policy.resolve(state.resolutions.values.toSet())
@@ -311,6 +329,7 @@ constructor(
                         state.lastSentEnhancedLocations.remove(event.trackable.id)
                         state.skippedEnhancedLocations.clear(event.trackable.id)
                         state.enhancedLocationsPublishingState.clear(event.trackable.id)
+                        state.duplicateTrackableGuard.clear(event.trackable)
                         // If this was the active Trackable then clear that state and remove destination.
                         if (state.active == event.trackable) {
                             removeCurrentDestination(state)
@@ -695,6 +714,8 @@ constructor(
             get() = if (isDisposed) throw PublisherStateDisposedException() else field
         val enhancedLocationsPublishingState: LocationsPublishingState = LocationsPublishingState()
             get() = if (isDisposed) throw PublisherStateDisposedException() else field
+        val duplicateTrackableGuard: DuplicateTrackableGuard = DuplicateTrackableGuard()
+            get() = if (isDisposed) throw PublisherStateDisposedException() else field
 
         fun dispose() {
             trackables.clear()
@@ -712,6 +733,7 @@ constructor(
             requests.clear()
             rawLocationChangedCommands.clear()
             enhancedLocationsPublishingState.clearAll()
+            duplicateTrackableGuard.clearAll()
             isDisposed = true
         }
     }
