@@ -9,7 +9,7 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        api-level: [21, 24, 27, 29]
+        api-level: [ 21, 24, 27, 29 ]
         include:
           - api: 21
             excludeModules: true
@@ -25,8 +25,9 @@ jobs:
       - uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: ${{ matrix.api-level }}
-          #Github's default -no-snapshot option causes check workflow failing likely it has to cold boot emulator
-          #It's either stuck or causes timeouts. Exact reason not known. #adding -no-snapshot-save will enable quick
+          #Github's default -no-snapshot option causes check workflow failing.It is likely because it has to cold boot
+          #emulator which might be taking long and causing a timeout issue or a freeze.
+          #Adding -no-snapshot-save will enable quick
           #boot. See https://developer.android.com/studio/run/emulator-commandline#common for more
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
           # ${{ condition && 'ifTrue' || 'ifFalse' }} is a workaround for a ternary operator https://github.com/actions/runner/issues/409#issuecomment-752775072
