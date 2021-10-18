@@ -9,6 +9,9 @@ import com.ably.tracking.common.PresenceMessage
 import com.ably.tracking.common.ResultHandler
 import kotlinx.coroutines.flow.StateFlow
 
+internal typealias AddTrackableResult = StateFlow<TrackableState>
+internal typealias AddTrackableHandler = ResultHandler<AddTrackableResult>
+
 internal sealed class Event
 
 /**
@@ -27,7 +30,13 @@ internal class StopEvent(
 
 internal class AddTrackableEvent(
     val trackable: Trackable,
-    handler: ResultHandler<StateFlow<TrackableState>>
+    handler: AddTrackableHandler
+) : Request<StateFlow<TrackableState>>(handler)
+
+internal class AddTrackableFailedEvent(
+    val trackable: Trackable,
+    handler: AddTrackableHandler,
+    val exception: Exception,
 ) : Request<StateFlow<TrackableState>>(handler)
 
 internal class TrackTrackableEvent(
