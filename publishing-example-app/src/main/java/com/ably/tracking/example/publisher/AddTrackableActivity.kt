@@ -92,7 +92,7 @@ class AddTrackableActivity : PublisherServiceActivity() {
                         }
                     }
                 } else {
-                    onAddTrackableFailed()
+                    onAddTrackableFailed("Publisher service not started")
                 }
             } else {
                 showLongToast("Insert tracking ID")
@@ -109,8 +109,8 @@ class AddTrackableActivity : PublisherServiceActivity() {
         publisherService.startPublisher(createLocationSource(locationHistoryData))
     }
 
-    private fun onAddTrackableFailed() {
-        showLongToast("Error when adding the trackable")
+    private fun onAddTrackableFailed(message: String = "Error when adding the trackable") {
+        showLongToast(message)
         hideLoading()
     }
 
