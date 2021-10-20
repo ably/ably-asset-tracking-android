@@ -76,11 +76,7 @@ class AddTrackableActivity : PublisherServiceActivity() {
             if (trackableId.isNotEmpty()) {
                 showLoading()
                 if (isPublisherServiceStarted()) {
-                    publisherService.let { publisherService ->
-                        if (publisherService == null) {
-                            onAddTrackableFailed()
-                            return
-                        }
+                    publisherService?.let { publisherService ->
                         scope.launch(CoroutineExceptionHandler { _, _ -> onAddTrackableFailed() }) {
                             if (!publisherService.isPublisherStarted) {
                                 startPublisher(publisherService)
