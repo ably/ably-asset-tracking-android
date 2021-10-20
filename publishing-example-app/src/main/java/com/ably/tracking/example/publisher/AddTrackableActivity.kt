@@ -73,6 +73,11 @@ class AddTrackableActivity : PublisherServiceActivity() {
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
     private fun addTrackableClicked() {
         getTrackableId().let { trackableId ->
+            if (!hasFineOrCoarseLocationPermissionGranted(this)) {
+                showLongToast("Grant the location permission to use the publisher")
+                finish()
+                return
+            }
             if (trackableId.isNotEmpty()) {
                 showLoading()
                 if (isPublisherServiceStarted()) {
