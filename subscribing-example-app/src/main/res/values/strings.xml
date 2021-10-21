@@ -14,4 +14,8 @@
   <string name="resolution_minimum_displacement_value">%.1fm</string>
   <string name="resolution_desired_interval">Desired interval</string>
   <string name="resolution_desired_interval_value">%dms</string>
+  <string name="error_start_subscriber">Starting subscriber error</string>
+  <string name="error_stop_subscriber">Stopping subscriber error</string>
+  <string name="error_no_trackable_id">Insert trackable ID</string>
+  <string name="error_change_resolution">Changing resolution error</string>
 </resources>
