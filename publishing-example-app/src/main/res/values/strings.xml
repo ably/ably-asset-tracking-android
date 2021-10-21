@@ -67,4 +67,8 @@
   <string name="error_trackable_removal_failed">Error when removing the trackable</string>
   <string name="error_stop_publisher">Stopping publisher error</string>
   <string name="info_permission_granted">Permission granted</string>
+
+  <string name="location_source_phone">Phone</string>
+  <string name="location_source_ably_channel">Ably Channel</string>
+  <string name="location_source_s3_file">S3 File</string>
 </resources>

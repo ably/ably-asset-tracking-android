@@ -61,7 +61,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         val appPreferences = AppPreferences.getInstance(requireContext())
         (findPreference(getString(R.string.preferences_location_source_key)) as ListPreference?)?.apply {
             entries = LocationSourceType.values()
-                .map { it.displayName }
+                .map { getString(it.displayNameResourceId) }
                 .toTypedArray()
             entryValues = LocationSourceType.values().map { it.name }.toTypedArray()
             value = appPreferences.getLocationSource().name

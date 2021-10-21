@@ -118,7 +118,7 @@ class MainActivity : PublisherServiceActivity() {
     }
 
     private fun updateLocationSourceMethodInfo() {
-        locationSourceMethodTextView.text = appPreferences.getLocationSource().displayName
+        locationSourceMethodTextView.text = getString(appPreferences.getLocationSource().displayNameResourceId)
     }
 
     private fun requestLocationPermission() {
