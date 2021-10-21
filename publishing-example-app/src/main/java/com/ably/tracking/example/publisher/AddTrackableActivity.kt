@@ -8,6 +8,7 @@ import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.widget.ArrayAdapter
 import androidx.annotation.RequiresPermission
+import androidx.annotation.StringRes
 import androidx.core.content.ContextCompat
 import androidx.core.widget.addTextChangedListener
 import com.ably.tracking.Accuracy
@@ -74,7 +75,7 @@ class AddTrackableActivity : PublisherServiceActivity() {
     private fun addTrackableClicked() {
         getTrackableId().let { trackableId ->
             if (!hasFineOrCoarseLocationPermissionGranted(this)) {
-                showLongToast("Grant the location permission to use the publisher")
+                showLongToast(R.string.error_location_permission_required)
                 finish()
                 return
             }
@@ -92,10 +93,10 @@ class AddTrackableActivity : PublisherServiceActivity() {
                         }
                     }
                 } else {
-                    onAddTrackableFailed("Publisher service not started")
+                    onAddTrackableFailed(R.string.error_publisher_service_not_started)
                 }
             } else {
-                showLongToast("Insert tracking ID")
+                showLongToast(R.string.error_no_trackable_id)
             }
         }
     }
@@ -109,8 +110,8 @@ class AddTrackableActivity : PublisherServiceActivity() {
         publisherService.startPublisher(createLocationSource(locationHistoryData))
     }
 
-    private fun onAddTrackableFailed(message: String = "Error when adding the trackable") {
-        showLongToast(message)
+    private fun onAddTrackableFailed(@StringRes messageResourceId: Int = R.string.error_trackable_adding_failed) {
+        showLongToast(messageResourceId)
         hideLoading()
     }
 
@@ -161,7 +162,7 @@ class AddTrackableActivity : PublisherServiceActivity() {
                 onHistoryDataDownloaded = { continuation.resume(it) },
                 onError = { continuation.resumeWithException(it) },
                 onUninitialized = {
-                    showLongToast("S3 not initialized - cannot download history data")
+                    showLongToast(R.string.error_s3_not_initialized_history_data_download)
                     continuation.resumeWithException(Exception("S3 not initialized"))
                 }
             )

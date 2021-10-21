@@ -68,7 +68,7 @@ class MainActivity : PublisherServiceActivity() {
                             publisherService.publisher?.stop()
                             publisherService.publisher = null
                         } catch (e: Exception) {
-                            showLongToast("Stopping publisher error")
+                            showLongToast(R.string.error_stop_publisher)
                         }
                     } else {
                         showTrackablesList()
@@ -134,7 +134,7 @@ class MainActivity : PublisherServiceActivity() {
 
     @AfterPermissionGranted(REQUEST_LOCATION_PERMISSION)
     fun onLocationPermissionGranted() {
-        showLongToast("Permission granted")
+        showLongToast(R.string.info_permission_granted)
     }
 
     private fun showAddTrackableScreen() {

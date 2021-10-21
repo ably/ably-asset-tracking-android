@@ -81,7 +81,7 @@ class TrackableDetailsActivity : PublisherServiceActivity() {
                         finish()
                     } catch (exception: Exception) {
                         hideLoading()
-                        showLongToast("Error when removing the trackable")
+                        showLongToast(R.string.error_trackable_removal_failed)
                     }
                 }
             }
