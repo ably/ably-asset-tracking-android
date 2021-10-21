@@ -20,4 +20,5 @@ include ':android-test-common',
         ':subscribing-sdk-java',
         ':subscribing-example-app',
         ':subscribing-java-testing',
-        ':location-provider'
+        ':location-provider',
+        ':location-provider-mapbox'
