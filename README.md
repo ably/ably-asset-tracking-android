@@ -143,7 +143,7 @@ try {
 }
 ```
 
-### Documentation
+### Resources
 
 Visit the [Ably Asset Tracking](https://ably.com/documentation/asset-tracking) documentation for a complete API reference and code examples.
 
