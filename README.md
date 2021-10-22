@@ -170,6 +170,13 @@ val exampleConstraints = DefaultResolutionConstraints(
 ```
 
 These values are then used in the default `ResolutionPolicy`, created by the `DefaultResolutionPolicyFactory`. This default policy implementation uses a simple decision algorithm to determine the `Resolution` for a certain state, relative to proximity threshold, battery threshold and the presence of subscribers.
+
+### Providing a Custom Resolution Policy Implementation
+
+For the greatest flexibility it is possible to provide a custom implementation of the `ResolutionPolicy` interface. In this implementation the application developer can define which logic will be applied to their own parameters, including how resolution is to be determined based on the those parameters and requests from subscribers.
+
+Please see `DefaultResolutionPolicy` [implementation](publishing-sdk/src/main/java/com/ably/tracking/publisher/DefaultResolutionPolicyFactory.kt) for an example.
+
 ### Resources
 
 Visit the [Ably Asset Tracking](https://ably.com/documentation/asset-tracking) documentation for a complete API reference and code examples.
@@ -193,12 +200,6 @@ We also provide support for applications written in Java, however the requiremen
 - require Java 1.8 or later
 - require a minimum of Android API Level 24 at runtime
 
-
-### Providing a Custom Resolution Policy Implementation
-
-For the greatest flexibility it is possible to provide a custom implementation of the `ResolutionPolicy` interface. In this implementation the application developer can define which logic will be applied to their own parameters, including how resolution is to be determined based on the those parameters and requests from subscribers.
-
-Please see `DefaultResolutionPolicy` [implementation](publishing-sdk/src/main/java/com/ably/tracking/publisher/DefaultResolutionPolicyFactory.kt) for an example.
 
 ## Contributing
 
