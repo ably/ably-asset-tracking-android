@@ -143,29 +143,6 @@ try {
 }
 ```
 
-### Resources
-
-Visit the [Ably Asset Tracking](https://ably.com/documentation/asset-tracking) documentation for a complete API reference and code examples.
-
-#### Useful links
-- [Introducing Ably Asset Tracking - public beta now available](https://ably.com/blog/ably-asset-tracking-beta)
-- [Accurate Delivery Tracking with Navigation SDK + Ably Realtime Network](https://www.mapbox.com/blog/accurate-delivery-tracking)
-
-## Android Runtime Requirements
-
-### Kotlin Users
-
-These SDKs require a minimum of Android API Level 21 at runtime for applications written in Kotlin.
-
-### Java Users
-
-We also provide support for applications written in Java, however the requirements differ in that case:
-- must wrap using the appropriate Java facade for the SDK they are using:
-    - [publishing-sdk-java](publishing-sdk-java/) for the [publishing-sdk](publishing-sdk/)
-    - [subscribing-sdk-java](subscribing-sdk-java/) for the [subscribing-sdk](subscribing-sdk/)
-- require Java 1.8 or later
-- require a minimum of Android API Level 24 at runtime
-
 ## Resolution Policies
 
 In order to provide application developers with flexibility when it comes to choosing their own balance between higher frequency of updates and optimal battery usage, we provide several ways for them to define the logic used to determine the frequency of updates:
@@ -193,6 +170,29 @@ val exampleConstraints = DefaultResolutionConstraints(
 ```
 
 These values are then used in the default `ResolutionPolicy`, created by the `DefaultResolutionPolicyFactory`. This default policy implementation uses a simple decision algorithm to determine the `Resolution` for a certain state, relative to proximity threshold, battery threshold and the presence of subscribers.
+### Resources
+
+Visit the [Ably Asset Tracking](https://ably.com/documentation/asset-tracking) documentation for a complete API reference and code examples.
+
+#### Useful links
+- [Introducing Ably Asset Tracking - public beta now available](https://ably.com/blog/ably-asset-tracking-beta)
+- [Accurate Delivery Tracking with Navigation SDK + Ably Realtime Network](https://www.mapbox.com/blog/accurate-delivery-tracking)
+
+## Android Runtime Requirements
+
+### Kotlin Users
+
+These SDKs require a minimum of Android API Level 21 at runtime for applications written in Kotlin.
+
+### Java Users
+
+We also provide support for applications written in Java, however the requirements differ in that case:
+- must wrap using the appropriate Java facade for the SDK they are using:
+    - [publishing-sdk-java](publishing-sdk-java/) for the [publishing-sdk](publishing-sdk/)
+    - [subscribing-sdk-java](subscribing-sdk-java/) for the [subscribing-sdk](subscribing-sdk/)
+- require Java 1.8 or later
+- require a minimum of Android API Level 24 at runtime
+
 
 ### Providing a Custom Resolution Policy Implementation
 
