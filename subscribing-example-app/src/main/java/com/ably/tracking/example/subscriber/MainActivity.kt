@@ -300,6 +300,10 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun showToast(message: String) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+    }
+
     private fun showToast(@StringRes stringResourceId: Int) {
         Toast.makeText(this, stringResourceId, Toast.LENGTH_SHORT).show()
     }

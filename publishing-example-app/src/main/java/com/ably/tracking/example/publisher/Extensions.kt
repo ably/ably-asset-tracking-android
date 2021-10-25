@@ -16,6 +16,14 @@ fun Context.hideKeyboard(view: View) {
     )
 }
 
+fun Context.showShortToast(message: String) {
+    Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+}
+
+fun Context.showLongToast(message: String) {
+    Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+}
+
 fun Context.showShortToast(@StringRes stringResourceId: Int) {
     Toast.makeText(this, stringResourceId, Toast.LENGTH_SHORT).show()
 }
