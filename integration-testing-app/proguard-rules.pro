@@ -17,3 +17,13 @@
 
 # This is needed for ChannelModesTest to make HTTP request to Ably REST API
 -keep,allowobfuscation class okhttp3.** { *; }
+
+-dontwarn com.google.auto.value.AutoValue
+-dontwarn com.google.firebase.installations.FirebaseInstallations
+-dontwarn com.google.firebase.installations.InstallationTokenResult
+-dontwarn java.beans.ConstructorProperties
+-dontwarn java.beans.Transient
+-dontwarn javax.xml.bind.DatatypeConverter
+-dontwarn org.bouncycastle.jce.ECNamedCurveTable
+-dontwarn org.bouncycastle.jce.spec.ECNamedCurveParameterSpec
+-dontwarn org.slf4j.impl.StaticLoggerBinder
