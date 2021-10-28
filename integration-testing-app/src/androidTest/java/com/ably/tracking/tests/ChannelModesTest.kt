@@ -25,7 +25,6 @@ import java.util.UUID
 
 @RunWith(AndroidJUnit4::class)
 class ChannelModesTest {
-
     @Test
     fun shouldCreateOnlyOnePublisherAndOneSubscriberConnection() {
         // given
