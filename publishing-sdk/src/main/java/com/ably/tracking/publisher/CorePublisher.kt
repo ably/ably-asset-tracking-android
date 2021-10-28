@@ -385,7 +385,11 @@ constructor(
                             retrySendingEnhancedLocation(state, event.trackableId, event.locationUpdate)
                         } else {
                             state.enhancedLocationsPublishingState.unmarkMessageAsPending(event.trackableId)
-                            saveLocationForFurtherSending(state, event.trackableId, event.locationUpdate.location)
+                            saveEnhancedLocationForFurtherSending(
+                                state,
+                                event.trackableId,
+                                event.locationUpdate.location
+                            )
                             logHandler?.w(
                                 "Sending location update failed. Location saved for further sending",
                                 event.exception
@@ -432,7 +436,7 @@ constructor(
                 sendEnhancedLocationUpdate(event, state, trackableId)
             }
             else -> {
-                saveLocationForFurtherSending(state, trackableId, event.location)
+                saveEnhancedLocationForFurtherSending(state, trackableId, event.location)
                 processNextWaitingEnhancedLocationUpdate(state, trackableId)
             }
         }
@@ -465,7 +469,7 @@ constructor(
         }
     }
 
-    private fun saveLocationForFurtherSending(state: State, trackableId: String, location: Location) {
+    private fun saveEnhancedLocationForFurtherSending(state: State, trackableId: String, location: Location) {
         state.skippedEnhancedLocations.add(trackableId, location)
     }
 
