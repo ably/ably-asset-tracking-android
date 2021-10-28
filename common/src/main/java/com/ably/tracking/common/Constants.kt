@@ -15,6 +15,7 @@ const val METERS_PER_KILOMETER = 1000
  */
 object EventNames {
     const val ENHANCED = "enhanced"
+    const val RAW = "raw"
 }
 
 object ClientTypes {

@@ -3,6 +3,7 @@ package com.ably.tracking.common.message
 import com.ably.tracking.Accuracy
 import com.ably.tracking.EnhancedLocationUpdate
 import com.ably.tracking.Location
+import com.ably.tracking.LocationUpdate
 import com.ably.tracking.LocationUpdateType
 import com.ably.tracking.Resolution
 import com.ably.tracking.common.MILLISECONDS_PER_SECOND
@@ -40,6 +41,14 @@ fun Accuracy.toMessage(): AccuracyMessage = when (this) {
     Accuracy.HIGH -> AccuracyMessage.HIGH
     Accuracy.MAXIMUM -> AccuracyMessage.MAXIMUM
 }
+
+fun LocationUpdate.toJson(gson: Gson): String =
+    gson.toJson(
+        LocationUpdateMessage(
+            location.toMessage(),
+            skippedLocations.map { it.toMessage() },
+        )
+    )
 
 fun EnhancedLocationUpdate.toJson(gson: Gson): String =
     gson.toJson(

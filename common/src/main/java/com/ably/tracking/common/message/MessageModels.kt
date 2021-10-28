@@ -64,6 +64,12 @@ enum class LocationUpdateTypeMessage {
 }
 
 @Shared
+data class LocationUpdateMessage(
+    @SerializedName("location") val location: LocationMessage,
+    @SerializedName("skippedLocations") val skippedLocations: List<LocationMessage>,
+)
+
+@Shared
 data class LocationMessage(
     @SerializedName("type") val type: String,
     @SerializedName("geometry") val geometry: LocationGeometry,

@@ -24,14 +24,14 @@ import io.ably.lib.types.ChannelOptions
 import io.ably.lib.types.ErrorInfo
 import io.ably.lib.types.Message
 import io.ably.lib.util.Log
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.coroutines.suspendCoroutine
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
-import kotlin.coroutines.suspendCoroutine
 
 /**
  * Wrapper for the [AblyRealtime] that's used to interact with the Ably SDK.
@@ -80,6 +80,21 @@ interface Ably {
     fun sendEnhancedLocation(
         trackableId: String,
         locationUpdate: EnhancedLocationUpdate,
+        callback: (Result<Unit>) -> Unit
+    )
+
+    /**
+     * Sends a raw location update to the channel.
+     * Should be called only when there's an existing channel for the [trackableId].
+     * If a channel for the [trackableId] doesn't exist then it just calls [callback] with success.
+     *
+     * @param trackableId The ID of the trackable channel.
+     * @param locationUpdate The location update that is sent to the channel.
+     * @param callback The function that will be called when sending completes. If something goes wrong it will be called with [ConnectionException].
+     */
+    fun sendRawLocation(
+        trackableId: String,
+        locationUpdate: LocationUpdate,
         callback: (Result<Unit>) -> Unit
     )
 
@@ -313,6 +328,38 @@ constructor(
             try {
                 trackableChannel.publish(
                     Message(EventNames.ENHANCED, locationUpdateJson).apply {
+                        id = "$trackableId${locationUpdate.hashCode()}"
+                    },
+                    object : CompletionListener {
+                        override fun onSuccess() {
+                            callback(Result.success(Unit))
+                        }
+
+                        override fun onError(reason: ErrorInfo) {
+                            callback(Result.failure(reason.toTrackingException()))
+                        }
+                    }
+                )
+            } catch (exception: AblyException) {
+                callback(Result.failure(exception.errorInfo.toTrackingException()))
+            }
+        } else {
+            callback(Result.success(Unit))
+        }
+    }
+
+    override fun sendRawLocation(
+        trackableId: String,
+        locationUpdate: LocationUpdate,
+        callback: (Result<Unit>) -> Unit
+    ) {
+        val trackableChannel = channels[trackableId]
+        if (trackableChannel != null) {
+            val locationUpdateJson = locationUpdate.toJson(gson)
+            logHandler?.d("sendRawLocationMessage: publishing: $locationUpdateJson")
+            try {
+                trackableChannel.publish(
+                    Message(EventNames.RAW, locationUpdateJson).apply {
                         id = "$trackableId${locationUpdate.hashCode()}"
                     },
                     object : CompletionListener {
