@@ -3,7 +3,7 @@ package com.ably.tracking.publisher
 /**
  * Class responsible for managing state connected to location updates that are going to or are being published.
  */
-internal class LocationsPublishingState {
+internal class LocationsPublishingState<LocationUpdateEventType> {
     /**
      * The maximum number of retries after a location update is considered to be failed.
      */
@@ -17,7 +17,7 @@ internal class LocationsPublishingState {
     /**
      * Stores location updates that are waiting to be processed, for each trackable independently.
      */
-    private val waitingLocationUpdates: MutableMap<String, MutableList<EnhancedLocationChangedEvent>> = mutableMapOf()
+    private val waitingLocationUpdates: MutableMap<String, MutableList<LocationUpdateEventType>> = mutableMapOf()
 
     /**
      * Stores the number of retries of the current location update, for each trackable independently.
@@ -56,13 +56,13 @@ internal class LocationsPublishingState {
      * Adds the event to the waiting list for the specified trackable.
      *
      * @param trackableId The ID of the trackable.
-     * @param enhancedLocationChangedEvent The event that will be added to waiting list.
+     * @param locationUpdateEvent The event that will be added to waiting list.
      */
-    fun addToWaiting(trackableId: String, enhancedLocationChangedEvent: EnhancedLocationChangedEvent) {
+    fun addToWaiting(trackableId: String, locationUpdateEvent: LocationUpdateEventType) {
         if (waitingLocationUpdates[trackableId] == null) {
             waitingLocationUpdates[trackableId] = mutableListOf()
         }
-        waitingLocationUpdates[trackableId]!!.add(enhancedLocationChangedEvent)
+        waitingLocationUpdates[trackableId]!!.add(locationUpdateEvent)
     }
 
     /**
@@ -71,7 +71,7 @@ internal class LocationsPublishingState {
      * @param trackableId The ID of the trackable.
      * @return The next waiting event or null if no events are waiting.
      */
-    fun getNextWaiting(trackableId: String): EnhancedLocationChangedEvent? =
+    fun getNextWaiting(trackableId: String): LocationUpdateEventType? =
         waitingLocationUpdates[trackableId]?.removeFirstOrNull()
 
     /**

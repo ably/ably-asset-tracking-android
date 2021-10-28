@@ -712,7 +712,8 @@ constructor(
             }
         val rawLocationChangedCommands: MutableList<(State) -> Unit> = mutableListOf()
             get() = if (isDisposed) throw PublisherStateDisposedException() else field
-        val enhancedLocationsPublishingState: LocationsPublishingState = LocationsPublishingState()
+        val enhancedLocationsPublishingState: LocationsPublishingState<EnhancedLocationChangedEvent> =
+            LocationsPublishingState()
             get() = if (isDisposed) throw PublisherStateDisposedException() else field
         val duplicateTrackableGuard: DuplicateTrackableGuard = DuplicateTrackableGuard()
             get() = if (isDisposed) throw PublisherStateDisposedException() else field
