@@ -1,4 +1,4 @@
-val ably_core_version:String by project
+val ablyCoreVersion:String by project
 
 plugins {
     id("com.android.application")
@@ -23,7 +23,7 @@ dependencies {
     implementation(project(":subscribing-sdk"))
     implementation(project(":publishing-sdk"))
     implementation("com.google.code.gson:gson:2.8.6")
-    implementation("io.ably:ably-android:$ably_core_version")
+    implementation("io.ably:ably-android:$ablyCoreVersion")
     implementation("io.jsonwebtoken:jjwt:0.7.0")
     implementation("com.squareup.okhttp3:okhttp:4.9.1")
 }

@@ -1,4 +1,4 @@
-val ably_core_version:String by project
+val ablyCoreVersion:String by project
 
 plugins {
     id("com.android.library")
@@ -8,5 +8,5 @@ plugins {
 
 dependencies {
     implementation(project(":core-sdk"))
-    implementation("io.ably:ably-android:$ably_core_version")
+    implementation("io.ably:ably-android:$ablyCoreVersion")
 }
