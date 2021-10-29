@@ -112,7 +112,7 @@ class CorePublisherResolutionTest(
 
     @SuppressLint("MissingPermission")
     private val corePublisher: CorePublisher =
-        createCorePublisher(ably, mapbox, resolutionPolicyFactory, RoutingProfile.DRIVING, null)
+        createCorePublisher(ably, mapbox, resolutionPolicyFactory, RoutingProfile.DRIVING, null, false)
 
     @Test
     fun `Should send limited location updates`() {

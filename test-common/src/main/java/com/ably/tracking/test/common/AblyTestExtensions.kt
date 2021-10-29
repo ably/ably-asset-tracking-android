@@ -77,4 +77,13 @@ fun Ably.mockSendEnhancedLocationFailureThenSuccess(trackableId: String) {
     }
 }
 
+fun Ably.mockSendRawLocationSuccess(trackableId: String) {
+    val callbackSlot = slot<(Result<Unit>) -> Unit>()
+    every {
+        sendRawLocation(trackableId, any(), capture(callbackSlot))
+    } answers {
+        callbackSlot.captured(Result.success(Unit))
+    }
+}
+
 private fun anyConnectionException() = ConnectionException(ErrorInformation("Test"))

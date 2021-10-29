@@ -50,8 +50,16 @@ internal fun createCorePublisher(
     resolutionPolicyFactory: ResolutionPolicy.Factory,
     routingProfile: RoutingProfile,
     logHandler: LogHandler?,
+    areRawLocationsEnabled: Boolean?,
 ): CorePublisher {
-    return DefaultCorePublisher(ably, mapbox, resolutionPolicyFactory, routingProfile, logHandler)
+    return DefaultCorePublisher(
+        ably,
+        mapbox,
+        resolutionPolicyFactory,
+        routingProfile,
+        logHandler,
+        areRawLocationsEnabled
+    )
 }
 
 /**
@@ -67,6 +75,7 @@ constructor(
     resolutionPolicyFactory: ResolutionPolicy.Factory,
     routingProfile: RoutingProfile,
     private val logHandler: LogHandler?,
+    private val areRawLocationsEnabled: Boolean?,
 ) : CorePublisher {
     private val scope = CoroutineScope(singleThreadDispatcher + SupervisorJob())
     private val sendEventChannel: SendChannel<Event>
@@ -155,7 +164,9 @@ constructor(
                     }
                     is RawLocationChangedEvent -> {
                         state.lastPublisherLocation = event.location
-                        state.trackables.forEach { processRawLocationUpdate(event, state, it.id) }
+                        if (areRawLocationsEnabled == true) {
+                            state.trackables.forEach { processRawLocationUpdate(event, state, it.id) }
+                        }
                         state.rawLocationChangedCommands.apply {
                             if (isNotEmpty()) {
                                 forEach { command -> command(state) }
