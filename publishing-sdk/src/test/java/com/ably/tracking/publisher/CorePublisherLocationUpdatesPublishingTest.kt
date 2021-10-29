@@ -8,22 +8,22 @@ import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
 import com.ably.tracking.test.common.createLocation
-import com.ably.tracking.test.common.mockConnectSuccess
+import com.ably.tracking.test.common.mockCreateConnectionSuccess
 import com.ably.tracking.test.common.mockSendEnhancedLocationFailure
 import com.ably.tracking.test.common.mockSendEnhancedLocationFailureThenSuccess
 import com.ably.tracking.test.common.mockSendEnhancedLocationSuccess
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import java.util.UUID
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.coroutines.suspendCoroutine
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
-import java.util.UUID
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
-import kotlin.coroutines.suspendCoroutine
 
 class CorePublisherLocationUpdatesPublishingTest {
     private val ably = mockk<Ably>(relaxed = true)
@@ -109,7 +109,7 @@ class CorePublisherLocationUpdatesPublishingTest {
     }
 
     private fun addTrackable(trackable: Trackable) {
-        ably.mockConnectSuccess(trackable.id)
+        ably.mockCreateConnectionSuccess(trackable.id)
         runBlocking(Dispatchers.IO) {
             addTrackableToCorePublisher(trackable)
         }
