@@ -1,0 +1,18 @@
+plugins {
+    id("com.android.library")
+    id("kotlin-android")
+    id("org.jlleitschuh.gradle.ktlint")
+}
+
+dependencies {
+    implementation(project(":core-sdk"))
+    implementation(project(":common"))
+    implementation("io.mockk:mockk:1.10.2")
+}
+
+// The mockk library depends on the objenesis library in version 3. This forces using minSdkLevel to 26 or above.
+// In order to fix it and not increase the minSdkLevel we"re forcing the older version of objenesis library.
+// https://github.com/mockito/mockito/issues/2007#issuecomment-689365556
+configurations.all {
+    resolutionStrategy.force("org.objenesis:objenesis:2.6")
+}
