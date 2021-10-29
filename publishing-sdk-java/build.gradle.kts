@@ -1,0 +1,17 @@
+plugins {
+    id("com.android.library")
+    id("kotlin-android")
+    id("org.jlleitschuh.gradle.ktlint")
+}
+apply{
+    from("../jacoco.gradle")
+}
+dependencies {
+    api(project(":publishing-sdk"))
+    api(project(":core-sdk-java"))
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.4.2")
+}
+
+apply{
+    from("../publish.gradle")
+}
