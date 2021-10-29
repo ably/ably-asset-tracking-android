@@ -1,4 +1,4 @@
-val ablyCoreVersion:String by project
+val ablyCoreVersion: String by project
 
 plugins {
     id("com.android.library")
