@@ -139,7 +139,7 @@ constructor(
     ) {
         launch {
             // state
-            val state = State(routingProfile, policy.resolve(emptySet()))
+            val state = State(routingProfile, policy.resolve(emptySet()), areRawLocationsEnabled)
 
             // processing
             for (event in receiveEventChannel) {
@@ -755,7 +755,8 @@ constructor(
 
     private inner class State(
         routingProfile: RoutingProfile,
-        locationEngineResolution: Resolution
+        locationEngineResolution: Resolution,
+        areRawLocationsEnabled: Boolean?,
     ) {
         private var isDisposed: Boolean = false
         var isStopped: Boolean = false
@@ -795,7 +796,7 @@ constructor(
             get() = if (isDisposed) throw PublisherStateDisposedException() else field
         val requests: MutableMap<String, MutableMap<Subscriber, Resolution>> = mutableMapOf()
             get() = if (isDisposed) throw PublisherStateDisposedException() else field
-        var presenceData: PresenceData = PresenceData(ClientTypes.PUBLISHER)
+        var presenceData: PresenceData = PresenceData(ClientTypes.PUBLISHER, rawLocations = areRawLocationsEnabled)
             get() = if (isDisposed) throw PublisherStateDisposedException() else field
         var active: Trackable? = null
             get() = if (isDisposed) throw PublisherStateDisposedException() else field

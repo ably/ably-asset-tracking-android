@@ -18,7 +18,7 @@ fun PresenceDataMessage.toTracking(): PresenceData? =
     type?.let { PresenceData(it, resolution?.toTracking()) }
 
 fun PresenceData.toMessage(): PresenceDataMessage =
-    PresenceDataMessage(type, resolution?.toMessage())
+    PresenceDataMessage(type, resolution?.toMessage(), rawLocations)
 
 fun ResolutionMessage.toTracking(): Resolution =
     Resolution(accuracy.toTracking(), desiredInterval, minimumDisplacement)

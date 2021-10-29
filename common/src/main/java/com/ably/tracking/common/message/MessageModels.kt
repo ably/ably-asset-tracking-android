@@ -18,7 +18,8 @@ fun LocationMessage.synopsis(): String =
 @Shared
 data class PresenceDataMessage(
     @SerializedName("type") val type: String?,
-    @SerializedName("resolution") val resolution: ResolutionMessage? = null
+    @SerializedName("resolution") val resolution: ResolutionMessage? = null,
+    @SerializedName("rawLocations") val rawLocations: Boolean? = null,
 )
 
 @Shared
