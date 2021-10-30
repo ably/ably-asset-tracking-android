@@ -26,9 +26,18 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
-import kotlinx.android.synthetic.main.activity_main.*
-import kotlinx.android.synthetic.main.asset_information_view.*
-import kotlinx.android.synthetic.main.trackable_input_controls_view.*
+import kotlinx.android.synthetic.main.activity_main.assetInformationContainer
+import kotlinx.android.synthetic.main.activity_main.draggingAreaView
+import kotlinx.android.synthetic.main.activity_main.mapFragment
+import kotlinx.android.synthetic.main.activity_main.rootContainer
+import kotlinx.android.synthetic.main.asset_information_view.animationSwitch
+import kotlinx.android.synthetic.main.asset_information_view.assetStateTextView
+import kotlinx.android.synthetic.main.asset_information_view.resolutionAccuracyTextView
+import kotlinx.android.synthetic.main.asset_information_view.resolutionDisplacementTextView
+import kotlinx.android.synthetic.main.asset_information_view.resolutionIntervalTextView
+import kotlinx.android.synthetic.main.trackable_input_controls_view.progressIndicator
+import kotlinx.android.synthetic.main.trackable_input_controls_view.startButton
+import kotlinx.android.synthetic.main.trackable_input_controls_view.trackableIdEditText
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -104,46 +113,49 @@ class MainActivity : AppCompatActivity() {
     private fun startSubscribing() {
         trackableIdEditText.text.toString().trim().let { trackableId ->
             if (trackableId.isNotEmpty()) {
-                googleMap?.clear()
-                googleMap?.setOnCameraIdleListener { updateResolutionBasedOnZoomLevel() }
-                showAssetInformation()
-                trackableIdEditText.isEnabled = false
-                createAndStartAssetSubscriber(trackableId)
-                updateResolutionInfo(resolution)
-                changeStartButtonText(true)
+                hideKeyboard(trackableIdEditText)
+                showLoading()
+                scope.launch {
+                    try {
+                        createAndStartAssetSubscriber(trackableId)
+                        showStartedSubscriberLayout()
+                        hideLoading()
+                    } catch (exception: Exception) {
+                        showToast("Starting subscriber error")
+                        hideLoading()
+                    }
+                }
             } else {
                 showToast("Insert trackable ID")
             }
         }
     }
 
-    private fun createAndStartAssetSubscriber(trackableId: String) {
-        scope.launch {
-            subscriber = Subscriber.subscribers()
-                .connection(ConnectionConfiguration(Authentication.basic(CLIENT_ID, ABLY_API_KEY)))
-                .trackingId(trackableId)
-                .resolution(resolution)
-                .logHandler(object : LogHandler {
-                    override fun logMessage(level: LogLevel, message: String, throwable: Throwable?) {
-                        when (level) {
-                            LogLevel.VERBOSE -> Timber.v(throwable, message)
-                            LogLevel.INFO -> Timber.i(throwable, message)
-                            LogLevel.DEBUG -> Timber.d(throwable, message)
-                            LogLevel.WARN -> Timber.w(throwable, message)
-                            LogLevel.ERROR -> Timber.e(throwable, message)
-                        }
+    private suspend fun createAndStartAssetSubscriber(trackableId: String) {
+        subscriber = Subscriber.subscribers()
+            .connection(ConnectionConfiguration(Authentication.basic(CLIENT_ID, ABLY_API_KEY)))
+            .trackingId(trackableId)
+            .resolution(resolution)
+            .logHandler(object : LogHandler {
+                override fun logMessage(level: LogLevel, message: String, throwable: Throwable?) {
+                    when (level) {
+                        LogLevel.VERBOSE -> Timber.v(throwable, message)
+                        LogLevel.INFO -> Timber.i(throwable, message)
+                        LogLevel.DEBUG -> Timber.d(throwable, message)
+                        LogLevel.WARN -> Timber.w(throwable, message)
+                        LogLevel.ERROR -> Timber.e(throwable, message)
                     }
-                })
-                .start()
-                .apply {
-                    locations
-                        .onEach { showMarkerOnMap(it.location) }
-                        .launchIn(scope)
-                    trackableStates
-                        .onEach { updateAssetState(it) }
-                        .launchIn(scope)
                 }
-        }
+            })
+            .start()
+            .apply {
+                locations
+                    .onEach { showMarkerOnMap(it.location) }
+                    .launchIn(scope)
+                trackableStates
+                    .onEach { updateAssetState(it) }
+                    .launchIn(scope)
+            }
     }
 
     private fun updateResolutionBasedOnZoomLevel() {
@@ -222,17 +234,16 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun stopSubscribing() {
-        googleMap?.setOnCameraIdleListener { }
-        clearResolutionInfo()
-        hideAssetInformation()
-        trackableIdEditText.isEnabled = true
+        showLoading()
         scope.launch {
             try {
                 subscriber?.stop()
                 subscriber = null
-                changeStartButtonText(false)
                 marker = null
+                showStoppedSubscriberLayout()
+                hideLoading()
             } catch (exception: Exception) {
+                hideLoading()
                 showToast("Stopping subscriber error")
             }
         }
@@ -309,5 +320,34 @@ class MainActivity : AppCompatActivity() {
             setVisibility(assetInformationContainer.id, if (isShowing) ConstraintSet.VISIBLE else ConstraintSet.GONE)
             applyTo(rootContainer)
         }
+    }
+
+    private fun showStartedSubscriberLayout() {
+        googleMap?.clear()
+        googleMap?.setOnCameraIdleListener { updateResolutionBasedOnZoomLevel() }
+        showAssetInformation()
+        trackableIdEditText.isEnabled = false
+        updateResolutionInfo(resolution)
+        changeStartButtonText(true)
+    }
+
+    private fun showStoppedSubscriberLayout() {
+        googleMap?.setOnCameraIdleListener { }
+        hideAssetInformation()
+        trackableIdEditText.isEnabled = true
+        clearResolutionInfo()
+        changeStartButtonText(false)
+    }
+
+    private fun showLoading() {
+        progressIndicator.visibility = View.VISIBLE
+        startButton.isEnabled = false
+        startButton.hideText()
+    }
+
+    private fun hideLoading() {
+        progressIndicator.visibility = View.GONE
+        startButton.isEnabled = true
+        startButton.showText()
     }
 }
