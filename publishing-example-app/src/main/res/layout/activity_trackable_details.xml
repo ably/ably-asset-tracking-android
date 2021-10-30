@@ -199,4 +199,17 @@
     android:textColor="@color/white"
     app:layout_constraintBottom_toBottomOf="parent" />
 
+  <ProgressBar
+    android:id="@+id/stopTrackingProgressIndicator"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:elevation="8dp"
+    android:indeterminateTint="@color/black"
+    android:visibility="gone"
+    app:layout_constraintBottom_toBottomOf="@id/stopTrackingButton"
+    app:layout_constraintEnd_toEndOf="@id/stopTrackingButton"
+    app:layout_constraintStart_toStartOf="@id/stopTrackingButton"
+    app:layout_constraintTop_toTopOf="@id/stopTrackingButton"
+    tools:visibility="visible" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

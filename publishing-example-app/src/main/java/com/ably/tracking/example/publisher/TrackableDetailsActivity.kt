@@ -3,6 +3,7 @@ package com.ably.tracking.example.publisher
 import android.content.Intent
 import android.content.res.ColorStateList
 import android.os.Bundle
+import android.view.View
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import com.ably.tracking.Location
@@ -72,14 +73,34 @@ class TrackableDetailsActivity : PublisherServiceActivity() {
             .setTitle(R.string.stop_tracking_dialog_title)
             .setMessage(R.string.stop_tracking_dialog_message)
             .setPositiveButton(R.string.dialog_positive_button) { _, _ ->
+                showLoading()
                 scope.launch {
-                    val trackableToRemove = trackables?.find { trackable -> trackable.id == trackableId }
-                    trackableToRemove?.let { publisherService?.publisher?.remove(it) }
-                    finish()
+                    try {
+                        val trackableToRemove = trackables?.find { trackable -> trackable.id == trackableId }
+                        trackableToRemove?.let { publisherService?.publisher?.remove(it) }
+                        finish()
+                    } catch (exception: Exception) {
+                        hideLoading()
+                        showLongToast("Error when removing the trackable")
+                    }
                 }
             }
             .setNegativeButton(R.string.dialog_negative_button, null)
             .show()
+    }
+
+    private fun showLoading() {
+        stopTrackingProgressIndicator.visibility = View.VISIBLE
+        showMapButton.isEnabled = false
+        stopTrackingButton.isEnabled = false
+        stopTrackingButton.hideText()
+    }
+
+    private fun hideLoading() {
+        stopTrackingProgressIndicator.visibility = View.GONE
+        showMapButton.isEnabled = true
+        stopTrackingButton.isEnabled = true
+        stopTrackingButton.showText()
     }
 
     private fun updateLocationInfo(location: Location) {
