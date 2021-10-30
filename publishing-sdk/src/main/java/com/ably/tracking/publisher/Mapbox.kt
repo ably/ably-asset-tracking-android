@@ -23,6 +23,7 @@ import com.mapbox.navigation.base.internal.extensions.applyDefaultParams
 import com.mapbox.navigation.base.options.NavigationOptions
 import com.mapbox.navigation.base.trip.notification.TripNotification
 import com.mapbox.navigation.core.MapboxNavigation
+import com.mapbox.navigation.core.MapboxNavigationProvider
 import com.mapbox.navigation.core.directions.session.RoutesRequestCallback
 import com.mapbox.navigation.core.replay.MapboxReplayer
 import com.mapbox.navigation.core.replay.ReplayLocationEngine
@@ -30,6 +31,7 @@ import com.mapbox.navigation.core.replay.history.ReplayEventBase
 import com.mapbox.navigation.core.replay.history.ReplayEventsObserver
 import com.mapbox.navigation.core.replay.history.ReplayHistoryMapper
 import com.mapbox.navigation.core.trip.session.LocationObserver
+import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 
@@ -120,6 +122,23 @@ internal interface Mapbox {
 }
 
 /**
+ * Singleton object used to count the created instances of [Mapbox] interface implementations ([DefaultMapbox]).
+ * This is used to check whether we should destroy the [MapboxNavigation] when a [Mapbox] instance is stopped.
+ * This object is safe to use across multiple threads as it uses an [AtomicInteger] as the counter.
+ */
+private object MapboxInstancesCounter {
+    private val counter = AtomicInteger(0)
+    fun increment() {
+        counter.incrementAndGet()
+    }
+
+    fun decrementAndCheckIfItWasTheLastOne(): Boolean {
+        val instancesAmount = counter.decrementAndGet()
+        return instancesAmount == 0
+    }
+}
+
+/**
  * The default implementation of the [Mapbox] wrapper.
  * The [MapboxNavigation] needs to be called from the main thread. To achieve that we use the [runBlocking] method with the [mainDispatcher].
  * This enables us to switch threads and run the required method in the main thread.
@@ -160,7 +179,12 @@ internal class DefaultMapbox(
         }
 
         runBlocking(mainDispatcher) {
-            mapboxNavigation = MapboxNavigation(mapboxBuilder.build())
+            MapboxInstancesCounter.increment()
+            mapboxNavigation = if (MapboxNavigationProvider.isCreated()) {
+                MapboxNavigationProvider.retrieve()
+            } else {
+                MapboxNavigationProvider.create(mapboxBuilder.build())
+            }
         }
     }
 
@@ -197,7 +221,9 @@ internal class DefaultMapbox(
                     val historyEvents = ReplayHistoryMapper().mapToReplayEvents(tripHistoryString)
                     locationHistoryListener?.invoke(LocationHistoryData(historyEvents.toGeoJsonMessages()))
                 }
-                onDestroy()
+            }
+            if (MapboxInstancesCounter.decrementAndCheckIfItWasTheLastOne()) {
+                MapboxNavigationProvider.destroy()
             }
         }
     }
