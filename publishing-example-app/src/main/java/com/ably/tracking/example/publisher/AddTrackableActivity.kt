@@ -76,7 +76,16 @@ class AddTrackableActivity : PublisherServiceActivity() {
             if (trackableId.isNotEmpty()) {
                 showLoading()
                 if (isPublisherServiceStarted()) {
-                    startPublisherAndAddTrackable(trackableId)
+                    publisherService?.let { publisherService ->
+                        scope.launch(CoroutineExceptionHandler { _, _ -> onAddTrackableFailed() }) {
+                            if (!publisherService.isPublisherStarted) {
+                                startPublisher(publisherService)
+                            }
+                            publisherService.publisher!!.track(createTrackable(trackableId))
+                            showTrackableDetailsScreen(trackableId)
+                            finish()
+                        }
+                    }
                 } else {
                     onAddTrackableFailed()
                 }
@@ -87,27 +96,12 @@ class AddTrackableActivity : PublisherServiceActivity() {
     }
 
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
-    private fun startPublisherAndAddTrackable(trackableId: String) {
-        publisherService.let { publisherService ->
-            if (publisherService == null) {
-                onAddTrackableFailed()
-                return
-            }
-            scope.launch(
-                CoroutineExceptionHandler { _, _ -> onAddTrackableFailed() }
-            ) {
-                if (!publisherService.isPublisherStarted) {
-                    val locationHistoryData = when (appPreferences.getLocationSource()) {
-                        LocationSourceType.S3_FILE -> downloadLocationHistoryData()
-                        else -> null
-                    }
-                    publisherService.startPublisher(createLocationSource(locationHistoryData))
-                }
-                publisherService.publisher!!.track(createTrackable(trackableId))
-                showTrackableDetailsScreen(trackableId)
-                finish()
-            }
+    private suspend fun startPublisher(publisherService: PublisherService) {
+        val locationHistoryData = when (appPreferences.getLocationSource()) {
+            LocationSourceType.S3_FILE -> downloadLocationHistoryData()
+            else -> null
         }
+        publisherService.startPublisher(createLocationSource(locationHistoryData))
     }
 
     private fun onAddTrackableFailed() {
