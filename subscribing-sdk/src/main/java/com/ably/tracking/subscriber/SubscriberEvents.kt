@@ -21,6 +21,14 @@ internal class StartEvent(
     handler: ResultHandler<Unit>
 ) : Request<Unit>(handler)
 
+internal class ConnectionCreatedEvent(
+    handler: ResultHandler<Unit>
+) : Request<Unit>(handler)
+
+internal class ConnectionReadyEvent(
+    handler: ResultHandler<Unit>
+) : Request<Unit>(handler)
+
 internal class StopEvent(
     handler: ResultHandler<Unit>
 ) : Request<Unit>(handler)
