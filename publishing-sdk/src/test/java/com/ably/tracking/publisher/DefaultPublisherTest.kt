@@ -5,8 +5,10 @@ import com.ably.tracking.ConnectionException
 import com.ably.tracking.common.Ably
 import com.ably.tracking.test.common.mockConnectFailureThenSuccess
 import com.ably.tracking.test.common.mockConnectSuccess
+import com.ably.tracking.test.common.mockCreateConnectionSuccess
 import com.ably.tracking.test.common.mockDisconnectSuccess
 import com.ably.tracking.test.common.mockSubscribeToPresenceError
+import com.ably.tracking.test.common.mockSubscribeToPresenceSuccess
 import io.mockk.mockk
 import io.mockk.verify
 import java.util.UUID
@@ -73,7 +75,7 @@ class DefaultPublisherTest {
         // given
         val trackableId = UUID.randomUUID().toString()
         val trackable = Trackable(trackableId)
-        ably.mockConnectSuccess(trackableId)
+        ably.mockCreateConnectionSuccess(trackableId)
 
         // when
         runBlocking {
@@ -93,6 +95,7 @@ class DefaultPublisherTest {
         val trackableId = UUID.randomUUID().toString()
         val trackable = Trackable(trackableId)
         ably.mockConnectFailureThenSuccess(trackableId)
+        ably.mockSubscribeToPresenceSuccess(trackableId)
 
         // when
         runBlocking {
@@ -115,7 +118,7 @@ class DefaultPublisherTest {
         // given
         val trackableId = UUID.randomUUID().toString()
         val trackable = Trackable(trackableId)
-        ably.mockConnectSuccess(trackableId)
+        ably.mockCreateConnectionSuccess(trackableId)
 
         // when
         runBlocking {
@@ -140,6 +143,7 @@ class DefaultPublisherTest {
         var didSecondAddFail = false
         // without the callback delay sometimes the first add() ends before the second one begins
         ably.mockConnectFailureThenSuccess(trackableId, callbackDelayInMilliseconds = 100L)
+        ably.mockSubscribeToPresenceSuccess(trackableId)
 
         // when
         runBlocking {
@@ -175,7 +179,7 @@ class DefaultPublisherTest {
         val trackableId = UUID.randomUUID().toString()
         val trackable = Trackable(trackableId)
         val callsOrder = mutableListOf<Int>()
-        ably.mockConnectSuccess(trackableId)
+        ably.mockCreateConnectionSuccess(trackableId)
 
         // when
         runBlocking {

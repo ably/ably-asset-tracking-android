@@ -68,6 +68,11 @@ internal class ConnectionForTrackableCreatedEvent(
     handler: ResultHandler<StateFlow<TrackableState>>
 ) : Request<StateFlow<TrackableState>>(handler)
 
+internal class ConnectionForTrackableReadyEvent(
+    val trackable: Trackable,
+    handler: ResultHandler<StateFlow<TrackableState>>
+) : Request<StateFlow<TrackableState>>(handler)
+
 internal data class RawLocationChangedEvent(
     val location: Location,
 ) : AdhocEvent()

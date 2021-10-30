@@ -7,7 +7,6 @@ import android.content.Intent
 import android.os.IBinder
 import androidx.annotation.RequiresPermission
 import androidx.core.app.NotificationCompat
-import com.ably.tracking.Accuracy
 import com.ably.tracking.Resolution
 import com.ably.tracking.connection.Authentication
 import com.ably.tracking.connection.ConnectionConfiguration
@@ -40,7 +39,6 @@ private const val ABLY_API_KEY = BuildConfig.ABLY_API_KEY
 class PublisherService : Service() {
     // SupervisorJob() is used to keep the scope working after any of its children fail
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
-    private val DEFAULT_RESOLUTION = Resolution(Accuracy.MINIMUM, 1000L, 1.0)
     private val NOTIFICATION_ID = 5235
     private lateinit var notification: Notification
     private val binder = Binder()
