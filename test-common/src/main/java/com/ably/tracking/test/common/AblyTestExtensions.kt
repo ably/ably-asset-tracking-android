@@ -6,6 +6,11 @@ import com.ably.tracking.common.Ably
 import io.mockk.every
 import io.mockk.slot
 
+fun Ably.mockCreateConnectionSuccess(trackableId: String) {
+    mockConnectSuccess(trackableId)
+    mockSubscribeToPresenceSuccess(trackableId)
+}
+
 fun Ably.mockConnectSuccess(trackableId: String) {
     val callbackSlot = slot<(Result<Unit>) -> Unit>()
     every {
@@ -31,8 +36,22 @@ fun Ably.mockConnectFailureThenSuccess(trackableId: String, callbackDelayInMilli
     }
 }
 
+fun Ably.mockSubscribeToPresenceSuccess(trackableId: String) {
+    val callbackSlot = slot<(Result<Unit>) -> Unit>()
+    every {
+        subscribeForPresenceMessages(trackableId, any(), capture(callbackSlot))
+    } answers {
+        callbackSlot.captured(Result.success(Unit))
+    }
+}
+
 fun Ably.mockSubscribeToPresenceError(trackableId: String) {
-    every { subscribeForPresenceMessages(trackableId, any()) } throws anyConnectionException()
+    val callbackSlot = slot<(Result<Unit>) -> Unit>()
+    every {
+        subscribeForPresenceMessages(trackableId, any(), capture(callbackSlot))
+    } answers {
+        callbackSlot.captured(Result.failure(anyConnectionException()))
+    }
 }
 
 fun Ably.mockDisconnectSuccess(trackableId: String) {
