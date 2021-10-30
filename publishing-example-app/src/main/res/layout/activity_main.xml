@@ -111,8 +111,36 @@
     android:layout_height="0dp"
     android:layout_marginTop="16dp"
     android:visibility="gone"
-    app:layout_constraintBottom_toBottomOf="parent"
+    app:layout_constraintBottom_toTopOf="@id/publisherServiceBackground"
     app:layout_constraintTop_toBottomOf="@id/trackableListLabelTextView" />
+
+  <View
+    android:id="@+id/publisherServiceBackground"
+    android:layout_width="match_parent"
+    android:layout_height="90dp"
+    android:background="@color/location_source_background"
+    app:layout_constraintBottom_toBottomOf="parent" />
+
+  <TextView
+    android:id="@+id/publisherServiceSwitchLabelTextView"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="@dimen/medium_margin"
+    android:text="@string/publisher_service_label"
+    android:textColor="@color/black"
+    android:textSize="16sp"
+    app:layout_constraintBottom_toBottomOf="@id/publisherServiceBackground"
+    app:layout_constraintStart_toStartOf="@id/publisherServiceBackground"
+    app:layout_constraintTop_toTopOf="@id/publisherServiceBackground" />
+
+  <androidx.appcompat.widget.SwitchCompat
+    android:id="@+id/publisherServiceSwitch"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="@dimen/medium_margin"
+    app:layout_constraintBottom_toBottomOf="@id/publisherServiceSwitchLabelTextView"
+    app:layout_constraintStart_toEndOf="@id/publisherServiceSwitchLabelTextView"
+    app:layout_constraintTop_toTopOf="@id/publisherServiceSwitchLabelTextView" />
 
   <com.google.android.material.floatingactionbutton.FloatingActionButton
     android:id="@+id/addTrackableFab"

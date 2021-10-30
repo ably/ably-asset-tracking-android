@@ -4,11 +4,13 @@ import android.Manifest
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
+import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import kotlinx.android.synthetic.main.activity_main.addTrackableFab
 import kotlinx.android.synthetic.main.activity_main.emptyStateContainer
 import kotlinx.android.synthetic.main.activity_main.locationSourceMethodTextView
+import kotlinx.android.synthetic.main.activity_main.publisherServiceSwitch
 import kotlinx.android.synthetic.main.activity_main.settingsImageView
 import kotlinx.android.synthetic.main.activity_main.trackablesRecyclerView
 import kotlinx.coroutines.CoroutineScope
@@ -45,9 +47,8 @@ class MainActivity : PublisherServiceActivity() {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
 
-        addTrackableFab.setOnClickListener {
-            showAddTrackableScreen()
-        }
+        addTrackableFab.setOnClickListener { onAddTrackableClick() }
+        publisherServiceSwitch.setOnClickListener { onServiceSwitchClick(publisherServiceSwitch.isChecked) }
 
         trackablesRecyclerView.adapter = trackablesAdapter
         trackablesRecyclerView.layoutManager = LinearLayoutManager(this)
@@ -56,6 +57,7 @@ class MainActivity : PublisherServiceActivity() {
     }
 
     override fun onPublisherServiceConnected(publisherService: PublisherService) {
+        indicatePublisherServiceIsOn()
         publisherService.publisher?.let { publisher ->
             trackablesUpdateJob = publisher.trackables
                 .onEach {
@@ -68,7 +70,6 @@ class MainActivity : PublisherServiceActivity() {
                         } catch (e: Exception) {
                             showLongToast("Stopping publisher error")
                         }
-                        stopPublisherService()
                     } else {
                         showTrackablesList()
                     }
@@ -78,6 +79,7 @@ class MainActivity : PublisherServiceActivity() {
     }
 
     override fun onPublisherServiceDisconnected() {
+        indicatePublisherServiceIsOff()
         trackablesUpdateJob?.cancel()
     }
 
@@ -92,6 +94,27 @@ class MainActivity : PublisherServiceActivity() {
                 putExtra(TRACKABLE_ID_EXTRA, trackableId)
             }
         )
+    }
+
+    private fun onServiceSwitchClick(isSwitchingOn: Boolean) {
+        if (isSwitchingOn) {
+            startAndBindPublisherService()
+        } else {
+            if (trackablesAdapter.trackables.isEmpty()) {
+                stopPublisherService()
+            } else {
+                showCannotStopServiceDialog()
+                indicatePublisherServiceIsOn()
+            }
+        }
+    }
+
+    private fun onAddTrackableClick() {
+        if (isPublisherServiceStarted()) {
+            showAddTrackableScreen()
+        } else {
+            showServiceNotStartedDialog()
+        }
     }
 
     private fun updateLocationSourceMethodInfo() {
@@ -140,5 +163,29 @@ class MainActivity : PublisherServiceActivity() {
     private fun hideTrackablesList() {
         trackablesRecyclerView.visibility = View.GONE
         emptyStateContainer.visibility = View.VISIBLE
+    }
+
+    private fun indicatePublisherServiceIsOn() {
+        publisherServiceSwitch.isChecked = true
+    }
+
+    private fun indicatePublisherServiceIsOff() {
+        publisherServiceSwitch.isChecked = false
+    }
+
+    private fun showServiceNotStartedDialog() {
+        AlertDialog.Builder(this)
+            .setTitle(R.string.service_not_started_dialog_title)
+            .setMessage(R.string.service_not_started_dialog_message)
+            .setPositiveButton(R.string.dialog_positive_button, null)
+            .show()
+    }
+
+    private fun showCannotStopServiceDialog() {
+        AlertDialog.Builder(this)
+            .setTitle(R.string.cannot_stop_service_dialog_title)
+            .setMessage(R.string.cannot_stop_service_dialog_message)
+            .setPositiveButton(R.string.dialog_positive_button, null)
+            .show()
     }
 }

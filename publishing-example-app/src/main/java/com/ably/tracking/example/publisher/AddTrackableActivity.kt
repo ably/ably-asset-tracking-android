@@ -71,14 +71,6 @@ class AddTrackableActivity : PublisherServiceActivity() {
     }
 
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
-    override fun onPublisherServiceConnected(publisherService: PublisherService) {
-        // If the publisher is not started it means that we've just created the service and we should add a trackable
-        if (!publisherService.isPublisherStarted) {
-            startPublisherAndAddTrackable(getTrackableId())
-        }
-    }
-
-    @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
     private fun addTrackableClicked() {
         getTrackableId().let { trackableId ->
             if (trackableId.isNotEmpty()) {
@@ -86,7 +78,7 @@ class AddTrackableActivity : PublisherServiceActivity() {
                 if (isPublisherServiceStarted()) {
                     startPublisherAndAddTrackable(trackableId)
                 } else {
-                    startAndBindPublisherService()
+                    onAddTrackableFailed()
                 }
             } else {
                 showLongToast("Insert tracking ID")
