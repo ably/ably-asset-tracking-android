@@ -17,3 +17,27 @@
 
 # This is needed for ChannelModesTest to make HTTP request to Ably REST API
 -keep,allowobfuscation class okhttp3.** { *; }
+
+
+# Below third party classes do not provide proguard rule.
+# To suppress Gradle build warning, we conservatively keep those classes and then supress the warnings
+-keep class com.google.auto.value.** { *; }
+-dontwarn com.google.auto.value.AutoValue
+
+-keep class com.google.firebase.installations.** { *; }
+-dontwarn com.google.firebase.installations.FirebaseInstallations
+-dontwarn com.google.firebase.installations.InstallationTokenResult
+
+-keep class java.beans.** { *; }
+-dontwarn java.beans.ConstructorProperties
+-dontwarn java.beans.Transient
+
+-keep class javax.xml.bind.** { *; }
+-dontwarn javax.xml.bind.DatatypeConverter
+
+-keep class org.bouncycastle.jce.** { *; }
+-dontwarn org.bouncycastle.jce.ECNamedCurveTable
+-dontwarn org.bouncycastle.jce.spec.ECNamedCurveParameterSpec
+
+-keep class org.slf4j.impl.value.** { *; }
+-dontwarn org.slf4j.impl.StaticLoggerBinder
