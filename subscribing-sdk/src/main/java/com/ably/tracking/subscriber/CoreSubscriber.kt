@@ -107,19 +107,31 @@ private class DefaultCoreSubscriber(
                         updateTrackableState(state)
                         ably.connect(trackableId, state.presenceData, useRewind = true, willSubscribe = true) {
                             if (it.isSuccess) {
-                                subscribeForEnhancedEvents()
-                                try {
-                                    subscribeForPresenceMessages()
-                                } catch (exception: ConnectionException) {
-                                    ably.disconnect(trackableId, state.presenceData) {
-                                        event.handler(Result.failure(exception))
-                                    }
-                                    return@connect
-                                }
-                                subscribeForChannelState()
+                                request(ConnectionCreatedEvent(event.handler))
+                            } else {
+                                event.handler(it)
                             }
-                            event.handler(it)
                         }
+                    }
+                    is ConnectionCreatedEvent -> {
+                        ably.subscribeForPresenceMessages(
+                            trackableId = trackableId,
+                            listener = { enqueue(PresenceMessageEvent(it)) },
+                            callback = { subscribeResult ->
+                                if (subscribeResult.isSuccess) {
+                                    request(ConnectionReadyEvent(event.handler))
+                                } else {
+                                    ably.disconnect(trackableId, state.presenceData) {
+                                        event.handler(subscribeResult)
+                                    }
+                                }
+                            }
+                        )
+                    }
+                    is ConnectionReadyEvent -> {
+                        subscribeForChannelState()
+                        subscribeForEnhancedEvents()
+                        event.handler(Result.success(Unit))
                     }
                     is PresenceMessageEvent -> {
                         when (event.presenceMessage.action) {
@@ -188,12 +200,6 @@ private class DefaultCoreSubscriber(
     private fun subscribeForChannelState() {
         ably.subscribeForChannelStateChange(trackableId) {
             enqueue(ChannelConnectionStateChangeEvent(it))
-        }
-    }
-
-    private fun subscribeForPresenceMessages() {
-        ably.subscribeForPresenceMessages(trackableId) {
-            enqueue(PresenceMessageEvent(it))
         }
     }
 

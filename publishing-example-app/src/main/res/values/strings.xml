@@ -9,6 +9,7 @@
   <string name="trackable_details">Trackable details</string>
   <string name="add_trackable">Add trackable</string>
   <string name="location_source_label">Location Source:</string>
+  <string name="publisher_service_label">Publisher Service:</string>
   <string name="current_location_and_bearing">Current location and bearing</string>
   <string name="latitude_label">Lat:</string>
   <string name="longitude_label">Long:</string>
@@ -51,4 +52,8 @@
   <string name="preferences_update_resolution_minimum_displacement_title">Set Minimum Displacement</string>
   <string name="trackable_list_empty_state_header">No assets</string>
   <string name="trackable_list_empty_state_message">Trackable assets will be listed here when added</string>
+  <string name="service_not_started_dialog_title">Publisher service not started</string>
+  <string name="service_not_started_dialog_message">The publisher service has to be started to start adding trackables. Please use the switch at the bottom of the screen to turn it on.</string>
+  <string name="cannot_stop_service_dialog_title">Publisher still has added trackables</string>
+  <string name="cannot_stop_service_dialog_message">The publisher has added trackables. Remove them before stopping the publisher service.</string>
 </resources>
