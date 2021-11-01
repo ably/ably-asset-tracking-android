@@ -182,6 +182,7 @@ Please see `DefaultResolutionPolicy` [implementation](publishing-sdk/src/main/ja
 Visit the [Ably Asset Tracking](https://ably.com/documentation/asset-tracking) documentation for a complete API reference and code examples.
 
 #### Useful links
+
 - [Introducing Ably Asset Tracking - public beta now available](https://ably.com/blog/ably-asset-tracking-beta)
 - [Accurate Delivery Tracking with Navigation SDK + Ably Realtime Network](https://www.mapbox.com/blog/accurate-delivery-tracking)
 
@@ -199,7 +200,6 @@ We also provide support for applications written in Java, however the requiremen
     - [subscribing-sdk-java](subscribing-sdk-java/) for the [subscribing-sdk](subscribing-sdk/)
 - require Java 1.8 or later
 - require a minimum of Android API Level 24 at runtime
-
 
 ## Contributing
 
