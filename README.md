@@ -4,6 +4,8 @@
 ![.github/workflows/emulate.yml](https://github.com/ably/ably-asset-tracking-android/workflows/.github/workflows/emulate.yml/badge.svg)
 ![.github/workflows/assemble.yml](https://github.com/ably/ably-asset-tracking-android/workflows/.github/workflows/assemble.yml/badge.svg)
 
+_[Ably](https://ably.com) is the platform that powers synchronized digital experiences in realtime. Whether attending an event in a virtual venue, receiving realtime financial information, or monitoring live car performance data – consumers simply expect realtime digital experiences as standard. Ably provides a suite of APIs to build, extend, and deliver powerful digital experiences in realtime for more than 250 million devices across 80 countries each month. Organizations like Bloomberg, HubSpot, Verizon, and Hopin depend on Ably’s platform to offload the growing complexity of business-critical realtime data synchronization at global scale. For more information, see the [Ably documentation](https://ably.com/documentation)._
+
 ## Overview
 
 Ably Asset Tracking SDKs provide an easy way to track multiple assets with realtime location updates powered by [Ably](https://ably.com/) realtime network and Mapbox [Navigation SDK](https://docs.mapbox.com/android/navigation/overview/) with location enhancement.
@@ -25,14 +27,29 @@ In this repository there are two SDKs for Android devices:
 - the [Asset Publishing SDK](publishing-sdk/)
 - the [Asset Subscribing SDK](subscribing-sdk/)
 
-### Documentation
+## Example Apps
 
-Visit the [Ably Asset Tracking](https://ably.com/documentation/asset-tracking) documentation for a complete API reference and code examples.
+This repository also contains example apps that showcase how the Ably Asset Tracking SDKs can be used:
 
-### Useful Resources
+- the [Asset Publishing example app](publishing-example-app/)
+- the [Asset Subscribing example app](subscribing-example-app/)
 
-- [Introducing Ably Asset Tracking - public beta now available](https://ably.com/blog/ably-asset-tracking-beta)
-- [Accurate Delivery Tracking with Navigation SDK + Ably Realtime Network](https://www.mapbox.com/blog/accurate-delivery-tracking)
+To build these apps from source you will need to specify credentials in Gradle properties.
+
+The following secrets need to be injected into Gradle by either storing them in `~/.gradle/gradle.properties`, or by using one of [many other ways](https://docs.gradle.org/current/userguide/build_environment.html) to do this:
+
+ - `ABLY_API_KEY`: On your [Ably accounts page](https://ably.com/accounts/), select your application, and paste an API Key from the API Keys tab (with relevant capabilities for either subscriber/ publisher). This API key needs the following capabilities: `publish`, `subscribe`, `history` and `presence`.
+ - `MAPBOX_DOWNLOADS_TOKEN`: On the [Mapbox Access Tokens page](https://account.mapbox.com/access-tokens/), create a token with the `DOWNLOADS:READ` secret scope.
+ - `MAPBOX_ACCESS_TOKEN`: On the [Mapbox Access Tokens page](https://account.mapbox.com/access-tokens/), create a token with all public scopes or use the default public token automatically generated for you.
+ - `GOOGLE_MAPS_API_KEY`: Create an API key in Google Cloud, ensuring it has both `Geolocation` and `Maps SDK for Android` API.
+
+To do this, create a file in your home folder if it doesn't exist already, `~/.gradle/gradle.properties`, add the following code, and update the values:
+```bash
+ABLY_API_KEY=get_value_from_ably_dashboard
+MAPBOX_DOWNLOADS_TOKEN=create_token_with_downloads_read_secret_scope
+MAPBOX_ACCESS_TOKEN=create_token_with_all_public_scopes
+GOOGLE_MAPS_API_KEY=create_api_key_with_geolocation_maps_sdk
+```
 
 ## Usage
 
@@ -126,45 +143,6 @@ try {
 }
 ```
 
-## Example Apps
-
-This repository also contains example apps that showcase how the Ably Asset Tracking SDKs can be used:
-
-- the [Asset Publishing example app](publishing-example-app/)
-- the [Asset Subscribing example app](subscribing-example-app/)
-
-To build these apps from source you will need to specify credentials in Gradle properties.
-
-The following secrets need to be injected into Gradle by either storing them in `~/.gradle/gradle.properties`, or by using one of [many other ways](https://docs.gradle.org/current/userguide/build_environment.html) to do this:
-
- - `ABLY_API_KEY`: On your [Ably accounts page](https://ably.com/accounts/), select your application, and paste an API Key from the API Keys tab (with relevant capabilities for either subscriber/ publisher). This API key needs the following capabilities: `publish`, `subscribe`, `history` and `presence`.
- - `MAPBOX_DOWNLOADS_TOKEN`: On the [Mapbox Access Tokens page](https://account.mapbox.com/access-tokens/), create a token with the `DOWNLOADS:READ` secret scope.
- - `MAPBOX_ACCESS_TOKEN`: On the [Mapbox Access Tokens page](https://account.mapbox.com/access-tokens/), create a token with all public scopes or use the default public token automatically generated for you.
- - `GOOGLE_MAPS_API_KEY`: Create an API key in Google Cloud, ensuring it has both `Geolocation` and `Maps SDK for Android` API.
-
-To do this, create a file in your home folder if it doesn't exist already, `~/.gradle/gradle.properties`, add the following code, and update the values:
-```bash
-ABLY_API_KEY=get_value_from_ably_dashboard
-MAPBOX_DOWNLOADS_TOKEN=create_token_with_downloads_read_secret_scope
-MAPBOX_ACCESS_TOKEN=create_token_with_all_public_scopes
-GOOGLE_MAPS_API_KEY=create_api_key_with_geolocation_maps_sdk
-```
-
-## Android Runtime Requirements
-
-### Kotlin Users
-
-These SDKs require a minimum of Android API Level 21 at runtime for applications written in Kotlin.
-
-### Java Users
-
-We also provide support for applications written in Java, however the requirements differ in that case:
-- must wrap using the appropriate Java facade for the SDK they are using:
-    - [publishing-sdk-java](publishing-sdk-java/) for the [publishing-sdk](publishing-sdk/)
-    - [subscribing-sdk-java](subscribing-sdk-java/) for the [subscribing-sdk](subscribing-sdk/)
-- require Java 1.8 or later
-- require a minimum of Android API Level 24 at runtime
-
 ## Resolution Policies
 
 In order to provide application developers with flexibility when it comes to choosing their own balance between higher frequency of updates and optimal battery usage, we provide several ways for them to define the logic used to determine the frequency of updates:
@@ -198,6 +176,30 @@ These values are then used in the default `ResolutionPolicy`, created by the `De
 For the greatest flexibility it is possible to provide a custom implementation of the `ResolutionPolicy` interface. In this implementation the application developer can define which logic will be applied to their own parameters, including how resolution is to be determined based on the those parameters and requests from subscribers.
 
 Please see `DefaultResolutionPolicy` [implementation](publishing-sdk/src/main/java/com/ably/tracking/publisher/DefaultResolutionPolicyFactory.kt) for an example.
+
+### Resources
+
+Visit the [Ably Asset Tracking](https://ably.com/documentation/asset-tracking) documentation for a complete API reference and code examples.
+
+#### Useful links
+
+- [Introducing Ably Asset Tracking - public beta now available](https://ably.com/blog/ably-asset-tracking-beta)
+- [Accurate Delivery Tracking with Navigation SDK + Ably Realtime Network](https://www.mapbox.com/blog/accurate-delivery-tracking)
+
+## Android Runtime Requirements
+
+### Kotlin Users
+
+These SDKs require a minimum of Android API Level 21 at runtime for applications written in Kotlin.
+
+### Java Users
+
+We also provide support for applications written in Java, however the requirements differ in that case:
+- must wrap using the appropriate Java facade for the SDK they are using:
+    - [publishing-sdk-java](publishing-sdk-java/) for the [publishing-sdk](publishing-sdk/)
+    - [subscribing-sdk-java](subscribing-sdk-java/) for the [subscribing-sdk](subscribing-sdk/)
+- require Java 1.8 or later
+- require a minimum of Android API Level 24 at runtime
 
 ## Contributing
 
