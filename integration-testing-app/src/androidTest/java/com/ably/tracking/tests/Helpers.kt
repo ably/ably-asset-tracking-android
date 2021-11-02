@@ -32,6 +32,7 @@ fun createAndStartPublisher(
     resolution: Resolution = Resolution(Accuracy.BALANCED, 1L, 0.0),
     authentication: Authentication = defaultConnectionConfiguration,
     locationData: LocationHistoryData = getLocationData(context),
+    rawLocations: Boolean = false,
     onLocationDataEnded: () -> Unit = {}
 ): Publisher {
     createNotificationChannel(context)
@@ -53,18 +54,21 @@ fun createAndStartPublisher(
             },
             1234
         )
+        .rawLocations(rawLocations)
         .start()
 }
 
 suspend fun createAndStartSubscriber(
     trackingId: String,
     resolution: Resolution = Resolution(Accuracy.BALANCED, 1L, 0.0),
-    authentication: Authentication = defaultConnectionConfiguration
+    authentication: Authentication = defaultConnectionConfiguration,
+    rawLocations: Boolean = false,
 ) =
     Subscriber.subscribers()
         .connection(ConnectionConfiguration(authentication))
         .resolution(resolution)
         .trackingId(trackingId)
+        .rawLocations(rawLocations)
         .start()
 
 private fun getLocationData(context: Context): LocationHistoryData {
