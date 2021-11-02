@@ -1,6 +1,5 @@
 package com.ably.tracking.example.publisher
 
-import android.Manifest
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
@@ -19,12 +18,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import pub.devrel.easypermissions.AfterPermissionGranted
-import pub.devrel.easypermissions.EasyPermissions
 import timber.log.Timber
-
-private val REQUIRED_PERMISSIONS = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
-private const val REQUEST_LOCATION_PERMISSION = 1
 
 class MainActivity : PublisherServiceActivity() {
     private lateinit var appPreferences: AppPreferences
@@ -41,7 +35,7 @@ class MainActivity : PublisherServiceActivity() {
         appPreferences = AppPreferences.getInstance(this)
         updateLocationSourceMethodInfo()
 
-        requestLocationPermission()
+        PermissionsHelper.requestLocationPermission(this)
 
         settingsImageView.setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
@@ -121,27 +115,11 @@ class MainActivity : PublisherServiceActivity() {
         locationSourceMethodTextView.text = getString(appPreferences.getLocationSource().displayNameResourceId)
     }
 
-    private fun requestLocationPermission() {
-        if (!EasyPermissions.hasPermissions(this, *REQUIRED_PERMISSIONS)) {
-            EasyPermissions.requestPermissions(
-                this,
-                "Please grant the location permission",
-                REQUEST_LOCATION_PERMISSION,
-                *REQUIRED_PERMISSIONS
-            )
-        }
-    }
-
-    @AfterPermissionGranted(REQUEST_LOCATION_PERMISSION)
-    fun onLocationPermissionGranted() {
-        showLongToast(R.string.info_permission_granted)
-    }
-
     private fun showAddTrackableScreen() {
-        if (hasFineOrCoarseLocationPermissionGranted(this)) {
+        if (PermissionsHelper.hasFineOrCoarseLocationPermissionGranted(this)) {
             startActivity(Intent(this, AddTrackableActivity::class.java))
         } else {
-            requestLocationPermission()
+            PermissionsHelper.requestLocationPermission(this)
         }
     }
 
@@ -151,8 +129,12 @@ class MainActivity : PublisherServiceActivity() {
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        // Forward results to EasyPermissions
-        EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this)
+        PermissionsHelper.onRequestPermissionsResult(
+            requestCode,
+            permissions,
+            grantResults,
+            onLocationPermissionGranted = { showLongToast(R.string.info_permission_granted) }
+        )
     }
 
     private fun showTrackablesList() {

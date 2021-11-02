@@ -1,6 +1,7 @@
 package com.ably.tracking.example.publisher
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.res.ColorStateList
 import android.os.Bundle
@@ -74,9 +75,8 @@ class AddTrackableActivity : PublisherServiceActivity() {
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
     private fun addTrackableClicked() {
         getTrackableId().let { trackableId ->
-            if (!hasFineOrCoarseLocationPermissionGranted(this)) {
-                showLongToast(R.string.error_location_permission_required)
-                finish()
+            if (!PermissionsHelper.hasFineOrCoarseLocationPermissionGranted(this)) {
+                PermissionsHelper.requestLocationPermission(this)
                 return
             }
             if (trackableId.isNotEmpty()) {
@@ -207,5 +207,18 @@ class AddTrackableActivity : PublisherServiceActivity() {
                 ColorStateList.valueOf(ContextCompat.getColor(this, R.color.button_inactive))
             addTrackableButton.setTextColor(ContextCompat.getColor(this, R.color.mid_grey))
         }
+    }
+
+    @SuppressLint("MissingPermission")
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        PermissionsHelper.onRequestPermissionsResult(
+            requestCode,
+            permissions,
+            grantResults,
+            onLocationPermissionGranted = {
+                addTrackableClicked()
+            }
+        )
     }
 }

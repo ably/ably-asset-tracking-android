@@ -60,7 +60,6 @@
   <string name="error_s3_not_initialized_history_data_upload">S3 not initialized - cannot upload history data</string>
   <string name="error_s3_not_initialized_history_data_download">S3 not initialized - cannot download history data</string>
   <string name="error_s3_not_initialized_history_data_fetch">S3 not initialized - cannot fetch files</string>
-  <string name="error_location_permission_required">Grant the location permission to use the publisher</string>
   <string name="error_no_trackable_id">Insert tracking ID</string>
   <string name="error_publisher_service_not_started">Publisher service not started</string>
   <string name="error_trackable_adding_failed">Error when adding the trackable</string>
