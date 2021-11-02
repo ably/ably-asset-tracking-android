@@ -9,6 +9,7 @@ import com.ably.tracking.common.logging.i
 import com.ably.tracking.common.logging.v
 import com.ably.tracking.common.logging.w
 import com.ably.tracking.common.message.getEnhancedLocationUpdate
+import com.ably.tracking.common.message.getRawLocationUpdate
 import com.ably.tracking.common.message.toJson
 import com.ably.tracking.common.message.toMessage
 import com.ably.tracking.connection.ConnectionConfiguration
@@ -111,6 +112,17 @@ interface Ably {
      * @throws ConnectionException if something goes wrong.
      */
     fun subscribeForEnhancedEvents(trackableId: String, listener: (LocationUpdate) -> Unit)
+
+    /**
+     * Adds a listener for the raw location updates that are received from the channel.
+     * If a channel for the [trackableId] doesn't exist then nothing happens.
+     *
+     * @param trackableId The ID of the trackable channel.
+     * @param listener The function that will be called each time a raw location update event is received.
+     *
+     * @throws ConnectionException if something goes wrong.
+     */
+    fun subscribeForRawEvents(trackableId: String, listener: (LocationUpdate) -> Unit)
 
     /**
      * Joins the presence of the channel for the given [trackableId] and add it to the connected channels.
@@ -388,6 +400,18 @@ constructor(
             try {
                 channel.subscribe(EventNames.ENHANCED) { message ->
                     listener(message.getEnhancedLocationUpdate(gson))
+                }
+            } catch (exception: AblyException) {
+                throw exception.errorInfo.toTrackingException()
+            }
+        }
+    }
+
+    override fun subscribeForRawEvents(trackableId: String, listener: (LocationUpdate) -> Unit) {
+        channels[trackableId]?.let { channel ->
+            try {
+                channel.subscribe(EventNames.RAW) { message ->
+                    listener(message.getRawLocationUpdate(gson))
                 }
             } catch (exception: AblyException) {
                 throw exception.errorInfo.toTrackingException()

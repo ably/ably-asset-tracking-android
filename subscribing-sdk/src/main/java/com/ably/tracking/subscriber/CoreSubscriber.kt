@@ -29,15 +29,17 @@ internal interface CoreSubscriber {
     fun enqueue(event: AdhocEvent)
     fun request(request: Request<*>)
     val enhancedLocations: SharedFlow<LocationUpdate>
+    val rawLocations: SharedFlow<LocationUpdate>
     val trackableStates: StateFlow<TrackableState>
 }
 
 internal fun createCoreSubscriber(
     ably: Ably,
     initialResolution: Resolution? = null,
-    trackableId: String
+    trackableId: String,
+    areRawLocationsEnabled: Boolean?,
 ): CoreSubscriber {
-    return DefaultCoreSubscriber(ably, initialResolution, trackableId)
+    return DefaultCoreSubscriber(ably, initialResolution, trackableId, areRawLocationsEnabled)
 }
 
 /**
@@ -48,16 +50,21 @@ private val singleThreadDispatcher = createSingleThreadDispatcher()
 private class DefaultCoreSubscriber(
     private val ably: Ably,
     private val initialResolution: Resolution?,
-    private val trackableId: String
+    private val trackableId: String,
+    private val areRawLocationsEnabled: Boolean?,
 ) :
     CoreSubscriber {
     private val scope = CoroutineScope(singleThreadDispatcher + SupervisorJob())
     private val sendEventChannel: SendChannel<Event>
     private val _trackableStates: MutableStateFlow<TrackableState> = MutableStateFlow(TrackableState.Offline())
     private val _enhancedLocations: MutableSharedFlow<LocationUpdate> = MutableSharedFlow(replay = 1)
+    private val _rawLocations: MutableSharedFlow<LocationUpdate> = MutableSharedFlow(replay = 1)
 
     override val enhancedLocations: SharedFlow<LocationUpdate>
         get() = _enhancedLocations.asSharedFlow()
+
+    override val rawLocations: SharedFlow<LocationUpdate>
+        get() = _rawLocations.asSharedFlow()
 
     override val trackableStates: StateFlow<TrackableState>
         get() = _trackableStates.asStateFlow()
@@ -131,6 +138,9 @@ private class DefaultCoreSubscriber(
                     is ConnectionReadyEvent -> {
                         subscribeForChannelState()
                         subscribeForEnhancedEvents()
+                        if (areRawLocationsEnabled == true) {
+                            subscribeForRawEvents()
+                        }
                         event.handler(Result.success(Unit))
                     }
                     is PresenceMessageEvent -> {
@@ -206,6 +216,12 @@ private class DefaultCoreSubscriber(
     private fun subscribeForEnhancedEvents() {
         ably.subscribeForEnhancedEvents(trackableId) {
             scope.launch { _enhancedLocations.emit(it) }
+        }
+    }
+
+    private fun subscribeForRawEvents() {
+        ably.subscribeForRawEvents(trackableId) {
+            scope.launch { _rawLocations.emit(it) }
         }
     }
 

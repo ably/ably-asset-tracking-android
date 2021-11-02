@@ -4,27 +4,31 @@ import com.ably.tracking.LocationUpdate
 import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
 
 internal class DefaultSubscriber(
     ably: Ably,
     resolution: Resolution?,
-    trackableId: String
+    trackableId: String,
+    areRawLocationsEnabled: Boolean?,
 ) : Subscriber {
     private val core: CoreSubscriber
 
     override val locations: SharedFlow<LocationUpdate>
         get() = core.enhancedLocations
 
+    override val rawLocations: SharedFlow<LocationUpdate>
+        get() = core.rawLocations
+
     override val trackableStates: StateFlow<TrackableState>
         get() = core.trackableStates
 
     init {
-        core = createCoreSubscriber(ably, resolution, trackableId)
+        core = createCoreSubscriber(ably, resolution, trackableId, areRawLocationsEnabled)
     }
 
     /**

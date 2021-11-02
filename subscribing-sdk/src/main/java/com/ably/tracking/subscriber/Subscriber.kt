@@ -3,10 +3,10 @@ package com.ably.tracking.subscriber
 import com.ably.tracking.BuilderConfigurationIncompleteException
 import com.ably.tracking.ConnectionException
 import com.ably.tracking.LocationUpdate
-import com.ably.tracking.logging.LogHandler
 import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
 import com.ably.tracking.connection.ConnectionConfiguration
+import com.ably.tracking.logging.LogHandler
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -46,6 +46,13 @@ interface Subscriber {
      * The shared flow emitting enhanced location values when they become available.
      */
     val locations: SharedFlow<LocationUpdate>
+        @JvmSynthetic get
+
+    /**
+     * The shared flow emitting raw location values when they become available.
+     * Raw locations are disabled by default. To enable them use [].
+     */
+    val rawLocations: SharedFlow<LocationUpdate>
         @JvmSynthetic get
 
     /**
@@ -103,6 +110,17 @@ interface Subscriber {
          * @return A new instance of the builder with this property changed.
          */
         fun logHandler(logHandler: LogHandler): Builder
+
+        /**
+         * EXPERIMENTAL API
+         * **OPTIONAL** Enables subscribing for raw location updates. This should only be enabled for diagnostics.
+         * In the production environment this should be always disabled.
+         * By default this is disabled.
+         *
+         * @param enabled Whether subscribing for raw location updates is enabled.
+         * @return A new instance of the builder with this property changed.
+         */
+        fun rawLocations(enabled: Boolean): Builder
 
         /**
          * Creates a [Subscriber] and starts listening for location updates.
