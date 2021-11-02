@@ -59,14 +59,17 @@ interface Ably {
      * Adds a listener for the presence messages that are received from the channel's presence.
      * After adding a listener it will emit [PresenceMessage] for each client that's currently in the presence.
      * Should be called only when there's an existing channel for the [trackableId].
-     * If a channel for the [trackableId] doesn't exist then nothing happens.
+     * If a channel for the [trackableId] doesn't exist then it just calls [callback] with success.
      *
      * @param trackableId The ID of the trackable channel.
      * @param listener The function that will be called each time a presence message is received.
-     *
-     * @throws ConnectionException if something goes wrong.
+     * @param callback The function that will be called when subscribing completes. If something goes wrong it will be called with [ConnectionException].
      */
-    fun subscribeForPresenceMessages(trackableId: String, listener: (PresenceMessage) -> Unit)
+    fun subscribeForPresenceMessages(
+        trackableId: String,
+        listener: (PresenceMessage) -> Unit,
+        callback: (Result<Unit>) -> Unit,
+    )
 
     /**
      * Sends an enhanced location update to the channel.
@@ -392,34 +395,45 @@ constructor(
         }
     }
 
-    override fun subscribeForPresenceMessages(trackableId: String, listener: (PresenceMessage) -> Unit) {
-        channels[trackableId]?.let { channel ->
-            try {
-                // Emit the current presence messages of the channel
-                channel.presence.get(true).let { messages ->
-                    messages.forEach { presenceMessage ->
-                        // Each message is launched in a fire-and-forget manner to not block this method on the listener() call
-                        scope.launch {
-                            val parsedMessage = presenceMessage.toTracking(gson)
-                            if (parsedMessage != null) {
-                                listener(parsedMessage)
-                            } else {
-                                logHandler?.w("Presence message in unexpected format: $presenceMessage")
+    override fun subscribeForPresenceMessages(
+        trackableId: String,
+        listener: (PresenceMessage) -> Unit,
+        callback: (Result<Unit>) -> Unit,
+    ) {
+        val channel = channels[trackableId]
+        if (channel != null) {
+            // Launching on a separate thread as the presence.get(true) might block the current thread
+            scope.launch {
+                try {
+                    // Emit the current presence messages of the channel
+                    channel.presence.get(true).let { messages ->
+                        messages.forEach { presenceMessage ->
+                            // Each message is launched in a fire-and-forget manner to not block this method on the listener() call
+                            scope.launch {
+                                val parsedMessage = presenceMessage.toTracking(gson)
+                                if (parsedMessage != null) {
+                                    listener(parsedMessage)
+                                } else {
+                                    logHandler?.w("Presence message in unexpected format: $presenceMessage")
+                                }
                             }
                         }
                     }
-                }
-                channel.presence.subscribe {
-                    val parsedMessage = it.toTracking(gson)
-                    if (parsedMessage != null) {
-                        listener(parsedMessage)
-                    } else {
-                        logHandler?.w("Presence message in unexpected format: $it")
+                    channel.presence.subscribe {
+                        val parsedMessage = it.toTracking(gson)
+                        if (parsedMessage != null) {
+                            listener(parsedMessage)
+                        } else {
+                            logHandler?.w("Presence message in unexpected format: $it")
+                        }
                     }
+                    callback(Result.success(Unit))
+                } catch (exception: AblyException) {
+                    callback(Result.failure(exception.errorInfo.toTrackingException()))
                 }
-            } catch (exception: AblyException) {
-                throw exception.errorInfo.toTrackingException()
             }
+        } else {
+            callback(Result.success(Unit))
         }
     }
 

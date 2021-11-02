@@ -226,19 +226,6 @@ constructor(
                                 ably.connect(event.trackable.id, state.presenceData, willPublish = true) { result ->
                                     try {
                                         result.getOrThrow()
-                                        try {
-                                            ably.subscribeForPresenceMessages(event.trackable.id) {
-                                                enqueue(PresenceMessageEvent(event.trackable, it))
-                                            }
-                                        } catch (exception: ConnectionException) {
-                                            ably.disconnect(event.trackable.id, state.presenceData) {
-                                                throw exception
-                                            }
-                                            return@connect
-                                        }
-                                        ably.subscribeForChannelStateChange(event.trackable.id) {
-                                            enqueue(ChannelConnectionStateChangeEvent(it, event.trackable.id))
-                                        }
                                         request(ConnectionForTrackableCreatedEvent(event.trackable, event.handler))
                                     } catch (exception: ConnectionException) {
                                         request(AddTrackableFailedEvent(event.trackable, event.handler, exception))
@@ -282,6 +269,25 @@ constructor(
                         }
                     }
                     is ConnectionForTrackableCreatedEvent -> {
+                        ably.subscribeForPresenceMessages(
+                            trackableId = event.trackable.id,
+                            listener = { enqueue(PresenceMessageEvent(event.trackable, it)) },
+                            callback = { result ->
+                                try {
+                                    result.getOrThrow()
+                                    request(ConnectionForTrackableReadyEvent(event.trackable, event.handler))
+                                } catch (exception: ConnectionException) {
+                                    ably.disconnect(event.trackable.id, state.presenceData) {
+                                        request(AddTrackableFailedEvent(event.trackable, event.handler, exception))
+                                    }
+                                }
+                            }
+                        )
+                    }
+                    is ConnectionForTrackableReadyEvent -> {
+                        ably.subscribeForChannelStateChange(event.trackable.id) {
+                            enqueue(ChannelConnectionStateChangeEvent(it, event.trackable.id))
+                        }
                         if (!state.isTracking) {
                             state.isTracking = true
                             mapbox.startTrip()

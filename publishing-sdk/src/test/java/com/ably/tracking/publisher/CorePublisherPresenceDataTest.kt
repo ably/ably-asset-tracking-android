@@ -7,7 +7,7 @@ import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ClientTypes
 import com.ably.tracking.common.PresenceData
-import com.ably.tracking.test.common.mockConnectSuccess
+import com.ably.tracking.test.common.mockCreateConnectionSuccess
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -81,7 +81,7 @@ class CorePublisherPresenceDataTest {
     }
 
     private fun addTrackable(trackable: Trackable, corePublisher: CorePublisher) {
-        ably.mockConnectSuccess(trackable.id)
+        ably.mockCreateConnectionSuccess(trackable.id)
         runBlocking(Dispatchers.IO) {
             addTrackableToCorePublisher(trackable, corePublisher)
         }

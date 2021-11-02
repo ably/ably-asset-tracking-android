@@ -1,6 +1,7 @@
 package com.ably.tracking.example.publisher
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.res.ColorStateList
 import android.os.Bundle
@@ -71,22 +72,27 @@ class AddTrackableActivity : PublisherServiceActivity() {
     }
 
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
-    override fun onPublisherServiceConnected(publisherService: PublisherService) {
-        // If the publisher is not started it means that we've just created the service and we should add a trackable
-        if (!publisherService.isPublisherStarted) {
-            startPublisherAndAddTrackable(getTrackableId())
-        }
-    }
-
-    @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
     private fun addTrackableClicked() {
         getTrackableId().let { trackableId ->
+            if (!PermissionsHelper.hasFineOrCoarseLocationPermissionGranted(this)) {
+                PermissionsHelper.requestLocationPermission(this)
+                return
+            }
             if (trackableId.isNotEmpty()) {
                 showLoading()
                 if (isPublisherServiceStarted()) {
-                    startPublisherAndAddTrackable(trackableId)
+                    publisherService?.let { publisherService ->
+                        scope.launch(CoroutineExceptionHandler { _, _ -> onAddTrackableFailed() }) {
+                            if (!publisherService.isPublisherStarted) {
+                                startPublisher(publisherService)
+                            }
+                            publisherService.publisher!!.track(createTrackable(trackableId))
+                            showTrackableDetailsScreen(trackableId)
+                            finish()
+                        }
+                    }
                 } else {
-                    startAndBindPublisherService()
+                    onAddTrackableFailed("Publisher service not started")
                 }
             } else {
                 showLongToast("Insert tracking ID")
@@ -95,31 +101,16 @@ class AddTrackableActivity : PublisherServiceActivity() {
     }
 
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
-    private fun startPublisherAndAddTrackable(trackableId: String) {
-        publisherService.let { publisherService ->
-            if (publisherService == null) {
-                onAddTrackableFailed()
-                return
-            }
-            scope.launch(
-                CoroutineExceptionHandler { _, _ -> onAddTrackableFailed() }
-            ) {
-                if (!publisherService.isPublisherStarted) {
-                    val locationHistoryData = when (appPreferences.getLocationSource()) {
-                        LocationSourceType.S3_FILE -> downloadLocationHistoryData()
-                        else -> null
-                    }
-                    publisherService.startPublisher(createLocationSource(locationHistoryData))
-                }
-                publisherService.publisher!!.track(createTrackable(trackableId))
-                showTrackableDetailsScreen(trackableId)
-                finish()
-            }
+    private suspend fun startPublisher(publisherService: PublisherService) {
+        val locationHistoryData = when (appPreferences.getLocationSource()) {
+            LocationSourceType.S3_FILE -> downloadLocationHistoryData()
+            else -> null
         }
+        publisherService.startPublisher(createLocationSource(locationHistoryData))
     }
 
-    private fun onAddTrackableFailed() {
-        showLongToast("Error when adding the trackable")
+    private fun onAddTrackableFailed(message: String = "Error when adding the trackable") {
+        showLongToast(message)
         hideLoading()
     }
 
@@ -215,5 +206,18 @@ class AddTrackableActivity : PublisherServiceActivity() {
                 ColorStateList.valueOf(ContextCompat.getColor(this, R.color.button_inactive))
             addTrackableButton.setTextColor(ContextCompat.getColor(this, R.color.mid_grey))
         }
+    }
+
+    @SuppressLint("MissingPermission")
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        PermissionsHelper.onRequestPermissionsResult(
+            requestCode,
+            permissions,
+            grantResults,
+            onLocationPermissionGranted = {
+                addTrackableClicked()
+            }
+        )
     }
 }

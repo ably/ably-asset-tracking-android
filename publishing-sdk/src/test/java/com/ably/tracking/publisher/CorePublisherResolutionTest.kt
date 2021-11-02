@@ -8,7 +8,7 @@ import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
 import com.ably.tracking.test.common.createLocation
-import com.ably.tracking.test.common.mockConnectSuccess
+import com.ably.tracking.test.common.mockCreateConnectionSuccess
 import com.ably.tracking.test.common.mockSendEnhancedLocationSuccess
 import com.mapbox.geojson.LineString
 import com.mapbox.geojson.Point
@@ -17,6 +17,10 @@ import com.mapbox.turf.TurfMeasurement
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import java.util.UUID
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.coroutines.suspendCoroutine
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
@@ -24,10 +28,6 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
-import java.util.UUID
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
-import kotlin.coroutines.suspendCoroutine
 
 @RunWith(Parameterized::class)
 class CorePublisherResolutionTest(
@@ -150,7 +150,7 @@ class CorePublisherResolutionTest(
     }
 
     private fun addTrackable(trackable: Trackable) {
-        ably.mockConnectSuccess(trackable.id)
+        ably.mockCreateConnectionSuccess(trackable.id)
         runBlocking(Dispatchers.IO) {
             addTrackableToCorePublisher(trackable)
         }
