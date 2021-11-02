@@ -206,9 +206,10 @@ interface Publisher {
          * In the production environment this should be always disabled.
          * By default this is disabled.
          *
+         * @param enabled Whether the sending of raw location updates is enabled.
          * @return A new instance of the builder with this property changed.
          */
-        fun enableRawLocations(): Builder
+        fun rawLocations(enabled: Boolean): Builder
 
         /**
          * Creates a [Publisher] and starts publishing.

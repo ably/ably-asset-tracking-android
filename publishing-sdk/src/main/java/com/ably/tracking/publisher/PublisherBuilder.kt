@@ -49,8 +49,8 @@ internal data class PublisherBuilder(
     ): Publisher.Builder =
         this.copy(notificationProvider = notificationProvider, notificationId = notificationId)
 
-    override fun enableRawLocations(): Publisher.Builder =
-        this.copy(areRawLocationsEnabled = true)
+    override fun rawLocations(enabled: Boolean): Publisher.Builder =
+        this.copy(areRawLocationsEnabled = enabled)
 
     @RequiresPermission(anyOf = [ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION])
     override fun start(): Publisher {
