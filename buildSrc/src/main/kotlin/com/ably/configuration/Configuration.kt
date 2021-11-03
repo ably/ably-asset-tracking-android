@@ -3,7 +3,8 @@ package com.ably.configuration
 object Configuration {
     const val compileSdk = 30
     const val targetSdk = 30
-    const val minSdk = 21
+    const val minSdkLower = 21
+    const val minSdkHigher = 24
     const val majorVersion = 1
     const val minorVersion = 2
     const val patchVersion = 8
