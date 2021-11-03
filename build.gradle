@@ -19,15 +19,15 @@ buildscript {
         // see: https://firebase.google.com/docs/crashlytics/get-started?platform=android
         classpath 'com.google.gms:google-services:4.3.5'
         classpath 'com.google.firebase:firebase-crashlytics-gradle:2.5.2'
-
-        // NOTE: Do not place your application dependencies here; they belong
-        // in the individual module build.gradle files
     }
 }
 
 plugins {
     id 'org.jlleitschuh.gradle.ktlint' version '10.1.0'
     id 'org.jetbrains.dokka' version '1.4.32'
+    //Recommended by https://proandroiddev.com/publishing-android-libraries-to-mavencentral-in-2021-8ac9975c3e52
+
+    id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
 }
 
 allprojects {
