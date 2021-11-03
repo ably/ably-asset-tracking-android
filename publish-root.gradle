@@ -1,4 +1,4 @@
-
+import com.ably.configuration.*
 // Create variables with empty default values
 ext["ossrhUsername"] = ''
 ext["ossrhPassword"] = ''
@@ -25,6 +25,11 @@ if (secretPropsFile.exists()) {
     ext["snapshot"] = System.getenv('SNAPSHOT')
 }
 
+if (snapshot) {
+    ext["rootVersionName"] = Configuration.snapshotVersionName
+} else {
+    ext["rootVersionName"] = Configuration.versionName
+}
 
 // Set up Sonatype repository
 nexusPublishing {
