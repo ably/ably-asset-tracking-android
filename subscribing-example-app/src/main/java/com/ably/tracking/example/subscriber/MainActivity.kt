@@ -60,7 +60,8 @@ private const val ZOOM_LEVEL_CONTINENT = 5F
 class MainActivity : AppCompatActivity() {
     private var subscriber: Subscriber? = null
     private var googleMap: GoogleMap? = null
-    private var marker: Marker? = null
+    private var enhancedMarker: Marker? = null
+    private var rawMarker: Marker? = null
     private var resolution: Resolution =
         Resolution(Accuracy.MAXIMUM, desiredInterval = 1000L, minimumDisplacement = 1.0)
 
@@ -147,10 +148,14 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             })
+            .rawLocations(true)
             .start()
             .apply {
                 locations
-                    .onEach { showMarkerOnMap(it.location) }
+                    .onEach { showMarkerOnMap(it.location, isRaw = false) }
+                    .launchIn(scope)
+                rawLocations
+                    .onEach { showMarkerOnMap(it.location, isRaw = true) }
                     .launchIn(scope)
                 trackableStates
                     .onEach { updateAssetState(it) }
@@ -239,7 +244,8 @@ class MainActivity : AppCompatActivity() {
             try {
                 subscriber?.stop()
                 subscriber = null
-                marker = null
+                enhancedMarker = null
+                rawMarker = null
                 showStoppedSubscriberLayout()
                 hideLoading()
             } catch (exception: Exception) {
@@ -249,35 +255,44 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun showMarkerOnMap(location: Location) {
+    private fun showMarkerOnMap(location: Location, isRaw: Boolean) {
         googleMap?.apply {
-            LatLng(location.latitude, location.longitude).let { position ->
-                marker.let { currentMarker ->
-                    if (currentMarker == null) {
-                        marker = addMarker(
-                            MarkerOptions()
-                                .position(position)
-                                .icon(getMarkerIcon(location.bearing))
-                        )
-                        moveCamera(CameraUpdateFactory.newLatLngZoom(position, ZOOM_LEVEL_STREETS))
-                    } else {
-                        val cameraPosition = CameraUpdateFactory.newLatLng(position)
-                        currentMarker.setIcon(getMarkerIcon(location.bearing))
-                        if (animationSwitch.isChecked) {
-                            animateCamera(cameraPosition)
-                            animateMarkerMovement(currentMarker, position)
-                        } else {
-                            moveCamera(cameraPosition)
-                            currentMarker.position = position
-                        }
+            val position = LatLng(location.latitude, location.longitude)
+            val currentMarker = if (isRaw) rawMarker else enhancedMarker
+            if (currentMarker == null) {
+                val marker = addMarker(
+                    MarkerOptions()
+                        .position(position)
+                        .icon(getMarkerIcon(location.bearing, isRaw))
+                        .alpha(if (isRaw) 0.5f else 1f)
+                )
+                if (isRaw) {
+                    rawMarker = marker
+                } else {
+                    enhancedMarker = marker
+                    moveCamera(CameraUpdateFactory.newLatLngZoom(position, ZOOM_LEVEL_STREETS))
+                }
+            } else {
+                val cameraPosition = CameraUpdateFactory.newLatLng(position)
+                currentMarker.setIcon(getMarkerIcon(location.bearing, isRaw))
+                if (animationSwitch.isChecked) {
+                    if (!isRaw) {
+                        animateCamera(cameraPosition)
                     }
+                    animateMarkerMovement(currentMarker, position)
+                } else {
+                    if (!isRaw) {
+                        moveCamera(cameraPosition)
+                    }
+                    currentMarker.position = position
                 }
             }
         }
     }
 
-    private fun getMarkerIcon(bearing: Float) =
-        BitmapDescriptorFactory.fromResource(getMarkerResourceIdByBearing(bearing))
+    private fun getMarkerIcon(bearing: Float, isRaw: Boolean) =
+        if (isRaw) BitmapDescriptorFactory.fromResource(getMarkerResourceIdByBearing(bearing, true))
+        else BitmapDescriptorFactory.fromResource(getMarkerResourceIdByBearing(bearing, false))
 
     private fun changeStartButtonText(isSubscribing: Boolean) {
         if (isSubscribing) {
