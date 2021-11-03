@@ -62,7 +62,7 @@ class MainActivity : PublisherServiceActivity() {
                             publisherService.publisher?.stop()
                             publisherService.publisher = null
                         } catch (e: Exception) {
-                            showLongToast(R.string.error_stop_publisher)
+                            showLongToast(R.string.error_stopping_publisher_failed)
                         }
                     } else {
                         showTrackablesList()

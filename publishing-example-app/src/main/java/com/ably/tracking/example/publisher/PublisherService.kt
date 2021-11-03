@@ -132,7 +132,7 @@ class PublisherService : Service() {
             S3Helper.uploadHistoryData(
                 this,
                 historyData
-            ) { showShortToast(R.string.error_s3_not_initialized_history_data_upload) }
+            ) { showShortToast(R.string.error_s3_not_initialized_history_data_upload_failed) }
         }
     }
 }

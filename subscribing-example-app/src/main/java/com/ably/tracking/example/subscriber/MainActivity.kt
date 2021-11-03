@@ -122,7 +122,7 @@ class MainActivity : AppCompatActivity() {
                         showStartedSubscriberLayout()
                         hideLoading()
                     } catch (exception: Exception) {
-                        showToast(R.string.error_start_subscriber)
+                        showToast(R.string.error_starting_subscriber_failed)
                         hideLoading()
                     }
                 }
@@ -175,7 +175,7 @@ class MainActivity : AppCompatActivity() {
                 resolution = newResolution
                 updateResolutionInfo(newResolution)
             } catch (exception: Exception) {
-                showToast(R.string.error_change_resolution)
+                showToast(R.string.error_changing_resolution_failed)
             }
         }
     }
@@ -245,7 +245,7 @@ class MainActivity : AppCompatActivity() {
                 hideLoading()
             } catch (exception: Exception) {
                 hideLoading()
-                showToast(R.string.error_stop_subscriber)
+                showToast(R.string.error_stopping_subscriber_failed)
             }
         }
     }

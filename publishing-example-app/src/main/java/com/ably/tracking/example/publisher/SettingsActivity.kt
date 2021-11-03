@@ -52,7 +52,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 setupS3Preference(filenamesWithSizes, filenames)
             },
             onUninitialized = {
-                requireContext().showShortToast(R.string.error_s3_not_initialized_history_data_fetch)
+                requireContext().showShortToast(R.string.error_s3_not_initialized_history_data_fetch_failed)
             }
         )
     }

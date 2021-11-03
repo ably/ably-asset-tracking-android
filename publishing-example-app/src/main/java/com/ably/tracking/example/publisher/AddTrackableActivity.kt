@@ -162,7 +162,7 @@ class AddTrackableActivity : PublisherServiceActivity() {
                 onHistoryDataDownloaded = { continuation.resume(it) },
                 onError = { continuation.resumeWithException(it) },
                 onUninitialized = {
-                    showLongToast(R.string.error_s3_not_initialized_history_data_download)
+                    showLongToast(R.string.error_s3_not_initialized_history_data_download_failed)
                     continuation.resumeWithException(Exception("S3 not initialized"))
                 }
             )
