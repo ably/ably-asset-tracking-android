@@ -1,4 +1,4 @@
-import com.ably.configuration.*
+import com.ably.configuration.Configuration
 
 plugins {
     id 'com.android.library'

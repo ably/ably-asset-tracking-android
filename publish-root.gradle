@@ -1,4 +1,4 @@
-import com.ably.configuration.*
+import com.ably.configuration.Configuration
 // Create variables with empty default values
 ext["ossrhUsername"] = ''
 ext["ossrhPassword"] = ''
