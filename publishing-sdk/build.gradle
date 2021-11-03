@@ -1,3 +1,5 @@
+import com.ably.configuration.*
+
 plugins {
     id 'com.android.library'
     id 'kotlin-android'
@@ -7,9 +9,9 @@ plugins {
 }
 
 ext {
-    PUBLISH_GROUP_ID = "com.ably.io"
+    PUBLISH_GROUP_ID = Configuration.artifactGroup
     PUBLISH_ARTIFACT_ID = 'publishing-sdk'
-    PUBLISH_VERSION = "$ably_core_version"
+    PUBLISH_VERSION = Configuration.versionName
 }
 
 apply from: "../publish-module.gradle"

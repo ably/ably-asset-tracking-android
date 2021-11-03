@@ -38,7 +38,7 @@ nexusPublishing {
             stagingProfileId = sonatypeStagingProfileId
             username = ossrhUsername
             password = ossrhPassword
-            version = "1.2.8"
+            version = rootVersionName
         }
     }
 }
