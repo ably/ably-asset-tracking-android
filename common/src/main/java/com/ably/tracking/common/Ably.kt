@@ -115,6 +115,7 @@ interface Ably {
 
     /**
      * Adds a listener for the raw location updates that are received from the channel.
+     * The raw locations publishing needs to be enabled in the Publisher builder API in order to receive them here.
      * If a channel for the [trackableId] doesn't exist then nothing happens.
      *
      * @param trackableId The ID of the trackable channel.
