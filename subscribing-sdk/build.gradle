@@ -5,6 +5,13 @@ plugins {
     id 'org.jetbrains.dokka'
 }
 
+ext {
+    PUBLISH_GROUP_ID = "com.ably.io"
+    PUBLISH_ARTIFACT_ID = 'subscribing-sdk'
+    PUBLISH_VERSION = "$ably_core_version"
+}
+
+apply from: "../publish-module.gradle"
 apply from: '../jacoco.gradle'
 
 android {
@@ -18,4 +25,3 @@ dependencies {
     implementation project(':common')
 }
 
-apply from: '../publish.gradle'

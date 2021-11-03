@@ -6,6 +6,13 @@ plugins {
     id 'org.jetbrains.kotlin.kapt'
 }
 
+ext {
+    PUBLISH_GROUP_ID = "com.ably.io"
+    PUBLISH_ARTIFACT_ID = 'publishing-sdk'
+    PUBLISH_VERSION = "$ably_core_version"
+}
+
+apply from: "../publish-module.gradle"
 apply from: '../jacoco.gradle'
 
 android {
@@ -46,5 +53,3 @@ dependencies {
     // https://developers.google.com/android/reference/com/google/android/gms/location/FusedLocationProviderClient
     implementation 'com.google.android.gms:play-services-location:17.1.0'
 }
-
-apply from: '../publish.gradle'

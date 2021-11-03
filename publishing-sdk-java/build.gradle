@@ -4,6 +4,14 @@ plugins {
     id 'org.jlleitschuh.gradle.ktlint'
 }
 
+ext {
+    PUBLISH_GROUP_ID = "com.ably.io"
+    PUBLISH_ARTIFACT_ID = 'publishing-sdk-java'
+    PUBLISH_VERSION = "$ably_core_version"
+}
+
+apply from: "../publish-module.gradle"
+
 apply from: '../jacoco.gradle'
 
 dependencies {
@@ -11,5 +19,3 @@ dependencies {
     api project(':core-sdk-java')
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.4.2'
 }
-
-apply from: '../publish.gradle'

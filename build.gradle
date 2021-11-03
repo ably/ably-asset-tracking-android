@@ -239,3 +239,6 @@ subprojects {
 task clean(type: Delete) {
     delete rootProject.buildDir
 }
+
+apply from: "publish-root.gradle"
+

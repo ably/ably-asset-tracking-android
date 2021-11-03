@@ -3,6 +3,13 @@ plugins {
     id 'kotlin-android'
     id 'org.jlleitschuh.gradle.ktlint'
 }
+ext {
+    PUBLISH_GROUP_ID = "com.ably.io"
+    PUBLISH_ARTIFACT_ID = 'Common library'
+    PUBLISH_VERSION = "$ably_core_version"
+}
+
+apply from: "../publish-module.gradle"
 
 dependencies {
     implementation project(':core-sdk')
@@ -18,5 +25,3 @@ android {
         consumerProguardFiles 'consumer-rules.pro'
     }
 }
-
-apply from: '../publish.gradle'
