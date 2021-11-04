@@ -5,6 +5,7 @@ plugins {
     id 'kotlin-android'
     id 'org.jlleitschuh.gradle.ktlint'
 }
+
 ext {
     PUBLISH_GROUP_ID = Configuration.artifactGroup
     PUBLISH_ARTIFACT_ID = 'asset-tracking-common'

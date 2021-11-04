@@ -9,6 +9,7 @@ object Configuration {
     const val minorVersion = 2
     const val patchVersion = 8
     const val versionName = "$majorVersion.$minorVersion.$patchVersion"
+    const val versionCode = 12
     const val snapshotVersionName = "$majorVersion.$minorVersion.${patchVersion + 1}-SNAPSHOT"
-    const val artifactGroup = "io.ably"
+    const val artifactGroup = "com.ably.tracking"
 }
