@@ -8,4 +8,4 @@ enum class PresenceAction {
     PRESENT_OR_ENTER, LEAVE_OR_ABSENT, UPDATE;
 }
 
-data class PresenceData(val type: String, val resolution: Resolution? = null)
+data class PresenceData(val type: String, val resolution: Resolution? = null, val rawLocations: Boolean? = null)

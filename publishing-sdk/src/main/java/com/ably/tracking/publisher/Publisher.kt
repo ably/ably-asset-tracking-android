@@ -7,9 +7,9 @@ import androidx.annotation.RequiresPermission
 import com.ably.tracking.BuilderConfigurationIncompleteException
 import com.ably.tracking.ConnectionException
 import com.ably.tracking.LocationUpdate
-import com.ably.tracking.logging.LogHandler
 import com.ably.tracking.TrackableState
 import com.ably.tracking.connection.ConnectionConfiguration
+import com.ably.tracking.logging.LogHandler
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -199,6 +199,17 @@ interface Publisher {
             notificationProvider: PublisherNotificationProvider,
             notificationId: Int
         ): Builder
+
+        /**
+         * EXPERIMENTAL API
+         * **OPTIONAL** Enables sending of raw location updates. This should only be enabled for diagnostics.
+         * In the production environment this should be always disabled.
+         * By default this is disabled.
+         *
+         * @param enabled Whether the sending of raw location updates is enabled.
+         * @return A new instance of the builder with this property changed.
+         */
+        fun rawLocations(enabled: Boolean): Builder
 
         /**
          * Creates a [Publisher] and starts publishing.

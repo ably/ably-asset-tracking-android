@@ -50,8 +50,16 @@ internal fun createCorePublisher(
     resolutionPolicyFactory: ResolutionPolicy.Factory,
     routingProfile: RoutingProfile,
     logHandler: LogHandler?,
+    areRawLocationsEnabled: Boolean?,
 ): CorePublisher {
-    return DefaultCorePublisher(ably, mapbox, resolutionPolicyFactory, routingProfile, logHandler)
+    return DefaultCorePublisher(
+        ably,
+        mapbox,
+        resolutionPolicyFactory,
+        routingProfile,
+        logHandler,
+        areRawLocationsEnabled
+    )
 }
 
 /**
@@ -67,6 +75,7 @@ constructor(
     resolutionPolicyFactory: ResolutionPolicy.Factory,
     routingProfile: RoutingProfile,
     private val logHandler: LogHandler?,
+    private val areRawLocationsEnabled: Boolean?,
 ) : CorePublisher {
     private val scope = CoroutineScope(singleThreadDispatcher + SupervisorJob())
     private val sendEventChannel: SendChannel<Event>
@@ -130,7 +139,7 @@ constructor(
     ) {
         launch {
             // state
-            val state = State(routingProfile, policy.resolve(emptySet()))
+            val state = State(routingProfile, policy.resolve(emptySet()), areRawLocationsEnabled)
 
             // processing
             for (event in receiveEventChannel) {
@@ -155,6 +164,9 @@ constructor(
                     }
                     is RawLocationChangedEvent -> {
                         state.lastPublisherLocation = event.location
+                        if (areRawLocationsEnabled == true) {
+                            state.trackables.forEach { processRawLocationUpdate(event, state, it.id) }
+                        }
                         state.rawLocationChangedCommands.apply {
                             if (isNotEmpty()) {
                                 forEach { command -> command(state) }
@@ -333,8 +345,11 @@ constructor(
                             ?.let { enqueue(ChangeLocationEngineResolutionEvent()) }
                         state.requests.remove(event.trackable.id)
                         state.lastSentEnhancedLocations.remove(event.trackable.id)
+                        state.lastSentRawLocations.remove(event.trackable.id)
                         state.skippedEnhancedLocations.clear(event.trackable.id)
+                        state.skippedRawLocations.clear(event.trackable.id)
                         state.enhancedLocationsPublishingState.clear(event.trackable.id)
+                        state.rawLocationsPublishingState.clear(event.trackable.id)
                         state.duplicateTrackableGuard.clear(event.trackable)
                         // If this was the active Trackable then clear that state and remove destination.
                         if (state.active == event.trackable) {
@@ -391,12 +406,35 @@ constructor(
                             retrySendingEnhancedLocation(state, event.trackableId, event.locationUpdate)
                         } else {
                             state.enhancedLocationsPublishingState.unmarkMessageAsPending(event.trackableId)
-                            saveLocationForFurtherSending(state, event.trackableId, event.locationUpdate.location)
+                            saveEnhancedLocationForFurtherSending(
+                                state,
+                                event.trackableId,
+                                event.locationUpdate.location
+                            )
                             logHandler?.w(
                                 "Sending location update failed. Location saved for further sending",
                                 event.exception
                             )
                             processNextWaitingEnhancedLocationUpdate(state, event.trackableId)
+                        }
+                    }
+                    is SendRawLocationSuccessEvent -> {
+                        state.rawLocationsPublishingState.unmarkMessageAsPending(event.trackableId)
+                        state.lastSentRawLocations[event.trackableId] = event.location
+                        state.skippedRawLocations.clear(event.trackableId)
+                        processNextWaitingRawLocationUpdate(state, event.trackableId)
+                    }
+                    is SendRawLocationFailureEvent -> {
+                        if (state.rawLocationsPublishingState.shouldRetryPublishing(event.trackableId)) {
+                            retrySendingRawLocation(state, event.trackableId, event.locationUpdate)
+                        } else {
+                            state.rawLocationsPublishingState.unmarkMessageAsPending(event.trackableId)
+                            saveRawLocationForFurtherSending(state, event.trackableId, event.locationUpdate.location)
+                            logHandler?.w(
+                                "Sending raw location update failed. Location saved for further sending",
+                                event.exception
+                            )
+                            processNextWaitingRawLocationUpdate(state, event.trackableId)
                         }
                     }
                 }
@@ -438,7 +476,7 @@ constructor(
                 sendEnhancedLocationUpdate(event, state, trackableId)
             }
             else -> {
-                saveLocationForFurtherSending(state, trackableId, event.location)
+                saveEnhancedLocationForFurtherSending(state, trackableId, event.location)
                 processNextWaitingEnhancedLocationUpdate(state, trackableId)
             }
         }
@@ -471,8 +509,65 @@ constructor(
         }
     }
 
-    private fun saveLocationForFurtherSending(state: State, trackableId: String, location: Location) {
+    private fun saveEnhancedLocationForFurtherSending(state: State, trackableId: String, location: Location) {
         state.skippedEnhancedLocations.add(trackableId, location)
+    }
+
+    private fun retrySendingRawLocation(state: State, trackableId: String, locationUpdate: LocationUpdate) {
+        state.rawLocationsPublishingState.incrementRetryCount(trackableId)
+        sendRawLocationUpdate(RawLocationChangedEvent(locationUpdate.location), state, trackableId)
+    }
+
+    private fun processRawLocationUpdate(
+        event: RawLocationChangedEvent,
+        state: State,
+        trackableId: String
+    ) {
+        when {
+            state.rawLocationsPublishingState.hasPendingMessage(trackableId) -> {
+                state.rawLocationsPublishingState.addToWaiting(trackableId, event)
+            }
+            shouldSendLocation(
+                event.location,
+                state.lastSentRawLocations[trackableId],
+                state.resolutions[trackableId]
+            ) -> {
+                sendRawLocationUpdate(event, state, trackableId)
+            }
+            else -> {
+                saveRawLocationForFurtherSending(state, trackableId, event.location)
+                processNextWaitingRawLocationUpdate(state, trackableId)
+            }
+        }
+    }
+
+    private fun processNextWaitingRawLocationUpdate(state: State, trackableId: String) {
+        state.rawLocationsPublishingState.getNextWaiting(trackableId)?.let {
+            processRawLocationUpdate(it, state, trackableId)
+        }
+    }
+
+    private fun sendRawLocationUpdate(
+        event: RawLocationChangedEvent,
+        state: State,
+        trackableId: String
+    ) {
+        val locationUpdate = LocationUpdate(
+            event.location,
+            state.skippedRawLocations.toList(trackableId),
+        )
+        state.rawLocationsPublishingState.markMessageAsPending(trackableId)
+        ably.sendRawLocation(trackableId, locationUpdate) {
+            if (it.isSuccess) {
+                enqueue(SendRawLocationSuccessEvent(locationUpdate.location, trackableId))
+            } else {
+                enqueue(SendRawLocationFailureEvent(locationUpdate, trackableId, it.exceptionOrNull()))
+            }
+        }
+    }
+
+    private fun saveRawLocationForFurtherSending(state: State, trackableId: String, location: Location) {
+        state.skippedRawLocations.add(trackableId, location)
     }
 
     private fun stopLocationUpdates(state: State) {
@@ -666,7 +761,8 @@ constructor(
 
     private inner class State(
         routingProfile: RoutingProfile,
-        locationEngineResolution: Resolution
+        locationEngineResolution: Resolution,
+        areRawLocationsEnabled: Boolean?,
     ) {
         private var isDisposed: Boolean = false
         var isStopped: Boolean = false
@@ -690,7 +786,11 @@ constructor(
             get() = if (isDisposed) throw PublisherStateDisposedException() else field
         val lastSentEnhancedLocations: MutableMap<String, Location> = mutableMapOf()
             get() = if (isDisposed) throw PublisherStateDisposedException() else field
+        val lastSentRawLocations: MutableMap<String, Location> = mutableMapOf()
+            get() = if (isDisposed) throw PublisherStateDisposedException() else field
         val skippedEnhancedLocations: SkippedLocations = SkippedLocations()
+            get() = if (isDisposed) throw PublisherStateDisposedException() else field
+        val skippedRawLocations: SkippedLocations = SkippedLocations()
             get() = if (isDisposed) throw PublisherStateDisposedException() else field
         var estimatedArrivalTimeInMilliseconds: Long? = null
             get() = if (isDisposed) throw PublisherStateDisposedException() else field
@@ -702,7 +802,7 @@ constructor(
             get() = if (isDisposed) throw PublisherStateDisposedException() else field
         val requests: MutableMap<String, MutableMap<Subscriber, Resolution>> = mutableMapOf()
             get() = if (isDisposed) throw PublisherStateDisposedException() else field
-        var presenceData: PresenceData = PresenceData(ClientTypes.PUBLISHER)
+        var presenceData: PresenceData = PresenceData(ClientTypes.PUBLISHER, rawLocations = areRawLocationsEnabled)
             get() = if (isDisposed) throw PublisherStateDisposedException() else field
         var active: Trackable? = null
             get() = if (isDisposed) throw PublisherStateDisposedException() else field
@@ -718,7 +818,10 @@ constructor(
             }
         val rawLocationChangedCommands: MutableList<(State) -> Unit> = mutableListOf()
             get() = if (isDisposed) throw PublisherStateDisposedException() else field
-        val enhancedLocationsPublishingState: LocationsPublishingState = LocationsPublishingState()
+        val enhancedLocationsPublishingState: LocationsPublishingState<EnhancedLocationChangedEvent> =
+            LocationsPublishingState()
+            get() = if (isDisposed) throw PublisherStateDisposedException() else field
+        val rawLocationsPublishingState: LocationsPublishingState<RawLocationChangedEvent> = LocationsPublishingState()
             get() = if (isDisposed) throw PublisherStateDisposedException() else field
         val duplicateTrackableGuard: DuplicateTrackableGuard = DuplicateTrackableGuard()
             get() = if (isDisposed) throw PublisherStateDisposedException() else field
@@ -730,7 +833,9 @@ constructor(
             lastChannelConnectionStateChanges.clear()
             resolutions.clear()
             lastSentEnhancedLocations.clear()
+            lastSentRawLocations.clear()
             skippedEnhancedLocations.clearAll()
+            skippedRawLocations.clearAll()
             estimatedArrivalTimeInMilliseconds = null
             active = null
             lastPublisherLocation = null
@@ -739,6 +844,7 @@ constructor(
             requests.clear()
             rawLocationChangedCommands.clear()
             enhancedLocationsPublishingState.clearAll()
+            rawLocationsPublishingState.clearAll()
             duplicateTrackableGuard.clearAll()
             isDisposed = true
         }
