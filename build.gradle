@@ -1,6 +1,6 @@
 buildscript {
     ext.kotlin_version = '1.5.10'
-
+    ext.copyright_message = 'Copyright 2020-2021 Ably Real-time Ltd (ably.com)'
     // The version of Ably's client library for Java that we're using.
     // Source code: https://github.com/ably/ably-java
     // Maven coordinates: groupId 'io.ably', artifactId ':'ably-android'.
@@ -30,6 +30,11 @@ plugins {
     id 'org.jetbrains.dokka' version '1.4.32'
 }
 
+tasks.dokkaHtmlMultiModule.configure {
+    pluginsMapConfiguration.set(
+            ["org.jetbrains.dokka.base.DokkaBase": """{ "footerMessage": "$copyright_message"}"""]
+    )
+}
 allprojects {
     // group and version properties are configured here as they're inherited by the maven-publish plugin.
     group = 'com.ably.tracking'
@@ -118,28 +123,28 @@ subprojects {
 
                 // Lint rules which we might care about at some point, but need not fail the build.
                 informational 'GradleDependency',
-                              'NewerVersionAvailable',
-                              'AllowBackup',
-                              'VectorPath',
-                              'ContentDescription',
-                              'UnusedResources',
-                              'UnpackedNativeCode',
-                              'LockedOrientationActivity',
-                              'IconLocation',
-                              'StopShip',
-                              'DefaultLocale',
-                              'ObsoleteSdkInt'
+                        'NewerVersionAvailable',
+                        'AllowBackup',
+                        'VectorPath',
+                        'ContentDescription',
+                        'UnusedResources',
+                        'UnpackedNativeCode',
+                        'LockedOrientationActivity',
+                        'IconLocation',
+                        'StopShip',
+                        'DefaultLocale',
+                        'ObsoleteSdkInt'
 
                 // Lint rules which are disabled by default (see: lint --show), but which we would
                 // rather were enabled.
                 error 'MissingRegistered',
-                      'Registered',
-                      'WrongThreadInterprocedural',
-                      'MinSdkTooLow',
-                      'MangledCRLF',
-                      'EasterEgg',
-                      'LogConditional',
-                      'UnusedIds'
+                        'Registered',
+                        'WrongThreadInterprocedural',
+                        'MinSdkTooLow',
+                        'MangledCRLF',
+                        'EasterEgg',
+                        'LogConditional',
+                        'UnusedIds'
             }
 
             // https://developer.android.com/studio/build/build-variants#build-types
@@ -190,17 +195,28 @@ subprojects {
 
         // https://github.com/jlleitschuh/ktlint-gradle#configuration
         ktlint {
-            version = '0.41.0' // override because v.9.4.1 of org.jlleitschuh.gradle.ktlint plugin is at 0.38.1 which has issues
+            version = '0.41.0'
+            // override because v.9.4.1 of org.jlleitschuh.gradle.ktlint plugin is at 0.38.1 which has issues
             verbose = true // shows rule name that failed
             android = true
             outputColorName = 'RED' // easier to spot failures in console output
             disabledRules = [
-                // according to a Github issue comment this issue could be resolved with Kotlin 1.4
-                // https://github.com/pinterest/ktlint/issues/527#issuecomment-705871614
-                'import-ordering',
+                    // according to a Github issue comment this issue could be resolved with Kotlin 1.4
+                    // https://github.com/pinterest/ktlint/issues/527#issuecomment-705871614
+                    'import-ordering',
             ]
         }
+//dokka configuration for modules
+        final hasDokkaPlugin = evaluatedSubProject.pluginManager.hasPlugin('org.jetbrains.dokka')
+        if (hasDokkaPlugin) {
+            //  apply plugin: 'org.jetbrains.dokka'
 
+            tasks.withType(dokkaHtmlPartial.getClass()).configureEach {
+                pluginsMapConfiguration.set(
+                        ["org.jetbrains.dokka.base.DokkaBase": """{ "footerMessage": "$copyright_message"}"""]
+                )
+            }
+        }
         dependencies {
             implementation 'androidx.appcompat:appcompat:1.2.0'
             implementation 'com.google.android.material:material:1.2.1'
