@@ -11,7 +11,6 @@ internal data class SubscriberBuilder(
     val resolution: Resolution? = null,
     val logHandler: LogHandler? = null,
     val trackingId: String? = null,
-    val areRawLocationsEnabled: Boolean? = null,
 ) : Subscriber.Builder {
 
     override fun connection(configuration: ConnectionConfiguration): Subscriber.Builder =
@@ -26,9 +25,6 @@ internal data class SubscriberBuilder(
     override fun logHandler(logHandler: LogHandler): Subscriber.Builder =
         this.copy(logHandler = logHandler)
 
-    override fun rawLocations(enabled: Boolean): Subscriber.Builder =
-        this.copy(areRawLocationsEnabled = enabled)
-
     override suspend fun start(): Subscriber {
         if (isMissingRequiredFields()) {
             throw BuilderConfigurationIncompleteException()
@@ -38,7 +34,6 @@ internal data class SubscriberBuilder(
             DefaultAbly(connectionConfiguration!!, logHandler),
             resolution,
             trackingId!!,
-            areRawLocationsEnabled,
         ).apply {
             start()
         }

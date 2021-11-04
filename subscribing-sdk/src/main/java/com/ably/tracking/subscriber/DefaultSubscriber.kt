@@ -14,7 +14,6 @@ internal class DefaultSubscriber(
     ably: Ably,
     resolution: Resolution?,
     trackableId: String,
-    areRawLocationsEnabled: Boolean?,
 ) : Subscriber {
     private val core: CoreSubscriber
 
@@ -28,7 +27,7 @@ internal class DefaultSubscriber(
         get() = core.trackableStates
 
     init {
-        core = createCoreSubscriber(ably, resolution, trackableId, areRawLocationsEnabled)
+        core = createCoreSubscriber(ably, resolution, trackableId)
     }
 
     /**

@@ -124,7 +124,7 @@ class PublisherAndSubscriberTests {
         // create subscriber and publisher
         var subscriber: Subscriber
         runBlocking {
-            subscriber = createAndStartSubscriber(trackableId, rawLocations = true)
+            subscriber = createAndStartSubscriber(trackableId)
         }
 
         val publisher = createAndStartPublisher(context, rawLocations = true)
