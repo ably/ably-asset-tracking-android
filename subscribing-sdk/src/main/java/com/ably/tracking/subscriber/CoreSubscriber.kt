@@ -37,9 +37,8 @@ internal fun createCoreSubscriber(
     ably: Ably,
     initialResolution: Resolution? = null,
     trackableId: String,
-    areRawLocationsEnabled: Boolean?,
 ): CoreSubscriber {
-    return DefaultCoreSubscriber(ably, initialResolution, trackableId, areRawLocationsEnabled)
+    return DefaultCoreSubscriber(ably, initialResolution, trackableId)
 }
 
 /**
@@ -51,7 +50,6 @@ private class DefaultCoreSubscriber(
     private val ably: Ably,
     private val initialResolution: Resolution?,
     private val trackableId: String,
-    private val areRawLocationsEnabled: Boolean?,
 ) :
     CoreSubscriber {
     private val scope = CoroutineScope(singleThreadDispatcher + SupervisorJob())
@@ -138,9 +136,7 @@ private class DefaultCoreSubscriber(
                     is ConnectionReadyEvent -> {
                         subscribeForChannelState()
                         subscribeForEnhancedEvents()
-                        if (areRawLocationsEnabled == true) {
-                            subscribeForRawEvents()
-                        }
+                        subscribeForRawEvents()
                         event.handler(Result.success(Unit))
                     }
                     is PresenceMessageEvent -> {

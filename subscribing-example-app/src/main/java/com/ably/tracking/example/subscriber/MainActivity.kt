@@ -148,7 +148,6 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             })
-            .rawLocations(true)
             .start()
             .apply {
                 locations
