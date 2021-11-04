@@ -50,6 +50,9 @@
   <string name="preferences_resolution_minimum_displacement_label">Minimum displacement</string>
   <string name="preferences_update_resolution_minimum_displacement_message">Minimum Displacement [m]</string>
   <string name="preferences_update_resolution_minimum_displacement_title">Set Minimum Displacement</string>
+  <string name="preferences_debug_category_title">Debug</string>
+  <string name="preferences_send_raw_locations_key">send_raw_locations</string>
+  <string name="preferences_send_raw_locations_label">Send raw location updates</string>
   <string name="trackable_list_empty_state_header">No assets</string>
   <string name="trackable_list_empty_state_message">Trackable assets will be listed here when added</string>
   <string name="service_not_started_dialog_title">Publisher service not started</string>
