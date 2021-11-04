@@ -42,7 +42,7 @@ fun Accuracy.toMessage(): AccuracyMessage = when (this) {
     Accuracy.MAXIMUM -> AccuracyMessage.MAXIMUM
 }
 
-fun LocationUpdate.toJson(gson: Gson): String =
+fun LocationUpdate.toMessageJson(gson: Gson): String =
     gson.toJson(
         LocationUpdateMessage(
             location.toMessage(),
@@ -50,7 +50,7 @@ fun LocationUpdate.toJson(gson: Gson): String =
         )
     )
 
-fun EnhancedLocationUpdate.toJson(gson: Gson): String =
+fun EnhancedLocationUpdate.toMessageJson(gson: Gson): String =
     gson.toJson(
         EnhancedLocationUpdateMessage(
             location.toMessage(),

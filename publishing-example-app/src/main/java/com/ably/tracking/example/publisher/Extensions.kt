@@ -5,6 +5,7 @@ import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.Toast
+import androidx.annotation.StringRes
 
 private const val NO_FLAGS = 0
 
@@ -21,6 +22,14 @@ fun Context.showShortToast(message: String) {
 
 fun Context.showLongToast(message: String) {
     Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+}
+
+fun Context.showShortToast(@StringRes stringResourceId: Int) {
+    Toast.makeText(this, stringResourceId, Toast.LENGTH_SHORT).show()
+}
+
+fun Context.showLongToast(@StringRes stringResourceId: Int) {
+    Toast.makeText(this, stringResourceId, Toast.LENGTH_LONG).show()
 }
 
 fun Button.hideText() {

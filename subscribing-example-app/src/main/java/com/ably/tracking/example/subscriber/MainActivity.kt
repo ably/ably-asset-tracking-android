@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.widget.Toast
+import androidx.annotation.StringRes
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.content.ContextCompat
@@ -121,12 +122,12 @@ class MainActivity : AppCompatActivity() {
                         showStartedSubscriberLayout()
                         hideLoading()
                     } catch (exception: Exception) {
-                        showToast("Starting subscriber error")
+                        showToast(R.string.error_starting_subscriber_failed)
                         hideLoading()
                     }
                 }
             } else {
-                showToast("Insert trackable ID")
+                showToast(R.string.error_no_trackable_id)
             }
         }
     }
@@ -174,7 +175,7 @@ class MainActivity : AppCompatActivity() {
                 resolution = newResolution
                 updateResolutionInfo(newResolution)
             } catch (exception: Exception) {
-                showToast("Changing resolution error")
+                showToast(R.string.error_changing_resolution_failed)
             }
         }
     }
@@ -244,7 +245,7 @@ class MainActivity : AppCompatActivity() {
                 hideLoading()
             } catch (exception: Exception) {
                 hideLoading()
-                showToast("Stopping subscriber error")
+                showToast(R.string.error_stopping_subscriber_failed)
             }
         }
     }
@@ -301,6 +302,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun showToast(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+    }
+
+    private fun showToast(@StringRes stringResourceId: Int) {
+        Toast.makeText(this, stringResourceId, Toast.LENGTH_SHORT).show()
     }
 
     private fun showAssetInformation() {

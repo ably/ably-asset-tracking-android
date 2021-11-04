@@ -1,7 +1,6 @@
 package com.ably.tracking.example.publisher
 
 import android.os.Bundle
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.preference.EditTextPreference
 import androidx.preference.ListPreference
@@ -53,11 +52,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 setupS3Preference(filenamesWithSizes, filenames)
             },
             onUninitialized = {
-                Toast.makeText(
-                    requireContext(),
-                    "S3 not initialized - cannot fetch files",
-                    Toast.LENGTH_SHORT
-                ).show()
+                requireContext().showShortToast(R.string.error_s3_not_initialized_history_data_fetch_failed)
             }
         )
     }
@@ -66,7 +61,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         val appPreferences = AppPreferences.getInstance(requireContext())
         (findPreference(getString(R.string.preferences_location_source_key)) as ListPreference?)?.apply {
             entries = LocationSourceType.values()
-                .map { it.displayName }
+                .map { getString(it.displayNameResourceId) }
                 .toTypedArray()
             entryValues = LocationSourceType.values().map { it.name }.toTypedArray()
             value = appPreferences.getLocationSource().name
