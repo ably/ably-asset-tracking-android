@@ -60,9 +60,14 @@ afterEvaluate {
                     }
                     developers {
                         developer {
-                            id = 'tschellenbach'
-                            name = 'Thierry Schellenbach'
-                            email = 'thierry@getstream.io'
+                            id = 'KacperKluka'
+                            name = 'Kacper Kluka'
+                            email = 'kacper.kluka@ably.com'
+                        }
+                        developer {
+                            id = 'QuintinWillison'
+                            name = 'Quintin Willison'
+                            email = 'quintin.willison@ably.com'
                         }
                     }
                     scm {
