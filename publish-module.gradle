@@ -71,9 +71,9 @@ afterEvaluate {
                         }
                     }
                     scm {
-                        connection = 'scm:git:github.com/getstream/stream-chat-android.git'
-                        developerConnection = 'scm:git:ssh://github.com/getstream/stream-chat-android.git'
-                        url = 'https://github.com/getstream/stream-chat-android/tree/main'
+                        connection = 'scm:git@github.com:ably/ably-asset-tracking-android.git'
+                        developerConnection = 'scm:git:ssh://git@github.com:ably/ably-asset-tracking-android.git'
+                        url = 'https://github.com/ably/ably-asset-tracking-android'
                     }
                 }
             }
