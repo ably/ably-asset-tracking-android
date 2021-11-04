@@ -9,7 +9,7 @@ import com.ably.tracking.common.logging.i
 import com.ably.tracking.common.logging.v
 import com.ably.tracking.common.logging.w
 import com.ably.tracking.common.message.getEnhancedLocationUpdate
-import com.ably.tracking.common.message.toJson
+import com.ably.tracking.common.message.toMessageJson
 import com.ably.tracking.common.message.toMessage
 import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.logging.LogHandler
@@ -326,7 +326,7 @@ constructor(
     ) {
         val trackableChannel = channels[trackableId]
         if (trackableChannel != null) {
-            val locationUpdateJson = locationUpdate.toJson(gson)
+            val locationUpdateJson = locationUpdate.toMessageJson(gson)
             logHandler?.d("sendEnhancedLocationMessage: publishing: $locationUpdateJson")
             try {
                 trackableChannel.publish(
@@ -358,7 +358,7 @@ constructor(
     ) {
         val trackableChannel = channels[trackableId]
         if (trackableChannel != null) {
-            val locationUpdateJson = locationUpdate.toJson(gson)
+            val locationUpdateJson = locationUpdate.toMessageJson(gson)
             logHandler?.d("sendRawLocationMessage: publishing: $locationUpdateJson")
             try {
                 trackableChannel.publish(
