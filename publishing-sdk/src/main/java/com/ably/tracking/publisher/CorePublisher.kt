@@ -328,6 +328,10 @@ constructor(
                                     event.handler(Result.failure(result.exceptionOrNull()!!))
                                 }
                             }
+                        } else if (state.duplicateTrackableGuard.isCurrentlyAddingTrackable(event.trackable)) {
+                            //This is the case where a trackable hasn't yet finished adding and the removal was
+                            // requested
+                            state.duplicateTrackableGuard.markForRemoval(event.trackable)
                         } else {
                             // notify with false to indicate that it was not removed
                             event.handler(Result.success(false))
@@ -716,7 +720,7 @@ constructor(
             val timeSinceLastSentLocation = currentLocation.timeFrom(lastSentLocation)
             val distanceFromLastSentLocation = currentLocation.distanceInMetersFrom(lastSentLocation)
             return distanceFromLastSentLocation >= resolution.minimumDisplacement ||
-                timeSinceLastSentLocation >= resolution.desiredInterval
+                    timeSinceLastSentLocation >= resolution.desiredInterval
         } else {
             true
         }

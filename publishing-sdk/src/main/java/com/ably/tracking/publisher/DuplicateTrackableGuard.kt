@@ -11,6 +11,12 @@ class DuplicateTrackableGuard {
     private val trackablesCurrentlyBeingAdded: MutableSet<Trackable> = mutableSetOf()
 
     /**
+     * A set of trackable that were marked for removal. This should be used to store / retrieve trackables
+     * that did not finished adding.
+     */
+    private val trackablesMarkedForRemoval: MutableSet<Trackable> = mutableSetOf()
+
+    /**
      * Stores handlers from trackables that are duplicates of the trackables from [trackablesCurrentlyBeingAdded].
      */
     private val duplicateAddCallsHandlers: MutableMap<Trackable, MutableList<AddTrackableHandler>> = mutableMapOf()
@@ -77,4 +83,10 @@ class DuplicateTrackableGuard {
         trackablesCurrentlyBeingAdded.clear()
         duplicateAddCallsHandlers.clear()
     }
+
+    fun markForRemoval(trackable: Trackable) {
+        trackablesMarkedForRemoval.add(trackable)
+    }
+
+    fun markedForRemoval(trackable: Trackable):Boolean = trackablesMarkedForRemoval.contains(trackable)
 }
