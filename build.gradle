@@ -30,11 +30,13 @@ plugins {
     id 'org.jetbrains.dokka' version '1.4.32'
 }
 
+//https://github.com/Kotlin/dokka/issues/2202#issuecomment-950666269
 tasks.dokkaHtmlMultiModule.configure {
     pluginsMapConfiguration.set(
             ["org.jetbrains.dokka.base.DokkaBase": """{ "footerMessage": "$copyright_message"}"""]
     )
 }
+
 allprojects {
     // group and version properties are configured here as they're inherited by the maven-publish plugin.
     group = 'com.ably.tracking'
@@ -42,7 +44,6 @@ allprojects {
     // version MUST conform to the Semantic Versioning Specification (https://semver.org/) version 2.0.0
     // on incrementing this value, ensure to also increment versionCode in android defaultConfig (also in this file)
     version = '1.0.0-beta.10'
-
     repositories {
         google()
         mavenCentral()
@@ -75,6 +76,16 @@ subprojects {
         // contain Java source code (example app implementation) or contain interfaces
         // which provide support to Java users ('-java' as a suffix).
         final evaluatedSubProjectIsJava = evaluatedSubProject.name.contains('-java')
+
+        //dokka configuration for modules
+        final evaluatedSubProjectHasDokkaPlugin = evaluatedSubProject.pluginManager.hasPlugin('org.jetbrains.dokka')
+        if (evaluatedSubProjectHasDokkaPlugin) {
+            tasks.withType(dokkaHtmlPartial.getClass()).configureEach {
+                pluginsMapConfiguration.set(
+                        ["org.jetbrains.dokka.base.DokkaBase": """{ "footerMessage": "$copyright_message"}"""]
+                )
+            }
+        }
 
         android {
             compileSdkVersion 30
@@ -206,17 +217,7 @@ subprojects {
                     'import-ordering',
             ]
         }
-//dokka configuration for modules
-        final hasDokkaPlugin = evaluatedSubProject.pluginManager.hasPlugin('org.jetbrains.dokka')
-        if (hasDokkaPlugin) {
-            //  apply plugin: 'org.jetbrains.dokka'
 
-            tasks.withType(dokkaHtmlPartial.getClass()).configureEach {
-                pluginsMapConfiguration.set(
-                        ["org.jetbrains.dokka.base.DokkaBase": """{ "footerMessage": "$copyright_message"}"""]
-                )
-            }
-        }
         dependencies {
             implementation 'androidx.appcompat:appcompat:1.2.0'
             implementation 'com.google.android.material:material:1.2.1'
