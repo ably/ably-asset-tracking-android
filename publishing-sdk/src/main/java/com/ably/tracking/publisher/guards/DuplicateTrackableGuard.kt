@@ -1,4 +1,8 @@
-package com.ably.tracking.publisher
+package com.ably.tracking.publisher.guards
+
+import com.ably.tracking.publisher.AddTrackableHandler
+import com.ably.tracking.publisher.AddTrackableResult
+import com.ably.tracking.publisher.Trackable
 
 /**
  * Class that protects from adding duplicates of a trackable that is currently being added to the publisher.
@@ -9,12 +13,6 @@ class DuplicateTrackableGuard {
      * Stores trackables that are currently being added (the adding process has started but hasn't finished yet).
      */
     private val trackablesCurrentlyBeingAdded: MutableSet<Trackable> = mutableSetOf()
-
-    /**
-     * A set of trackable that were marked for removal. This should be used to store / retrieve trackables
-     * that did not finished adding.
-     */
-    private val trackablesMarkedForRemoval: MutableSet<Trackable> = mutableSetOf()
 
     /**
      * Stores handlers from trackables that are duplicates of the trackables from [trackablesCurrentlyBeingAdded].
@@ -83,10 +81,4 @@ class DuplicateTrackableGuard {
         trackablesCurrentlyBeingAdded.clear()
         duplicateAddCallsHandlers.clear()
     }
-
-    fun markForRemoval(trackable: Trackable) {
-        trackablesMarkedForRemoval.add(trackable)
-    }
-
-    fun markedForRemoval(trackable: Trackable):Boolean = trackablesMarkedForRemoval.contains(trackable)
 }

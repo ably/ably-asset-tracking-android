@@ -18,6 +18,7 @@ import com.ably.tracking.common.PresenceData
 import com.ably.tracking.common.createSingleThreadDispatcher
 import com.ably.tracking.common.logging.w
 import com.ably.tracking.logging.LogHandler
+import com.ably.tracking.publisher.guards.DuplicateTrackableGuard
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
@@ -330,7 +331,7 @@ constructor(
                             }
                         } else if (state.duplicateTrackableGuard.isCurrentlyAddingTrackable(event.trackable)) {
                             //This is the case where a trackable hasn't yet finished adding and the removal was
-                            // requested
+                            // requested. We mark that trackable for removal so that it will not
                             state.duplicateTrackableGuard.markForRemoval(event.trackable)
                         } else {
                             // notify with false to indicate that it was not removed
