@@ -19,6 +19,7 @@ import com.ably.tracking.common.createSingleThreadDispatcher
 import com.ably.tracking.common.logging.w
 import com.ably.tracking.logging.LogHandler
 import com.ably.tracking.publisher.guards.DuplicateTrackableGuard
+import com.ably.tracking.publisher.guards.TrackableRemovalGuard
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
@@ -239,6 +240,7 @@ constructor(
                         val failureResult = Result.failure<AddTrackableResult>(event.exception)
                         event.handler(failureResult)
                         state.duplicateTrackableGuard.finishAddingTrackable(event.trackable, failureResult)
+                        state.trackableRemovalGuard.removeMarked(event.trackable)
                     }
                     is PresenceMessageEvent -> {
                         when (event.presenceMessage.action) {
@@ -270,22 +272,32 @@ constructor(
                         }
                     }
                     is ConnectionForTrackableCreatedEvent -> {
-                        ably.subscribeForPresenceMessages(
-                            trackableId = event.trackable.id,
-                            listener = { enqueue(PresenceMessageEvent(event.trackable, it)) },
-                            callback = { result ->
-                                try {
-                                    result.getOrThrow()
-                                    request(ConnectionForTrackableReadyEvent(event.trackable, event.handler))
-                                } catch (exception: ConnectionException) {
-                                    ably.disconnect(event.trackable.id, state.presenceData) {
-                                        request(AddTrackableFailedEvent(event.trackable, event.handler, exception))
+                        //only if it wasn't marked for removal
+                        if (state.trackableRemovalGuard.markedForRemoval(event.trackable)) {
+                            state.trackableRemovalGuard.removeMarked(event.trackable)
+                        } else {
+                            ably.subscribeForPresenceMessages(
+                                trackableId = event.trackable.id,
+                                listener = { enqueue(PresenceMessageEvent(event.trackable, it)) },
+                                callback = { result ->
+                                    try {
+                                        result.getOrThrow()
+                                        request(ConnectionForTrackableReadyEvent(event.trackable, event.handler))
+                                    } catch (exception: ConnectionException) {
+                                        ably.disconnect(event.trackable.id, state.presenceData) {
+                                            request(AddTrackableFailedEvent(event.trackable, event.handler, exception))
+                                        }
                                     }
                                 }
-                            }
-                        )
+                            )
+                        }
+
                     }
                     is ConnectionForTrackableReadyEvent -> {
+                        if (state.trackableRemovalGuard.markedForRemoval(event.trackable)){
+                            request(AddTrackableFailedEvent(event.trackable, event.handler, exception = Exception
+                                ("Trackable was marked for removal")))
+                        }
                         ably.subscribeForChannelStateChange(event.trackable.id) {
                             enqueue(ChannelConnectionStateChangeEvent(it, event.trackable.id))
                         }
@@ -332,7 +344,7 @@ constructor(
                         } else if (state.duplicateTrackableGuard.isCurrentlyAddingTrackable(event.trackable)) {
                             //This is the case where a trackable hasn't yet finished adding and the removal was
                             // requested. We mark that trackable for removal so that it will not
-                            state.duplicateTrackableGuard.markForRemoval(event.trackable)
+                            state.trackableRemovalGuard.markForRemoval(event.trackable)
                         } else {
                             // notify with false to indicate that it was not removed
                             event.handler(Result.success(false))
@@ -829,6 +841,8 @@ constructor(
         val rawLocationsPublishingState: LocationsPublishingState<RawLocationChangedEvent> = LocationsPublishingState()
             get() = if (isDisposed) throw PublisherStateDisposedException() else field
         val duplicateTrackableGuard: DuplicateTrackableGuard = DuplicateTrackableGuard()
+            get() = if (isDisposed) throw PublisherStateDisposedException() else field
+        val trackableRemovalGuard: TrackableRemovalGuard = TrackableRemovalGuard()
             get() = if (isDisposed) throw PublisherStateDisposedException() else field
 
         fun dispose() {
