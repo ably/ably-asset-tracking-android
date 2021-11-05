@@ -1,4 +1,4 @@
-package com.ably.tracking.publisher.locationengine
+package com.ably.tracking.locationprovider.mapbox.locationengine
 
 import com.ably.tracking.Resolution
 import com.mapbox.android.core.location.LocationEngine

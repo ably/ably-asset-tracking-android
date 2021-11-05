@@ -10,15 +10,16 @@ import androidx.core.app.NotificationCompat
 import com.ably.tracking.Resolution
 import com.ably.tracking.connection.Authentication
 import com.ably.tracking.connection.ConnectionConfiguration
+import com.ably.tracking.locationprovider.LocationHistoryData
+import com.ably.tracking.locationprovider.RoutingProfile
+import com.ably.tracking.locationprovider.mapbox.LocationSource
+import com.ably.tracking.locationprovider.mapbox.MapConfiguration
+import com.ably.tracking.locationprovider.mapbox.MapboxLocationProvider
+import com.ably.tracking.locationprovider.mapbox.PublisherNotificationProvider
 import com.ably.tracking.logging.LogHandler
 import com.ably.tracking.logging.LogLevel
 import com.ably.tracking.publisher.DefaultResolutionPolicyFactory
-import com.ably.tracking.publisher.LocationHistoryData
-import com.ably.tracking.publisher.LocationSource
-import com.ably.tracking.publisher.MapConfiguration
 import com.ably.tracking.publisher.Publisher
-import com.ably.tracking.publisher.PublisherNotificationProvider
-import com.ably.tracking.publisher.RoutingProfile
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -96,10 +97,20 @@ class PublisherService : Service() {
     private fun createPublisher(locationSource: LocationSource?): Publisher =
         Publisher.publishers()
             .connection(ConnectionConfiguration(Authentication.basic(CLIENT_ID, ABLY_API_KEY)))
-            .map(MapConfiguration(MAPBOX_ACCESS_TOKEN))
-            .locationSource(locationSource)
+            .locationProvider(
+                MapboxLocationProvider(
+                    this,
+                    MapConfiguration(MAPBOX_ACCESS_TOKEN),
+                    ConnectionConfiguration(Authentication.basic(CLIENT_ID, ABLY_API_KEY)),
+                    locationSource,
+                    null,
+                    object : PublisherNotificationProvider {
+                        override fun getNotification(): Notification = notification
+                    },
+                    NOTIFICATION_ID
+                )
+            )
             .resolutionPolicy(DefaultResolutionPolicyFactory(createDefaultResolution(), this))
-            .androidContext(this)
             .profile(RoutingProfile.DRIVING)
             .logHandler(object : LogHandler {
                 override fun logMessage(level: LogLevel, message: String, throwable: Throwable?) {
@@ -112,12 +123,6 @@ class PublisherService : Service() {
                     }
                 }
             })
-            .backgroundTrackingNotificationProvider(
-                object : PublisherNotificationProvider {
-                    override fun getNotification(): Notification = notification
-                },
-                NOTIFICATION_ID
-            )
             .start()
 
     private fun createDefaultResolution(): Resolution =

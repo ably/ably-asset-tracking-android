@@ -1,6 +1,8 @@
-package com.ably.tracking.publisher
+package com.ably.tracking.locationprovider.mapbox
 
 import com.ably.tracking.Location
+import com.ably.tracking.locationprovider.Destination
+import com.ably.tracking.locationprovider.RoutingProfile
 import com.mapbox.api.directions.v5.DirectionsCriteria
 import com.mapbox.geojson.Point
 

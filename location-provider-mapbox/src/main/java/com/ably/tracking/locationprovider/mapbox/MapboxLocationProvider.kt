@@ -1,4 +1,4 @@
-package com.ably.tracking.publisher
+package com.ably.tracking.locationprovider.mapbox
 
 import android.Manifest
 import android.content.Context
@@ -6,16 +6,21 @@ import androidx.annotation.RequiresPermission
 import com.ably.tracking.Location
 import com.ably.tracking.Resolution
 import com.ably.tracking.common.MILLISECONDS_PER_SECOND
-import com.ably.tracking.common.ResultHandler
 import com.ably.tracking.common.clientOptions
 import com.ably.tracking.common.toAssetTracking
 import com.ably.tracking.connection.ConnectionConfiguration
+import com.ably.tracking.locationprovider.Destination
+import com.ably.tracking.locationprovider.LocationHistoryListener
+import com.ably.tracking.locationprovider.LocationProvider
+import com.ably.tracking.locationprovider.LocationUpdatesObserver
+import com.ably.tracking.locationprovider.MapException
+import com.ably.tracking.locationprovider.RoutingProfile
+import com.ably.tracking.locationprovider.mapbox.debug.AblySimulationLocationEngine
+import com.ably.tracking.locationprovider.mapbox.locationengine.FusedAndroidLocationEngine
+import com.ably.tracking.locationprovider.mapbox.locationengine.GoogleLocationEngine
+import com.ably.tracking.locationprovider.mapbox.locationengine.LocationEngineUtils
+import com.ably.tracking.locationprovider.mapbox.locationengine.ResolutionLocationEngine
 import com.ably.tracking.logging.LogHandler
-import com.ably.tracking.publisher.debug.AblySimulationLocationEngine
-import com.ably.tracking.publisher.locationengine.FusedAndroidLocationEngine
-import com.ably.tracking.publisher.locationengine.GoogleLocationEngine
-import com.ably.tracking.publisher.locationengine.LocationEngineUtils
-import com.ably.tracking.publisher.locationengine.ResolutionLocationEngine
 import com.mapbox.api.directions.v5.models.DirectionsRoute
 import com.mapbox.api.directions.v5.models.RouteOptions
 import com.mapbox.module.Mapbox_TripNotificationModuleConfiguration
@@ -35,95 +40,9 @@ import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 
-typealias LocationHistoryListener = (LocationHistoryData) -> Unit
-
 /**
- * An interface which enables observing location updates.
- */
-internal interface LocationUpdatesObserver {
-    /**
-     * Called when a new raw location update is ready.
-     *
-     * @param rawLocation the current raw location.
-     */
-    fun onRawLocationChanged(rawLocation: Location)
-
-    /**
-     * Called when a new enhanced location update is ready.
-     *
-     * @param enhancedLocation the current enhanced location.
-     * @param intermediateLocations a list (can be empty) of predicted location points leading up to the current update.
-     */
-    fun onEnhancedLocationChanged(enhancedLocation: Location, intermediateLocations: List<Location>)
-}
-
-/**
- * Wrapper for the [MapboxNavigation] that's used to interact with the Mapbox SDK.
- */
-internal interface Mapbox {
-    /**
-     * Starts the navigation trip which results in location updates from the location engine.
-     */
-    @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
-    fun startTrip()
-
-    /**
-     * Stops the navigation trip and closes the whole [MapboxNavigation].
-     */
-    fun stopAndClose()
-
-    /**
-     * Sets a location observer that gets notified when a new raw or enhanced location is received.
-     * If there is already a registered location observer it will be replaced by the [locationUpdatesObserver].
-     *
-     * @param locationUpdatesObserver The location observer to register.
-     */
-    fun registerLocationObserver(locationUpdatesObserver: LocationUpdatesObserver)
-
-    /**
-     * Removes a location observer if it was previously set with [registerLocationObserver].
-     */
-    fun unregisterLocationObserver()
-
-    /**
-     * Changes the [resolution] of the location engine if it's a subtype of the [ResolutionLocationEngine].
-     *
-     * @param resolution The new resolution to set.
-     */
-    fun changeResolution(resolution: Resolution)
-
-    /**
-     * Removes the currently active route.
-     */
-    fun clearRoute()
-
-    /**
-     * Sets a route with the provided parameters. The route starts in [currentLocation] and ends in [destination].
-     * When the route is successfully set then it calls the [routeDurationCallback] with the estimated route duration.
-     *
-     * @param currentLocation The current location of the [Publisher].
-     * @param destination The destination of the [Trackable].
-     * @param routingProfile The routing profile for the route.
-     * @param routeDurationCallback The function that's called with the ETA of the route in milliseconds. If something goes wrong it will be called with [MapException].
-     */
-    fun setRoute(
-        currentLocation: Location,
-        destination: Destination,
-        routingProfile: RoutingProfile,
-        routeDurationCallback: ResultHandler<Long>
-    )
-
-    /**
-     * Sets a location history listener that will be notified when a trip history is ready.
-     *
-     * @param listener The function to call when location history data is ready.
-     */
-    fun setLocationHistoryListener(listener: LocationHistoryListener?)
-}
-
-/**
- * Singleton object used to count the created instances of [Mapbox] interface implementations ([DefaultMapbox]).
- * This is used to check whether we should destroy the [MapboxNavigation] when a [Mapbox] instance is stopped.
+ * Singleton object used to count the created instances of [MapboxLocationProvider]. This is used to check
+ * whether we should destroy the [MapboxNavigation] when a [MapboxLocationProvider] instance is stopped.
  * This object is safe to use across multiple threads as it uses an [AtomicInteger] as the counter.
  */
 private object MapboxInstancesCounter {
@@ -138,12 +57,7 @@ private object MapboxInstancesCounter {
     }
 }
 
-/**
- * The default implementation of the [Mapbox] wrapper.
- * The [MapboxNavigation] needs to be called from the main thread. To achieve that we use the [runBlocking] method with the [mainDispatcher].
- * This enables us to switch threads and run the required method in the main thread.
- */
-internal class DefaultMapbox(
+class MapboxLocationProvider(
     context: Context,
     private val mapConfiguration: MapConfiguration,
     connectionConfiguration: ConnectionConfiguration,
@@ -151,7 +65,7 @@ internal class DefaultMapbox(
     logHandler: LogHandler?,
     notificationProvider: PublisherNotificationProvider,
     notificationId: Int
-) : Mapbox {
+) : LocationProvider {
     /**
      * Dispatcher used to run [mapboxNavigation] methods on the main thread.
      * It has to be the "immediate" version of the main dispatcher to not
@@ -219,7 +133,7 @@ internal class DefaultMapbox(
                 // (see: https://github.com/ably/ably-asset-tracking-android/issues/434)
                 if (tripHistoryString.isNotEmpty()) {
                     val historyEvents = ReplayHistoryMapper().mapToReplayEvents(tripHistoryString)
-                    locationHistoryListener?.invoke(LocationHistoryData(historyEvents.toGeoJsonMessages()))
+                    locationHistoryListener?.invoke(MapboxLocationHistoryData(historyEvents.toLocations()))
                 }
             }
             if (MapboxInstancesCounter.decrementAndCheckIfItWasTheLastOne()) {
@@ -274,7 +188,7 @@ internal class DefaultMapbox(
         currentLocation: Location,
         destination: Destination,
         routingProfile: RoutingProfile,
-        routeDurationCallback: ResultHandler<Long>
+        routeDurationCallback: (Result<Long>) -> Unit
     ) {
         runBlocking(mainDispatcher) {
             mapboxNavigation.requestRoutes(

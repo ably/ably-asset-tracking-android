@@ -7,13 +7,14 @@ import com.ably.tracking.Accuracy
 import com.ably.tracking.Resolution
 import com.ably.tracking.connection.Authentication
 import com.ably.tracking.connection.ConnectionConfiguration
+import com.ably.tracking.locationprovider.RoutingProfile
+import com.ably.tracking.locationprovider.mapbox.MapConfiguration
+import com.ably.tracking.locationprovider.mapbox.MapboxLocationProvider
+import com.ably.tracking.locationprovider.mapbox.PublisherNotificationProvider
 import com.ably.tracking.publisher.DefaultProximity
 import com.ably.tracking.publisher.DefaultResolutionConstraints
 import com.ably.tracking.publisher.DefaultResolutionSet
-import com.ably.tracking.publisher.MapConfiguration
 import com.ably.tracking.publisher.Publisher
-import com.ably.tracking.publisher.PublisherNotificationProvider
-import com.ably.tracking.publisher.RoutingProfile
 import com.ably.tracking.publisher.Trackable
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -68,20 +69,25 @@ class ExampleUsage(
                     )
                 )
             )
-            .map(MapConfiguration(MAPBOX_ACCESS_TOKEN)) // provide Mapbox configuration with credentials
-            .androidContext(this) // provide Android runtime context
-            .profile(RoutingProfile.DRIVING) // provide mode of transportation for better location enhancements
-            .backgroundTrackingNotificationProvider(
-                object : PublisherNotificationProvider {
-                    override fun getNotification(): Notification =
-                        NotificationCompat.Builder(this@ExampleUsage, "test-channel")
-                            .setContentTitle("Title")
-                            .setContentText("Text")
-                            .setSmallIcon(R.drawable.aat_logo)
-                            .build()
-                },
-                NOTIFICATION_ID
+            .locationProvider(
+                MapboxLocationProvider(
+                    this,
+                    MapConfiguration(MAPBOX_ACCESS_TOKEN),
+                    ConnectionConfiguration(Authentication.basic(CLIENT_ID, ABLY_API_KEY)),
+                    null,
+                    null,
+                    object : PublisherNotificationProvider {
+                        override fun getNotification(): Notification =
+                            NotificationCompat.Builder(this@ExampleUsage, "test-channel")
+                                .setContentTitle("Title")
+                                .setContentText("Text")
+                                .setSmallIcon(R.drawable.aat_logo)
+                                .build()
+                    },
+                    NOTIFICATION_ID
+                )
             )
+            .profile(RoutingProfile.DRIVING) // provide mode of transportation for better location enhancements
             .start()
 
         // Start tracking an asset

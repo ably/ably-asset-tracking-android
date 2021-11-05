@@ -1,4 +1,4 @@
-package com.ably.tracking.publisher.locationengine
+package com.ably.tracking.locationprovider.mapbox.locationengine
 
 import android.annotation.SuppressLint
 import android.app.PendingIntent

@@ -1,4 +1,4 @@
-package com.ably.tracking.publisher
+package com.ably.tracking.locationprovider.mapbox
 
 import android.app.Notification
 import androidx.annotation.Keep

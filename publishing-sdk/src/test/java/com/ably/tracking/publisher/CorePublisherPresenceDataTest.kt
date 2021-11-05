@@ -7,6 +7,8 @@ import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ClientTypes
 import com.ably.tracking.common.PresenceData
+import com.ably.tracking.locationprovider.LocationProvider
+import com.ably.tracking.locationprovider.RoutingProfile
 import com.ably.tracking.test.common.mockCreateConnectionSuccess
 import io.mockk.every
 import io.mockk.mockk
@@ -24,7 +26,7 @@ import org.junit.Test
 @SuppressLint("MissingPermission")
 class CorePublisherPresenceDataTest {
     private val ably = mockk<Ably>(relaxed = true)
-    private val mapbox = mockk<Mapbox>(relaxed = true)
+    private val locationProvider = mockk<LocationProvider>(relaxed = true)
     private val resolutionPolicy = mockk<ResolutionPolicy>(relaxed = true)
     private val resolutionPolicyFactory = object : ResolutionPolicy.Factory {
         override fun createResolutionPolicy(hooks: ResolutionPolicy.Hooks, methods: ResolutionPolicy.Methods) =
@@ -39,7 +41,7 @@ class CorePublisherPresenceDataTest {
     @Test
     fun `Should se rawMessages to null in the presence data if they are disabled`() {
         val corePublisher: CorePublisher =
-            createCorePublisher(ably, mapbox, resolutionPolicyFactory, RoutingProfile.DRIVING, null, null)
+            createCorePublisher(ably, locationProvider, resolutionPolicyFactory, RoutingProfile.DRIVING, null, null)
         // given
         val trackableId = UUID.randomUUID().toString()
 
@@ -59,7 +61,7 @@ class CorePublisherPresenceDataTest {
     @Test
     fun `Should set rawMessages to true in the presence data if they are enabled`() {
         val corePublisher: CorePublisher =
-            createCorePublisher(ably, mapbox, resolutionPolicyFactory, RoutingProfile.DRIVING, null, true)
+            createCorePublisher(ably, locationProvider, resolutionPolicyFactory, RoutingProfile.DRIVING, null, true)
         // given
         val trackableId = UUID.randomUUID().toString()
 

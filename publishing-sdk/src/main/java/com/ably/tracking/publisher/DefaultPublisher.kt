@@ -7,6 +7,9 @@ import androidx.annotation.RequiresPermission
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
+import com.ably.tracking.locationprovider.LocationHistoryData
+import com.ably.tracking.locationprovider.LocationProvider
+import com.ably.tracking.locationprovider.RoutingProfile
 import com.ably.tracking.logging.LogHandler
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -19,7 +22,7 @@ internal class DefaultPublisher
 @RequiresPermission(anyOf = [ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION])
 constructor(
     ably: Ably,
-    mapbox: Mapbox,
+    locationProvider: LocationProvider,
     resolutionPolicyFactory: ResolutionPolicy.Factory,
     routingProfile: RoutingProfile,
     logHandler: LogHandler?,
@@ -43,7 +46,7 @@ constructor(
     init {
         core = createCorePublisher(
             ably,
-            mapbox,
+            locationProvider,
             resolutionPolicyFactory,
             routingProfile,
             logHandler,

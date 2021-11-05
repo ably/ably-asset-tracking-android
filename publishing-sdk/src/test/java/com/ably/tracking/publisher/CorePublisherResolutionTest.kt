@@ -7,13 +7,11 @@ import com.ably.tracking.LocationUpdateType
 import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
+import com.ably.tracking.locationprovider.LocationProvider
+import com.ably.tracking.locationprovider.RoutingProfile
 import com.ably.tracking.test.common.createLocation
 import com.ably.tracking.test.common.mockCreateConnectionSuccess
 import com.ably.tracking.test.common.mockSendEnhancedLocationSuccess
-import com.mapbox.geojson.LineString
-import com.mapbox.geojson.Point
-import com.mapbox.turf.TurfConstants
-import com.mapbox.turf.TurfMeasurement
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -103,7 +101,7 @@ class CorePublisherResolutionTest(
     }
 
     private val ably = mockk<Ably>(relaxed = true)
-    private val mapbox = mockk<Mapbox>(relaxed = true)
+    private val locationProvider = mockk<LocationProvider>(relaxed = true)
     private val resolutionPolicy = mockk<ResolutionPolicy>(relaxed = true)
     private val resolutionPolicyFactory = object : ResolutionPolicy.Factory {
         override fun createResolutionPolicy(hooks: ResolutionPolicy.Hooks, methods: ResolutionPolicy.Methods) =
@@ -112,7 +110,7 @@ class CorePublisherResolutionTest(
 
     @SuppressLint("MissingPermission")
     private val corePublisher: CorePublisher =
-        createCorePublisher(ably, mapbox, resolutionPolicyFactory, RoutingProfile.DRIVING, null, false)
+        createCorePublisher(ably, locationProvider, resolutionPolicyFactory, RoutingProfile.DRIVING, null, false)
 
     @Test
     fun `Should send limited location updates`() {
@@ -196,7 +194,7 @@ class CorePublisherResolutionTest(
                 oldLocation.longitude,
                 timestamp
             )
-            else -> createLocation(timestamp = timestamp)
+            else -> createLocation(0.0, 0.0, timestamp) // We start at 0.0 because it's easier to mock distant locations
         }
 
     /**
@@ -204,16 +202,14 @@ class CorePublisherResolutionTest(
      * so it is [distanceInMeters] away from the [oldLocation].
      */
     private fun createDistantLocation(oldLocation: Location, distanceInMeters: Double, timestamp: Long): Location {
-        // creating a line on which we'll create the new location
-        val lineStartingPoint = Point.fromLngLat(oldLocation.longitude, oldLocation.latitude)
-        val lineEndingPoint = Point.fromLngLat(lineStartingPoint.longitude() + 1, lineStartingPoint.latitude())
-        val movementLine = LineString.fromLngLats(listOf(lineStartingPoint, lineEndingPoint))
-        // calculating a point that is distant from the old location by the specified distance
-        val newLocationPoint = TurfMeasurement.along(
-            movementLine,
-            distanceInMeters + 0.01, // we're adding a small distance value to compensate the inaccuracy of this method
-            TurfConstants.UNIT_METRES
+        // If you add this value to the longitude it will move the location 1 meter away
+        // (precisely 1.0007622222311054 meters away). This approximation will work well
+        // as long as the [distanceInMeters] is smaller than 1310.
+        val oneMeterDistanceOnLongitude = 0.00000899
+        return createLocation(
+            oldLocation.latitude,
+            oldLocation.longitude + distanceInMeters * oneMeterDistanceOnLongitude,
+            timestamp
         )
-        return createLocation(newLocationPoint.latitude(), newLocationPoint.longitude(), timestamp)
     }
 }

@@ -1,8 +1,8 @@
 package com.ably.tracking.example.publisher
 
 import android.content.Context
-import com.ably.tracking.publisher.LOCATION_HISTORY_VERSION
-import com.ably.tracking.publisher.LocationHistoryData
+import com.ably.tracking.locationprovider.LocationHistoryData
+import com.ably.tracking.locationprovider.mapbox.LOCATION_HISTORY_VERSION
 import com.amplifyframework.auth.cognito.AWSCognitoAuthPlugin
 import com.amplifyframework.core.Amplify
 import com.amplifyframework.core.AmplifyConfiguration

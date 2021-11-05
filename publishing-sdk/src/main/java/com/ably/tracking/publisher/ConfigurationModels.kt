@@ -1,19 +1,7 @@
 package com.ably.tracking.publisher
 
-import android.app.Notification
 import com.ably.tracking.Resolution
-
-data class MapConfiguration(val apiKey: String)
-
-/**
- * Provides the notification that will be used for the background tracking service.
- */
-interface PublisherNotificationProvider {
-    /**
-     * Returns the notification that will be displayed. This method can be called multiple times.
-     */
-    fun getNotification(): Notification
-}
+import com.ably.tracking.locationprovider.Destination
 
 /**
  * Defines the strategy by which the various [ResolutionRequest]s and preferences are translated by [Publisher]
@@ -219,11 +207,6 @@ data class TrackableResolutionRequest(
     val remoteRequests: Set<Resolution>
 )
 
-data class Destination(
-    val latitude: Double,
-    val longitude: Double
-)
-
 data class Trackable(
     val id: String,
     val destination: Destination? = null,
@@ -361,64 +344,3 @@ data class DefaultResolutionConstraints(
      */
     val lowBatteryMultiplier: Float
 ) : ResolutionConstraints()
-
-/**
- * Represents the means of transport that's being used.
- */
-enum class RoutingProfile {
-    /**
-     * For car and motorcycle routing. This profile prefers high-speed roads like highways.
-     */
-    DRIVING,
-
-    /**
-     * For bicycle routing. This profile prefers routes that are safe for cyclist, avoiding highways and preferring streets with bike lanes.
-     */
-    CYCLING,
-
-    /**
-     * For pedestrian and hiking routing. This profile prefers sidewalks and trails.
-     */
-    WALKING,
-
-    /**
-     * For car and motorcycle routing. This profile factors in current and historic traffic conditions to avoid slowdowns.
-     */
-    DRIVING_TRAFFIC,
-}
-
-sealed class LocationSource
-class LocationSourceAbly private constructor(val simulationChannelName: String) : LocationSource() {
-    companion object {
-        @JvmStatic
-        fun create(simulationChannelName: String) = LocationSourceAbly(simulationChannelName)
-    }
-
-    private constructor() : this("")
-}
-
-class LocationSourceRaw private constructor(
-    val historyData: LocationHistoryData,
-    val onDataEnded: (() -> Unit)? = null
-) :
-    LocationSource() {
-    companion object {
-        @JvmSynthetic
-        fun create(historyData: LocationHistoryData, onDataEnded: (() -> Unit)? = null) =
-            LocationSourceRaw(historyData, onDataEnded)
-
-        @JvmStatic
-        fun createRaw(historyData: LocationHistoryData, callback: (DataEndedCallback)? = null) =
-            LocationSourceRaw(historyData, callback)
-    }
-
-    private constructor() : this(historyData = LocationHistoryData(emptyList()), onDataEnded = null)
-    private constructor(historyData: LocationHistoryData, callback: (DataEndedCallback)? = null) : this(
-        historyData,
-        { callback?.onDataEnded() }
-    )
-}
-
-interface DataEndedCallback {
-    fun onDataEnded()
-}

@@ -17,6 +17,12 @@ import com.ably.tracking.common.PresenceAction
 import com.ably.tracking.common.PresenceData
 import com.ably.tracking.common.createSingleThreadDispatcher
 import com.ably.tracking.common.logging.w
+import com.ably.tracking.locationprovider.Destination
+import com.ably.tracking.locationprovider.LocationHistoryData
+import com.ably.tracking.locationprovider.LocationProvider
+import com.ably.tracking.locationprovider.LocationUpdatesObserver
+import com.ably.tracking.locationprovider.MapException
+import com.ably.tracking.locationprovider.RoutingProfile
 import com.ably.tracking.logging.LogHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
@@ -46,7 +52,7 @@ internal interface CorePublisher {
 @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
 internal fun createCorePublisher(
     ably: Ably,
-    mapbox: Mapbox,
+    locationProvider: LocationProvider,
     resolutionPolicyFactory: ResolutionPolicy.Factory,
     routingProfile: RoutingProfile,
     logHandler: LogHandler?,
@@ -54,7 +60,7 @@ internal fun createCorePublisher(
 ): CorePublisher {
     return DefaultCorePublisher(
         ably,
-        mapbox,
+        locationProvider,
         resolutionPolicyFactory,
         routingProfile,
         logHandler,
@@ -71,7 +77,7 @@ private class DefaultCorePublisher
 @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
 constructor(
     private val ably: Ably,
-    private val mapbox: Mapbox,
+    private val locationProvider: LocationProvider,
     resolutionPolicyFactory: ResolutionPolicy.Factory,
     routingProfile: RoutingProfile,
     private val logHandler: LogHandler?,
@@ -110,7 +116,7 @@ constructor(
             }
         }
         ably.subscribeForAblyStateChange { enqueue(AblyConnectionStateChangeEvent(it)) }
-        mapbox.registerLocationObserver(object : LocationUpdatesObserver {
+        locationProvider.registerLocationObserver(object : LocationUpdatesObserver {
             override fun onRawLocationChanged(rawLocation: Location) {
                 enqueue(RawLocationChangedEvent(rawLocation))
             }
@@ -121,7 +127,7 @@ constructor(
                 enqueue(EnhancedLocationChangedEvent(enhancedLocation, intermediateLocations, locationUpdateType))
             }
         })
-        mapbox.setLocationHistoryListener { historyData -> scope.launch { _locationHistory.emit(historyData) } }
+        locationProvider.setLocationHistoryListener { historyData -> scope.launch { _locationHistory.emit(historyData) } }
     }
 
     override fun enqueue(event: AdhocEvent) {
@@ -290,7 +296,7 @@ constructor(
                         }
                         if (!state.isTracking) {
                             state.isTracking = true
-                            mapbox.startTrip()
+                            locationProvider.startTrip()
                         }
                         state.trackables.add(event.trackable)
                         scope.launch { _trackables.emit(state.trackables) }
@@ -308,7 +314,7 @@ constructor(
                     }
                     is ChangeLocationEngineResolutionEvent -> {
                         state.locationEngineResolution = policy.resolve(state.resolutions.values.toSet())
-                        mapbox.changeResolution(state.locationEngineResolution)
+                        locationProvider.changeResolution(state.locationEngineResolution)
                     }
                     is RemoveTrackableEvent -> {
                         if (state.trackables.contains(event.trackable)) {
@@ -572,8 +578,8 @@ constructor(
 
     private fun stopLocationUpdates(state: State) {
         state.isTracking = false
-        mapbox.unregisterLocationObserver()
-        mapbox.stopAndClose()
+        locationProvider.unregisterLocationObserver()
+        locationProvider.stopAndClose()
     }
 
     private fun updateTrackableState(state: State, trackableId: String) {
@@ -669,7 +675,7 @@ constructor(
             if (currentLocation != null) {
                 removeCurrentDestination(state)
                 state.currentDestination = destination
-                mapbox.setRoute(currentLocation, destination, state.routingProfile) {
+                locationProvider.setRoute(currentLocation, destination, state.routingProfile) {
                     try {
                         enqueue(SetDestinationSuccessEvent(it.getOrThrow()))
                     } catch (exception: MapException) {
@@ -683,7 +689,7 @@ constructor(
     }
 
     private fun removeCurrentDestination(state: State) {
-        mapbox.clearRoute()
+        locationProvider.clearRoute()
         state.currentDestination = null
         state.estimatedArrivalTimeInMilliseconds = null
     }

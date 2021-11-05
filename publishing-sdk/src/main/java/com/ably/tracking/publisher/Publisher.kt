@@ -2,13 +2,15 @@ package com.ably.tracking.publisher
 
 import android.Manifest.permission.ACCESS_COARSE_LOCATION
 import android.Manifest.permission.ACCESS_FINE_LOCATION
-import android.content.Context
 import androidx.annotation.RequiresPermission
 import com.ably.tracking.BuilderConfigurationIncompleteException
 import com.ably.tracking.ConnectionException
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.TrackableState
 import com.ably.tracking.connection.ConnectionConfiguration
+import com.ably.tracking.locationprovider.LocationHistoryData
+import com.ably.tracking.locationprovider.LocationProvider
+import com.ably.tracking.locationprovider.RoutingProfile
 import com.ably.tracking.logging.LogHandler
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -137,20 +139,12 @@ interface Publisher {
         fun connection(configuration: ConnectionConfiguration): Builder
 
         /**
-         * **REQUIRED** Sets the maps configuration.
+         * **REQUIRED** Sets the location provider.
          *
-         * @param configuration The configuration to be used for maps.
+         * @param provider The location provider to be used for location updates.
          * @return A new instance of the builder with this property changed.
          */
-        fun map(configuration: MapConfiguration): Builder
-
-        /**
-         * **REQUIRED** Sets the Android Context.
-         *
-         * @param context The context of the application.
-         * @return A new instance of the builder with this property changed.
-         */
-        fun androidContext(context: Context): Builder
+        fun locationProvider(provider: LocationProvider): Builder
 
         /**
          * **OPTIONAL** Set the means of transport being used for the initial state of publishers created from this builder.
@@ -171,15 +165,6 @@ interface Publisher {
         fun resolutionPolicy(factory: ResolutionPolicy.Factory): Builder
 
         /**
-         * **OPTIONAL** Sets the location source to be used instead of the GPS.
-         * The location source will be providing location updates for the [Publisher].
-         *
-         * @param locationSource The location source from which location updates will be received.
-         * @return A new instance of the builder with this property changed.
-         */
-        fun locationSource(locationSource: LocationSource?): Builder
-
-        /**
          * EXPERIMENTAL API
          * **OPTIONAL** Sets the log handler.
          *
@@ -189,19 +174,6 @@ interface Publisher {
         fun logHandler(logHandler: LogHandler): Builder
 
         /**
-         * Sets the notification that will be displayed for the background tracking service.
-         *
-         * @param notificationProvider It will be used to create the notification.
-         * @param notificationId The ID of the notification used by the Android OS to display it.
-         * @return A new instance of the builder with this property changed.
-         */
-        fun backgroundTrackingNotificationProvider(
-            notificationProvider: PublisherNotificationProvider,
-            notificationId: Int
-        ): Builder
-
-        /**
-         * EXPERIMENTAL API
          * **OPTIONAL** Enables sending of raw location updates. This should only be enabled for diagnostics.
          * In the production environment this should be always disabled.
          * By default this is disabled.

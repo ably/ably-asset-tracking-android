@@ -3,6 +3,8 @@ package com.ably.tracking.publisher
 import android.annotation.SuppressLint
 import com.ably.tracking.ConnectionException
 import com.ably.tracking.common.Ably
+import com.ably.tracking.locationprovider.LocationProvider
+import com.ably.tracking.locationprovider.RoutingProfile
 import com.ably.tracking.test.common.mockConnectFailureThenSuccess
 import com.ably.tracking.test.common.mockConnectSuccess
 import com.ably.tracking.test.common.mockCreateConnectionSuccess
@@ -20,7 +22,7 @@ import org.junit.Test
 
 class DefaultPublisherTest {
     private val ably = mockk<Ably>(relaxed = true)
-    private val mapbox = mockk<Mapbox>(relaxed = true)
+    private val locationProvider = mockk<LocationProvider>(relaxed = true)
     private val resolutionPolicy = mockk<ResolutionPolicy>(relaxed = true)
     private val resolutionPolicyFactory = object : ResolutionPolicy.Factory {
         override fun createResolutionPolicy(hooks: ResolutionPolicy.Hooks, methods: ResolutionPolicy.Methods) =
@@ -29,7 +31,7 @@ class DefaultPublisherTest {
 
     @SuppressLint("MissingPermission")
     private val publisher: Publisher =
-        DefaultPublisher(ably, mapbox, resolutionPolicyFactory, RoutingProfile.DRIVING, null, false)
+        DefaultPublisher(ably, locationProvider, resolutionPolicyFactory, RoutingProfile.DRIVING, null, false)
 
     @Test(expected = ConnectionException::class)
     fun `should return an error when adding a trackable with subscribing to presence error`() {

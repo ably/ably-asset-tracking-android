@@ -8,6 +8,7 @@ import com.ably.tracking.TrackableState
 import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.PresenceMessage
 import com.ably.tracking.common.ResultHandler
+import com.ably.tracking.locationprovider.RoutingProfile
 import kotlinx.coroutines.flow.StateFlow
 
 internal typealias AddTrackableResult = StateFlow<TrackableState>

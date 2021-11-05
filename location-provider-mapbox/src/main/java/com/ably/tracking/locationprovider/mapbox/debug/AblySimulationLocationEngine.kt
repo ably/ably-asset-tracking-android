@@ -1,12 +1,12 @@
-package com.ably.tracking.publisher.debug
+package com.ably.tracking.locationprovider.mapbox.debug
 
 import android.app.PendingIntent
 import android.os.Looper
 import android.os.SystemClock
 import com.ably.tracking.common.EventNames
-import com.ably.tracking.common.message.getLocationMessages
 import com.ably.tracking.common.logging.d
 import com.ably.tracking.common.logging.i
+import com.ably.tracking.common.message.getLocationMessages
 import com.ably.tracking.common.message.synopsis
 import com.ably.tracking.common.message.toTracking
 import com.ably.tracking.logging.LogHandler

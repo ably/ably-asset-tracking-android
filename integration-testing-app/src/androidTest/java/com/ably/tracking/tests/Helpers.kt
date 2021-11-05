@@ -8,13 +8,14 @@ import com.ably.tracking.Accuracy
 import com.ably.tracking.Resolution
 import com.ably.tracking.connection.Authentication
 import com.ably.tracking.connection.ConnectionConfiguration
+import com.ably.tracking.locationprovider.RoutingProfile
+import com.ably.tracking.locationprovider.mapbox.LocationSourceRaw
+import com.ably.tracking.locationprovider.mapbox.MapConfiguration
+import com.ably.tracking.locationprovider.mapbox.MapboxLocationHistoryData
+import com.ably.tracking.locationprovider.mapbox.MapboxLocationProvider
+import com.ably.tracking.locationprovider.mapbox.PublisherNotificationProvider
 import com.ably.tracking.publisher.DefaultResolutionPolicyFactory
-import com.ably.tracking.publisher.LocationHistoryData
-import com.ably.tracking.publisher.LocationSourceRaw
-import com.ably.tracking.publisher.MapConfiguration
 import com.ably.tracking.publisher.Publisher
-import com.ably.tracking.publisher.PublisherNotificationProvider
-import com.ably.tracking.publisher.RoutingProfile
 import com.ably.tracking.subscriber.Subscriber
 import com.ably.tracking.test.android.common.NOTIFICATION_CHANNEL_ID
 import com.ably.tracking.test.android.common.createNotificationChannel
@@ -31,28 +32,14 @@ fun createAndStartPublisher(
     context: Context,
     resolution: Resolution = Resolution(Accuracy.BALANCED, 1L, 0.0),
     authentication: Authentication = defaultConnectionConfiguration,
-    locationData: LocationHistoryData = getLocationData(context),
+    locationData: MapboxLocationHistoryData = getLocationData(context),
     onLocationDataEnded: () -> Unit = {}
 ): Publisher {
-    createNotificationChannel(context)
     return Publisher.publishers()
-        .androidContext(context)
         .connection(ConnectionConfiguration(authentication))
-        .map(MapConfiguration(MAPBOX_ACCESS_TOKEN))
+        .locationProvider(createMapboxLocationProvider(context, authentication, locationData, onLocationDataEnded))
         .resolutionPolicy(DefaultResolutionPolicyFactory(resolution, context))
         .profile(RoutingProfile.DRIVING)
-        .locationSource(LocationSourceRaw.create(locationData, onLocationDataEnded))
-        .backgroundTrackingNotificationProvider(
-            object : PublisherNotificationProvider {
-                override fun getNotification(): Notification =
-                    NotificationCompat.Builder(context, NOTIFICATION_CHANNEL_ID)
-                        .setContentTitle("Title")
-                        .setContentText("Text")
-                        .setSmallIcon(R.drawable.aat_logo)
-                        .build()
-            },
-            1234
-        )
         .start()
 }
 
@@ -67,7 +54,32 @@ suspend fun createAndStartSubscriber(
         .trackingId(trackingId)
         .start()
 
-private fun getLocationData(context: Context): LocationHistoryData {
+fun createMapboxLocationProvider(
+    context: Context,
+    authentication: Authentication = defaultConnectionConfiguration,
+    locationData: MapboxLocationHistoryData = getLocationData(context),
+    onLocationDataEnded: () -> Unit = {},
+): MapboxLocationProvider {
+    createNotificationChannel(context)
+    return MapboxLocationProvider(
+        context,
+        MapConfiguration(MAPBOX_ACCESS_TOKEN),
+        ConnectionConfiguration(authentication),
+        LocationSourceRaw.create(locationData, onLocationDataEnded),
+        null,
+        object : PublisherNotificationProvider {
+            override fun getNotification(): Notification =
+                NotificationCompat.Builder(context, NOTIFICATION_CHANNEL_ID)
+                    .setContentTitle("Title")
+                    .setContentText("Text")
+                    .setSmallIcon(R.drawable.aat_logo)
+                    .build()
+        },
+        1234
+    )
+}
+
+private fun getLocationData(context: Context): MapboxLocationHistoryData {
     val historyString = context.assets.open("location_history_small.txt").use { String(it.readBytes()) }
-    return Gson().fromJson(historyString, LocationHistoryData::class.java)
+    return Gson().fromJson(historyString, MapboxLocationHistoryData::class.java)
 }

@@ -1,6 +1,6 @@
 package com.ably.tracking.publisher.java
 
-import com.ably.tracking.publisher.LocationHistoryData
+import com.ably.tracking.locationprovider.LocationHistoryData
 import com.ably.tracking.publisher.Trackable
 
 /**

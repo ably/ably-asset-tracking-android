@@ -1,6 +1,7 @@
 package com.ably.tracking.publisher
 
 import com.ably.tracking.Location
+import com.ably.tracking.locationprovider.Destination
 
 internal class ThresholdChecker {
     fun isThresholdReached(

@@ -1,4 +1,4 @@
-package com.ably.tracking.publisher.locationengine
+package com.ably.tracking.locationprovider.mapbox.locationengine
 
 import android.content.Context
 import com.google.android.gms.common.ConnectionResult

@@ -1,5 +1,6 @@
 package com.ably.tracking.publisher
 
+import com.ably.tracking.locationprovider.Destination
 import com.ably.tracking.test.common.anyLocation
 import com.ably.tracking.test.common.createLocation
 import org.junit.Assert

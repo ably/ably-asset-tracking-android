@@ -7,6 +7,8 @@ import com.ably.tracking.LocationUpdateType
 import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
+import com.ably.tracking.locationprovider.LocationProvider
+import com.ably.tracking.locationprovider.RoutingProfile
 import com.ably.tracking.test.common.createLocation
 import com.ably.tracking.test.common.mockCreateConnectionSuccess
 import com.ably.tracking.test.common.mockSendEnhancedLocationFailure
@@ -28,7 +30,7 @@ import org.junit.Test
 
 class CorePublisherLocationUpdatesPublishingTest {
     private val ably = mockk<Ably>(relaxed = true)
-    private val mapbox = mockk<Mapbox>(relaxed = true)
+    private val locationProvider = mockk<LocationProvider>(relaxed = true)
     private val resolutionPolicy = mockk<ResolutionPolicy>(relaxed = true)
     private val resolutionPolicyFactory = object : ResolutionPolicy.Factory {
         override fun createResolutionPolicy(hooks: ResolutionPolicy.Hooks, methods: ResolutionPolicy.Methods) =
@@ -37,7 +39,7 @@ class CorePublisherLocationUpdatesPublishingTest {
 
     @SuppressLint("MissingPermission")
     private val corePublisher: CorePublisher =
-        createCorePublisher(ably, mapbox, resolutionPolicyFactory, RoutingProfile.DRIVING, null, false)
+        createCorePublisher(ably, locationProvider, resolutionPolicyFactory, RoutingProfile.DRIVING, null, false)
 
     @Test
     fun `Should send a message only once if publishing it succeeds`() {
@@ -128,7 +130,7 @@ class CorePublisherLocationUpdatesPublishingTest {
     fun `Should send raw messages if they are enabled`() {
         // given
         val corePublisher =
-            createCorePublisher(ably, mapbox, resolutionPolicyFactory, RoutingProfile.DRIVING, null, true)
+            createCorePublisher(ably, locationProvider, resolutionPolicyFactory, RoutingProfile.DRIVING, null, true)
         val trackableId = UUID.randomUUID().toString()
         mockAllTrackablesResolution(Resolution(Accuracy.MAXIMUM, 0, 0.0))
         addTrackable(Trackable(trackableId), corePublisher)

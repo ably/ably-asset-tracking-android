@@ -14,13 +14,14 @@ import androidx.core.content.ContextCompat
 import androidx.core.widget.addTextChangedListener
 import com.ably.tracking.Accuracy
 import com.ably.tracking.Resolution
+import com.ably.tracking.locationprovider.LocationHistoryData
+import com.ably.tracking.locationprovider.mapbox.LocationSource
+import com.ably.tracking.locationprovider.mapbox.LocationSourceAbly
+import com.ably.tracking.locationprovider.mapbox.LocationSourceRaw
+import com.ably.tracking.locationprovider.mapbox.MapboxLocationHistoryData
 import com.ably.tracking.publisher.DefaultProximity
 import com.ably.tracking.publisher.DefaultResolutionConstraints
 import com.ably.tracking.publisher.DefaultResolutionSet
-import com.ably.tracking.publisher.LocationHistoryData
-import com.ably.tracking.publisher.LocationSource
-import com.ably.tracking.publisher.LocationSourceAbly
-import com.ably.tracking.publisher.LocationSourceRaw
 import com.ably.tracking.publisher.Trackable
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -147,7 +148,7 @@ class AddTrackableActivity : PublisherServiceActivity() {
             LocationSourceType.PHONE -> null
             LocationSourceType.ABLY_CHANNEL -> LocationSourceAbly.create(appPreferences.getSimulationChannel())
             LocationSourceType.S3_FILE -> {
-                if (historyData != null)
+                if (historyData != null && historyData is MapboxLocationHistoryData)
                     LocationSourceRaw.create(historyData)
                 else
                     throw Exception("Location history data cannot be null")

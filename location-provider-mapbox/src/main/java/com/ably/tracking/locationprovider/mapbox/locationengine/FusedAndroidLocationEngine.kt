@@ -1,4 +1,4 @@
-package com.ably.tracking.publisher.locationengine
+package com.ably.tracking.locationprovider.mapbox.locationengine
 
 import android.annotation.SuppressLint
 import android.app.PendingIntent
@@ -142,6 +142,7 @@ open class FusedAndroidLocationEngine(
             else -> Criteria.POWER_LOW
         }
 
+    @SuppressLint("MissingPermission")
     override fun removeLocationUpdates(callback: LocationEngineCallback<LocationEngineResult>) {
         listeners.remove(callback)?.let { locationManager.removeUpdates(it) }
     }
