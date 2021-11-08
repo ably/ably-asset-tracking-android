@@ -272,7 +272,7 @@ constructor(
                         }
                     }
                     is ConnectionForTrackableCreatedEvent -> {
-                        //only if it wasn't marked for removal
+                        // only if it wasn't marked for removal
                         if (state.trackableRemovalGuard.markedForRemoval(event.trackable)) {
                             state.trackableRemovalGuard.removeMarked(event.trackable)
                         } else {
@@ -291,12 +291,16 @@ constructor(
                                 }
                             )
                         }
-
                     }
                     is ConnectionForTrackableReadyEvent -> {
-                        if (state.trackableRemovalGuard.markedForRemoval(event.trackable)){
-                            request(AddTrackableFailedEvent(event.trackable, event.handler, exception = Exception
-                                ("Trackable was marked for removal")))
+                        if (state.trackableRemovalGuard.markedForRemoval(event.trackable)) {
+                            request(
+                                AddTrackableFailedEvent(
+                                    event.trackable,
+                                    event.handler,
+                                    exception = Exception("Trackable was marked for removal")
+                                )
+                            )
                         }
                         ably.subscribeForChannelStateChange(event.trackable.id) {
                             enqueue(ChannelConnectionStateChangeEvent(it, event.trackable.id))
@@ -309,9 +313,11 @@ constructor(
                         scope.launch { _trackables.emit(state.trackables) }
                         resolveResolution(event.trackable, state)
                         hooks.trackables?.onTrackableAdded(event.trackable)
-                        val trackableState = state.trackableStates[event.trackable.id] ?: TrackableState.Offline()
+                        val trackableState = state.trackableStates[event.trackable.id]
+                            ?: TrackableState.Offline()
                         val trackableStateFlow =
-                            state.trackableStateFlows[event.trackable.id] ?: MutableStateFlow(trackableState)
+                            state.trackableStateFlows[event.trackable.id]
+                                ?: MutableStateFlow(trackableState)
                         state.trackableStateFlows[event.trackable.id] = trackableStateFlow
                         trackableStateFlows = state.trackableStateFlows
                         state.trackableStates[event.trackable.id] = trackableState
@@ -342,7 +348,7 @@ constructor(
                                 }
                             }
                         } else if (state.duplicateTrackableGuard.isCurrentlyAddingTrackable(event.trackable)) {
-                            //This is the case where a trackable hasn't yet finished adding and the removal was
+                            // This is the case where a trackable hasn't yet finished adding and the removal was
                             // requested. We mark that trackable for removal so that it will not
                             state.trackableRemovalGuard.markForRemoval(event.trackable)
                         } else {
@@ -674,7 +680,8 @@ constructor(
     }
 
     private fun resolveResolution(trackable: Trackable, state: State) {
-        val resolutionRequests: Set<Resolution> = state.requests[trackable.id]?.values?.toSet() ?: emptySet()
+        val resolutionRequests: Set<Resolution> = state.requests[trackable.id]?.values?.toSet()
+            ?: emptySet()
         policy.resolve(TrackableResolutionRequest(trackable, resolutionRequests)).let { resolution ->
             state.resolutions[trackable.id] = resolution
             enqueue(ChangeLocationEngineResolutionEvent())
@@ -732,8 +739,7 @@ constructor(
         return if (resolution != null && lastSentLocation != null) {
             val timeSinceLastSentLocation = currentLocation.timeFrom(lastSentLocation)
             val distanceFromLastSentLocation = currentLocation.distanceInMetersFrom(lastSentLocation)
-            return distanceFromLastSentLocation >= resolution.minimumDisplacement ||
-                    timeSinceLastSentLocation >= resolution.desiredInterval
+            return distanceFromLastSentLocation >= resolution.minimumDisplacement || timeSinceLastSentLocation >= resolution.desiredInterval
         } else {
             true
         }

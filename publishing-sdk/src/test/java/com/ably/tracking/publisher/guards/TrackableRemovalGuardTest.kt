@@ -12,9 +12,9 @@ class TrackableRemovalGuardTest {
     fun `marking trackable for removal really marks it for removal`() {
         // given
         val trackable = Trackable("sample")
-        //when
+        // when
         trackableRemovalGuard.markForRemoval(trackable)
-        //then
+        // then
         assertTrue(trackableRemovalGuard.markedForRemoval(trackable))
     }
 
@@ -22,9 +22,9 @@ class TrackableRemovalGuardTest {
     fun `not marking trackable for removal not marks it for removal`() {
         // given
         val trackable = Trackable("sample")
-        //when
-        //nothing happens here
-        //then
+        // when
+        // nothing happens here
+        // then
         assertFalse(trackableRemovalGuard.markedForRemoval(trackable))
     }
 
@@ -34,10 +34,10 @@ class TrackableRemovalGuardTest {
         val trackable = Trackable("sample")
         trackableRemovalGuard.markForRemoval(trackable)
 
-        //when
+        // when
         trackableRemovalGuard.removeMarked(trackable)
 
-        //then
+        // then
         assertFalse(trackableRemovalGuard.markedForRemoval(trackable))
     }
 
@@ -48,12 +48,13 @@ class TrackableRemovalGuardTest {
         val otherTrackable = Trackable("sample2")
         trackableRemovalGuard.markForRemoval(trackable)
 
-        //when
+        // when
         trackableRemovalGuard.removeMarked(otherTrackable)
 
-        //then
+        // then
         assertTrue(trackableRemovalGuard.markedForRemoval(trackable))
     }
+
     @Test
     fun `adding the same trackable twice and removing it once removes it from removal list`() {
         // given
@@ -62,10 +63,10 @@ class TrackableRemovalGuardTest {
         trackableRemovalGuard.markForRemoval(trackable)
         trackableRemovalGuard.markForRemoval(trackable)
 
-        //when
+        // when
         trackableRemovalGuard.removeMarked(sameTrackable)
 
-        //then
+        // then
         assertFalse(trackableRemovalGuard.markedForRemoval(trackable))
     }
 }
