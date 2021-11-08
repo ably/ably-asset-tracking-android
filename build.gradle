@@ -44,6 +44,7 @@ allprojects {
     // version MUST conform to the Semantic Versioning Specification (https://semver.org/) version 2.0.0
     // on incrementing this value, ensure to also increment versionCode in android defaultConfig (also in this file)
     version = '1.0.0-beta.10'
+
     repositories {
         google()
         mavenCentral()
@@ -206,8 +207,8 @@ subprojects {
 
         // https://github.com/jlleitschuh/ktlint-gradle#configuration
         ktlint {
-            version = '0.41.0'
-            // override because v.9.4.1 of org.jlleitschuh.gradle.ktlint plugin is at 0.38.1 which has issues
+            version = '0.41.0' // override because v.9.4.1 of org.jlleitschuh.gradle.ktlint plugin is at 0.38.1 which
+            // has issues
             verbose = true // shows rule name that failed
             android = true
             outputColorName = 'RED' // easier to spot failures in console output
