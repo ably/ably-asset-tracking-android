@@ -59,4 +59,18 @@
   <string name="service_not_started_dialog_message">The publisher service has to be started to start adding trackables. Please use the switch at the bottom of the screen to turn it on.</string>
   <string name="cannot_stop_service_dialog_title">Publisher still has added trackables</string>
   <string name="cannot_stop_service_dialog_message">The publisher has added trackables. Remove them before stopping the publisher service.</string>
+
+  <string name="error_s3_not_initialized_history_data_upload_failed">S3 not initialized - cannot upload history data</string>
+  <string name="error_s3_not_initialized_history_data_download_failed">S3 not initialized - cannot download history data</string>
+  <string name="error_s3_not_initialized_history_data_fetch_failed">S3 not initialized - cannot fetch files</string>
+  <string name="error_no_trackable_id">Insert tracking ID</string>
+  <string name="error_publisher_service_not_started">Publisher service not started</string>
+  <string name="error_trackable_adding_failed">Error when adding the trackable</string>
+  <string name="error_trackable_removal_failed">Error when removing the trackable</string>
+  <string name="error_stopping_publisher_failed">Stopping publisher error</string>
+  <string name="info_permission_granted">Permission granted</string>
+
+  <string name="location_source_phone">Phone</string>
+  <string name="location_source_ably_channel">Ably Channel</string>
+  <string name="location_source_s3_file">S3 File</string>
 </resources>

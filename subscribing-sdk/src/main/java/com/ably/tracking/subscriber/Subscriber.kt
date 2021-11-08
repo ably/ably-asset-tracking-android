@@ -112,17 +112,6 @@ interface Subscriber {
         fun logHandler(logHandler: LogHandler): Builder
 
         /**
-         * EXPERIMENTAL API
-         * **OPTIONAL** Enables subscribing for raw location updates. This should only be enabled for diagnostics.
-         * In the production environment this should be always disabled.
-         * By default this is disabled.
-         *
-         * @param enabled Whether subscribing for raw location updates is enabled.
-         * @return A new instance of the builder with this property changed.
-         */
-        fun rawLocations(enabled: Boolean): Builder
-
-        /**
          * Creates a [Subscriber] and starts listening for location updates.
          *
          * @return A new subscriber instance.

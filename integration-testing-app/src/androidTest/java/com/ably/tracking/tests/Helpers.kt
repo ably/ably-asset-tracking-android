@@ -62,13 +62,11 @@ suspend fun createAndStartSubscriber(
     trackingId: String,
     resolution: Resolution = Resolution(Accuracy.BALANCED, 1L, 0.0),
     authentication: Authentication = defaultConnectionConfiguration,
-    rawLocations: Boolean = false,
 ) =
     Subscriber.subscribers()
         .connection(ConnectionConfiguration(authentication))
         .resolution(resolution)
         .trackingId(trackingId)
-        .rawLocations(rawLocations)
         .start()
 
 private fun getLocationData(context: Context): LocationHistoryData {

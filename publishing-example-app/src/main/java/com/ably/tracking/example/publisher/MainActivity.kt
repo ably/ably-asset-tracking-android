@@ -62,7 +62,7 @@ class MainActivity : PublisherServiceActivity() {
                             publisherService.publisher?.stop()
                             publisherService.publisher = null
                         } catch (e: Exception) {
-                            showLongToast("Stopping publisher error")
+                            showLongToast(R.string.error_stopping_publisher_failed)
                         }
                     } else {
                         showTrackablesList()
@@ -112,7 +112,7 @@ class MainActivity : PublisherServiceActivity() {
     }
 
     private fun updateLocationSourceMethodInfo() {
-        locationSourceMethodTextView.text = appPreferences.getLocationSource().displayName
+        locationSourceMethodTextView.text = getString(appPreferences.getLocationSource().displayNameResourceId)
     }
 
     private fun showAddTrackableScreen() {
@@ -133,7 +133,7 @@ class MainActivity : PublisherServiceActivity() {
             requestCode,
             permissions,
             grantResults,
-            onLocationPermissionGranted = { showLongToast("Permission granted") }
+            onLocationPermissionGranted = { showLongToast(R.string.info_permission_granted) }
         )
     }
 
