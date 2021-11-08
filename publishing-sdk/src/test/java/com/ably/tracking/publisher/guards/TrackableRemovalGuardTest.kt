@@ -1,8 +1,8 @@
 package com.ably.tracking.publisher.guards
 
 import com.ably.tracking.publisher.Trackable
-import junit.framework.Assert.assertFalse
-import junit.framework.Assert.assertTrue
+import org.junit.Assert.assertTrue
+import org.junit.Assert.assertFalse
 import org.junit.Test
 
 class TrackableRemovalGuardTest {
