@@ -207,8 +207,8 @@ subprojects {
 
         // https://github.com/jlleitschuh/ktlint-gradle#configuration
         ktlint {
-            version = '0.41.0' // override because v.9.4.1 of org.jlleitschuh.gradle.ktlint plugin is at 0.38.1 which
-            // has issues
+            // override because v.9.4.1 of org.jlleitschuh.gradle.ktlint plugin is at 0.38.1 which has issues
+            version = '0.41.0'
             verbose = true // shows rule name that failed
             android = true
             outputColorName = 'RED' // easier to spot failures in console output
