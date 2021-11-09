@@ -16,7 +16,7 @@ class TrackableRemovalGuard {
 
     fun markForRemoval(trackable: Trackable) = trackables.add(trackable)
 
-    fun markedForRemoval(trackable: Trackable): Boolean = trackables.contains(trackable)
+    fun isMarkedForRemoval(trackable: Trackable): Boolean = trackables.contains(trackable)
 
     fun removeMarked(trackable: Trackable) = trackables.remove(trackable)
 }

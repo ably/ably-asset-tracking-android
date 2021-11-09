@@ -15,7 +15,7 @@ class TrackableRemovalGuardTest {
         // when
         trackableRemovalGuard.markForRemoval(trackable)
         // then
-        assertTrue(trackableRemovalGuard.markedForRemoval(trackable))
+        assertTrue(trackableRemovalGuard.isMarkedForRemoval(trackable))
     }
 
     @Test
@@ -25,7 +25,7 @@ class TrackableRemovalGuardTest {
         // when
         // nothing happens here
         // then
-        assertFalse(trackableRemovalGuard.markedForRemoval(trackable))
+        assertFalse(trackableRemovalGuard.isMarkedForRemoval(trackable))
     }
 
     @Test
@@ -38,7 +38,7 @@ class TrackableRemovalGuardTest {
         trackableRemovalGuard.removeMarked(trackable)
 
         // then
-        assertFalse(trackableRemovalGuard.markedForRemoval(trackable))
+        assertFalse(trackableRemovalGuard.isMarkedForRemoval(trackable))
     }
 
     @Test
@@ -52,7 +52,7 @@ class TrackableRemovalGuardTest {
         trackableRemovalGuard.removeMarked(otherTrackable)
 
         // then
-        assertTrue(trackableRemovalGuard.markedForRemoval(trackable))
+        assertTrue(trackableRemovalGuard.isMarkedForRemoval(trackable))
     }
 
     @Test
@@ -67,6 +67,6 @@ class TrackableRemovalGuardTest {
         trackableRemovalGuard.removeMarked(sameTrackable)
 
         // then
-        assertFalse(trackableRemovalGuard.markedForRemoval(trackable))
+        assertFalse(trackableRemovalGuard.isMarkedForRemoval(trackable))
     }
 }

@@ -273,7 +273,7 @@ constructor(
                     }
                     is ConnectionForTrackableCreatedEvent -> {
                         // only if it wasn't marked for removal
-                        if (state.trackableRemovalGuard.markedForRemoval(event.trackable)) {
+                        if (state.trackableRemovalGuard.isMarkedForRemoval(event.trackable)) {
                             state.trackableRemovalGuard.removeMarked(event.trackable)
                         } else {
                             ably.subscribeForPresenceMessages(
@@ -293,7 +293,7 @@ constructor(
                         }
                     }
                     is ConnectionForTrackableReadyEvent -> {
-                        if (state.trackableRemovalGuard.markedForRemoval(event.trackable)) {
+                        if (state.trackableRemovalGuard.isMarkedForRemoval(event.trackable)) {
                             request(
                                 AddTrackableFailedEvent(
                                     event.trackable,
