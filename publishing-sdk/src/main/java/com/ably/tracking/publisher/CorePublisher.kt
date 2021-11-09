@@ -348,8 +348,6 @@ constructor(
                                 }
                             }
                         } else if (state.duplicateTrackableGuard.isCurrentlyAddingTrackable(event.trackable)) {
-                            // This is the case where a trackable hasn't yet finished adding and the removal was
-                            // requested. We mark that trackable for removal so that it will not
                             state.trackableRemovalGuard.markForRemoval(event.trackable)
                         } else {
                             // notify with false to indicate that it was not removed
