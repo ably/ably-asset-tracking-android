@@ -871,6 +871,7 @@ constructor(
             enhancedLocationsPublishingState.clearAll()
             rawLocationsPublishingState.clearAll()
             duplicateTrackableGuard.clearAll()
+            trackableRemovalGuard.clearAll()
             isDisposed = true
         }
     }
