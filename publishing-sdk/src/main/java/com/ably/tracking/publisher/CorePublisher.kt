@@ -240,7 +240,7 @@ constructor(
                         val failureResult = Result.failure<AddTrackableResult>(event.exception)
                         event.handler(failureResult)
                         state.duplicateTrackableGuard.finishAddingTrackable(event.trackable, failureResult)
-                        state.trackableRemovalGuard.removeMarked(event.trackable)
+                        state.trackableRemovalGuard.removeMarked(event.trackable, Result.success(true))
                     }
                     is PresenceMessageEvent -> {
                         when (event.presenceMessage.action) {
@@ -271,10 +271,23 @@ constructor(
                             }
                         }
                     }
+                    is TrackableRemovalRequestedEvent -> {
+                        if (event.result.isSuccess) {
+                            state.trackableRemovalGuard.removeMarked(event.trackable, Result.success(true))
+                        } else {
+                            state.trackableRemovalGuard.removeMarked(event.trackable, Result.failure(event.result
+                                .exceptionOrNull()!!))
+                        }
+                        event.handler(Result.failure(RemoveTrackableRequestedException()))
+                        state.duplicateTrackableGuard.finishAddingTrackable(event.trackable,Result.failure
+                            (RemoveTrackableRequestedException()))
+                    }
                     is ConnectionForTrackableCreatedEvent -> {
-                        // only if it wasn't marked for removal
                         if (state.trackableRemovalGuard.isMarkedForRemoval(event.trackable)) {
-                            state.trackableRemovalGuard.removeMarked(event.trackable)
+                            // Leave Ably channel.
+                            ably.disconnect(event.trackable.id, state.presenceData) { result ->
+                               request(TrackableRemovalRequestedEvent(event.trackable,event.handler,result))
+                            }
                         } else {
                             ably.subscribeForPresenceMessages(
                                 trackableId = event.trackable.id,
@@ -294,13 +307,10 @@ constructor(
                     }
                     is ConnectionForTrackableReadyEvent -> {
                         if (state.trackableRemovalGuard.isMarkedForRemoval(event.trackable)) {
-                            request(
-                                AddTrackableFailedEvent(
-                                    event.trackable,
-                                    event.handler,
-                                    exception = Exception("Trackable was marked for removal")
-                                )
-                            )
+                            ably.disconnect(event.trackable.id, state.presenceData) { result ->
+                                request(TrackableRemovalRequestedEvent(event.trackable,event.handler,result))
+                            }
+                            continue
                         }
                         ably.subscribeForChannelStateChange(event.trackable.id) {
                             enqueue(ChannelConnectionStateChangeEvent(it, event.trackable.id))
@@ -330,7 +340,7 @@ constructor(
                         mapbox.changeResolution(state.locationEngineResolution)
                     }
                     is RemoveTrackableEvent -> {
-                        if (state.trackables.contains(event.trackable)) {
+                        if (state.trackables.contains(event.trackable) ) {
                             // Leave Ably channel.
                             ably.disconnect(event.trackable.id, state.presenceData) { result ->
                                 if (result.isSuccess) {
@@ -348,7 +358,7 @@ constructor(
                                 }
                             }
                         } else if (state.duplicateTrackableGuard.isCurrentlyAddingTrackable(event.trackable)) {
-                            state.trackableRemovalGuard.markForRemoval(event.trackable)
+                            state.trackableRemovalGuard.markForRemoval(event.trackable,event.handler)
                         } else {
                             // notify with false to indicate that it was not removed
                             event.handler(Result.success(false))
