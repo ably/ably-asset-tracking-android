@@ -1,6 +1,5 @@
 package com.ably.tracking.publisher.guards
 
-import androidx.annotation.VisibleForTesting
 import com.ably.tracking.common.ResultHandler
 import com.ably.tracking.publisher.Trackable
 

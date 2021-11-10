@@ -1,11 +1,9 @@
 package com.ably.tracking.publisher.guards
 
 import com.ably.tracking.publisher.Trackable
-import org.junit.Assert.assertTrue
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.lang.Exception
-import com.ably.tracking.common.ResultHandler as ResultHandler1
 
 class TrackableRemovalGuardTest {
     private val trackableRemovalGuard = TrackableRemovalGuard()
@@ -14,9 +12,7 @@ class TrackableRemovalGuardTest {
     fun `marking trackable for removal really marks it for removal`() {
         // given
         val trackable = Trackable("sample")
-        trackableRemovalGuard.markForRemoval(trackable) {
-
-        }
+        trackableRemovalGuard.markForRemoval(trackable) {}
         // then
         assertTrue(trackableRemovalGuard.isMarkedForRemoval(trackable))
     }
@@ -82,7 +78,7 @@ class TrackableRemovalGuardTest {
         trackableRemovalGuard.markForRemoval(trackable) {
             called1 = true
         }
-        //add it one more time
+        // add it one more time
         trackableRemovalGuard.markForRemoval(trackable) {
             called2 = true
         }
@@ -104,7 +100,7 @@ class TrackableRemovalGuardTest {
         trackableRemovalGuard.markForRemoval(trackable) {
             called1 = true
         }
-        //add it one more time
+        // add it one more time
         trackableRemovalGuard.markForRemoval(trackable) {
             called2 = true
         }
@@ -121,7 +117,7 @@ class TrackableRemovalGuardTest {
         val trackable = Trackable("sample")
 
         trackableRemovalGuard.markForRemoval(trackable) {
-            //then
+            // then
             assertTrue(it.isSuccess)
         }
         // when
@@ -134,11 +130,10 @@ class TrackableRemovalGuardTest {
         val trackable = Trackable("sample")
 
         trackableRemovalGuard.markForRemoval(trackable) {
-            //then
+            // then
             assertTrue(it.isFailure)
         }
         // when
         trackableRemovalGuard.removeMarked(trackable, Result.failure(Exception("simple")))
     }
-
 }
