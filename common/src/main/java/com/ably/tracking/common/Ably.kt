@@ -181,6 +181,10 @@ class DefaultAbly
     private val channels: MutableMap<String, Channel> = mutableMapOf()
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
+    // Channels whose presence successfully were left but were unable to detach
+    // This list is here to maintain those channel list, it is not a list that will make the operations transactional
+    private val channelsFailedDetach = mutableSetOf<Channel>()
+
     init {
         try {
             val clientOptions = connectionConfiguration.authentication.clientOptions.apply {
@@ -290,7 +294,12 @@ class DefaultAbly
                 if (it.isSuccess) {
                     detachFromChannel(channelToRemove, trackableId, callback)
                 } else {
-                    callback(it)
+                    //if it was previosly removed anyway but was not detached, do another detach call
+                    if (channelsFailedDetach.contains(channelToRemove)) {
+                        detachFromChannel(channelToRemove, trackableId, callback)
+                    } else {
+                        callback(it)
+                    }
                 }
             }
         } catch (ablyException: AblyException) {
@@ -309,7 +318,9 @@ class DefaultAbly
                 override fun onSuccess() {
                     channelToRemove.unsubscribe()
                     channelToRemove.presence.unsubscribe()
-                    callback(Result.success(Unit))
+                    scope.launch(callbackDispatcher) {
+                        callback(Result.success(Unit))
+                    }
                 }
 
                 override fun onError(reason: ErrorInfo) {
@@ -335,6 +346,7 @@ class DefaultAbly
             }
 
             override fun onError(reason: ErrorInfo) {
+                channelsFailedDetach.add(channelToRemove)
                 scope.launch(callbackDispatcher) {
                     callback(Result.failure(reason.toTrackingException()))
                 }
