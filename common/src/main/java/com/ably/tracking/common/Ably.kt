@@ -250,12 +250,17 @@ constructor(
                         gson.toJson(presenceData.toMessage()),
                         object : CompletionListener {
                             override fun onSuccess() {
-                                channels[trackableId] = this@apply
-                                callback(Result.success(Unit))
+                                scope.launch {
+                                    channels[trackableId] = this@apply
+                                    callback(Result.success(Unit))
+                                }
                             }
 
                             override fun onError(reason: ErrorInfo) {
-                                callback(Result.failure(Exception(reason.toTrackingException())))
+                                scope.launch {
+                                    callback(Result.failure(Exception(reason.toTrackingException())))
+                                }
+
                             }
                         }
                     )
@@ -280,18 +285,25 @@ constructor(
                             channelToRemove.presence.unsubscribe()
                             channelToRemove.detach(object : CompletionListener {
                                 override fun onSuccess() {
-                                    channels.remove(trackableId)
-                                    callback(Result.success(Unit))
+                                    scope.launch {
+                                        channels.remove(trackableId)
+                                        callback(Result.success(Unit))
+                                    }
+
                                 }
 
                                 override fun onError(reason: ErrorInfo) {
-                                    callback(Result.failure(reason.toTrackingException()))
+                                    scope.launch {
+                                        callback(Result.failure(reason.toTrackingException()))
+                                    }
                                 }
                             })
                         }
 
                         override fun onError(reason: ErrorInfo) {
-                            callback(Result.failure(reason.toTrackingException()))
+                            scope.launch {
+                                callback(Result.failure(reason.toTrackingException()))
+                            }
                         }
                     }
                 )
@@ -335,11 +347,16 @@ constructor(
                     },
                     object : CompletionListener {
                         override fun onSuccess() {
-                            callback(Result.success(Unit))
+                            scope.launch {
+                                callback(Result.success(Unit))
+                            }
                         }
 
                         override fun onError(reason: ErrorInfo) {
-                            callback(Result.failure(reason.toTrackingException()))
+                            scope.launch {
+                                callback(Result.failure(reason.toTrackingException()))
+                            }
+
                         }
                     }
                 )
@@ -367,11 +384,15 @@ constructor(
                     },
                     object : CompletionListener {
                         override fun onSuccess() {
-                            callback(Result.success(Unit))
+                            scope.launch {
+                                callback(Result.success(Unit))
+                            }
                         }
 
                         override fun onError(reason: ErrorInfo) {
-                            callback(Result.failure(reason.toTrackingException()))
+                            scope.launch {
+                                callback(Result.failure(reason.toTrackingException()))
+                            }
                         }
                     }
                 )
@@ -387,7 +408,9 @@ constructor(
         channels[trackableId]?.let { channel ->
             try {
                 channel.subscribe(EventNames.ENHANCED) { message ->
-                    listener(message.getEnhancedLocationUpdate(gson))
+                    scope.launch {
+                        listener(message.getEnhancedLocationUpdate(gson))
+                    }
                 }
             } catch (exception: AblyException) {
                 throw exception.errorInfo.toTrackingException()
@@ -420,11 +443,13 @@ constructor(
                         }
                     }
                     channel.presence.subscribe {
-                        val parsedMessage = it.toTracking(gson)
-                        if (parsedMessage != null) {
-                            listener(parsedMessage)
-                        } else {
-                            logHandler?.w("Presence message in unexpected format: $it")
+                        scope.launch {
+                            val parsedMessage = it.toTracking(gson)
+                            if (parsedMessage != null) {
+                                listener(parsedMessage)
+                            } else {
+                                logHandler?.w("Presence message in unexpected format: $it")
+                            }
                         }
                     }
                     callback(Result.success(Unit))
@@ -443,11 +468,15 @@ constructor(
                 gson.toJson(presenceData.toMessage()),
                 object : CompletionListener {
                     override fun onSuccess() {
-                        callback(Result.success(Unit))
+                        scope.launch {
+                            callback(Result.success(Unit))
+                        }
                     }
 
                     override fun onError(reason: ErrorInfo) {
-                        callback(Result.failure(Exception(reason.toTrackingException())))
+                        scope.launch {
+                            callback(Result.failure(Exception(reason.toTrackingException())))
+                        }
                     }
                 }
             )
