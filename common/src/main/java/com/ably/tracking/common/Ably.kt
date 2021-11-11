@@ -24,14 +24,10 @@ import io.ably.lib.types.ChannelOptions
 import io.ably.lib.types.ErrorInfo
 import io.ably.lib.types.Message
 import io.ably.lib.util.Log
+import kotlinx.coroutines.*
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.supervisorScope
 
 /**
  * Wrapper for the [AblyRealtime] that's used to interact with the Ably SDK.
@@ -170,10 +166,10 @@ private const val AGENT_HEADER_NAME = "ably-asset-tracking-android"
 class DefaultAbly
 /**
  * @throws ConnectionException if something goes wrong during Ably SDK initialization.
- */
-constructor(
+ */(
     connectionConfiguration: ConnectionConfiguration,
     private val logHandler: LogHandler?,
+    val callbackDispatcher: CoroutineDispatcher,
 ) : Ably {
     private val gson = Gson()
     private val ably: AblyRealtime
@@ -206,7 +202,11 @@ constructor(
     }
 
     override fun subscribeForAblyStateChange(listener: (ConnectionStateChange) -> Unit) {
-        ably.connection.on { listener(it.toTracking()) }
+        ably.connection.on {
+            scope.launch(callbackDispatcher){
+                listener(it.toTracking())
+            }
+        }
     }
 
     override fun subscribeForChannelStateChange(trackableId: String, listener: (ConnectionStateChange) -> Unit) {
@@ -214,9 +214,11 @@ constructor(
             // Emit the current channel state
             channel.state.toTracking().let { currentChannelState ->
                 // Initial state is launched in a fire-and-forget manner to not block this method on the listener() call
-                scope.launch { listener(ConnectionStateChange(currentChannelState, null)) }
+                scope.launch(callbackDispatcher) { listener(ConnectionStateChange(currentChannelState, null)) }
             }
-            channel.on { listener(it.toTracking()) }
+            channel.on {
+                scope.launch(callbackDispatcher) { listener(it.toTracking()) }
+            }
         }
     }
 
@@ -250,14 +252,14 @@ constructor(
                         gson.toJson(presenceData.toMessage()),
                         object : CompletionListener {
                             override fun onSuccess() {
-                                scope.launch {
+                                scope.launch(callbackDispatcher) {
                                     channels[trackableId] = this@apply
                                     callback(Result.success(Unit))
                                 }
                             }
 
                             override fun onError(reason: ErrorInfo) {
-                                scope.launch {
+                                scope.launch(callbackDispatcher) {
                                     callback(Result.failure(Exception(reason.toTrackingException())))
                                 }
 
@@ -285,7 +287,7 @@ constructor(
                             channelToRemove.presence.unsubscribe()
                             channelToRemove.detach(object : CompletionListener {
                                 override fun onSuccess() {
-                                    scope.launch {
+                                    scope.launch(callbackDispatcher) {
                                         channels.remove(trackableId)
                                         callback(Result.success(Unit))
                                     }
@@ -293,7 +295,7 @@ constructor(
                                 }
 
                                 override fun onError(reason: ErrorInfo) {
-                                    scope.launch {
+                                    scope.launch(callbackDispatcher) {
                                         callback(Result.failure(reason.toTrackingException()))
                                     }
                                 }
@@ -301,7 +303,7 @@ constructor(
                         }
 
                         override fun onError(reason: ErrorInfo) {
-                            scope.launch {
+                            scope.launch(callbackDispatcher) {
                                 callback(Result.failure(reason.toTrackingException()))
                             }
                         }
@@ -347,13 +349,13 @@ constructor(
                     },
                     object : CompletionListener {
                         override fun onSuccess() {
-                            scope.launch {
+                            scope.launch(callbackDispatcher) {
                                 callback(Result.success(Unit))
                             }
                         }
 
                         override fun onError(reason: ErrorInfo) {
-                            scope.launch {
+                            scope.launch(callbackDispatcher) {
                                 callback(Result.failure(reason.toTrackingException()))
                             }
 
@@ -384,13 +386,13 @@ constructor(
                     },
                     object : CompletionListener {
                         override fun onSuccess() {
-                            scope.launch {
+                            scope.launch(callbackDispatcher) {
                                 callback(Result.success(Unit))
                             }
                         }
 
                         override fun onError(reason: ErrorInfo) {
-                            scope.launch {
+                            scope.launch(callbackDispatcher) {
                                 callback(Result.failure(reason.toTrackingException()))
                             }
                         }
@@ -408,7 +410,7 @@ constructor(
         channels[trackableId]?.let { channel ->
             try {
                 channel.subscribe(EventNames.ENHANCED) { message ->
-                    scope.launch {
+                    scope.launch(callbackDispatcher) {
                         listener(message.getEnhancedLocationUpdate(gson))
                     }
                 }
@@ -432,7 +434,7 @@ constructor(
                     channel.presence.get(true).let { messages ->
                         messages.forEach { presenceMessage ->
                             // Each message is launched in a fire-and-forget manner to not block this method on the listener() call
-                            scope.launch {
+                            scope.launch(callbackDispatcher) {
                                 val parsedMessage = presenceMessage.toTracking(gson)
                                 if (parsedMessage != null) {
                                     listener(parsedMessage)
@@ -443,7 +445,7 @@ constructor(
                         }
                     }
                     channel.presence.subscribe {
-                        scope.launch {
+                        scope.launch(callbackDispatcher) {
                             val parsedMessage = it.toTracking(gson)
                             if (parsedMessage != null) {
                                 listener(parsedMessage)
@@ -468,13 +470,13 @@ constructor(
                 gson.toJson(presenceData.toMessage()),
                 object : CompletionListener {
                     override fun onSuccess() {
-                        scope.launch {
+                        scope.launch(callbackDispatcher) {
                             callback(Result.success(Unit))
                         }
                     }
 
                     override fun onError(reason: ErrorInfo) {
-                        scope.launch {
+                        scope.launch(callbackDispatcher) {
                             callback(Result.failure(Exception(reason.toTrackingException())))
                         }
                     }

@@ -8,6 +8,7 @@ import com.ably.tracking.LocationUpdate
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
 import com.ably.tracking.logging.LogHandler
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
@@ -24,6 +25,7 @@ constructor(
     routingProfile: RoutingProfile,
     logHandler: LogHandler?,
     areRawLocationsEnabled: Boolean?,
+    dispatcher: CoroutineDispatcher
 ) :
     Publisher {
     private val core: CorePublisher
@@ -47,7 +49,8 @@ constructor(
             resolutionPolicyFactory,
             routingProfile,
             logHandler,
-            areRawLocationsEnabled
+            areRawLocationsEnabled,
+            dispatcher
         )
     }
 

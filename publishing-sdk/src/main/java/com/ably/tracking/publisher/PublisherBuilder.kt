@@ -6,6 +6,7 @@ import android.content.Context
 import androidx.annotation.RequiresPermission
 import com.ably.tracking.BuilderConfigurationIncompleteException
 import com.ably.tracking.common.DefaultAbly
+import com.ably.tracking.common.createSingleThreadDispatcher
 import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.logging.LogHandler
 
@@ -59,7 +60,7 @@ internal data class PublisherBuilder(
         }
         // All below fields are required and above code checks if they are nulls, so using !! should be safe from NPE
         return DefaultPublisher(
-            DefaultAbly(connectionConfiguration!!, logHandler),
+            DefaultAbly(connectionConfiguration!!, logHandler, singleThreadDispatcher),
             DefaultMapbox(
                 androidContext!!,
                 mapConfiguration!!,
@@ -73,6 +74,7 @@ internal data class PublisherBuilder(
             routingProfile,
             logHandler,
             areRawLocationsEnabled,
+            singleThreadDispatcher
         )
     }
 
@@ -84,3 +86,7 @@ internal data class PublisherBuilder(
             notificationId == null ||
             resolutionPolicyFactory == null
 }
+/**
+ * This is a private static single thread dispatcher that will be used for all the [Publisher] instances.
+ */
+private val singleThreadDispatcher = createSingleThreadDispatcher()

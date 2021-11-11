@@ -18,19 +18,16 @@ import com.ably.tracking.common.PresenceData
 import com.ably.tracking.common.createSingleThreadDispatcher
 import com.ably.tracking.common.logging.w
 import com.ably.tracking.logging.LogHandler
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
 
 internal interface CorePublisher {
     fun enqueue(event: AdhocEvent)
@@ -51,6 +48,7 @@ internal fun createCorePublisher(
     routingProfile: RoutingProfile,
     logHandler: LogHandler?,
     areRawLocationsEnabled: Boolean?,
+    dispatcher: CoroutineDispatcher
 ): CorePublisher {
     return DefaultCorePublisher(
         ably,
@@ -58,14 +56,11 @@ internal fun createCorePublisher(
         resolutionPolicyFactory,
         routingProfile,
         logHandler,
-        areRawLocationsEnabled
+        areRawLocationsEnabled,
+        dispatcher
     )
 }
 
-/**
- * This is a private static single thread dispatcher that will be used for all the [Publisher] instances.
- */
-private val singleThreadDispatcher = createSingleThreadDispatcher()
 
 private class DefaultCorePublisher
 @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
@@ -76,8 +71,9 @@ constructor(
     routingProfile: RoutingProfile,
     private val logHandler: LogHandler?,
     private val areRawLocationsEnabled: Boolean?,
+    private val dispatcher: CoroutineDispatcher
 ) : CorePublisher {
-    private val scope = CoroutineScope(singleThreadDispatcher + SupervisorJob())
+    private val scope = CoroutineScope(dispatcher + SupervisorJob())
     private val sendEventChannel: SendChannel<Event>
     private val _locations = MutableSharedFlow<LocationUpdate>(replay = 1)
     private val _trackables = MutableSharedFlow<Set<Trackable>>(replay = 1)

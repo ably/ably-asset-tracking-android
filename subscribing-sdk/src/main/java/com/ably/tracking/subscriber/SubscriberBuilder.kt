@@ -4,6 +4,7 @@ import com.ably.tracking.BuilderConfigurationIncompleteException
 import com.ably.tracking.logging.LogHandler
 import com.ably.tracking.Resolution
 import com.ably.tracking.common.DefaultAbly
+import com.ably.tracking.common.createSingleThreadDispatcher
 import com.ably.tracking.connection.ConnectionConfiguration
 
 internal data class SubscriberBuilder(
@@ -31,7 +32,8 @@ internal data class SubscriberBuilder(
         }
         // All below fields are required and above code checks if they are nulls, so using !! should be safe from NPE
         return DefaultSubscriber(
-            DefaultAbly(connectionConfiguration!!, logHandler),
+            //todo check this!
+            DefaultAbly(connectionConfiguration!!, logHandler, createSingleThreadDispatcher()),
             resolution,
             trackingId!!
         ).apply {
