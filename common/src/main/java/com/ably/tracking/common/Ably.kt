@@ -294,7 +294,7 @@ class DefaultAbly
                 if (it.isSuccess) {
                     detachFromChannel(channelToRemove, trackableId, callback)
                 } else {
-                    //if it was previosly removed anyway but was not detached, do another detach call
+                    // if it was previosly removed anyway but was not detached, do another detach call
                     if (channelsFailedDetach.contains(channelToRemove)) {
                         detachFromChannel(channelToRemove, trackableId, callback)
                     } else {
@@ -340,6 +340,7 @@ class DefaultAbly
         channelToRemove.detach(object : CompletionListener {
             override fun onSuccess() {
                 scope.launch(callbackDispatcher) {
+                    channelsFailedDetach.remove(channelToRemove)
                     channels.remove(trackableId)
                     callback(Result.success(Unit))
                 }
