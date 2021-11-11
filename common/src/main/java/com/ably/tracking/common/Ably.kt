@@ -284,41 +284,62 @@ class DefaultAbly
             callback(Result.success(Unit))
             return
         }
-
         val channelToRemove = channels[trackableId]!!
         try {
-            channelToRemove.presence.leave(
-                gson.toJson(presenceData.toMessage()),
-                object : CompletionListener {
-                    override fun onSuccess() {
-                        channelToRemove.unsubscribe()
-                        channelToRemove.presence.unsubscribe()
-                        channelToRemove.detach(object : CompletionListener {
-                            override fun onSuccess() {
-                                scope.launch(callbackDispatcher) {
-                                    channels.remove(trackableId)
-                                    callback(Result.success(Unit))
-                                }
-                            }
-
-                            override fun onError(reason: ErrorInfo) {
-                                scope.launch(callbackDispatcher) {
-                                    callback(Result.failure(reason.toTrackingException()))
-                                }
-                            }
-                        })
-                    }
-
-                    override fun onError(reason: ErrorInfo) {
-                        scope.launch(callbackDispatcher) {
-                            callback(Result.failure(reason.toTrackingException()))
-                        }
-                    }
+            leaveChannelPresence(channelToRemove, presenceData) {
+                if (it.isSuccess) {
+                    detachFromChannel(channelToRemove, trackableId, callback)
+                } else {
+                    callback(it)
                 }
-            )
+            }
         } catch (ablyException: AblyException) {
             callback(Result.failure(ablyException.errorInfo.toTrackingException()))
         }
+    }
+
+    private fun leaveChannelPresence(
+        channelToRemove: Channel,
+        presenceData: PresenceData,
+        callback: (Result<Unit>) -> Unit
+    ) {
+        channelToRemove.presence.leave(
+            gson.toJson(presenceData.toMessage()),
+            object : CompletionListener {
+                override fun onSuccess() {
+                    channelToRemove.unsubscribe()
+                    channelToRemove.presence.unsubscribe()
+                    callback(Result.success(Unit))
+                }
+
+                override fun onError(reason: ErrorInfo) {
+                    scope.launch(callbackDispatcher) {
+                        callback(Result.failure(reason.toTrackingException()))
+                    }
+                }
+            }
+        )
+    }
+
+    private fun detachFromChannel(
+        channelToRemove: Channel,
+        trackableId: String,
+        callback: (Result<Unit>) -> Unit
+    ) {
+        channelToRemove.detach(object : CompletionListener {
+            override fun onSuccess() {
+                scope.launch(callbackDispatcher) {
+                    channels.remove(trackableId)
+                    callback(Result.success(Unit))
+                }
+            }
+
+            override fun onError(reason: ErrorInfo) {
+                scope.launch(callbackDispatcher) {
+                    callback(Result.failure(reason.toTrackingException()))
+                }
+            }
+        })
     }
 
     /**
