@@ -15,7 +15,6 @@ import com.ably.tracking.common.ConnectionState
 import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.PresenceAction
 import com.ably.tracking.common.PresenceData
-import com.ably.tracking.common.createSingleThreadDispatcher
 import com.ably.tracking.common.logging.w
 import com.ably.tracking.logging.LogHandler
 import kotlinx.coroutines.*
@@ -60,7 +59,6 @@ internal fun createCorePublisher(
         dispatcher
     )
 }
-
 
 private class DefaultCorePublisher
 @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])

@@ -128,7 +128,7 @@ class CorePublisherLocationUpdatesPublishingTest {
     fun `Should send raw messages if they are enabled`() {
         // given
         val corePublisher =
-            createCorePublisher(ably, mapbox, resolutionPolicyFactory, RoutingProfile.DRIVING, null, true,Dispatchers.Unconfined)
+            createCorePublisher(ably, mapbox, resolutionPolicyFactory, RoutingProfile.DRIVING, null, true, Dispatchers.Unconfined)
         val trackableId = UUID.randomUUID().toString()
         mockAllTrackablesResolution(Resolution(Accuracy.MAXIMUM, 0, 0.0))
         addTrackable(Trackable(trackableId), corePublisher)

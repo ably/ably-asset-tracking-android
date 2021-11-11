@@ -11,6 +11,7 @@ import com.ably.tracking.test.common.mockSubscribeToPresenceError
 import com.ably.tracking.test.common.mockSubscribeToPresenceSuccess
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.Dispatchers
 import java.util.UUID
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -29,7 +30,7 @@ class DefaultPublisherTest {
 
     @SuppressLint("MissingPermission")
     private val publisher: Publisher =
-        DefaultPublisher(ably, mapbox, resolutionPolicyFactory, RoutingProfile.DRIVING, null, false)
+        DefaultPublisher(ably, mapbox, resolutionPolicyFactory, RoutingProfile.DRIVING, null, false, Dispatchers.Unconfined)
 
     @Test(expected = ConnectionException::class)
     fun `should return an error when adding a trackable with subscribing to presence error`() {

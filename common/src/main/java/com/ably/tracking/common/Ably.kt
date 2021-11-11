@@ -24,7 +24,12 @@ import io.ably.lib.types.ChannelOptions
 import io.ably.lib.types.ErrorInfo
 import io.ably.lib.types.Message
 import io.ably.lib.util.Log
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
@@ -169,7 +174,7 @@ class DefaultAbly
  */(
     connectionConfiguration: ConnectionConfiguration,
     private val logHandler: LogHandler?,
-    val callbackDispatcher: CoroutineDispatcher,
+    val callbackDispatcher: CoroutineDispatcher
 ) : Ably {
     private val gson = Gson()
     private val ably: AblyRealtime
@@ -203,7 +208,7 @@ class DefaultAbly
 
     override fun subscribeForAblyStateChange(listener: (ConnectionStateChange) -> Unit) {
         ably.connection.on {
-            scope.launch(callbackDispatcher){
+            scope.launch(callbackDispatcher) {
                 listener(it.toTracking())
             }
         }
@@ -262,7 +267,6 @@ class DefaultAbly
                                 scope.launch(callbackDispatcher) {
                                     callback(Result.failure(Exception(reason.toTrackingException())))
                                 }
-
                             }
                         }
                     )
@@ -291,7 +295,6 @@ class DefaultAbly
                                         channels.remove(trackableId)
                                         callback(Result.success(Unit))
                                     }
-
                                 }
 
                                 override fun onError(reason: ErrorInfo) {
@@ -358,7 +361,6 @@ class DefaultAbly
                             scope.launch(callbackDispatcher) {
                                 callback(Result.failure(reason.toTrackingException()))
                             }
-
                         }
                     }
                 )
