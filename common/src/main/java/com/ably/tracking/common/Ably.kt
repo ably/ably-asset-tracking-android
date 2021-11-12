@@ -280,14 +280,13 @@ class DefaultAbly
     }
 
     /**
-    It will be adequate to just detach from the channel if we want to leave presence.
-    From documentation
-    "Leave
-    A member who was present has now left the channel. This may be a result of an explicit request to leave or
+    It should be adequate to only detach from the channel if we want to leave presence. Documentation says :
+    "A member who was present has now left the channel. This may be a result of an explicit request to leave or
     implicitly when detaching from the channel. Alternatively, if a member’s connection is abruptly disconnected
     and they do not resume their connection within a minute, Ably treats this as a leave event as the client
     is no longer present"
-    @link https://docs.ably.io/realtime/presence/
+
+    https://docs.ably.io/realtime/presence/
      * */
     override fun disconnect(trackableId: String, callback: (Result<Unit>) -> Unit) {
         if (!channels.contains(trackableId)) {
