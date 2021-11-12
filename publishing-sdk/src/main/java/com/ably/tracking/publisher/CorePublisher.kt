@@ -271,7 +271,7 @@ constructor(
                                     result.getOrThrow()
                                     request(ConnectionForTrackableReadyEvent(event.trackable, event.handler))
                                 } catch (exception: ConnectionException) {
-                                    ably.disconnect(event.trackable.id, state.presenceData) {
+                                    ably.disconnect(event.trackable.id) {
                                         request(AddTrackableFailedEvent(event.trackable, event.handler, exception))
                                     }
                                 }
@@ -307,7 +307,7 @@ constructor(
                     is RemoveTrackableEvent -> {
                         if (state.trackables.contains(event.trackable)) {
                             // Leave Ably channel.
-                            ably.disconnect(event.trackable.id, state.presenceData) { result ->
+                            ably.disconnect(event.trackable.id) { result ->
                                 if (result.isSuccess) {
                                     request(
                                         DisconnectSuccessEvent(event.trackable) {

@@ -153,7 +153,7 @@ interface Ably {
      * @param presenceData The data that will be send via the presence channel.
      * @param callback The function that will be called when disconnecting completes. If something goes wrong it will be called with [ConnectionException].
      */
-    fun disconnect(trackableId: String, presenceData: PresenceData, callback: (Result<Unit>) -> Unit)
+    fun disconnect(trackableId: String, callback: (Result<Unit>) -> Unit)
 
     /**
      * Cleanups and closes all the connected channels and their presence. In the end closes Ably connection.
@@ -180,10 +180,6 @@ class DefaultAbly
     private val ably: AblyRealtime
     private val channels: MutableMap<String, Channel> = mutableMapOf()
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-
-    // Channels whose presence successfully were left but were unable to detach
-    // This list is here to maintain those channel list, it is not a list that will make the operations transactional
-    private val channelsFailedDetach = mutableSetOf<Channel>()
 
     init {
         try {
@@ -283,42 +279,30 @@ class DefaultAbly
         }
     }
 
-    override fun disconnect(trackableId: String, presenceData: PresenceData, callback: (Result<Unit>) -> Unit) {
+    /**
+    It will be adequate to just detach from the channel if we want to leave presence.
+    "Leave
+    A member who was present has now left the channel. This may be a result of an explicit request to leave or
+    implicitly when detaching from the channel. Alternatively, if a member’s connection is abruptly disconnected
+    and they do not resume their connection within a minute, Ably treats this as a leave event as the client
+    is no longer present"
+    @link https://docs.ably.io/realtime/presence/
+     * */
+    override fun disconnect(trackableId: String, callback: (Result<Unit>) -> Unit) {
         if (!channels.contains(trackableId)) {
             callback(Result.success(Unit))
             return
         }
         val channelToRemove = channels[trackableId]!!
         try {
-            leaveChannelPresence(channelToRemove, presenceData) {
-                if (it.isSuccess) {
-                    detachFromChannel(channelToRemove, trackableId, callback)
-                } else {
-                    // if it was previosly removed anyway but was not detached, do another detach call
-                    if (channelsFailedDetach.contains(channelToRemove)) {
-                        detachFromChannel(channelToRemove, trackableId, callback)
-                    } else {
-                        callback(it)
-                    }
-                }
-            }
-        } catch (ablyException: AblyException) {
-            callback(Result.failure(ablyException.errorInfo.toTrackingException()))
-        }
-    }
-
-    private fun leaveChannelPresence(
-        channelToRemove: Channel,
-        presenceData: PresenceData,
-        callback: (Result<Unit>) -> Unit
-    ) {
-        channelToRemove.presence.leave(
-            gson.toJson(presenceData.toMessage()),
-            object : CompletionListener {
+            channelToRemove.detach(object : CompletionListener {
                 override fun onSuccess() {
-                    channelToRemove.unsubscribe()
-                    channelToRemove.presence.unsubscribe()
                     scope.launch(callbackDispatcher) {
+                        //Will we really need to invoke these next two lines after detaching ?
+                        channelToRemove.unsubscribe()
+                        channelToRemove.presence.unsubscribe()
+
+                        channels.remove(trackableId)
                         callback(Result.success(Unit))
                     }
                 }
@@ -328,40 +312,19 @@ class DefaultAbly
                         callback(Result.failure(reason.toTrackingException()))
                     }
                 }
-            }
-        )
-    }
-
-    private fun detachFromChannel(
-        channelToRemove: Channel,
-        trackableId: String,
-        callback: (Result<Unit>) -> Unit
-    ) {
-        channelToRemove.detach(object : CompletionListener {
-            override fun onSuccess() {
-                scope.launch(callbackDispatcher) {
-                    channelsFailedDetach.remove(channelToRemove)
-                    channels.remove(trackableId)
-                    callback(Result.success(Unit))
-                }
-            }
-
-            override fun onError(reason: ErrorInfo) {
-                channelsFailedDetach.add(channelToRemove)
-                scope.launch(callbackDispatcher) {
-                    callback(Result.failure(reason.toTrackingException()))
-                }
-            }
-        })
+            })
+        } catch (exception: AblyException) {
+            callback(Result.failure(exception.errorInfo.toTrackingException()))
+        }
     }
 
     /**
      * A suspend version of the [DefaultAbly.disconnect] method. It waits until disconnection is completed.
      * @throws ConnectionException if something goes wrong during disconnect.
      */
-    private suspend fun disconnect(trackableId: String, presenceData: PresenceData) {
+    private suspend fun disconnect(trackableId: String) {
         suspendCoroutine<Unit> { continuation ->
-            disconnect(trackableId, presenceData) {
+            disconnect(trackableId) {
                 try {
                     continuation.resume(it.getOrThrow())
                 } catch (exception: ConnectionException) {
@@ -528,7 +491,7 @@ class DefaultAbly
         // launches closing of all channels in parallel but waits for all channels to be closed
         supervisorScope {
             channels.keys.forEach { trackableId ->
-                launch { disconnect(trackableId, presenceData) }
+                launch { disconnect(trackableId) }
             }
         }
         closeConnection()

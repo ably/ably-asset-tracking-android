@@ -121,7 +121,7 @@ private class DefaultCoreSubscriber(
                                 if (subscribeResult.isSuccess) {
                                     request(ConnectionReadyEvent(event.handler))
                                 } else {
-                                    ably.disconnect(trackableId, state.presenceData) {
+                                    ably.disconnect(trackableId) {
                                         event.handler(subscribeResult)
                                     }
                                 }

@@ -49,7 +49,7 @@ class DefaultSubscriberTest {
 
         // then
         verify(exactly = 1) {
-            ably.disconnect(trackableId, any(), any())
+            ably.disconnect(trackableId, any())
         }
     }
 }

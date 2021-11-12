@@ -57,7 +57,7 @@ fun Ably.mockSubscribeToPresenceError(trackableId: String) {
 fun Ably.mockDisconnectSuccess(trackableId: String) {
     val callbackSlot = slot<(Result<Unit>) -> Unit>()
     every {
-        disconnect(trackableId, any(), capture(callbackSlot))
+        disconnect(trackableId, capture(callbackSlot))
     } answers {
         callbackSlot.captured(Result.success(Unit))
     }
