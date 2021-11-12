@@ -299,7 +299,6 @@ class DefaultAbly
             channelToRemove.detach(object : CompletionListener {
                 override fun onSuccess() {
                     scope.launch(callbackDispatcher) {
-                        //Will we really need to invoke these next two lines after detaching ?
                         channelToRemove.unsubscribe()
                         channelToRemove.presence.unsubscribe()
 
