@@ -270,37 +270,38 @@ constructor(
     }
 
     override fun disconnect(trackableId: String, presenceData: PresenceData, callback: (Result<Unit>) -> Unit) {
-        if (channels.contains(trackableId)) {
-            val channelToRemove = channels[trackableId]!!
-            try {
-                channelToRemove.presence.leave(
-                    gson.toJson(presenceData.toMessage()),
-                    object : CompletionListener {
-                        override fun onSuccess() {
-                            channelToRemove.unsubscribe()
-                            channelToRemove.presence.unsubscribe()
-                            channelToRemove.detach(object : CompletionListener {
-                                override fun onSuccess() {
-                                    channels.remove(trackableId)
-                                    callback(Result.success(Unit))
-                                }
-
-                                override fun onError(reason: ErrorInfo) {
-                                    callback(Result.failure(reason.toTrackingException()))
-                                }
-                            })
-                        }
-
-                        override fun onError(reason: ErrorInfo) {
-                            callback(Result.failure(reason.toTrackingException()))
-                        }
-                    }
-                )
-            } catch (ablyException: AblyException) {
-                callback(Result.failure(ablyException.errorInfo.toTrackingException()))
-            }
-        } else {
+        if (!channels.contains(trackableId)) {
             callback(Result.success(Unit))
+            return
+        }
+
+        val channelToRemove = channels[trackableId]!!
+        try {
+            channelToRemove.presence.leave(
+                gson.toJson(presenceData.toMessage()),
+                object : CompletionListener {
+                    override fun onSuccess() {
+                        channelToRemove.detach(object : CompletionListener {
+                            override fun onSuccess() {
+                                channelToRemove.unsubscribe()
+                                channelToRemove.presence.unsubscribe()
+                                channels.remove(trackableId)
+                                callback(Result.success(Unit))
+                            }
+
+                            override fun onError(reason: ErrorInfo) {
+                                callback(Result.failure(reason.toTrackingException()))
+                            }
+                        })
+                    }
+
+                    override fun onError(reason: ErrorInfo) {
+                        callback(Result.failure(reason.toTrackingException()))
+                    }
+                }
+            )
+        } catch (ablyException: AblyException) {
+            callback(Result.failure(ablyException.errorInfo.toTrackingException()))
         }
     }
 
