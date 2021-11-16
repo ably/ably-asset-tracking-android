@@ -122,7 +122,7 @@ class TrackableRemovalGuardTest {
         // when
         trackableRemovalGuard.removeMarked(trackable, Result.success(true))
 
-        //then
+        // then
         assertTrue(calledWithSuccess)
     }
 
@@ -137,7 +137,7 @@ class TrackableRemovalGuardTest {
         // when
         trackableRemovalGuard.removeMarked(trackable, Result.failure(Exception("simple")))
 
-        //then
+        // then
         assertTrue(calledWithFailure)
     }
 }

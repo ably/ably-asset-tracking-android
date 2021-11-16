@@ -286,8 +286,7 @@ constructor(
                         event.handler(Result.failure(RemoveTrackableRequestedException()))
                         state.duplicateTrackableGuard.finishAddingTrackable(
                             event.trackable,
-                            Result.failure
-                                (RemoveTrackableRequestedException())
+                            Result.failure(RemoveTrackableRequestedException())
                         )
                     }
                     is ConnectionForTrackableCreatedEvent -> {
