@@ -32,6 +32,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Wrapper for the [AblyRealtime] that's used to interact with the Ably SDK.
@@ -177,7 +178,7 @@ constructor(
 ) : Ably {
     private val gson = Gson()
     private val ably: AblyRealtime
-    private val channels: MutableMap<String, Channel> = mutableMapOf()
+    private val channels: ConcurrentHashMap<String, Channel> = ConcurrentHashMap()
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     init {
