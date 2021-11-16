@@ -115,25 +115,29 @@ class TrackableRemovalGuardTest {
     fun `handler is called with success if removal was successful`() {
         // given
         val trackable = Trackable("sample")
-
+        var calledWithSuccess = false
         trackableRemovalGuard.markForRemoval(trackable) {
-            // then
-            assertTrue(it.isSuccess)
+            calledWithSuccess = it.isSuccess
         }
         // when
         trackableRemovalGuard.removeMarked(trackable, Result.success(true))
+
+        //then
+        assertTrue(calledWithSuccess)
     }
 
     @Test
     fun `handler is called with failure if removal was not successful`() {
         // given
         val trackable = Trackable("sample")
-
+        var calledWithFailure = false
         trackableRemovalGuard.markForRemoval(trackable) {
-            // then
-            assertTrue(it.isFailure)
+            calledWithFailure = it.isFailure
         }
         // when
         trackableRemovalGuard.removeMarked(trackable, Result.failure(Exception("simple")))
+
+        //then
+        assertTrue(calledWithFailure)
     }
 }
