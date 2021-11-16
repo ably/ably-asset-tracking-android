@@ -277,10 +277,7 @@ constructor(
                         } else {
                             state.trackableRemovalGuard.removeMarked(
                                 event.trackable,
-                                Result.failure(
-                                    event.result
-                                        .exceptionOrNull()!!
-                                )
+                                Result.failure(event.result.exceptionOrNull()!!)
                             )
                         }
                         event.handler(Result.failure(RemoveTrackableRequestedException()))
@@ -330,8 +327,7 @@ constructor(
                         scope.launch { _trackables.emit(state.trackables) }
                         resolveResolution(event.trackable, state)
                         hooks.trackables?.onTrackableAdded(event.trackable)
-                        val trackableState = state.trackableStates[event.trackable.id]
-                            ?: TrackableState.Offline()
+                        val trackableState = state.trackableStates[event.trackable.id] ?: TrackableState.Offline()
                         val trackableStateFlow =
                             state.trackableStateFlows[event.trackable.id]
                                 ?: MutableStateFlow(trackableState)
