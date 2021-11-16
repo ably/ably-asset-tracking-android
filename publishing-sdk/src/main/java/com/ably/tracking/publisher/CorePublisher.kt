@@ -287,7 +287,7 @@ constructor(
                         state.duplicateTrackableGuard.finishAddingTrackable(
                             event.trackable,
                             Result.failure
-                            (RemoveTrackableRequestedException())
+                                (RemoveTrackableRequestedException())
                         )
                     }
                     is ConnectionForTrackableCreatedEvent -> {
@@ -296,22 +296,22 @@ constructor(
                             ably.disconnect(event.trackable.id, state.presenceData) { result ->
                                 request(TrackableRemovalRequestedEvent(event.trackable, event.handler, result))
                             }
-                        } else {
-                            ably.subscribeForPresenceMessages(
-                                trackableId = event.trackable.id,
-                                listener = { enqueue(PresenceMessageEvent(event.trackable, it)) },
-                                callback = { result ->
-                                    try {
-                                        result.getOrThrow()
-                                        request(ConnectionForTrackableReadyEvent(event.trackable, event.handler))
-                                    } catch (exception: ConnectionException) {
-                                        ably.disconnect(event.trackable.id, state.presenceData) {
-                                            request(AddTrackableFailedEvent(event.trackable, event.handler, exception))
-                                        }
+                            continue
+                        }
+                        ably.subscribeForPresenceMessages(
+                            trackableId = event.trackable.id,
+                            listener = { enqueue(PresenceMessageEvent(event.trackable, it)) },
+                            callback = { result ->
+                                try {
+                                    result.getOrThrow()
+                                    request(ConnectionForTrackableReadyEvent(event.trackable, event.handler))
+                                } catch (exception: ConnectionException) {
+                                    ably.disconnect(event.trackable.id, state.presenceData) {
+                                        request(AddTrackableFailedEvent(event.trackable, event.handler, exception))
                                     }
                                 }
-                            )
-                        }
+                            }
+                        )
                     }
                     is ConnectionForTrackableReadyEvent -> {
                         if (state.trackableRemovalGuard.isMarkedForRemoval(event.trackable)) {
