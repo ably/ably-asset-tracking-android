@@ -291,6 +291,11 @@ constructor(
 
                             override fun onError(reason: ErrorInfo) {
                                 callback(Result.failure(reason.toTrackingException()))
+                                // reconnect
+                                connect(trackableId, presenceData) {
+                                    // dealing with connection result will make things more complicated here so leaving
+                                    // it blank
+                                }
                             }
                         })
                     }
