@@ -23,6 +23,8 @@
 
 **Merged pull requests:**
 
+- Add raw locations to the Subscriber SDK [\#495](https://github.com/ably/ably-asset-tracking-android/pull/495) ([KacperKluka](https://github.com/KacperKluka))
+- Send raw locations from the Publisher [\#493](https://github.com/ably/ably-asset-tracking-android/pull/493) ([KacperKluka](https://github.com/KacperKluka))
 - Start replaying recorded trip when the trip is started [\#428](https://github.com/ably/ably-asset-tracking-android/pull/428) ([KacperKluka](https://github.com/KacperKluka))
 
 ## [1.0.0-beta.10](https://github.com/ably/ably-asset-tracking-android/tree/v1.0.0-beta.10)
