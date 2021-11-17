@@ -26,7 +26,7 @@ internal class DefaultSubscriber(
     override val trackableStates: StateFlow<TrackableState>
         get() = core.trackableStates
 
-    override val resolutions: StateFlow<Resolution>
+    override val resolutions: SharedFlow<Resolution>
         get() = core.resolutions
 
     init {
