@@ -51,6 +51,7 @@ internal fun createCorePublisher(
     routingProfile: RoutingProfile,
     logHandler: LogHandler?,
     areRawLocationsEnabled: Boolean?,
+    sendResolutionEnabled: Boolean,
 ): CorePublisher {
     return DefaultCorePublisher(
         ably,
@@ -58,7 +59,8 @@ internal fun createCorePublisher(
         resolutionPolicyFactory,
         routingProfile,
         logHandler,
-        areRawLocationsEnabled
+        areRawLocationsEnabled,
+        sendResolutionEnabled,
     )
 }
 
@@ -76,6 +78,7 @@ constructor(
     routingProfile: RoutingProfile,
     private val logHandler: LogHandler?,
     private val areRawLocationsEnabled: Boolean?,
+    private val sendResolutionEnabled: Boolean,
 ) : CorePublisher {
     private val scope = CoroutineScope(singleThreadDispatcher + SupervisorJob())
     private val sendEventChannel: SendChannel<Event>
@@ -661,6 +664,9 @@ constructor(
         policy.resolve(TrackableResolutionRequest(trackable, resolutionRequests)).let { resolution ->
             state.resolutions[trackable.id] = resolution
             enqueue(ChangeLocationEngineResolutionEvent())
+            if (sendResolutionEnabled) {
+                ably.sendResolution(trackable.id, resolution) {} // we ignore the result of this operation
+            }
         }
     }
 
