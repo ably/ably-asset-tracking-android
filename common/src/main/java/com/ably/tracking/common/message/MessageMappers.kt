@@ -83,6 +83,9 @@ fun Message.getRawLocationUpdate(gson: Gson): LocationUpdate =
             )
         }
 
+fun Message.getResolution(gson: Gson): Resolution =
+    gson.fromJson(data as String, ResolutionMessage::class.java).toTracking()
+
 fun LocationUpdateTypeMessage.toTracking(): LocationUpdateType =
     when (this) {
         LocationUpdateTypeMessage.PREDICTED -> LocationUpdateType.PREDICTED
