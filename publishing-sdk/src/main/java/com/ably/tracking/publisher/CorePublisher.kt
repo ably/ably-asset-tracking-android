@@ -181,6 +181,7 @@ constructor(
                                 EnhancedLocationUpdate(
                                     event.location,
                                     emptyList(),
+                                    null,
                                     event.intermediateLocations,
                                     event.type
                                 )
@@ -496,6 +497,7 @@ constructor(
         val locationUpdate = EnhancedLocationUpdate(
             event.location,
             state.skippedEnhancedLocations.toList(trackableId),
+            state.resolutions[trackableId],
             event.intermediateLocations,
             event.type
         )
@@ -555,6 +557,7 @@ constructor(
         val locationUpdate = LocationUpdate(
             event.location,
             state.skippedRawLocations.toList(trackableId),
+            state.resolutions[trackableId],
         )
         state.rawLocationsPublishingState.markMessageAsPending(trackableId)
         ably.sendRawLocation(trackableId, locationUpdate) {

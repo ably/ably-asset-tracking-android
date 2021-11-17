@@ -1,15 +1,19 @@
 package com.ably.tracking
 
-open class LocationUpdate(val location: Location, val skippedLocations: List<Location>) {
+open class LocationUpdate(val location: Location, val skippedLocations: List<Location>, val resolution: Resolution?) {
     override fun equals(other: Any?): Boolean =
         when (other) {
-            is LocationUpdate -> location == other.location && skippedLocations == other.skippedLocations
+            is LocationUpdate ->
+                location == other.location &&
+                    skippedLocations == other.skippedLocations &&
+                    resolution == other.resolution
             else -> false
         }
 
     override fun hashCode(): Int {
         var result = location.hashCode()
         result = 31 * result + skippedLocations.hashCode()
+        result = 31 * result + resolution.hashCode()
         return result
     }
 }
@@ -17,9 +21,10 @@ open class LocationUpdate(val location: Location, val skippedLocations: List<Loc
 class EnhancedLocationUpdate(
     location: Location,
     skippedLocations: List<Location>,
+    resolution: Resolution?,
     val intermediateLocations: List<Location>,
     val type: LocationUpdateType
-) : LocationUpdate(location, skippedLocations) {
+) : LocationUpdate(location, skippedLocations, resolution) {
     override fun equals(other: Any?): Boolean =
         when (other) {
             !super.equals(other) -> false

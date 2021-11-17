@@ -47,6 +47,7 @@ fun LocationUpdate.toMessageJson(gson: Gson): String =
         LocationUpdateMessage(
             location.toMessage(),
             skippedLocations.map { it.toMessage() },
+            resolution?.toMessage(),
         )
     )
 
@@ -55,6 +56,7 @@ fun EnhancedLocationUpdate.toMessageJson(gson: Gson): String =
         EnhancedLocationUpdateMessage(
             location.toMessage(),
             skippedLocations.map { it.toMessage() },
+            resolution?.toMessage(),
             intermediateLocations.map { it.toMessage() },
             type.toMessage()
         )
@@ -66,6 +68,7 @@ fun Message.getEnhancedLocationUpdate(gson: Gson): EnhancedLocationUpdate =
             EnhancedLocationUpdate(
                 message.location.toTracking(),
                 message.skippedLocations.map { it.toTracking() },
+                message.resolution?.toTracking(),
                 message.intermediateLocations.map { it.toTracking() },
                 message.type.toTracking()
             )
@@ -77,6 +80,7 @@ fun Message.getRawLocationUpdate(gson: Gson): LocationUpdate =
             LocationUpdate(
                 message.location.toTracking(),
                 message.skippedLocations.map { it.toTracking() },
+                message.resolution?.toTracking(),
             )
         }
 

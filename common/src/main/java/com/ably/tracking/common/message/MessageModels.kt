@@ -51,6 +51,7 @@ enum class AccuracyMessage {
 data class EnhancedLocationUpdateMessage(
     @SerializedName("location") val location: LocationMessage,
     @SerializedName("skippedLocations") val skippedLocations: List<LocationMessage>,
+    @SerializedName("resolution") val resolution: ResolutionMessage?,
     @SerializedName("intermediateLocations") val intermediateLocations: List<LocationMessage>,
     @SerializedName("type") val type: LocationUpdateTypeMessage
 )
@@ -68,6 +69,7 @@ enum class LocationUpdateTypeMessage {
 data class LocationUpdateMessage(
     @SerializedName("location") val location: LocationMessage,
     @SerializedName("skippedLocations") val skippedLocations: List<LocationMessage>,
+    @SerializedName("resolution") val resolution: ResolutionMessage?,
 )
 
 @Shared
