@@ -3,7 +3,7 @@
   xmlns:app="http://schemas.android.com/apk/res-auto"
   xmlns:tools="http://schemas.android.com/tools"
   android:layout_width="match_parent"
-  android:layout_height="@dimen/asset_information_container_height"
+  android:layout_height="@dimen/asset_information_container_full_height"
   android:background="@color/asset_information_background"
   tools:ignore="Overdraw">
 
