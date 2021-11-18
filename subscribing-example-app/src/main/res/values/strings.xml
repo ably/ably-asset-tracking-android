@@ -18,4 +18,6 @@
   <string name="error_stopping_subscriber_failed">Stopping subscriber error</string>
   <string name="error_no_trackable_id">Insert trackable ID</string>
   <string name="error_changing_resolution_failed">Changing resolution error</string>
+    <string name="subscriber_resolution_title">Subscriber\'s requested resolution</string>
+  <string name="publisher_resolution_title">Publisher\'s calculated resolution</string>
 </resources>
