@@ -372,10 +372,9 @@ constructor(
             logHandler?.d("sendEnhancedLocationMessage: publishing: $locationUpdateJson")
             sendMessage(
                 trackableChannel,
-                trackableId,
-                EventNames.ENHANCED,
-                locationUpdate,
-                locationUpdateJson,
+                Message(EventNames.ENHANCED, locationUpdateJson).apply {
+                    id = "$trackableId${locationUpdate.hashCode()}"
+                },
                 callback
             )
         } else {
@@ -394,10 +393,9 @@ constructor(
             logHandler?.d("sendRawLocationMessage: publishing: $locationUpdateJson")
             sendMessage(
                 trackableChannel,
-                trackableId,
-                EventNames.RAW,
-                locationUpdate,
-                locationUpdateJson,
+                Message(EventNames.RAW, locationUpdateJson).apply {
+                    id = "$trackableId${locationUpdate.hashCode()}"
+                },
                 callback
             )
         } else {
@@ -412,10 +410,7 @@ constructor(
             logHandler?.d("sendResolution: publishing: $resolutionJson")
             sendMessage(
                 trackableChannel,
-                trackableId,
-                EventNames.RESOLUTION,
-                resolution,
-                resolutionJson,
+                Message(EventNames.RESOLUTION, resolutionJson),
                 callback
             )
         } else {
@@ -423,19 +418,10 @@ constructor(
         }
     }
 
-    private fun sendMessage(
-        channel: Channel,
-        trackableId: String,
-        eventName: String,
-        messageObject: Any,
-        messageJson: String,
-        callback: (Result<Unit>) -> Unit
-    ) {
+    private fun sendMessage(channel: Channel, message: Message?, callback: (Result<Unit>) -> Unit) {
         try {
             channel.publish(
-                Message(eventName, messageJson).apply {
-                    id = "$trackableId${messageObject.hashCode()}"
-                },
+                message,
                 object : CompletionListener {
                     override fun onSuccess() {
                         callback(Result.success(Unit))
