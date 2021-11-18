@@ -28,7 +28,9 @@ jobs:
 
   - name: Release build
       # assembleRelease for all modules, excluding non-library modules
-      run: ./gradlew assembleRelease -x :android-test-common:assembleRelease -x :test-common:assembleRelease -x
+      run:
+      echo "Publishing version ${{ github.event.inputs.version }}..."
+      ./gradlew assembleRelease -x :android-test-common:assembleRelease -x :test-common:assembleRelease -x
       :integration-testing-app:assembleRelease -x :publishing-example-app:assembleRelease -x
       :publishing-java-testing:assembleRelease -x :subscribing-example-app:assembleRelease -x :subscribing-java-testing:assembleRelease
       - name: Source jar and dokka
@@ -50,7 +52,3 @@ jobs:
           SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
           SONATYPE_STAGING_PROFILE_ID: ${{ secrets.SONATYPE_STAGING_PROFILE_ID }}
           SNAPSHOT: true
-    run: |
-      echo "Publishing version ${{ github.event.inputs.version }}..."
-      ./gradlew publish
-
