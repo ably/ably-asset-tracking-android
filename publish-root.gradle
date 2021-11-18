@@ -1,4 +1,3 @@
-import com.ably.configuration.Configuration
 // Create variables with empty default values
 ext["ossrhUsername"] = ''
 ext["ossrhPassword"] = ''
@@ -26,9 +25,9 @@ if (secretPropsFile.exists()) {
 }
 
 if (snapshot) {
-    ext["rootVersionName"] = Configuration.snapshotVersionName
+    ext["rootVersionName"] = '1.2.8-SNAPSHOT'
 } else {
-    ext["rootVersionName"] = Configuration.versionName
+    ext["rootVersionName"] = '1.2.8'
 }
 
 // Set up Sonatype repository

@@ -1,4 +1,3 @@
-import com.ably.configuration.Configuration
 
 plugins {
     id 'com.android.library'
@@ -9,9 +8,9 @@ plugins {
 }
 
 ext {
-    PUBLISH_GROUP_ID = Configuration.artifactGroup
+    PUBLISH_GROUP_ID = "com.ably.io"
     PUBLISH_ARTIFACT_ID = 'publishing-sdk'
-    PUBLISH_VERSION = Configuration.versionName
+    PUBLISH_VERSION = "$ably_core_version"
 }
 
 apply from: "../publish-module.gradle"

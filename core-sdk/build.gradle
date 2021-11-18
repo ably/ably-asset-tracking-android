@@ -1,4 +1,3 @@
-import com.ably.configuration.Configuration
 
 plugins {
     id 'com.android.library'
@@ -8,9 +7,9 @@ plugins {
 }
 
 ext {
-    PUBLISH_GROUP_ID = Configuration.artifactGroup
+    PUBLISH_GROUP_ID = 'com.ably.tracking'
     PUBLISH_ARTIFACT_ID = 'asset-tracking-core-sdk'
-    PUBLISH_VERSION = Configuration.versionName
+    PUBLISH_VERSION = '1.2.8'
 }
 
 apply from: "../publish-module.gradle"
