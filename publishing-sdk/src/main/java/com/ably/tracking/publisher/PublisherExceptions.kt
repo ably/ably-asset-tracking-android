@@ -5,3 +5,5 @@ class PublisherStoppedException : Exception("Cannot perform this action when pub
 class PublisherStateDisposedException : Exception("Cannot access the publisher state after it's disposed.")
 
 class MapException(throwable: Throwable) : Exception(throwable)
+
+class RemoveTrackableRequestedException : Exception("This trackable is marked for removal.")

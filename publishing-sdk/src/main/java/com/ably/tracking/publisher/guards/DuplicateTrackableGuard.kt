@@ -1,4 +1,8 @@
-package com.ably.tracking.publisher
+package com.ably.tracking.publisher.guards
+
+import com.ably.tracking.publisher.AddTrackableHandler
+import com.ably.tracking.publisher.AddTrackableResult
+import com.ably.tracking.publisher.Trackable
 
 /**
  * Class that protects from adding duplicates of a trackable that is currently being added to the publisher.
