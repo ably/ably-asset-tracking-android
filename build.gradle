@@ -30,7 +30,7 @@ plugins {
     id 'org.jetbrains.dokka' version '1.4.32'
 }
 
-//https://github.com/Kotlin/dokka/issues/2202#issuecomment-950666269
+// https://github.com/Kotlin/dokka/issues/2202#issuecomment-950666269
 tasks.dokkaHtmlMultiModule.configure {
     pluginsMapConfiguration.set(
             ["org.jetbrains.dokka.base.DokkaBase": """{ "footerMessage": "$copyright_message"}"""]
@@ -78,7 +78,7 @@ subprojects {
         // which provide support to Java users ('-java' as a suffix).
         final evaluatedSubProjectIsJava = evaluatedSubProject.name.contains('-java')
 
-        //dokka configuration for modules
+        // Dokka configuration for modules
         final evaluatedSubProjectHasDokkaPlugin = evaluatedSubProject.pluginManager.hasPlugin('org.jetbrains.dokka')
         if (evaluatedSubProjectHasDokkaPlugin) {
             tasks.withType(dokkaHtmlPartial.getClass()).configureEach {
