@@ -4,13 +4,13 @@ import com.ably.tracking.Resolution
 import com.ably.tracking.java.LocationUpdateListener
 import com.ably.tracking.java.TrackableStateListener
 import com.ably.tracking.subscriber.Subscriber
+import java.util.concurrent.CompletableFuture
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.future.future
-import java.util.concurrent.CompletableFuture
 
 internal class DefaultSubscriberFacade(
     private val subscriber: Subscriber
@@ -23,6 +23,12 @@ internal class DefaultSubscriberFacade(
 
     override fun addLocationListener(listener: LocationUpdateListener) {
         subscriber.locations
+            .onEach { listener.onLocationUpdate(it) }
+            .launchIn(scope)
+    }
+
+    override fun addRawLocationListener(listener: LocationUpdateListener) {
+        subscriber.rawLocations
             .onEach { listener.onLocationUpdate(it) }
             .launchIn(scope)
     }

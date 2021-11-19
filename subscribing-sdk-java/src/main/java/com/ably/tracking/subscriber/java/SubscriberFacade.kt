@@ -37,6 +37,13 @@ interface SubscriberFacade : Subscriber {
     fun addLocationListener(listener: LocationUpdateListener)
 
     /**
+     * Adds a handler to be notified when a raw location update is available.
+     *
+     * @param listener The listening function to be notified.
+     */
+    fun addRawLocationListener(listener: LocationUpdateListener)
+
+    /**
      * Adds a handler to be notified when the online state of the trackable changes.
      *
      * @param listener the listening function to be notified.

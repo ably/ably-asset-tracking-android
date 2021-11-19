@@ -71,6 +71,15 @@ fun Message.getEnhancedLocationUpdate(gson: Gson): EnhancedLocationUpdate =
             )
         }
 
+fun Message.getRawLocationUpdate(gson: Gson): LocationUpdate =
+    gson.fromJson(data as String, LocationUpdateMessage::class.java)
+        .let { message ->
+            LocationUpdate(
+                message.location.toTracking(),
+                message.skippedLocations.map { it.toTracking() },
+            )
+        }
+
 fun LocationUpdateTypeMessage.toTracking(): LocationUpdateType =
     when (this) {
         LocationUpdateTypeMessage.PREDICTED -> LocationUpdateType.PREDICTED
