@@ -79,6 +79,8 @@ subprojects {
         final evaluatedSubProjectIsJava = evaluatedSubProject.name.contains('-java')
 
         // Dokka configuration for modules
+        // "The configuration must be done both for the subprojects (pages generated for packages, classes, etc.) and for the overall dokka multi-module task."
+        // See https://github.com/Kotlin/dokka/issues/2202#issuecomment-950136122 for more
         final evaluatedSubProjectHasDokkaPlugin = evaluatedSubProject.pluginManager.hasPlugin('org.jetbrains.dokka')
         if (evaluatedSubProjectHasDokkaPlugin) {
             tasks.withType(dokkaHtmlPartial.getClass()).configureEach {
