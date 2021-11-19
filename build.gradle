@@ -1,10 +1,12 @@
 buildscript {
     ext.kotlin_version = '1.5.10'
-    ext.copyright_message = 'Copyright 2020-2021 Ably Real-time Ltd (ably.com)'
+
     // The version of Ably's client library for Java that we're using.
     // Source code: https://github.com/ably/ably-java
     // Maven coordinates: groupId 'io.ably', artifactId ':'ably-android'.
     ext.ably_core_version = '1.2.8'
+
+    ext.copyright_message = 'Copyright 2020-2021 Ably Real-time Ltd (ably.com)'
 
     repositories {
         google()
@@ -209,8 +211,8 @@ subprojects {
 
         // https://github.com/jlleitschuh/ktlint-gradle#configuration
         ktlint {
-            // override because v.9.4.1 of org.jlleitschuh.gradle.ktlint plugin is at 0.38.1 which has issues
             version = '0.41.0'
+            // override because v.9.4.1 of org.jlleitschuh.gradle.ktlint plugin is at 0.38.1 which has issues
             verbose = true // shows rule name that failed
             android = true
             outputColorName = 'RED' // easier to spot failures in console output
