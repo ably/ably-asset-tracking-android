@@ -33,7 +33,7 @@ plugins {
 // https://github.com/Kotlin/dokka/issues/2202#issuecomment-950666269
 tasks.dokkaHtmlMultiModule.configure {
     pluginsMapConfiguration.set(
-            ["org.jetbrains.dokka.base.DokkaBase": """{ "footerMessage": "$copyright_message"}"""]
+        ["org.jetbrains.dokka.base.DokkaBase": """{ "footerMessage": "$copyright_message"}"""]
     )
 }
 
@@ -83,7 +83,7 @@ subprojects {
         if (evaluatedSubProjectHasDokkaPlugin) {
             tasks.withType(dokkaHtmlPartial.getClass()).configureEach {
                 pluginsMapConfiguration.set(
-                        ["org.jetbrains.dokka.base.DokkaBase": """{ "footerMessage": "$copyright_message"}"""]
+                    ["org.jetbrains.dokka.base.DokkaBase": """{ "footerMessage": "$copyright_message"}"""]
                 )
             }
         }
@@ -135,28 +135,28 @@ subprojects {
 
                 // Lint rules which we might care about at some point, but need not fail the build.
                 informational 'GradleDependency',
-                        'NewerVersionAvailable',
-                        'AllowBackup',
-                        'VectorPath',
-                        'ContentDescription',
-                        'UnusedResources',
-                        'UnpackedNativeCode',
-                        'LockedOrientationActivity',
-                        'IconLocation',
-                        'StopShip',
-                        'DefaultLocale',
-                        'ObsoleteSdkInt'
+                    'NewerVersionAvailable',
+                    'AllowBackup',
+                    'VectorPath',
+                    'ContentDescription',
+                    'UnusedResources',
+                    'UnpackedNativeCode',
+                    'LockedOrientationActivity',
+                    'IconLocation',
+                    'StopShip',
+                    'DefaultLocale',
+                    'ObsoleteSdkInt'
 
                 // Lint rules which are disabled by default (see: lint --show), but which we would
                 // rather were enabled.
                 error 'MissingRegistered',
-                        'Registered',
-                        'WrongThreadInterprocedural',
-                        'MinSdkTooLow',
-                        'MangledCRLF',
-                        'EasterEgg',
-                        'LogConditional',
-                        'UnusedIds'
+                    'Registered',
+                    'WrongThreadInterprocedural',
+                    'MinSdkTooLow',
+                    'MangledCRLF',
+                    'EasterEgg',
+                    'LogConditional',
+                    'UnusedIds'
             }
 
             // https://developer.android.com/studio/build/build-variants#build-types
@@ -213,9 +213,9 @@ subprojects {
             android = true
             outputColorName = 'RED' // easier to spot failures in console output
             disabledRules = [
-                    // according to a Github issue comment this issue could be resolved with Kotlin 1.4
-                    // https://github.com/pinterest/ktlint/issues/527#issuecomment-705871614
-                    'import-ordering',
+                // according to a Github issue comment this issue could be resolved with Kotlin 1.4
+                // https://github.com/pinterest/ktlint/issues/527#issuecomment-705871614
+                'import-ordering',
             ]
         }
 
