@@ -293,11 +293,12 @@ constructor(
                                 callback(Result.failure(reason.toTrackingException()))
                                 // reenter but do not handle reenter results as it will make things more complicated
                                 // for now
-                                channelToRemove.presence.enter(Gson().toJson(presenceData),object :CompletionListener{
-                                    override fun onSuccess() { }
+                                channelToRemove.presence.enter(Gson().toJson(presenceData),
+                                    object : CompletionListener {
+                                        override fun onSuccess() {}
 
-                                    override fun onError(reason: ErrorInfo?) { }
-                                })
+                                        override fun onError(reason: ErrorInfo?) {}
+                                    })
                             }
                         })
                     }
