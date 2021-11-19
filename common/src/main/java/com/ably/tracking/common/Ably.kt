@@ -9,8 +9,8 @@ import com.ably.tracking.common.logging.i
 import com.ably.tracking.common.logging.v
 import com.ably.tracking.common.logging.w
 import com.ably.tracking.common.message.getEnhancedLocationUpdate
-import com.ably.tracking.common.message.toMessageJson
 import com.ably.tracking.common.message.toMessage
+import com.ably.tracking.common.message.toMessageJson
 import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.logging.LogHandler
 import com.google.gson.Gson
@@ -24,15 +24,16 @@ import io.ably.lib.types.ChannelOptions
 import io.ably.lib.types.ErrorInfo
 import io.ably.lib.types.Message
 import io.ably.lib.util.Log
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
-import kotlin.coroutines.suspendCoroutine
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
-import java.util.concurrent.ConcurrentHashMap
+import java.util.Collections
+import kotlin.collections.HashMap
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.coroutines.suspendCoroutine
 
 /**
  * Wrapper for the [AblyRealtime] that's used to interact with the Ably SDK.
@@ -178,7 +179,7 @@ constructor(
 ) : Ably {
     private val gson = Gson()
     private val ably: AblyRealtime
-    private val channels: ConcurrentHashMap<String, Channel> = ConcurrentHashMap()
+    private val channels = Collections.synchronizedMap(HashMap<String,Channel>())
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     init {
