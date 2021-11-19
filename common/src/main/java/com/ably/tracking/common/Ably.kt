@@ -291,11 +291,13 @@ constructor(
 
                             override fun onError(reason: ErrorInfo) {
                                 callback(Result.failure(reason.toTrackingException()))
-                                // reconnect
-                                connect(trackableId, presenceData) {
-                                    // dealing with connection result will make things more complicated here so leaving
-                                    // it blank
-                                }
+                                // reenter but do not handle reenter results as it will make things more complicated
+                                // for now
+                                channelToRemove.presence.enter(Gson().toJson(presenceData),object :CompletionListener{
+                                    override fun onSuccess() { }
+
+                                    override fun onError(reason: ErrorInfo?) { }
+                                })
                             }
                         })
                     }
