@@ -179,7 +179,7 @@ constructor(
 ) : Ably {
     private val gson = Gson()
     private val ably: AblyRealtime
-    private val channels = Collections.synchronizedMap(HashMap<String,Channel>())
+    private val channels = Collections.synchronizedMap(HashMap<String, Channel>())
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     init {
@@ -294,12 +294,14 @@ constructor(
                                 callback(Result.failure(reason.toTrackingException()))
                                 // reenter but do not handle reenter results as it will make things more complicated
                                 // for now
-                                channelToRemove.presence.enter(Gson().toJson(presenceData),
+                                channelToRemove.presence.enter(
+                                    Gson().toJson(presenceData),
                                     object : CompletionListener {
                                         override fun onSuccess() {}
 
                                         override fun onError(reason: ErrorInfo?) {}
-                                    })
+                                    }
+                                )
                             }
                         })
                     }
