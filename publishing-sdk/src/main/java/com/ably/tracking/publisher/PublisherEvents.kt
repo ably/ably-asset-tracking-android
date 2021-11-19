@@ -69,6 +69,12 @@ internal class ConnectionForTrackableCreatedEvent(
     handler: ResultHandler<StateFlow<TrackableState>>
 ) : Request<StateFlow<TrackableState>>(handler)
 
+internal class TrackableRemovalRequestedEvent(
+    val trackable: Trackable,
+    handler: ResultHandler<StateFlow<TrackableState>>,
+    val result: Result<Unit>
+) : Request<StateFlow<TrackableState>>(handler)
+
 internal class ConnectionForTrackableReadyEvent(
     val trackable: Trackable,
     handler: ResultHandler<StateFlow<TrackableState>>

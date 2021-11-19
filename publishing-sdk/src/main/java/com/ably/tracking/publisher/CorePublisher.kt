@@ -18,6 +18,8 @@ import com.ably.tracking.common.PresenceData
 import com.ably.tracking.common.createSingleThreadDispatcher
 import com.ably.tracking.common.logging.w
 import com.ably.tracking.logging.LogHandler
+import com.ably.tracking.publisher.guards.DuplicateTrackableGuard
+import com.ably.tracking.publisher.guards.TrackableRemovalGuard
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
@@ -241,6 +243,7 @@ constructor(
                         val failureResult = Result.failure<AddTrackableResult>(event.exception)
                         event.handler(failureResult)
                         state.duplicateTrackableGuard.finishAddingTrackable(event.trackable, failureResult)
+                        state.trackableRemovalGuard.removeMarked(event.trackable, Result.success(true))
                     }
                     is PresenceMessageEvent -> {
                         when (event.presenceMessage.action) {
@@ -271,7 +274,29 @@ constructor(
                             }
                         }
                     }
+                    is TrackableRemovalRequestedEvent -> {
+                        if (event.result.isSuccess) {
+                            state.trackableRemovalGuard.removeMarked(event.trackable, Result.success(true))
+                        } else {
+                            state.trackableRemovalGuard.removeMarked(
+                                event.trackable,
+                                Result.failure(event.result.exceptionOrNull()!!)
+                            )
+                        }
+                        event.handler(Result.failure(RemoveTrackableRequestedException()))
+                        state.duplicateTrackableGuard.finishAddingTrackable(
+                            event.trackable,
+                            Result.failure(RemoveTrackableRequestedException())
+                        )
+                    }
                     is ConnectionForTrackableCreatedEvent -> {
+                        if (state.trackableRemovalGuard.isMarkedForRemoval(event.trackable)) {
+                            // Leave Ably channel.
+                            ably.disconnect(event.trackable.id, state.presenceData) { result ->
+                                request(TrackableRemovalRequestedEvent(event.trackable, event.handler, result))
+                            }
+                            continue
+                        }
                         ably.subscribeForPresenceMessages(
                             trackableId = event.trackable.id,
                             listener = { enqueue(PresenceMessageEvent(event.trackable, it)) },
@@ -288,6 +313,12 @@ constructor(
                         )
                     }
                     is ConnectionForTrackableReadyEvent -> {
+                        if (state.trackableRemovalGuard.isMarkedForRemoval(event.trackable)) {
+                            ably.disconnect(event.trackable.id, state.presenceData) { result ->
+                                request(TrackableRemovalRequestedEvent(event.trackable, event.handler, result))
+                            }
+                            continue
+                        }
                         ably.subscribeForChannelStateChange(event.trackable.id) {
                             enqueue(ChannelConnectionStateChangeEvent(it, event.trackable.id))
                         }
@@ -301,7 +332,8 @@ constructor(
                         hooks.trackables?.onTrackableAdded(event.trackable)
                         val trackableState = state.trackableStates[event.trackable.id] ?: TrackableState.Offline()
                         val trackableStateFlow =
-                            state.trackableStateFlows[event.trackable.id] ?: MutableStateFlow(trackableState)
+                            state.trackableStateFlows[event.trackable.id]
+                                ?: MutableStateFlow(trackableState)
                         state.trackableStateFlows[event.trackable.id] = trackableStateFlow
                         trackableStateFlows = state.trackableStateFlows
                         state.trackableStates[event.trackable.id] = trackableState
@@ -331,6 +363,8 @@ constructor(
                                     event.handler(Result.failure(result.exceptionOrNull()!!))
                                 }
                             }
+                        } else if (state.duplicateTrackableGuard.isCurrentlyAddingTrackable(event.trackable)) {
+                            state.trackableRemovalGuard.markForRemoval(event.trackable, event.handler)
                         } else {
                             // notify with false to indicate that it was not removed
                             event.handler(Result.success(false))
@@ -660,7 +694,8 @@ constructor(
     }
 
     private fun resolveResolution(trackable: Trackable, state: State) {
-        val resolutionRequests: Set<Resolution> = state.requests[trackable.id]?.values?.toSet() ?: emptySet()
+        val resolutionRequests: Set<Resolution> = state.requests[trackable.id]?.values?.toSet()
+            ?: emptySet()
         policy.resolve(TrackableResolutionRequest(trackable, resolutionRequests)).let { resolution ->
             state.resolutions[trackable.id] = resolution
             enqueue(ChangeLocationEngineResolutionEvent())
@@ -721,8 +756,7 @@ constructor(
         return if (resolution != null && lastSentLocation != null) {
             val timeSinceLastSentLocation = currentLocation.timeFrom(lastSentLocation)
             val distanceFromLastSentLocation = currentLocation.distanceInMetersFrom(lastSentLocation)
-            return distanceFromLastSentLocation >= resolution.minimumDisplacement ||
-                timeSinceLastSentLocation >= resolution.desiredInterval
+            return distanceFromLastSentLocation >= resolution.minimumDisplacement || timeSinceLastSentLocation >= resolution.desiredInterval
         } else {
             true
         }
@@ -831,6 +865,8 @@ constructor(
             get() = if (isDisposed) throw PublisherStateDisposedException() else field
         val duplicateTrackableGuard: DuplicateTrackableGuard = DuplicateTrackableGuard()
             get() = if (isDisposed) throw PublisherStateDisposedException() else field
+        val trackableRemovalGuard: TrackableRemovalGuard = TrackableRemovalGuard()
+            get() = if (isDisposed) throw PublisherStateDisposedException() else field
 
         fun dispose() {
             trackables.clear()
@@ -852,6 +888,7 @@ constructor(
             enhancedLocationsPublishingState.clearAll()
             rawLocationsPublishingState.clearAll()
             duplicateTrackableGuard.clearAll()
+            trackableRemovalGuard.clearAll()
             isDisposed = true
         }
     }
