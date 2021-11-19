@@ -138,13 +138,12 @@ constructor(
         routingProfile: RoutingProfile
     ) {
         launch {
-            // state
-            val state = State(routingProfile, policy.resolve(emptySet()), areRawLocationsEnabled)
+            val properties = Properties(routingProfile, policy.resolve(emptySet()), areRawLocationsEnabled)
 
             // processing
             for (event in receiveEventChannel) {
                 // handle events after the publisher is stopped
-                if (state.isStopped) {
+                if (properties.isStopped) {
                     if (event is Request<*>) {
                         // when the event is a request then call its handler
                         when (event) {
@@ -159,23 +158,23 @@ constructor(
                 }
                 when (event) {
                     is SetDestinationSuccessEvent -> {
-                        state.estimatedArrivalTimeInMilliseconds =
+                        properties.estimatedArrivalTimeInMilliseconds =
                             System.currentTimeMillis() + event.routeDurationInMilliseconds
                     }
                     is RawLocationChangedEvent -> {
-                        state.lastPublisherLocation = event.location
+                        properties.lastPublisherLocation = event.location
                         if (areRawLocationsEnabled == true) {
-                            state.trackables.forEach { processRawLocationUpdate(event, state, it.id) }
+                            properties.trackables.forEach { processRawLocationUpdate(event, properties, it.id) }
                         }
-                        state.rawLocationChangedCommands.apply {
+                        properties.rawLocationChangedCommands.apply {
                             if (isNotEmpty()) {
-                                forEach { command -> command(state) }
+                                forEach { command -> command(properties) }
                                 clear()
                             }
                         }
                     }
                     is EnhancedLocationChangedEvent -> {
-                        state.trackables.forEach { processEnhancedLocationUpdate(event, state, it.id) }
+                        properties.trackables.forEach { processEnhancedLocationUpdate(event, properties, it.id) }
                         scope.launch {
                             _locations.emit(
                                 EnhancedLocationUpdate(
@@ -188,8 +187,8 @@ constructor(
                         }
                         checkThreshold(
                             event.location,
-                            state.active,
-                            state.estimatedArrivalTimeInMilliseconds
+                            properties.active,
+                            properties.estimatedArrivalTimeInMilliseconds
                         )
                     }
                     is TrackTrackableEvent -> {
@@ -204,26 +203,33 @@ constructor(
                         )
                     }
                     is SetActiveTrackableEvent -> {
-                        if (state.active != event.trackable) {
-                            state.active = event.trackable
+                        if (properties.active != event.trackable) {
+                            properties.active = event.trackable
                             hooks.trackables?.onActiveTrackableChanged(event.trackable)
                             event.trackable.destination?.let {
-                                setDestination(it, state)
+                                setDestination(it, properties)
                             }
                         }
                         event.handler(Result.success(Unit))
                     }
                     is AddTrackableEvent -> {
                         when {
-                            state.duplicateTrackableGuard.isCurrentlyAddingTrackable(event.trackable) -> {
-                                state.duplicateTrackableGuard.saveDuplicateAddHandler(event.trackable, event.handler)
+                            properties.duplicateTrackableGuard.isCurrentlyAddingTrackable(event.trackable) -> {
+                                properties.duplicateTrackableGuard.saveDuplicateAddHandler(
+                                    event.trackable,
+                                    event.handler
+                                )
                             }
-                            state.trackables.contains(event.trackable) -> {
-                                event.handler(Result.success(state.trackableStateFlows[event.trackable.id]!!))
+                            properties.trackables.contains(event.trackable) -> {
+                                event.handler(Result.success(properties.trackableStateFlows[event.trackable.id]!!))
                             }
                             else -> {
-                                state.duplicateTrackableGuard.startAddingTrackable(event.trackable)
-                                ably.connect(event.trackable.id, state.presenceData, willPublish = true) { result ->
+                                properties.duplicateTrackableGuard.startAddingTrackable(event.trackable)
+                                ably.connect(
+                                    event.trackable.id,
+                                    properties.presenceData,
+                                    willPublish = true
+                                ) { result ->
                                     try {
                                         result.getOrThrow()
                                         request(ConnectionForTrackableCreatedEvent(event.trackable, event.handler))
@@ -237,7 +243,7 @@ constructor(
                     is AddTrackableFailedEvent -> {
                         val failureResult = Result.failure<AddTrackableResult>(event.exception)
                         event.handler(failureResult)
-                        state.duplicateTrackableGuard.finishAddingTrackable(event.trackable, failureResult)
+                        properties.duplicateTrackableGuard.finishAddingTrackable(event.trackable, failureResult)
                     }
                     is PresenceMessageEvent -> {
                         when (event.presenceMessage.action) {
@@ -247,13 +253,13 @@ constructor(
                                         event.presenceMessage.clientId,
                                         event.trackable,
                                         event.presenceMessage.data,
-                                        state
+                                        properties
                                     )
                                 }
                             }
                             PresenceAction.LEAVE_OR_ABSENT -> {
                                 if (event.presenceMessage.data.type == ClientTypes.SUBSCRIBER) {
-                                    removeSubscriber(event.presenceMessage.clientId, event.trackable, state)
+                                    removeSubscriber(event.presenceMessage.clientId, event.trackable, properties)
                                 }
                             }
                             PresenceAction.UPDATE -> {
@@ -262,7 +268,7 @@ constructor(
                                         event.presenceMessage.clientId,
                                         event.trackable,
                                         event.presenceMessage.data,
-                                        state
+                                        properties
                                     )
                                 }
                             }
@@ -277,7 +283,7 @@ constructor(
                                     result.getOrThrow()
                                     request(ConnectionForTrackableReadyEvent(event.trackable, event.handler))
                                 } catch (exception: ConnectionException) {
-                                    ably.disconnect(event.trackable.id, state.presenceData) {
+                                    ably.disconnect(event.trackable.id, properties.presenceData) {
                                         request(AddTrackableFailedEvent(event.trackable, event.handler, exception))
                                     }
                                 }
@@ -288,32 +294,32 @@ constructor(
                         ably.subscribeForChannelStateChange(event.trackable.id) {
                             enqueue(ChannelConnectionStateChangeEvent(it, event.trackable.id))
                         }
-                        if (!state.isTracking) {
-                            state.isTracking = true
+                        if (!properties.isTracking) {
+                            properties.isTracking = true
                             mapbox.startTrip()
                         }
-                        state.trackables.add(event.trackable)
-                        scope.launch { _trackables.emit(state.trackables) }
-                        resolveResolution(event.trackable, state)
+                        properties.trackables.add(event.trackable)
+                        scope.launch { _trackables.emit(properties.trackables) }
+                        resolveResolution(event.trackable, properties)
                         hooks.trackables?.onTrackableAdded(event.trackable)
-                        val trackableState = state.trackableStates[event.trackable.id] ?: TrackableState.Offline()
+                        val trackableState = properties.trackableStates[event.trackable.id] ?: TrackableState.Offline()
                         val trackableStateFlow =
-                            state.trackableStateFlows[event.trackable.id] ?: MutableStateFlow(trackableState)
-                        state.trackableStateFlows[event.trackable.id] = trackableStateFlow
-                        trackableStateFlows = state.trackableStateFlows
-                        state.trackableStates[event.trackable.id] = trackableState
+                            properties.trackableStateFlows[event.trackable.id] ?: MutableStateFlow(trackableState)
+                        properties.trackableStateFlows[event.trackable.id] = trackableStateFlow
+                        trackableStateFlows = properties.trackableStateFlows
+                        properties.trackableStates[event.trackable.id] = trackableState
                         val successResult = Result.success(trackableStateFlow.asStateFlow())
                         event.handler(successResult)
-                        state.duplicateTrackableGuard.finishAddingTrackable(event.trackable, successResult)
+                        properties.duplicateTrackableGuard.finishAddingTrackable(event.trackable, successResult)
                     }
                     is ChangeLocationEngineResolutionEvent -> {
-                        state.locationEngineResolution = policy.resolve(state.resolutions.values.toSet())
-                        mapbox.changeResolution(state.locationEngineResolution)
+                        properties.locationEngineResolution = policy.resolve(properties.resolutions.values.toSet())
+                        mapbox.changeResolution(properties.locationEngineResolution)
                     }
                     is RemoveTrackableEvent -> {
-                        if (state.trackables.contains(event.trackable)) {
+                        if (properties.trackables.contains(event.trackable)) {
                             // Leave Ably channel.
-                            ably.disconnect(event.trackable.id, state.presenceData) { result ->
+                            ably.disconnect(event.trackable.id, properties.presenceData) { result ->
                                 if (result.isSuccess) {
                                     request(
                                         DisconnectSuccessEvent(event.trackable) {
@@ -334,80 +340,80 @@ constructor(
                         }
                     }
                     is DisconnectSuccessEvent -> {
-                        state.trackables.remove(event.trackable)
-                        scope.launch { _trackables.emit(state.trackables) }
-                        state.trackableStateFlows.remove(event.trackable.id) // there is no way to stop the StateFlow so we just remove it
-                        trackableStateFlows = state.trackableStateFlows
-                        state.trackableStates.remove(event.trackable.id)
+                        properties.trackables.remove(event.trackable)
+                        scope.launch { _trackables.emit(properties.trackables) }
+                        properties.trackableStateFlows.remove(event.trackable.id) // there is no way to stop the StateFlow so we just remove it
+                        trackableStateFlows = properties.trackableStateFlows
+                        properties.trackableStates.remove(event.trackable.id)
                         hooks.trackables?.onTrackableRemoved(event.trackable)
-                        removeAllSubscribers(event.trackable, state)
-                        state.resolutions.remove(event.trackable.id)
+                        removeAllSubscribers(event.trackable, properties)
+                        properties.resolutions.remove(event.trackable.id)
                             ?.let { enqueue(ChangeLocationEngineResolutionEvent()) }
-                        state.requests.remove(event.trackable.id)
-                        state.lastSentEnhancedLocations.remove(event.trackable.id)
-                        state.lastSentRawLocations.remove(event.trackable.id)
-                        state.skippedEnhancedLocations.clear(event.trackable.id)
-                        state.skippedRawLocations.clear(event.trackable.id)
-                        state.enhancedLocationsPublishingState.clear(event.trackable.id)
-                        state.rawLocationsPublishingState.clear(event.trackable.id)
-                        state.duplicateTrackableGuard.clear(event.trackable)
+                        properties.requests.remove(event.trackable.id)
+                        properties.lastSentEnhancedLocations.remove(event.trackable.id)
+                        properties.lastSentRawLocations.remove(event.trackable.id)
+                        properties.skippedEnhancedLocations.clear(event.trackable.id)
+                        properties.skippedRawLocations.clear(event.trackable.id)
+                        properties.enhancedLocationsPublishingState.clear(event.trackable.id)
+                        properties.rawLocationsPublishingState.clear(event.trackable.id)
+                        properties.duplicateTrackableGuard.clear(event.trackable)
                         // If this was the active Trackable then clear that state and remove destination.
-                        if (state.active == event.trackable) {
-                            removeCurrentDestination(state)
-                            state.active = null
+                        if (properties.active == event.trackable) {
+                            removeCurrentDestination(properties)
+                            properties.active = null
                             hooks.trackables?.onActiveTrackableChanged(null)
                         }
                         // When we remove the last trackable then we should stop location updates
-                        if (state.trackables.isEmpty() && state.isTracking) {
-                            stopLocationUpdates(state)
+                        if (properties.trackables.isEmpty() && properties.isTracking) {
+                            stopLocationUpdates(properties)
                         }
-                        state.lastChannelConnectionStateChanges.remove(event.trackable.id)
+                        properties.lastChannelConnectionStateChanges.remove(event.trackable.id)
                         event.handler(Result.success(Unit))
                     }
                     is RefreshResolutionPolicyEvent -> {
-                        state.trackables.forEach { resolveResolution(it, state) }
+                        properties.trackables.forEach { resolveResolution(it, properties) }
                     }
                     is ChangeRoutingProfileEvent -> {
-                        state.routingProfile = event.routingProfile
-                        state.currentDestination?.let { setDestination(it, state) }
+                        properties.routingProfile = event.routingProfile
+                        properties.currentDestination?.let { setDestination(it, properties) }
                     }
                     is StopEvent -> {
-                        if (state.isTracking) {
-                            stopLocationUpdates(state)
+                        if (properties.isTracking) {
+                            stopLocationUpdates(properties)
                         }
                         try {
-                            ably.close(state.presenceData)
-                            state.dispose()
-                            state.isStopped = true
+                            ably.close(properties.presenceData)
+                            properties.dispose()
+                            properties.isStopped = true
                             event.handler(Result.success(Unit))
                         } catch (exception: ConnectionException) {
                             event.handler(Result.failure(exception))
                         }
                     }
                     is AblyConnectionStateChangeEvent -> {
-                        state.lastConnectionStateChange = event.connectionStateChange
-                        state.trackables.forEach {
-                            updateTrackableState(state, it.id)
+                        properties.lastConnectionStateChange = event.connectionStateChange
+                        properties.trackables.forEach {
+                            updateTrackableState(properties, it.id)
                         }
                     }
                     is ChannelConnectionStateChangeEvent -> {
-                        state.lastChannelConnectionStateChanges[event.trackableId] = event.connectionStateChange
-                        updateTrackableState(state, event.trackableId)
+                        properties.lastChannelConnectionStateChanges[event.trackableId] = event.connectionStateChange
+                        updateTrackableState(properties, event.trackableId)
                     }
                     is SendEnhancedLocationSuccessEvent -> {
-                        state.enhancedLocationsPublishingState.unmarkMessageAsPending(event.trackableId)
-                        state.lastSentEnhancedLocations[event.trackableId] = event.location
-                        state.skippedEnhancedLocations.clear(event.trackableId)
-                        updateTrackableState(state, event.trackableId)
-                        processNextWaitingEnhancedLocationUpdate(state, event.trackableId)
+                        properties.enhancedLocationsPublishingState.unmarkMessageAsPending(event.trackableId)
+                        properties.lastSentEnhancedLocations[event.trackableId] = event.location
+                        properties.skippedEnhancedLocations.clear(event.trackableId)
+                        updateTrackableState(properties, event.trackableId)
+                        processNextWaitingEnhancedLocationUpdate(properties, event.trackableId)
                     }
                     is SendEnhancedLocationFailureEvent -> {
-                        if (state.enhancedLocationsPublishingState.shouldRetryPublishing(event.trackableId)) {
-                            retrySendingEnhancedLocation(state, event.trackableId, event.locationUpdate)
+                        if (properties.enhancedLocationsPublishingState.shouldRetryPublishing(event.trackableId)) {
+                            retrySendingEnhancedLocation(properties, event.trackableId, event.locationUpdate)
                         } else {
-                            state.enhancedLocationsPublishingState.unmarkMessageAsPending(event.trackableId)
+                            properties.enhancedLocationsPublishingState.unmarkMessageAsPending(event.trackableId)
                             saveEnhancedLocationForFurtherSending(
-                                state,
+                                properties,
                                 event.trackableId,
                                 event.locationUpdate.location
                             )
@@ -415,26 +421,30 @@ constructor(
                                 "Sending location update failed. Location saved for further sending",
                                 event.exception
                             )
-                            processNextWaitingEnhancedLocationUpdate(state, event.trackableId)
+                            processNextWaitingEnhancedLocationUpdate(properties, event.trackableId)
                         }
                     }
                     is SendRawLocationSuccessEvent -> {
-                        state.rawLocationsPublishingState.unmarkMessageAsPending(event.trackableId)
-                        state.lastSentRawLocations[event.trackableId] = event.location
-                        state.skippedRawLocations.clear(event.trackableId)
-                        processNextWaitingRawLocationUpdate(state, event.trackableId)
+                        properties.rawLocationsPublishingState.unmarkMessageAsPending(event.trackableId)
+                        properties.lastSentRawLocations[event.trackableId] = event.location
+                        properties.skippedRawLocations.clear(event.trackableId)
+                        processNextWaitingRawLocationUpdate(properties, event.trackableId)
                     }
                     is SendRawLocationFailureEvent -> {
-                        if (state.rawLocationsPublishingState.shouldRetryPublishing(event.trackableId)) {
-                            retrySendingRawLocation(state, event.trackableId, event.locationUpdate)
+                        if (properties.rawLocationsPublishingState.shouldRetryPublishing(event.trackableId)) {
+                            retrySendingRawLocation(properties, event.trackableId, event.locationUpdate)
                         } else {
-                            state.rawLocationsPublishingState.unmarkMessageAsPending(event.trackableId)
-                            saveRawLocationForFurtherSending(state, event.trackableId, event.locationUpdate.location)
+                            properties.rawLocationsPublishingState.unmarkMessageAsPending(event.trackableId)
+                            saveRawLocationForFurtherSending(
+                                properties,
+                                event.trackableId,
+                                event.locationUpdate.location
+                            )
                             logHandler?.w(
                                 "Sending raw location update failed. Location saved for further sending",
                                 event.exception
                             )
-                            processNextWaitingRawLocationUpdate(state, event.trackableId)
+                            processNextWaitingRawLocationUpdate(properties, event.trackableId)
                         }
                     }
                 }
@@ -443,63 +453,63 @@ constructor(
     }
 
     private fun retrySendingEnhancedLocation(
-        state: State,
+        properties: Properties,
         trackableId: String,
         locationUpdate: EnhancedLocationUpdate
     ) {
-        state.enhancedLocationsPublishingState.incrementRetryCount(trackableId)
+        properties.enhancedLocationsPublishingState.incrementRetryCount(trackableId)
         sendEnhancedLocationUpdate(
             EnhancedLocationChangedEvent(
                 locationUpdate.location,
                 locationUpdate.intermediateLocations,
                 locationUpdate.type
             ),
-            state,
+            properties,
             trackableId
         )
     }
 
     private fun processEnhancedLocationUpdate(
         event: EnhancedLocationChangedEvent,
-        state: State,
+        properties: Properties,
         trackableId: String
     ) {
         when {
-            state.enhancedLocationsPublishingState.hasPendingMessage(trackableId) -> {
-                state.enhancedLocationsPublishingState.addToWaiting(trackableId, event)
+            properties.enhancedLocationsPublishingState.hasPendingMessage(trackableId) -> {
+                properties.enhancedLocationsPublishingState.addToWaiting(trackableId, event)
             }
             shouldSendLocation(
                 event.location,
-                state.lastSentEnhancedLocations[trackableId],
-                state.resolutions[trackableId]
+                properties.lastSentEnhancedLocations[trackableId],
+                properties.resolutions[trackableId]
             ) -> {
-                sendEnhancedLocationUpdate(event, state, trackableId)
+                sendEnhancedLocationUpdate(event, properties, trackableId)
             }
             else -> {
-                saveEnhancedLocationForFurtherSending(state, trackableId, event.location)
-                processNextWaitingEnhancedLocationUpdate(state, trackableId)
+                saveEnhancedLocationForFurtherSending(properties, trackableId, event.location)
+                processNextWaitingEnhancedLocationUpdate(properties, trackableId)
             }
         }
     }
 
-    private fun processNextWaitingEnhancedLocationUpdate(state: State, trackableId: String) {
-        state.enhancedLocationsPublishingState.getNextWaiting(trackableId)?.let {
-            processEnhancedLocationUpdate(it, state, trackableId)
+    private fun processNextWaitingEnhancedLocationUpdate(properties: Properties, trackableId: String) {
+        properties.enhancedLocationsPublishingState.getNextWaiting(trackableId)?.let {
+            processEnhancedLocationUpdate(it, properties, trackableId)
         }
     }
 
     private fun sendEnhancedLocationUpdate(
         event: EnhancedLocationChangedEvent,
-        state: State,
+        properties: Properties,
         trackableId: String
     ) {
         val locationUpdate = EnhancedLocationUpdate(
             event.location,
-            state.skippedEnhancedLocations.toList(trackableId),
+            properties.skippedEnhancedLocations.toList(trackableId),
             event.intermediateLocations,
             event.type
         )
-        state.enhancedLocationsPublishingState.markMessageAsPending(trackableId)
+        properties.enhancedLocationsPublishingState.markMessageAsPending(trackableId)
         ably.sendEnhancedLocation(trackableId, locationUpdate) {
             if (it.isSuccess) {
                 enqueue(SendEnhancedLocationSuccessEvent(locationUpdate.location, trackableId))
@@ -509,54 +519,54 @@ constructor(
         }
     }
 
-    private fun saveEnhancedLocationForFurtherSending(state: State, trackableId: String, location: Location) {
-        state.skippedEnhancedLocations.add(trackableId, location)
+    private fun saveEnhancedLocationForFurtherSending(properties: Properties, trackableId: String, location: Location) {
+        properties.skippedEnhancedLocations.add(trackableId, location)
     }
 
-    private fun retrySendingRawLocation(state: State, trackableId: String, locationUpdate: LocationUpdate) {
-        state.rawLocationsPublishingState.incrementRetryCount(trackableId)
-        sendRawLocationUpdate(RawLocationChangedEvent(locationUpdate.location), state, trackableId)
+    private fun retrySendingRawLocation(properties: Properties, trackableId: String, locationUpdate: LocationUpdate) {
+        properties.rawLocationsPublishingState.incrementRetryCount(trackableId)
+        sendRawLocationUpdate(RawLocationChangedEvent(locationUpdate.location), properties, trackableId)
     }
 
     private fun processRawLocationUpdate(
         event: RawLocationChangedEvent,
-        state: State,
+        properties: Properties,
         trackableId: String
     ) {
         when {
-            state.rawLocationsPublishingState.hasPendingMessage(trackableId) -> {
-                state.rawLocationsPublishingState.addToWaiting(trackableId, event)
+            properties.rawLocationsPublishingState.hasPendingMessage(trackableId) -> {
+                properties.rawLocationsPublishingState.addToWaiting(trackableId, event)
             }
             shouldSendLocation(
                 event.location,
-                state.lastSentRawLocations[trackableId],
-                state.resolutions[trackableId]
+                properties.lastSentRawLocations[trackableId],
+                properties.resolutions[trackableId]
             ) -> {
-                sendRawLocationUpdate(event, state, trackableId)
+                sendRawLocationUpdate(event, properties, trackableId)
             }
             else -> {
-                saveRawLocationForFurtherSending(state, trackableId, event.location)
-                processNextWaitingRawLocationUpdate(state, trackableId)
+                saveRawLocationForFurtherSending(properties, trackableId, event.location)
+                processNextWaitingRawLocationUpdate(properties, trackableId)
             }
         }
     }
 
-    private fun processNextWaitingRawLocationUpdate(state: State, trackableId: String) {
-        state.rawLocationsPublishingState.getNextWaiting(trackableId)?.let {
-            processRawLocationUpdate(it, state, trackableId)
+    private fun processNextWaitingRawLocationUpdate(properties: Properties, trackableId: String) {
+        properties.rawLocationsPublishingState.getNextWaiting(trackableId)?.let {
+            processRawLocationUpdate(it, properties, trackableId)
         }
     }
 
     private fun sendRawLocationUpdate(
         event: RawLocationChangedEvent,
-        state: State,
+        properties: Properties,
         trackableId: String
     ) {
         val locationUpdate = LocationUpdate(
             event.location,
-            state.skippedRawLocations.toList(trackableId),
+            properties.skippedRawLocations.toList(trackableId),
         )
-        state.rawLocationsPublishingState.markMessageAsPending(trackableId)
+        properties.rawLocationsPublishingState.markMessageAsPending(trackableId)
         ably.sendRawLocation(trackableId, locationUpdate) {
             if (it.isSuccess) {
                 enqueue(SendRawLocationSuccessEvent(locationUpdate.location, trackableId))
@@ -566,20 +576,20 @@ constructor(
         }
     }
 
-    private fun saveRawLocationForFurtherSending(state: State, trackableId: String, location: Location) {
-        state.skippedRawLocations.add(trackableId, location)
+    private fun saveRawLocationForFurtherSending(properties: Properties, trackableId: String, location: Location) {
+        properties.skippedRawLocations.add(trackableId, location)
     }
 
-    private fun stopLocationUpdates(state: State) {
-        state.isTracking = false
+    private fun stopLocationUpdates(properties: Properties) {
+        properties.isTracking = false
         mapbox.unregisterLocationObserver()
         mapbox.stopAndClose()
     }
 
-    private fun updateTrackableState(state: State, trackableId: String) {
-        val hasSentAtLeastOneLocation: Boolean = state.lastSentEnhancedLocations[trackableId] != null
-        val lastChannelConnectionStateChange = getLastChannelConnectionStateChange(state, trackableId)
-        val newTrackableState = when (state.lastConnectionStateChange.state) {
+    private fun updateTrackableState(properties: Properties, trackableId: String) {
+        val hasSentAtLeastOneLocation: Boolean = properties.lastSentEnhancedLocations[trackableId] != null
+        val lastChannelConnectionStateChange = getLastChannelConnectionStateChange(properties, trackableId)
+        val newTrackableState = when (properties.lastConnectionStateChange.state) {
             ConnectionState.ONLINE -> {
                 when (lastChannelConnectionStateChange.state) {
                     ConnectionState.ONLINE -> if (hasSentAtLeastOneLocation) TrackableState.Online else TrackableState.Offline()
@@ -588,54 +598,57 @@ constructor(
                 }
             }
             ConnectionState.OFFLINE -> TrackableState.Offline()
-            ConnectionState.FAILED -> TrackableState.Failed(state.lastConnectionStateChange.errorInformation!!) // are we sure error information will always be present?
+            ConnectionState.FAILED -> TrackableState.Failed(properties.lastConnectionStateChange.errorInformation!!) // are we sure error information will always be present?
         }
-        if (newTrackableState != state.trackableStates[trackableId]) {
-            state.trackableStates[trackableId] = newTrackableState
-            scope.launch { state.trackableStateFlows[trackableId]?.emit(newTrackableState) }
+        if (newTrackableState != properties.trackableStates[trackableId]) {
+            properties.trackableStates[trackableId] = newTrackableState
+            scope.launch { properties.trackableStateFlows[trackableId]?.emit(newTrackableState) }
         }
     }
 
-    private fun getLastChannelConnectionStateChange(state: State, trackableId: String): ConnectionStateChange =
-        state.lastChannelConnectionStateChanges[trackableId]
+    private fun getLastChannelConnectionStateChange(
+        properties: Properties,
+        trackableId: String
+    ): ConnectionStateChange =
+        properties.lastChannelConnectionStateChanges[trackableId]
             ?: ConnectionStateChange(ConnectionState.OFFLINE, null)
 
-    private fun removeAllSubscribers(trackable: Trackable, state: State) {
-        state.subscribers[trackable.id]?.let { subscribers ->
+    private fun removeAllSubscribers(trackable: Trackable, properties: Properties) {
+        properties.subscribers[trackable.id]?.let { subscribers ->
             subscribers.forEach { hooks.subscribers?.onSubscriberRemoved(it) }
             subscribers.clear()
         }
     }
 
-    private fun addSubscriber(id: String, trackable: Trackable, data: PresenceData, state: State) {
+    private fun addSubscriber(id: String, trackable: Trackable, data: PresenceData, properties: Properties) {
         val subscriber = Subscriber(id, trackable)
-        if (state.subscribers[trackable.id] == null) {
-            state.subscribers[trackable.id] = mutableSetOf()
+        if (properties.subscribers[trackable.id] == null) {
+            properties.subscribers[trackable.id] = mutableSetOf()
         }
-        state.subscribers[trackable.id]?.add(subscriber)
-        saveOrRemoveResolutionRequest(data.resolution, trackable, subscriber, state)
+        properties.subscribers[trackable.id]?.add(subscriber)
+        saveOrRemoveResolutionRequest(data.resolution, trackable, subscriber, properties)
         hooks.subscribers?.onSubscriberAdded(subscriber)
-        resolveResolution(trackable, state)
+        resolveResolution(trackable, properties)
     }
 
-    private fun updateSubscriber(id: String, trackable: Trackable, data: PresenceData, state: State) {
-        state.subscribers[trackable.id]?.let { subscribers ->
+    private fun updateSubscriber(id: String, trackable: Trackable, data: PresenceData, properties: Properties) {
+        properties.subscribers[trackable.id]?.let { subscribers ->
             subscribers.find { it.id == id }?.let { subscriber ->
                 data.resolution.let { resolution ->
-                    saveOrRemoveResolutionRequest(resolution, trackable, subscriber, state)
-                    resolveResolution(trackable, state)
+                    saveOrRemoveResolutionRequest(resolution, trackable, subscriber, properties)
+                    resolveResolution(trackable, properties)
                 }
             }
         }
     }
 
-    private fun removeSubscriber(id: String, trackable: Trackable, state: State) {
-        state.subscribers[trackable.id]?.let { subscribers ->
+    private fun removeSubscriber(id: String, trackable: Trackable, properties: Properties) {
+        properties.subscribers[trackable.id]?.let { subscribers ->
             subscribers.find { it.id == id }?.let { subscriber ->
                 subscribers.remove(subscriber)
-                state.requests[trackable.id]?.remove(subscriber)
+                properties.requests[trackable.id]?.remove(subscriber)
                 hooks.subscribers?.onSubscriberRemoved(subscriber)
-                resolveResolution(trackable, state)
+                resolveResolution(trackable, properties)
             }
         }
     }
@@ -644,32 +657,32 @@ constructor(
         resolution: Resolution?,
         trackable: Trackable,
         subscriber: Subscriber,
-        state: State
+        properties: Properties
     ) {
         if (resolution != null) {
-            if (state.requests[trackable.id] == null) {
-                state.requests[trackable.id] = mutableMapOf()
+            if (properties.requests[trackable.id] == null) {
+                properties.requests[trackable.id] = mutableMapOf()
             }
-            state.requests[trackable.id]?.put(subscriber, resolution)
+            properties.requests[trackable.id]?.put(subscriber, resolution)
         } else {
-            state.requests[trackable.id]?.remove(subscriber)
+            properties.requests[trackable.id]?.remove(subscriber)
         }
     }
 
-    private fun resolveResolution(trackable: Trackable, state: State) {
-        val resolutionRequests: Set<Resolution> = state.requests[trackable.id]?.values?.toSet() ?: emptySet()
+    private fun resolveResolution(trackable: Trackable, properties: Properties) {
+        val resolutionRequests: Set<Resolution> = properties.requests[trackable.id]?.values?.toSet() ?: emptySet()
         policy.resolve(TrackableResolutionRequest(trackable, resolutionRequests)).let { resolution ->
-            state.resolutions[trackable.id] = resolution
+            properties.resolutions[trackable.id] = resolution
             enqueue(ChangeLocationEngineResolutionEvent())
         }
     }
 
-    private fun setDestination(destination: Destination, state: State) {
-        state.lastPublisherLocation.let { currentLocation ->
+    private fun setDestination(destination: Destination, properties: Properties) {
+        properties.lastPublisherLocation.let { currentLocation ->
             if (currentLocation != null) {
-                removeCurrentDestination(state)
-                state.currentDestination = destination
-                mapbox.setRoute(currentLocation, destination, state.routingProfile) {
+                removeCurrentDestination(properties)
+                properties.currentDestination = destination
+                mapbox.setRoute(currentLocation, destination, properties.routingProfile) {
                     try {
                         enqueue(SetDestinationSuccessEvent(it.getOrThrow()))
                     } catch (exception: MapException) {
@@ -677,15 +690,17 @@ constructor(
                     }
                 }
             } else {
-                state.rawLocationChangedCommands.add { updatedState -> setDestination(destination, updatedState) }
+                properties.rawLocationChangedCommands.add { updatedProperties ->
+                    setDestination(destination, updatedProperties)
+                }
             }
         }
     }
 
-    private fun removeCurrentDestination(state: State) {
+    private fun removeCurrentDestination(properties: Properties) {
         mapbox.clearRoute()
-        state.currentDestination = null
-        state.estimatedArrivalTimeInMilliseconds = null
+        properties.currentDestination = null
+        properties.estimatedArrivalTimeInMilliseconds = null
     }
 
     private fun checkThreshold(
@@ -759,7 +774,7 @@ constructor(
         }
     }
 
-    private inner class State(
+    private inner class Properties(
         routingProfile: RoutingProfile,
         locationEngineResolution: Resolution,
         areRawLocationsEnabled: Boolean?,
@@ -767,64 +782,64 @@ constructor(
         private var isDisposed: Boolean = false
         var isStopped: Boolean = false
         var locationEngineResolution: Resolution = locationEngineResolution
-            get() = if (isDisposed) throw PublisherStateDisposedException() else field
+            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
         var isTracking: Boolean = false
-            get() = if (isDisposed) throw PublisherStateDisposedException() else field
+            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
         val trackables: MutableSet<Trackable> = mutableSetOf()
-            get() = if (isDisposed) throw PublisherStateDisposedException() else field
+            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
         val trackableStates: MutableMap<String, TrackableState> = mutableMapOf()
-            get() = if (isDisposed) throw PublisherStateDisposedException() else field
+            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
         val trackableStateFlows: MutableMap<String, MutableStateFlow<TrackableState>> = mutableMapOf()
-            get() = if (isDisposed) throw PublisherStateDisposedException() else field
+            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
         val lastChannelConnectionStateChanges: MutableMap<String, ConnectionStateChange> = mutableMapOf()
-            get() = if (isDisposed) throw PublisherStateDisposedException() else field
+            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
         var lastConnectionStateChange: ConnectionStateChange = ConnectionStateChange(
             ConnectionState.OFFLINE, null
         )
-            get() = if (isDisposed) throw PublisherStateDisposedException() else field
+            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
         val resolutions: MutableMap<String, Resolution> = mutableMapOf()
-            get() = if (isDisposed) throw PublisherStateDisposedException() else field
+            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
         val lastSentEnhancedLocations: MutableMap<String, Location> = mutableMapOf()
-            get() = if (isDisposed) throw PublisherStateDisposedException() else field
+            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
         val lastSentRawLocations: MutableMap<String, Location> = mutableMapOf()
-            get() = if (isDisposed) throw PublisherStateDisposedException() else field
+            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
         val skippedEnhancedLocations: SkippedLocations = SkippedLocations()
-            get() = if (isDisposed) throw PublisherStateDisposedException() else field
+            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
         val skippedRawLocations: SkippedLocations = SkippedLocations()
-            get() = if (isDisposed) throw PublisherStateDisposedException() else field
+            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
         var estimatedArrivalTimeInMilliseconds: Long? = null
-            get() = if (isDisposed) throw PublisherStateDisposedException() else field
+            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
         var lastPublisherLocation: Location? = null
-            get() = if (isDisposed) throw PublisherStateDisposedException() else field
+            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
         var currentDestination: Destination? = null
-            get() = if (isDisposed) throw PublisherStateDisposedException() else field
+            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
         val subscribers: MutableMap<String, MutableSet<Subscriber>> = mutableMapOf()
-            get() = if (isDisposed) throw PublisherStateDisposedException() else field
+            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
         val requests: MutableMap<String, MutableMap<Subscriber, Resolution>> = mutableMapOf()
-            get() = if (isDisposed) throw PublisherStateDisposedException() else field
+            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
         var presenceData: PresenceData = PresenceData(ClientTypes.PUBLISHER, rawLocations = areRawLocationsEnabled)
-            get() = if (isDisposed) throw PublisherStateDisposedException() else field
+            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
         var active: Trackable? = null
-            get() = if (isDisposed) throw PublisherStateDisposedException() else field
+            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
             set(value) {
                 this@DefaultCorePublisher.active = value
                 field = value
             }
         var routingProfile: RoutingProfile = routingProfile
-            get() = if (isDisposed) throw PublisherStateDisposedException() else field
+            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
             set(value) {
                 this@DefaultCorePublisher.routingProfile = value
                 field = value
             }
-        val rawLocationChangedCommands: MutableList<(State) -> Unit> = mutableListOf()
-            get() = if (isDisposed) throw PublisherStateDisposedException() else field
+        val rawLocationChangedCommands: MutableList<(Properties) -> Unit> = mutableListOf()
+            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
         val enhancedLocationsPublishingState: LocationsPublishingState<EnhancedLocationChangedEvent> =
             LocationsPublishingState()
-            get() = if (isDisposed) throw PublisherStateDisposedException() else field
+            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
         val rawLocationsPublishingState: LocationsPublishingState<RawLocationChangedEvent> = LocationsPublishingState()
-            get() = if (isDisposed) throw PublisherStateDisposedException() else field
+            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
         val duplicateTrackableGuard: DuplicateTrackableGuard = DuplicateTrackableGuard()
-            get() = if (isDisposed) throw PublisherStateDisposedException() else field
+            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
 
         fun dispose() {
             trackables.clear()
