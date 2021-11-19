@@ -55,11 +55,57 @@ GOOGLE_MAPS_API_KEY=create_api_key_with_geolocation_maps_sdk
 
 ### Maven / Gradle Dependencies
 
-We publish to [GitHub Packages](https://github.com/ably/ably-asset-tracking-android/packages/) for this repository.
-
 Kotlin users will want to add either `publishing-sdk` or `subscribing-sdk`, according to the needs of their project.
 Java users should add either `publishing-sdk-java` or `subscribing-sdk-java`.
 See [Android Runtime Requirements](#android-runtime-requirements) for more details.
+
+#### GitHub Packages
+We publish to [GitHub Packages](https://github.com/ably/ably-asset-tracking-android/packages/) for this repository.
+
+To install the dependency you will first need to create a "Personal Access Token" in your GitHub account. The token must have the `read:packages` permission.
+Then use your generated token to authenticate in the AAT GitHub Packages repository:
+
+```gradle
+repositories {
+    maven {
+        name = "Ably Asset Tracking"
+        url = uri("https://maven.pkg.github.com/ably/ably-asset-tracking-android")
+        credentials {
+            username = '<GITHUB_USERNAME>'
+            password = '<GITHUB_PERSONAL_ACCESS_TOKEN>'
+        }
+    }
+}
+```
+
+In order to resolve all AAT dependencies you will also need to authenticate in the Mapbox repository:
+
+```gradle
+repositories {
+    maven {
+        name = "Mapbox"
+        url 'https://api.mapbox.com/downloads/v2/releases/maven'
+        authentication {
+            basic(BasicAuthentication)
+        }
+        credentials {
+            username = '<MAPBOX_USERNAME>'
+            password = '<MAPBOX_DOWNLOADS_TOKEN>'
+        }
+    }
+}
+```
+
+Finally, you can add the AAT dependency in the Gradle build script
+```gradle
+dependencies {
+    // Publishing SDK for publishers
+    implementation 'com.ably.tracking:publishing-sdk:1.0.0-beta.11'
+
+    // Subscribing SDK for subscribers
+    implementation 'com.ably.tracking:subscribing-sdk:1.0.0-beta.11'
+}
+```
 
 ### Publishing SDK
 
