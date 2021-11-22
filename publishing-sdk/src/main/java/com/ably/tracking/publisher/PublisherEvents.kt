@@ -26,14 +26,14 @@ internal sealed class AdhocEvent : Event()
 internal sealed class Request<T>(val handler: ResultHandler<T>) : Event()
 
 /**
- * Event created when wanting to stop the [CorePublisher].
+ * Stop the [CorePublisher].
  */
 internal class StopEvent(
     handler: ResultHandler<Unit>
 ) : Request<Unit>(handler)
 
 /**
- * Event created when wanting to add a [Trackable] to the [CorePublisher].
+ * Add a [Trackable] to the [CorePublisher].
  */
 internal class AddTrackableEvent(
     val trackable: Trackable,
@@ -41,7 +41,7 @@ internal class AddTrackableEvent(
 ) : Request<StateFlow<TrackableState>>(handler)
 
 /**
- * Event created when adding a [Trackable] fails.
+ * Failed to add a [Trackable].
  * Should be created only from within the [CorePublisher].
  */
 internal class AddTrackableFailedEvent(
@@ -51,7 +51,7 @@ internal class AddTrackableFailedEvent(
 ) : Request<StateFlow<TrackableState>>(handler)
 
 /**
- * Event created when wanting to track a [Trackable].
+ * Track a [Trackable].
  */
 internal class TrackTrackableEvent(
     val trackable: Trackable,
@@ -59,7 +59,7 @@ internal class TrackTrackableEvent(
 ) : Request<StateFlow<TrackableState>>(handler)
 
 /**
- * Event created when wanting to change the actively tracked [Trackable].
+ * Change the actively tracked [Trackable].
  * Should be created only from within the [CorePublisher].
  */
 internal class SetActiveTrackableEvent(
@@ -68,7 +68,7 @@ internal class SetActiveTrackableEvent(
 ) : Request<Unit>(handler)
 
 /**
- * Event created when wanting to remove a [Trackable] from the [CorePublisher].
+ * Remove a [Trackable] from the [CorePublisher].
  */
 internal class RemoveTrackableEvent(
     val trackable: Trackable,
@@ -80,7 +80,7 @@ internal class RemoveTrackableEvent(
 ) : Request<Boolean>(handler)
 
 /**
- * Event created when successfully disconnected from the trackable channel.
+ * Successfully disconnected from the trackable channel.
  * Should be created only from within the [CorePublisher].
  */
 internal class DisconnectSuccessEvent(
@@ -89,7 +89,7 @@ internal class DisconnectSuccessEvent(
 ) : Request<Unit>(handler)
 
 /**
- * Event created when a connection for a trackable is successfully created.
+ * Successfully created a connection for a trackable channel.
  * Should be created only from within the [CorePublisher].
  */
 internal class ConnectionForTrackableCreatedEvent(
@@ -98,7 +98,7 @@ internal class ConnectionForTrackableCreatedEvent(
 ) : Request<StateFlow<TrackableState>>(handler)
 
 /**
- * Event created when a connection for a trackable is ready to be used.
+ * Connection for a trackable is ready to be used.
  * Should be created only from within the [CorePublisher].
  */
 internal class ConnectionForTrackableReadyEvent(
@@ -107,7 +107,7 @@ internal class ConnectionForTrackableReadyEvent(
 ) : Request<StateFlow<TrackableState>>(handler)
 
 /**
- * Event created each time a new raw location update is received.
+ * A new raw location update is received.
  * Should be created only from within the [CorePublisher].
  */
 internal data class RawLocationChangedEvent(
@@ -115,7 +115,7 @@ internal data class RawLocationChangedEvent(
 ) : AdhocEvent()
 
 /**
- * Event created when sending a raw location was successful.
+ * Successfully sent a raw location update.
  * Should be created only from within the [CorePublisher].
  */
 internal data class SendRawLocationSuccessEvent(
@@ -124,7 +124,7 @@ internal data class SendRawLocationSuccessEvent(
 ) : AdhocEvent()
 
 /**
- * Event created when sending a raw location failed.
+ * Failed to send a raw location update.
  * Should be created only from within the [CorePublisher].
  */
 internal data class SendRawLocationFailureEvent(
@@ -134,7 +134,7 @@ internal data class SendRawLocationFailureEvent(
 ) : AdhocEvent()
 
 /**
- * Event created each time a new enhanced location update is received.
+ * A new enhanced location update is received.
  * Should be created only from within the [CorePublisher].
  */
 internal data class EnhancedLocationChangedEvent(
@@ -144,7 +144,7 @@ internal data class EnhancedLocationChangedEvent(
 ) : AdhocEvent()
 
 /**
- * Event created when sending an enhanced location was successful.
+ * Successfully sent an enhanced location update.
  * Should be created only from within the [CorePublisher].
  */
 internal data class SendEnhancedLocationSuccessEvent(
@@ -153,7 +153,7 @@ internal data class SendEnhancedLocationSuccessEvent(
 ) : AdhocEvent()
 
 /**
- * Event created when sending an enhanced location failed.
+ * Failed to send an enhanced location update.
  * Should be created only from within the [CorePublisher].
  */
 internal data class SendEnhancedLocationFailureEvent(
@@ -163,13 +163,13 @@ internal data class SendEnhancedLocationFailureEvent(
 ) : AdhocEvent()
 
 /**
- * Event created when the resolution policy should be refreshed. This means recalculating all the resolutions.
+ * Refresh the resolution policy.
  * Should be created only from within the [CorePublisher].
  */
 internal class RefreshResolutionPolicyEvent : AdhocEvent()
 
 /**
- * Event created when setting the destination was successful.
+ * Successfully set the destination.
  * Should be created only from within the [CorePublisher].
  */
 internal data class SetDestinationSuccessEvent(
@@ -177,7 +177,7 @@ internal data class SetDestinationSuccessEvent(
 ) : AdhocEvent()
 
 /**
- * Event created each time when a presence message is received.
+ * A new presence message is received.
  * Should be created only from within the [CorePublisher].
  */
 internal data class PresenceMessageEvent(
@@ -186,20 +186,20 @@ internal data class PresenceMessageEvent(
 ) : AdhocEvent()
 
 /**
- * Event created when the location engine resolution should be changed.
+ * Change the location engine resolution.
  * Should be created only from within the [CorePublisher].
  */
 internal class ChangeLocationEngineResolutionEvent : AdhocEvent()
 
 /**
- * Event created when the navigation routing profile should be changed.
+ * Change the navigation routing profile.
  */
 internal data class ChangeRoutingProfileEvent(
     val routingProfile: RoutingProfile
 ) : AdhocEvent()
 
 /**
- * Event created each time the Ably connection state changes.
+ * Ably connection state changed.
  * Should be created only from within the [CorePublisher].
  */
 internal data class AblyConnectionStateChangeEvent(
@@ -207,7 +207,7 @@ internal data class AblyConnectionStateChangeEvent(
 ) : AdhocEvent()
 
 /**
- * Event created each time the trackable Ably channel state changes.
+ * Trackable Ably channel state changed.
  * Should be created only from within the [CorePublisher].
  */
 internal data class ChannelConnectionStateChangeEvent(

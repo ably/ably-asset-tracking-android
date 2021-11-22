@@ -18,14 +18,14 @@ internal sealed class AdhocEvent : Event()
 internal sealed class Request<T>(val handler: ResultHandler<T>) : Event()
 
 /**
- * Event created when wanting to start the [CoreSubscriber].
+ * Start the [CoreSubscriber].
  */
 internal class StartEvent(
     handler: ResultHandler<Unit>
 ) : Request<Unit>(handler)
 
 /**
- * Event created when a connection for a trackable is successfully created.
+ * Successfully created a connection for a trackable.
  * Should be created only from within the [CoreSubscriber].
  */
 internal class ConnectionCreatedEvent(
@@ -33,7 +33,7 @@ internal class ConnectionCreatedEvent(
 ) : Request<Unit>(handler)
 
 /**
- * Event created when a connection for a trackable is ready to be used.
+ * Connection for a trackable is ready to be used.
  * Should be created only from within the [CoreSubscriber].
  */
 internal class ConnectionReadyEvent(
@@ -41,14 +41,14 @@ internal class ConnectionReadyEvent(
 ) : Request<Unit>(handler)
 
 /**
- * Event created when wanting to stop the [CoreSubscriber]
+ * Stop the [CoreSubscriber].
  */
 internal class StopEvent(
     handler: ResultHandler<Unit>
 ) : Request<Unit>(handler)
 
 /**
- * Event created each time when a presence message is received.
+ * A new presence message is received.
  * Should be created only from within the [CoreSubscriber].
  */
 internal data class PresenceMessageEvent(
@@ -56,7 +56,7 @@ internal data class PresenceMessageEvent(
 ) : AdhocEvent()
 
 /**
- * Event created when wanting to change the requested [Resolution].
+ * Change the requested [Resolution].
  */
 internal class ChangeResolutionEvent(
     val resolution: Resolution?,
@@ -64,7 +64,7 @@ internal class ChangeResolutionEvent(
 ) : Request<Unit>(handler)
 
 /**
- * Event created each time the Ably connection state changes.
+ * Ably connection state changed.
  * Should be created only from within the [CoreSubscriber].
  */
 internal data class AblyConnectionStateChangeEvent(
@@ -72,7 +72,7 @@ internal data class AblyConnectionStateChangeEvent(
 ) : AdhocEvent()
 
 /**
- * Event created each time the trackable Ably channel state changes.
+ * Trackable Ably channel state changed.
  * Should be created only from within the [CoreSubscriber].
  */
 internal data class ChannelConnectionStateChangeEvent(
