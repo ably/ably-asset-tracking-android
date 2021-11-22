@@ -119,6 +119,7 @@ class PublisherService : Service() {
                 NOTIFICATION_ID
             )
             .rawLocations(appPreferences.shouldSendRawLocations())
+            .sendResolution(appPreferences.shouldSendResolution())
             .start()
 
     private fun createDefaultResolution(): Resolution =

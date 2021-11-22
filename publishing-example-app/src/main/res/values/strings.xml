@@ -53,6 +53,8 @@
   <string name="preferences_debug_category_title">Debug</string>
   <string name="preferences_send_raw_locations_key">send_raw_locations</string>
   <string name="preferences_send_raw_locations_label">Send raw location updates</string>
+  <string name="preferences_send_resolution_key">send_resolution</string>
+  <string name="preferences_send_resolution_label">Send resolution</string>
   <string name="trackable_list_empty_state_header">No assets</string>
   <string name="trackable_list_empty_state_message">Trackable assets will be listed here when added</string>
   <string name="service_not_started_dialog_title">Publisher service not started</string>
