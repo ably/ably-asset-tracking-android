@@ -50,7 +50,7 @@ interface Subscriber {
 
     /**
      * The shared flow emitting raw location values when they become available.
-     * Raw locations are disabled by default. To enable them use [].
+     * Raw locations are disabled by default. You need to enable them in the Publishing SDK.
      */
     val rawLocations: SharedFlow<LocationUpdate>
         @JvmSynthetic get
@@ -59,6 +59,13 @@ interface Subscriber {
      * The shared flow emitting values when the state of the trackable changes.
      */
     val trackableStates: StateFlow<TrackableState>
+        @JvmSynthetic get
+
+    /**
+     * The shared flow emitting resolution values when they become available.
+     * Resolutions are disabled by default. You need to enable them in the Publishing SDK.
+     */
+    val resolutions: SharedFlow<Resolution>
         @JvmSynthetic get
 
     /**
