@@ -29,7 +29,7 @@ class DefaultPublisherTest {
 
     @SuppressLint("MissingPermission")
     private val publisher: Publisher =
-        DefaultPublisher(ably, mapbox, resolutionPolicyFactory, RoutingProfile.DRIVING, null, false)
+        DefaultPublisher(ably, mapbox, resolutionPolicyFactory, RoutingProfile.DRIVING, null, false, false)
 
     @Test(expected = ConnectionException::class)
     fun `should return an error when adding a trackable with subscribing to presence error`() {

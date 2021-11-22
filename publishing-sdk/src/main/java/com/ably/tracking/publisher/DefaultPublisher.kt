@@ -24,6 +24,7 @@ constructor(
     routingProfile: RoutingProfile,
     logHandler: LogHandler?,
     areRawLocationsEnabled: Boolean?,
+    sendResolutionEnabled: Boolean,
 ) :
     Publisher {
     private val core: CorePublisher
@@ -47,7 +48,8 @@ constructor(
             resolutionPolicyFactory,
             routingProfile,
             logHandler,
-            areRawLocationsEnabled
+            areRawLocationsEnabled,
+            sendResolutionEnabled,
         )
     }
 
