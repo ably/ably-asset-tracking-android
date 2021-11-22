@@ -8,6 +8,7 @@ open class LocationUpdate(
      * Current location of the publisher.
      */
     val location: Location,
+
     /**
      * List of publisher locations that were skipped since the last sent location update.
      * A location can be skipped due to the active [Resolution] or network issues.
@@ -36,11 +37,13 @@ open class LocationUpdate(
 class EnhancedLocationUpdate(
     location: Location,
     skippedLocations: List<Location>,
+
     /**
      * List of predicted location points leading up to the [location] of this enhanced location update.
      * This list may be empty.
      */
     val intermediateLocations: List<Location>,
+
     /**
      * The type of [location] of this enhanced location update.
      */
