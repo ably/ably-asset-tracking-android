@@ -8,7 +8,7 @@ import org.junit.Test
 
 class LocationsPublishingStateTest {
     private val trackableId = "test-trackable-id"
-    private lateinit var locationsPublishingState: LocationsPublishingState
+    private lateinit var locationsPublishingState: LocationsPublishingState<EnhancedLocationChangedEvent>
 
     @Before
     fun beforeEach() {

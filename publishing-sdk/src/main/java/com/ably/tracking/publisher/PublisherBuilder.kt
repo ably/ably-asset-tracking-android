@@ -18,7 +18,8 @@ internal data class PublisherBuilder(
     val logHandler: LogHandler? = null,
     val notificationProvider: PublisherNotificationProvider? = null,
     val notificationId: Int? = null,
-    val locationSource: LocationSource? = null
+    val locationSource: LocationSource? = null,
+    val areRawLocationsEnabled: Boolean? = null,
 ) : Publisher.Builder {
 
     override fun connection(configuration: ConnectionConfiguration): Publisher.Builder =
@@ -48,6 +49,9 @@ internal data class PublisherBuilder(
     ): Publisher.Builder =
         this.copy(notificationProvider = notificationProvider, notificationId = notificationId)
 
+    override fun rawLocations(enabled: Boolean): Publisher.Builder =
+        this.copy(areRawLocationsEnabled = enabled)
+
     @RequiresPermission(anyOf = [ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION])
     override fun start(): Publisher {
         if (isMissingRequiredFields()) {
@@ -68,6 +72,7 @@ internal data class PublisherBuilder(
             resolutionPolicyFactory!!,
             routingProfile,
             logHandler,
+            areRawLocationsEnabled,
         )
     }
 

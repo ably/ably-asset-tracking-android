@@ -3,6 +3,7 @@ package com.ably.tracking.common.message
 import com.ably.tracking.Accuracy
 import com.ably.tracking.EnhancedLocationUpdate
 import com.ably.tracking.Location
+import com.ably.tracking.LocationUpdate
 import com.ably.tracking.LocationUpdateType
 import com.ably.tracking.Resolution
 import com.ably.tracking.common.MILLISECONDS_PER_SECOND
@@ -17,7 +18,7 @@ fun PresenceDataMessage.toTracking(): PresenceData? =
     type?.let { PresenceData(it, resolution?.toTracking()) }
 
 fun PresenceData.toMessage(): PresenceDataMessage =
-    PresenceDataMessage(type, resolution?.toMessage())
+    PresenceDataMessage(type, resolution?.toMessage(), rawLocations)
 
 fun ResolutionMessage.toTracking(): Resolution =
     Resolution(accuracy.toTracking(), desiredInterval, minimumDisplacement)
@@ -41,7 +42,15 @@ fun Accuracy.toMessage(): AccuracyMessage = when (this) {
     Accuracy.MAXIMUM -> AccuracyMessage.MAXIMUM
 }
 
-fun EnhancedLocationUpdate.toJson(gson: Gson): String =
+fun LocationUpdate.toMessageJson(gson: Gson): String =
+    gson.toJson(
+        LocationUpdateMessage(
+            location.toMessage(),
+            skippedLocations.map { it.toMessage() },
+        )
+    )
+
+fun EnhancedLocationUpdate.toMessageJson(gson: Gson): String =
     gson.toJson(
         EnhancedLocationUpdateMessage(
             location.toMessage(),
@@ -59,6 +68,15 @@ fun Message.getEnhancedLocationUpdate(gson: Gson): EnhancedLocationUpdate =
                 message.skippedLocations.map { it.toTracking() },
                 message.intermediateLocations.map { it.toTracking() },
                 message.type.toTracking()
+            )
+        }
+
+fun Message.getRawLocationUpdate(gson: Gson): LocationUpdate =
+    gson.fromJson(data as String, LocationUpdateMessage::class.java)
+        .let { message ->
+            LocationUpdate(
+                message.location.toTracking(),
+                message.skippedLocations.map { it.toTracking() },
             )
         }
 

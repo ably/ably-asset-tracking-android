@@ -1,5 +1,9 @@
 package com.ably.tracking.example.publisher
 
-enum class LocationSourceType(val displayName: String) {
-    PHONE("Phone"), ABLY_CHANNEL("Ably Channel"), S3_FILE("S3 File")
+import androidx.annotation.StringRes
+
+enum class LocationSourceType(@StringRes val displayNameResourceId: Int) {
+    PHONE(R.string.location_source_phone),
+    ABLY_CHANNEL(R.string.location_source_ably_channel),
+    S3_FILE(R.string.location_source_s3_file)
 }

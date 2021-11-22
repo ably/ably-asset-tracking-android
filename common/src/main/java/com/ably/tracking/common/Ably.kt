@@ -9,8 +9,9 @@ import com.ably.tracking.common.logging.i
 import com.ably.tracking.common.logging.v
 import com.ably.tracking.common.logging.w
 import com.ably.tracking.common.message.getEnhancedLocationUpdate
-import com.ably.tracking.common.message.toJson
+import com.ably.tracking.common.message.getRawLocationUpdate
 import com.ably.tracking.common.message.toMessage
+import com.ably.tracking.common.message.toMessageJson
 import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.logging.LogHandler
 import com.google.gson.Gson
@@ -87,6 +88,21 @@ interface Ably {
     )
 
     /**
+     * Sends a raw location update to the channel.
+     * Should be called only when there's an existing channel for the [trackableId].
+     * If a channel for the [trackableId] doesn't exist then it just calls [callback] with success.
+     *
+     * @param trackableId The ID of the trackable channel.
+     * @param locationUpdate The location update that is sent to the channel.
+     * @param callback The function that will be called when sending completes. If something goes wrong it will be called with [ConnectionException].
+     */
+    fun sendRawLocation(
+        trackableId: String,
+        locationUpdate: LocationUpdate,
+        callback: (Result<Unit>) -> Unit
+    )
+
+    /**
      * Adds a listener for the enhanced location updates that are received from the channel.
      * If a channel for the [trackableId] doesn't exist then nothing happens.
      *
@@ -96,6 +112,18 @@ interface Ably {
      * @throws ConnectionException if something goes wrong.
      */
     fun subscribeForEnhancedEvents(trackableId: String, listener: (LocationUpdate) -> Unit)
+
+    /**
+     * Adds a listener for the raw location updates that are received from the channel.
+     * The raw locations publishing needs to be enabled in the Publisher builder API in order to receive them here.
+     * If a channel for the [trackableId] doesn't exist then nothing happens.
+     *
+     * @param trackableId The ID of the trackable channel.
+     * @param listener The function that will be called each time a raw location update event is received.
+     *
+     * @throws ConnectionException if something goes wrong.
+     */
+    fun subscribeForRawEvents(trackableId: String, listener: (LocationUpdate) -> Unit)
 
     /**
      * Joins the presence of the channel for the given [trackableId] and add it to the connected channels.
@@ -311,11 +339,43 @@ constructor(
     ) {
         val trackableChannel = channels[trackableId]
         if (trackableChannel != null) {
-            val locationUpdateJson = locationUpdate.toJson(gson)
+            val locationUpdateJson = locationUpdate.toMessageJson(gson)
             logHandler?.d("sendEnhancedLocationMessage: publishing: $locationUpdateJson")
             try {
                 trackableChannel.publish(
                     Message(EventNames.ENHANCED, locationUpdateJson).apply {
+                        id = "$trackableId${locationUpdate.hashCode()}"
+                    },
+                    object : CompletionListener {
+                        override fun onSuccess() {
+                            callback(Result.success(Unit))
+                        }
+
+                        override fun onError(reason: ErrorInfo) {
+                            callback(Result.failure(reason.toTrackingException()))
+                        }
+                    }
+                )
+            } catch (exception: AblyException) {
+                callback(Result.failure(exception.errorInfo.toTrackingException()))
+            }
+        } else {
+            callback(Result.success(Unit))
+        }
+    }
+
+    override fun sendRawLocation(
+        trackableId: String,
+        locationUpdate: LocationUpdate,
+        callback: (Result<Unit>) -> Unit
+    ) {
+        val trackableChannel = channels[trackableId]
+        if (trackableChannel != null) {
+            val locationUpdateJson = locationUpdate.toMessageJson(gson)
+            logHandler?.d("sendRawLocationMessage: publishing: $locationUpdateJson")
+            try {
+                trackableChannel.publish(
+                    Message(EventNames.RAW, locationUpdateJson).apply {
                         id = "$trackableId${locationUpdate.hashCode()}"
                     },
                     object : CompletionListener {
@@ -341,6 +401,18 @@ constructor(
             try {
                 channel.subscribe(EventNames.ENHANCED) { message ->
                     listener(message.getEnhancedLocationUpdate(gson))
+                }
+            } catch (exception: AblyException) {
+                throw exception.errorInfo.toTrackingException()
+            }
+        }
+    }
+
+    override fun subscribeForRawEvents(trackableId: String, listener: (LocationUpdate) -> Unit) {
+        channels[trackableId]?.let { channel ->
+            try {
+                channel.subscribe(EventNames.RAW) { message ->
+                    listener(message.getRawLocationUpdate(gson))
                 }
             } catch (exception: AblyException) {
                 throw exception.errorInfo.toTrackingException()

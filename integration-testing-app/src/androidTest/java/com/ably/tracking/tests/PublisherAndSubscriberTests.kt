@@ -8,8 +8,10 @@ import com.ably.tracking.subscriber.Subscriber
 import com.ably.tracking.test.android.common.BooleanExpectation
 import com.ably.tracking.test.android.common.UnitExpectation
 import com.ably.tracking.test.android.common.testLogD
+import java.util.UUID
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -17,7 +19,6 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.util.UUID
 
 @RunWith(AndroidJUnit4::class)
 class PublisherAndSubscriberTests {
@@ -108,5 +109,54 @@ class PublisherAndSubscriberTests {
                 receivedLocation
             )
         }
+    }
+
+    @Test
+    fun shouldSendRawLocationsWhenTheyAreEnabled() {
+        // given
+        var hasNotReceivedLocationUpdate = true
+        val subscriberReceivedLocationUpdateExpectation = UnitExpectation("subscriber received a location update")
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val trackableId = UUID.randomUUID().toString()
+        val scope = CoroutineScope(Dispatchers.Default)
+
+        // when
+        // create subscriber and publisher
+        var subscriber: Subscriber
+        runBlocking {
+            subscriber = createAndStartSubscriber(trackableId)
+        }
+
+        val publisher = createAndStartPublisher(context, rawLocations = true)
+
+        // listen for location updates
+        subscriber.rawLocations
+            .onEach {
+                // UnitExpectation throws an error if it's fulfilled more than once so we need to have this check
+                if (hasNotReceivedLocationUpdate) {
+                    hasNotReceivedLocationUpdate = false
+                    subscriberReceivedLocationUpdateExpectation.fulfill()
+                }
+            }
+            .launchIn(scope)
+
+        // start publishing location updates
+        runBlocking {
+            publisher.track(Trackable(trackableId))
+        }
+
+        // await for at least one received location update
+        subscriberReceivedLocationUpdateExpectation.await()
+
+        // cleanup
+        runBlocking {
+            coroutineScope {
+                launch { publisher.stop() }
+                launch { subscriber.stop() }
+            }
+        }
+
+        // then
+        subscriberReceivedLocationUpdateExpectation.assertFulfilled()
     }
 }

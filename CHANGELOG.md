@@ -1,5 +1,32 @@
 # Change log
 
+## [1.0.0-beta.11](https://github.com/ably/ably-asset-tracking-android/tree/v1.0.0-beta.11)
+
+[Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.0.0-beta.10...v1.0.0-beta.11)
+
+**Implemented enhancements:**
+
+- Add raw location information for DEBUG capabilities [\#489](https://github.com/ably/ably-asset-tracking-android/issues/489)
+
+**Fixed bugs:**
+
+- Ensure only one active instance of MapboxNavigation is created [\#463](https://github.com/ably/ably-asset-tracking-android/issues/463)
+- Project doesn't build under JDK 16 [\#462](https://github.com/ably/ably-asset-tracking-android/issues/462)
+- Add and track methods called with an already added trackable repeat some of the adding logic [\#458](https://github.com/ably/ably-asset-tracking-android/issues/458)
+- Detach from a channel when a trackable is removed [\#438](https://github.com/ably/ably-asset-tracking-android/issues/438)
+- Code execution freezes when adding a trackable [\#403](https://github.com/ably/ably-asset-tracking-android/issues/403)
+
+**Closed issues:**
+
+- Remove code connected to trip metadata from the Publisher SDK [\#431](https://github.com/ably/ably-asset-tracking-android/issues/431)
+- Conform ReadMe and Contributing Documents [\#393](https://github.com/ably/ably-asset-tracking-android/issues/393)
+
+**Merged pull requests:**
+
+- Add raw locations to the Subscriber SDK [\#495](https://github.com/ably/ably-asset-tracking-android/pull/495) ([KacperKluka](https://github.com/KacperKluka))
+- Send raw locations from the Publisher [\#493](https://github.com/ably/ably-asset-tracking-android/pull/493) ([KacperKluka](https://github.com/KacperKluka))
+- Start replaying recorded trip when the trip is started [\#428](https://github.com/ably/ably-asset-tracking-android/pull/428) ([KacperKluka](https://github.com/KacperKluka))
+
 ## [1.0.0-beta.10](https://github.com/ably/ably-asset-tracking-android/tree/v1.0.0-beta.10)
 
 [Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.0.0-beta.9...v1.0.0-beta.10)

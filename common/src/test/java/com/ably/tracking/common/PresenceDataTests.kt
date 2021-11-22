@@ -39,7 +39,7 @@ class PresenceDataTests {
     @Test
     fun `parse presence message if presence data is in correct format`() {
         // given
-        val presenceData = gson.toJson(PresenceDataMessage("abc", null))
+        val presenceData = gson.toJson(PresenceDataMessage("abc", null, null))
         val presenceMessage = PresenceMessage(PresenceMessage.Action.enter, clientId, presenceData)
 
         // when
@@ -50,5 +50,6 @@ class PresenceDataTests {
         Assert.assertNotNull(parsedMessage?.data)
         Assert.assertEquals("abc", parsedMessage?.data?.type)
         Assert.assertEquals(null, parsedMessage?.data?.resolution)
+        Assert.assertEquals(null, parsedMessage?.data?.rawLocations)
     }
 }

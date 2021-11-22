@@ -2,6 +2,7 @@ package com.ably.tracking.publisher
 
 import com.ably.tracking.EnhancedLocationUpdate
 import com.ably.tracking.Location
+import com.ably.tracking.LocationUpdate
 import com.ably.tracking.LocationUpdateType
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.ConnectionStateChange
@@ -68,6 +69,12 @@ internal class ConnectionForTrackableCreatedEvent(
     handler: ResultHandler<StateFlow<TrackableState>>
 ) : Request<StateFlow<TrackableState>>(handler)
 
+internal class TrackableRemovalRequestedEvent(
+    val trackable: Trackable,
+    handler: ResultHandler<StateFlow<TrackableState>>,
+    val result: Result<Unit>
+) : Request<StateFlow<TrackableState>>(handler)
+
 internal class ConnectionForTrackableReadyEvent(
     val trackable: Trackable,
     handler: ResultHandler<StateFlow<TrackableState>>
@@ -75,6 +82,17 @@ internal class ConnectionForTrackableReadyEvent(
 
 internal data class RawLocationChangedEvent(
     val location: Location,
+) : AdhocEvent()
+
+internal data class SendRawLocationSuccessEvent(
+    val location: Location,
+    val trackableId: String,
+) : AdhocEvent()
+
+internal data class SendRawLocationFailureEvent(
+    val locationUpdate: LocationUpdate,
+    val trackableId: String,
+    val exception: Throwable?,
 ) : AdhocEvent()
 
 internal data class EnhancedLocationChangedEvent(

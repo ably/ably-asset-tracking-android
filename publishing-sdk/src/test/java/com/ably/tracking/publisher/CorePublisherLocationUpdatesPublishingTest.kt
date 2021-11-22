@@ -12,6 +12,7 @@ import com.ably.tracking.test.common.mockCreateConnectionSuccess
 import com.ably.tracking.test.common.mockSendEnhancedLocationFailure
 import com.ably.tracking.test.common.mockSendEnhancedLocationFailureThenSuccess
 import com.ably.tracking.test.common.mockSendEnhancedLocationSuccess
+import com.ably.tracking.test.common.mockSendRawLocationSuccess
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -36,7 +37,7 @@ class CorePublisherLocationUpdatesPublishingTest {
 
     @SuppressLint("MissingPermission")
     private val corePublisher: CorePublisher =
-        createCorePublisher(ably, mapbox, resolutionPolicyFactory, RoutingProfile.DRIVING, null)
+        createCorePublisher(ably, mapbox, resolutionPolicyFactory, RoutingProfile.DRIVING, null, false)
 
     @Test
     fun `Should send a message only once if publishing it succeeds`() {
@@ -101,21 +102,75 @@ class CorePublisherLocationUpdatesPublishingTest {
         }
     }
 
+    @Test
+    fun `Should not send raw messages if they are disabled`() {
+        // given
+        val trackableId = UUID.randomUUID().toString()
+        mockAllTrackablesResolution(Resolution(Accuracy.MAXIMUM, 0, 0.0))
+        addTrackable(Trackable(trackableId))
+        ably.mockSendRawLocationSuccess(trackableId)
+
+        // when
+        corePublisher.enqueue(createRawLocationChangedEvent(createLocation()))
+
+        // then
+        runBlocking {
+            delay(500) // we're assuming that within this time all events will be processed or at least placed in the queue in the final order
+            stopCorePublisher()
+        }
+        verify(exactly = 0) {
+            ably.sendRawLocation(trackableId, any(), any())
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    @Test
+    fun `Should send raw messages if they are enabled`() {
+        // given
+        val corePublisher =
+            createCorePublisher(ably, mapbox, resolutionPolicyFactory, RoutingProfile.DRIVING, null, true)
+        val trackableId = UUID.randomUUID().toString()
+        mockAllTrackablesResolution(Resolution(Accuracy.MAXIMUM, 0, 0.0))
+        addTrackable(Trackable(trackableId), corePublisher)
+        ably.mockSendRawLocationSuccess(trackableId)
+
+        // when
+        corePublisher.enqueue(createRawLocationChangedEvent(createLocation()))
+
+        // then
+        runBlocking {
+            delay(500) // we're assuming that within this time all events will be processed or at least placed in the queue in the final order
+            stopCorePublisher(corePublisher)
+        }
+        verify(exactly = 1) {
+            ably.sendRawLocation(trackableId, any(), any())
+        }
+    }
+
     private fun createEnhancedLocationChangedEvent(location: Location) =
         EnhancedLocationChangedEvent(location, emptyList(), LocationUpdateType.ACTUAL)
+
+    private fun createRawLocationChangedEvent(location: Location) =
+        RawLocationChangedEvent(location)
 
     private fun mockAllTrackablesResolution(resolution: Resolution) {
         every { resolutionPolicy.resolve(any<TrackableResolutionRequest>()) } returns resolution
     }
 
-    private fun addTrackable(trackable: Trackable) {
+    private fun addTrackable(
+        trackable: Trackable,
+        corePublisher: CorePublisher = this.corePublisher
+    ) {
         ably.mockCreateConnectionSuccess(trackable.id)
         runBlocking(Dispatchers.IO) {
-            addTrackableToCorePublisher(trackable)
+            addTrackableToCorePublisher(trackable, corePublisher)
         }
     }
 
-    private suspend fun addTrackableToCorePublisher(trackable: Trackable): StateFlow<TrackableState> {
+    private suspend fun addTrackableToCorePublisher(
+        trackable: Trackable,
+        corePublisher: CorePublisher = this.corePublisher
+    ): StateFlow<TrackableState> {
         return suspendCoroutine { continuation ->
             corePublisher.request(
                 AddTrackableEvent(trackable) {
@@ -129,7 +184,7 @@ class CorePublisherLocationUpdatesPublishingTest {
         }
     }
 
-    private suspend fun stopCorePublisher() {
+    private suspend fun stopCorePublisher(corePublisher: CorePublisher = this.corePublisher) {
         suspendCoroutine<Unit> { continuation ->
             corePublisher.request(
                 StopEvent {

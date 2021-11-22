@@ -61,4 +61,16 @@
 
   </PreferenceCategory>
 
+  <PreferenceCategory
+    android:layout="@layout/preference_category_layout"
+    android:title="@string/preferences_debug_category_title">
+
+    <SwitchPreferenceCompat
+      android:defaultValue="false"
+      android:key="@string/preferences_send_raw_locations_key"
+      android:layout="@layout/switch_preference_layout"
+      android:title="@string/preferences_send_raw_locations_label" />
+
+  </PreferenceCategory>
+
 </PreferenceScreen>

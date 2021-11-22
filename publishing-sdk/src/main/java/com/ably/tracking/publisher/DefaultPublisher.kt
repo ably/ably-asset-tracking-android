@@ -8,11 +8,11 @@ import com.ably.tracking.LocationUpdate
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
 import com.ably.tracking.logging.LogHandler
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
 
 @SuppressLint("LogConditional")
 internal class DefaultPublisher
@@ -23,6 +23,7 @@ constructor(
     resolutionPolicyFactory: ResolutionPolicy.Factory,
     routingProfile: RoutingProfile,
     logHandler: LogHandler?,
+    areRawLocationsEnabled: Boolean?,
 ) :
     Publisher {
     private val core: CorePublisher
@@ -40,7 +41,14 @@ constructor(
         get() = core.locationHistory
 
     init {
-        core = createCorePublisher(ably, mapbox, resolutionPolicyFactory, routingProfile, logHandler)
+        core = createCorePublisher(
+            ably,
+            mapbox,
+            resolutionPolicyFactory,
+            routingProfile,
+            logHandler,
+            areRawLocationsEnabled
+        )
     }
 
     override suspend fun track(trackable: Trackable): StateFlow<TrackableState> {

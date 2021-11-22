@@ -118,6 +118,7 @@ class PublisherService : Service() {
                 },
                 NOTIFICATION_ID
             )
+            .rawLocations(appPreferences.shouldSendRawLocations())
             .start()
 
     private fun createDefaultResolution(): Resolution =
@@ -132,7 +133,7 @@ class PublisherService : Service() {
             S3Helper.uploadHistoryData(
                 this,
                 historyData
-            ) { showShortToast("S3 not initialized - cannot upload history data") }
+            ) { showShortToast(R.string.error_s3_not_initialized_history_data_upload_failed) }
         }
     }
 }
