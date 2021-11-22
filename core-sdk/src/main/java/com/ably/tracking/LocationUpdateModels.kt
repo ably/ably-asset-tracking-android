@@ -1,6 +1,21 @@
 package com.ably.tracking
 
-open class LocationUpdate(val location: Location, val skippedLocations: List<Location>) {
+/**
+ * Represents a raw location update of the publisher.
+ */
+open class LocationUpdate(
+    /**
+     * Current location of the publisher.
+     */
+    val location: Location,
+
+    /**
+     * List of publisher locations that were skipped since the last sent location update.
+     * A location can be skipped due to the active [Resolution] or network issues.
+     * This list may be empty.
+     */
+    val skippedLocations: List<Location>,
+) {
     override fun equals(other: Any?): Boolean =
         when (other) {
             is LocationUpdate -> location == other.location && skippedLocations == other.skippedLocations
@@ -14,10 +29,24 @@ open class LocationUpdate(val location: Location, val skippedLocations: List<Loc
     }
 }
 
+/**
+ * Represents an enhanced location update of the publisher.
+ * Enhanced locations can be predicted from previous locations (e.g. when the GPS signal is lost)
+ * or just enhanced (e.g. snapped to the closest road).
+ */
 class EnhancedLocationUpdate(
     location: Location,
     skippedLocations: List<Location>,
+
+    /**
+     * List of predicted location points leading up to the [location] of this enhanced location update.
+     * This list may be empty.
+     */
     val intermediateLocations: List<Location>,
+
+    /**
+     * The type of [location] of this enhanced location update.
+     */
     val type: LocationUpdateType
 ) : LocationUpdate(location, skippedLocations) {
     override fun equals(other: Any?): Boolean =
@@ -35,8 +64,19 @@ class EnhancedLocationUpdate(
     }
 }
 
+/**
+ * Represents the type of an enhanced location update.
+ */
 enum class LocationUpdateType {
-    PREDICTED, ACTUAL
+    /**
+     * The location was predicted using the previous locations of the publisher.
+     */
+    PREDICTED,
+
+    /**
+     * The location is enhanced but not predicted.
+     */
+    ACTUAL,
 }
 
 /**
