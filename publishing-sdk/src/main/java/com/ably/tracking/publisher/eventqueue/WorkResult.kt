@@ -1,10 +1,12 @@
 package com.ably.tracking.publisher.eventqueue
 
-interface WorkResult{
-  fun delay():Long
+import com.ably.tracking.publisher.AddTrackableHandler
+import com.ably.tracking.publisher.Trackable
+
+sealed class WorkResult
+sealed class AddTrackableResult : WorkResult() {
+    data class Success(val trackable: Trackable, val handler: AddTrackableHandler) : AddTrackableResult()
+    data class Fail(val trackable: Trackable, val handler: AddTrackableHandler, val exception: Throwable?) :
+        AddTrackableResult()
 }
 
-class AddTrackableResult(val delay: Long): WorkResult {
-    override fun delay() = delay
-
-}

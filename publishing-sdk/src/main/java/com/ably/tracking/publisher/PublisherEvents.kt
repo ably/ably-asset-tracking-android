@@ -13,17 +13,17 @@ import kotlinx.coroutines.flow.StateFlow
 internal typealias AddTrackableResult = StateFlow<TrackableState>
 internal typealias AddTrackableHandler = ResultHandler<AddTrackableResult>
 
-internal sealed class Event
+sealed class Event
 
 /**
  * Represents an event that doesn't have a callback (launch and forget).
  */
-internal sealed class AdhocEvent : Event()
+sealed class AdhocEvent : Event()
 
 /**
  * Represents an event that invokes an action that calls a callback when it completes.
  */
-internal sealed class Request<T>(val handler: ResultHandler<T>) : Event()
+sealed class Request<T>(val handler: ResultHandler<T>) : Event()
 
 internal class StopEvent(
     handler: ResultHandler<Unit>
@@ -80,7 +80,7 @@ internal class ConnectionForTrackableReadyEvent(
     handler: ResultHandler<StateFlow<TrackableState>>
 ) : Request<StateFlow<TrackableState>>(handler)
 
-internal data class RawLocationChangedEvent(
+data class RawLocationChangedEvent(
     val location: Location,
 ) : AdhocEvent()
 
@@ -95,7 +95,7 @@ internal data class SendRawLocationFailureEvent(
     val exception: Throwable?,
 ) : AdhocEvent()
 
-internal data class EnhancedLocationChangedEvent(
+data class EnhancedLocationChangedEvent(
     val location: Location,
     val intermediateLocations: List<Location>,
     val type: LocationUpdateType

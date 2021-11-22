@@ -18,6 +18,8 @@ import com.ably.tracking.common.PresenceData
 import com.ably.tracking.common.createSingleThreadDispatcher
 import com.ably.tracking.common.logging.w
 import com.ably.tracking.logging.LogHandler
+import com.ably.tracking.publisher.eventqueue.WorkerQueue
+import com.ably.tracking.publisher.eventqueue.workers.AddTrackableWorker
 import com.ably.tracking.publisher.guards.DuplicateTrackableGuard
 import com.ably.tracking.publisher.guards.TrackableRemovalGuard
 import kotlinx.coroutines.CoroutineScope
@@ -71,7 +73,7 @@ internal fun createCorePublisher(
  */
 private val singleThreadDispatcher = createSingleThreadDispatcher()
 
-private class DefaultCorePublisher
+class DefaultCorePublisher
 @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
 constructor(
     private val ably: Ably,
@@ -145,7 +147,8 @@ constructor(
         launch {
             // state
             val state = State(routingProfile, policy.resolve(emptySet()), areRawLocationsEnabled)
-
+            val workerQueue = WorkerQueue(this@DefaultCorePublisher)
+            workerQueue.executeWork()
             // processing
             for (event in receiveEventChannel) {
                 // handle events after the publisher is stopped
@@ -219,25 +222,7 @@ constructor(
                         event.handler(Result.success(Unit))
                     }
                     is AddTrackableEvent -> {
-                        when {
-                            state.duplicateTrackableGuard.isCurrentlyAddingTrackable(event.trackable) -> {
-                                state.duplicateTrackableGuard.saveDuplicateAddHandler(event.trackable, event.handler)
-                            }
-                            state.trackables.contains(event.trackable) -> {
-                                event.handler(Result.success(state.trackableStateFlows[event.trackable.id]!!))
-                            }
-                            else -> {
-                                state.duplicateTrackableGuard.startAddingTrackable(event.trackable)
-                                ably.connect(event.trackable.id, state.presenceData, willPublish = true) { result ->
-                                    try {
-                                        result.getOrThrow()
-                                        request(ConnectionForTrackableCreatedEvent(event.trackable, event.handler))
-                                    } catch (exception: ConnectionException) {
-                                        request(AddTrackableFailedEvent(event.trackable, event.handler, exception))
-                                    }
-                                }
-                            }
-                        }
+                        workerQueue.enqueue(AddTrackableWorker(state,event.trackable,event.handler,ably))
                     }
                     is AddTrackableFailedEvent -> {
                         val failureResult = Result.failure<AddTrackableResult>(event.exception)
@@ -799,7 +784,7 @@ constructor(
         }
     }
 
-    private inner class State(
+    inner class State(
         routingProfile: RoutingProfile,
         locationEngineResolution: Resolution,
         areRawLocationsEnabled: Boolean?,

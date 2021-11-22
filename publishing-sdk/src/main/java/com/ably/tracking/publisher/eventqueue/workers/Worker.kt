@@ -1,6 +1,6 @@
-package com.ably.tracking.publisher.eventqueue
+package com.ably.tracking.publisher.eventqueue.workers
 
-import kotlinx.coroutines.delay
+import com.ably.tracking.publisher.eventqueue.WorkResult
 
 /**
  * This interface is for workers whose sole purpose is to process works that were enqueued in [WorkerQueue]
@@ -14,16 +14,6 @@ interface Worker {
      * **/
     fun doWork(): (suspend () -> WorkResult)?
 }
-class AddTrackableWorker(val delay:Long): Worker {
-    override fun doWork(): (suspend () -> WorkResult)? {
-        //do some synchronous work here and return async part
-        println("Doing sync part of AddTrackableWorker")
-        return {
-            println("Doing async part of AddTrackableWorker")
-            delay(delay)
-            AddTrackableResult(delay)
-        }
-    }
-}
+
 
 
