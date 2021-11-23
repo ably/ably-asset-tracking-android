@@ -7,11 +7,11 @@ import com.ably.tracking.LocationUpdateType
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.PresenceMessage
-import com.ably.tracking.common.ResultHandler
+import com.ably.tracking.common.ResultCallbackFunction
 import kotlinx.coroutines.flow.StateFlow
 
 internal typealias AddTrackableResult = StateFlow<TrackableState>
-internal typealias AddTrackableHandler = ResultHandler<AddTrackableResult>
+internal typealias AddTrackableHandler = ResultCallbackFunction<AddTrackableResult>
 
 sealed class Event
 
@@ -23,11 +23,11 @@ sealed class AdhocEvent : Event()
 /**
  * Represents an event that invokes an action that calls a callback when it completes.
  */
-sealed class Request<T>(val handler: ResultHandler<T>) : Event()
+sealed class Request<T>(val callbackFunction: ResultCallbackFunction<T>) : Event()
 
 internal class StopEvent(
-    handler: ResultHandler<Unit>
-) : Request<Unit>(handler)
+    callbackFunction: ResultCallbackFunction<Unit>
+) : Request<Unit>(callbackFunction)
 
 internal class AddTrackableEvent(
     val trackable: Trackable,
@@ -42,13 +42,13 @@ internal class AddTrackableFailedEvent(
 
 internal class TrackTrackableEvent(
     val trackable: Trackable,
-    handler: ResultHandler<StateFlow<TrackableState>>
-) : Request<StateFlow<TrackableState>>(handler)
+    callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>
+) : Request<StateFlow<TrackableState>>(callbackFunction)
 
 internal class SetActiveTrackableEvent(
     val trackable: Trackable,
-    handler: ResultHandler<Unit>
-) : Request<Unit>(handler)
+    callbackFunction: ResultCallbackFunction<Unit>
+) : Request<Unit>(callbackFunction)
 
 internal class RemoveTrackableEvent(
     val trackable: Trackable,
@@ -56,29 +56,29 @@ internal class RemoveTrackableEvent(
     /**
      * On success, the handler is supplied `true` if the [Trackable] was already present.
      */
-    handler: ResultHandler<Boolean>
-) : Request<Boolean>(handler)
+    callbackFunction: ResultCallbackFunction<Boolean>
+) : Request<Boolean>(callbackFunction)
 
 internal class DisconnectSuccessEvent(
     val trackable: Trackable,
-    handler: ResultHandler<Unit>
-) : Request<Unit>(handler)
+    callbackFunction: ResultCallbackFunction<Unit>
+) : Request<Unit>(callbackFunction)
 
 internal class ConnectionForTrackableCreatedEvent(
     val trackable: Trackable,
-    handler: ResultHandler<StateFlow<TrackableState>>
-) : Request<StateFlow<TrackableState>>(handler)
+    callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>
+) : Request<StateFlow<TrackableState>>(callbackFunction)
 
 internal class TrackableRemovalRequestedEvent(
     val trackable: Trackable,
-    handler: ResultHandler<StateFlow<TrackableState>>,
+    callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>,
     val result: Result<Unit>
-) : Request<StateFlow<TrackableState>>(handler)
+) : Request<StateFlow<TrackableState>>(callbackFunction)
 
 internal class ConnectionForTrackableReadyEvent(
     val trackable: Trackable,
-    handler: ResultHandler<StateFlow<TrackableState>>
-) : Request<StateFlow<TrackableState>>(handler)
+    callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>
+) : Request<StateFlow<TrackableState>>(callbackFunction)
 
 data class RawLocationChangedEvent(
     val location: Location,

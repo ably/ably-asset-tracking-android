@@ -103,8 +103,8 @@ private class DefaultCoreSubscriber(
                     if (event is Request<*>) {
                         // when the event is a request then call its handler
                         when (event) {
-                            is StopEvent -> event.handler(Result.success(Unit))
-                            else -> event.handler(Result.failure(SubscriberStoppedException()))
+                            is StopEvent -> event.callbackFunction(Result.success(Unit))
+                            else -> event.callbackFunction(Result.failure(SubscriberStoppedException()))
                         }
                         continue
                     } else if (event is AdhocEvent) {
@@ -117,9 +117,9 @@ private class DefaultCoreSubscriber(
                         updateTrackableState(state)
                         ably.connect(trackableId, state.presenceData, useRewind = true, willSubscribe = true) {
                             if (it.isSuccess) {
-                                request(ConnectionCreatedEvent(event.handler))
+                                request(ConnectionCreatedEvent(event.callbackFunction))
                             } else {
-                                event.handler(it)
+                                event.callbackFunction(it)
                             }
                         }
                     }
@@ -129,10 +129,10 @@ private class DefaultCoreSubscriber(
                             listener = { enqueue(PresenceMessageEvent(it)) },
                             callback = { subscribeResult ->
                                 if (subscribeResult.isSuccess) {
-                                    request(ConnectionReadyEvent(event.handler))
+                                    request(ConnectionReadyEvent(event.callbackFunction))
                                 } else {
                                     ably.disconnect(trackableId, state.presenceData) {
-                                        event.handler(subscribeResult)
+                                        event.callbackFunction(subscribeResult)
                                     }
                                 }
                             }
@@ -143,7 +143,7 @@ private class DefaultCoreSubscriber(
                         subscribeForEnhancedEvents()
                         subscribeForRawEvents()
                         subscribeForResolutionEvents()
-                        event.handler(Result.success(Unit))
+                        event.callbackFunction(Result.success(Unit))
                     }
                     is PresenceMessageEvent -> {
                         when (event.presenceMessage.action) {
@@ -165,7 +165,7 @@ private class DefaultCoreSubscriber(
                     is ChangeResolutionEvent -> {
                         state.presenceData = state.presenceData.copy(resolution = event.resolution)
                         ably.updatePresenceData(trackableId, state.presenceData) {
-                            event.handler(it)
+                            event.callbackFunction(it)
                         }
                     }
                     is StopEvent -> {
@@ -173,9 +173,9 @@ private class DefaultCoreSubscriber(
                             ably.close(state.presenceData)
                             state.isStopped = true
                             notifyAssetIsOffline()
-                            event.handler(Result.success(Unit))
+                            event.callbackFunction(Result.success(Unit))
                         } catch (exception: ConnectionException) {
-                            event.handler(Result.failure(exception))
+                            event.callbackFunction(Result.failure(exception))
                         }
                     }
                     is AblyConnectionStateChangeEvent -> {

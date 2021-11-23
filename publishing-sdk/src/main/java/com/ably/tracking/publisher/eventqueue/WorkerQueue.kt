@@ -1,6 +1,6 @@
 package com.ably.tracking.publisher.eventqueue
 
-import android.util.Log
+import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.common.createSingleThreadDispatcher
 import com.ably.tracking.publisher.CorePublisher
 import com.ably.tracking.publisher.eventqueue.workers.Worker
@@ -9,27 +9,42 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 
 private const val TAG = "WorkerQueue"
+
 //temporarily put core publisher for bridging
 internal class WorkerQueue(private val corePublisher: CorePublisher) {
-    val channel = Channel<Worker>(100)
-    val scope = CoroutineScope(createSingleThreadDispatcher())
+    private val channel = Channel<Worker>(100)
+    private val scope = CoroutineScope(createSingleThreadDispatcher())
+    private val activeWorkers = hashMapOf<Worker, MutableList<ResultCallbackFunction<*>>>()
 
-    suspend fun enqueue(worker: Worker) {
+    suspend fun enqueue(worker: Worker, resultCallbackFunctions: List<ResultCallbackFunction<*>>?) {
+        activeWorkers[worker]?.let { functions ->
+            resultCallbackFunctions?.let { functions.addAll(it) }
+            return
+        }
         channel.send(worker)
     }
 
     suspend fun executeWork() {
         for (worker in channel) {
-            val asyncWork = worker.doWork()
-            asyncWork?.let {
+            val workResult = worker.doWork()
+            //process sync work result
+            workResult.syncWorkResult?.let {
+                handleWorkResult(worker, it)
+            }
+            //process async work if exists
+            workResult.asyncWork?.let {asyncWork->
                 scope.launch {
-                    val asyncWorkResult = it()
-                    val handler = ResultHandlers.handlerFor(worker)
-                    handler.handle(asyncWorkResult,corePublisher)
-                    stop()
+                    val asyncWorkResult = asyncWork()
+                    handleWorkResult(worker, asyncWorkResult)
                 }
             }
         }
+    }
+
+    private suspend fun handleWorkResult(worker: Worker, workResult: WorkResult) {
+        val resultHandler = getWorkResultHandler(worker)
+        val nextWorker = resultHandler.handle(workResult, activeWorkers[worker], corePublisher)
+        nextWorker?.let { enqueue(it.worker, it.resultCallbackFunctions) }
     }
 
     suspend fun stop() {
