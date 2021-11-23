@@ -11,10 +11,10 @@ sealed class WorkResult
 data class SyncAsyncResult(val syncWorkResult: WorkResult? = null, val asyncWork: AsyncWork<WorkResult>? = null)
     :WorkResult()
 
-sealed class AddTrackableResult() : WorkResult() {
-    data class AlreadyIn(val trackable: MutableStateFlow<TrackableState>) : AddTrackableResult()
-    data class Success(val trackable: Trackable) : AddTrackableResult()
+sealed class AddTrackableWorkResult() : WorkResult() {
+    data class AlreadyIn(val trackableStateFlow: MutableStateFlow<TrackableState>) : AddTrackableWorkResult()
+    data class Success(val trackable: Trackable) : AddTrackableWorkResult()
     data class Fail(val trackable: Trackable, val exception: Throwable?) :
-        AddTrackableResult()
+        AddTrackableWorkResult()
 }
 

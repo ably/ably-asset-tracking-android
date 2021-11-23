@@ -5,7 +5,7 @@ import com.ably.tracking.ConnectionException
 import com.ably.tracking.common.Ably
 import com.ably.tracking.publisher.DefaultCorePublisher
 import com.ably.tracking.publisher.Trackable
-import com.ably.tracking.publisher.eventqueue.AddTrackableResult
+import com.ably.tracking.publisher.eventqueue.AddTrackableWorkResult
 import com.ably.tracking.publisher.eventqueue.SyncAsyncResult
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
@@ -21,7 +21,7 @@ internal class AddTrackableWorker(
         Log.d(TAG, "doWork: ")
         if (publisherState.trackables.contains(trackable)) {
             return SyncAsyncResult(
-                AddTrackableResult.AlreadyIn(
+                AddTrackableWorkResult.AlreadyIn(
                     publisherState.trackableStateFlows[trackable
                         .id]!!
                 ), null
@@ -29,10 +29,11 @@ internal class AddTrackableWorker(
         }
         return SyncAsyncResult(null, asyncWork = {
             val connectResult = suspendingConnect()
+            Log.d(TAG, "doWork: connect result received $connectResult")
             if (connectResult.isSuccess) {
-                AddTrackableResult.Success(trackable)
+                AddTrackableWorkResult.Success(trackable)
             } else {
-                AddTrackableResult.Fail(trackable, connectResult.exceptionOrNull())
+                AddTrackableWorkResult.Fail(trackable, connectResult.exceptionOrNull())
             }
         })
     }
@@ -48,5 +49,20 @@ internal class AddTrackableWorker(
                 }
             }
         }
+    }
+
+    override fun hashCode(): Int {
+        return trackable.hashCode()
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as AddTrackableWorker
+
+        if (trackable != other.trackable) return false
+
+        return true
     }
 }

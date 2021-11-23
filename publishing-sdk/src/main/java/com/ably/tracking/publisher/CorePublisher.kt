@@ -1,7 +1,6 @@
 package com.ably.tracking.publisher
 
 import android.Manifest
-import android.util.Log
 import androidx.annotation.RequiresPermission
 import com.ably.tracking.ConnectionException
 import com.ably.tracking.EnhancedLocationUpdate
@@ -16,7 +15,6 @@ import com.ably.tracking.common.ConnectionState
 import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.PresenceAction
 import com.ably.tracking.common.PresenceData
-import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.common.createSingleThreadDispatcher
 import com.ably.tracking.common.logging.w
 import com.ably.tracking.logging.LogHandler
@@ -228,11 +226,10 @@ constructor(
                         event.callbackFunction(Result.success(Unit))
                     }
                     is AddTrackableEvent -> {
-                        Log.d("AddTrackableEvent", "sequenceEventsQueue: ")
-                        val callbackFunctions = listOf(event.callbackFunction as ResultCallbackFunction<*>)
+
                         workerQueue.enqueue(
                             AddTrackableWorker(state, event.trackable, ably),
-                            callbackFunctions
+                            event.callbackFunction
                         )
                     }
                     is AddTrackableFailedEvent -> {
