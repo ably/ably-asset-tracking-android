@@ -1,6 +1,6 @@
 buildscript {
     ext.kotlin_version = '1.5.10'
-
+    ext.copyright_message = 'Copyright 2020-2021 Ably Real-time Ltd (ably.com)'
     // The version of Ably's client library for Java that we're using.
     // Source code: https://github.com/ably/ably-java
     // Maven coordinates: groupId 'io.ably', artifactId ':'ably-android'.
@@ -28,6 +28,13 @@ buildscript {
 plugins {
     id 'org.jlleitschuh.gradle.ktlint' version '10.1.0'
     id 'org.jetbrains.dokka' version '1.4.32'
+}
+
+// https://github.com/Kotlin/dokka/issues/2202#issuecomment-950666269
+tasks.dokkaHtmlMultiModule.configure {
+    pluginsMapConfiguration.set(
+        ["org.jetbrains.dokka.base.DokkaBase": """{ "footerMessage": "$copyright_message"}"""]
+    )
 }
 
 allprojects {
@@ -70,6 +77,18 @@ subprojects {
         // contain Java source code (example app implementation) or contain interfaces
         // which provide support to Java users ('-java' as a suffix).
         final evaluatedSubProjectIsJava = evaluatedSubProject.name.contains('-java')
+
+        // Dokka configuration for modules
+        // "The configuration must be done both for the subprojects (pages generated for packages, classes, etc.) and for the overall dokka multi-module task."
+        // See https://github.com/Kotlin/dokka/issues/2202#issuecomment-950136122 for more
+        final evaluatedSubProjectHasDokkaPlugin = evaluatedSubProject.pluginManager.hasPlugin('org.jetbrains.dokka')
+        if (evaluatedSubProjectHasDokkaPlugin) {
+            tasks.withType(dokkaHtmlPartial.getClass()).configureEach {
+                pluginsMapConfiguration.set(
+                    ["org.jetbrains.dokka.base.DokkaBase": """{ "footerMessage": "$copyright_message"}"""]
+                )
+            }
+        }
 
         android {
             compileSdkVersion 30
@@ -118,28 +137,28 @@ subprojects {
 
                 // Lint rules which we might care about at some point, but need not fail the build.
                 informational 'GradleDependency',
-                              'NewerVersionAvailable',
-                              'AllowBackup',
-                              'VectorPath',
-                              'ContentDescription',
-                              'UnusedResources',
-                              'UnpackedNativeCode',
-                              'LockedOrientationActivity',
-                              'IconLocation',
-                              'StopShip',
-                              'DefaultLocale',
-                              'ObsoleteSdkInt'
+                    'NewerVersionAvailable',
+                    'AllowBackup',
+                    'VectorPath',
+                    'ContentDescription',
+                    'UnusedResources',
+                    'UnpackedNativeCode',
+                    'LockedOrientationActivity',
+                    'IconLocation',
+                    'StopShip',
+                    'DefaultLocale',
+                    'ObsoleteSdkInt'
 
                 // Lint rules which are disabled by default (see: lint --show), but which we would
                 // rather were enabled.
                 error 'MissingRegistered',
-                      'Registered',
-                      'WrongThreadInterprocedural',
-                      'MinSdkTooLow',
-                      'MangledCRLF',
-                      'EasterEgg',
-                      'LogConditional',
-                      'UnusedIds'
+                    'Registered',
+                    'WrongThreadInterprocedural',
+                    'MinSdkTooLow',
+                    'MangledCRLF',
+                    'EasterEgg',
+                    'LogConditional',
+                    'UnusedIds'
             }
 
             // https://developer.android.com/studio/build/build-variants#build-types
@@ -190,7 +209,8 @@ subprojects {
 
         // https://github.com/jlleitschuh/ktlint-gradle#configuration
         ktlint {
-            version = '0.41.0' // override because v.9.4.1 of org.jlleitschuh.gradle.ktlint plugin is at 0.38.1 which has issues
+            // override because v.9.4.1 of org.jlleitschuh.gradle.ktlint plugin is at 0.38.1 which has issues
+            version = '0.41.0'
             verbose = true // shows rule name that failed
             android = true
             outputColorName = 'RED' // easier to spot failures in console output

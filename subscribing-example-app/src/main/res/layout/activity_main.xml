@@ -34,16 +34,21 @@
     android:visibility="gone" />
 
   <include
-    android:id="@+id/assetInformationContainer"
-    layout="@layout/asset_information_view"
-    android:layout_width="match_parent"
-    android:layout_height="@dimen/asset_information_container_height"
-    android:visibility="gone" />
-
-  <include
     android:id="@+id/controlsContainer"
     layout="@layout/trackable_input_controls_view"
     android:layout_width="match_parent"
     android:layout_height="wrap_content" />
+
+  <androidx.constraintlayout.widget.Guideline
+    android:id="@+id/collapsedInformationContainerGuideline"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"/>
+
+  <include
+    android:id="@+id/assetInformationContainer"
+    layout="@layout/asset_information_view"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/asset_information_container_full_height"
+    android:visibility="gone" />
 
 </androidx.constraintlayout.motion.widget.MotionLayout>
