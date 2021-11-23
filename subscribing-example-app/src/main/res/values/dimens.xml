@@ -2,7 +2,8 @@
 <resources>
   <dimen name="medium_margin">16dp</dimen>
   <dimen name="start_button_margin">@dimen/medium_margin</dimen>
-  <dimen name="asset_information_container_height">130dp</dimen>
+  <dimen name="asset_information_container_full_height">200dp</dimen>
+  <dimen name="asset_information_container_collapsed_height">60dp</dimen>
   <dimen name="header_full_height">57dp</dimen>
   <dimen name="header_collapsed_height">32dp</dimen>
   <dimen name="header_logo_collapsed_height">16dp</dimen>

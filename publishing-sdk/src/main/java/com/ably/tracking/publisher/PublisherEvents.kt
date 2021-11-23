@@ -98,6 +98,16 @@ internal class ConnectionForTrackableCreatedEvent(
 ) : Request<StateFlow<TrackableState>>(handler)
 
 /**
+ * Requested removal of a trackable that is during add process.
+ * Should be created only from within the [CorePublisher].
+ */
+internal class TrackableRemovalRequestedEvent(
+    val trackable: Trackable,
+    handler: ResultHandler<StateFlow<TrackableState>>,
+    val result: Result<Unit>
+) : Request<StateFlow<TrackableState>>(handler)
+
+/**
  * Connection for a trackable is ready to be used.
  * Should be created only from within the [CorePublisher].
  */

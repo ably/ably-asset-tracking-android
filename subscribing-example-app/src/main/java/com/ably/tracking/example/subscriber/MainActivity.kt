@@ -33,6 +33,9 @@ import kotlinx.android.synthetic.main.activity_main.mapFragment
 import kotlinx.android.synthetic.main.activity_main.rootContainer
 import kotlinx.android.synthetic.main.asset_information_view.animationSwitch
 import kotlinx.android.synthetic.main.asset_information_view.assetStateTextView
+import kotlinx.android.synthetic.main.asset_information_view.publisherResolutionAccuracyTextView
+import kotlinx.android.synthetic.main.asset_information_view.publisherResolutionDisplacementTextView
+import kotlinx.android.synthetic.main.asset_information_view.publisherResolutionIntervalTextView
 import kotlinx.android.synthetic.main.asset_information_view.resolutionAccuracyTextView
 import kotlinx.android.synthetic.main.asset_information_view.resolutionDisplacementTextView
 import kotlinx.android.synthetic.main.asset_information_view.resolutionIntervalTextView
@@ -160,6 +163,9 @@ class MainActivity : AppCompatActivity() {
                 trackableStates
                     .onEach { updateAssetState(it) }
                     .launchIn(scope)
+                resolutions
+                    .onEach { updatePublisherResolutionInfo(it) }
+                    .launchIn(scope)
             }
     }
 
@@ -211,10 +217,22 @@ class MainActivity : AppCompatActivity() {
             getString(R.string.resolution_desired_interval_value, resolution.desiredInterval)
     }
 
-    private fun clearResolutionInfo() {
+    private fun updatePublisherResolutionInfo(resolution: Resolution) {
+        publisherResolutionAccuracyTextView.text =
+            resolution.accuracy.name.lowercase().replaceFirstChar { it.uppercase() }
+        publisherResolutionDisplacementTextView.text =
+            getString(R.string.resolution_minimum_displacement_value, resolution.minimumDisplacement)
+        publisherResolutionIntervalTextView.text =
+            getString(R.string.resolution_desired_interval_value, resolution.desiredInterval)
+    }
+
+    private fun clearResolutionsInfo() {
         resolutionAccuracyTextView.text = ""
         resolutionDisplacementTextView.text = ""
         resolutionIntervalTextView.text = ""
+        publisherResolutionAccuracyTextView.text = ""
+        publisherResolutionDisplacementTextView.text = ""
+        publisherResolutionIntervalTextView.text = ""
     }
 
     private fun updateAssetState(trackableState: TrackableState) {
@@ -354,7 +372,7 @@ class MainActivity : AppCompatActivity() {
         googleMap?.setOnCameraIdleListener { }
         hideAssetInformation()
         trackableIdEditText.isEnabled = true
-        clearResolutionInfo()
+        clearResolutionsInfo()
         changeStartButtonText(false)
     }
 

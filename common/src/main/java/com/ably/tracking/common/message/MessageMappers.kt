@@ -26,6 +26,9 @@ fun ResolutionMessage.toTracking(): Resolution =
 fun Resolution.toMessage(): ResolutionMessage =
     ResolutionMessage(accuracy.toMessage(), desiredInterval, minimumDisplacement)
 
+fun Resolution.toMessageJson(gson: Gson): String =
+    gson.toJson(this.toMessage())
+
 fun AccuracyMessage.toTracking(): Accuracy = when (this) {
     AccuracyMessage.MINIMUM -> Accuracy.MINIMUM
     AccuracyMessage.LOW -> Accuracy.LOW
@@ -79,6 +82,9 @@ fun Message.getRawLocationUpdate(gson: Gson): LocationUpdate =
                 message.skippedLocations.map { it.toTracking() },
             )
         }
+
+fun Message.getResolution(gson: Gson): Resolution =
+    gson.fromJson(data as String, ResolutionMessage::class.java).toTracking()
 
 fun LocationUpdateTypeMessage.toTracking(): LocationUpdateType =
     when (this) {
