@@ -31,6 +31,7 @@ internal interface CoreSubscriber {
     val enhancedLocations: SharedFlow<LocationUpdate>
     val rawLocations: SharedFlow<LocationUpdate>
     val trackableStates: StateFlow<TrackableState>
+    val resolutions: SharedFlow<Resolution>
 }
 
 internal fun createCoreSubscriber(
@@ -57,6 +58,7 @@ private class DefaultCoreSubscriber(
     private val _trackableStates: MutableStateFlow<TrackableState> = MutableStateFlow(TrackableState.Offline())
     private val _enhancedLocations: MutableSharedFlow<LocationUpdate> = MutableSharedFlow(replay = 1)
     private val _rawLocations: MutableSharedFlow<LocationUpdate> = MutableSharedFlow(replay = 1)
+    private val _resolutions: MutableSharedFlow<Resolution> = MutableSharedFlow(replay = 1)
 
     override val enhancedLocations: SharedFlow<LocationUpdate>
         get() = _enhancedLocations.asSharedFlow()
@@ -66,6 +68,9 @@ private class DefaultCoreSubscriber(
 
     override val trackableStates: StateFlow<TrackableState>
         get() = _trackableStates.asStateFlow()
+
+    override val resolutions: SharedFlow<Resolution>
+        get() = _resolutions.asSharedFlow()
 
     init {
         val channel = Channel<Event>()
@@ -136,6 +141,7 @@ private class DefaultCoreSubscriber(
                         subscribeForChannelState()
                         subscribeForEnhancedEvents()
                         subscribeForRawEvents()
+                        subscribeForResolutionEvents()
                         event.handler(Result.success(Unit))
                     }
                     is PresenceMessageEvent -> {
@@ -217,6 +223,12 @@ private class DefaultCoreSubscriber(
     private fun subscribeForRawEvents() {
         ably.subscribeForRawEvents(trackableId) {
             scope.launch { _rawLocations.emit(it) }
+        }
+    }
+
+    private fun subscribeForResolutionEvents() {
+        ably.subscribeForResolutionEvents(trackableId) {
+            scope.launch { _resolutions.emit(it) }
         }
     }
 

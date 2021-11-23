@@ -37,6 +37,12 @@
       motion:layout_constraintTop_toBottomOf="@id/headerBackground" />
     <!-- ASSET INFORMATION -->
     <Constraint
+      android:id="@+id/collapsedInformationContainerGuideline"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:orientation="horizontal"
+      motion:layout_constraintGuide_end="@dimen/asset_information_container_collapsed_height" />
+    <Constraint
       android:id="@+id/draggingAreaView"
       android:layout_width="match_parent"
       android:layout_height="@dimen/dragging_area_height"
@@ -45,7 +51,7 @@
     <Constraint
       android:id="@+id/assetInformationContainer"
       android:layout_width="match_parent"
-      android:layout_height="@dimen/asset_information_container_height"
+      android:layout_height="@dimen/asset_information_container_full_height"
       motion:layout_constraintBottom_toTopOf="@+id/controlsContainer"
       motion:visibilityMode="ignore" />
     <!-- INPUT CONTROLS -->
@@ -79,6 +85,12 @@
       motion:layout_constraintTop_toBottomOf="@id/headerBackground" />
     <!-- ASSET INFORMATION -->
     <Constraint
+      android:id="@+id/collapsedInformationContainerGuideline"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:orientation="horizontal"
+      motion:layout_constraintGuide_end="@dimen/asset_information_container_collapsed_height" />
+    <Constraint
       android:id="@+id/draggingAreaView"
       android:layout_width="match_parent"
       android:layout_height="@dimen/dragging_area_height"
@@ -86,9 +98,8 @@
     <Constraint
       android:id="@+id/assetInformationContainer"
       android:layout_width="match_parent"
-      android:layout_height="@dimen/asset_information_container_height"
-      motion:layout_constraintBottom_toBottomOf="parent"
-      motion:layout_constraintTop_toBottomOf="parent" />
+      android:layout_height="@dimen/asset_information_container_full_height"
+      motion:layout_constraintTop_toBottomOf="@id/collapsedInformationContainerGuideline" />
     <!-- INPUT CONTROLS -->
     <Constraint
       android:id="@+id/controlsContainer"

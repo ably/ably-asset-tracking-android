@@ -334,10 +334,10 @@ internal fun DefaultResolutionSet.getResolution(isNear: Boolean, hasSubscriber: 
 sealed class ResolutionConstraints
 
 /**
- * Specifies the thresholds and corresponding logical mappings for tracking [Resolution]s that are required by the
- * default [ResolutionPolicy], which can adopted by [Publisher] instances using the [Builder][Publisher.Builder]'s
- * [resolutionPolicy][Publisher.Builder.resolutionPolicy] method, providing it with an instance of the
- * [DefaultResolutionPolicyFactory] class.
+ * Specifies the thresholds and corresponding logical mappings for a [Trackable] that can be used
+ * to calculate its [Resolution] by a [ResolutionPolicy]. [ResolutionConstraints] is an optional
+ * part of the [Trackable] and is not required by the [DefaultResolutionPolicy] to calculate a resolution.
+ * However, if it is provided the calculated resolution can be better adjusted to the current situation.
  */
 data class DefaultResolutionConstraints(
     /**
@@ -356,7 +356,7 @@ data class DefaultResolutionConstraints(
     val batteryLevelThreshold: Float,
 
     /**
-     * The multipler to be applied to the [interval][Resolution.desiredInterval] when the battery level is below
+     * The multiplier to be applied to the [interval][Resolution.desiredInterval] when the battery level is below
      * [batteryLevelThreshold].
      */
     val lowBatteryMultiplier: Float

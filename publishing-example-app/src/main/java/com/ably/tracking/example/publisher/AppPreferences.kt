@@ -30,6 +30,7 @@ class AppPreferences private constructor(context: Context) {
     private val RESOLUTION_MINIMUM_DISPLACEMENT_KEY =
         context.getString(R.string.preferences_resolution_minimum_displacement_key)
     private val SEND_RAW_LOCATIONS_KEY = context.getString(R.string.preferences_send_raw_locations_key)
+    private val SEND_RESOLUTION_KEY = context.getString(R.string.preferences_send_resolution_key)
     private val DEFAULT_LOCATION_SOURCE = LocationSourceType.PHONE.name
     private val DEFAULT_SIMULATION_CHANNEL = context.getString(R.string.default_simulation_channel)
     private val DEFAULT_S3_FILE = ""
@@ -37,6 +38,7 @@ class AppPreferences private constructor(context: Context) {
     private val DEFAULT_RESULTION_DESIRED_INTERVAL = 1000L
     private val DEFAULT_RESULTION_MINIMUM_DISPLACEMENT = 1.0f
     private val DEFAULT_SEND_RAW_LOCATIONS = false
+    private val DEFAULT_SEND_RESOLUTION = false
 
     fun getLocationSource(): LocationSourceType =
         LocationSourceType.valueOf(preferences.getString(LOCATION_SOURCE_KEY, DEFAULT_LOCATION_SOURCE)!!)
@@ -60,4 +62,7 @@ class AppPreferences private constructor(context: Context) {
 
     fun shouldSendRawLocations() =
         preferences.getBoolean(SEND_RAW_LOCATIONS_KEY, DEFAULT_SEND_RAW_LOCATIONS)
+
+    fun shouldSendResolution() =
+        preferences.getBoolean(SEND_RESOLUTION_KEY, DEFAULT_SEND_RESOLUTION)
 }
