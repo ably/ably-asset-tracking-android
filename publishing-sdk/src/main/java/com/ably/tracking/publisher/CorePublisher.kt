@@ -80,7 +80,7 @@ constructor(
     private val ably: Ably,
     private val mapbox: Mapbox,
     resolutionPolicyFactory: ResolutionPolicy.Factory,
-    routingProfile: RoutingProfile,
+    override var routingProfile: RoutingProfile,
     private val logHandler: LogHandler?,
     private val areRawLocationsEnabled: Boolean?,
     private val sendResolutionEnabled: Boolean,
@@ -102,7 +102,6 @@ constructor(
         get() = _locationHistory.asSharedFlow()
 
     override var active: Trackable? = null
-    override var routingProfile: RoutingProfile = routingProfile
     override var trackableStateFlows: Map<String, StateFlow<TrackableState>> = emptyMap()
 
     init {
