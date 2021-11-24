@@ -17,15 +17,25 @@ internal class AddTrackableWorker(
     private val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>,
     private val ably: Ably
 ) : Worker {
-    override fun doWork(publisherState: DefaultCorePublisher.Properties): SyncAsyncResult {
-        if (publisherState.trackables.contains(trackable)) {
+    override fun doWork(properties: DefaultCorePublisher.Properties): SyncAsyncResult {
+        when {
+            properties.duplicateTrackableGuard.isCurrentlyAddingTrackable(trackable) -> {
+                properties.duplicateTrackableGuard.saveDuplicateAddHandler(trackable, callbackFunction)
+            }
+            properties.trackables.contains(trackable) -> {
+                callbackFunction(Result.success(properties.trackableStateFlows[trackable.id]!!))
+            }
+        }
+        if (properties.trackables.contains(trackable)) {
             return SyncAsyncResult(
-                AddTrackableWorkResult.AlreadyIn(publisherState.trackableStateFlows[trackable.id]!!, callbackFunction),
+                AddTrackableWorkResult.AlreadyIn(properties.trackableStateFlows[trackable.id]!!, callbackFunction),
                 null
             )
         }
-        return SyncAsyncResult(null, asyncWork = {
-            val connectResult = suspendingConnect(publisherState)
+        return SyncAsyncResult(
+            syncWorkResult = null,
+            asyncWork = {
+            val connectResult = suspendingConnect(properties)
             if (connectResult.isSuccess) {
                 AddTrackableWorkResult.Success(trackable, callbackFunction)
             } else {
