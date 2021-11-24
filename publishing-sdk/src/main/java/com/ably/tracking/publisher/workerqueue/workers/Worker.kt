@@ -12,11 +12,8 @@ internal interface Worker {
      * This function is provided in order for implementors  to implement synchronous work, optionally provide a
      * result for synchronous work and an optional asynchronous work.
      * @return [SyncAsyncResult] which represent an optional synchronous work result and an optional asynchronous work
-     * [publisherState] : Current state of publisher to be used by this worker. Please do not modify and access to
+     * [properties] : Current state of publisher to be used by this worker. Please do not modify and access to
      * this from async work block.
      * **/
-    fun doWork(publisherState: DefaultCorePublisher.Properties): SyncAsyncResult
+    fun doWork(properties: DefaultCorePublisher.Properties): SyncAsyncResult
 }
-
-
-

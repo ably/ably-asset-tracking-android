@@ -35,13 +35,13 @@ internal class AddTrackableWorker(
         return SyncAsyncResult(
             syncWorkResult = null,
             asyncWork = {
-            val connectResult = suspendingConnect(properties)
-            if (connectResult.isSuccess) {
-                AddTrackableWorkResult.Success(trackable, callbackFunction)
-            } else {
-                AddTrackableWorkResult.Fail(trackable, connectResult.exceptionOrNull(), callbackFunction)
+                val connectResult = suspendingConnect(properties)
+                if (connectResult.isSuccess) {
+                    AddTrackableWorkResult.Success(trackable, callbackFunction)
+                } else {
+                    AddTrackableWorkResult.Fail(trackable, connectResult.exceptionOrNull(), callbackFunction)
+                }
             }
-        }
         )
     }
 
