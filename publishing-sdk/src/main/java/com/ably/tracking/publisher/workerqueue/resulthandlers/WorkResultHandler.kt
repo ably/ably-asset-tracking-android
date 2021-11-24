@@ -1,6 +1,5 @@
 package com.ably.tracking.publisher.workerqueue
 
-import android.util.Log
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.publisher.CorePublisher
@@ -8,26 +7,32 @@ import com.ably.tracking.publisher.workerqueue.resulthandlers.AddTrackableResult
 import com.ably.tracking.publisher.workerqueue.workers.Worker
 import kotlinx.coroutines.flow.StateFlow
 
-private const val TAG = "WorkResultHandler"
+/**
+ * This interface is intended for handling [WorkResult]s that are received from  [Worker]s synchrnous or asynchronus
+ * work.
+ * Design note: A more generic interface like WorkResultHandler<T> could have been a nicer choice as implmentors
+ * could then expose a narrower typing of [WorkResult]. However I have not found a possible way to represent concrete
+ * handlers as generic interface without unchecked casts.
+ * **/
 internal interface WorkResultHandler {
-    //core publisher is here temporarily so we can  stay bridged with existing architecture.
-    fun handle(
-        workResult: WorkResult, corePublisher:
-        CorePublisher
-    )
-        : WorkResultHandlerResult?
+    /**
+     * Handles [WorkResult] given to it. Impelementors are responsible for what type of work results they process.
+     * @param [workResult] : [WorkResult] to be handled
+     * @param [corePublisher] : This is a temporary reference of [CorePublisher] that is kept here to maintain
+     * compatibility with refactored code. Implementors must delegate work to this if the required [Worker]s has not
+     * been implemented yet.
+     * **/
+    fun handle(workResult: WorkResult, corePublisher: CorePublisher): WorkResultHandlerResult?
 }
 
-// a class that represent the result from work result handler so that the caller might use wrappeed objects to
-// enqueue again
+
 internal data class WorkResultHandlerResult(
     val worker: Worker, val resultCallbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>? =
         null
 )
 
-//Get handler for work result
+
 internal fun getWorkResultHandler(workResult: WorkResult): WorkResultHandler {
-    Log.d(TAG, "getWorkResultHandler: $workResult")
     when (workResult) {
         is AddTrackableWorkResult.Success -> AddTrackableResultHandler()
         is AddTrackableWorkResult.Fail -> AddTrackableResultHandler()
