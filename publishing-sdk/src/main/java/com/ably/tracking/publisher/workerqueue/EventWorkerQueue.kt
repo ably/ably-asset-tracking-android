@@ -24,10 +24,11 @@ internal class EventWorkerQueue(
      * to be processed later in case of any sync work is blocking it
      * */
     private val channel = Channel<Worker>(100)
+
     /**
      * Enqueues the work, adds it to channel
      * @param [worker] : [Worker] to be enqueued
-    **/
+     **/
     override suspend fun enqueue(worker: Worker) {
         channel.send(worker)
     }
