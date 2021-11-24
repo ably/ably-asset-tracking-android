@@ -1,11 +1,11 @@
-package com.ably.tracking.publisher.eventqueue
+package com.ably.tracking.publisher.workerqueue
 
 import android.util.Log
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.publisher.CorePublisher
-import com.ably.tracking.publisher.eventqueue.resulthandlers.AddTrackableResultHandler
-import com.ably.tracking.publisher.eventqueue.workers.Worker
+import com.ably.tracking.publisher.workerqueue.resulthandlers.AddTrackableResultHandler
+import com.ably.tracking.publisher.workerqueue.workers.Worker
 import kotlinx.coroutines.flow.StateFlow
 
 private const val TAG = "WorkResultHandler"
@@ -20,7 +20,7 @@ internal interface WorkResultHandler {
 
 // a class that represent the result from work result handler so that the caller might use wrappeed objects to
 // enqueue again
-data class WorkResultHandlerResult(
+internal data class WorkResultHandlerResult(
     val worker: Worker, val resultCallbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>? =
         null
 )

@@ -1,4 +1,4 @@
-package com.ably.tracking.publisher.eventqueue.workers
+package com.ably.tracking.publisher.workerqueue.workers
 
 import android.util.Log
 import com.ably.tracking.ConnectionException
@@ -7,8 +7,8 @@ import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.publisher.DefaultCorePublisher
 import com.ably.tracking.publisher.Trackable
-import com.ably.tracking.publisher.eventqueue.AddTrackableWorkResult
-import com.ably.tracking.publisher.eventqueue.SyncAsyncResult
+import com.ably.tracking.publisher.workerqueue.AddTrackableWorkResult
+import com.ably.tracking.publisher.workerqueue.SyncAsyncResult
 import kotlinx.coroutines.flow.StateFlow
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
@@ -16,30 +16,30 @@ import kotlin.coroutines.suspendCoroutine
 private const val TAG = "AddTrackableWorker"
 
 internal class AddTrackableWorker(
-    private val publisherState: DefaultCorePublisher.State,
     private val trackable: Trackable,
     val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>,
     private val ably: Ably
 ) : Worker {
-    override fun doWork(): SyncAsyncResult {
+    override fun doWork(publisherState: DefaultCorePublisher.State): SyncAsyncResult {
         Log.d(TAG, "doWork: ")
         if (publisherState.trackables.contains(trackable)) {
             return SyncAsyncResult(
-                AddTrackableWorkResult.AlreadyIn(publisherState.trackableStateFlows[trackable.id]!!,callbackFunction), null
+                AddTrackableWorkResult.AlreadyIn(publisherState.trackableStateFlows[trackable.id]!!, callbackFunction),
+                null
             )
         }
         return SyncAsyncResult(null, asyncWork = {
-            val connectResult = suspendingConnect()
+            val connectResult = suspendingConnect(publisherState)
             Log.d(TAG, "doWork: connect result received $connectResult")
             if (connectResult.isSuccess) {
-                AddTrackableWorkResult.Success(trackable,callbackFunction)
+                AddTrackableWorkResult.Success(trackable, callbackFunction)
             } else {
-                AddTrackableWorkResult.Fail(trackable, connectResult.exceptionOrNull(),callbackFunction)
+                AddTrackableWorkResult.Fail(trackable, connectResult.exceptionOrNull(), callbackFunction)
             }
         })
     }
 
-    private suspend fun suspendingConnect(): Result<Boolean> {
+    private suspend fun suspendingConnect(publisherState: DefaultCorePublisher.State): Result<Boolean> {
         return suspendCoroutine { continuation ->
             ably.connect(trackable.id, publisherState.presenceData, willPublish = true) { result ->
                 try {

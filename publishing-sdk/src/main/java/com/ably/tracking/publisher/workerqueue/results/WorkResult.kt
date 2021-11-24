@@ -1,4 +1,4 @@
-package com.ably.tracking.publisher.eventqueue
+package com.ably.tracking.publisher.workerqueue
 
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.ResultCallbackFunction
@@ -8,12 +8,19 @@ import kotlinx.coroutines.flow.StateFlow
 
 typealias AsyncWork<T> = (suspend () -> T)
 
-sealed class WorkResult
+internal sealed class WorkResult
 
-data class SyncAsyncResult(val syncWorkResult: WorkResult? = null, val asyncWork: AsyncWork<WorkResult>? = null)
+/**
+ * A special [WorkResult] that contains an optional [syncWorkResult] and [asyncWork]
+ * [syncWorkResult] is any work result that resulted from sync work. Caller is responsible for how it should handle
+ * this result
+ * [asyncWork] is any work that is not immediately executed but returned to caller for it to execute it. It is a
+ * suspending work, so it's intended to be used inside a coroutine scope.
+ * **/
+internal data class SyncAsyncResult(val syncWorkResult: WorkResult? = null, val asyncWork: AsyncWork<WorkResult>? = null)
     :WorkResult()
 
-sealed class AddTrackableWorkResult() : WorkResult() {
+internal sealed class AddTrackableWorkResult() : WorkResult() {
     data class AlreadyIn(
         val trackableStateFlow: MutableStateFlow<TrackableState>,
         val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>

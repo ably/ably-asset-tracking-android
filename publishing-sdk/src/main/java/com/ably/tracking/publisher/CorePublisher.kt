@@ -18,8 +18,8 @@ import com.ably.tracking.common.PresenceData
 import com.ably.tracking.common.createSingleThreadDispatcher
 import com.ably.tracking.common.logging.w
 import com.ably.tracking.logging.LogHandler
-import com.ably.tracking.publisher.eventqueue.WorkerQueue
-import com.ably.tracking.publisher.eventqueue.workers.AddTrackableWorker
+import com.ably.tracking.publisher.workerqueue.WorkerQueue
+import com.ably.tracking.publisher.workerqueue.workers.AddTrackableWorker
 import com.ably.tracking.publisher.guards.DuplicateTrackableGuard
 import com.ably.tracking.publisher.guards.TrackableRemovalGuard
 import kotlinx.coroutines.CoroutineScope
@@ -148,7 +148,7 @@ constructor(
         launch {
             // state
             val state = State(routingProfile, policy.resolve(emptySet()), areRawLocationsEnabled)
-            val workerQueue = WorkerQueue(this@DefaultCorePublisher)
+            val workerQueue = WorkerQueue(this@DefaultCorePublisher, state)
             launch {
                 workerQueue.executeWork()
             }
@@ -228,7 +228,7 @@ constructor(
                     is AddTrackableEvent -> {
 
                         workerQueue.enqueue(
-                            AddTrackableWorker(state, event.trackable,event.callbackFunction, ably)
+                            AddTrackableWorker(event.trackable, event.callbackFunction, ably)
                         )
                     }
                     is AddTrackableFailedEvent -> {
@@ -797,7 +797,7 @@ constructor(
         }
     }
 
-    inner class State(
+    internal inner class State(
         routingProfile: RoutingProfile,
         locationEngineResolution: Resolution,
         areRawLocationsEnabled: Boolean?,

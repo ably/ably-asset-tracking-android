@@ -1,12 +1,12 @@
-package com.ably.tracking.publisher.eventqueue.resulthandlers
+package com.ably.tracking.publisher.workerqueue.resulthandlers
 
 import com.ably.tracking.publisher.AddTrackableFailedEvent
 import com.ably.tracking.publisher.ConnectionForTrackableCreatedEvent
 import com.ably.tracking.publisher.CorePublisher
-import com.ably.tracking.publisher.eventqueue.AddTrackableWorkResult
-import com.ably.tracking.publisher.eventqueue.WorkResult
-import com.ably.tracking.publisher.eventqueue.WorkResultHandler
-import com.ably.tracking.publisher.eventqueue.WorkResultHandlerResult
+import com.ably.tracking.publisher.workerqueue.AddTrackableWorkResult
+import com.ably.tracking.publisher.workerqueue.WorkResult
+import com.ably.tracking.publisher.workerqueue.WorkResultHandler
+import com.ably.tracking.publisher.workerqueue.WorkResultHandlerResult
 
 private const val TAG = "AddTrackableResultHandl"
 

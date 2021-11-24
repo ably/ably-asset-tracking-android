@@ -1,9 +1,10 @@
-package com.ably.tracking.publisher.eventqueue
+package com.ably.tracking.publisher.workerqueue
 
 import android.util.Log
 import com.ably.tracking.common.createSingleThreadDispatcher
 import com.ably.tracking.publisher.CorePublisher
-import com.ably.tracking.publisher.eventqueue.workers.Worker
+import com.ably.tracking.publisher.DefaultCorePublisher
+import com.ably.tracking.publisher.workerqueue.workers.Worker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
@@ -11,7 +12,7 @@ import kotlinx.coroutines.launch
 private const val TAG = "WorkerQueue"
 
 //temporarily put core publisher for bridging
-internal class WorkerQueue(private val corePublisher: CorePublisher) {
+internal class WorkerQueue(private val corePublisher: CorePublisher,private val publisherState:DefaultCorePublisher.State) {
     private val channel = Channel<Worker>(100)
     private val scope = CoroutineScope(createSingleThreadDispatcher())
 
@@ -21,7 +22,7 @@ internal class WorkerQueue(private val corePublisher: CorePublisher) {
 
     suspend fun executeWork() {
         for (worker in channel) {
-            val workResult = worker.doWork()
+            val workResult = worker.doWork(publisherState)
             //process sync work result
             workResult.syncWorkResult?.let {
                 handleWorkResult(it)
