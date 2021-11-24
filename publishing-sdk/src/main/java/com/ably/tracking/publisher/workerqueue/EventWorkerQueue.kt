@@ -17,7 +17,7 @@ import kotlinx.coroutines.launch
 
 internal class EventWorkerQueue(
     private val corePublisher: CorePublisher,
-    private val publisherState: DefaultCorePublisher.State
+    private val publisherState: DefaultCorePublisher.Properties
 ) : WorkerQueue {
     /**
      * Channel to be used to send [Worker]s to, This channel is given a buffer so that it can still receive Workers

@@ -15,7 +15,7 @@ internal interface Worker {
      * [publisherState] : Current state of publisher to be used by this worker. Please do not modify and access to
      * this from async work block.
      * **/
-    fun doWork(publisherState: DefaultCorePublisher.State): SyncAsyncResult
+    fun doWork(publisherState: DefaultCorePublisher.Properties): SyncAsyncResult
 }
 
 

@@ -17,7 +17,7 @@ internal class AddTrackableWorker(
     private val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>,
     private val ably: Ably
 ) : Worker {
-    override fun doWork(publisherState: DefaultCorePublisher.State): SyncAsyncResult {
+    override fun doWork(publisherState: DefaultCorePublisher.Properties): SyncAsyncResult {
         if (publisherState.trackables.contains(trackable)) {
             return SyncAsyncResult(
                 AddTrackableWorkResult.AlreadyIn(publisherState.trackableStateFlows[trackable.id]!!, callbackFunction),
@@ -34,7 +34,7 @@ internal class AddTrackableWorker(
         })
     }
 
-    private suspend fun suspendingConnect(publisherState: DefaultCorePublisher.State): Result<Boolean> {
+    private suspend fun suspendingConnect(publisherState: DefaultCorePublisher.Properties): Result<Boolean> {
         return suspendCoroutine { continuation ->
             ably.connect(trackable.id, publisherState.presenceData, willPublish = true) { result ->
                 try {
