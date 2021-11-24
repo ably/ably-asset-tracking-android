@@ -93,18 +93,17 @@ private class DefaultCoreSubscriber(
 
     private fun CoroutineScope.sequenceEventsQueue(receiveEventChannel: ReceiveChannel<Event>) {
         launch {
-            // state
-            val state = State()
+            val properties = Properties()
 
             // processing
             for (event in receiveEventChannel) {
                 // handle events after the subscriber is stopped
-                if (state.isStopped) {
+                if (properties.isStopped) {
                     if (event is Request<*>) {
                         // when the event is a request then call its handler
                         when (event) {
-                            is StopEvent -> event.callbackFunction(Result.success(Unit))
-                            else -> event.callbackFunction(Result.failure(SubscriberStoppedException()))
+                            is StopEvent -> event.handler(Result.success(Unit))
+                            else -> event.handler(Result.failure(SubscriberStoppedException()))
                         }
                         continue
                     } else if (event is AdhocEvent) {
@@ -114,12 +113,12 @@ private class DefaultCoreSubscriber(
                 }
                 when (event) {
                     is StartEvent -> {
-                        updateTrackableState(state)
-                        ably.connect(trackableId, state.presenceData, useRewind = true, willSubscribe = true) {
+                        updateTrackableState(properties)
+                        ably.connect(trackableId, properties.presenceData, useRewind = true, willSubscribe = true) {
                             if (it.isSuccess) {
-                                request(ConnectionCreatedEvent(event.callbackFunction))
+                                request(ConnectionCreatedEvent(event.handler))
                             } else {
-                                event.callbackFunction(it)
+                                event.handler(it)
                             }
                         }
                     }
@@ -129,10 +128,10 @@ private class DefaultCoreSubscriber(
                             listener = { enqueue(PresenceMessageEvent(it)) },
                             callback = { subscribeResult ->
                                 if (subscribeResult.isSuccess) {
-                                    request(ConnectionReadyEvent(event.callbackFunction))
+                                    request(ConnectionReadyEvent(event.handler))
                                 } else {
-                                    ably.disconnect(trackableId, state.presenceData) {
-                                        event.callbackFunction(subscribeResult)
+                                    ably.disconnect(trackableId, properties.presenceData) {
+                                        event.handler(subscribeResult)
                                     }
                                 }
                             }
@@ -143,68 +142,68 @@ private class DefaultCoreSubscriber(
                         subscribeForEnhancedEvents()
                         subscribeForRawEvents()
                         subscribeForResolutionEvents()
-                        event.callbackFunction(Result.success(Unit))
+                        event.handler(Result.success(Unit))
                     }
                     is PresenceMessageEvent -> {
                         when (event.presenceMessage.action) {
                             PresenceAction.PRESENT_OR_ENTER -> {
                                 if (event.presenceMessage.data.type == ClientTypes.PUBLISHER) {
-                                    state.isPublisherOnline = true
-                                    updateTrackableState(state)
+                                    properties.isPublisherOnline = true
+                                    updateTrackableState(properties)
                                 }
                             }
                             PresenceAction.LEAVE_OR_ABSENT -> {
                                 if (event.presenceMessage.data.type == ClientTypes.PUBLISHER) {
-                                    state.isPublisherOnline = false
-                                    updateTrackableState(state)
+                                    properties.isPublisherOnline = false
+                                    updateTrackableState(properties)
                                 }
                             }
                             else -> Unit
                         }
                     }
                     is ChangeResolutionEvent -> {
-                        state.presenceData = state.presenceData.copy(resolution = event.resolution)
-                        ably.updatePresenceData(trackableId, state.presenceData) {
-                            event.callbackFunction(it)
+                        properties.presenceData = properties.presenceData.copy(resolution = event.resolution)
+                        ably.updatePresenceData(trackableId, properties.presenceData) {
+                            event.handler(it)
                         }
                     }
                     is StopEvent -> {
                         try {
-                            ably.close(state.presenceData)
-                            state.isStopped = true
+                            ably.close(properties.presenceData)
+                            properties.isStopped = true
                             notifyAssetIsOffline()
-                            event.callbackFunction(Result.success(Unit))
+                            event.handler(Result.success(Unit))
                         } catch (exception: ConnectionException) {
-                            event.callbackFunction(Result.failure(exception))
+                            event.handler(Result.failure(exception))
                         }
                     }
                     is AblyConnectionStateChangeEvent -> {
-                        state.lastConnectionStateChange = event.connectionStateChange
-                        updateTrackableState(state)
+                        properties.lastConnectionStateChange = event.connectionStateChange
+                        updateTrackableState(properties)
                     }
                     is ChannelConnectionStateChangeEvent -> {
-                        state.lastChannelConnectionStateChange = event.connectionStateChange
-                        updateTrackableState(state)
+                        properties.lastChannelConnectionStateChange = event.connectionStateChange
+                        updateTrackableState(properties)
                     }
                 }
             }
         }
     }
 
-    private fun updateTrackableState(state: State) {
-        val newTrackableState = when (state.lastConnectionStateChange.state) {
+    private fun updateTrackableState(properties: Properties) {
+        val newTrackableState = when (properties.lastConnectionStateChange.state) {
             ConnectionState.ONLINE -> {
-                when (state.lastChannelConnectionStateChange.state) {
-                    ConnectionState.ONLINE -> if (state.isPublisherOnline) TrackableState.Online else TrackableState.Offline()
+                when (properties.lastChannelConnectionStateChange.state) {
+                    ConnectionState.ONLINE -> if (properties.isPublisherOnline) TrackableState.Online else TrackableState.Offline()
                     ConnectionState.OFFLINE -> TrackableState.Offline()
-                    ConnectionState.FAILED -> TrackableState.Failed(state.lastChannelConnectionStateChange.errorInformation!!) // are we sure error information will always be present?
+                    ConnectionState.FAILED -> TrackableState.Failed(properties.lastChannelConnectionStateChange.errorInformation!!) // are we sure error information will always be present?
                 }
             }
             ConnectionState.OFFLINE -> TrackableState.Offline()
-            ConnectionState.FAILED -> TrackableState.Failed(state.lastConnectionStateChange.errorInformation!!) // are we sure error information will always be present?
+            ConnectionState.FAILED -> TrackableState.Failed(properties.lastConnectionStateChange.errorInformation!!) // are we sure error information will always be present?
         }
-        if (newTrackableState != state.trackableState) {
-            state.trackableState = newTrackableState
+        if (newTrackableState != properties.trackableState) {
+            properties.trackableState = newTrackableState
             scope.launch { _trackableStates.emit(newTrackableState) }
         }
     }
@@ -237,7 +236,7 @@ private class DefaultCoreSubscriber(
         scope.launch { _trackableStates.emit(TrackableState.Offline()) }
     }
 
-    private inner class State(
+    private inner class Properties(
         var isStopped: Boolean = false,
         var isPublisherOnline: Boolean = false,
         var trackableState: TrackableState = TrackableState.Offline(),
