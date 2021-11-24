@@ -60,6 +60,7 @@ Java users should add either `publishing-sdk-java` or `subscribing-sdk-java`.
 See [Android Runtime Requirements](#android-runtime-requirements) for more details.
 
 #### GitHub Packages
+
 We publish to [GitHub Packages](https://github.com/ably/ably-asset-tracking-android/packages/) for this repository.
 
 To install the dependency you will first need to create a "Personal Access Token" in your GitHub account. The token must have the `read:packages` permission.
@@ -97,6 +98,7 @@ repositories {
 ```
 
 Finally, you can add the AAT dependency in the Gradle build script
+
 ```gradle
 dependencies {
     // Publishing SDK for publishers
