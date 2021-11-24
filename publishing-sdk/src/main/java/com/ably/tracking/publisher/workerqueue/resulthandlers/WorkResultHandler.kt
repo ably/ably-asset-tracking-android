@@ -1,11 +1,8 @@
 package com.ably.tracking.publisher.workerqueue
 
-import com.ably.tracking.TrackableState
-import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.publisher.CorePublisher
 import com.ably.tracking.publisher.workerqueue.resulthandlers.AddTrackableResultHandler
 import com.ably.tracking.publisher.workerqueue.workers.Worker
-import kotlinx.coroutines.flow.StateFlow
 
 /**
  * This interface is intended for handling [WorkResult]s that are received from  [Worker]s synchrnous or asynchronus
@@ -22,15 +19,8 @@ internal interface WorkResultHandler {
      * compatibility with refactored code. Implementors must delegate work to this if the required [Worker]s has not
      * been implemented yet.
      * **/
-    fun handle(workResult: WorkResult, corePublisher: CorePublisher): WorkResultHandlerResult?
+    fun handle(workResult: WorkResult, corePublisher: CorePublisher): Worker?
 }
-
-
-internal data class WorkResultHandlerResult(
-    val worker: Worker, val resultCallbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>? =
-        null
-)
-
 
 internal fun getWorkResultHandler(workResult: WorkResult): WorkResultHandler {
     when (workResult) {

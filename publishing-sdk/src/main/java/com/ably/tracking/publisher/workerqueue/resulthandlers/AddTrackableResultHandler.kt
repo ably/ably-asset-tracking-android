@@ -6,15 +6,13 @@ import com.ably.tracking.publisher.CorePublisher
 import com.ably.tracking.publisher.workerqueue.AddTrackableWorkResult
 import com.ably.tracking.publisher.workerqueue.WorkResult
 import com.ably.tracking.publisher.workerqueue.WorkResultHandler
-import com.ably.tracking.publisher.workerqueue.WorkResultHandlerResult
-
-private const val TAG = "AddTrackableResultHandl"
+import com.ably.tracking.publisher.workerqueue.workers.Worker
 
 internal class AddTrackableResultHandler : WorkResultHandler {
     override fun handle(
         workResult: WorkResult,
         corePublisher: CorePublisher
-    ): WorkResultHandlerResult? {
+    ): Worker? {
         when (workResult) {
             is AddTrackableWorkResult.AlreadyIn -> workResult.callbackFunction.invoke(
                 Result.success(workResult.trackableStateFlow)

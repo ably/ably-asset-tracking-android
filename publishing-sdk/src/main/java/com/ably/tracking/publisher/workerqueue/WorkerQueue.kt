@@ -42,7 +42,7 @@ internal class WorkerQueue(private val corePublisher: CorePublisher,private val 
         val resultHandler = getWorkResultHandler(workResult)
         Log.d(TAG, "handleWorkResult: result handler $resultHandler")
         val nextWorker = resultHandler.handle(workResult, corePublisher)
-        nextWorker?.let { enqueue(it.worker) }
+        nextWorker?.let { enqueue(it) }
     }
 
     suspend fun stop() {
