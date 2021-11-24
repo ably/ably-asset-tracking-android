@@ -146,9 +146,6 @@ constructor(
         launch {
             val properties = Properties(routingProfile, policy.resolve(emptySet()), areRawLocationsEnabled)
             val workerQueue = EventWorkerQueue(this@DefaultCorePublisher, properties, scope)
-            scope.launch {
-                workerQueue.executeWork()
-            }
             // processing
             for (event in receiveEventChannel) {
                 // handle events after the publisher is stopped
