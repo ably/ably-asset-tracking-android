@@ -228,8 +228,7 @@ constructor(
                     is AddTrackableEvent -> {
 
                         workerQueue.enqueue(
-                            AddTrackableWorker(state, event.trackable, ably),
-                            event.callbackFunction
+                            AddTrackableWorker(state, event.trackable,event.callbackFunction, ably)
                         )
                     }
                     is AddTrackableFailedEvent -> {

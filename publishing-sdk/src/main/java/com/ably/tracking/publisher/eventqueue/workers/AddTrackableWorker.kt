@@ -2,11 +2,14 @@ package com.ably.tracking.publisher.eventqueue.workers
 
 import android.util.Log
 import com.ably.tracking.ConnectionException
+import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
+import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.publisher.DefaultCorePublisher
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.eventqueue.AddTrackableWorkResult
 import com.ably.tracking.publisher.eventqueue.SyncAsyncResult
+import kotlinx.coroutines.flow.StateFlow
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
@@ -15,25 +18,23 @@ private const val TAG = "AddTrackableWorker"
 internal class AddTrackableWorker(
     private val publisherState: DefaultCorePublisher.State,
     private val trackable: Trackable,
+    val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>,
     private val ably: Ably
 ) : Worker {
     override fun doWork(): SyncAsyncResult {
         Log.d(TAG, "doWork: ")
         if (publisherState.trackables.contains(trackable)) {
             return SyncAsyncResult(
-                AddTrackableWorkResult.AlreadyIn(
-                    publisherState.trackableStateFlows[trackable
-                        .id]!!
-                ), null
+                AddTrackableWorkResult.AlreadyIn(publisherState.trackableStateFlows[trackable.id]!!,callbackFunction), null
             )
         }
         return SyncAsyncResult(null, asyncWork = {
             val connectResult = suspendingConnect()
             Log.d(TAG, "doWork: connect result received $connectResult")
             if (connectResult.isSuccess) {
-                AddTrackableWorkResult.Success(trackable)
+                AddTrackableWorkResult.Success(trackable,callbackFunction)
             } else {
-                AddTrackableWorkResult.Fail(trackable, connectResult.exceptionOrNull())
+                AddTrackableWorkResult.Fail(trackable, connectResult.exceptionOrNull(),callbackFunction)
             }
         })
     }

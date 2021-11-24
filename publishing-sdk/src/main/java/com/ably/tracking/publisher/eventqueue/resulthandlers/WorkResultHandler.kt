@@ -1,5 +1,6 @@
 package com.ably.tracking.publisher.eventqueue
 
+import android.util.Log
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.publisher.CorePublisher
@@ -7,10 +8,11 @@ import com.ably.tracking.publisher.eventqueue.resulthandlers.AddTrackableResultH
 import com.ably.tracking.publisher.eventqueue.workers.Worker
 import kotlinx.coroutines.flow.StateFlow
 
+private const val TAG = "WorkResultHandler"
 internal interface WorkResultHandler {
     //core publisher is here temporarily so we can  stay bridged with existing architecture.
     fun handle(
-        workResult: WorkResult, resultCallbackFunctions: ResultCallbackFunction<StateFlow<TrackableState>>?, corePublisher:
+        workResult: WorkResult, corePublisher:
         CorePublisher
     )
         : WorkResultHandlerResult?
@@ -25,9 +27,12 @@ data class WorkResultHandlerResult(
 
 //Get handler for work result
 internal fun getWorkResultHandler(workResult: WorkResult): WorkResultHandler {
+    Log.d(TAG, "getWorkResultHandler: $workResult")
     when (workResult) {
-        is AddTrackableWorkResult -> AddTrackableResultHandler()
+        is AddTrackableWorkResult.Success -> AddTrackableResultHandler()
+        is AddTrackableWorkResult.Fail -> AddTrackableResultHandler()
+        is AddTrackableWorkResult.AlreadyIn -> AddTrackableResultHandler()
     }
-    throw IllegalArgumentException()
+    return AddTrackableResultHandler()
 }
 
