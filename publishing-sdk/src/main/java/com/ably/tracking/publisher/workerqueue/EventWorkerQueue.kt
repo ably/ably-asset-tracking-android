@@ -45,11 +45,11 @@ internal class EventWorkerQueue(
     override suspend fun executeWork() {
         for (worker in channel) {
             val workResult = worker.doWork(publisherState)
-            //process sync work result
+
             workResult.syncWorkResult?.let {
                 handleWorkResult(it)
             }
-            //process async work if exists
+
             workResult.asyncWork?.let { asyncWork ->
                 scope.launch {
                     val asyncWorkResult = asyncWork()

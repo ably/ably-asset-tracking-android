@@ -31,7 +31,8 @@ internal class AddTrackableWorker(
             } else {
                 AddTrackableWorkResult.Fail(trackable, connectResult.exceptionOrNull(), callbackFunction)
             }
-        })
+        }
+        )
     }
 
     private suspend fun suspendingConnect(publisherState: DefaultCorePublisher.Properties): Result<Boolean> {

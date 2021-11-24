@@ -21,7 +21,6 @@ import com.ably.tracking.logging.LogHandler
 import com.ably.tracking.publisher.guards.DuplicateTrackableGuard
 import com.ably.tracking.publisher.guards.TrackableRemovalGuard
 import com.ably.tracking.publisher.workerqueue.EventWorkerQueue
-import com.ably.tracking.publisher.workerqueue.WorkerQueue
 import com.ably.tracking.publisher.workerqueue.workers.AddTrackableWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
@@ -224,7 +223,7 @@ constructor(
                     }
                     is AddTrackableEvent -> {
                         workerQueue.enqueue(
-                            AddTrackableWorker(event.trackable,event.callbackFunction, ably)
+                            AddTrackableWorker(event.trackable, event.callbackFunction, ably)
                         )
                     }
                     is AddTrackableFailedEvent -> {

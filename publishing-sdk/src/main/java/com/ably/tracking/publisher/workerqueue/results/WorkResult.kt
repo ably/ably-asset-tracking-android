@@ -6,7 +6,6 @@ import com.ably.tracking.publisher.Trackable
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
-
 typealias AsyncWork<T> = (suspend () -> T)
 
 /**
@@ -46,4 +45,3 @@ internal sealed class AddTrackableWorkResult() : WorkResult() {
         val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>
     ) : AddTrackableWorkResult()
 }
-

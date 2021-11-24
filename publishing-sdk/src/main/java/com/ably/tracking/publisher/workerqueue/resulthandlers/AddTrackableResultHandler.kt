@@ -34,5 +34,4 @@ internal class AddTrackableResultHandler : WorkResultHandler {
         }
         return null
     }
-
 }
