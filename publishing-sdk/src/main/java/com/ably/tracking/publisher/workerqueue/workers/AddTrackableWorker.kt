@@ -33,8 +33,10 @@ internal class AddTrackableWorker(
                     null
                 )
             }
-            else ->
-                return SyncAsyncResult(
+            else -> {
+                properties.duplicateTrackableGuard.startAddingTrackable(trackable)
+
+                SyncAsyncResult(
                     syncWorkResult = null,
                     asyncWork = {
                         val connectResult = suspendingConnect(properties)
@@ -45,6 +47,7 @@ internal class AddTrackableWorker(
                         }
                     }
                 )
+            }
         }
     }
 
