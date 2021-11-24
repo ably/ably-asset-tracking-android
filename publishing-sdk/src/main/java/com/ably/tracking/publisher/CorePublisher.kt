@@ -22,6 +22,7 @@ import com.ably.tracking.publisher.guards.DuplicateTrackableGuard
 import com.ably.tracking.publisher.guards.TrackableRemovalGuard
 import com.ably.tracking.publisher.workerqueue.EventWorkerQueue
 import com.ably.tracking.publisher.workerqueue.WorkerQueue
+import com.ably.tracking.publisher.workerqueue.workers.AddTrackableWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
@@ -223,32 +224,9 @@ constructor(
                         event.callbackFunction(Result.success(Unit))
                     }
                     is AddTrackableEvent -> {
-                        when {
-                            properties.duplicateTrackableGuard.isCurrentlyAddingTrackable(event.trackable) -> {
-                                properties.duplicateTrackableGuard.saveDuplicateAddHandler(
-                                    event.trackable,
-                                    event.callbackFunction
-                                )
-                            }
-                            properties.trackables.contains(event.trackable) -> {
-                                event.callbackFunction(Result.success(properties.trackableStateFlows[event.trackable.id]!!))
-                            }
-                            else -> {
-                                properties.duplicateTrackableGuard.startAddingTrackable(event.trackable)
-                                ably.connect(
-                                    event.trackable.id,
-                                    properties.presenceData,
-                                    willPublish = true
-                                ) { result ->
-                                    try {
-                                        result.getOrThrow()
-                                        request(ConnectionForTrackableCreatedEvent(event.trackable, event.callbackFunction))
-                                    } catch (exception: ConnectionException) {
-                                        request(AddTrackableFailedEvent(event.trackable, event.callbackFunction, exception))
-                                    }
-                                }
-                            }
-                        }
+                        workerQueue.enqueue(
+                            AddTrackableWorker(event.trackable,event.callbackFunction, ably)
+                        )
                     }
                     is AddTrackableFailedEvent -> {
                         val failureResult = Result.failure<AddTrackableResult>(event.exception)
