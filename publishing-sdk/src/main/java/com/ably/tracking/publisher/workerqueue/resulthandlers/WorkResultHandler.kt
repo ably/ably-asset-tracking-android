@@ -1,7 +1,6 @@
 package com.ably.tracking.publisher.workerqueue
 
 import com.ably.tracking.publisher.CorePublisher
-import com.ably.tracking.publisher.workerqueue.resulthandlers.AddTrackableResultHandler
 import com.ably.tracking.publisher.workerqueue.workers.Worker
 
 /**
@@ -22,13 +21,3 @@ internal interface WorkResultHandler {
      * **/
     fun handle(workResult: WorkResult, corePublisher: CorePublisher): Worker?
 }
-
-internal fun getWorkResultHandler(workResult: WorkResult): WorkResultHandler {
-    when (workResult) {
-        is AddTrackableWorkResult.Success -> AddTrackableResultHandler()
-        is AddTrackableWorkResult.Fail -> AddTrackableResultHandler()
-        is AddTrackableWorkResult.AlreadyIn -> AddTrackableResultHandler()
-    }
-    return AddTrackableResultHandler()
-}
-

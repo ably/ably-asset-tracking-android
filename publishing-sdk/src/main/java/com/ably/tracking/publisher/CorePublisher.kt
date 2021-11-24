@@ -18,7 +18,7 @@ import com.ably.tracking.common.PresenceData
 import com.ably.tracking.common.createSingleThreadDispatcher
 import com.ably.tracking.common.logging.w
 import com.ably.tracking.logging.LogHandler
-import com.ably.tracking.publisher.workerqueue.WorkerQueue
+import com.ably.tracking.publisher.workerqueue.EventWorkerQueue
 import com.ably.tracking.publisher.workerqueue.workers.AddTrackableWorker
 import com.ably.tracking.publisher.guards.DuplicateTrackableGuard
 import com.ably.tracking.publisher.guards.TrackableRemovalGuard
@@ -148,7 +148,7 @@ constructor(
         launch {
             // state
             val state = State(routingProfile, policy.resolve(emptySet()), areRawLocationsEnabled)
-            val workerQueue = WorkerQueue(this@DefaultCorePublisher, state)
+            val workerQueue = EventWorkerQueue(this@DefaultCorePublisher, state)
             launch {
                 workerQueue.executeWork()
             }
