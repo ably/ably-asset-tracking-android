@@ -3,7 +3,7 @@ package com.ably.tracking.publisher
 /**
  * Class responsible for managing state connected to location updates that are going to or are being published.
  */
-class LocationsPublishingState<LocationUpdateEventType> {
+internal class LocationsPublishingState<LocationUpdateEventType> {
     /**
      * The maximum number of retries after a location update is considered to be failed.
      */

@@ -6,7 +6,7 @@ import com.ably.tracking.LocationUpdate
 /**
  * Class responsible for storing locations for multiple trackables that are then used as the [LocationUpdate.skippedLocations].
  */
-class SkippedLocations {
+internal class SkippedLocations {
     /**
      * The maximum size for each individual list of skipped locations.
      */

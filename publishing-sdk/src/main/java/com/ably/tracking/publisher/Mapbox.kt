@@ -40,7 +40,7 @@ typealias LocationHistoryListener = (LocationHistoryData) -> Unit
 /**
  * An interface which enables observing location updates.
  */
-interface LocationUpdatesObserver {
+internal interface LocationUpdatesObserver {
     /**
      * Called when a new raw location update is ready.
      *
@@ -60,7 +60,7 @@ interface LocationUpdatesObserver {
 /**
  * Wrapper for the [MapboxNavigation] that's used to interact with the Mapbox SDK.
  */
-interface Mapbox {
+internal interface Mapbox {
     /**
      * Starts the navigation trip which results in location updates from the location engine.
      */

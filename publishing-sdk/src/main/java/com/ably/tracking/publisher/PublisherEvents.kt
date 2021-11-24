@@ -13,17 +13,17 @@ import kotlinx.coroutines.flow.StateFlow
 internal typealias AddTrackableResult = StateFlow<TrackableState>
 internal typealias AddTrackableHandler = ResultCallbackFunction<AddTrackableResult>
 
-sealed class Event
+internal sealed class Event
 
 /**
  * Represents an event that doesn't have a callback (launch and forget).
  */
-sealed class AdhocEvent : Event()
+internal sealed class AdhocEvent : Event()
 
 /**
  * Represents an event that invokes an action that calls the [handler] when it completes.
  */
-sealed class Request<T>(val callbackFunction: ResultCallbackFunction<T>) : Event()
+internal sealed class Request<T>(val callbackFunction: ResultCallbackFunction<T>) : Event()
 
 /**
  * Stop the [CorePublisher].
