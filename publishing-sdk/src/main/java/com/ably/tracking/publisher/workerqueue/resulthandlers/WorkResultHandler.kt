@@ -18,6 +18,7 @@ internal interface WorkResultHandler {
      * @param [corePublisher] : This is a temporary reference of [CorePublisher] that is kept here to maintain
      * compatibility with refactored code. Implementors must delegate work to this if the required [Worker]s has not
      * been implemented yet.
+     * @return an optional [Worker] if implementors decide there is a need to add another worker to the queue.
      * **/
     fun handle(workResult: WorkResult, corePublisher: CorePublisher): Worker?
 }
