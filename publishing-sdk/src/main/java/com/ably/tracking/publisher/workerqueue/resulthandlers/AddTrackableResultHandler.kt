@@ -14,7 +14,7 @@ internal class AddTrackableResultHandler : WorkResultHandler {
         corePublisher: CorePublisher
     ): Worker? {
         when (workResult) {
-            is AddTrackableWorkResult.AlreadyIn -> workResult.callbackFunction.invoke(
+            is AddTrackableWorkResult.AlreadyIn -> workResult.callbackFunction(
                 Result.success(workResult.trackableStateFlow)
             )
 
@@ -30,21 +30,9 @@ internal class AddTrackableResultHandler : WorkResultHandler {
                     workResult.callbackFunction
                 )
             )
+            else -> return null
         }
         return null
-
-        /*        return when (workResult) {
-            is AddTrackableResult.Success -> WorkResultHandlerResult(
-                ConnectionForTrackableCreatedWorker
-                    (workResult.trackable),
-                resultCallbackFunctions
-            )
-            is AddTrackableResult.Fail -> WorkResultHandlerResult(
-                AddTrackableFailedWorker(workResult.exception),
-                resultCallbackFunctions
-            )
-            is AddTrackableResult.AlreadyIn -> TODO()
-        }*/
     }
 
 }
