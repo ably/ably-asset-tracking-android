@@ -1,6 +1,5 @@
 package com.ably.tracking.publisher.workerqueue
 
-import com.ably.tracking.common.createSingleThreadDispatcher
 import com.ably.tracking.publisher.CorePublisher
 import com.ably.tracking.publisher.DefaultCorePublisher
 import com.ably.tracking.publisher.workerqueue.resulthandlers.getWorkResultHandler
@@ -17,15 +16,14 @@ import kotlinx.coroutines.launch
 
 internal class EventWorkerQueue(
     private val corePublisher: CorePublisher,
-    private val publisherState: DefaultCorePublisher.Properties
+    private val publisherState: DefaultCorePublisher.Properties,
+    private val scope: CoroutineScope
 ) : WorkerQueue {
     /**
      * Channel to be used to send [Worker]s to, This channel is given a buffer so that it can still receive Workers
      * to be processed later in case of any sync work is blocking it
      * */
     private val channel = Channel<Worker>(100)
-    private val scope = CoroutineScope(createSingleThreadDispatcher())
-
     /**
      * Enqueues the work, adds it to channel
      * @param [worker] : [Worker] to be enqueued

@@ -145,8 +145,8 @@ constructor(
     ) {
         launch {
             val properties = Properties(routingProfile, policy.resolve(emptySet()), areRawLocationsEnabled)
-            val workerQueue = EventWorkerQueue(this@DefaultCorePublisher, properties)
-            launch {
+            val workerQueue = EventWorkerQueue(this@DefaultCorePublisher, properties, scope)
+            scope.launch {
                 workerQueue.executeWork()
             }
             // processing

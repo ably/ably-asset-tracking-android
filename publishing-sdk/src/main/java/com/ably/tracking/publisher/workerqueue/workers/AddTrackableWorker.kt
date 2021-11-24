@@ -18,31 +18,34 @@ internal class AddTrackableWorker(
     private val ably: Ably
 ) : Worker {
     override fun doWork(properties: DefaultCorePublisher.Properties): SyncAsyncResult {
-        when {
+        return when {
             properties.duplicateTrackableGuard.isCurrentlyAddingTrackable(trackable) -> {
                 properties.duplicateTrackableGuard.saveDuplicateAddHandler(trackable, callbackFunction)
+                SyncAsyncResult()
             }
             properties.trackables.contains(trackable) -> {
                 callbackFunction(Result.success(properties.trackableStateFlows[trackable.id]!!))
+                SyncAsyncResult()
             }
-        }
-        if (properties.trackables.contains(trackable)) {
-            return SyncAsyncResult(
-                AddTrackableWorkResult.AlreadyIn(properties.trackableStateFlows[trackable.id]!!, callbackFunction),
-                null
-            )
-        }
-        return SyncAsyncResult(
-            syncWorkResult = null,
-            asyncWork = {
-                val connectResult = suspendingConnect(properties)
-                if (connectResult.isSuccess) {
-                    AddTrackableWorkResult.Success(trackable, callbackFunction)
-                } else {
-                    AddTrackableWorkResult.Fail(trackable, connectResult.exceptionOrNull(), callbackFunction)
-                }
+            properties.trackables.contains(trackable) -> {
+                return SyncAsyncResult(
+                    AddTrackableWorkResult.AlreadyIn(properties.trackableStateFlows[trackable.id]!!, callbackFunction),
+                    null
+                )
             }
-        )
+            else ->
+                return SyncAsyncResult(
+                    syncWorkResult = null,
+                    asyncWork = {
+                        val connectResult = suspendingConnect(properties)
+                        if (connectResult.isSuccess) {
+                            AddTrackableWorkResult.Success(trackable, callbackFunction)
+                        } else {
+                            AddTrackableWorkResult.Fail(trackable, connectResult.exceptionOrNull(), callbackFunction)
+                        }
+                    }
+                )
+        }
     }
 
     private suspend fun suspendingConnect(publisherState: DefaultCorePublisher.Properties): Result<Boolean> {
