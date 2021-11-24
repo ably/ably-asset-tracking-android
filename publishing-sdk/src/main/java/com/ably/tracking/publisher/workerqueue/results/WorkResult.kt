@@ -30,17 +30,17 @@ internal data class SyncAsyncResult(
 ) : WorkResult()
 
 internal sealed class AddTrackableWorkResult() : WorkResult() {
-    data class AlreadyIn(
+    internal data class AlreadyIn(
         val trackableStateFlow: MutableStateFlow<TrackableState>,
         val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>
     ) : AddTrackableWorkResult()
 
-    data class Success(
+    internal data class Success(
         val trackable: Trackable,
         val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>
     ) : AddTrackableWorkResult()
 
-    data class Fail(
+    internal data class Fail(
         val trackable: Trackable,
         val exception: Throwable?,
         val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>
