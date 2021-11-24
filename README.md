@@ -63,8 +63,8 @@ See [Android Runtime Requirements](#android-runtime-requirements) for more detai
 
 We publish to [GitHub Packages](https://github.com/ably/ably-asset-tracking-android/packages/) for this repository.
 
-To install the dependency you will first need to create a "Personal Access Token" in your GitHub account. The token must have the `read:packages` permission.
-Then use your generated token to authenticate in the AAT GitHub Packages repository:
+To install the dependency you will first need to create a "Personal Access Token" in your GitHub account. That token must have the `read:packages` permission.
+Then use your generated token to authenticate with the AAT GitHub Packages repository:
 
 ```gradle
 repositories {
