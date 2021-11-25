@@ -1,43 +1,17 @@
-// Create variables with empty default values
-ext["ossrhUsername"] = ''
-ext["ossrhPassword"] = ''
-ext["sonatypeStagingProfileId"] = ''
-ext["signing.keyId"] = ''
-ext["signing.password"] = ''
-ext["signing.key"] = ''
-ext["snapshot"] = ''
+// nexus publishing sonatype configuration
+// https://github.com/gradle-nexus/publish-plugin
 
-File secretPropsFile = project.rootProject.file('local.properties')
-if (secretPropsFile.exists()) {
-    // Read local.properties file first if it exists
-    Properties p = new Properties()
-    new FileInputStream(secretPropsFile).withCloseable { is -> p.load(is) }
-    p.each { name, value -> ext[name] = value }
-} else {
-    // Use system environment variables
-    ext["ossrhUsername"] = System.getenv('OSSRH_USERNAME')
-    ext["ossrhPassword"] = System.getenv('OSSRH_PASSWORD')
-    ext["sonatypeStagingProfileId"] = System.getenv('SONATYPE_STAGING_PROFILE_ID')
-    ext["signing.keyId"] = System.getenv('SIGNING_KEY_ID')
-    ext["signing.password"] = System.getenv('SIGNING_PASSWORD')
-    ext["signing.key"] = System.getenv('SIGNING_KEY')
-    ext["snapshot"] = System.getenv('SNAPSHOT')
-}
-
-if (snapshot) {
-    ext["rootVersionName"] = '1.2.8-SNAPSHOT'
-} else {
-    ext["rootVersionName"] = '1.2.8'
-}
-
-// Set up Sonatype repository
 nexusPublishing {
     repositories {
         sonatype {
-            stagingProfileId = sonatypeStagingProfileId
-            username = ossrhUsername
-            password = ossrhPassword
-            version = rootVersionName
+            stagingProfileId = SONATYPE_STAGING_PROFILE_ID
+            username = OSSRH_USERNAME
+            password = OSSRH_PASSWORD
+            if (SNAPSHOT) {
+                version = ROOT_VERSION_NAME_SNAPSHOT
+            } else {
+                version = ROOT_VERSION_NAME
+            }
         }
     }
 }
