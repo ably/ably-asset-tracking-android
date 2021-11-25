@@ -16,12 +16,14 @@ internal class FakeProperties(override val duplicateTrackableGuard: DuplicateTra
 }
 
 internal class FakeDuplicateGuard(private val currentlyAdding: Boolean) : DuplicateTrackableGuard {
+    private val trackables: MutableSet<Trackable> = mutableSetOf()
+
     override fun startAddingTrackable(trackable: Trackable) {
-        //do not implement this just yet
+        trackables.add(trackable)
     }
 
     override fun finishAddingTrackable(trackable: Trackable, result: Result<AddTrackableResult>) {
-        TODO("Not yet implemented")
+        //does not need implementing for now
     }
 
     override fun isCurrentlyAddingTrackable(trackable: Trackable): Boolean {
@@ -29,14 +31,14 @@ internal class FakeDuplicateGuard(private val currentlyAdding: Boolean) : Duplic
     }
 
     override fun saveDuplicateAddHandler(trackable: Trackable, handler: AddTrackableHandler) {
-        TODO("Not yet implemented")
+        //does not need implementing
     }
 
     override fun clear(trackable: Trackable) {
-        TODO("Not yet implemented")
+        trackables.remove(trackable)
     }
 
     override fun clearAll() {
-        TODO("Not yet implemented")
+        trackables.clear()
     }
 }
