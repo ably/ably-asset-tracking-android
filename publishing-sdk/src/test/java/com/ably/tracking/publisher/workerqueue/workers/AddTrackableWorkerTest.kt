@@ -1,7 +1,6 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
 import com.ably.tracking.TrackableState
-import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.AddTrackableWorkResult
@@ -10,22 +9,26 @@ import io.mockk.spyk
 import io.mockk.verify
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.runBlocking
+import org.junit.After
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
+import java.lang.Exception
 
 class AddTrackableWorkerTest {
     private lateinit var worker: AddTrackableWorker
 
     // dependencies
     private val resultCallbackFunction = mockk<ResultCallbackFunction<StateFlow<TrackableState>>>()
-    private val ably = mockk<Ably>(relaxed = true)
+    private val ably = FakeAbly(true)
     private val trackable = Trackable("testtrackable")
 
     @Before
     fun setUp() {
         worker = AddTrackableWorker(trackable, resultCallbackFunction, ably)
     }
+
 
     @Test
     fun `doWork returns asyncWork when trackable is not added and not being added`() {
@@ -90,10 +93,58 @@ class AddTrackableWorkerTest {
         // then
         Assert.assertNull(result.asyncWork)
         Assert.assertTrue(result.syncWorkResult is AddTrackableWorkResult.AlreadyIn)
-        //also make sure it has the right content
+        // also make sure it has the right content
         val alreadyIn = result.syncWorkResult as AddTrackableWorkResult.AlreadyIn
         Assert.assertTrue(alreadyIn.callbackFunction == resultCallbackFunction)
         Assert.assertTrue(alreadyIn.trackableStateFlow == publisherProperties.trackableStateFlows[trackable.id])
+    }
+
+    // async work tests
+    @Test
+    fun `Async work returns successful result on successful connection`() {
+        runBlocking {
+            // given
+            val publisherProperties = spyk(FakeProperties(FakeDuplicateGuard(false)))
+            ably.connectionSucces = true
+            // when
+            val result = worker.doWork(publisherProperties)
+
+            // then
+            // first make sure there is an asyncwork
+            Assert.assertNotNull(result.asyncWork)
+            result.asyncWork?.let {
+                val asyncWorkResult = it()
+                Assert.assertTrue(asyncWorkResult is AddTrackableWorkResult.Success)
+                // also check content
+                val success = asyncWorkResult as AddTrackableWorkResult.Success
+                Assert.assertTrue(success.trackable == trackable)
+                Assert.assertTrue(success.callbackFunction == resultCallbackFunction)
+            }
+        }
+    }
+
+    @Test
+    fun `Async work returns failed result on failed connection`() {
+        runBlocking {
+            // given
+            val publisherProperties = spyk(FakeProperties(FakeDuplicateGuard(false)))
+            ably.connectionSucces = false
+            // when
+            val result = worker.doWork(publisherProperties)
+
+            // then
+            // first make sure there is an asyncwork
+            Assert.assertNotNull(result.asyncWork)
+            result.asyncWork?.let {
+                val asyncWorkResult = it()
+                Assert.assertTrue(asyncWorkResult is AddTrackableWorkResult.Fail)
+                // also check content
+                val fail = asyncWorkResult as AddTrackableWorkResult.Fail
+                Assert.assertTrue(fail.trackable == trackable)
+                Assert.assertTrue(fail.callbackFunction == resultCallbackFunction)
+             //   Assert.assertTrue(fail.exception == Exception("connection failed"))
+            }
+        }
     }
 
 }
