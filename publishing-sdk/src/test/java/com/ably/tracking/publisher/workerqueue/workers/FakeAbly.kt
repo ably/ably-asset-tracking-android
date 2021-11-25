@@ -11,7 +11,7 @@ import kotlinx.coroutines.delay
 import java.lang.Exception
 
 
-internal class FakeAbly(private val connectionSucces:Boolean): Ably {
+internal class FakeAbly(var connectionSucces:Boolean): Ably {
     override fun subscribeForAblyStateChange(listener: (ConnectionStateChange) -> Unit) {
         TODO("Not yet implemented")
     }
