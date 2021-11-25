@@ -139,7 +139,7 @@ class AddTrackableWorkerTest {
                 val fail = asyncWorkResult as AddTrackableWorkResult.Fail
                 Assert.assertTrue(fail.trackable == trackable)
                 Assert.assertTrue(fail.callbackFunction == resultCallbackFunction)
-                //   Assert.assertTrue(fail.exception == Exception("connection failed"))
+                Assert.assertTrue(fail.exception?.message == "connection failed")
             }
         }
     }
