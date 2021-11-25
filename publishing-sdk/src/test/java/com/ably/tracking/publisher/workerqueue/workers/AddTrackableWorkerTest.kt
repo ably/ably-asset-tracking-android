@@ -10,11 +10,9 @@ import io.mockk.verify
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.runBlocking
-import org.junit.After
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
-import java.lang.Exception
 
 class AddTrackableWorkerTest {
     private lateinit var worker: AddTrackableWorker
@@ -28,7 +26,6 @@ class AddTrackableWorkerTest {
     fun setUp() {
         worker = AddTrackableWorker(trackable, resultCallbackFunction, ably)
     }
-
 
     @Test
     fun `doWork returns asyncWork when trackable is not added and not being added`() {
@@ -142,9 +139,8 @@ class AddTrackableWorkerTest {
                 val fail = asyncWorkResult as AddTrackableWorkResult.Fail
                 Assert.assertTrue(fail.trackable == trackable)
                 Assert.assertTrue(fail.callbackFunction == resultCallbackFunction)
-             //   Assert.assertTrue(fail.exception == Exception("connection failed"))
+                //   Assert.assertTrue(fail.exception == Exception("connection failed"))
             }
         }
     }
-
 }

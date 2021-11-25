@@ -10,14 +10,13 @@ import com.ably.tracking.common.PresenceMessage
 import kotlinx.coroutines.delay
 import java.lang.Exception
 
-
-internal class FakeAbly(var connectionSucces:Boolean): Ably {
+internal class FakeAbly(var connectionSucces: Boolean) : Ably {
     override fun subscribeForAblyStateChange(listener: (ConnectionStateChange) -> Unit) {
-        TODO("Not yet implemented")
+        // not needed for now
     }
 
     override fun subscribeForChannelStateChange(trackableId: String, listener: (ConnectionStateChange) -> Unit) {
-        TODO("Not yet implemented")
+        // not needed for now
     }
 
     override fun subscribeForPresenceMessages(
@@ -25,7 +24,7 @@ internal class FakeAbly(var connectionSucces:Boolean): Ably {
         listener: (PresenceMessage) -> Unit,
         callback: (Result<Unit>) -> Unit
     ) {
-        TODO("Not yet implemented")
+        // not needed for now
     }
 
     override fun sendEnhancedLocation(
@@ -33,7 +32,7 @@ internal class FakeAbly(var connectionSucces:Boolean): Ably {
         locationUpdate: EnhancedLocationUpdate,
         callback: (Result<Unit>) -> Unit
     ) {
-        TODO("Not yet implemented")
+        // not needed for now
     }
 
     override fun sendRawLocation(
@@ -41,7 +40,7 @@ internal class FakeAbly(var connectionSucces:Boolean): Ably {
         locationUpdate: LocationUpdate,
         callback: (Result<Unit>) -> Unit
     ) {
-        TODO("Not yet implemented")
+        // not needed for now
     }
 
     override fun sendResolution(trackableId: String, resolution: Resolution, callback: (Result<Unit>) -> Unit) {
