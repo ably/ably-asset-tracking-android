@@ -24,7 +24,7 @@ internal class AddTrackableWorker(
                 SyncAsyncResult()
             }
             properties.trackables.contains(trackable) -> {
-                return SyncAsyncResult(
+                 SyncAsyncResult(
                     AddTrackableWorkResult.AlreadyIn(properties.trackableStateFlows[trackable.id]!!, callbackFunction),
                     null
                 )
