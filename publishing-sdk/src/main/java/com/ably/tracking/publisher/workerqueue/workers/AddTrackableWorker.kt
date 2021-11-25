@@ -1,6 +1,5 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
-import com.ably.tracking.ConnectionException
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ResultCallbackFunction
@@ -9,8 +8,6 @@ import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.AddTrackableWorkResult
 import com.ably.tracking.publisher.workerqueue.SyncAsyncResult
 import kotlinx.coroutines.flow.StateFlow
-import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
 
 internal class AddTrackableWorker(
     private val trackable: Trackable,
@@ -24,18 +21,22 @@ internal class AddTrackableWorker(
                 SyncAsyncResult()
             }
             properties.trackables.contains(trackable) -> {
-                 SyncAsyncResult(
+                SyncAsyncResult(
                     AddTrackableWorkResult.AlreadyIn(properties.trackableStateFlows[trackable.id]!!, callbackFunction),
                     null
                 )
             }
             else -> {
                 properties.duplicateTrackableGuard.startAddingTrackable(trackable)
+                val presenceData = properties.presenceData
 
                 SyncAsyncResult(
                     syncWorkResult = null,
                     asyncWork = {
-                        val connectResult = suspendingConnect(properties)
+                        val connectResult = ably.suspendingConnect(
+                            trackableId = trackable.id, presenceData =
+                            presenceData, willPublish = true
+                        )
                         if (connectResult.isSuccess) {
                             AddTrackableWorkResult.Success(trackable, callbackFunction)
                         } else {
@@ -43,19 +44,6 @@ internal class AddTrackableWorker(
                         }
                     }
                 )
-            }
-        }
-    }
-
-    private suspend fun suspendingConnect(publisherState: PublisherProperties): Result<Boolean> {
-        return suspendCoroutine { continuation ->
-            ably.connect(trackable.id, publisherState.presenceData, willPublish = true) { result ->
-                try {
-                    result.getOrThrow()
-                    continuation.resume(Result.success(true))
-                } catch (exception: ConnectionException) {
-                    continuation.resume(Result.failure(exception))
-                }
             }
         }
     }
