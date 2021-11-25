@@ -23,7 +23,7 @@ internal class FakeDuplicateGuard(private val currentlyAdding: Boolean) : Duplic
     }
 
     override fun finishAddingTrackable(trackable: Trackable, result: Result<AddTrackableResult>) {
-        //does not need implementing for now
+        // does not need implementing for now
     }
 
     override fun isCurrentlyAddingTrackable(trackable: Trackable): Boolean {
@@ -31,7 +31,7 @@ internal class FakeDuplicateGuard(private val currentlyAdding: Boolean) : Duplic
     }
 
     override fun saveDuplicateAddHandler(trackable: Trackable, handler: AddTrackableHandler) {
-        //does not need implementing
+        // does not need implementing
     }
 
     override fun clear(trackable: Trackable) {
