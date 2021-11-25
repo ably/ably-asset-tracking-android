@@ -21,22 +21,25 @@ jobs:
         ref: v${{ github.event.inputs.version }}
 
       # Gradle 7 requires Java 11 to run
+
     - uses: actions/setup-java@v2
       with:
         distribution: 'zulu'
         java-version: '11'
 
-  - name: Release build
+    - name: Release build
       # assembleRelease for all modules, excluding non-library modules
-      run:
-      echo "Publishing version ${{ github.event.inputs.version }}..."
-      ./gradlew assembleRelease -x :android-test-common:assembleRelease -x :test-common:assembleRelease -x
-      :integration-testing-app:assembleRelease -x :publishing-example-app:assembleRelease -x
-      :publishing-java-testing:assembleRelease -x :subscribing-example-app:assembleRelease -x :subscribing-java-testing:assembleRelease
-      - name: Source jar and dokka
-        run: ./gradlew androidSourcesJar javadocJar
-      - name: Publish to MavenCentral
-        run: ./gradlew publishReleasePublicationToSonatypeRepository
+      run: |
+        echo "Publishing version ${{ github.event.inputs.version }}..."
+        ./gradlew assembleRelease -x :android-test-common:assembleRelease -x :test-common:assembleRelease -x
+        :integration-testing-app:assembleRelease -x :publishing-example-app:assembleRelease -x
+        :publishing-java-testing:assembleRelease -x :subscribing-example-app:assembleRelease -x :subscribing-java-testing:assembleRelease
+
+    - name: Source jar and dokka
+      run: ./gradlew androidSourcesJar javadocJar
+
+    - name: Publish to MavenCentral
+      run: ./gradlew publishReleasePublicationToSonatypeRepository
         env:
           ORG_GRADLE_PROJECT_MAPBOX_DOWNLOADS_TOKEN: ${{ secrets.MAPBOX_DOWNLOADS_TOKEN }}
           ORG_GRADLE_PROJECT_MAPBOX_ACCESS_TOKEN: ${{ secrets.MAPBOX_ACCESS_TOKEN }}
