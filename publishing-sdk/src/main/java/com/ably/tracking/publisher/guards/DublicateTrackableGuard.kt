@@ -4,7 +4,6 @@ import com.ably.tracking.publisher.AddTrackableHandler
 import com.ably.tracking.publisher.AddTrackableResult
 import com.ably.tracking.publisher.Trackable
 
-
 /**
  * Interface for [DublicateTrackableGuardImpl] is created to make it possible to create test fakes.
  * */

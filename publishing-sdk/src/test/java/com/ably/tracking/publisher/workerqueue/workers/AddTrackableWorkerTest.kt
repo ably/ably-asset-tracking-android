@@ -6,6 +6,7 @@ import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.publisher.Trackable
 import io.mockk.mockk
 import kotlinx.coroutines.flow.StateFlow
+import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 
@@ -24,6 +25,11 @@ class AddTrackableWorkerTest {
 
     @Test
     fun `doWork returns asyncWork when trackable is not added and not being added`() {
-
+        // given
+        val publisherProperties = FakeProperties(FakeDuplicateGuard(false))
+        // when
+        val result = worker.doWork(publisherProperties)
+        // then
+        Assert.assertNotNull(result.asyncWork)
     }
 }
