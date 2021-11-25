@@ -183,8 +183,7 @@ interface Ably {
         presenceData: PresenceData,
         useRewind: Boolean = false,
         willPublish: Boolean = false,
-        willSubscribe: Boolean = false,
-        callback: (Result<Unit>) -> Unit
+        willSubscribe: Boolean = false
     ): Result<Boolean>
 
     /**
@@ -327,8 +326,7 @@ constructor(
         presenceData: PresenceData,
         useRewind: Boolean,
         willPublish: Boolean,
-        willSubscribe: Boolean,
-        callback: (Result<Unit>) -> Unit
+        willSubscribe: Boolean
     ): Result<Boolean> {
         return suspendCoroutine { continuation ->
             connect(trackableId, presenceData, useRewind, willPublish, willSubscribe) { result ->
