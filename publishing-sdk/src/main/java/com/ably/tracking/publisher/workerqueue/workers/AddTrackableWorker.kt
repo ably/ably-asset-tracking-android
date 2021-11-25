@@ -4,7 +4,7 @@ import com.ably.tracking.ConnectionException
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ResultCallbackFunction
-import com.ably.tracking.publisher.DefaultCorePublisher
+import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.AddTrackableWorkResult
 import com.ably.tracking.publisher.workerqueue.SyncAsyncResult
@@ -17,7 +17,7 @@ internal class AddTrackableWorker(
     private val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>,
     private val ably: Ably
 ) : Worker {
-    override fun doWork(properties: DefaultCorePublisher.Properties): SyncAsyncResult {
+    override fun doWork(properties: PublisherProperties): SyncAsyncResult {
         return when {
             properties.duplicateTrackableGuard.isCurrentlyAddingTrackable(trackable) -> {
                 properties.duplicateTrackableGuard.saveDuplicateAddHandler(trackable, callbackFunction)
@@ -51,7 +51,7 @@ internal class AddTrackableWorker(
         }
     }
 
-    private suspend fun suspendingConnect(publisherState: DefaultCorePublisher.Properties): Result<Boolean> {
+    private suspend fun suspendingConnect(publisherState: PublisherProperties): Result<Boolean> {
         return suspendCoroutine { continuation ->
             ably.connect(trackable.id, publisherState.presenceData, willPublish = true) { result ->
                 try {

@@ -1,6 +1,6 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
-import com.ably.tracking.publisher.DefaultCorePublisher
+import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.workerqueue.SyncAsyncResult
 
 /**
@@ -15,5 +15,5 @@ internal interface Worker {
      * [properties] : Current state of publisher to be used by this worker. Please do not modify and access to
      * this from async work block.
      * **/
-    fun doWork(properties: DefaultCorePublisher.Properties): SyncAsyncResult
+    fun doWork(properties: PublisherProperties): SyncAsyncResult
 }
