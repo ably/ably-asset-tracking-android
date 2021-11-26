@@ -3,7 +3,7 @@ package com.ably.tracking.subscriber
 import com.ably.tracking.Resolution
 import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.PresenceMessage
-import com.ably.tracking.common.ResultCallbackFunction
+import com.ably.tracking.common.ResultHandler
 
 internal sealed class Event
 
@@ -15,37 +15,37 @@ internal sealed class AdhocEvent : Event()
 /**
  * Represents an event that invokes an action that calls the [handler] when it completes.
  */
-internal sealed class Request<T>(val callbackFunction: ResultCallbackFunction<T>) : Event()
+internal sealed class Request<T>(val handler: ResultHandler<T>) : Event()
 
 /**
  * Start the [CoreSubscriber].
  */
 internal class StartEvent(
-    callbackFunction: ResultCallbackFunction<Unit>
-) : Request<Unit>(callbackFunction)
+    handler: ResultHandler<Unit>
+) : Request<Unit>(handler)
 
 /**
  * Successfully created a connection for a trackable.
  * Should be created only from within the [CoreSubscriber].
  */
 internal class ConnectionCreatedEvent(
-    callbackFunction: ResultCallbackFunction<Unit>
-) : Request<Unit>(callbackFunction)
+    handler: ResultHandler<Unit>
+) : Request<Unit>(handler)
 
 /**
  * Connection for a trackable is ready to be used.
  * Should be created only from within the [CoreSubscriber].
  */
 internal class ConnectionReadyEvent(
-    callbackFunction: ResultCallbackFunction<Unit>
-) : Request<Unit>(callbackFunction)
+    handler: ResultHandler<Unit>
+) : Request<Unit>(handler)
 
 /**
  * Stop the [CoreSubscriber].
  */
 internal class StopEvent(
-    callbackFunction: ResultCallbackFunction<Unit>
-) : Request<Unit>(callbackFunction)
+    handler: ResultHandler<Unit>
+) : Request<Unit>(handler)
 
 /**
  * A new presence message is received.
@@ -60,8 +60,8 @@ internal data class PresenceMessageEvent(
  */
 internal class ChangeResolutionEvent(
     val resolution: Resolution?,
-    callbackFunction: ResultCallbackFunction<Unit>
-) : Request<Unit>(callbackFunction)
+    handler: ResultHandler<Unit>
+) : Request<Unit>(handler)
 
 /**
  * Ably connection state changed.

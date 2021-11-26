@@ -154,8 +154,8 @@ constructor(
                     if (event is Request<*>) {
                         // when the event is a request then call its handler
                         when (event) {
-                            is StopEvent -> event.callbackFunction(Result.success(Unit))
-                            else -> event.callbackFunction(Result.failure(PublisherStoppedException()))
+                            is StopEvent -> event.handler(Result.success(Unit))
+                            else -> event.handler(Result.failure(PublisherStoppedException()))
                         }
                         continue
                     } else if (event is AdhocEvent) {
@@ -202,9 +202,9 @@ constructor(
                         request(
                             AddTrackableEvent(event.trackable) { result ->
                                 if (result.isSuccess) {
-                                    request(SetActiveTrackableEvent(event.trackable) { event.callbackFunction(result) })
+                                    request(SetActiveTrackableEvent(event.trackable) { event.handler(result) })
                                 } else {
-                                    event.callbackFunction(result)
+                                    event.handler(result)
                                 }
                             }
                         )
@@ -217,16 +217,16 @@ constructor(
                                 setDestination(it, properties)
                             }
                         }
-                        event.callbackFunction(Result.success(Unit))
+                        event.handler(Result.success(Unit))
                     }
                     is AddTrackableEvent -> {
                         workerQueue.enqueue(
-                            AddTrackableWorker(event.trackable, event.callbackFunction, ably)
+                            AddTrackableWorker(event.trackable, event.handler, ably)
                         )
                     }
                     is AddTrackableFailedEvent -> {
                         val failureResult = Result.failure<AddTrackableResult>(event.exception)
-                        event.callbackFunction(failureResult)
+                        event.handler(failureResult)
                         properties.duplicateTrackableGuard.finishAddingTrackable(event.trackable, failureResult)
                         properties.trackableRemovalGuard.removeMarked(event.trackable, Result.success(true))
                     }
@@ -268,7 +268,7 @@ constructor(
                                 Result.failure(event.result.exceptionOrNull()!!)
                             )
                         }
-                        event.callbackFunction(Result.failure(RemoveTrackableRequestedException()))
+                        event.handler(Result.failure(RemoveTrackableRequestedException()))
                         properties.duplicateTrackableGuard.finishAddingTrackable(
                             event.trackable,
                             Result.failure(RemoveTrackableRequestedException())
@@ -278,7 +278,7 @@ constructor(
                         if (properties.trackableRemovalGuard.isMarkedForRemoval(event.trackable)) {
                             // Leave Ably channel.
                             ably.disconnect(event.trackable.id, properties.presenceData) { result ->
-                                request(TrackableRemovalRequestedEvent(event.trackable, event.callbackFunction, result))
+                                request(TrackableRemovalRequestedEvent(event.trackable, event.handler, result))
                             }
                             continue
                         }
@@ -288,13 +288,13 @@ constructor(
                             callback = { result ->
                                 try {
                                     result.getOrThrow()
-                                    request(ConnectionForTrackableReadyEvent(event.trackable, event.callbackFunction))
+                                    request(ConnectionForTrackableReadyEvent(event.trackable, event.handler))
                                 } catch (exception: ConnectionException) {
                                     ably.disconnect(event.trackable.id, properties.presenceData) {
                                         request(
                                             AddTrackableFailedEvent(
                                                 event.trackable,
-                                                event.callbackFunction,
+                                                event.handler,
                                                 exception
                                             )
                                         )
@@ -306,7 +306,7 @@ constructor(
                     is ConnectionForTrackableReadyEvent -> {
                         if (properties.trackableRemovalGuard.isMarkedForRemoval(event.trackable)) {
                             ably.disconnect(event.trackable.id, properties.presenceData) { result ->
-                                request(TrackableRemovalRequestedEvent(event.trackable, event.callbackFunction, result))
+                                request(TrackableRemovalRequestedEvent(event.trackable, event.handler, result))
                             }
                             continue
                         }
@@ -328,7 +328,7 @@ constructor(
                         trackableStateFlows = properties.trackableStateFlows
                         properties.trackableStates[event.trackable.id] = trackableState
                         val successResult = Result.success(trackableStateFlow.asStateFlow())
-                        event.callbackFunction(successResult)
+                        event.handler(successResult)
                         properties.duplicateTrackableGuard.finishAddingTrackable(event.trackable, successResult)
                     }
                     is ChangeLocationEngineResolutionEvent -> {
@@ -343,21 +343,21 @@ constructor(
                                     request(
                                         DisconnectSuccessEvent(event.trackable) {
                                             if (it.isSuccess) {
-                                                event.callbackFunction(Result.success(true))
+                                                event.handler(Result.success(true))
                                             } else {
-                                                event.callbackFunction(Result.failure(it.exceptionOrNull()!!))
+                                                event.handler(Result.failure(it.exceptionOrNull()!!))
                                             }
                                         }
                                     )
                                 } else {
-                                    event.callbackFunction(Result.failure(result.exceptionOrNull()!!))
+                                    event.handler(Result.failure(result.exceptionOrNull()!!))
                                 }
                             }
                         } else if (properties.duplicateTrackableGuard.isCurrentlyAddingTrackable(event.trackable)) {
-                            properties.trackableRemovalGuard.markForRemoval(event.trackable, event.callbackFunction)
+                            properties.trackableRemovalGuard.markForRemoval(event.trackable, event.handler)
                         } else {
                             // notify with false to indicate that it was not removed
-                            event.callbackFunction(Result.success(false))
+                            event.handler(Result.success(false))
                         }
                     }
                     is DisconnectSuccessEvent -> {
@@ -389,7 +389,7 @@ constructor(
                             stopLocationUpdates(properties)
                         }
                         properties.lastChannelConnectionStateChanges.remove(event.trackable.id)
-                        event.callbackFunction(Result.success(Unit))
+                        event.handler(Result.success(Unit))
                     }
                     is RefreshResolutionPolicyEvent -> {
                         properties.trackables.forEach { resolveResolution(it, properties) }
@@ -406,9 +406,9 @@ constructor(
                             ably.close(properties.presenceData)
                             properties.dispose()
                             properties.isStopped = true
-                            event.callbackFunction(Result.success(Unit))
+                            event.handler(Result.success(Unit))
                         } catch (exception: ConnectionException) {
-                            event.callbackFunction(Result.failure(exception))
+                            event.handler(Result.failure(exception))
                         }
                     }
                     is AblyConnectionStateChangeEvent -> {
