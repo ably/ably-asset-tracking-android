@@ -167,7 +167,7 @@ fun ChannelState.toTracking() = when (this) {
 fun io.ably.lib.realtime.ChannelStateListener.ChannelStateChange.toTracking() =
     ConnectionStateChange(
         this.current.toTracking(),
-        this.reason.toTracking()
+        this.reason?.toTracking()
     )
 
 /**
