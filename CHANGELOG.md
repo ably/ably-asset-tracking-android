@@ -12,7 +12,7 @@
 
 **Fixed bugs:**
 
-- Calling remove\(\) should remove a trackable that isn't finished being added [\#450](https://github.com/ably/ably-asset-tracking-android/issues/450)
+- Calling remove() should remove a trackable that isn't finished being added [\#450](https://github.com/ably/ably-asset-tracking-android/issues/450)
 
 **Closed issues:**
 
