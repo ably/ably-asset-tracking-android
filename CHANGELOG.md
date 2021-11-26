@@ -1,5 +1,47 @@
 # Change log
 
+
+
+## [Unreleased](https://github.com/ably/ably-asset-tracking-android/tree/v1.0.0-beta.11)
+
+[Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.0.0-beta.11...v1.0.0-beta.12)
+
+**Implemented enhancements:**
+
+- Add log statements to both SDKs [\#524](https://github.com/ably/ably-asset-tracking-android/issues/524)
+- Display resolution information in the example apps [\#510](https://github.com/ably/ably-asset-tracking-android/issues/510)
+- Send resolution to subscriber [\#509](https://github.com/ably/ably-asset-tracking-android/issues/509)
+
+**Fixed bugs:**
+
+- Calling remove\(\) should remove a trackable that isn't finished being added [\#450](https://github.com/ably/ably-asset-tracking-android/issues/450)
+
+**Closed issues:**
+
+- Rename State to Properties in core classes [\#466](https://github.com/ably/ably-asset-tracking-android/issues/466)
+- Improve the example apps to be more production-quality ready [\#421](https://github.com/ably/ably-asset-tracking-android/issues/421)
+- Create AAT SDK Testing guide [\#415](https://github.com/ably/ably-asset-tracking-android/issues/415)
+- Information about using SDK as a dependency in Gradle [\#348](https://github.com/ably/ably-asset-tracking-android/issues/348)
+- Update docs for DefaultResolutionConstraints [\#305](https://github.com/ably/ably-asset-tracking-android/issues/305)
+- API Reference docs output is missing copyright information [\#269](https://github.com/ably/ably-asset-tracking-android/issues/269)
+- Document the Event classes that are used in both SDKs [\#260](https://github.com/ably/ably-asset-tracking-android/issues/260)
+- Document the public interfaces exposed from LocationUpdateModels.kt in core-sdk [\#144](https://github.com/ably/ably-asset-tracking-android/issues/144)
+
+**Merged pull requests:**
+
+- Fix NPE when converting Ably's ChannelStateChange to AAT's one [\#527](https://github.com/ably/ably-asset-tracking-android/pull/527) ([KacperKluka](https://github.com/KacperKluka))
+- Add log statements to publisher SDK [\#526](https://github.com/ably/ably-asset-tracking-android/pull/526) ([KacperKluka](https://github.com/KacperKluka))
+- Add GitHub Packages installation instruction to the README [\#523](https://github.com/ably/ably-asset-tracking-android/pull/523) ([KacperKluka](https://github.com/KacperKluka))
+- Add documentation for the core publisher and core subscriber events [\#521](https://github.com/ably/ably-asset-tracking-android/pull/521) ([KacperKluka](https://github.com/KacperKluka))
+- Rename state to properties in core subscriber and publisher [\#520](https://github.com/ably/ably-asset-tracking-android/pull/520) ([KacperKluka](https://github.com/KacperKluka))
+- Fix DefaultResolutionConstraints docs [\#519](https://github.com/ably/ably-asset-tracking-android/pull/519) ([KacperKluka](https://github.com/KacperKluka))
+- Add documentation for the public location update classes [\#518](https://github.com/ably/ably-asset-tracking-android/pull/518) ([KacperKluka](https://github.com/KacperKluka))
+- Show publisher's resolution in the subscriber example app [\#517](https://github.com/ably/ably-asset-tracking-android/pull/517) ([KacperKluka](https://github.com/KacperKluka))
+- Add missing PRs to the changelog [\#516](https://github.com/ably/ably-asset-tracking-android/pull/516) ([KacperKluka](https://github.com/KacperKluka))
+- Send resolution data from publisher to subscribers [\#515](https://github.com/ably/ably-asset-tracking-android/pull/515) ([KacperKluka](https://github.com/KacperKluka))
+- Remove unfinished trackable when remove called [\#506](https://github.com/ably/ably-asset-tracking-android/pull/506) ([ikbalkaya](https://github.com/ikbalkaya))
+- Fixed Copyright footer [\#503](https://github.com/ably/ably-asset-tracking-android/pull/503) ([ikbalkaya](https://github.com/ikbalkaya))
+
 ## [1.0.0-beta.11](https://github.com/ably/ably-asset-tracking-android/tree/v1.0.0-beta.11)
 
 [Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.0.0-beta.10...v1.0.0-beta.11)
