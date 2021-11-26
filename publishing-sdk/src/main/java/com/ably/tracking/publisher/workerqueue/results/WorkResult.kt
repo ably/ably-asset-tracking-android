@@ -1,7 +1,7 @@
 package com.ably.tracking.publisher.workerqueue
 
 import com.ably.tracking.TrackableState
-import com.ably.tracking.common.ResultCallbackFunction
+import com.ably.tracking.common.ResultHandler
 import com.ably.tracking.publisher.Trackable
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -31,17 +31,17 @@ internal data class SyncAsyncResult(
 internal sealed class AddTrackableWorkResult() : WorkResult() {
     internal data class AlreadyIn(
         val trackableStateFlow: MutableStateFlow<TrackableState>,
-        val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>
+        val handler: ResultHandler<StateFlow<TrackableState>>
     ) : AddTrackableWorkResult()
 
     internal data class Success(
         val trackable: Trackable,
-        val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>
+        val handler: ResultHandler<StateFlow<TrackableState>>
     ) : AddTrackableWorkResult()
 
     internal data class Fail(
         val trackable: Trackable,
         val exception: Throwable?,
-        val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>
+        val handler: ResultHandler<StateFlow<TrackableState>>
     ) : AddTrackableWorkResult()
 }
