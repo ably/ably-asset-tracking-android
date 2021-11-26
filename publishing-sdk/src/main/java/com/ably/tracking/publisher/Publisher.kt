@@ -223,6 +223,15 @@ interface Publisher {
         fun sendResolution(enabled: Boolean): Builder
 
         /**
+         * **OPTIONAL** Enables using predictions for enhanced location updates.
+         * By default this is enabled.
+         *
+         * @param enabled Whether the predictions for enhanced locations are enabled.
+         * @return A new instance of the builder with this property changed.
+         */
+        fun predictions(enabled: Boolean): Builder
+
+        /**
          * Creates a [Publisher] and starts publishing.
          *
          * The returned publisher instance does not start in a state whereby it is actively tracking anything. If
