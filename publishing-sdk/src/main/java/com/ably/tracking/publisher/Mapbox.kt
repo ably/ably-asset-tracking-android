@@ -8,6 +8,9 @@ import com.ably.tracking.Resolution
 import com.ably.tracking.common.MILLISECONDS_PER_SECOND
 import com.ably.tracking.common.ResultHandler
 import com.ably.tracking.common.clientOptions
+import com.ably.tracking.common.logging.createLoggingTag
+import com.ably.tracking.common.logging.e
+import com.ably.tracking.common.logging.v
 import com.ably.tracking.common.toAssetTracking
 import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.logging.LogHandler
@@ -148,10 +151,12 @@ internal class DefaultMapbox(
     private val mapConfiguration: MapConfiguration,
     connectionConfiguration: ConnectionConfiguration,
     locationSource: LocationSource? = null,
-    logHandler: LogHandler?,
+    private val logHandler: LogHandler?,
     notificationProvider: PublisherNotificationProvider,
     notificationId: Int
 ) : Mapbox {
+    private val TAG = createLoggingTag(this)
+
     /**
      * Dispatcher used to run [mapboxNavigation] methods on the main thread.
      * It has to be the "immediate" version of the main dispatcher to not
@@ -170,9 +175,11 @@ internal class DefaultMapbox(
         locationSource?.let {
             when (it) {
                 is LocationSourceAbly -> {
+                    logHandler?.v("$TAG Use Ably simulation location engine")
                     useAblySimulationLocationEngine(mapboxBuilder, it, connectionConfiguration, logHandler)
                 }
                 is LocationSourceRaw -> {
+                    logHandler?.v("$TAG Use history data replayer location engine")
                     useHistoryDataReplayerLocationEngine(mapboxBuilder, it)
                 }
             }
@@ -181,8 +188,10 @@ internal class DefaultMapbox(
         runBlocking(mainDispatcher) {
             MapboxInstancesCounter.increment()
             mapboxNavigation = if (MapboxNavigationProvider.isCreated()) {
+                logHandler?.v("$TAG Retrieve previously created MapboxNavigation instance")
                 MapboxNavigationProvider.retrieve()
             } else {
+                logHandler?.v("$TAG Create new MapboxNavigation instance")
                 MapboxNavigationProvider.create(mapboxBuilder.build())
             }
         }
@@ -199,6 +208,7 @@ internal class DefaultMapbox(
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
     override fun startTrip() {
         runBlocking(mainDispatcher) {
+            logHandler?.v("$TAG Start trip and location updates")
             mapboxNavigation.apply {
                 toggleHistory(true)
                 startTripSession()
@@ -209,6 +219,7 @@ internal class DefaultMapbox(
 
     override fun stopAndClose() {
         runBlocking(mainDispatcher) {
+            logHandler?.v("$TAG Stop and close Mapbox")
             mapboxReplayer?.stop()
             mapboxNavigation.apply {
                 stopTripSession()
@@ -223,6 +234,7 @@ internal class DefaultMapbox(
                 }
             }
             if (MapboxInstancesCounter.decrementAndCheckIfItWasTheLastOne()) {
+                logHandler?.v("$TAG Destroy the MapboxNavigation instance")
                 MapboxNavigationProvider.destroy()
             }
         }
@@ -231,6 +243,7 @@ internal class DefaultMapbox(
     private fun createLocationObserver(locationUpdatesObserver: LocationUpdatesObserver) =
         object : LocationObserver {
             override fun onRawLocationChanged(rawLocation: android.location.Location) {
+                logHandler?.v("$TAG Raw location received from Mapbox: $rawLocation")
                 locationUpdatesObserver.onRawLocationChanged(rawLocation.toAssetTracking())
             }
 
@@ -238,6 +251,7 @@ internal class DefaultMapbox(
                 enhancedLocation: android.location.Location,
                 keyPoints: List<android.location.Location>
             ) {
+                logHandler?.v("$TAG Enhanced location received from Mapbox: $enhancedLocation")
                 val intermediateLocations =
                     if (keyPoints.size > 1) keyPoints.subList(0, keyPoints.size - 1)
                     else emptyList()
@@ -257,6 +271,7 @@ internal class DefaultMapbox(
     override fun registerLocationObserver(locationUpdatesObserver: LocationUpdatesObserver) {
         unregisterLocationObserver()
         runBlocking(mainDispatcher) {
+            logHandler?.v("$TAG Register location observer")
             locationObserver = createLocationObserver(locationUpdatesObserver)
             locationObserver?.let { mapboxNavigation.registerLocationObserver(it) }
         }
@@ -265,6 +280,7 @@ internal class DefaultMapbox(
     override fun unregisterLocationObserver() {
         locationObserver?.let {
             runBlocking(mainDispatcher) {
+                logHandler?.v("$TAG Unregister location observer")
                 mapboxNavigation.unregisterLocationObserver(it)
             }
         }
@@ -277,6 +293,7 @@ internal class DefaultMapbox(
         routeDurationCallback: ResultHandler<Long>
     ) {
         runBlocking(mainDispatcher) {
+            logHandler?.v("$TAG Set route to: $destination")
             mapboxNavigation.requestRoutes(
                 RouteOptions.builder()
                     .applyDefaultParams()
@@ -286,6 +303,7 @@ internal class DefaultMapbox(
                     .build(),
                 object : RoutesRequestCallback {
                     override fun onRoutesReady(routes: List<DirectionsRoute>) {
+                        logHandler?.v("$TAG Set route successful")
                         routes.firstOrNull()?.let {
                             val routeDurationInMilliseconds =
                                 (it.durationTypical() ?: it.duration()) * MILLISECONDS_PER_SECOND
@@ -298,6 +316,7 @@ internal class DefaultMapbox(
                     override fun onRoutesRequestFailure(throwable: Throwable, routeOptions: RouteOptions) {
                         // We won't know the ETA for the active trackable and therefore we won't be able to check the temporal threshold.
                         routeDurationCallback(Result.failure(MapException(throwable)))
+                        logHandler?.e("$TAG Set route failed", throwable)
                     }
                 }
             )
@@ -306,12 +325,14 @@ internal class DefaultMapbox(
 
     override fun clearRoute() {
         runBlocking(mainDispatcher) {
+            logHandler?.v("$TAG Clear route")
             mapboxNavigation.setRoutes(emptyList())
         }
     }
 
     override fun changeResolution(resolution: Resolution) {
         runBlocking(mainDispatcher) {
+            logHandler?.v("$TAG Change location engine resolution")
             mapboxNavigation.navigationOptions.locationEngine.let {
                 if (it is ResolutionLocationEngine) {
                     it.changeResolution(resolution)
@@ -322,8 +343,10 @@ internal class DefaultMapbox(
 
     private fun getBestLocationEngine(context: Context, logHandler: LogHandler?): ResolutionLocationEngine =
         if (LocationEngineUtils.hasGoogleLocationServices(context)) {
+            logHandler?.v("$TAG Use Google location engine")
             GoogleLocationEngine(context)
         } else {
+            logHandler?.v("$TAG Use Android location engine")
             FusedAndroidLocationEngine(context, logHandler)
         }
 

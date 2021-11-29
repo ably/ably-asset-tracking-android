@@ -16,6 +16,8 @@ import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.PresenceAction
 import com.ably.tracking.common.PresenceData
 import com.ably.tracking.common.createSingleThreadDispatcher
+import com.ably.tracking.common.logging.createLoggingTag
+import com.ably.tracking.common.logging.v
 import com.ably.tracking.common.logging.w
 import com.ably.tracking.logging.LogHandler
 import com.ably.tracking.publisher.guards.DuplicateTrackableGuard
@@ -84,6 +86,7 @@ constructor(
     private val areRawLocationsEnabled: Boolean?,
     private val sendResolutionEnabled: Boolean,
 ) : CorePublisher {
+    private val TAG = createLoggingTag(this)
     private val scope = CoroutineScope(singleThreadDispatcher + SupervisorJob())
     private val sendEventChannel: SendChannel<Event>
     private val _locations = MutableSharedFlow<LocationUpdate>(replay = 1)
@@ -118,10 +121,12 @@ constructor(
         ably.subscribeForAblyStateChange { enqueue(AblyConnectionStateChangeEvent(it)) }
         mapbox.registerLocationObserver(object : LocationUpdatesObserver {
             override fun onRawLocationChanged(rawLocation: Location) {
+                logHandler?.v("$TAG Raw location received: $rawLocation")
                 enqueue(RawLocationChangedEvent(rawLocation))
             }
 
             override fun onEnhancedLocationChanged(enhancedLocation: Location, intermediateLocations: List<Location>) {
+                logHandler?.v("$TAG Enhanced location received: $enhancedLocation")
                 val locationUpdateType =
                     if (intermediateLocations.isEmpty()) LocationUpdateType.ACTUAL else LocationUpdateType.PREDICTED
                 enqueue(EnhancedLocationChangedEvent(enhancedLocation, intermediateLocations, locationUpdateType))
@@ -168,6 +173,7 @@ constructor(
                             System.currentTimeMillis() + event.routeDurationInMilliseconds
                     }
                     is RawLocationChangedEvent -> {
+                        logHandler?.v("$TAG Raw location changed event received ${event.location}")
                         properties.lastPublisherLocation = event.location
                         if (areRawLocationsEnabled == true) {
                             properties.trackables.forEach { processRawLocationUpdate(event, properties, it.id) }
@@ -180,6 +186,7 @@ constructor(
                         }
                     }
                     is EnhancedLocationChangedEvent -> {
+                        logHandler?.v("$TAG Enhanced location changed event received ${event.location}")
                         properties.trackables.forEach { processEnhancedLocationUpdate(event, properties, it.id) }
                         scope.launch {
                             _locations.emit(
@@ -405,16 +412,19 @@ constructor(
                         }
                     }
                     is AblyConnectionStateChangeEvent -> {
+                        logHandler?.v("$TAG Ably connection state changed ${event.connectionStateChange.state}")
                         properties.lastConnectionStateChange = event.connectionStateChange
                         properties.trackables.forEach {
                             updateTrackableState(properties, it.id)
                         }
                     }
                     is ChannelConnectionStateChangeEvent -> {
+                        logHandler?.v("$TAG Trackable ${event.trackableId} connection state changed ${event.connectionStateChange.state}")
                         properties.lastChannelConnectionStateChanges[event.trackableId] = event.connectionStateChange
                         updateTrackableState(properties, event.trackableId)
                     }
                     is SendEnhancedLocationSuccessEvent -> {
+                        logHandler?.v("$TAG Trackable ${event.trackableId} successfully sent enhanced location ${event.location}")
                         properties.enhancedLocationsPublishingState.unmarkMessageAsPending(event.trackableId)
                         properties.lastSentEnhancedLocations[event.trackableId] = event.location
                         properties.skippedEnhancedLocations.clear(event.trackableId)
@@ -422,6 +432,10 @@ constructor(
                         processNextWaitingEnhancedLocationUpdate(properties, event.trackableId)
                     }
                     is SendEnhancedLocationFailureEvent -> {
+                        logHandler?.w(
+                            "$TAG Trackable ${event.trackableId} failed to send enhanced location ${event.locationUpdate.location}",
+                            event.exception
+                        )
                         if (properties.enhancedLocationsPublishingState.shouldRetryPublishing(event.trackableId)) {
                             retrySendingEnhancedLocation(properties, event.trackableId, event.locationUpdate)
                         } else {
@@ -431,20 +445,21 @@ constructor(
                                 event.trackableId,
                                 event.locationUpdate.location
                             )
-                            logHandler?.w(
-                                "Sending location update failed. Location saved for further sending",
-                                event.exception
-                            )
                             processNextWaitingEnhancedLocationUpdate(properties, event.trackableId)
                         }
                     }
                     is SendRawLocationSuccessEvent -> {
+                        logHandler?.v("$TAG Trackable ${event.trackableId} successfully sent raw location ${event.location}")
                         properties.rawLocationsPublishingState.unmarkMessageAsPending(event.trackableId)
                         properties.lastSentRawLocations[event.trackableId] = event.location
                         properties.skippedRawLocations.clear(event.trackableId)
                         processNextWaitingRawLocationUpdate(properties, event.trackableId)
                     }
                     is SendRawLocationFailureEvent -> {
+                        logHandler?.w(
+                            "$TAG Trackable ${event.trackableId} failed to send raw location ${event.locationUpdate.location}",
+                            event.exception
+                        )
                         if (properties.rawLocationsPublishingState.shouldRetryPublishing(event.trackableId)) {
                             retrySendingRawLocation(properties, event.trackableId, event.locationUpdate)
                         } else {
@@ -453,10 +468,6 @@ constructor(
                                 properties,
                                 event.trackableId,
                                 event.locationUpdate.location
-                            )
-                            logHandler?.w(
-                                "Sending raw location update failed. Location saved for further sending",
-                                event.exception
                             )
                             processNextWaitingRawLocationUpdate(properties, event.trackableId)
                         }
@@ -471,6 +482,7 @@ constructor(
         trackableId: String,
         locationUpdate: EnhancedLocationUpdate
     ) {
+        logHandler?.v("$TAG Trackable $trackableId retry sending enhanced location ${locationUpdate.location}")
         properties.enhancedLocationsPublishingState.incrementRetryCount(trackableId)
         sendEnhancedLocationUpdate(
             EnhancedLocationChangedEvent(
@@ -488,8 +500,10 @@ constructor(
         properties: Properties,
         trackableId: String
     ) {
+        logHandler?.v("$TAG Processing enhanced location for trackable: $trackableId. ${event.location}")
         when {
             properties.enhancedLocationsPublishingState.hasPendingMessage(trackableId) -> {
+                logHandler?.v("$TAG Trackable: $trackableId has pending message. Adding enhanced location to waiting ${event.location}")
                 properties.enhancedLocationsPublishingState.addToWaiting(trackableId, event)
             }
             shouldSendLocation(
@@ -508,6 +522,7 @@ constructor(
 
     private fun processNextWaitingEnhancedLocationUpdate(properties: Properties, trackableId: String) {
         properties.enhancedLocationsPublishingState.getNextWaiting(trackableId)?.let {
+            logHandler?.v("$TAG Trackable: $trackableId. Process next waiting enhanced location ${it.location}")
             processEnhancedLocationUpdate(it, properties, trackableId)
         }
     }
@@ -517,6 +532,7 @@ constructor(
         properties: Properties,
         trackableId: String
     ) {
+        logHandler?.v("$TAG Trackable: $trackableId will send enhanced location ${event.location}")
         val locationUpdate = EnhancedLocationUpdate(
             event.location,
             properties.skippedEnhancedLocations.toList(trackableId),
@@ -534,10 +550,12 @@ constructor(
     }
 
     private fun saveEnhancedLocationForFurtherSending(properties: Properties, trackableId: String, location: Location) {
+        logHandler?.v("$TAG Trackable: $trackableId. Put enhanced location to the skippedLocations $location")
         properties.skippedEnhancedLocations.add(trackableId, location)
     }
 
     private fun retrySendingRawLocation(properties: Properties, trackableId: String, locationUpdate: LocationUpdate) {
+        logHandler?.v("$TAG Trackable $trackableId retry sending raw location ${locationUpdate.location}")
         properties.rawLocationsPublishingState.incrementRetryCount(trackableId)
         sendRawLocationUpdate(RawLocationChangedEvent(locationUpdate.location), properties, trackableId)
     }
@@ -547,8 +565,10 @@ constructor(
         properties: Properties,
         trackableId: String
     ) {
+        logHandler?.v("$TAG Processing raw location for trackable: $trackableId. ${event.location}")
         when {
             properties.rawLocationsPublishingState.hasPendingMessage(trackableId) -> {
+                logHandler?.v("$TAG Trackable: $trackableId has pending message. Adding raw location to waiting ${event.location}")
                 properties.rawLocationsPublishingState.addToWaiting(trackableId, event)
             }
             shouldSendLocation(
@@ -567,6 +587,7 @@ constructor(
 
     private fun processNextWaitingRawLocationUpdate(properties: Properties, trackableId: String) {
         properties.rawLocationsPublishingState.getNextWaiting(trackableId)?.let {
+            logHandler?.v("$TAG Trackable: $trackableId. Process next waiting raw location ${it.location}")
             processRawLocationUpdate(it, properties, trackableId)
         }
     }
@@ -576,6 +597,7 @@ constructor(
         properties: Properties,
         trackableId: String
     ) {
+        logHandler?.v("$TAG Trackable: $trackableId will send raw location ${event.location}")
         val locationUpdate = LocationUpdate(
             event.location,
             properties.skippedRawLocations.toList(trackableId),
@@ -591,6 +613,7 @@ constructor(
     }
 
     private fun saveRawLocationForFurtherSending(properties: Properties, trackableId: String, location: Location) {
+        logHandler?.v("$TAG Trackable: $trackableId. Put raw location to the skippedLocations $location")
         properties.skippedRawLocations.add(trackableId, location)
     }
 
