@@ -1,5 +1,6 @@
 package com.ably.tracking.publisher.workerqueue
 
+import android.util.Log
 import com.ably.tracking.publisher.CorePublisher
 import com.ably.tracking.publisher.DefaultCorePublisher
 import com.ably.tracking.publisher.workerqueue.resulthandlers.getWorkResultHandler
@@ -12,6 +13,7 @@ import kotlinx.coroutines.launch
  * that this is currently an acting bridge between the older event queue (CorePublisher) . All methods must be called
  * from the corresponding channel receivers.
  * */
+private const val TAG = "EventWorkerQueue"
 
 internal class EventWorkerQueue(
     private val corePublisher: CorePublisher,
@@ -26,7 +28,7 @@ internal class EventWorkerQueue(
      * directly. Current behaviour is temporary and is going to change after all events have their corresponding
      * worker and we no longer use a channel in CorePublisher
      **/
-    override suspend fun enqueue(worker: Worker) {
+    override fun enqueue(worker: Worker) {
         executeWork(worker)
     }
 
@@ -37,22 +39,24 @@ internal class EventWorkerQueue(
      * If the optional async work exists, It's executed in a different coroutine in order to not block the queue.
      * Then, the result of this work is handled in the same way as the sync work result.
      * */
-    private suspend fun executeWork(worker: Worker) {
+    private fun executeWork(worker: Worker) {
         val workResult = worker.doWork(publisherProperties)
-
+        Log.d(TAG, "executeWork: ")
         workResult.syncWorkResult?.let {
             handleWorkResult(it)
         }
 
         workResult.asyncWork?.let { asyncWork ->
             scope.launch {
+                Log.d(TAG, "executeWork: asyncWork ")
+
                 val asyncWorkResult = asyncWork()
                 handleWorkResult(asyncWorkResult)
             }
         }
     }
 
-    private suspend fun handleWorkResult(workResult: WorkResult) {
+    private fun handleWorkResult(workResult: WorkResult) {
         val resultHandler = getWorkResultHandler(workResult)
         val nextWorker = resultHandler.handle(workResult, corePublisher)
         nextWorker?.let { enqueue(it) }

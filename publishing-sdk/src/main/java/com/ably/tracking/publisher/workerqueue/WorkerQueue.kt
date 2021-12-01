@@ -13,5 +13,5 @@ internal interface WorkerQueue {
      * @param [worker] : [Worker] to be executed
      * Please note that this behaviour will change after refactorings
      * **/
-    suspend fun enqueue(worker: Worker)
+    fun enqueue(worker: Worker)
 }
