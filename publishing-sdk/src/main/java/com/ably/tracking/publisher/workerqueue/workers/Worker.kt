@@ -13,9 +13,10 @@ internal interface Worker {
      * provide result for the executed synchronous work and an optional asynchronous work the form of a suspending
      * function.
      *
-     * @param properties : Current state of publisher to be used by this worker. This state is intended to be used
-     * inside sync work block. Please use this directly only at synchronus part of code. If you need to pass this
-     * into async work lambda, you should copy neccessary properties.
+     * @param properties : Current state of publisher to be used by this worker.
+     *
+     * Please use [properties] directly only at synchronous part of code. If you need to pass this
+     * into async work lambda, you should copy necessary properties.
      *
      * @return SyncAsyncResult which represents an optional synchronous work result and an optional asynchronous work
      * **/
