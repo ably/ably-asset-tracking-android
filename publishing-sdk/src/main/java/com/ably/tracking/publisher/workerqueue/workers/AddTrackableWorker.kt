@@ -25,20 +25,17 @@ internal class AddTrackableWorker(
                 SyncAsyncResult()
             }
             properties.trackables.contains(trackable) -> {
-                handler(Result.success(properties.trackableStateFlows[trackable.id]!!))
-                SyncAsyncResult()
-            }
-            properties.trackables.contains(trackable) -> {
                 return SyncAsyncResult(
-                    AddTrackableWorkResult.AlreadyIn(properties.trackableStateFlows[trackable.id]!!, handler),
-                    null
+                    syncWorkResult = AddTrackableWorkResult.AlreadyIn(
+                        properties.trackableStateFlows[trackable.id]!!,
+                        handler
+                    )
                 )
             }
             else -> {
                 properties.duplicateTrackableGuard.startAddingTrackable(trackable)
                 val presenceData = properties.presenceData.copy()
                 SyncAsyncResult(
-                    syncWorkResult = null,
                     asyncWork = {
                         val connectResult = suspendingConnect(presenceData)
                         if (connectResult.isSuccess) {
