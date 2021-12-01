@@ -13,8 +13,6 @@ import kotlinx.coroutines.launch
  * that this is currently an acting bridge between the older event queue (CorePublisher) . All methods must be called
  * from the corresponding channel receivers.
  * */
-private const val TAG = "EventWorkerQueue"
-
 internal class EventWorkerQueue(
     private val corePublisher: CorePublisher,
     private val publisherProperties: DefaultCorePublisher.Properties,
@@ -41,15 +39,12 @@ internal class EventWorkerQueue(
      * */
     private fun executeWork(worker: Worker) {
         val workResult = worker.doWork(publisherProperties)
-        Log.d(TAG, "executeWork: ")
         workResult.syncWorkResult?.let {
             handleWorkResult(it)
         }
 
         workResult.asyncWork?.let { asyncWork ->
             scope.launch {
-                Log.d(TAG, "executeWork: asyncWork ")
-
                 val asyncWorkResult = asyncWork()
                 handleWorkResult(asyncWorkResult)
             }
