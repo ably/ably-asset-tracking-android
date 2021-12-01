@@ -15,7 +15,7 @@ import kotlinx.coroutines.launch
 
 internal class EventWorkerQueue(
     private val corePublisher: CorePublisher,
-    private val publisherState: DefaultCorePublisher.Properties,
+    private val publisherProperties: DefaultCorePublisher.Properties,
     private val scope: CoroutineScope
 ) : WorkerQueue {
 
@@ -38,7 +38,7 @@ internal class EventWorkerQueue(
      * Then, the result of this work is handled in the same way as the sync work result.
      * */
     private suspend fun executeWork(worker: Worker) {
-        val workResult = worker.doWork(publisherState)
+        val workResult = worker.doWork(publisherProperties)
 
         workResult.syncWorkResult?.let {
             handleWorkResult(it)
