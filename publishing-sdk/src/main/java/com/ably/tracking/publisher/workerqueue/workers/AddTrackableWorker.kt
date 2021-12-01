@@ -5,7 +5,9 @@ import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.PresenceData
 import com.ably.tracking.common.ResultHandler
+import com.ably.tracking.publisher.AddTrackableEvent
 import com.ably.tracking.publisher.DefaultCorePublisher
+import com.ably.tracking.publisher.Request
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.AddTrackableWorkResult
 import com.ably.tracking.publisher.workerqueue.SyncAsyncResult
@@ -18,6 +20,10 @@ internal class AddTrackableWorker(
     private val handler: ResultHandler<StateFlow<TrackableState>>,
     private val ably: Ably
 ) : Worker {
+
+    override val event: Request<*>
+        get() = AddTrackableEvent(trackable, handler)
+
     override fun doWork(properties: DefaultCorePublisher.Properties): SyncAsyncResult {
         return when {
             properties.duplicateTrackableGuard.isCurrentlyAddingTrackable(trackable) -> {

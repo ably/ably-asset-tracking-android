@@ -1,6 +1,7 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
 import com.ably.tracking.publisher.DefaultCorePublisher
+import com.ably.tracking.publisher.Request
 import com.ably.tracking.publisher.workerqueue.SyncAsyncResult
 
 /**
@@ -8,6 +9,13 @@ import com.ably.tracking.publisher.workerqueue.SyncAsyncResult
  * and another optional asynchronous work.
  * */
 internal interface Worker {
+    /**
+     * A temporary variable that enables sending requests in form of events to CorePublisher, during refactoring
+     *
+     * This should be removed after refactoring finishes
+     * */
+    val event: Request<*>
+
     /**
      * This function is provided in order for implementors  to implement synchronous work. They may  optionally
      * provide result for the executed synchronous work and an optional asynchronous work the form of a suspending

@@ -42,6 +42,6 @@ internal class EventWorkerQueue(
     private fun handleWorkResult(workResult: WorkResult) {
         val resultHandler = getWorkResultHandler(workResult)
         val nextWorker = resultHandler.handle(workResult, corePublisher)
-        nextWorker?.let { execute(it) }
+        nextWorker?.let { corePublisher.request(it.event) }
     }
 }
