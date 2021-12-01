@@ -16,12 +16,14 @@ internal sealed class WorkResult
 
 /**
  * A special [WorkResult] that contains an optional [syncWorkResult] and [asyncWork]
- * [syncWorkResult] : Any work result that has resulted from synchronous work. This work result is expected to be
+ *
+ * @param syncWorkResult : Any work result that has resulted from synchronous work. This work result is expected to be
  * returned and processed in a blocking fashion
- * [asyncWork] is any work that is not immediately executed but returned to caller for it to execute later. It is a
- * suspending work and it is intended to be launched in a different coroutine. However there is nothing that prevents
- * caller from executing this in the same coroutine. If any use case like this arise, you should document the reason
- * of such usage.
+ * @param asyncWork is any work that is not immediately executed but returned to caller for background execution.
+ *
+ * [asyncWork] is a suspending work and it is intended to be launched in a different coroutine. However there is
+ * nothing that prevents callers from executing this in the same coroutine. If any use case like this arise, you
+ * should document the reason of such usage.
  * **/
 internal data class SyncAsyncResult(
     val syncWorkResult: WorkResult? = null,

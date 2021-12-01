@@ -7,6 +7,6 @@ import com.ably.tracking.publisher.workerqueue.WorkResultHandler
 internal fun getWorkResultHandler(workResult: WorkResult): WorkResultHandler {
     when (workResult) {
         is AddTrackableWorkResult -> return AddTrackableResultHandler()
+        else -> throw IllegalArgumentException("Invalid workResult provided")
     }
-    throw IllegalArgumentException("Invalid workResult provided")
 }
