@@ -20,13 +20,19 @@ fun Ably.mockSuspendingConnectSuccess(trackableId: String) {
 }
 
 fun Ably.mockConnectFailureThenSuccess(trackableId: String, callbackDelayInMilliseconds: Long? = null) {
+    var failed = false
     coEvery {
+        if (failed) {
+            callbackDelayInMilliseconds?.let { delay(it) }
+        }
         suspendingConnect(trackableId, any(), any(), any(), any())
-    }.answers{
-        Result.success(true)
-    }.coAndThen {
-        delay(callbackDelayInMilliseconds!!)
-        Result.failure(anyConnectionException())
+    }.answers {
+        if (!failed){
+            failed = true
+            Result.failure(anyConnectionException())
+        }else{
+            Result.success(true)
+        }
     }
 }
 
