@@ -3,6 +3,7 @@ package com.ably.tracking.publisher.workerqueue.workers
 import com.ably.tracking.ConnectionException
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
+import com.ably.tracking.common.PresenceData
 import com.ably.tracking.common.ResultHandler
 import com.ably.tracking.publisher.DefaultCorePublisher
 import com.ably.tracking.publisher.Trackable
@@ -35,11 +36,11 @@ internal class AddTrackableWorker(
             }
             else -> {
                 properties.duplicateTrackableGuard.startAddingTrackable(trackable)
-
+                val presenceData = properties.presenceData.copy()
                 SyncAsyncResult(
                     syncWorkResult = null,
                     asyncWork = {
-                        val connectResult = suspendingConnect(properties)
+                        val connectResult = suspendingConnect(presenceData)
                         if (connectResult.isSuccess) {
                             AddTrackableWorkResult.Success(trackable, handler)
                         } else {
@@ -51,9 +52,9 @@ internal class AddTrackableWorker(
         }
     }
 
-    private suspend fun suspendingConnect(publisherState: DefaultCorePublisher.Properties): Result<Boolean> {
+    private suspend fun suspendingConnect(presenceData: PresenceData): Result<Boolean> {
         return suspendCoroutine { continuation ->
-            ably.connect(trackable.id, publisherState.presenceData, willPublish = true) { result ->
+            ably.connect(trackable.id, presenceData, willPublish = true) { result ->
                 try {
                     result.getOrThrow()
                     continuation.resume(Result.success(true))
