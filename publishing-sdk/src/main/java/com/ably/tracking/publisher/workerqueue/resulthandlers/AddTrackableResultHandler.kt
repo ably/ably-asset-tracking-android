@@ -30,7 +30,6 @@ internal class AddTrackableResultHandler : WorkResultHandler {
                     workResult.handler
                 )
             )
-            else -> return null
         }
         return null
     }
