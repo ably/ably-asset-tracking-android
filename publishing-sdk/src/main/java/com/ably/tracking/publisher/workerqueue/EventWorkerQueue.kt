@@ -1,6 +1,5 @@
 package com.ably.tracking.publisher.workerqueue
 
-import android.util.Log
 import com.ably.tracking.publisher.CorePublisher
 import com.ably.tracking.publisher.DefaultCorePublisher
 import com.ably.tracking.publisher.workerqueue.resulthandlers.getWorkResultHandler
