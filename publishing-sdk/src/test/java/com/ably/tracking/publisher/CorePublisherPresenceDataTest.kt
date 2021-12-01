@@ -8,18 +8,18 @@ import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ClientTypes
 import com.ably.tracking.common.PresenceData
 import com.ably.tracking.test.common.mockCreateConnectionSuccess
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.verify
-import java.util.UUID
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
-import kotlin.coroutines.suspendCoroutine
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Test
+import java.util.UUID
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.coroutines.suspendCoroutine
 
 @SuppressLint("MissingPermission")
 class CorePublisherPresenceDataTest {
@@ -51,8 +51,8 @@ class CorePublisherPresenceDataTest {
             stopCorePublisher(corePublisher)
         }
         val expectedPresenceData = PresenceData(ClientTypes.PUBLISHER, null, null)
-        verify(exactly = 1) {
-            ably.connect(trackableId, expectedPresenceData, any(), any(), any(), any())
+        coVerify(exactly = 1) {
+            ably.suspendingConnect(trackableId, expectedPresenceData, any(), any(), any())
         }
     }
 
@@ -71,8 +71,8 @@ class CorePublisherPresenceDataTest {
             stopCorePublisher(corePublisher)
         }
         val expectedPresenceData = PresenceData(ClientTypes.PUBLISHER, null, true)
-        verify(exactly = 1) {
-            ably.connect(trackableId, expectedPresenceData, any(), any(), any(), any())
+        coVerify(exactly = 1) {
+            ably.suspendingConnect(trackableId, expectedPresenceData, any(), any(), any())
         }
     }
 

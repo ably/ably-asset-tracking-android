@@ -22,14 +22,12 @@ fun Ably.mockSuspendingConnectSuccess(trackableId: String) {
 fun Ably.mockConnectFailureThenSuccess(trackableId: String, callbackDelayInMilliseconds: Long? = null) {
     coEvery {
         suspendingConnect(trackableId, any(), any(), any(), any())
-    } returns
-        Result.success(false)
-
-    coEvery {
-        callbackDelayInMilliseconds?.let { delay(it) }
-        suspendingConnect(trackableId, any(), any(), any(), any())
-    } returns
+    }.answers{
         Result.success(true)
+    }.coAndThen {
+        delay(callbackDelayInMilliseconds!!)
+        Result.failure(anyConnectionException())
+    }
 }
 
 fun Ably.mockSubscribeToPresenceSuccess(trackableId: String) {
