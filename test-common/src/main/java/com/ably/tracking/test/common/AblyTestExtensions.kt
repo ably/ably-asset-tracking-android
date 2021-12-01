@@ -8,9 +8,23 @@ import io.mockk.every
 import io.mockk.slot
 import kotlinx.coroutines.delay
 
-fun Ably.mockCreateConnectionSuccess(trackableId: String) {
+fun Ably.mockCreateSuspendingConnectionSuccess(trackableId: String) {
     mockSuspendingConnectSuccess(trackableId)
     mockSubscribeToPresenceSuccess(trackableId)
+}
+
+fun Ably.mockCreateConnectionSuccess(trackableId: String) {
+    mockConnectSuccess(trackableId)
+    mockSubscribeToPresenceSuccess(trackableId)
+}
+
+fun Ably.mockConnectSuccess(trackableId: String) {
+    val callbackSlot = slot<(Result<Unit>) -> Unit>()
+    every {
+        connect(trackableId, any(), any(), any(), any(), capture(callbackSlot))
+    } answers {
+        callbackSlot.captured(Result.success(Unit))
+    }
 }
 
 fun Ably.mockSuspendingConnectSuccess(trackableId: String) {
@@ -27,10 +41,10 @@ fun Ably.mockConnectFailureThenSuccess(trackableId: String, callbackDelayInMilli
         }
         suspendingConnect(trackableId, any(), any(), any(), any())
     }.answers {
-        if (!failed){
+        if (!failed) {
             failed = true
             Result.failure(anyConnectionException())
-        }else{
+        } else {
             Result.success(true)
         }
     }

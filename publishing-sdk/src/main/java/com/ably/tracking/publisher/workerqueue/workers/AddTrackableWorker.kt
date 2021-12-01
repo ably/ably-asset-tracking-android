@@ -17,7 +17,7 @@ internal class AddTrackableWorker(
     private val ably: Ably
 ) : Worker {
     override val event: Request<*>
-        get() = AddTrackableEvent(trackable,handler)
+        get() = AddTrackableEvent(trackable, handler)
 
     override fun doWork(properties: PublisherProperties): SyncAsyncResult {
         return when {

@@ -4,7 +4,7 @@ import android.annotation.SuppressLint
 import com.ably.tracking.ConnectionException
 import com.ably.tracking.common.Ably
 import com.ably.tracking.test.common.mockConnectFailureThenSuccess
-import com.ably.tracking.test.common.mockCreateConnectionSuccess
+import com.ably.tracking.test.common.mockCreateSuspendingConnectionSuccess
 import com.ably.tracking.test.common.mockDisconnectSuccess
 import com.ably.tracking.test.common.mockSubscribeToPresenceError
 import com.ably.tracking.test.common.mockSubscribeToPresenceSuccess
@@ -76,7 +76,7 @@ class DefaultPublisherTest {
         // given
         val trackableId = UUID.randomUUID().toString()
         val trackable = Trackable(trackableId)
-        ably.mockCreateConnectionSuccess(trackableId)
+        ably.mockCreateSuspendingConnectionSuccess(trackableId)
 
         // when
         runBlocking {
@@ -119,7 +119,7 @@ class DefaultPublisherTest {
         // given
         val trackableId = UUID.randomUUID().toString()
         val trackable = Trackable(trackableId)
-        ably.mockCreateConnectionSuccess(trackableId)
+        ably.mockCreateSuspendingConnectionSuccess(trackableId)
 
         // when
         runBlocking {
@@ -180,7 +180,7 @@ class DefaultPublisherTest {
         val trackableId = UUID.randomUUID().toString()
         val trackable = Trackable(trackableId)
         val callsOrder = mutableListOf<Int>()
-        ably.mockCreateConnectionSuccess(trackableId)
+        ably.mockCreateSuspendingConnectionSuccess(trackableId)
 
         // when
         runBlocking {
