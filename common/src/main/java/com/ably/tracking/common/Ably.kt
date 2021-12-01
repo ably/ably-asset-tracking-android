@@ -178,7 +178,7 @@ interface Ably {
     /**
      * A suspending version of [connect]
      * */
-    suspend fun suspendingConnect(
+    suspend fun connect(
         trackableId: String,
         presenceData: PresenceData,
         useRewind: Boolean = false,
@@ -321,7 +321,7 @@ constructor(
         }
     }
 
-    override suspend fun suspendingConnect(
+    override suspend fun connect(
         trackableId: String,
         presenceData: PresenceData,
         useRewind: Boolean,

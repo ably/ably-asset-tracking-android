@@ -38,7 +38,7 @@ internal class AddTrackableWorker(
                 SyncAsyncResult(
                     syncWorkResult = null,
                     asyncWork = {
-                        val connectResult = ably.suspendingConnect(
+                        val connectResult = ably.connect(
                             trackableId = trackable.id,
                             presenceData = presenceData,
                             willPublish = true

@@ -52,7 +52,7 @@ class CorePublisherPresenceDataTest {
         }
         val expectedPresenceData = PresenceData(ClientTypes.PUBLISHER, null, null)
         coVerify(exactly = 1) {
-            ably.suspendingConnect(trackableId, expectedPresenceData, any(), any(), any())
+            ably.connect(trackableId, expectedPresenceData, any(), any(), any())
         }
     }
 
@@ -72,7 +72,7 @@ class CorePublisherPresenceDataTest {
         }
         val expectedPresenceData = PresenceData(ClientTypes.PUBLISHER, null, true)
         coVerify(exactly = 1) {
-            ably.suspendingConnect(trackableId, expectedPresenceData, any(), any(), any())
+            ably.connect(trackableId, expectedPresenceData, any(), any(), any())
         }
     }
 

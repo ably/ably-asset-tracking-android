@@ -70,7 +70,7 @@ internal class FakeAbly(var connectionSucces: Boolean) : Ably {
         TODO("Not yet implemented")
     }
 
-    override suspend fun suspendingConnect(
+    override suspend fun connect(
         trackableId: String,
         presenceData: PresenceData,
         useRewind: Boolean,
