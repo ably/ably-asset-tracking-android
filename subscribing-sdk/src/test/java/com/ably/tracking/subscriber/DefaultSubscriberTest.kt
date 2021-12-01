@@ -3,14 +3,13 @@ package com.ably.tracking.subscriber
 import com.ably.tracking.ConnectionException
 import com.ably.tracking.common.Ably
 import com.ably.tracking.test.common.mockCreateConnectionSuccess
-import com.ably.tracking.test.common.mockCreateSuspendingConnectionSuccess
 import com.ably.tracking.test.common.mockDisconnectSuccess
 import com.ably.tracking.test.common.mockSubscribeToPresenceError
 import io.mockk.mockk
 import io.mockk.verify
-import java.util.UUID
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
+import java.util.UUID
 
 class DefaultSubscriberTest {
     private val ably = mockk<Ably>(relaxed = true)
