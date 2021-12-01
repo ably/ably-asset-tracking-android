@@ -226,7 +226,7 @@ constructor(
                         event.handler(Result.success(Unit))
                     }
                     is AddTrackableEvent -> {
-                        workerQueue.enqueue(
+                        workerQueue.execute(
                             AddTrackableWorker(event.trackable, event.handler, ably)
                         )
                     }

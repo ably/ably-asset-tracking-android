@@ -15,5 +15,5 @@ internal interface WorkerQueue {
      *
      * Please note that this behaviour is temporary and will change after refactoring.
      * **/
-    fun enqueue(worker: Worker)
+    fun execute(worker: Worker)
 }
