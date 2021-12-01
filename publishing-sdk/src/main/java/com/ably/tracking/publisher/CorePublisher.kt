@@ -299,11 +299,7 @@ constructor(
                                 } catch (exception: ConnectionException) {
                                     ably.disconnect(event.trackable.id, properties.presenceData) {
                                         request(
-                                            AddTrackableFailedEvent(
-                                                event.trackable,
-                                                event.handler,
-                                                exception
-                                            )
+                                            AddTrackableFailedEvent(event.trackable, event.handler, exception)
                                         )
                                     }
                                 }
