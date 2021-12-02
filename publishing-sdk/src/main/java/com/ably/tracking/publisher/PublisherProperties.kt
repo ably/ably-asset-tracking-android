@@ -3,6 +3,7 @@ package com.ably.tracking.publisher
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.PresenceData
 import com.ably.tracking.publisher.guards.DuplicateTrackableGuard
+import com.ably.tracking.publisher.guards.TrackableRemovalGuard
 import kotlinx.coroutines.flow.MutableStateFlow
 
 /**
@@ -10,6 +11,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
  * */
 internal interface PublisherProperties {
     val duplicateTrackableGuard: DuplicateTrackableGuard
+    val trackableRemovalGuard:TrackableRemovalGuard
     val trackables: MutableSet<Trackable>
     val trackableStateFlows: MutableMap<String, MutableStateFlow<TrackableState>>
     var presenceData: PresenceData
