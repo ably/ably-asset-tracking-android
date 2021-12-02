@@ -33,6 +33,12 @@ fun Ably.mockSuspendingConnectSuccess(trackableId: String) {
     } returns Result.success(true)
 }
 
+fun Ably.mockSuspendingConnectFailure(trackableId: String) {
+    coEvery {
+        connect(trackableId, any(), any(), any(), any())
+    } returns Result.failure(anyConnectionException())
+}
+
 fun Ably.mockConnectFailureThenSuccess(trackableId: String, callbackDelayInMilliseconds: Long? = null) {
     var failed = false
     coEvery {

@@ -1,9 +1,12 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
 import com.ably.tracking.TrackableState
+import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ResultHandler
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.AddTrackableWorkResult
+import com.ably.tracking.test.common.mockSuspendingConnectFailure
+import com.ably.tracking.test.common.mockSuspendingConnectSuccess
 import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
@@ -19,7 +22,7 @@ class AddTrackableWorkerTest {
 
     // dependencies
     private val resultCallbackFunction = mockk<ResultHandler<StateFlow<TrackableState>>>()
-    private val ably = FakeAbly(true)
+    private val ably = mockk<Ably>(relaxed = true)
     private val trackable = Trackable("testtrackable")
 
     @Before
@@ -102,7 +105,7 @@ class AddTrackableWorkerTest {
         runBlocking {
             // given
             val publisherProperties = spyk(FakeProperties(FakeDuplicateGuard(false)))
-            ably.connectionSucces = true
+            ably.mockSuspendingConnectSuccess(trackable.id)
             // when
             val result = worker.doWork(publisherProperties)
 
@@ -125,7 +128,7 @@ class AddTrackableWorkerTest {
         runBlocking {
             // given
             val publisherProperties = spyk(FakeProperties(FakeDuplicateGuard(false)))
-            ably.connectionSucces = false
+            ably.mockSuspendingConnectFailure(trackable.id)
             // when
             val result = worker.doWork(publisherProperties)
 
@@ -139,7 +142,6 @@ class AddTrackableWorkerTest {
                 val fail = asyncWorkResult as AddTrackableWorkResult.Fail
                 Assert.assertTrue(fail.trackable == trackable)
                 Assert.assertTrue(fail.handler == resultCallbackFunction)
-                Assert.assertTrue(fail.exception?.message == "connection failed")
             }
         }
     }
