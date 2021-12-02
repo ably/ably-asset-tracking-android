@@ -50,6 +50,16 @@ internal interface CorePublisher {
     val active: Trackable?
     val routingProfile: RoutingProfile
     val trackableStateFlows: Map<String, StateFlow<TrackableState>>
+
+    fun addSubscriber(id: String, trackable: Trackable, data: PresenceData, properties: DefaultCorePublisher.Properties)
+    fun updateSubscriber(
+        id: String,
+        trackable: Trackable,
+        data: PresenceData,
+        properties: DefaultCorePublisher.Properties
+    )
+
+    fun removeSubscriber(id: String, trackable: Trackable, properties: DefaultCorePublisher.Properties)
 }
 
 @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
@@ -653,7 +663,7 @@ constructor(
         }
     }
 
-    private fun addSubscriber(id: String, trackable: Trackable, data: PresenceData, properties: Properties) {
+    override fun addSubscriber(id: String, trackable: Trackable, data: PresenceData, properties: Properties) {
         val subscriber = Subscriber(id, trackable)
         if (properties.subscribers[trackable.id] == null) {
             properties.subscribers[trackable.id] = mutableSetOf()
@@ -664,7 +674,7 @@ constructor(
         resolveResolution(trackable, properties)
     }
 
-    private fun updateSubscriber(id: String, trackable: Trackable, data: PresenceData, properties: Properties) {
+    override fun updateSubscriber(id: String, trackable: Trackable, data: PresenceData, properties: Properties) {
         properties.subscribers[trackable.id]?.let { subscribers ->
             subscribers.find { it.id == id }?.let { subscriber ->
                 data.resolution.let { resolution ->
@@ -675,7 +685,7 @@ constructor(
         }
     }
 
-    private fun removeSubscriber(id: String, trackable: Trackable, properties: Properties) {
+    override fun removeSubscriber(id: String, trackable: Trackable, properties: Properties) {
         properties.subscribers[trackable.id]?.let { subscribers ->
             subscribers.find { it.id == id }?.let { subscriber ->
                 subscribers.remove(subscriber)
