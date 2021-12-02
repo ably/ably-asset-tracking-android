@@ -1,6 +1,6 @@
 package com.ably.tracking.publisher.guards
 
-import com.ably.tracking.publisher.AddTrackableHandler
+import com.ably.tracking.publisher.AddTrackableCallbackFunction
 import com.ably.tracking.publisher.AddTrackableResult
 import com.ably.tracking.publisher.Trackable
 
@@ -11,7 +11,7 @@ internal interface DuplicateTrackableGuard {
     fun startAddingTrackable(trackable: Trackable)
     fun finishAddingTrackable(trackable: Trackable, result: Result<AddTrackableResult>)
     fun isCurrentlyAddingTrackable(trackable: Trackable): Boolean
-    fun saveDuplicateAddHandler(trackable: Trackable, handler: AddTrackableHandler)
+    fun saveDuplicateAddHandler(trackable: Trackable, callbackFunction: AddTrackableCallbackFunction)
     fun clear(trackable: Trackable)
     fun clearAll()
 }
@@ -29,7 +29,7 @@ internal class DublicateTrackableGuardImpl : DuplicateTrackableGuard {
     /**
      * Stores handlers from trackables that are duplicates of the trackables from [trackablesCurrentlyBeingAdded].
      */
-    private val duplicateAddCallsHandlers: MutableMap<Trackable, MutableList<AddTrackableHandler>> = mutableMapOf()
+    private val duplicateAddCallsHandlers: MutableMap<Trackable, MutableList<AddTrackableCallbackFunction>> = mutableMapOf()
 
     /**
      * Marks that the specified trackable adding process has started.
@@ -68,11 +68,11 @@ internal class DublicateTrackableGuardImpl : DuplicateTrackableGuard {
      * This handler will be called when the original trackable adding process will finish in [finishAddingTrackable].
      *
      * @param trackable The duplicate trackable.
-     * @param handler The handler of the duplicate trackable adding process.
+     * @param callbackFunction The handler of the duplicate trackable adding process.
      */
-    override fun saveDuplicateAddHandler(trackable: Trackable, handler: AddTrackableHandler) {
+    override fun saveDuplicateAddHandler(trackable: Trackable, callbackFunction: AddTrackableCallbackFunction) {
         val handlers = duplicateAddCallsHandlers[trackable] ?: mutableListOf()
-        handlers.add(handler)
+        handlers.add(callbackFunction)
         duplicateAddCallsHandlers[trackable] = handlers
     }
 

@@ -2,7 +2,7 @@ package com.ably.tracking.publisher.workerqueue.workers
 
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.PresenceData
-import com.ably.tracking.publisher.AddTrackableHandler
+import com.ably.tracking.publisher.AddTrackableCallbackFunction
 import com.ably.tracking.publisher.AddTrackableResult
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.Trackable
@@ -34,7 +34,7 @@ internal class FakeDuplicateGuard(private val currentlyAdding: Boolean) : Duplic
         return currentlyAdding
     }
 
-    override fun saveDuplicateAddHandler(trackable: Trackable, handler: AddTrackableHandler) {
+    override fun saveDuplicateAddHandler(trackable: Trackable, callbackFunction: AddTrackableCallbackFunction) {
         // does not need implementing
     }
 
