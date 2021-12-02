@@ -14,20 +14,20 @@ internal class AddTrackableResultHandler : WorkResultHandler {
         corePublisher: CorePublisher
     ): Worker? {
         when (workResult) {
-            is AddTrackableWorkResult.AlreadyIn -> workResult.handler(
+            is AddTrackableWorkResult.AlreadyIn -> workResult.callbackFunction(
                 Result.success(workResult.trackableStateFlow)
             )
 
             is AddTrackableWorkResult.Fail -> corePublisher.request(
                 AddTrackableFailedEvent(
                     workResult.trackable,
-                    workResult.handler, workResult.exception as Exception
+                    workResult.callbackFunction, workResult.exception as Exception
                 )
             )
             is AddTrackableWorkResult.Success -> corePublisher.request(
                 ConnectionForTrackableCreatedEvent(
                     workResult.trackable,
-                    workResult.handler
+                    workResult.callbackFunction
                 )
             )
         }

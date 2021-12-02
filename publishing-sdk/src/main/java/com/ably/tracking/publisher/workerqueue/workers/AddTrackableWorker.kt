@@ -2,7 +2,7 @@ package com.ably.tracking.publisher.workerqueue.workers
 
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
-import com.ably.tracking.common.ResultHandler
+import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.publisher.AddTrackableEvent
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.Request
@@ -13,20 +13,20 @@ import kotlinx.coroutines.flow.StateFlow
 
 internal class AddTrackableWorker(
     private val trackable: Trackable,
-    private val handler: ResultHandler<StateFlow<TrackableState>>,
+    private val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>,
     private val ably: Ably
 ) : Worker {
     override val event: Request<*>
-        get() = AddTrackableEvent(trackable, handler)
+        get() = AddTrackableEvent(trackable, callbackFunction)
 
     override fun doWork(properties: PublisherProperties): SyncAsyncResult {
         return when {
             properties.duplicateTrackableGuard.isCurrentlyAddingTrackable(trackable) -> {
-                properties.duplicateTrackableGuard.saveDuplicateAddHandler(trackable, handler)
+                properties.duplicateTrackableGuard.saveDuplicateAddHandler(trackable, callbackFunction)
                 SyncAsyncResult()
             }
             properties.trackables.contains(trackable) -> {
-                SyncAsyncResult(AddTrackableWorkResult.AlreadyIn(properties.trackableStateFlows[trackable.id]!!, handler))
+                SyncAsyncResult(AddTrackableWorkResult.AlreadyIn(properties.trackableStateFlows[trackable.id]!!, callbackFunction))
             }
             else -> {
                 properties.duplicateTrackableGuard.startAddingTrackable(trackable)
@@ -40,9 +40,9 @@ internal class AddTrackableWorker(
                             willPublish = true
                         )
                         if (connectResult.isSuccess) {
-                            AddTrackableWorkResult.Success(trackable, handler)
+                            AddTrackableWorkResult.Success(trackable, callbackFunction)
                         } else {
-                            AddTrackableWorkResult.Fail(trackable, connectResult.exceptionOrNull(), handler)
+                            AddTrackableWorkResult.Fail(trackable, connectResult.exceptionOrNull(), callbackFunction)
                         }
                     }
                 )

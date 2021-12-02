@@ -3,7 +3,7 @@ package com.ably.tracking.publisher.workerqueue
 import com.ably.tracking.ConnectionException
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.PresenceMessage
-import com.ably.tracking.common.ResultHandler
+import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.publisher.Trackable
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -35,38 +35,38 @@ internal data class SyncAsyncResult(
 internal sealed class AddTrackableWorkResult : WorkResult() {
     internal data class AlreadyIn(
         val trackableStateFlow: MutableStateFlow<TrackableState>,
-        val handler: ResultHandler<StateFlow<TrackableState>>
+        val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>
     ) : AddTrackableWorkResult()
 
     internal data class Success(
         val trackable: Trackable,
-        val handler: ResultHandler<StateFlow<TrackableState>>
+        val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>
     ) : AddTrackableWorkResult()
 
     internal data class Fail(
         val trackable: Trackable,
         val exception: Throwable?,
-        val handler: ResultHandler<StateFlow<TrackableState>>
+        val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>
     ) : AddTrackableWorkResult()
 }
 
 internal sealed class ConnectionCreatedWorkResult : WorkResult() {
     internal data class RemovalRequested(
         val trackable: Trackable,
-        val handler: ResultHandler<StateFlow<TrackableState>>,
+        val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>,
         val successfulDisconnect: Boolean,
         val exception: ConnectionException? = null
     ) : ConnectionCreatedWorkResult()
 
     internal data class PresenceSuccess(
         val trackable: Trackable,
-        val handler: ResultHandler<StateFlow<TrackableState>>,
+        val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>,
         val presenceUpdateListener: (presenceMessage: PresenceMessage) -> Unit
     ) : ConnectionCreatedWorkResult()
 
     internal data class PresenceFail(
         val trackable: Trackable,
-        val handler: ResultHandler<StateFlow<TrackableState>>,
+        val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>,
         val exception: ConnectionException
     ) : ConnectionCreatedWorkResult()
 }

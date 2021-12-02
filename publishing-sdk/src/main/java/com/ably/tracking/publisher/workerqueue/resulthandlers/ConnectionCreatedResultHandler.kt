@@ -20,7 +20,7 @@ internal class ConnectionCreatedResultHandler : WorkResultHandler {
                 corePublisher.request(
                     TrackableRemovalRequestedEvent(
                         trackable = workResult.trackable,
-                        handler = workResult.handler,
+                        callbackFunction = workResult.callbackFunction,
                         result = if (workResult.successfulDisconnect) Result.success(Unit) else Result.failure(
                             workResult.exception
                                 as ConnectionException
@@ -29,12 +29,12 @@ internal class ConnectionCreatedResultHandler : WorkResultHandler {
                 )
 
             is ConnectionCreatedWorkResult.PresenceSuccess -> {
-                corePublisher.request(ConnectionForTrackableReadyEvent(workResult.trackable, workResult.handler))
+                corePublisher.request(ConnectionForTrackableReadyEvent(workResult.trackable, workResult.callbackFunction))
             }
             is ConnectionCreatedWorkResult.PresenceFail -> corePublisher.request(
                 AddTrackableFailedEvent(
                     workResult.trackable,
-                    workResult.handler,
+                    workResult.callbackFunction,
                     workResult.exception
                 )
             )

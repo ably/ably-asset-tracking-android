@@ -5,7 +5,7 @@ import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.PresenceData
 import com.ably.tracking.common.PresenceMessage
-import com.ably.tracking.common.ResultHandler
+import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.publisher.ConnectionForTrackableCreatedEvent
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.Request
@@ -18,12 +18,12 @@ import kotlin.coroutines.suspendCoroutine
 
 internal class ConnectionCreatedWorker(
     private val trackable: Trackable,
-    private val handler: ResultHandler<StateFlow<TrackableState>>,
+    private val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>,
     private val ably: Ably,
     private val presenceUpdateListener: ((presenceMessage: PresenceMessage) -> Unit),
 ) : Worker {
     override val event: Request<*>
-        get() = ConnectionForTrackableCreatedEvent(trackable, handler)
+        get() = ConnectionForTrackableCreatedEvent(trackable, callbackFunction)
 
     override fun doWork(properties: PublisherProperties): SyncAsyncResult {
         if (properties.trackableRemovalGuard.isMarkedForRemoval(trackable)) {
@@ -33,11 +33,11 @@ internal class ConnectionCreatedWorker(
                 asyncWork = {
                     val result = ably.disconnect(trackable.id, presenceData)
                     if (result.isSuccess) {
-                        ConnectionCreatedWorkResult.RemovalRequested(trackable, handler, result.isSuccess)
+                        ConnectionCreatedWorkResult.RemovalRequested(trackable, callbackFunction, result.isSuccess)
                     } else {
                         ConnectionCreatedWorkResult.RemovalRequested(
                             trackable,
-                            handler,
+                            callbackFunction,
                             result.isSuccess,
                             result.exceptionOrNull() as ConnectionException?
                         )
@@ -62,11 +62,11 @@ internal class ConnectionCreatedWorker(
                     try {
                         result.getOrThrow()
                         continuation.resume(
-                            ConnectionCreatedWorkResult.PresenceSuccess(trackable, handler, presenceUpdateListener)
+                            ConnectionCreatedWorkResult.PresenceSuccess(trackable, callbackFunction, presenceUpdateListener)
                         )
                     } catch (exception: ConnectionException) {
                         ably.disconnect(trackable.id, presenceData) {
-                            continuation.resume(ConnectionCreatedWorkResult.PresenceFail(trackable, handler, exception))
+                            continuation.resume(ConnectionCreatedWorkResult.PresenceFail(trackable, callbackFunction, exception))
                         }
                     }
                 }

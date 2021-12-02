@@ -2,7 +2,7 @@ package com.ably.tracking.publisher.workerqueue.workers
 
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
-import com.ably.tracking.common.ResultHandler
+import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.guards.TrackableRemovalGuard
 import com.ably.tracking.publisher.workerqueue.AddTrackableWorkResult
@@ -22,7 +22,7 @@ class AddTrackableWorkerTest {
     private lateinit var worker: AddTrackableWorker
 
     // dependencies
-    private val resultCallbackFunction = mockk<ResultHandler<StateFlow<TrackableState>>>()
+    private val resultCallbackFunction = mockk<ResultCallbackFunction<StateFlow<TrackableState>>>()
     private val ably = mockk<Ably>(relaxed = true)
     private val trackableRemovalGuard = mockk<TrackableRemovalGuard>()
     private val trackable = Trackable("testtrackable")
@@ -97,7 +97,7 @@ class AddTrackableWorkerTest {
         Assert.assertTrue(result.syncWorkResult is AddTrackableWorkResult.AlreadyIn)
         // also make sure it has the right content
         val alreadyIn = result.syncWorkResult as AddTrackableWorkResult.AlreadyIn
-        Assert.assertTrue(alreadyIn.handler == resultCallbackFunction)
+        Assert.assertTrue(alreadyIn.callbackFunction == resultCallbackFunction)
         Assert.assertTrue(alreadyIn.trackableStateFlow == publisherProperties.trackableStateFlows[trackable.id])
     }
 
@@ -120,7 +120,7 @@ class AddTrackableWorkerTest {
                 // also check content
                 val success = asyncWorkResult as AddTrackableWorkResult.Success
                 Assert.assertTrue(success.trackable == trackable)
-                Assert.assertTrue(success.handler == resultCallbackFunction)
+                Assert.assertTrue(success.callbackFunction == resultCallbackFunction)
             }
         }
     }
@@ -143,7 +143,7 @@ class AddTrackableWorkerTest {
                 // also check content
                 val fail = asyncWorkResult as AddTrackableWorkResult.Fail
                 Assert.assertTrue(fail.trackable == trackable)
-                Assert.assertTrue(fail.handler == resultCallbackFunction)
+                Assert.assertTrue(fail.callbackFunction == resultCallbackFunction)
             }
         }
     }
