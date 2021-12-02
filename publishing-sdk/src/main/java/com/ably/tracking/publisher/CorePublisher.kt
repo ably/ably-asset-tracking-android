@@ -283,7 +283,7 @@ constructor(
                         )
                     }
                     is ConnectionForTrackableCreatedEvent -> {
-                        //for now delegate the presence listening to here, this could likely be a new case for new
+                        // for now delegate the presence listening to here, this could likely be a new case for new
                         // structure
                         workerQueue.execute(
                             ConnectionCreatedWorker(
@@ -292,7 +292,8 @@ constructor(
                                 ably
                             ) { presenceMessage ->
                                 enqueue(PresenceMessageEvent(event.trackable, presenceMessage))
-                            })
+                            }
+                        )
                     }
                     is ConnectionForTrackableReadyEvent -> {
                         if (properties.trackableRemovalGuard.isMarkedForRemoval(event.trackable)) {

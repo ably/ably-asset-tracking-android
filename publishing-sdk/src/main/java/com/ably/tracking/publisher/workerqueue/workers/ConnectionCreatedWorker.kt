@@ -29,25 +29,28 @@ internal class ConnectionCreatedWorker(
         if (properties.trackableRemovalGuard.isMarkedForRemoval(trackable)) {
             // Leave Ably channel.
             val presenceData = properties.presenceData.copy()
-            return SyncAsyncResult(asyncWork = {
-                val result = ably.disconnect(trackable.id, presenceData)
-                if (result.isSuccess) {
-                    ConnectionCreatedWorkResult.RemovalRequested(trackable, handler, result.isSuccess)
-                } else {
-                    ConnectionCreatedWorkResult.RemovalRequested(
-                        trackable,
-                        handler,
-                        result.isSuccess,
-                        result.exceptionOrNull() as ConnectionException?
-                    )
+            return SyncAsyncResult(
+                asyncWork = {
+                    val result = ably.disconnect(trackable.id, presenceData)
+                    if (result.isSuccess) {
+                        ConnectionCreatedWorkResult.RemovalRequested(trackable, handler, result.isSuccess)
+                    } else {
+                        ConnectionCreatedWorkResult.RemovalRequested(
+                            trackable,
+                            handler,
+                            result.isSuccess,
+                            result.exceptionOrNull() as ConnectionException?
+                        )
+                    }
                 }
-
-            })
+            )
         }
         val presenceData = properties.presenceData.copy()
-        return SyncAsyncResult(asyncWork = {
-            subscribeToPresenceMessages(presenceData)
-        })
+        return SyncAsyncResult(
+            asyncWork = {
+                subscribeToPresenceMessages(presenceData)
+            }
+        )
     }
 
     private suspend fun subscribeToPresenceMessages(presenceData: PresenceData): ConnectionCreatedWorkResult {

@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
  * */
 internal interface PublisherProperties {
     val duplicateTrackableGuard: DuplicateTrackableGuard
-    val trackableRemovalGuard:TrackableRemovalGuard
+    val trackableRemovalGuard: TrackableRemovalGuard
     val trackables: MutableSet<Trackable>
     val trackableStateFlows: MutableMap<String, MutableStateFlow<TrackableState>>
     var presenceData: PresenceData

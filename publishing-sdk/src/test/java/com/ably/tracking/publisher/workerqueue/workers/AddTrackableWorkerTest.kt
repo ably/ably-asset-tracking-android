@@ -4,6 +4,7 @@ import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ResultHandler
 import com.ably.tracking.publisher.Trackable
+import com.ably.tracking.publisher.guards.TrackableRemovalGuard
 import com.ably.tracking.publisher.workerqueue.AddTrackableWorkResult
 import com.ably.tracking.test.common.mockSuspendingConnectFailure
 import com.ably.tracking.test.common.mockSuspendingConnectSuccess
@@ -23,6 +24,7 @@ class AddTrackableWorkerTest {
     // dependencies
     private val resultCallbackFunction = mockk<ResultHandler<StateFlow<TrackableState>>>()
     private val ably = mockk<Ably>(relaxed = true)
+    private val trackableRemovalGuard = mockk<TrackableRemovalGuard>()
     private val trackable = Trackable("testtrackable")
 
     @Before
@@ -33,7 +35,7 @@ class AddTrackableWorkerTest {
     @Test
     fun `doWork returns asyncWork when trackable is not added and not being added`() {
         // given
-        val publisherProperties = FakeProperties(FakeDuplicateGuard(false))
+        val publisherProperties = FakeProperties(FakeDuplicateGuard(false), trackableRemovalGuard)
         // when
         val result = worker.doWork(publisherProperties)
         // then
@@ -45,7 +47,7 @@ class AddTrackableWorkerTest {
         // given
         // need to use spy to use verify
         val guard = spyk(FakeDuplicateGuard(false))
-        val publisherProperties = FakeProperties(guard)
+        val publisherProperties = FakeProperties(guard, trackableRemovalGuard)
 
         // when
         worker.doWork(publisherProperties)
@@ -59,7 +61,7 @@ class AddTrackableWorkerTest {
     @Test
     fun `doWork returns empty result if trackable is being added`() {
         // given
-        val publisherProperties = FakeProperties(FakeDuplicateGuard(true))
+        val publisherProperties = FakeProperties(FakeDuplicateGuard(true), trackableRemovalGuard)
         // when
         val result = worker.doWork(publisherProperties)
         // then
@@ -71,7 +73,7 @@ class AddTrackableWorkerTest {
     fun `doWork triggers dublicateTrackableGuard saveDuplicateAddHandler when adding trackable that is being added`() {
         // given
         val guard = spyk(FakeDuplicateGuard(true))
-        val publisherProperties = FakeProperties(guard)
+        val publisherProperties = FakeProperties(guard, trackableRemovalGuard)
 
         // when
         worker.doWork(publisherProperties)
@@ -85,7 +87,7 @@ class AddTrackableWorkerTest {
     @Test
     fun `doWork returns AlreadyIn result if trackable is already added`() {
         // given
-        val publisherProperties = FakeProperties(FakeDuplicateGuard(false))
+        val publisherProperties = FakeProperties(FakeDuplicateGuard(false), trackableRemovalGuard)
         publisherProperties.trackables.add(trackable)
         publisherProperties.trackableStateFlows[trackable.id] = MutableStateFlow(TrackableState.Online)
         // when
@@ -104,7 +106,7 @@ class AddTrackableWorkerTest {
     fun `Async work returns successful result on successful connection`() {
         runBlocking {
             // given
-            val publisherProperties = spyk(FakeProperties(FakeDuplicateGuard(false)))
+            val publisherProperties = spyk(FakeProperties(FakeDuplicateGuard(false), trackableRemovalGuard))
             ably.mockSuspendingConnectSuccess(trackable.id)
             // when
             val result = worker.doWork(publisherProperties)
@@ -127,7 +129,7 @@ class AddTrackableWorkerTest {
     fun `Async work returns failed result on failed connection`() {
         runBlocking {
             // given
-            val publisherProperties = spyk(FakeProperties(FakeDuplicateGuard(false)))
+            val publisherProperties = spyk(FakeProperties(FakeDuplicateGuard(false), trackableRemovalGuard))
             ably.mockSuspendingConnectFailure(trackable.id)
             // when
             val result = worker.doWork(publisherProperties)
