@@ -883,7 +883,7 @@ constructor(
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
         override val duplicateTrackableGuard: DuplicateTrackableGuard = DublicateTrackableGuardImpl()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        val trackableRemovalGuard: TrackableRemovalGuard = TrackableRemovalGuard()
+        override val trackableRemovalGuard: TrackableRemovalGuard = TrackableRemovalGuard()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
 
         fun dispose() {
