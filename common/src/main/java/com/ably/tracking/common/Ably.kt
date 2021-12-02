@@ -208,6 +208,11 @@ interface Ably {
     fun disconnect(trackableId: String, presenceData: PresenceData, callback: (Result<Unit>) -> Unit)
 
     /**
+     * A suspending version of [disconnect]
+     * */
+    suspend fun disconnect(trackableId: String, presenceData: PresenceData): Result<Boolean>
+
+    /**
      * Cleanups and closes all the connected channels and their presence. In the end closes Ably connection.
      *
      * @param presenceData The data that will be send via the presence channels.
@@ -379,13 +384,14 @@ constructor(
      * A suspend version of the [DefaultAbly.disconnect] method. It waits until disconnection is completed.
      * @throws ConnectionException if something goes wrong during disconnect.
      */
-    private suspend fun disconnect(trackableId: String, presenceData: PresenceData) {
-        suspendCoroutine<Unit> { continuation ->
+    override suspend fun disconnect(trackableId: String, presenceData: PresenceData): Result<Boolean> {
+        return suspendCoroutine { continuation ->
             disconnect(trackableId, presenceData) {
                 try {
-                    continuation.resume(it.getOrThrow())
+                    it.getOrThrow()
+                    continuation.resume(Result.success(true))
                 } catch (exception: ConnectionException) {
-                    continuation.resumeWithException(exception)
+                    continuation.resume(Result.failure(exception))
                 }
             }
         }
