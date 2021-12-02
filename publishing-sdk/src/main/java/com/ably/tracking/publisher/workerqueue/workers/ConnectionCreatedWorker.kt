@@ -19,8 +19,8 @@ import kotlin.coroutines.suspendCoroutine
 internal class ConnectionCreatedWorker(
     private val trackable: Trackable,
     private val handler: ResultHandler<StateFlow<TrackableState>>,
-    val presenceUpdateListener: ((trackable: Trackable, presenceMessage: PresenceMessage) -> Unit),
-    private val ably: Ably
+    private val ably: Ably,
+    private val presenceUpdateListener: ((trackable: Trackable, presenceMessage: PresenceMessage) -> Unit),
 ) : Worker {
     override val event: Request<*>
         get() = ConnectionForTrackableCreatedEvent(trackable, handler)
