@@ -20,7 +20,7 @@ internal class ConnectionCreatedWorker(
     private val trackable: Trackable,
     private val handler: ResultHandler<StateFlow<TrackableState>>,
     private val ably: Ably,
-    private val presenceUpdateListener: ((trackable: Trackable, presenceMessage: PresenceMessage) -> Unit),
+    private val presenceUpdateListener: ((presenceMessage: PresenceMessage) -> Unit),
 ) : Worker {
     override val event: Request<*>
         get() = ConnectionForTrackableCreatedEvent(trackable, handler)
@@ -54,7 +54,7 @@ internal class ConnectionCreatedWorker(
         return suspendCoroutine { continuation ->
             ably.subscribeForPresenceMessages(
                 trackableId = trackable.id,
-                listener = { presenceUpdateListener(trackable, it) },
+                listener = presenceUpdateListener,
                 callback = { result ->
                     try {
                         result.getOrThrow()

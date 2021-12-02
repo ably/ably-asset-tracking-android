@@ -61,7 +61,7 @@ internal sealed class ConnectionCreatedWorkResult : WorkResult() {
     internal data class PresenceSuccess(
         val trackable: Trackable,
         val handler: ResultHandler<StateFlow<TrackableState>>,
-        val presenceUpdateListener: (trackable: Trackable, presenceMessage: PresenceMessage) -> Unit
+        val presenceUpdateListener: (presenceMessage: PresenceMessage) -> Unit
     ) : ConnectionCreatedWorkResult()
 
     internal data class PresenceFail(
