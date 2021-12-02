@@ -26,17 +26,13 @@ internal class AddTrackableWorker(
                 SyncAsyncResult()
             }
             properties.trackables.contains(trackable) -> {
-                SyncAsyncResult(
-                    AddTrackableWorkResult.AlreadyIn(properties.trackableStateFlows[trackable.id]!!, handler),
-                    null
-                )
+                SyncAsyncResult(AddTrackableWorkResult.AlreadyIn(properties.trackableStateFlows[trackable.id]!!, handler))
             }
             else -> {
                 properties.duplicateTrackableGuard.startAddingTrackable(trackable)
                 val presenceData = properties.presenceData.copy()
 
                 SyncAsyncResult(
-                    syncWorkResult = null,
                     asyncWork = {
                         val connectResult = ably.connect(
                             trackableId = trackable.id,
