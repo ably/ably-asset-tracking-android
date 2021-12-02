@@ -1,6 +1,8 @@
 package com.ably.tracking.publisher.workerqueue
 
+import com.ably.tracking.ConnectionException
 import com.ably.tracking.TrackableState
+import com.ably.tracking.common.PresenceMessage
 import com.ably.tracking.common.ResultHandler
 import com.ably.tracking.publisher.Trackable
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,7 +32,7 @@ internal data class SyncAsyncResult(
     val asyncWork: AsyncWork<WorkResult>? = null
 ) : WorkResult()
 
-internal sealed class AddTrackableWorkResult() : WorkResult() {
+internal sealed class AddTrackableWorkResult : WorkResult() {
     internal data class AlreadyIn(
         val trackableStateFlow: MutableStateFlow<TrackableState>,
         val handler: ResultHandler<StateFlow<TrackableState>>
@@ -46,4 +48,25 @@ internal sealed class AddTrackableWorkResult() : WorkResult() {
         val exception: Throwable?,
         val handler: ResultHandler<StateFlow<TrackableState>>
     ) : AddTrackableWorkResult()
+}
+
+internal sealed class ConnectionCreatedWorkResult : WorkResult() {
+    internal data class RemovalRequested(
+        val trackable: Trackable,
+        val handler: ResultHandler<StateFlow<TrackableState>>,
+        val successfulDisconnect: Boolean,
+        val exception: ConnectionException? = null
+    ) : ConnectionCreatedWorkResult()
+
+    internal data class PresenceSuccess(
+        val trackable: Trackable,
+        val handler: ResultHandler<StateFlow<TrackableState>>,
+        val presenceUpdateListener: (trackable: Trackable, presenceMessage: PresenceMessage) -> Unit
+    ) : ConnectionCreatedWorkResult()
+
+    internal data class PresenceFail(
+        val trackable: Trackable,
+        val handler: ResultHandler<StateFlow<TrackableState>>,
+        val exception: ConnectionException
+    ) : ConnectionCreatedWorkResult()
 }
