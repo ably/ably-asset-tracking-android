@@ -1,7 +1,7 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
+import com.ably.tracking.publisher.Event
 import com.ably.tracking.publisher.PublisherProperties
-import com.ably.tracking.publisher.Request
 import com.ably.tracking.publisher.workerqueue.SyncAsyncResult
 
 /**
@@ -14,7 +14,7 @@ internal interface Worker {
      *
      * This should be removed after refactoring finishes
      * */
-    val event: Request<*>
+    val event: Event
 
     /**
      * This function is provided in order for implementors  to implement synchronous work. They may  optionally
