@@ -61,6 +61,7 @@ internal interface CorePublisher {
     )
 
     fun removeSubscriber(id: String, trackable: Trackable, properties: PublisherProperties)
+    fun setDestination(destination: Destination, properties: PublisherProperties)
 }
 
 @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
@@ -702,7 +703,7 @@ constructor(
         }
     }
 
-    private fun setDestination(destination: Destination, properties: Properties) {
+    override fun setDestination(destination: Destination, properties: PublisherProperties) {
         properties.lastPublisherLocation.let { currentLocation ->
             if (currentLocation != null) {
                 removeCurrentDestination(properties)
@@ -722,7 +723,7 @@ constructor(
         }
     }
 
-    private fun removeCurrentDestination(properties: Properties) {
+    private fun removeCurrentDestination(properties: PublisherProperties) {
         mapbox.clearRoute()
         properties.currentDestination = null
         properties.estimatedArrivalTimeInMilliseconds = null
@@ -761,7 +762,7 @@ constructor(
         }
     }
 
-    private inner class Hooks : ResolutionPolicy.Hooks {
+    internal inner class Hooks : ResolutionPolicy.Hooks {
         var trackables: ResolutionPolicy.Hooks.TrackableSetListener? = null
         var subscribers: ResolutionPolicy.Hooks.SubscriberSetListener? = null
 
@@ -804,38 +805,38 @@ constructor(
         areRawLocationsEnabled: Boolean?,
     ) : PublisherProperties {
         private var isDisposed: Boolean = false
-        var isStopped: Boolean = false
-        var locationEngineResolution: Resolution = locationEngineResolution
+        override var isStopped: Boolean = false
+        override var locationEngineResolution: Resolution = locationEngineResolution
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        var isTracking: Boolean = false
+        override var isTracking: Boolean = false
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
         override val trackables: MutableSet<Trackable> = mutableSetOf()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        val trackableStates: MutableMap<String, TrackableState> = mutableMapOf()
+        override val trackableStates: MutableMap<String, TrackableState> = mutableMapOf()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
         override val trackableStateFlows: MutableMap<String, MutableStateFlow<TrackableState>> = mutableMapOf()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        val lastChannelConnectionStateChanges: MutableMap<String, ConnectionStateChange> = mutableMapOf()
+        override val lastChannelConnectionStateChanges: MutableMap<String, ConnectionStateChange> = mutableMapOf()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        var lastConnectionStateChange: ConnectionStateChange = ConnectionStateChange(
+        override var lastConnectionStateChange: ConnectionStateChange = ConnectionStateChange(
             ConnectionState.OFFLINE, null
         )
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
         override val resolutions: MutableMap<String, Resolution> = mutableMapOf()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        val lastSentEnhancedLocations: MutableMap<String, Location> = mutableMapOf()
+        override val lastSentEnhancedLocations: MutableMap<String, Location> = mutableMapOf()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        val lastSentRawLocations: MutableMap<String, Location> = mutableMapOf()
+        override val lastSentRawLocations: MutableMap<String, Location> = mutableMapOf()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        val skippedEnhancedLocations: SkippedLocations = SkippedLocations()
+        override val skippedEnhancedLocations: SkippedLocations = SkippedLocations()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        val skippedRawLocations: SkippedLocations = SkippedLocations()
+        override val skippedRawLocations: SkippedLocations = SkippedLocations()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        var estimatedArrivalTimeInMilliseconds: Long? = null
+        override var estimatedArrivalTimeInMilliseconds: Long? = null
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        var lastPublisherLocation: Location? = null
+        override var lastPublisherLocation: Location? = null
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        var currentDestination: Destination? = null
+        override var currentDestination: Destination? = null
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
         override val subscribers: MutableMap<String, MutableSet<Subscriber>> = mutableMapOf()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
@@ -844,24 +845,25 @@ constructor(
         override var presenceData: PresenceData =
             PresenceData(ClientTypes.PUBLISHER, rawLocations = areRawLocationsEnabled)
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        var active: Trackable? = null
+        override var active: Trackable? = null
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
             set(value) {
                 this@DefaultCorePublisher.active = value
                 field = value
             }
-        var routingProfile: RoutingProfile = routingProfile
+        override var routingProfile: RoutingProfile = routingProfile
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
             set(value) {
                 this@DefaultCorePublisher.routingProfile = value
                 field = value
             }
-        val rawLocationChangedCommands: MutableList<(Properties) -> Unit> = mutableListOf()
+        override val rawLocationChangedCommands: MutableList<(Properties) -> Unit> = mutableListOf()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        val enhancedLocationsPublishingState: LocationsPublishingState<EnhancedLocationChangedEvent> =
+        override val enhancedLocationsPublishingState: LocationsPublishingState<EnhancedLocationChangedEvent> =
             LocationsPublishingState()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        val rawLocationsPublishingState: LocationsPublishingState<RawLocationChangedEvent> = LocationsPublishingState()
+        override val rawLocationsPublishingState: LocationsPublishingState<RawLocationChangedEvent> =
+            LocationsPublishingState()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
         override val duplicateTrackableGuard: DuplicateTrackableGuard = DublicateTrackableGuardImpl()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
