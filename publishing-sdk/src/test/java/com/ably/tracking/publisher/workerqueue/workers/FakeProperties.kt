@@ -4,7 +4,6 @@ import com.ably.tracking.Accuracy
 import com.ably.tracking.Location
 import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
-import com.ably.tracking.common.ClientTypes
 import com.ably.tracking.common.ConnectionState
 import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.PresenceData
@@ -21,7 +20,6 @@ import com.ably.tracking.publisher.RoutingProfile
 import com.ably.tracking.publisher.SkippedLocations
 import com.ably.tracking.publisher.Subscriber
 import com.ably.tracking.publisher.Trackable
-import com.ably.tracking.publisher.guards.DublicateTrackableGuardImpl
 import com.ably.tracking.publisher.guards.DuplicateTrackableGuard
 import com.ably.tracking.publisher.guards.TrackableRemovalGuard
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -40,8 +38,9 @@ internal class FakeProperties(
     private var isDisposed: Boolean = false
     override var isStopped: Boolean = false
     override var locationEngineResolution: Resolution = Resolution(
-        accuracy = Accuracy.BALANCED, desiredInterval =
-        299, minimumDisplacement = 2.4
+        accuracy = Accuracy.BALANCED,
+        desiredInterval = 299,
+        minimumDisplacement = 2.4
     )
         get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
     override var isTracking: Boolean = false
