@@ -13,7 +13,6 @@ import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ClientTypes
 import com.ably.tracking.common.ConnectionState
 import com.ably.tracking.common.ConnectionStateChange
-import com.ably.tracking.common.PresenceAction
 import com.ably.tracking.common.PresenceData
 import com.ably.tracking.common.createSingleThreadDispatcher
 import com.ably.tracking.common.logging.createLoggingTag
@@ -254,7 +253,13 @@ constructor(
                         )
                     }
                     is PresenceMessageEvent -> {
-                       workerQueue.execute(PresenceMessageWorker(event.trackable,event.presenceMessage,this@DefaultCorePublisher))
+                        workerQueue.execute(
+                            PresenceMessageWorker(
+                                event.trackable,
+                                event.presenceMessage,
+                                this@DefaultCorePublisher
+                            )
+                        )
                     }
                     is TrackableRemovalRequestedEvent -> {
                         if (event.result.isSuccess) {
@@ -649,7 +654,12 @@ constructor(
         resolveResolution(trackable, properties)
     }
 
-    override fun updateSubscriber(id: String, trackable: Trackable, data: PresenceData, properties: PublisherProperties) {
+    override fun updateSubscriber(
+        id: String,
+        trackable: Trackable,
+        data: PresenceData,
+        properties: PublisherProperties
+    ) {
         properties.subscribers[trackable.id]?.let { subscribers ->
             subscribers.find { it.id == id }?.let { subscriber ->
                 data.resolution.let { resolution ->
