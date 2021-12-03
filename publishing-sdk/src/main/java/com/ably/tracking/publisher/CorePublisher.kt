@@ -27,6 +27,7 @@ import com.ably.tracking.publisher.workerqueue.workers.AddTrackableFailedWorker
 import com.ably.tracking.publisher.workerqueue.workers.AddTrackableWorker
 import com.ably.tracking.publisher.workerqueue.workers.ConnectionCreatedWorker
 import com.ably.tracking.publisher.workerqueue.workers.PresenceMessageWorker
+import com.ably.tracking.publisher.workerqueue.workers.SetActiveTrackableWorker
 import com.ably.tracking.publisher.workerqueue.workers.TrackableRemovalRequestedWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
@@ -231,14 +232,12 @@ constructor(
                         )
                     }
                     is SetActiveTrackableEvent -> {
-                        if (properties.active != event.trackable) {
-                            properties.active = event.trackable
-                            hooks.trackables?.onActiveTrackableChanged(event.trackable)
-                            event.trackable.destination?.let {
-                                setDestination(it, properties)
-                            }
-                        }
-                        event.callbackFunction(Result.success(Unit))
+                        workerQueue.execute(
+                            SetActiveTrackableWorker(
+                                event.trackable, event.callbackFunction,
+                                this@DefaultCorePublisher, hooks
+                            )
+                        )
                     }
                     is AddTrackableEvent -> {
                         workerQueue.execute(
