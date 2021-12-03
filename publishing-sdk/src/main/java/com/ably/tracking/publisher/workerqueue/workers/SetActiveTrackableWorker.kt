@@ -9,9 +9,6 @@ import com.ably.tracking.publisher.SetActiveTrackableEvent
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.SyncAsyncResult
 
-/**
- *
- * */
 internal class SetActiveTrackableWorker(
     private val trackable: Trackable,
     private val callbackFunction: ResultCallbackFunction<Unit>,
