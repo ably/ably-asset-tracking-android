@@ -11,9 +11,10 @@ import com.ably.tracking.publisher.workerqueue.workers.Worker
 internal interface WorkerQueue {
     /**
      * Enqueue a worker that will immediately executes its' work
-     * @param worker: [Worker] to be executed
-     *
+     **
      * Please note that this behaviour is temporary and will change after refactoring.
+     *
+     * @param worker: [Worker] to be executed
      * **/
     fun execute(worker: Worker)
 }
