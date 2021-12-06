@@ -18,7 +18,7 @@ internal class SetActiveTrackableWorker(
     override val event: Event
         get() = SetActiveTrackableEvent(trackable, callbackFunction)
 
-    override fun doWork(properties: PublisherProperties): SyncAsyncResult {
+    override suspend fun doWork(properties: PublisherProperties): SyncAsyncResult {
         if (properties.active != trackable) {
             properties.active = trackable
             hooks.trackables?.onActiveTrackableChanged(trackable)

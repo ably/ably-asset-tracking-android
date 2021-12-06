@@ -16,7 +16,7 @@ internal class AddTrackableFailedWorker(
     override val event: Request<*>
         get() = AddTrackableFailedEvent(trackable, callbackFunction, exception)
 
-    override fun doWork(properties: PublisherProperties): SyncAsyncResult {
+    override suspend fun doWork(properties: PublisherProperties): SyncAsyncResult {
         val failureResult = Result.failure<AddTrackableResult>(exception)
         callbackFunction(failureResult)
         properties.duplicateTrackableGuard.finishAddingTrackable(trackable, failureResult)

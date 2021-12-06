@@ -27,7 +27,7 @@ internal class EventWorkerQueue(
      * If the optional async work exists, It's executed in a different coroutine in order to not block the queue.
      * Then, the result of this work is handled in the same way as the sync work result.
      * */
-    override fun execute(worker: Worker) {
+    override suspend fun execute(worker: Worker) {
         val workResult = worker.doWork(publisherProperties)
         workResult.syncWorkResult?.let {
             handleWorkResult(it)

@@ -63,6 +63,7 @@ internal interface CorePublisher {
 
     fun removeSubscriber(id: String, trackable: Trackable, properties: PublisherProperties)
     fun setDestination(destination: Destination, properties: PublisherProperties)
+    fun stopLocationUpdates(properties: PublisherProperties)
 }
 
 @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
@@ -597,7 +598,7 @@ constructor(
         properties.skippedRawLocations.add(trackableId, location)
     }
 
-    private fun stopLocationUpdates(properties: Properties) {
+    override fun stopLocationUpdates(properties: PublisherProperties) {
         properties.isTracking = false
         mapbox.unregisterLocationObserver()
         mapbox.stopAndClose()
@@ -869,7 +870,7 @@ constructor(
         override val trackableRemovalGuard: TrackableRemovalGuard = TrackableRemovalGuard()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
 
-        fun dispose() {
+        override fun dispose() {
             trackables.clear()
             trackableStates.clear()
             trackableStateFlows.clear()

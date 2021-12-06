@@ -25,7 +25,7 @@ internal class ConnectionCreatedWorker(
     override val event: Request<*>
         get() = ConnectionForTrackableCreatedEvent(trackable, callbackFunction)
 
-    override fun doWork(properties: PublisherProperties): SyncAsyncResult {
+    override suspend fun doWork(properties: PublisherProperties): SyncAsyncResult {
         if (properties.trackableRemovalGuard.isMarkedForRemoval(trackable)) {
             // Leave Ably channel.
             val presenceData = properties.presenceData.copy()

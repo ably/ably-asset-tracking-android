@@ -19,7 +19,7 @@ internal class PresenceMessageWorker(
     override val event: Event
         get() = PresenceMessageEvent(trackable, presenceMessage)
 
-    override fun doWork(properties: PublisherProperties): SyncAsyncResult {
+    override suspend fun doWork(properties: PublisherProperties): SyncAsyncResult {
         when (presenceMessage.action) {
             PresenceAction.PRESENT_OR_ENTER -> {
                 if (presenceMessage.data.type == ClientTypes.SUBSCRIBER) {
