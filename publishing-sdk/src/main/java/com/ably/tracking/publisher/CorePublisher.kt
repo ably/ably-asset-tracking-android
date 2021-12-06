@@ -2,7 +2,6 @@ package com.ably.tracking.publisher
 
 import android.Manifest
 import androidx.annotation.RequiresPermission
-import com.ably.tracking.ConnectionException
 import com.ably.tracking.EnhancedLocationUpdate
 import com.ably.tracking.Location
 import com.ably.tracking.LocationUpdate
@@ -28,6 +27,7 @@ import com.ably.tracking.publisher.workerqueue.workers.AddTrackableWorker
 import com.ably.tracking.publisher.workerqueue.workers.ConnectionCreatedWorker
 import com.ably.tracking.publisher.workerqueue.workers.PresenceMessageWorker
 import com.ably.tracking.publisher.workerqueue.workers.SetActiveTrackableWorker
+import com.ably.tracking.publisher.workerqueue.workers.StopWorker
 import com.ably.tracking.publisher.workerqueue.workers.TrackableRemovalRequestedWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
@@ -380,17 +380,7 @@ constructor(
                         properties.currentDestination?.let { setDestination(it, properties) }
                     }
                     is StopEvent -> {
-                        if (properties.isTracking) {
-                            stopLocationUpdates(properties)
-                        }
-                        try {
-                            ably.close(properties.presenceData)
-                            properties.dispose()
-                            properties.isStopped = true
-                            event.callbackFunction(Result.success(Unit))
-                        } catch (exception: ConnectionException) {
-                            event.callbackFunction(Result.failure(exception))
-                        }
+                        workerQueue.execute(StopWorker(event.callbackFunction, ably, this@DefaultCorePublisher))
                     }
                     is AblyConnectionStateChangeEvent -> {
                         logHandler?.v("$TAG Ably connection state changed ${event.connectionStateChange.state}")
