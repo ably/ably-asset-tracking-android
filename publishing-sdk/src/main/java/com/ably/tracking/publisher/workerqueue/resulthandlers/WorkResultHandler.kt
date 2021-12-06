@@ -1,6 +1,7 @@
-package com.ably.tracking.publisher.workerqueue
+package com.ably.tracking.publisher.workerqueue.resulthandlers
 
 import com.ably.tracking.publisher.CorePublisher
+import com.ably.tracking.publisher.workerqueue.WorkResult
 import com.ably.tracking.publisher.workerqueue.workers.Worker
 
 /**
