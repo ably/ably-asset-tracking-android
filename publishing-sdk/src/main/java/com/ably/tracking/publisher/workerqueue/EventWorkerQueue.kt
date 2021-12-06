@@ -8,7 +8,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 /**
- * An implementation of [WorkerQueue] that executes incoming workers defined in [executeWorks] method. Please note
+ * An implementation of [WorkerQueue] that executes incoming workers defined in [execute] method. Please note
  * that this is currently an acting bridge between the older event queue (CorePublisher) . All methods must be called
  * from the corresponding channel receivers.
  * */
