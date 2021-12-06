@@ -4,13 +4,10 @@ import com.ably.tracking.ConnectionException
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.publisher.CorePublisher
-import com.ably.tracking.publisher.DefaultCorePublisher
 import com.ably.tracking.publisher.Event
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.StopEvent
 import com.ably.tracking.publisher.workerqueue.SyncAsyncResult
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 
 internal class StopWorker(
     private val callbackFunction: ResultCallbackFunction<Unit>,
