@@ -4,6 +4,8 @@ import com.ably.tracking.publisher.CorePublisher
 import com.ably.tracking.publisher.DefaultCorePublisher
 import com.ably.tracking.publisher.workerqueue.resulthandlers.getWorkResultHandler
 import com.ably.tracking.publisher.workerqueue.workers.Worker
+import com.ably.tracking.publisher.workerqueue.results.SyncAsyncResult
+import com.ably.tracking.publisher.workerqueue.results.WorkResult
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 

@@ -9,8 +9,8 @@ import com.ably.tracking.publisher.AddTrackableEvent
 import com.ably.tracking.publisher.DefaultCorePublisher
 import com.ably.tracking.publisher.Request
 import com.ably.tracking.publisher.Trackable
-import com.ably.tracking.publisher.workerqueue.AddTrackableWorkResult
-import com.ably.tracking.publisher.workerqueue.SyncAsyncResult
+import com.ably.tracking.publisher.workerqueue.results.AddTrackableWorkResult
+import com.ably.tracking.publisher.workerqueue.results.SyncAsyncResult
 import kotlinx.coroutines.flow.StateFlow
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine

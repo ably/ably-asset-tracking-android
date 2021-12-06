@@ -1,4 +1,4 @@
-package com.ably.tracking.publisher.workerqueue
+package com.ably.tracking.publisher.workerqueue.results
 
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.ResultHandler
