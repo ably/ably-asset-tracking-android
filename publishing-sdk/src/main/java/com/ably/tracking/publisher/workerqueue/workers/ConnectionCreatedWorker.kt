@@ -21,7 +21,7 @@ internal class ConnectionCreatedWorker(
     private val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>,
     private val ably: Ably,
     private val presenceUpdateListener: ((presenceMessage: PresenceMessage) -> Unit),
-) : Worker {
+) : SyncAsyncWorker {
     override val event: Request<*>
         get() = ConnectionForTrackableCreatedEvent(trackable, callbackFunction)
 

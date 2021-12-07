@@ -4,13 +4,13 @@ import com.ably.tracking.publisher.ConnectionForTrackableCreatedEvent
 import com.ably.tracking.publisher.CorePublisher
 import com.ably.tracking.publisher.workerqueue.results.AddTrackableWorkResult
 import com.ably.tracking.publisher.workerqueue.workers.AddTrackableFailedWorker
-import com.ably.tracking.publisher.workerqueue.workers.Worker
+import com.ably.tracking.publisher.workerqueue.workers.SyncAsyncWorker
 
 internal class AddTrackableResultHandler : WorkResultHandler<AddTrackableWorkResult> {
     override fun handle(
         workResult: AddTrackableWorkResult,
         corePublisher: CorePublisher
-    ): Worker? {
+    ): SyncAsyncWorker? {
         when (workResult) {
             is AddTrackableWorkResult.AlreadyIn -> workResult.callbackFunction(
                 Result.success(workResult.trackableStateFlow)

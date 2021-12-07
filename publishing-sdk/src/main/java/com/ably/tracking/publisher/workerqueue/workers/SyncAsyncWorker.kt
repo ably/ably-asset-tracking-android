@@ -5,10 +5,10 @@ import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.workerqueue.results.SyncAsyncResult
 
 /**
- * A [Worker] interface represents workers which executes synchronous work with an optional synchronous work result
+ * A [SyncAsyncWorker] interface represents workers which executes synchronous work with an optional synchronous work result
  * and another optional asynchronous work.
  * */
-internal interface Worker {
+internal interface SyncAsyncWorker {
     /**
      * A temporary variable that enables sending requests in form of events to CorePublisher, during refactoring
      *

@@ -12,7 +12,7 @@ internal class AddTrackableFailedWorker(
     private val trackable: Trackable,
     private val callbackFunction: AddTrackableCallbackFunction,
     val exception: Exception
-) : Worker {
+) : SyncAsyncWorker {
     override val event: Request<*>
         get() = AddTrackableFailedEvent(trackable, callbackFunction, exception)
 

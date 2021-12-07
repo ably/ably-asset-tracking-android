@@ -14,7 +14,7 @@ internal class StopWorker(
     private val callbackFunction: ResultCallbackFunction<Unit>,
     private val ably: Ably,
     private val corePublisher: CorePublisher
-) : Worker {
+) : SyncAsyncWorker {
     override val event: Event
         get() = StopEvent(callbackFunction)
 

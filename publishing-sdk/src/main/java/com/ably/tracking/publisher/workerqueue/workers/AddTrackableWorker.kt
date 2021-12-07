@@ -15,7 +15,7 @@ internal class AddTrackableWorker(
     private val trackable: Trackable,
     private val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>,
     private val ably: Ably
-) : Worker {
+) : SyncAsyncWorker {
     override val event: Request<*>
         get() = AddTrackableEvent(trackable, callbackFunction)
 

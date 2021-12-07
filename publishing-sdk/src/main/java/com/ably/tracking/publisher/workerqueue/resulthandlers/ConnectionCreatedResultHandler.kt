@@ -5,13 +5,13 @@ import com.ably.tracking.publisher.CorePublisher
 import com.ably.tracking.publisher.TrackableRemovalRequestedEvent
 import com.ably.tracking.publisher.workerqueue.results.ConnectionCreatedWorkResult
 import com.ably.tracking.publisher.workerqueue.workers.AddTrackableFailedWorker
-import com.ably.tracking.publisher.workerqueue.workers.Worker
+import com.ably.tracking.publisher.workerqueue.workers.SyncAsyncWorker
 
 internal class ConnectionCreatedResultHandler : WorkResultHandler<ConnectionCreatedWorkResult> {
     override fun handle(
         workResult: ConnectionCreatedWorkResult,
         corePublisher: CorePublisher
-    ): Worker? {
+    ): SyncAsyncWorker? {
         when (workResult) {
             is ConnectionCreatedWorkResult.RemovalRequested ->
                 corePublisher.request(

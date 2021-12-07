@@ -15,7 +15,7 @@ internal class PresenceMessageWorker(
     private val presenceMessage: PresenceMessage,
     private val corePublisher: CorePublisher
 ) :
-    Worker {
+    SyncAsyncWorker {
     override val event: Event
         get() = PresenceMessageEvent(trackable, presenceMessage)
 

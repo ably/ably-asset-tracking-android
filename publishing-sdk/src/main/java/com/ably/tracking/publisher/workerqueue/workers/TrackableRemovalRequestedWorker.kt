@@ -14,7 +14,7 @@ internal class TrackableRemovalRequestedWorker(
     private val trackable: Trackable,
     private val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>,
     private val result: Result<Unit>
-) : Worker {
+) : SyncAsyncWorker {
     override val event: Event
         get() = TrackableRemovalRequestedEvent(trackable, callbackFunction, result)
 

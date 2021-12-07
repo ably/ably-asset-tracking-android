@@ -14,7 +14,7 @@ internal class SetActiveTrackableWorker(
     private val callbackFunction: ResultCallbackFunction<Unit>,
     private val publisher: CorePublisher,
     private val hooks: DefaultCorePublisher.Hooks
-) : Worker {
+) : SyncAsyncWorker {
     override val event: Event
         get() = SetActiveTrackableEvent(trackable, callbackFunction)
 
