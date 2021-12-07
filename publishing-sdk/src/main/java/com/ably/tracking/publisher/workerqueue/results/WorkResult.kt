@@ -6,7 +6,7 @@ import com.ably.tracking.publisher.Trackable
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
-typealias AsyncWork<T> = (suspend () -> T)
+internal typealias AsyncWork<T> = (suspend () -> T)
 
 /**
  * This sealed class represents a base result from concrete  [Worker] instances after they finish doing their work.
