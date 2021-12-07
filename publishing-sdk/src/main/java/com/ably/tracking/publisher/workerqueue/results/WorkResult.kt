@@ -78,3 +78,9 @@ internal sealed class TrackableRemovalRequestedResult : WorkResult() {
 }
 
 internal data class SetActiveTrackableResult(val callbackFunction: ResultCallbackFunction<Unit>) : WorkResult()
+
+internal sealed class StopResult : WorkResult() {
+    data class Success(val callbackFunction: ResultCallbackFunction<Unit>) : StopResult()
+    data class Fail(val callbackFunction: ResultCallbackFunction<Unit>, val exception: ConnectionException) :
+        StopResult()
+}

@@ -7,6 +7,7 @@ import com.ably.tracking.publisher.CorePublisher
 import com.ably.tracking.publisher.Event
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.StopEvent
+import com.ably.tracking.publisher.workerqueue.results.StopResult
 import com.ably.tracking.publisher.workerqueue.results.SyncAsyncResult
 
 internal class StopWorker(
@@ -21,14 +22,13 @@ internal class StopWorker(
         if (properties.isTracking) {
             corePublisher.stopLocationUpdates(properties)
         }
-        try {
+        return try {
             ably.close(properties.presenceData)
             properties.dispose()
             properties.isStopped = true
-            callbackFunction(Result.success(Unit))
+            SyncAsyncResult(StopResult.Success(callbackFunction))
         } catch (exception: ConnectionException) {
-            callbackFunction(Result.failure(exception))
+            SyncAsyncResult(StopResult.Fail(callbackFunction, exception))
         }
-        return SyncAsyncResult()
     }
 }
