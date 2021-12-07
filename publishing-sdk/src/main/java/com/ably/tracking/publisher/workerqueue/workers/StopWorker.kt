@@ -7,7 +7,7 @@ import com.ably.tracking.publisher.CorePublisher
 import com.ably.tracking.publisher.Event
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.StopEvent
-import com.ably.tracking.publisher.workerqueue.SyncAsyncResult
+import com.ably.tracking.publisher.workerqueue.results.SyncAsyncResult
 
 internal class StopWorker(
     private val callbackFunction: ResultCallbackFunction<Unit>,
