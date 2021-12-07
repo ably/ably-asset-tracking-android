@@ -5,7 +5,6 @@ import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ResultHandler
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.guards.TrackableRemovalGuard
-import com.ably.tracking.publisher.workerqueue.AddTrackableWorkResult
 import com.ably.tracking.publisher.workerqueue.results.AddTrackableWorkResult
 import com.ably.tracking.test.common.mockSuspendingConnectFailure
 import com.ably.tracking.test.common.mockSuspendingConnectSuccess
