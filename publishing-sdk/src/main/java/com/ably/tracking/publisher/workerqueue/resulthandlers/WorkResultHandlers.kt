@@ -1,8 +1,7 @@
 package com.ably.tracking.publisher.workerqueue.resulthandlers
 
-import com.ably.tracking.publisher.workerqueue.AddTrackableWorkResult
-import com.ably.tracking.publisher.workerqueue.WorkResult
-import com.ably.tracking.publisher.workerqueue.WorkResultHandler
+import com.ably.tracking.publisher.workerqueue.results.AddTrackableWorkResult
+import com.ably.tracking.publisher.workerqueue.results.WorkResult
 
 internal fun getWorkResultHandler(workResult: WorkResult): WorkResultHandler {
     when (workResult) {

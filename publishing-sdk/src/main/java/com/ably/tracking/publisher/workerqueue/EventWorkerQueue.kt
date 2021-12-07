@@ -4,11 +4,13 @@ import com.ably.tracking.publisher.CorePublisher
 import com.ably.tracking.publisher.DefaultCorePublisher
 import com.ably.tracking.publisher.workerqueue.resulthandlers.getWorkResultHandler
 import com.ably.tracking.publisher.workerqueue.workers.Worker
+import com.ably.tracking.publisher.workerqueue.results.SyncAsyncResult
+import com.ably.tracking.publisher.workerqueue.results.WorkResult
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 /**
- * An implementation of [WorkerQueue] that executes incoming workers defined in [executeWorks] method. Please note
+ * An implementation of [WorkerQueue] that executes incoming workers defined in [execute] method. Please note
  * that this is currently an acting bridge between the older event queue (CorePublisher) . All methods must be called
  * from the corresponding channel receivers.
  * */
