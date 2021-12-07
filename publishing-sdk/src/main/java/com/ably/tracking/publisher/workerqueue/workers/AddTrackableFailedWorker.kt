@@ -6,7 +6,7 @@ import com.ably.tracking.publisher.AddTrackableResult
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.Request
 import com.ably.tracking.publisher.Trackable
-import com.ably.tracking.publisher.workerqueue.SyncAsyncResult
+import com.ably.tracking.publisher.workerqueue.results.SyncAsyncResult
 
 internal class AddTrackableFailedWorker(
     private val trackable: Trackable,
