@@ -4,6 +4,7 @@ import com.ably.tracking.publisher.ConnectionForTrackableCreatedEvent
 import com.ably.tracking.publisher.CorePublisher
 import com.ably.tracking.publisher.workerqueue.results.AddTrackableWorkResult
 import com.ably.tracking.publisher.workerqueue.results.WorkResult
+import com.ably.tracking.publisher.workerqueue.workers.AddTrackableFailedWorker
 import com.ably.tracking.publisher.workerqueue.workers.Worker
 
 internal class AddTrackableResultHandler : WorkResultHandler {
