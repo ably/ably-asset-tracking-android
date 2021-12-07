@@ -70,3 +70,11 @@ internal sealed class ConnectionCreatedWorkResult : WorkResult() {
         val exception: ConnectionException
     ) : ConnectionCreatedWorkResult()
 }
+
+internal sealed class TrackableRemovalRequestedResult : WorkResult() {
+    internal data class Success(val trackable: Trackable) : TrackableRemovalRequestedResult()
+    internal data class Fail(val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>) :
+        TrackableRemovalRequestedResult()
+}
+
+internal data class SetActiveTrackableResult(val callbackFunction: ResultCallbackFunction<Unit>) : WorkResult()

@@ -7,6 +7,7 @@ import com.ably.tracking.publisher.Event
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.SetActiveTrackableEvent
 import com.ably.tracking.publisher.Trackable
+import com.ably.tracking.publisher.workerqueue.results.SetActiveTrackableResult
 import com.ably.tracking.publisher.workerqueue.results.SyncAsyncResult
 
 internal class SetActiveTrackableWorker(
@@ -21,12 +22,13 @@ internal class SetActiveTrackableWorker(
     override suspend fun doWork(properties: PublisherProperties): SyncAsyncResult {
         if (properties.active != trackable) {
             properties.active = trackable
+
+            // In the future consider moving following lines to handler
             hooks.trackables?.onActiveTrackableChanged(trackable)
             trackable.destination?.let {
                 publisher.setDestination(it, properties)
             }
         }
-        callbackFunction(Result.success(Unit))
-        return SyncAsyncResult()
+        return SyncAsyncResult(SetActiveTrackableResult(callbackFunction))
     }
 }
