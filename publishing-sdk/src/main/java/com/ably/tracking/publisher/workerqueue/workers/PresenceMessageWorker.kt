@@ -8,7 +8,7 @@ import com.ably.tracking.publisher.Event
 import com.ably.tracking.publisher.PresenceMessageEvent
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.Trackable
-import com.ably.tracking.publisher.workerqueue.SyncAsyncResult
+import com.ably.tracking.publisher.workerqueue.results.SyncAsyncResult
 
 internal class PresenceMessageWorker(
     private val trackable: Trackable,

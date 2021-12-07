@@ -7,7 +7,7 @@ import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.RemoveTrackableRequestedException
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.TrackableRemovalRequestedEvent
-import com.ably.tracking.publisher.workerqueue.SyncAsyncResult
+import com.ably.tracking.publisher.workerqueue.results.SyncAsyncResult
 import kotlinx.coroutines.flow.StateFlow
 
 internal class TrackableRemovalRequestedWorker(
