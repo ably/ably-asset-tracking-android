@@ -24,9 +24,12 @@ import com.mapbox.api.directions.v5.models.RouteOptions
 import com.mapbox.module.Mapbox_TripNotificationModuleConfiguration
 import com.mapbox.navigation.base.internal.extensions.applyDefaultParams
 import com.mapbox.navigation.base.options.NavigationOptions
+import com.mapbox.navigation.base.trip.model.RouteLegProgress
+import com.mapbox.navigation.base.trip.model.RouteProgress
 import com.mapbox.navigation.base.trip.notification.TripNotification
 import com.mapbox.navigation.core.MapboxNavigation
 import com.mapbox.navigation.core.MapboxNavigationProvider
+import com.mapbox.navigation.core.arrival.ArrivalObserver
 import com.mapbox.navigation.core.directions.session.RoutesRequestCallback
 import com.mapbox.navigation.core.replay.MapboxReplayer
 import com.mapbox.navigation.core.replay.ReplayLocationEngine
@@ -167,6 +170,7 @@ internal class DefaultMapbox(
     private var mapboxReplayer: MapboxReplayer? = null
     private var locationHistoryListener: (LocationHistoryListener)? = null
     private var locationObserver: LocationObserver? = null
+    private var arrivalObserver: ArrivalObserver? = null
 
     init {
         setupTripNotification(notificationProvider, notificationId)
@@ -194,6 +198,7 @@ internal class DefaultMapbox(
                 logHandler?.v("$TAG Create new MapboxNavigation instance")
                 MapboxNavigationProvider.create(mapboxBuilder.build())
             }
+            setupRouteClearingWhenDestinationIsReached()
         }
     }
 
@@ -203,6 +208,17 @@ internal class DefaultMapbox(
                 override fun createTripNotification(): TripNotification =
                     MapboxTripNotification(notificationProvider, notificationId)
             }
+    }
+
+    private fun setupRouteClearingWhenDestinationIsReached() {
+        arrivalObserver = object : ArrivalObserver {
+            override fun onFinalDestinationArrival(routeProgress: RouteProgress) {
+                clearRoute()
+            }
+
+            override fun onNextRouteLegStart(routeLegProgress: RouteLegProgress) = Unit
+        }
+        arrivalObserver?.let { mapboxNavigation.registerArrivalObserver(it) }
     }
 
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
@@ -223,6 +239,7 @@ internal class DefaultMapbox(
             mapboxReplayer?.stop()
             mapboxNavigation.apply {
                 stopTripSession()
+                arrivalObserver?.let { mapboxNavigation.unregisterArrivalObserver(it) }
                 mapboxReplayer?.finish()
                 val tripHistoryString = retrieveHistory()
                 // MapBox's mapToReplayEvents method crashes if passed an empty string,
