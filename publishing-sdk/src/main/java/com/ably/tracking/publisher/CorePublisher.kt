@@ -24,6 +24,7 @@ import com.ably.tracking.publisher.guards.DublicateTrackableGuardImpl
 import com.ably.tracking.publisher.guards.DuplicateTrackableGuard
 import com.ably.tracking.publisher.guards.TrackableRemovalGuard
 import com.ably.tracking.publisher.workerqueue.EventWorkerQueue
+import com.ably.tracking.publisher.workerqueue.WorkerQueue
 import com.ably.tracking.publisher.workerqueue.workers.AddTrackableWorker
 import com.ably.tracking.publisher.workerqueue.workers.ConnectionCreatedWorker
 import kotlinx.coroutines.CoroutineScope
@@ -152,7 +153,7 @@ constructor(
     ) {
         launch {
             val properties = Properties(routingProfile, policy.resolve(emptySet()), areRawLocationsEnabled)
-            val workerQueue = EventWorkerQueue(this@DefaultCorePublisher, properties, scope)
+            val workerQueue: WorkerQueue = EventWorkerQueue(this@DefaultCorePublisher, properties, scope)
             // processing
             for (event in receiveEventChannel) {
                 // handle events after the publisher is stopped
