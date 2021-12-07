@@ -1,4 +1,4 @@
-package com.ably.tracking.publisher.workerqueue
+package com.ably.tracking.publisher.workerqueue.results
 
 import com.ably.tracking.ConnectionException
 import com.ably.tracking.TrackableState
@@ -8,7 +8,7 @@ import com.ably.tracking.publisher.Trackable
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
-typealias AsyncWork<T> = (suspend () -> T)
+internal typealias AsyncWork = (suspend () -> WorkResult)
 
 /**
  * This sealed class represents a base result from concrete  [Worker] instances after they finish doing their work.
@@ -29,7 +29,7 @@ internal sealed class WorkResult
  * **/
 internal data class SyncAsyncResult(
     val syncWorkResult: WorkResult? = null,
-    val asyncWork: AsyncWork<WorkResult>? = null
+    val asyncWork: AsyncWork? = null
 ) : WorkResult()
 
 internal sealed class AddTrackableWorkResult : WorkResult() {
