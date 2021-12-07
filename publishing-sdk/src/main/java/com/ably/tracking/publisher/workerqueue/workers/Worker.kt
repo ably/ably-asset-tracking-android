@@ -2,7 +2,7 @@ package com.ably.tracking.publisher.workerqueue.workers
 
 import com.ably.tracking.publisher.Event
 import com.ably.tracking.publisher.PublisherProperties
-import com.ably.tracking.publisher.workerqueue.SyncAsyncResult
+import com.ably.tracking.publisher.workerqueue.results.SyncAsyncResult
 
 /**
  * A [Worker] interface represents workers which executes synchronous work with an optional synchronous work result
