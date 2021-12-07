@@ -9,8 +9,10 @@ internal inline fun <reified T> getWorkResultHandler(workResult: T): WorkResultH
     return when (workResult!!::class) {
         AddTrackableWorkResult.Success::class, AddTrackableWorkResult.Fail::class, AddTrackableWorkResult.AlreadyIn::class
         -> AddTrackableResultHandler() as WorkResultHandler<WorkResult>
+
         ConnectionCreatedWorkResult.PresenceSuccess::class, ConnectionCreatedWorkResult.PresenceFail::class,
         ConnectionCreatedWorkResult.RemovalRequested::class -> ConnectionCreatedResultHandler() as WorkResultHandler<WorkResult>
+
         else -> throw IllegalArgumentException("Invalid workResult provided")
     }
 }
