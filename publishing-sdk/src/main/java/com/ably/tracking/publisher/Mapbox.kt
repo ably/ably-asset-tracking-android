@@ -170,7 +170,7 @@ internal class DefaultMapbox(
     private var mapboxReplayer: MapboxReplayer? = null
     private var locationHistoryListener: (LocationHistoryListener)? = null
     private var locationObserver: LocationObserver? = null
-    private var arrivalObserver: ArrivalObserver? = null
+    private lateinit var arrivalObserver: ArrivalObserver
 
     init {
         setupTripNotification(notificationProvider, notificationId)
@@ -218,7 +218,7 @@ internal class DefaultMapbox(
 
             override fun onNextRouteLegStart(routeLegProgress: RouteLegProgress) = Unit
         }
-        arrivalObserver?.let { mapboxNavigation.registerArrivalObserver(it) }
+        mapboxNavigation.registerArrivalObserver(arrivalObserver)
     }
 
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
@@ -239,7 +239,7 @@ internal class DefaultMapbox(
             mapboxReplayer?.stop()
             mapboxNavigation.apply {
                 stopTripSession()
-                arrivalObserver?.let { mapboxNavigation.unregisterArrivalObserver(it) }
+                mapboxNavigation.unregisterArrivalObserver(arrivalObserver)
                 mapboxReplayer?.finish()
                 val tripHistoryString = retrieveHistory()
                 // MapBox's mapToReplayEvents method crashes if passed an empty string,
