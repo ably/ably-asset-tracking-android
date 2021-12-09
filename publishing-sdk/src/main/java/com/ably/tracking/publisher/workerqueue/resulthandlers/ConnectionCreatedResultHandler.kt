@@ -1,6 +1,5 @@
 package com.ably.tracking.publisher.workerqueue.resulthandlers
 
-import com.ably.tracking.publisher.AddTrackableFailedEvent
 import com.ably.tracking.publisher.ConnectionForTrackableReadyEvent
 import com.ably.tracking.publisher.CorePublisher
 import com.ably.tracking.publisher.TrackableRemovalRequestedEvent
