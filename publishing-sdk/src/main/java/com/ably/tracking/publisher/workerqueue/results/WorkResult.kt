@@ -55,7 +55,7 @@ internal sealed class ConnectionCreatedWorkResult : WorkResult() {
         val trackable: Trackable,
         val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>,
         val successfulDisconnect: Boolean,
-        val exception: ConnectionException? = null
+        val result: Result<Unit>
     ) : ConnectionCreatedWorkResult()
 
     internal data class PresenceSuccess(
