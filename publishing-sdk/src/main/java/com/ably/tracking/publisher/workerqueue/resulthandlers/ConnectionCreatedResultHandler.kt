@@ -31,11 +31,7 @@ internal class ConnectionCreatedResultHandler : WorkResultHandler {
                 corePublisher.request(ConnectionForTrackableReadyEvent(workResult.trackable, workResult.handler))
             }
             is ConnectionCreatedWorkResult.PresenceFail -> corePublisher.request(
-                AddTrackableFailedEvent(
-                    workResult.trackable,
-                    workResult.handler,
-                    workResult.exception
-                )
+                AddTrackableFailedEvent(workResult.trackable, workResult.handler, workResult.exception)
             )
         }
         return null
