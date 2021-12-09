@@ -39,6 +39,10 @@
       android:name=".MapActivity"
       android:screenOrientation="portrait" />
 
+    <activity
+      android:name=".SetDestinationActivity"
+      android:screenOrientation="portrait" />
+
     <service android:name=".PublisherService" />
   </application>
 
