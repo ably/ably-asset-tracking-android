@@ -54,8 +54,7 @@ internal sealed class ConnectionCreatedWorkResult : WorkResult() {
     internal data class RemovalRequested(
         val trackable: Trackable,
         val handler: ResultHandler<StateFlow<TrackableState>>,
-        val successfulDisconnect: Boolean,
-        val exception: ConnectionException? = null
+        val result: Result<Unit>
     ) : ConnectionCreatedWorkResult()
 
     internal data class PresenceSuccess(
