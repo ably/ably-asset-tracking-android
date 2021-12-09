@@ -33,9 +33,9 @@ internal class ConnectionCreatedWorker(
                 asyncWork = {
                     val result = ably.disconnect(trackable.id, presenceData)
                     if (result.isSuccess) {
-                        ConnectionCreatedWorkResult.RemovalRequested(trackable, handler, result)
+                        ConnectionCreatedWorkResult.RemovalRequested(trackable, callbackFunction, result)
                     } else {
-                        ConnectionCreatedWorkResult.RemovalRequested(trackable, handler, result)
+                        ConnectionCreatedWorkResult.RemovalRequested(trackable, callbackFunction, result)
                     }
                 }
             )
@@ -57,11 +57,21 @@ internal class ConnectionCreatedWorker(
                     try {
                         result.getOrThrow()
                         continuation.resume(
-                            ConnectionCreatedWorkResult.PresenceSuccess(trackable, callbackFunction, presenceUpdateListener)
+                            ConnectionCreatedWorkResult.PresenceSuccess(
+                                trackable,
+                                callbackFunction,
+                                presenceUpdateListener
+                            )
                         )
                     } catch (exception: ConnectionException) {
                         ably.disconnect(trackable.id, presenceData) {
-                            continuation.resume(ConnectionCreatedWorkResult.PresenceFail(trackable, callbackFunction, exception))
+                            continuation.resume(
+                                ConnectionCreatedWorkResult.PresenceFail(
+                                    trackable,
+                                    callbackFunction,
+                                    exception
+                                )
+                            )
                         }
                     }
                 }

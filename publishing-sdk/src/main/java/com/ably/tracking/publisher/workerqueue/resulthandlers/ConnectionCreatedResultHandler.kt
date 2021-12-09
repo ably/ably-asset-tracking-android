@@ -1,6 +1,5 @@
 package com.ably.tracking.publisher.workerqueue.resulthandlers
 
-import com.ably.tracking.ConnectionException
 import com.ably.tracking.publisher.AddTrackableFailedEvent
 import com.ably.tracking.publisher.ConnectionForTrackableReadyEvent
 import com.ably.tracking.publisher.CorePublisher
@@ -20,15 +19,17 @@ internal class ConnectionCreatedResultHandler : WorkResultHandler {
                     TrackableRemovalRequestedEvent(
                         trackable = workResult.trackable,
                         callbackFunction = workResult.callbackFunction,
-                        result = if (workResult.successfulDisconnect) Result.success(Unit) else Result.failure(
-                            workResult.exception
-                                as ConnectionException
-                        )
+                        result = workResult.result
                     )
                 )
 
             is ConnectionCreatedWorkResult.PresenceSuccess -> {
-                corePublisher.request(ConnectionForTrackableReadyEvent(workResult.trackable, workResult.callbackFunction))
+                corePublisher.request(
+                    ConnectionForTrackableReadyEvent(
+                        workResult.trackable,
+                        workResult.callbackFunction
+                    )
+                )
             }
             is ConnectionCreatedWorkResult.PresenceFail -> corePublisher.request(
                 AddTrackableFailedEvent(
