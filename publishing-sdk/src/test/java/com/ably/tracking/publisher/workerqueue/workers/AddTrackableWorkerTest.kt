@@ -95,8 +95,8 @@ class AddTrackableWorkerTest {
         Assert.assertTrue(result.syncWorkResult is AddTrackableWorkResult.AlreadyIn)
         // also make sure it has the right content
         val alreadyIn = result.syncWorkResult as AddTrackableWorkResult.AlreadyIn
-        Assert.assertTrue(alreadyIn.handler == resultCallbackFunction)
-        Assert.assertTrue(alreadyIn.trackableStateFlow == publisherProperties.trackableStateFlows[trackable.id])
+        Assert.assertEquals(alreadyIn.handler, resultCallbackFunction)
+        Assert.assertEquals(alreadyIn.trackableStateFlow, publisherProperties.trackableStateFlows[trackable.id])
     }
 
     // async work tests
