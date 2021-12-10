@@ -120,6 +120,7 @@ class PublisherService : Service() {
             )
             .rawLocations(appPreferences.shouldSendRawLocations())
             .sendResolution(appPreferences.shouldSendResolution())
+            .predictions(appPreferences.shouldEnablePredictions())
             .start()
 
     private fun createDefaultResolution(): Resolution =
