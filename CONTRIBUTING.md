@@ -57,7 +57,7 @@ The release process must include the following steps:
 
 1. Ensure that all work intended for this release has landed to `main`
 2. Create a release branch named like `release/1.2.3`
-3. Add a commit to bump the version number
+3. Add a commit to bump the version number - this commit should also include an update to the root `README.md`, where the latest version number is explicitly referenced
 4. Add a commit to update the change log
 5. Push the release branch to GitHub
 6. Open a PR for the release against the release branch you just pushed
