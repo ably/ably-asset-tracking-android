@@ -382,7 +382,6 @@ constructor(
 
     /**
      * A suspend version of the [DefaultAbly.disconnect] method. It waits until disconnection is completed.
-     * @throws ConnectionException if something goes wrong during disconnect.
      */
     override suspend fun disconnect(trackableId: String, presenceData: PresenceData): Result<Unit> {
         return suspendCoroutine { continuation ->
