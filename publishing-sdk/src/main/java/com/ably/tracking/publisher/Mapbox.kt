@@ -156,7 +156,8 @@ internal class DefaultMapbox(
     locationSource: LocationSource? = null,
     private val logHandler: LogHandler?,
     notificationProvider: PublisherNotificationProvider,
-    notificationId: Int
+    notificationId: Int,
+    predictionsEnabled: Boolean,
 ) : Mapbox {
     private val TAG = createLoggingTag(this)
 
@@ -187,6 +188,10 @@ internal class DefaultMapbox(
                     useHistoryDataReplayerLocationEngine(mapboxBuilder, it)
                 }
             }
+        }
+
+        if (!predictionsEnabled) {
+            mapboxBuilder.navigatorPredictionMillis(0L) // Setting this to 0 disables location predictions
         }
 
         runBlocking(mainDispatcher) {
