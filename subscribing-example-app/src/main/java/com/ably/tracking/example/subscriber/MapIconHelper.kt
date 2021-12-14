@@ -3,7 +3,7 @@ package com.ably.tracking.example.subscriber
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
-import android.view.animation.AccelerateDecelerateInterpolator
+import android.view.animation.LinearInterpolator
 import com.google.android.gms.maps.model.Circle
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
@@ -25,7 +25,7 @@ fun getMarkerResourceIdByBearing(bearing: Float, isRaw: Boolean): Int {
 fun animateMarkerAndCircleMovement(marker: Marker, finalPosition: LatLng, circle: Circle, finalRadius: Double) {
     val startPosition = marker.position
     val startRadius = circle.radius
-    val interpolator = AccelerateDecelerateInterpolator()
+    val interpolator = LinearInterpolator()
     val startTimeInMillis = SystemClock.uptimeMillis()
     val animationDurationInMillis = 1000f // this should probably match events update rate
     val nextCalculationDelayInMillis = 16L
