@@ -26,6 +26,7 @@ import com.ably.tracking.publisher.guards.TrackableRemovalGuard
 import com.ably.tracking.publisher.workerqueue.EventWorkerQueue
 import com.ably.tracking.publisher.workerqueue.WorkerQueue
 import com.ably.tracking.publisher.workerqueue.workers.AddTrackableWorker
+import com.ably.tracking.publisher.workerqueue.workers.ConnectionCreatedWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
@@ -283,27 +284,15 @@ constructor(
                         )
                     }
                     is ConnectionForTrackableCreatedEvent -> {
-                        if (properties.trackableRemovalGuard.isMarkedForRemoval(event.trackable)) {
-                            // Leave Ably channel.
-                            ably.disconnect(event.trackable.id, properties.presenceData) { result ->
-                                request(TrackableRemovalRequestedEvent(event.trackable, event.handler, result))
-                            }
-                            continue
-                        }
-                        ably.subscribeForPresenceMessages(
-                            trackableId = event.trackable.id,
-                            listener = { enqueue(PresenceMessageEvent(event.trackable, it)) },
-                            callback = { result ->
-                                try {
-                                    result.getOrThrow()
-                                    request(ConnectionForTrackableReadyEvent(event.trackable, event.handler))
-                                } catch (exception: ConnectionException) {
-                                    ably.disconnect(event.trackable.id, properties.presenceData) {
-                                        request(
-                                            AddTrackableFailedEvent(event.trackable, event.handler, exception)
-                                        )
-                                    }
-                                }
+                        // for now delegate the presence listening to here, this could likely be a new case for new
+                        // structure
+                        workerQueue.execute(
+                            ConnectionCreatedWorker(
+                                event.trackable,
+                                event.handler,
+                                ably
+                            ) { presenceMessage ->
+                                enqueue(PresenceMessageEvent(event.trackable, presenceMessage))
                             }
                         )
                     }
@@ -884,7 +873,7 @@ constructor(
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
         override val duplicateTrackableGuard: DuplicateTrackableGuard = DublicateTrackableGuardImpl()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        val trackableRemovalGuard: TrackableRemovalGuard = TrackableRemovalGuard()
+        override val trackableRemovalGuard: TrackableRemovalGuard = TrackableRemovalGuard()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
 
         fun dispose() {

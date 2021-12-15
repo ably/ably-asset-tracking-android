@@ -7,9 +7,13 @@ import com.ably.tracking.publisher.AddTrackableResult
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.guards.DuplicateTrackableGuard
+import com.ably.tracking.publisher.guards.TrackableRemovalGuard
 import kotlinx.coroutines.flow.MutableStateFlow
 
-internal class FakeProperties(override val duplicateTrackableGuard: DuplicateTrackableGuard) : PublisherProperties {
+internal class FakeProperties(
+    override val duplicateTrackableGuard: DuplicateTrackableGuard,
+    override val trackableRemovalGuard: TrackableRemovalGuard
+) : PublisherProperties {
     override val trackables: MutableSet<Trackable> = mutableSetOf()
     override val trackableStateFlows: MutableMap<String, MutableStateFlow<TrackableState>> = mutableMapOf()
     override var presenceData: PresenceData = PresenceData("properties")
