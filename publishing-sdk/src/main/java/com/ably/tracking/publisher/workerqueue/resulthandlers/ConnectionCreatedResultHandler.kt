@@ -18,16 +18,25 @@ internal class ConnectionCreatedResultHandler : WorkResultHandler {
                 corePublisher.request(
                     TrackableRemovalRequestedEvent(
                         trackable = workResult.trackable,
-                        handler = workResult.handler,
+                        callbackFunction = workResult.callbackFunction,
                         result = workResult.result
                     )
                 )
 
             is ConnectionCreatedWorkResult.PresenceSuccess -> {
-                corePublisher.request(ConnectionForTrackableReadyEvent(workResult.trackable, workResult.handler))
+                corePublisher.request(
+                    ConnectionForTrackableReadyEvent(
+                        workResult.trackable,
+                        workResult.callbackFunction
+                    )
+                )
             }
             is ConnectionCreatedWorkResult.PresenceFail -> corePublisher.request(
-                AddTrackableFailedEvent(workResult.trackable, workResult.handler, workResult.exception)
+                AddTrackableFailedEvent(
+                    workResult.trackable,
+                    workResult.callbackFunction,
+                    workResult.exception
+                )
             )
         }
         return null

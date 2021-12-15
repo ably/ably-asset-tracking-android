@@ -6,7 +6,7 @@ import androidx.annotation.RequiresPermission
 import com.ably.tracking.Location
 import com.ably.tracking.Resolution
 import com.ably.tracking.common.MILLISECONDS_PER_SECOND
-import com.ably.tracking.common.ResultHandler
+import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.common.clientOptions
 import com.ably.tracking.common.logging.createLoggingTag
 import com.ably.tracking.common.logging.e
@@ -113,7 +113,7 @@ internal interface Mapbox {
         currentLocation: Location,
         destination: Destination,
         routingProfile: RoutingProfile,
-        routeDurationCallback: ResultHandler<Long>
+        routeDurationCallback: ResultCallbackFunction<Long>
     )
 
     /**
@@ -290,7 +290,7 @@ internal class DefaultMapbox(
         currentLocation: Location,
         destination: Destination,
         routingProfile: RoutingProfile,
-        routeDurationCallback: ResultHandler<Long>
+        routeDurationCallback: ResultCallbackFunction<Long>
     ) {
         runBlocking(mainDispatcher) {
             logHandler?.v("$TAG Set route to: $destination")

@@ -3,7 +3,7 @@ package com.ably.tracking.subscriber
 import com.ably.tracking.Resolution
 import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.PresenceMessage
-import com.ably.tracking.common.ResultHandler
+import com.ably.tracking.common.ResultCallbackFunction
 
 internal sealed class Event
 
@@ -13,39 +13,39 @@ internal sealed class Event
 internal sealed class AdhocEvent : Event()
 
 /**
- * Represents an event that invokes an action that calls the [handler] when it completes.
+ * Represents an event that invokes an action that calls the [callbackFunction] when it completes.
  */
-internal sealed class Request<T>(val handler: ResultHandler<T>) : Event()
+internal sealed class Request<T>(val callbackFunction: ResultCallbackFunction<T>) : Event()
 
 /**
  * Start the [CoreSubscriber].
  */
 internal class StartEvent(
-    handler: ResultHandler<Unit>
-) : Request<Unit>(handler)
+    callbackFunction: ResultCallbackFunction<Unit>
+) : Request<Unit>(callbackFunction)
 
 /**
  * Successfully created a connection for a trackable.
  * Should be created only from within the [CoreSubscriber].
  */
 internal class ConnectionCreatedEvent(
-    handler: ResultHandler<Unit>
-) : Request<Unit>(handler)
+    callbackFunction: ResultCallbackFunction<Unit>
+) : Request<Unit>(callbackFunction)
 
 /**
  * Connection for a trackable is ready to be used.
  * Should be created only from within the [CoreSubscriber].
  */
 internal class ConnectionReadyEvent(
-    handler: ResultHandler<Unit>
-) : Request<Unit>(handler)
+    callbackFunction: ResultCallbackFunction<Unit>
+) : Request<Unit>(callbackFunction)
 
 /**
  * Stop the [CoreSubscriber].
  */
 internal class StopEvent(
-    handler: ResultHandler<Unit>
-) : Request<Unit>(handler)
+    callbackFunction: ResultCallbackFunction<Unit>
+) : Request<Unit>(callbackFunction)
 
 /**
  * A new presence message is received.
@@ -60,8 +60,8 @@ internal data class PresenceMessageEvent(
  */
 internal class ChangeResolutionEvent(
     val resolution: Resolution?,
-    handler: ResultHandler<Unit>
-) : Request<Unit>(handler)
+    callbackFunction: ResultCallbackFunction<Unit>
+) : Request<Unit>(callbackFunction)
 
 /**
  * Ably connection state changed.
