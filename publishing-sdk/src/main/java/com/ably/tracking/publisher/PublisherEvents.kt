@@ -11,7 +11,7 @@ import com.ably.tracking.common.ResultCallbackFunction
 import kotlinx.coroutines.flow.StateFlow
 
 internal typealias AddTrackableResult = StateFlow<TrackableState>
-internal typealias AddTrackableHandler = ResultCallbackFunction<AddTrackableResult>
+internal typealias AddTrackableCallbackFunction = ResultCallbackFunction<AddTrackableResult>
 
 internal sealed class Event
 
@@ -37,8 +37,8 @@ internal class StopEvent(
  */
 internal class AddTrackableEvent(
     val trackable: Trackable,
-    handler: AddTrackableHandler
-) : Request<StateFlow<TrackableState>>(handler)
+    callbackFunction: AddTrackableCallbackFunction
+) : Request<StateFlow<TrackableState>>(callbackFunction)
 
 /**
  * Failed to add a [Trackable].
@@ -46,9 +46,9 @@ internal class AddTrackableEvent(
  */
 internal class AddTrackableFailedEvent(
     val trackable: Trackable,
-    handler: AddTrackableHandler,
+    callbackFunction: AddTrackableCallbackFunction,
     val exception: Exception,
-) : Request<StateFlow<TrackableState>>(handler)
+) : Request<StateFlow<TrackableState>>(callbackFunction)
 
 /**
  * Track a [Trackable].

@@ -24,6 +24,7 @@ import com.ably.tracking.publisher.guards.DublicateTrackableGuardImpl
 import com.ably.tracking.publisher.guards.DuplicateTrackableGuard
 import com.ably.tracking.publisher.guards.TrackableRemovalGuard
 import com.ably.tracking.publisher.workerqueue.EventWorkerQueue
+import com.ably.tracking.publisher.workerqueue.workers.AddTrackableFailedWorker
 import com.ably.tracking.publisher.workerqueue.WorkerQueue
 import com.ably.tracking.publisher.workerqueue.workers.AddTrackableWorker
 import com.ably.tracking.publisher.workerqueue.workers.ConnectionCreatedWorker
@@ -234,10 +235,13 @@ constructor(
                         )
                     }
                     is AddTrackableFailedEvent -> {
-                        val failureResult = Result.failure<AddTrackableResult>(event.exception)
-                        event.callbackFunction(failureResult)
-                        properties.duplicateTrackableGuard.finishAddingTrackable(event.trackable, failureResult)
-                        properties.trackableRemovalGuard.removeMarked(event.trackable, Result.success(true))
+                        workerQueue.execute(
+                            AddTrackableFailedWorker(
+                                event.trackable,
+                                event.callbackFunction,
+                                event.exception
+                            )
+                        )
                     }
                     is PresenceMessageEvent -> {
                         when (event.presenceMessage.action) {
