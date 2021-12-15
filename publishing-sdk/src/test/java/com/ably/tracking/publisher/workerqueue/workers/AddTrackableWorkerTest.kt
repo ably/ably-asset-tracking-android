@@ -34,88 +34,78 @@ class AddTrackableWorkerTest {
 
     @Test
     fun `doWork returns asyncWork when trackable is not added and not being added`() {
-        runBlocking {
-            // given
-            val publisherProperties = FakeProperties(FakeDuplicateGuard(false), trackableRemovalGuard)
+        // given
+        val publisherProperties = FakeProperties(FakeDuplicateGuard(false), trackableRemovalGuard)
 
-            // when
-            val result = worker.doWork(publisherProperties)
+        // when
+        val result = worker.doWork(publisherProperties)
 
-            // then
-            Assert.assertNotNull(result.asyncWork)
-        }
+        // then
+        Assert.assertNotNull(result.asyncWork)
     }
 
     @Test
     fun `doWork triggers dublicateTrackableGuard startAddingTrackable when adding trackable in clean state`() {
-        runBlocking {
-            // given
-            // need to use spy to use verify
-            val guard = spyk(FakeDuplicateGuard(false))
-            val publisherProperties = FakeProperties(guard, trackableRemovalGuard)
+        // given
+        // need to use spy to use verify
+        val guard = spyk(FakeDuplicateGuard(false))
+        val publisherProperties = FakeProperties(guard, trackableRemovalGuard)
 
-            // when
-            worker.doWork(publisherProperties)
+        // when
+        worker.doWork(publisherProperties)
 
-            // then
-            verify(exactly = 1) {
-                guard.startAddingTrackable(trackable)
-            }
+        // then
+        verify(exactly = 1) {
+            guard.startAddingTrackable(trackable)
         }
     }
 
     @Test
     fun `doWork returns empty result if trackable is being added`() {
-        runBlocking {
-            // given
-            val publisherProperties = FakeProperties(FakeDuplicateGuard(true), trackableRemovalGuard)
+        // given
+        val publisherProperties = FakeProperties(FakeDuplicateGuard(true), trackableRemovalGuard)
 
-            // when
-            val result = worker.doWork(publisherProperties)
+        // when
+        val result = worker.doWork(publisherProperties)
 
-            // then
-            Assert.assertNull(result.asyncWork)
-            Assert.assertNull(result.syncWorkResult)
-        }
+        // then
+        Assert.assertNull(result.asyncWork)
+        Assert.assertNull(result.syncWorkResult)
     }
 
     @Test
     fun `doWork triggers dublicateTrackableGuard saveDuplicateAddHandler when adding trackable that is being added`() {
-        runBlocking {
-            // given
-            val guard = spyk(FakeDuplicateGuard(true))
-            val publisherProperties = FakeProperties(guard, trackableRemovalGuard)
+        // given
+        val guard = spyk(FakeDuplicateGuard(true))
+        val publisherProperties = FakeProperties(guard, trackableRemovalGuard)
 
-            // when
-            worker.doWork(publisherProperties)
+        // when
+        worker.doWork(publisherProperties)
 
-            // then
-            verify(exactly = 1) {
-                guard.saveDuplicateAddHandler(trackable, resultCallbackFunction)
-            }
+        // then
+        verify(exactly = 1) {
+            guard.saveDuplicateAddHandler(trackable, resultCallbackFunction)
         }
     }
 
     @Test
     fun `doWork returns AlreadyIn result if trackable is already added`() {
-        runBlocking {
-            // given
-            val publisherProperties = FakeProperties(FakeDuplicateGuard(false), trackableRemovalGuard)
-            publisherProperties.trackables.add(trackable)
-            publisherProperties.trackableStateFlows[trackable.id] = MutableStateFlow(TrackableState.Online)
+        // given
+        val publisherProperties = FakeProperties(FakeDuplicateGuard(false), trackableRemovalGuard)
+        publisherProperties.trackables.add(trackable)
+        publisherProperties.trackableStateFlows[trackable.id] = MutableStateFlow(TrackableState.Online)
 
-            // when
-            val result = worker.doWork(publisherProperties)
+        // when
+        val result = worker.doWork(publisherProperties)
 
-            // then
-            Assert.assertNull(result.asyncWork)
-            Assert.assertTrue(result.syncWorkResult is AddTrackableWorkResult.AlreadyIn)
+        // then
+        Assert.assertNull(result.asyncWork)
+        Assert.assertTrue(result.syncWorkResult is AddTrackableWorkResult.AlreadyIn)
 
-            // also make sure it has the right content
-            val alreadyIn = result.syncWorkResult as AddTrackableWorkResult.AlreadyIn
-            Assert.assertTrue(alreadyIn.callbackFunction == resultCallbackFunction)
-            Assert.assertTrue(alreadyIn.trackableStateFlow == publisherProperties.trackableStateFlows[trackable.id])
-        }
+        // also make sure it has the right content
+        val alreadyIn = result.syncWorkResult as AddTrackableWorkResult.AlreadyIn
+        Assert.assertTrue(alreadyIn.callbackFunction == resultCallbackFunction)
+        Assert.assertTrue(alreadyIn.trackableStateFlow == publisherProperties.trackableStateFlows[trackable.id])
     }
 
     // async work tests

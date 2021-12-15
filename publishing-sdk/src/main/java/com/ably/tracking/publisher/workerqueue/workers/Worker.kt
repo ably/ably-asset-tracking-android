@@ -28,5 +28,5 @@ internal interface Worker {
      *
      * @return SyncAsyncResult which represents an optional synchronous work result and an optional asynchronous work
      * **/
-    suspend fun doWork(properties: PublisherProperties): SyncAsyncResult
+    fun doWork(properties: PublisherProperties): SyncAsyncResult
 }

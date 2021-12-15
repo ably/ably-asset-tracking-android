@@ -16,5 +16,5 @@ internal interface WorkerQueue {
      *
      * @param worker: [Worker] to be executed
      * **/
-    suspend fun execute(worker: Worker)
+    fun execute(worker: Worker)
 }

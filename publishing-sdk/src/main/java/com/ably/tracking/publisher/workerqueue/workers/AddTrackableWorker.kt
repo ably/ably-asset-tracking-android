@@ -19,7 +19,7 @@ internal class AddTrackableWorker(
     override val event: Request<*>
         get() = AddTrackableEvent(trackable, callbackFunction)
 
-    override suspend fun doWork(properties: PublisherProperties): SyncAsyncResult {
+    override fun doWork(properties: PublisherProperties): SyncAsyncResult {
         return when {
             properties.duplicateTrackableGuard.isCurrentlyAddingTrackable(trackable) -> {
                 properties.duplicateTrackableGuard.saveDuplicateAddHandler(trackable, callbackFunction)

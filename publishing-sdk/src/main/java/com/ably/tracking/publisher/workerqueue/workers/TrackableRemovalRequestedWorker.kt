@@ -18,7 +18,7 @@ internal class TrackableRemovalRequestedWorker(
     override val event: Event
         get() = TrackableRemovalRequestedEvent(trackable, callbackFunction, result)
 
-    override suspend fun doWork(properties: PublisherProperties): SyncAsyncResult {
+    override fun doWork(properties: PublisherProperties): SyncAsyncResult {
         if (result.isSuccess) {
             properties.trackableRemovalGuard.removeMarked(trackable, Result.success(true))
         } else {
