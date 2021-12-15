@@ -28,6 +28,7 @@ import com.ably.tracking.publisher.workerqueue.WorkerQueue
 import com.ably.tracking.publisher.workerqueue.workers.AddTrackableWorker
 import com.ably.tracking.publisher.workerqueue.workers.ConnectionCreatedWorker
 import com.ably.tracking.publisher.workerqueue.workers.PresenceMessageWorker
+import com.ably.tracking.publisher.workerqueue.workers.TrackableRemovalRequestedWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
@@ -263,18 +264,11 @@ constructor(
                         )
                     }
                     is TrackableRemovalRequestedEvent -> {
-                        if (event.result.isSuccess) {
-                            properties.trackableRemovalGuard.removeMarked(event.trackable, Result.success(true))
-                        } else {
-                            properties.trackableRemovalGuard.removeMarked(
-                                event.trackable,
-                                Result.failure(event.result.exceptionOrNull()!!)
+                        workerQueue.execute(
+                            TrackableRemovalRequestedWorker(
+                                event.trackable, event.callbackFunction,
+                                event.result
                             )
-                        }
-                        event.callbackFunction(Result.failure(RemoveTrackableRequestedException()))
-                        properties.duplicateTrackableGuard.finishAddingTrackable(
-                            event.trackable,
-                            Result.failure(RemoveTrackableRequestedException())
                         )
                     }
                     is ConnectionForTrackableCreatedEvent -> {
