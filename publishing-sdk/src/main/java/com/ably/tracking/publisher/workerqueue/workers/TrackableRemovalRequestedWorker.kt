@@ -22,10 +22,7 @@ internal class TrackableRemovalRequestedWorker(
         if (result.isSuccess) {
             properties.trackableRemovalGuard.removeMarked(trackable, Result.success(true))
         } else {
-            properties.trackableRemovalGuard.removeMarked(
-                trackable,
-                Result.failure(result.exceptionOrNull()!!)
-            )
+            properties.trackableRemovalGuard.removeMarked(trackable, Result.failure(result.exceptionOrNull()!!))
         }
         callbackFunction(Result.failure(RemoveTrackableRequestedException()))
         properties.duplicateTrackableGuard.finishAddingTrackable(
