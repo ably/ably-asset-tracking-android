@@ -1,6 +1,6 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
-import com.ably.tracking.publisher.DefaultCorePublisher
+import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.Request
 import com.ably.tracking.publisher.workerqueue.results.SyncAsyncResult
 
@@ -28,5 +28,5 @@ internal interface Worker {
      *
      * @return SyncAsyncResult which represents an optional synchronous work result and an optional asynchronous work
      * **/
-    fun doWork(properties: DefaultCorePublisher.Properties): SyncAsyncResult
+    fun doWork(properties: PublisherProperties): SyncAsyncResult
 }

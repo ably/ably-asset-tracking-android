@@ -20,6 +20,7 @@ import com.ably.tracking.common.logging.createLoggingTag
 import com.ably.tracking.common.logging.v
 import com.ably.tracking.common.logging.w
 import com.ably.tracking.logging.LogHandler
+import com.ably.tracking.publisher.guards.DublicateTrackableGuardImpl
 import com.ably.tracking.publisher.guards.DuplicateTrackableGuard
 import com.ably.tracking.publisher.guards.TrackableRemovalGuard
 import com.ably.tracking.publisher.workerqueue.EventWorkerQueue
@@ -298,7 +299,9 @@ constructor(
                                     request(ConnectionForTrackableReadyEvent(event.trackable, event.handler))
                                 } catch (exception: ConnectionException) {
                                     ably.disconnect(event.trackable.id, properties.presenceData) {
-                                        request(AddTrackableFailedEvent(event.trackable, event.handler, exception))
+                                        request(
+                                            AddTrackableFailedEvent(event.trackable, event.handler, exception)
+                                        )
                                     }
                                 }
                             }
@@ -818,18 +821,18 @@ constructor(
         routingProfile: RoutingProfile,
         locationEngineResolution: Resolution,
         areRawLocationsEnabled: Boolean?,
-    ) {
+    ) : PublisherProperties {
         private var isDisposed: Boolean = false
         var isStopped: Boolean = false
         var locationEngineResolution: Resolution = locationEngineResolution
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
         var isTracking: Boolean = false
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        val trackables: MutableSet<Trackable> = mutableSetOf()
+        override val trackables: MutableSet<Trackable> = mutableSetOf()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
         val trackableStates: MutableMap<String, TrackableState> = mutableMapOf()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        val trackableStateFlows: MutableMap<String, MutableStateFlow<TrackableState>> = mutableMapOf()
+        override val trackableStateFlows: MutableMap<String, MutableStateFlow<TrackableState>> = mutableMapOf()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
         val lastChannelConnectionStateChanges: MutableMap<String, ConnectionStateChange> = mutableMapOf()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
@@ -857,7 +860,8 @@ constructor(
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
         val requests: MutableMap<String, MutableMap<Subscriber, Resolution>> = mutableMapOf()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        var presenceData: PresenceData = PresenceData(ClientTypes.PUBLISHER, rawLocations = areRawLocationsEnabled)
+        override var presenceData: PresenceData =
+            PresenceData(ClientTypes.PUBLISHER, rawLocations = areRawLocationsEnabled)
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
         var active: Trackable? = null
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
@@ -878,7 +882,7 @@ constructor(
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
         val rawLocationsPublishingState: LocationsPublishingState<RawLocationChangedEvent> = LocationsPublishingState()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        val duplicateTrackableGuard: DuplicateTrackableGuard = DuplicateTrackableGuard()
+        override val duplicateTrackableGuard: DuplicateTrackableGuard = DublicateTrackableGuardImpl()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
         val trackableRemovalGuard: TrackableRemovalGuard = TrackableRemovalGuard()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field

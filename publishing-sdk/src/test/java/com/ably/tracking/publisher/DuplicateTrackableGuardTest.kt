@@ -1,18 +1,18 @@
 package com.ably.tracking.publisher
 
 import com.ably.tracking.TrackableState
-import com.ably.tracking.publisher.guards.DuplicateTrackableGuard
+import com.ably.tracking.publisher.guards.DublicateTrackableGuardImpl
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 
 class DuplicateTrackableGuardTest {
-    private lateinit var duplicateTrackableGuard: DuplicateTrackableGuard
+    private lateinit var duplicateTrackableGuard: DublicateTrackableGuardImpl
 
     @Before
     fun setup() {
-        duplicateTrackableGuard = DuplicateTrackableGuard()
+        duplicateTrackableGuard = DublicateTrackableGuardImpl()
     }
 
     @Test

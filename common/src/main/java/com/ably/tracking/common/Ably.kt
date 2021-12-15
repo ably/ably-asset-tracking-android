@@ -176,6 +176,17 @@ interface Ably {
     )
 
     /**
+     * A suspending version of [connect]
+     * */
+    suspend fun connect(
+        trackableId: String,
+        presenceData: PresenceData,
+        useRewind: Boolean = false,
+        willPublish: Boolean = false,
+        willSubscribe: Boolean = false
+    ): Result<Boolean>
+
+    /**
      * Updates presence data in the [trackableId] channel's presence.
      * Should be called only when there's an existing channel for the [trackableId].
      * If a channel for the [trackableId] doesn't exist then nothing happens.
@@ -307,6 +318,25 @@ constructor(
             }
         } else {
             callback(Result.success(Unit))
+        }
+    }
+
+    override suspend fun connect(
+        trackableId: String,
+        presenceData: PresenceData,
+        useRewind: Boolean,
+        willPublish: Boolean,
+        willSubscribe: Boolean
+    ): Result<Boolean> {
+        return suspendCoroutine { continuation ->
+            connect(trackableId, presenceData, useRewind, willPublish, willSubscribe) { result ->
+                try {
+                    result.getOrThrow()
+                    continuation.resume(Result.success(true))
+                } catch (exception: ConnectionException) {
+                    continuation.resume(Result.failure(exception))
+                }
+            }
         }
     }
 
