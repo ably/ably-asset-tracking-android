@@ -32,11 +32,7 @@ internal class ConnectionCreatedWorker(
             return SyncAsyncResult(
                 asyncWork = {
                     val result = ably.disconnect(trackable.id, presenceData)
-                    if (result.isSuccess) {
-                        ConnectionCreatedWorkResult.RemovalRequested(trackable, callbackFunction, result)
-                    } else {
-                        ConnectionCreatedWorkResult.RemovalRequested(trackable, callbackFunction, result)
-                    }
+                    ConnectionCreatedWorkResult.RemovalRequested(trackable, callbackFunction, result)
                 }
             )
         }
