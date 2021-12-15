@@ -13,7 +13,6 @@ import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ClientTypes
 import com.ably.tracking.common.ConnectionState
 import com.ably.tracking.common.ConnectionStateChange
-import com.ably.tracking.common.PresenceAction
 import com.ably.tracking.common.PresenceData
 import com.ably.tracking.common.createSingleThreadDispatcher
 import com.ably.tracking.common.logging.createLoggingTag
@@ -28,6 +27,7 @@ import com.ably.tracking.publisher.workerqueue.workers.AddTrackableFailedWorker
 import com.ably.tracking.publisher.workerqueue.WorkerQueue
 import com.ably.tracking.publisher.workerqueue.workers.AddTrackableWorker
 import com.ably.tracking.publisher.workerqueue.workers.ConnectionCreatedWorker
+import com.ably.tracking.publisher.workerqueue.workers.PresenceMessageWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
@@ -51,6 +51,16 @@ internal interface CorePublisher {
     val active: Trackable?
     val routingProfile: RoutingProfile
     val trackableStateFlows: Map<String, StateFlow<TrackableState>>
+
+    fun addSubscriber(id: String, trackable: Trackable, data: PresenceData, properties: PublisherProperties)
+    fun updateSubscriber(
+        id: String,
+        trackable: Trackable,
+        data: PresenceData,
+        properties: PublisherProperties
+    )
+
+    fun removeSubscriber(id: String, trackable: Trackable, properties: PublisherProperties)
 }
 
 @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
@@ -244,33 +254,13 @@ constructor(
                         )
                     }
                     is PresenceMessageEvent -> {
-                        when (event.presenceMessage.action) {
-                            PresenceAction.PRESENT_OR_ENTER -> {
-                                if (event.presenceMessage.data.type == ClientTypes.SUBSCRIBER) {
-                                    addSubscriber(
-                                        event.presenceMessage.clientId,
-                                        event.trackable,
-                                        event.presenceMessage.data,
-                                        properties
-                                    )
-                                }
-                            }
-                            PresenceAction.LEAVE_OR_ABSENT -> {
-                                if (event.presenceMessage.data.type == ClientTypes.SUBSCRIBER) {
-                                    removeSubscriber(event.presenceMessage.clientId, event.trackable, properties)
-                                }
-                            }
-                            PresenceAction.UPDATE -> {
-                                if (event.presenceMessage.data.type == ClientTypes.SUBSCRIBER) {
-                                    updateSubscriber(
-                                        event.presenceMessage.clientId,
-                                        event.trackable,
-                                        event.presenceMessage.data,
-                                        properties
-                                    )
-                                }
-                            }
-                        }
+                        workerQueue.execute(
+                            PresenceMessageWorker(
+                                event.trackable,
+                                event.presenceMessage,
+                                this@DefaultCorePublisher
+                            )
+                        )
                     }
                     is TrackableRemovalRequestedEvent -> {
                         if (event.result.isSuccess) {
@@ -654,7 +644,7 @@ constructor(
         }
     }
 
-    private fun addSubscriber(id: String, trackable: Trackable, data: PresenceData, properties: Properties) {
+    override fun addSubscriber(id: String, trackable: Trackable, data: PresenceData, properties: PublisherProperties) {
         val subscriber = Subscriber(id, trackable)
         if (properties.subscribers[trackable.id] == null) {
             properties.subscribers[trackable.id] = mutableSetOf()
@@ -665,7 +655,12 @@ constructor(
         resolveResolution(trackable, properties)
     }
 
-    private fun updateSubscriber(id: String, trackable: Trackable, data: PresenceData, properties: Properties) {
+    override fun updateSubscriber(
+        id: String,
+        trackable: Trackable,
+        data: PresenceData,
+        properties: PublisherProperties
+    ) {
         properties.subscribers[trackable.id]?.let { subscribers ->
             subscribers.find { it.id == id }?.let { subscriber ->
                 data.resolution.let { resolution ->
@@ -676,7 +671,7 @@ constructor(
         }
     }
 
-    private fun removeSubscriber(id: String, trackable: Trackable, properties: Properties) {
+    override fun removeSubscriber(id: String, trackable: Trackable, properties: PublisherProperties) {
         properties.subscribers[trackable.id]?.let { subscribers ->
             subscribers.find { it.id == id }?.let { subscriber ->
                 subscribers.remove(subscriber)
@@ -691,7 +686,7 @@ constructor(
         resolution: Resolution?,
         trackable: Trackable,
         subscriber: Subscriber,
-        properties: Properties
+        properties: PublisherProperties
     ) {
         if (resolution != null) {
             if (properties.requests[trackable.id] == null) {
@@ -703,7 +698,7 @@ constructor(
         }
     }
 
-    private fun resolveResolution(trackable: Trackable, properties: Properties) {
+    private fun resolveResolution(trackable: Trackable, properties: PublisherProperties) {
         val resolutionRequests: Set<Resolution> = properties.requests[trackable.id]?.values?.toSet() ?: emptySet()
         policy.resolve(TrackableResolutionRequest(trackable, resolutionRequests)).let { resolution ->
             properties.resolutions[trackable.id] = resolution
@@ -833,7 +828,7 @@ constructor(
             ConnectionState.OFFLINE, null
         )
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        val resolutions: MutableMap<String, Resolution> = mutableMapOf()
+        override val resolutions: MutableMap<String, Resolution> = mutableMapOf()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
         val lastSentEnhancedLocations: MutableMap<String, Location> = mutableMapOf()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
@@ -849,9 +844,9 @@ constructor(
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
         var currentDestination: Destination? = null
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        val subscribers: MutableMap<String, MutableSet<Subscriber>> = mutableMapOf()
+        override val subscribers: MutableMap<String, MutableSet<Subscriber>> = mutableMapOf()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        val requests: MutableMap<String, MutableMap<Subscriber, Resolution>> = mutableMapOf()
+        override val requests: MutableMap<String, MutableMap<Subscriber, Resolution>> = mutableMapOf()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
         override var presenceData: PresenceData =
             PresenceData(ClientTypes.PUBLISHER, rawLocations = areRawLocationsEnabled)

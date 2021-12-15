@@ -1,7 +1,9 @@
 package com.ably.tracking.publisher.workerqueue
 
+import com.ably.tracking.publisher.AdhocEvent
 import com.ably.tracking.publisher.CorePublisher
 import com.ably.tracking.publisher.DefaultCorePublisher
+import com.ably.tracking.publisher.Request
 import com.ably.tracking.publisher.workerqueue.resulthandlers.getWorkResultHandler
 import com.ably.tracking.publisher.workerqueue.workers.Worker
 import com.ably.tracking.publisher.workerqueue.results.SyncAsyncResult
@@ -44,6 +46,13 @@ internal class EventWorkerQueue(
     private fun handleWorkResult(workResult: WorkResult) {
         val resultHandler = getWorkResultHandler(workResult)
         val nextWorker = resultHandler.handle(workResult, corePublisher)
-        nextWorker?.let { corePublisher.request(it.event) }
+        nextWorker?.let {
+            it.event.apply {
+                when (this) {
+                    is Request<*> -> corePublisher.request(this)
+                    is AdhocEvent -> corePublisher.enqueue(this)
+                }
+            }
+        }
     }
 }
