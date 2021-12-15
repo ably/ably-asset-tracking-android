@@ -69,5 +69,3 @@ internal sealed class ConnectionCreatedWorkResult : WorkResult() {
         val exception: ConnectionException
     ) : ConnectionCreatedWorkResult()
 }
-
-internal data class SetActiveTrackableResult(val callbackFunction: ResultCallbackFunction<Unit>) : WorkResult()

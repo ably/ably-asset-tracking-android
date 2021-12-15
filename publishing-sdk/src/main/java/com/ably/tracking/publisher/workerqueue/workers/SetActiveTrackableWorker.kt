@@ -7,7 +7,6 @@ import com.ably.tracking.publisher.Event
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.SetActiveTrackableEvent
 import com.ably.tracking.publisher.Trackable
-import com.ably.tracking.publisher.workerqueue.results.SetActiveTrackableResult
 import com.ably.tracking.publisher.workerqueue.results.SyncAsyncResult
 
 internal class SetActiveTrackableWorker(
@@ -29,6 +28,7 @@ internal class SetActiveTrackableWorker(
                 publisher.setDestination(it, properties)
             }
         }
-        return SyncAsyncResult(SetActiveTrackableResult(callbackFunction))
+        callbackFunction(Result.success(Unit))
+        return SyncAsyncResult()
     }
 }
