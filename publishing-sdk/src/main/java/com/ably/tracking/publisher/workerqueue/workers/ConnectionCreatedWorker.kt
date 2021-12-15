@@ -32,16 +32,7 @@ internal class ConnectionCreatedWorker(
             return SyncAsyncResult(
                 asyncWork = {
                     val result = ably.disconnect(trackable.id, presenceData)
-                    if (result.isSuccess) {
-                        ConnectionCreatedWorkResult.RemovalRequested(trackable, callbackFunction, result.isSuccess)
-                    } else {
-                        ConnectionCreatedWorkResult.RemovalRequested(
-                            trackable,
-                            callbackFunction,
-                            result.isSuccess,
-                            result.exceptionOrNull() as ConnectionException?
-                        )
-                    }
+                    ConnectionCreatedWorkResult.RemovalRequested(trackable, callbackFunction, result)
                 }
             )
         }
@@ -62,11 +53,21 @@ internal class ConnectionCreatedWorker(
                     try {
                         result.getOrThrow()
                         continuation.resume(
-                            ConnectionCreatedWorkResult.PresenceSuccess(trackable, callbackFunction, presenceUpdateListener)
+                            ConnectionCreatedWorkResult.PresenceSuccess(
+                                trackable,
+                                callbackFunction,
+                                presenceUpdateListener
+                            )
                         )
                     } catch (exception: ConnectionException) {
                         ably.disconnect(trackable.id, presenceData) {
-                            continuation.resume(ConnectionCreatedWorkResult.PresenceFail(trackable, callbackFunction, exception))
+                            continuation.resume(
+                                ConnectionCreatedWorkResult.PresenceFail(
+                                    trackable,
+                                    callbackFunction,
+                                    exception
+                                )
+                            )
                         }
                     }
                 }

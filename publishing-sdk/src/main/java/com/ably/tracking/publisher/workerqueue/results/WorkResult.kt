@@ -54,8 +54,7 @@ internal sealed class ConnectionCreatedWorkResult : WorkResult() {
     internal data class RemovalRequested(
         val trackable: Trackable,
         val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>,
-        val successfulDisconnect: Boolean,
-        val exception: ConnectionException? = null
+        val result: Result<Unit>
     ) : ConnectionCreatedWorkResult()
 
     internal data class PresenceSuccess(
@@ -70,14 +69,6 @@ internal sealed class ConnectionCreatedWorkResult : WorkResult() {
         val exception: ConnectionException
     ) : ConnectionCreatedWorkResult()
 }
-
-internal sealed class TrackableRemovalRequestedResult : WorkResult() {
-    internal data class Success(val trackable: Trackable) : TrackableRemovalRequestedResult()
-    internal data class Fail(val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>) :
-        TrackableRemovalRequestedResult()
-}
-
-internal data class SetActiveTrackableResult(val callbackFunction: ResultCallbackFunction<Unit>) : WorkResult()
 
 internal sealed class StopResult : WorkResult() {
     data class Success(val callbackFunction: ResultCallbackFunction<Unit>) : StopResult()

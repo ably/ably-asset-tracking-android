@@ -37,8 +37,10 @@ class AddTrackableWorkerTest {
         runBlocking {
             // given
             val publisherProperties = FakeProperties(FakeDuplicateGuard(false), trackableRemovalGuard)
+
             // when
             val result = worker.doWork(publisherProperties)
+
             // then
             Assert.assertNotNull(result.asyncWork)
         }
@@ -67,8 +69,10 @@ class AddTrackableWorkerTest {
         runBlocking {
             // given
             val publisherProperties = FakeProperties(FakeDuplicateGuard(true), trackableRemovalGuard)
+
             // when
             val result = worker.doWork(publisherProperties)
+
             // then
             Assert.assertNull(result.asyncWork)
             Assert.assertNull(result.syncWorkResult)
@@ -99,11 +103,14 @@ class AddTrackableWorkerTest {
             val publisherProperties = FakeProperties(FakeDuplicateGuard(false), trackableRemovalGuard)
             publisherProperties.trackables.add(trackable)
             publisherProperties.trackableStateFlows[trackable.id] = MutableStateFlow(TrackableState.Online)
+
             // when
             val result = worker.doWork(publisherProperties)
+
             // then
             Assert.assertNull(result.asyncWork)
             Assert.assertTrue(result.syncWorkResult is AddTrackableWorkResult.AlreadyIn)
+
             // also make sure it has the right content
             val alreadyIn = result.syncWorkResult as AddTrackableWorkResult.AlreadyIn
             Assert.assertTrue(alreadyIn.callbackFunction == resultCallbackFunction)
@@ -118,6 +125,7 @@ class AddTrackableWorkerTest {
             // given
             val publisherProperties = spyk(FakeProperties(FakeDuplicateGuard(false), trackableRemovalGuard))
             ably.mockSuspendingConnectSuccess(trackable.id)
+
             // when
             val result = worker.doWork(publisherProperties)
 
@@ -141,6 +149,7 @@ class AddTrackableWorkerTest {
             // given
             val publisherProperties = spyk(FakeProperties(FakeDuplicateGuard(false), trackableRemovalGuard))
             ably.mockSuspendingConnectFailure(trackable.id)
+
             // when
             val result = worker.doWork(publisherProperties)
 
