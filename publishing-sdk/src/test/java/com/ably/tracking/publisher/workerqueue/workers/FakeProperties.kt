@@ -77,6 +77,30 @@ internal class FakeProperties(
     override val rawLocationsPublishingState: LocationsPublishingState<RawLocationChangedEvent> =
         LocationsPublishingState()
         get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
+
+    override fun dispose() {
+        trackables.clear()
+        trackableStates.clear()
+        trackableStateFlows.clear()
+        lastChannelConnectionStateChanges.clear()
+        resolutions.clear()
+        lastSentEnhancedLocations.clear()
+        lastSentRawLocations.clear()
+        skippedEnhancedLocations.clearAll()
+        skippedRawLocations.clearAll()
+        estimatedArrivalTimeInMilliseconds = null
+        active = null
+        lastPublisherLocation = null
+        currentDestination = null
+        subscribers.clear()
+        requests.clear()
+        rawLocationChangedCommands.clear()
+        enhancedLocationsPublishingState.clearAll()
+        rawLocationsPublishingState.clearAll()
+        duplicateTrackableGuard.clearAll()
+        trackableRemovalGuard.clearAll()
+        isDisposed = true
+    }
 }
 
 internal class FakeDuplicateGuard(private val currentlyAdding: Boolean) : DuplicateTrackableGuard {

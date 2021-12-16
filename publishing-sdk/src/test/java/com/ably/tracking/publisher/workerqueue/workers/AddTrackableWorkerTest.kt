@@ -35,7 +35,7 @@ class AddTrackableWorkerTest {
     @Test
     fun `doWork returns asyncWork when trackable is not added and not being added`() {
         // given
-        val publisherProperties = FakeProperties(FakeDuplicateGuard(false), TrackableRemovalGuard())
+        val publisherProperties = FakeProperties(FakeDuplicateGuard(false), trackableRemovalGuard)
 
         // when
         val result = worker.doWork(publisherProperties)
@@ -63,7 +63,7 @@ class AddTrackableWorkerTest {
     @Test
     fun `doWork returns empty result if trackable is being added`() {
         // given
-        val publisherProperties = FakeProperties(FakeDuplicateGuard(true), TrackableRemovalGuard())
+        val publisherProperties = FakeProperties(FakeDuplicateGuard(true), trackableRemovalGuard)
 
         // when
         val result = worker.doWork(publisherProperties)

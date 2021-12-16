@@ -39,4 +39,5 @@ internal interface PublisherProperties {
     val rawLocationChangedCommands: MutableList<(DefaultCorePublisher.Properties) -> Unit>
     val enhancedLocationsPublishingState: LocationsPublishingState<EnhancedLocationChangedEvent>
     val rawLocationsPublishingState: LocationsPublishingState<RawLocationChangedEvent>
+    fun dispose()
 }
