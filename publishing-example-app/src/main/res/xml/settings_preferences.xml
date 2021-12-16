@@ -31,6 +31,12 @@
       android:title="@string/preferences_s3_file_label"
       app:useSimpleSummaryProvider="true" />
 
+    <ListPreference
+      android:key="@string/preferences_routing_profile_key"
+      android:layout="@layout/preference_with_summary_layout"
+      android:title="@string/preferences_routing_profile_label"
+      app:useSimpleSummaryProvider="true" />
+
   </PreferenceCategory>
 
   <PreferenceCategory

@@ -24,6 +24,7 @@ class AppPreferences private constructor(context: Context) {
     private val SIMULATION_CHANNEL_KEY =
         context.getString(R.string.preferences_simulation_channel_name_key)
     private val S3_FILE_KEY = context.getString(R.string.preferences_s3_file_key)
+    private val ROUTING_PROFILE_KEY = context.getString(R.string.preferences_routing_profile_key)
     private val RESOLUTION_ACCURACY_KEY = context.getString(R.string.preferences_resolution_accuracy_key)
     private val RESOLUTION_DESIRED_INTERVAL_KEY =
         context.getString(R.string.preferences_resolution_desired_interval_key)
@@ -35,6 +36,7 @@ class AppPreferences private constructor(context: Context) {
     private val DEFAULT_LOCATION_SOURCE = LocationSourceType.PHONE.name
     private val DEFAULT_SIMULATION_CHANNEL = context.getString(R.string.default_simulation_channel)
     private val DEFAULT_S3_FILE = ""
+    private val DEFAULT_ROUTING_PROFILE = RoutingProfileType.DRIVING.name
     private val DEFAULT_RESULTION_ACCURACY = Accuracy.BALANCED.name
     private val DEFAULT_RESULTION_DESIRED_INTERVAL = 1000L
     private val DEFAULT_RESULTION_MINIMUM_DISPLACEMENT = 1.0f
@@ -50,6 +52,9 @@ class AppPreferences private constructor(context: Context) {
 
     fun getS3File() =
         preferences.getString(S3_FILE_KEY, DEFAULT_S3_FILE)!!
+
+    fun getRoutingProfile(): RoutingProfileType =
+        RoutingProfileType.valueOf(preferences.getString(ROUTING_PROFILE_KEY, DEFAULT_ROUTING_PROFILE)!!)
 
     fun getResolutionAccuracy(): Accuracy =
         preferences.getString(RESOLUTION_ACCURACY_KEY, DEFAULT_RESULTION_ACCURACY)!!.let { Accuracy.valueOf(it) }
