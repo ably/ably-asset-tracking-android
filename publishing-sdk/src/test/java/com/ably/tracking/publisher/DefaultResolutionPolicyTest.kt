@@ -339,6 +339,33 @@ class DefaultResolutionPolicyTest {
         Assert.assertEquals(defaultResolution, resolvedResolution)
     }
 
+    @Test(expected = WrongResolutionConstraintsException::class)
+    fun `should throw an error when using any other ResolutionConstraint than DefaultResolutionConstraints when resolving a resolution`() {
+        // given
+        val customResolutionConstraints = object : ResolutionConstraints {}
+        val trackable = Trackable("test_id", constraints = customResolutionConstraints)
+        val resolutionRequest = TrackableResolutionRequest(trackable, emptySet())
+
+        // when
+        policy.resolve(resolutionRequest)
+
+        // then
+        // exception is thrown
+    }
+
+    @Test(expected = WrongResolutionConstraintsException::class)
+    fun `should throw an error when using any other ResolutionConstraint than DefaultResolutionConstraints when signaling active trackable change`() {
+        // given
+        val customResolutionConstraints = object : ResolutionConstraints {}
+        val trackable = Trackable("test_id", constraints = customResolutionConstraints)
+
+        // when
+        hooks.trackableSetListener!!.onActiveTrackableChanged(trackable)
+
+        // then
+        // exception is thrown
+    }
+
     /**
      * [level] should be between [DefaultBatteryDataProvider.MINIMUM_BATTERY_PERCENTAGE] and [DefaultBatteryDataProvider.MAXIMUM_BATTERY_PERCENTAGE]
      */
