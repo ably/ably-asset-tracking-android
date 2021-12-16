@@ -13,6 +13,7 @@ import androidx.core.widget.addTextChangedListener
 import androidx.transition.TransitionManager
 import com.ably.tracking.Accuracy
 import com.ably.tracking.Location
+import com.ably.tracking.LocationUpdate
 import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
 import com.ably.tracking.connection.Authentication
@@ -46,10 +47,13 @@ import kotlinx.android.synthetic.main.trackable_input_controls_view.startButton
 import kotlinx.android.synthetic.main.trackable_input_controls_view.trackableIdEditText
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.yield
 import timber.log.Timber
 
 // The client ID for the Ably SDK instance.
@@ -63,6 +67,8 @@ private const val ZOOM_LEVEL_STREETS = 15F
 private const val ZOOM_LEVEL_CITY = 10F
 private const val ZOOM_LEVEL_CONTINENT = 5F
 
+private const val INITIAL_LOCATION_UPDATE_INTERVAL_IN_MILLISECONDS = 1000L
+
 class MainActivity : AppCompatActivity() {
     private var subscriber: Subscriber? = null
     private var googleMap: GoogleMap? = null
@@ -72,6 +78,7 @@ class MainActivity : AppCompatActivity() {
     private var rawAccuracyCircle: Circle? = null
     private var resolution: Resolution =
         Resolution(Accuracy.MAXIMUM, desiredInterval = 1000L, minimumDisplacement = 1.0)
+    private var locationUpdateIntervalInMilliseconds = INITIAL_LOCATION_UPDATE_INTERVAL_IN_MILLISECONDS
 
     // SupervisorJob() is used to keep the scope working after any of its children fail
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
@@ -158,17 +165,28 @@ class MainActivity : AppCompatActivity() {
             })
             .start()
             .apply {
+                var processEnhancedLocationJob: Job? = null
+                var processRawLocationJob: Job? = null
                 locations
-                    .onEach { showMarkerOnMap(it.location, isRaw = false) }
+                    .onEach {
+                        processEnhancedLocationJob?.cancel()
+                        processEnhancedLocationJob = scope.launch { processLocationUpdate(it, isRaw = false) }
+                    }
                     .launchIn(scope)
                 rawLocations
-                    .onEach { showMarkerOnMap(it.location, isRaw = true) }
+                    .onEach {
+                        processRawLocationJob?.cancel()
+                        processRawLocationJob = scope.launch { processLocationUpdate(it, isRaw = true) }
+                    }
                     .launchIn(scope)
                 trackableStates
                     .onEach { updateAssetState(it) }
                     .launchIn(scope)
                 resolutions
-                    .onEach { updatePublisherResolutionInfo(it) }
+                    .onEach {
+                        locationUpdateIntervalInMilliseconds = resolution.desiredInterval
+                        updatePublisherResolutionInfo(it)
+                    }
                     .launchIn(scope)
             }
     }
@@ -279,7 +297,21 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun showMarkerOnMap(location: Location, isRaw: Boolean) {
+    private suspend fun processLocationUpdate(locationUpdate: LocationUpdate, isRaw: Boolean) {
+        if (locationUpdate.skippedLocations.isNotEmpty()) {
+            val allLocations = locationUpdate.skippedLocations + locationUpdate.location
+            val singleLocationUpdateDuration: Float = locationUpdateIntervalInMilliseconds.toFloat() / allLocations.size
+            allLocations.forEach { location ->
+                yield() // this will break the coroutine if it was cancelled
+                showMarkerOnMap(location, isRaw, singleLocationUpdateDuration)
+            }
+        } else {
+            yield() // this will break the coroutine if it was cancelled
+            showMarkerOnMap(locationUpdate.location, isRaw, locationUpdateIntervalInMilliseconds.toFloat())
+        }
+    }
+
+    private suspend fun showMarkerOnMap(location: Location, isRaw: Boolean, animationDuration: Float) {
         googleMap?.apply {
             val position = LatLng(location.latitude, location.longitude)
             val currentMarker = if (isRaw) rawMarker else enhancedMarker
@@ -318,7 +350,8 @@ class MainActivity : AppCompatActivity() {
                         currentMarker,
                         position,
                         currentAccuracyCircle,
-                        location.accuracy.toDouble()
+                        location.accuracy.toDouble(),
+                        animationDuration,
                     )
                 } else {
                     if (!isRaw) {
@@ -327,6 +360,7 @@ class MainActivity : AppCompatActivity() {
                     currentMarker.position = position
                     currentAccuracyCircle.center = position
                     currentAccuracyCircle.radius = location.accuracy.toDouble()
+                    delay(animationDuration.toLong())
                 }
             }
         }

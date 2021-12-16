@@ -3,10 +3,12 @@ package com.ably.tracking.example.subscriber
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
-import android.view.animation.AccelerateDecelerateInterpolator
+import android.view.animation.LinearInterpolator
 import com.google.android.gms.maps.model.Circle
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 import kotlin.math.roundToInt
 
 fun getMarkerResourceIdByBearing(bearing: Float, isRaw: Boolean): Int {
@@ -22,12 +24,32 @@ fun getMarkerResourceIdByBearing(bearing: Float, isRaw: Boolean): Int {
     }
 }
 
-fun animateMarkerAndCircleMovement(marker: Marker, finalPosition: LatLng, circle: Circle, finalRadius: Double) {
+suspend fun animateMarkerAndCircleMovement(
+    marker: Marker,
+    finalPosition: LatLng,
+    circle: Circle,
+    finalRadius: Double,
+    animationDurationInMillis: Float = 1000f,
+) {
+    suspendCoroutine<Unit> {
+        animateMarkerAndCircleMovement(marker, finalPosition, circle, finalRadius, animationDurationInMillis) {
+            it.resume(Unit)
+        }
+    }
+}
+
+fun animateMarkerAndCircleMovement(
+    marker: Marker,
+    finalPosition: LatLng,
+    circle: Circle,
+    finalRadius: Double,
+    animationDurationInMillis: Float = 1000f,
+    animationFinishedCallback: () -> Unit = {}
+) {
     val startPosition = marker.position
     val startRadius = circle.radius
-    val interpolator = AccelerateDecelerateInterpolator()
+    val interpolator = LinearInterpolator()
     val startTimeInMillis = SystemClock.uptimeMillis()
-    val animationDurationInMillis = 1000f // this should probably match events update rate
     val nextCalculationDelayInMillis = 16L
     val handler = Handler(Looper.getMainLooper())
 
@@ -45,6 +67,8 @@ fun animateMarkerAndCircleMovement(marker: Marker, finalPosition: LatLng, circle
 
             if (timeProgressPercentage < 1) {
                 handler.postDelayed(this, nextCalculationDelayInMillis)
+            } else {
+                animationFinishedCallback()
             }
         }
     })
