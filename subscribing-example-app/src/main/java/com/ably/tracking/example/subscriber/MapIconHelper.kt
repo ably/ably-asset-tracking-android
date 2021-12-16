@@ -4,6 +4,7 @@ import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import android.view.animation.AccelerateDecelerateInterpolator
+import com.google.android.gms.maps.model.Circle
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import kotlin.math.roundToInt
@@ -21,8 +22,9 @@ fun getMarkerResourceIdByBearing(bearing: Float, isRaw: Boolean): Int {
     }
 }
 
-fun animateMarkerMovement(marker: Marker, finalPosition: LatLng) {
+fun animateMarkerAndCircleMovement(marker: Marker, finalPosition: LatLng, circle: Circle, finalRadius: Double) {
     val startPosition = marker.position
+    val startRadius = circle.radius
     val interpolator = AccelerateDecelerateInterpolator()
     val startTimeInMillis = SystemClock.uptimeMillis()
     val animationDurationInMillis = 1000f // this should probably match events update rate
@@ -37,8 +39,9 @@ fun animateMarkerMovement(marker: Marker, finalPosition: LatLng) {
             timeElapsedFromStartInMillis = SystemClock.uptimeMillis() - startTimeInMillis
             timeProgressPercentage = timeElapsedFromStartInMillis / animationDurationInMillis
             distanceProgressPercentage = interpolator.getInterpolation(timeProgressPercentage)
-            marker.position =
-                interpolateLinear(distanceProgressPercentage, startPosition, finalPosition)
+            marker.position = interpolateLinear(distanceProgressPercentage, startPosition, finalPosition)
+            circle.center = interpolateLinear(distanceProgressPercentage, startPosition, finalPosition)
+            circle.radius = interpolateLinear(distanceProgressPercentage, startRadius, finalRadius)
 
             if (timeProgressPercentage < 1) {
                 handler.postDelayed(this, nextCalculationDelayInMillis)
@@ -48,7 +51,9 @@ fun animateMarkerMovement(marker: Marker, finalPosition: LatLng) {
 }
 
 private fun interpolateLinear(fraction: Float, a: LatLng, b: LatLng): LatLng {
-    val lat = (b.latitude - a.latitude) * fraction + a.latitude
-    val lng = (b.longitude - a.longitude) * fraction + a.longitude
+    val lat = interpolateLinear(fraction, a.latitude, b.latitude)
+    val lng = interpolateLinear(fraction, a.longitude, b.longitude)
     return LatLng(lat, lng)
 }
+
+private fun interpolateLinear(fraction: Float, a: Double, b: Double): Double = (b - a) * fraction + a

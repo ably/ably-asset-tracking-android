@@ -24,6 +24,8 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
+import com.google.android.gms.maps.model.Circle
+import com.google.android.gms.maps.model.CircleOptions
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
@@ -65,7 +67,9 @@ class MainActivity : AppCompatActivity() {
     private var subscriber: Subscriber? = null
     private var googleMap: GoogleMap? = null
     private var enhancedMarker: Marker? = null
+    private var enhancedAccuracyCircle: Circle? = null
     private var rawMarker: Marker? = null
+    private var rawAccuracyCircle: Circle? = null
     private var resolution: Resolution =
         Resolution(Accuracy.MAXIMUM, desiredInterval = 1000L, minimumDisplacement = 1.0)
 
@@ -263,7 +267,9 @@ class MainActivity : AppCompatActivity() {
                 subscriber?.stop()
                 subscriber = null
                 enhancedMarker = null
+                enhancedAccuracyCircle = null
                 rawMarker = null
+                rawAccuracyCircle = null
                 showStoppedSubscriberLayout()
                 hideLoading()
             } catch (exception: Exception) {
@@ -277,17 +283,28 @@ class MainActivity : AppCompatActivity() {
         googleMap?.apply {
             val position = LatLng(location.latitude, location.longitude)
             val currentMarker = if (isRaw) rawMarker else enhancedMarker
-            if (currentMarker == null) {
+            val currentAccuracyCircle = if (isRaw) rawAccuracyCircle else enhancedAccuracyCircle
+            if (currentMarker == null || currentAccuracyCircle == null) {
                 val marker = addMarker(
                     MarkerOptions()
                         .position(position)
                         .icon(getMarkerIcon(location.bearing, isRaw))
                         .alpha(if (isRaw) 0.5f else 1f)
                 )
+                val accuracyCircle = addCircle(
+                    CircleOptions()
+                        .center(position)
+                        .radius(location.accuracy.toDouble())
+                        .strokeColor(if (isRaw) COLOR_RED else COLOR_ORANGE)
+                        .fillColor(if (isRaw) COLOR_RED_TRANSPARENT else COLOR_ORANGE_TRANSPARENT)
+                        .strokeWidth(2f)
+                )
                 if (isRaw) {
                     rawMarker = marker
+                    rawAccuracyCircle = accuracyCircle
                 } else {
                     enhancedMarker = marker
+                    enhancedAccuracyCircle = accuracyCircle
                     moveCamera(CameraUpdateFactory.newLatLngZoom(position, ZOOM_LEVEL_STREETS))
                 }
             } else {
@@ -297,12 +314,19 @@ class MainActivity : AppCompatActivity() {
                     if (!isRaw) {
                         animateCamera(cameraPosition)
                     }
-                    animateMarkerMovement(currentMarker, position)
+                    animateMarkerAndCircleMovement(
+                        currentMarker,
+                        position,
+                        currentAccuracyCircle,
+                        location.accuracy.toDouble()
+                    )
                 } else {
                     if (!isRaw) {
                         moveCamera(cameraPosition)
                     }
                     currentMarker.position = position
+                    currentAccuracyCircle.center = position
+                    currentAccuracyCircle.radius = location.accuracy.toDouble()
                 }
             }
         }
