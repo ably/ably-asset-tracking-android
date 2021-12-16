@@ -7,7 +7,6 @@ import com.ably.tracking.publisher.CorePublisher
 import com.ably.tracking.publisher.Event
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.StopEvent
-import com.ably.tracking.publisher.workerqueue.results.StopResult
 import com.ably.tracking.publisher.workerqueue.results.SyncAsyncResult
 import kotlinx.coroutines.runBlocking
 
@@ -21,7 +20,7 @@ internal class StopWorker(
 
     override fun doWork(properties: PublisherProperties): SyncAsyncResult {
         // We're using [runBlocking] on purpose as we want to block the whole publisher when it's stopping.
-        return runBlocking {
+        runBlocking {
             if (properties.isTracking) {
                 corePublisher.stopLocationUpdates(properties)
             }
@@ -29,10 +28,11 @@ internal class StopWorker(
                 ably.close(properties.presenceData)
                 properties.dispose()
                 properties.isStopped = true
-                SyncAsyncResult(StopResult.Success(callbackFunction))
+                callbackFunction(Result.success(Unit))
             } catch (exception: ConnectionException) {
-                SyncAsyncResult(StopResult.Fail(callbackFunction, exception))
+                callbackFunction(Result.failure(exception))
             }
         }
+        return SyncAsyncResult()
     }
 }

@@ -69,9 +69,3 @@ internal sealed class ConnectionCreatedWorkResult : WorkResult() {
         val exception: ConnectionException
     ) : ConnectionCreatedWorkResult()
 }
-
-internal sealed class StopResult : WorkResult() {
-    data class Success(val callbackFunction: ResultCallbackFunction<Unit>) : StopResult()
-    data class Fail(val callbackFunction: ResultCallbackFunction<Unit>, val exception: ConnectionException) :
-        StopResult()
-}
