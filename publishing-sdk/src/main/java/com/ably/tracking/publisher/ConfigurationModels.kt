@@ -331,7 +331,7 @@ internal fun DefaultResolutionSet.getResolution(isNear: Boolean, hasSubscriber: 
 /**
  * Specifies factors which contribute towards deciding the tracking [Resolution] for a [Trackable].
  */
-sealed class ResolutionConstraints
+interface ResolutionConstraints
 
 /**
  * Specifies the thresholds and corresponding logical mappings for a [Trackable] that can be used
@@ -360,7 +360,7 @@ data class DefaultResolutionConstraints(
      * [batteryLevelThreshold].
      */
     val lowBatteryMultiplier: Float
-) : ResolutionConstraints()
+) : ResolutionConstraints
 
 /**
  * Represents the means of transport that's being used.
