@@ -173,6 +173,10 @@ fun io.ably.lib.realtime.ChannelStateListener.ChannelStateChange.toTracking() =
 
 /**
  * Returns parsed data or null if data is missing or in wrong format.
+ *
+ * We expect the data to be in one of two formats: String or JsonObject.
+ * String data is being sent from AAT Android and AAT Swift.
+ * JsonObject data is being sent from AAT JavaScript.
  */
 fun io.ably.lib.types.PresenceMessage.getPresenceData(gson: Gson): PresenceData? =
     when (data) {
