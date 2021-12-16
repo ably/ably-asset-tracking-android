@@ -3,13 +3,12 @@ package com.ably.tracking.publisher.workerqueue.resulthandlers
 import com.ably.tracking.publisher.ConnectionForTrackableCreatedEvent
 import com.ably.tracking.publisher.CorePublisher
 import com.ably.tracking.publisher.workerqueue.results.AddTrackableWorkResult
-import com.ably.tracking.publisher.workerqueue.results.WorkResult
 import com.ably.tracking.publisher.workerqueue.workers.AddTrackableFailedWorker
 import com.ably.tracking.publisher.workerqueue.workers.Worker
 
-internal class AddTrackableResultHandler : WorkResultHandler {
+internal class AddTrackableResultHandler : WorkResultHandler<AddTrackableWorkResult> {
     override fun handle(
-        workResult: WorkResult,
+        workResult: AddTrackableWorkResult,
         corePublisher: CorePublisher
     ): Worker? {
         when (workResult) {
