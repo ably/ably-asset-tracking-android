@@ -103,10 +103,10 @@ Finally, you can add the AAT dependency in the Gradle build script
 ```gradle
 dependencies {
     // Publishing SDK for publishers
-    implementation 'com.ably.tracking:publishing-sdk:1.0.0-beta.11'
+    implementation 'com.ably.tracking:publishing-sdk:1.0.0-beta.13'
 
     // Subscribing SDK for subscribers
-    implementation 'com.ably.tracking:subscribing-sdk:1.0.0-beta.11'
+    implementation 'com.ably.tracking:subscribing-sdk:1.0.0-beta.13'
 }
 ```
 

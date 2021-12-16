@@ -29,6 +29,7 @@
   <string name="minimum_displacement_label">Minimum Displacement [m]</string>
   <string name="trackable_section_label">Trackable</string>
   <string name="show_map_button">Show map</string>
+  <string name="destination">Destination:</string>
 
   <string name="preferences_general_category_title">Navigation Settings</string>
   <string name="preferences_location_source_key">location_source</string>
@@ -57,6 +58,8 @@
   <string name="preferences_send_raw_locations_label">Send raw location updates</string>
   <string name="preferences_send_resolution_key">send_resolution</string>
   <string name="preferences_send_resolution_label">Send resolution</string>
+  <string name="preferences_enable_predictions_key">enable_predictions</string>
+  <string name="preferences_enable_predictions_label">Enable predictions</string>
   <string name="trackable_list_empty_state_header">No assets</string>
   <string name="trackable_list_empty_state_message">Trackable assets will be listed here when added</string>
   <string name="service_not_started_dialog_title">Publisher service not started</string>

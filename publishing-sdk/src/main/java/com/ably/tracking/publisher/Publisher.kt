@@ -115,6 +115,7 @@ interface Publisher {
 
     /**
      * Stops this publisher from publishing locations. Once a publisher has been stopped, it cannot be restarted.
+     * Please note that calling this method will remove the notification provided by [Builder.backgroundTrackingNotificationProvider].
      */
     @JvmSynthetic
     suspend fun stop()
@@ -190,6 +191,7 @@ interface Publisher {
 
         /**
          * Sets the notification that will be displayed for the background tracking service.
+         * Please note that this notification will be removed when you call the [stop] method.
          *
          * @param notificationProvider It will be used to create the notification.
          * @param notificationId The ID of the notification used by the Android OS to display it.
@@ -221,6 +223,15 @@ interface Publisher {
          * @return A new instance of the builder with this property changed.
          */
         fun sendResolution(enabled: Boolean): Builder
+
+        /**
+         * **OPTIONAL** Enables using predictions for enhanced location updates.
+         * By default this is enabled.
+         *
+         * @param enabled Whether the predictions for enhanced locations are enabled.
+         * @return A new instance of the builder with this property changed.
+         */
+        fun predictions(enabled: Boolean): Builder
 
         /**
          * Creates a [Publisher] and starts publishing.

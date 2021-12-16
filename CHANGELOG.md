@@ -1,5 +1,19 @@
 # Change log
 
+## [1.0.0-beta.13](https://github.com/ably/ably-asset-tracking-android/tree/v1.0.0-beta.13)
+
+[Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.0.0-beta.12...v1.0.0-beta.13)
+
+**Implemented enhancements:**
+
+- Clear the route when destination is reached [\#536](https://github.com/ably/ably-asset-tracking-android/issues/536)
+- Allow to disable predictions in the Mapbox SDK [\#532](https://github.com/ably/ably-asset-tracking-android/issues/532)
+
+**Merged pull requests:**
+
+- Clear the route when the destination is reached [\#548](https://github.com/ably/ably-asset-tracking-android/pull/548) ([KacperKluka](https://github.com/KacperKluka))
+- Allow to disable the enhanced location predictions in the publisher [\#547](https://github.com/ably/ably-asset-tracking-android/pull/547) ([KacperKluka](https://github.com/KacperKluka))
+
 ## [1.0.0-beta.12](https://github.com/ably/ably-asset-tracking-android/tree/v1.0.0-beta.12)
 
 [Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.0.0-beta.11...v1.0.0-beta.12)
