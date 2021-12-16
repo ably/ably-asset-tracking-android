@@ -141,6 +141,73 @@
         android:inputType="text"
         app:layout_constraintTop_toBottomOf="@id/trackableIdLabelTextView"
         tools:text="Here goes test ID" />
+
+      <TextView
+        android:id="@+id/destinationLabelTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/medium_margin"
+        android:layout_marginTop="@dimen/medium_margin"
+        android:text="@string/destination"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/trackableIdEditText" />
+
+      <TextView
+        android:id="@+id/latitudeLabelTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/medium_margin"
+        android:layout_marginTop="@dimen/medium_margin"
+        android:text="@string/latitude_label"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/destinationLabelTextView" />
+
+      <TextView
+        android:id="@+id/latitudeValueTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/medium_margin"
+        android:textColor="@color/black"
+        app:layout_constraintBottom_toBottomOf="@+id/latitudeLabelTextView"
+        app:layout_constraintStart_toEndOf="@+id/latitudeLabelTextView"
+        tools:text="10.234" />
+
+      <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/verticalCenterGuideline"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.5" />
+
+      <TextView
+        android:id="@+id/longitudeLabelTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/longitude_label"
+        app:layout_constraintStart_toStartOf="@id/verticalCenterGuideline"
+        app:layout_constraintTop_toTopOf="@+id/latitudeLabelTextView" />
+
+      <TextView
+        android:id="@+id/longitudeValueTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/medium_margin"
+        android:textColor="@color/black"
+        app:layout_constraintBottom_toBottomOf="@+id/longitudeLabelTextView"
+        app:layout_constraintStart_toEndOf="@+id/longitudeLabelTextView"
+        tools:text="51.125" />
+
+      <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/setDestinationButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/medium_margin"
+        android:background="@drawable/rounded_rectangle"
+        android:backgroundTint="@color/button_active"
+        android:paddingVertical="@dimen/medium_margin"
+        android:text="Set Destination"
+        android:textColor="@color/mid_grey"
+        app:layout_constraintTop_toBottomOf="@id/longitudeValueTextView" />
     </androidx.constraintlayout.widget.ConstraintLayout>
   </ScrollView>
 
