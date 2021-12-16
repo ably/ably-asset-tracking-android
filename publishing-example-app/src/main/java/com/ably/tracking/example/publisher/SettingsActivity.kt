@@ -21,6 +21,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         addPreferencesFromResource(R.xml.settings_preferences)
         setupLocationSourcePreference()
+        setupRoutingProfilePreference()
         setupResolutionPreferences()
         loadS3Preferences()
     }
@@ -65,6 +66,17 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 .toTypedArray()
             entryValues = LocationSourceType.values().map { it.name }.toTypedArray()
             value = appPreferences.getLocationSource().name
+        }
+    }
+
+    private fun setupRoutingProfilePreference() {
+        val appPreferences = AppPreferences.getInstance(requireContext())
+        (findPreference(getString(R.string.preferences_routing_profile_key)) as ListPreference?)?.apply {
+            entries = RoutingProfileType.values()
+                .map { getString(it.displayNameResourceId) }
+                .toTypedArray()
+            entryValues = RoutingProfileType.values().map { it.name }.toTypedArray()
+            value = appPreferences.getRoutingProfile().name
         }
     }
 
