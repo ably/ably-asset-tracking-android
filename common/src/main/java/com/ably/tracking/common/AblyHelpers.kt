@@ -8,6 +8,7 @@ import com.ably.tracking.connection.Authentication
 import com.ably.tracking.connection.TokenParams
 import com.ably.tracking.connection.TokenRequest
 import com.google.gson.Gson
+import com.google.gson.JsonObject
 import io.ably.lib.realtime.ChannelState
 import io.ably.lib.rest.Auth
 import io.ably.lib.types.ClientOptions
@@ -172,6 +173,14 @@ fun io.ably.lib.realtime.ChannelStateListener.ChannelStateChange.toTracking() =
 
 /**
  * Returns parsed data or null if data is missing or in wrong format.
+ *
+ * We expect the data to be in one of two formats: String or JsonObject.
+ * String data is being sent from AAT Android and AAT Swift.
+ * JsonObject data is being sent from AAT JavaScript.
  */
 fun io.ably.lib.types.PresenceMessage.getPresenceData(gson: Gson): PresenceData? =
-    gson.fromJson(data as? String, PresenceDataMessage::class.java)?.toTracking()
+    when (data) {
+        is String -> gson.fromJson(data as? String, PresenceDataMessage::class.java)?.toTracking()
+        is JsonObject -> gson.fromJson(data.toString(), PresenceDataMessage::class.java)?.toTracking()
+        else -> null
+    }
