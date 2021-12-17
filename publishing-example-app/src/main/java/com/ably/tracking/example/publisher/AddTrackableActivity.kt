@@ -8,6 +8,7 @@ import android.os.Bundle
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.widget.ArrayAdapter
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresPermission
 import androidx.annotation.StringRes
 import androidx.core.content.ContextCompat
@@ -53,21 +54,20 @@ class AddTrackableActivity : PublisherServiceActivity() {
         addTrackableButton.setOnClickListener { addTrackableClicked() }
         setupTrackableInputAction()
         setDestinationButton.setOnClickListener {
-            startActivityForResult(Intent(this, SetDestinationActivity::class.java), SET_DESTINATION_REQUEST_CODE)
-        }
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == SET_DESTINATION_REQUEST_CODE && resultCode == RESULT_OK && data != null) {
-            if (
-                data.hasExtra(SetDestinationActivity.EXTRA_LATITUDE) &&
-                data.hasExtra(SetDestinationActivity.EXTRA_LONGITUDE)
-            ) {
-                val latitude = data.getDoubleExtra(SetDestinationActivity.EXTRA_LATITUDE, 0.0)
-                val longitude = data.getDoubleExtra(SetDestinationActivity.EXTRA_LONGITUDE, 0.0)
-                updateDestination(latitude, longitude)
+            var resultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+                if (result.resultCode == RESULT_OK && result.data != null) {
+                    val data: Intent = result.data!!
+                    if (
+                        data.hasExtra(SetDestinationActivity.EXTRA_LATITUDE) &&
+                        data.hasExtra(SetDestinationActivity.EXTRA_LONGITUDE)
+                    ) {
+                        val latitude = data.getDoubleExtra(SetDestinationActivity.EXTRA_LATITUDE, 0.0)
+                        val longitude = data.getDoubleExtra(SetDestinationActivity.EXTRA_LONGITUDE, 0.0)
+                        updateDestination(latitude, longitude)
+                    }
+                }
             }
+            resultLauncher.launch(Intent(this, SetDestinationActivity::class.java))
         }
     }
 
