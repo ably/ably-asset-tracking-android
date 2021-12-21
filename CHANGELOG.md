@@ -1,5 +1,37 @@
 # Change log
 
+## [1.0.0-beta.14](https://github.com/ably/ably-asset-tracking-android/tree/v1.0.0-beta.14)
+
+[Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.0.0-beta.13...v1.0.0-beta.14)
+
+**Implemented enhancements:**
+
+- Migrate to Mapbox v2 [\#573](https://github.com/ably/ably-asset-tracking-android/issues/573)
+- Allow to set a trackable destination in the publisher example app [\#534](https://github.com/ably/ably-asset-tracking-android/issues/534)
+- Display the horizontal accuracy of locations in the subscriber example app [\#533](https://github.com/ably/ably-asset-tracking-android/issues/533)
+- Add display of the SkippedLocations to the Example Subsriber app [\#490](https://github.com/ably/ably-asset-tracking-android/issues/490)
+
+**Fixed bugs:**
+
+- Zooming does not improve resolution: Resolution-type events does not get sent. [\#535](https://github.com/ably/ably-asset-tracking-android/issues/535)
+
+**Closed issues:**
+
+- Add option to select routing profile in the Publisher Example app [\#332](https://github.com/ably/ably-asset-tracking-android/issues/332)
+- Make ResolutionConstraints an interface (right now it is a sealed class) [\#299](https://github.com/ably/ably-asset-tracking-android/issues/299)
+- Decide from which location type should the last known location be chosen [\#79](https://github.com/ably/ably-asset-tracking-android/issues/79)
+
+**Merged pull requests:**
+
+- Migrate to Mapbox v2 [\#574](https://github.com/ably/ably-asset-tracking-android/pull/574) ([KacperKluka](https://github.com/KacperKluka))
+- Show skipped locations in the subscriber example app [\#567](https://github.com/ably/ably-asset-tracking-android/pull/567) ([KacperKluka](https://github.com/KacperKluka))
+- Add information about removing notification when stopping the publisher [\#566](https://github.com/ably/ably-asset-tracking-android/pull/566) ([KacperKluka](https://github.com/KacperKluka))
+- Fix presence messages parsing if presence data is in JSON object format [\#565](https://github.com/ably/ably-asset-tracking-android/pull/565) ([KacperKluka](https://github.com/KacperKluka))
+- Change ResolutionConstraints to an interface [\#562](https://github.com/ably/ably-asset-tracking-android/pull/562) ([KacperKluka](https://github.com/KacperKluka))
+- Show accuracy circles for raw and enhanced markers in the subscriber app [\#560](https://github.com/ably/ably-asset-tracking-android/pull/560) ([KacperKluka](https://github.com/KacperKluka))
+- Set routing profile in the publisher example app [\#553](https://github.com/ably/ably-asset-tracking-android/pull/553) ([KacperKluka](https://github.com/KacperKluka))
+- Set trackable destination in the publisher example app [\#552](https://github.com/ably/ably-asset-tracking-android/pull/552) ([KacperKluka](https://github.com/KacperKluka))
+
 ## [1.0.0-beta.13](https://github.com/ably/ably-asset-tracking-android/tree/v1.0.0-beta.13)
 
 [Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.0.0-beta.12...v1.0.0-beta.13)
