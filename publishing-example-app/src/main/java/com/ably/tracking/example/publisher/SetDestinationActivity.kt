@@ -1,7 +1,3 @@
-// Mapbox has deprecated the Marker class and recommends using the Annotation Plugin
-// but to keep things as simple as possible we're going to still use the Marker approach
-@file:Suppress("DEPRECATION")
-
 package com.ably.tracking.example.publisher
 
 import android.content.Intent
@@ -9,12 +5,15 @@ import android.content.res.ColorStateList
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import com.mapbox.mapboxsdk.Mapbox
-import com.mapbox.mapboxsdk.annotations.Marker
-import com.mapbox.mapboxsdk.annotations.MarkerOptions
-import com.mapbox.mapboxsdk.geometry.LatLng
-import com.mapbox.mapboxsdk.maps.MapboxMap
-import com.mapbox.mapboxsdk.maps.Style
+import com.mapbox.geojson.Point
+import com.mapbox.maps.MapboxMap
+import com.mapbox.maps.Style
+import com.mapbox.maps.plugin.annotation.annotations
+import com.mapbox.maps.plugin.annotation.generated.PointAnnotation
+import com.mapbox.maps.plugin.annotation.generated.PointAnnotationManager
+import com.mapbox.maps.plugin.annotation.generated.PointAnnotationOptions
+import com.mapbox.maps.plugin.annotation.generated.createPointAnnotationManager
+import com.mapbox.maps.plugin.gestures.addOnMapClickListener
 import kotlinx.android.synthetic.main.activity_map.mapView
 import kotlinx.android.synthetic.main.activity_set_destination.acceptDestinationButton
 
@@ -25,38 +24,37 @@ class SetDestinationActivity : AppCompatActivity() {
     }
 
     private var map: MapboxMap? = null
-    private var marker: Marker? = null
+    lateinit var pointAnnotationManager: PointAnnotationManager
+    private var marker: PointAnnotation? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Mapbox.getInstance(this, BuildConfig.MAPBOX_ACCESS_TOKEN)
         setContentView(R.layout.activity_set_destination)
-        mapView.onCreate(savedInstanceState)
         setupMap()
         setupDestinationClickListener()
+        pointAnnotationManager = mapView.annotations.createPointAnnotationManager(mapView)
     }
 
     private fun setupMap() {
-        mapView.getMapAsync { mapboxMap ->
-            mapboxMap.setStyle(Style.MAPBOX_STREETS) {
-                mapboxMap.addOnMapClickListener {
-                    showDestinationMarker(it)
-                    enableAcceptDestinationButton()
-                    true
-                }
-                map = mapboxMap
+        mapView.getMapboxMap().let { mapboxMap ->
+            mapboxMap.loadStyleUri(Style.MAPBOX_STREETS)
+            mapboxMap.addOnMapClickListener {
+                showDestinationMarker(it)
+                enableAcceptDestinationButton()
+                true
             }
+            map = mapboxMap
         }
     }
 
     private fun setupDestinationClickListener() {
         acceptDestinationButton.setOnClickListener {
-            marker?.position?.let { destinationPosition ->
+            marker?.point?.let { destinationPoint ->
                 setResult(
                     RESULT_OK,
                     Intent().apply {
-                        putExtra(EXTRA_LATITUDE, destinationPosition.latitude)
-                        putExtra(EXTRA_LONGITUDE, destinationPosition.longitude)
+                        putExtra(EXTRA_LATITUDE, destinationPoint.latitude())
+                        putExtra(EXTRA_LONGITUDE, destinationPoint.longitude())
                     }
                 )
             }
@@ -70,48 +68,18 @@ class SetDestinationActivity : AppCompatActivity() {
             ColorStateList.valueOf(ContextCompat.getColor(this, R.color.button_active))
     }
 
-    private fun showDestinationMarker(location: LatLng) {
-        map?.apply {
-            if (marker == null) {
-                marker = addMarker(MarkerOptions().position(location))
-            } else {
-                marker?.position = location
+    private fun showDestinationMarker(location: Point) {
+        if (marker == null) {
+            createBitmapFromVectorDrawable(R.drawable.ic_red_map_marker)?.let { iconBitmap ->
+                marker = pointAnnotationManager.create(
+                    PointAnnotationOptions()
+                        .withPoint(location)
+                        .withIconImage(iconBitmap)
+                )
             }
+        } else {
+            marker!!.point = location
+            pointAnnotationManager.update(marker!!)
         }
-    }
-
-    override fun onStart() {
-        super.onStart()
-        mapView?.onStart()
-    }
-
-    override fun onResume() {
-        super.onResume()
-        mapView?.onResume()
-    }
-
-    override fun onPause() {
-        super.onPause()
-        mapView?.onPause()
-    }
-
-    override fun onStop() {
-        super.onStop()
-        mapView?.onStop()
-    }
-
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        mapView?.onSaveInstanceState(outState)
-    }
-
-    override fun onLowMemory() {
-        super.onLowMemory()
-        mapView?.onLowMemory()
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        mapView?.onDestroy()
     }
 }

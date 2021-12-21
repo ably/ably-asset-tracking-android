@@ -22,20 +22,23 @@ import com.ably.tracking.publisher.locationengine.ResolutionLocationEngine
 import com.mapbox.api.directions.v5.models.DirectionsRoute
 import com.mapbox.api.directions.v5.models.RouteOptions
 import com.mapbox.module.Mapbox_TripNotificationModuleConfiguration
-import com.mapbox.navigation.base.internal.extensions.applyDefaultParams
 import com.mapbox.navigation.base.options.NavigationOptions
+import com.mapbox.navigation.base.route.RouterCallback
+import com.mapbox.navigation.base.route.RouterFailure
+import com.mapbox.navigation.base.route.RouterOrigin
 import com.mapbox.navigation.base.trip.model.RouteLegProgress
 import com.mapbox.navigation.base.trip.model.RouteProgress
 import com.mapbox.navigation.base.trip.notification.TripNotification
 import com.mapbox.navigation.core.MapboxNavigation
 import com.mapbox.navigation.core.MapboxNavigationProvider
 import com.mapbox.navigation.core.arrival.ArrivalObserver
-import com.mapbox.navigation.core.directions.session.RoutesRequestCallback
+import com.mapbox.navigation.core.history.MapboxHistoryReader
 import com.mapbox.navigation.core.replay.MapboxReplayer
 import com.mapbox.navigation.core.replay.ReplayLocationEngine
 import com.mapbox.navigation.core.replay.history.ReplayEventBase
 import com.mapbox.navigation.core.replay.history.ReplayEventsObserver
 import com.mapbox.navigation.core.replay.history.ReplayHistoryMapper
+import com.mapbox.navigation.core.trip.session.LocationMatcherResult
 import com.mapbox.navigation.core.trip.session.LocationObserver
 import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.Dispatchers
@@ -151,7 +154,7 @@ private object MapboxInstancesCounter {
  */
 internal class DefaultMapbox(
     context: Context,
-    private val mapConfiguration: MapConfiguration,
+    mapConfiguration: MapConfiguration,
     connectionConfiguration: ConnectionConfiguration,
     locationSource: LocationSource? = null,
     private val logHandler: LogHandler?,
@@ -175,7 +178,7 @@ internal class DefaultMapbox(
 
     init {
         setupTripNotification(notificationProvider, notificationId)
-        val mapboxBuilder = MapboxNavigation.defaultNavigationOptionsBuilder(context, mapConfiguration.apiKey)
+        val mapboxBuilder = NavigationOptions.Builder(context).accessToken(mapConfiguration.apiKey)
             .locationEngine(getBestLocationEngine(context, logHandler))
         locationSource?.let {
             when (it) {
@@ -222,6 +225,7 @@ internal class DefaultMapbox(
             }
 
             override fun onNextRouteLegStart(routeLegProgress: RouteLegProgress) = Unit
+            override fun onWaypointArrival(routeProgress: RouteProgress) = Unit
         }
         mapboxNavigation.registerArrivalObserver(arrivalObserver)
     }
@@ -231,7 +235,7 @@ internal class DefaultMapbox(
         runBlocking(mainDispatcher) {
             logHandler?.v("$TAG Start trip and location updates")
             mapboxNavigation.apply {
-                toggleHistory(true)
+                historyRecorder.startRecording()
                 startTripSession()
             }
             mapboxReplayer?.play()
@@ -245,14 +249,16 @@ internal class DefaultMapbox(
             mapboxNavigation.apply {
                 stopTripSession()
                 mapboxNavigation.unregisterArrivalObserver(arrivalObserver)
-                mapboxReplayer?.finish()
-                val tripHistoryString = retrieveHistory()
-                // MapBox's mapToReplayEvents method crashes if passed an empty string,
-                // so check it's not empty to prevent that.
-                // (see: https://github.com/ably/ably-asset-tracking-android/issues/434)
-                if (tripHistoryString.isNotEmpty()) {
-                    val historyEvents = ReplayHistoryMapper().mapToReplayEvents(tripHistoryString)
-                    locationHistoryListener?.invoke(LocationHistoryData(historyEvents.toGeoJsonMessages()))
+                this@DefaultMapbox.mapboxReplayer?.finish()
+                historyRecorder.stopRecording { historyDataFilepath ->
+                    if (historyDataFilepath != null) {
+                        val historyMapper = ReplayHistoryMapper.Builder().build()
+                        val historyEvents = MapboxHistoryReader(historyDataFilepath)
+                            .asSequence()
+                            .mapNotNull { historyMapper.mapToReplayEvent(it) }
+                            .toList()
+                        locationHistoryListener?.invoke(LocationHistoryData(historyEvents.toGeoJsonMessages()))
+                    }
                 }
             }
             if (MapboxInstancesCounter.decrementAndCheckIfItWasTheLastOne()) {
@@ -264,15 +270,14 @@ internal class DefaultMapbox(
 
     private fun createLocationObserver(locationUpdatesObserver: LocationUpdatesObserver) =
         object : LocationObserver {
-            override fun onRawLocationChanged(rawLocation: android.location.Location) {
+            override fun onNewRawLocation(rawLocation: android.location.Location) {
                 logHandler?.v("$TAG Raw location received from Mapbox: $rawLocation")
                 locationUpdatesObserver.onRawLocationChanged(rawLocation.toAssetTracking())
             }
 
-            override fun onEnhancedLocationChanged(
-                enhancedLocation: android.location.Location,
-                keyPoints: List<android.location.Location>
-            ) {
+            override fun onNewLocationMatcherResult(locationMatcherResult: LocationMatcherResult) {
+                val enhancedLocation = locationMatcherResult.enhancedLocation
+                val keyPoints = locationMatcherResult.keyPoints
                 logHandler?.v("$TAG Enhanced location received from Mapbox: $enhancedLocation")
                 val intermediateLocations =
                     if (keyPoints.size > 1) keyPoints.subList(0, keyPoints.size - 1)
@@ -318,24 +323,27 @@ internal class DefaultMapbox(
             logHandler?.v("$TAG Set route to: $destination")
             mapboxNavigation.requestRoutes(
                 RouteOptions.builder()
-                    .applyDefaultParams()
-                    .accessToken(mapConfiguration.apiKey)
-                    .coordinates(getRouteCoordinates(currentLocation, destination))
+                    .coordinatesList(getRouteCoordinates(currentLocation, destination))
                     .profile(routingProfile.toMapboxProfileName())
                     .build(),
-                object : RoutesRequestCallback {
-                    override fun onRoutesReady(routes: List<DirectionsRoute>) {
+                object : RouterCallback {
+                    override fun onRoutesReady(routes: List<DirectionsRoute>, routerOrigin: RouterOrigin) {
                         logHandler?.v("$TAG Set route successful")
                         routes.firstOrNull()?.let {
+                            // According to the migration guide, we need to manually call [setRoutes] with routes list.
+                            // https://docs.mapbox.com/android/navigation/guides/migrate-to-v2/#request-a-route
+                            mapboxNavigation.setRoutes(routes)
                             val routeDurationInMilliseconds =
                                 (it.durationTypical() ?: it.duration()) * MILLISECONDS_PER_SECOND
                             routeDurationCallback(Result.success(routeDurationInMilliseconds.toLong()))
                         }
                     }
 
-                    override fun onRoutesRequestCanceled(routeOptions: RouteOptions) = Unit
+                    override fun onCanceled(routeOptions: RouteOptions, routerOrigin: RouterOrigin) = Unit
 
-                    override fun onRoutesRequestFailure(throwable: Throwable, routeOptions: RouteOptions) {
+                    override fun onFailure(reasons: List<RouterFailure>, routeOptions: RouteOptions) {
+                        // Use the exception from the reasons list if it is available
+                        val throwable = reasons.firstOrNull()?.throwable ?: UnknownSetRouteException()
                         // We won't know the ETA for the active trackable and therefore we won't be able to check the temporal threshold.
                         routeDurationCallback(Result.failure(MapException(throwable)))
                         logHandler?.e("$TAG Set route failed", throwable)

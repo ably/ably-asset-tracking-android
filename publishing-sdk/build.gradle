@@ -22,7 +22,7 @@ dependencies {
     // The MapBox Navigation SDK for Android.
     // We're not using the pre-built UI components, so just need the core dependency.
     // https://docs.mapbox.com/android/navigation/overview/
-    implementation('com.mapbox.navigation:core:1.6.1') {
+    implementation('com.mapbox.navigation:core:2.1.1') {
         // We provide a custom trip notification so we exclude the default one.
         // https://docs.mapbox.com/android/navigation/guides/modularization/#tripnotification
         exclude group: "com.mapbox.navigation", module: "notification"
@@ -30,17 +30,17 @@ dependencies {
 
     // Dependencies needed for replacing Mapbox modules.
     // https://docs.mapbox.com/android/navigation/guides/modularization/#replacing-a-module
-    compileOnly("com.mapbox.base:annotations:0.4.0")
+    compileOnly("com.mapbox.base:annotations:0.5.0")
     kapt("com.mapbox.base:annotations-processor:0.4.0")
 
     // Only the Core SDK portion of the MapBox Maps SDK for Android.
     // https://docs.mapbox.com/android/maps/overview/
     // https://docs.mapbox.com/android/core/overview/
-    implementation 'com.mapbox.mapboxsdk:mapbox-android-core:3.1.1'
+    implementation 'com.mapbox.mapboxsdk:mapbox-android-core:5.0.0'
 
     // Advanced geospatial analysis - used i.e. for calculating distance between points.
     // https://docs.mapbox.com/android/java/guides/turf/
-    implementation 'com.mapbox.mapboxsdk:mapbox-sdk-turf:5.7.0'
+    implementation 'com.mapbox.mapboxsdk:mapbox-sdk-turf:6.1.0'
 
     // Required for FusedLocationProviderClient that's used in Google location engine implementation
     // https://developers.google.com/android/reference/com/google/android/gms/location/FusedLocationProviderClient
