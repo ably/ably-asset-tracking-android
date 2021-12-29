@@ -161,6 +161,7 @@ internal class DefaultMapbox(
     notificationProvider: PublisherNotificationProvider,
     notificationId: Int,
     predictionsEnabled: Boolean,
+    private val rawHistoryCallback: ((String) -> Unit)?,
 ) : Mapbox {
     private val TAG = createLoggingTag(this)
 
@@ -258,6 +259,7 @@ internal class DefaultMapbox(
                             .mapNotNull { historyMapper.mapToReplayEvent(it) }
                             .toList()
                         locationHistoryListener?.invoke(LocationHistoryData(historyEvents.toGeoJsonMessages()))
+                        rawHistoryCallback?.invoke(historyDataFilepath)
                     }
                 }
             }

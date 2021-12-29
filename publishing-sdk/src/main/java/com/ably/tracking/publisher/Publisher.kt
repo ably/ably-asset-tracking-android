@@ -234,6 +234,16 @@ interface Publisher {
         fun predictions(enabled: Boolean): Builder
 
         /**
+         * EXPERIMENTAL API
+         * **OPTIONAL** Specifies a callback that will be called with the filepath of raw history data from the Navigation SDK component.
+         * This will be probably removed in the future. Do not use this in the production environment.
+         *
+         * @param callback The callback that will be called with the raw history data filepath.
+         * @return A new instance of the builder with this property changed.
+         */
+        fun rawHistoryDataCallback(callback: (String) -> Unit): Builder
+
+        /**
          * Creates a [Publisher] and starts publishing.
          *
          * The returned publisher instance does not start in a state whereby it is actively tracking anything. If
