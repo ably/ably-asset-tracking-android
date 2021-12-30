@@ -25,7 +25,7 @@ class AddTrackableWorkerTest {
     private lateinit var worker: AddTrackableWorker
 
     // dependencies
-    private val resultCallbackFunction = mockk<ResultCallbackFunction<StateFlow<TrackableState>>>()
+    private val resultCallbackFunction: ResultCallbackFunction<StateFlow<TrackableState>> = {}
     private val ably = mockk<Ably>(relaxed = true)
     private val trackable = Trackable("testtrackable")
     private val duplicateTrackableGuard = mockk<DuplicateTrackableGuard>(relaxed = true)
