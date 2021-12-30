@@ -109,8 +109,8 @@ class AddTrackableWorkerTest {
 
         // also make sure it has the right content
         val alreadyIn = result.syncWorkResult as AddTrackableWorkResult.AlreadyIn
-        Assert.assertTrue(alreadyIn.callbackFunction == resultCallbackFunction)
-        Assert.assertTrue(alreadyIn.trackableStateFlow == publisherProperties.trackableStateFlows[trackable.id])
+        Assert.assertEquals(resultCallbackFunction, alreadyIn.callbackFunction)
+        Assert.assertEquals(publisherProperties.trackableStateFlows[trackable.id], alreadyIn.trackableStateFlow)
     }
 
     // async work tests
@@ -132,8 +132,8 @@ class AddTrackableWorkerTest {
                 Assert.assertTrue(asyncWorkResult is AddTrackableWorkResult.Success)
                 // also check content
                 val success = asyncWorkResult as AddTrackableWorkResult.Success
-                Assert.assertTrue(success.trackable == trackable)
-                Assert.assertTrue(success.callbackFunction == resultCallbackFunction)
+                Assert.assertEquals(trackable, success.trackable)
+                Assert.assertEquals(resultCallbackFunction, success.callbackFunction)
             }
         }
     }
@@ -156,8 +156,8 @@ class AddTrackableWorkerTest {
                 Assert.assertTrue(asyncWorkResult is AddTrackableWorkResult.Fail)
                 // also check content
                 val fail = asyncWorkResult as AddTrackableWorkResult.Fail
-                Assert.assertTrue(fail.trackable == trackable)
-                Assert.assertTrue(fail.callbackFunction == resultCallbackFunction)
+                Assert.assertEquals(trackable, fail.trackable)
+                Assert.assertEquals(resultCallbackFunction, fail.callbackFunction)
             }
         }
     }
