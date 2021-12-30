@@ -43,7 +43,7 @@ class AddTrackableWorkerTest {
     }
 
     @Test
-    fun `doWork returns asyncWork when trackable is not added and not being added`() {
+    fun `should return only async work when adding a trackable that is not added and not being added`() {
         // given
         mockTrackableIsNeitherAddedNorCurrentlyBeingAdded()
 
@@ -51,11 +51,12 @@ class AddTrackableWorkerTest {
         val result = worker.doWork(publisherProperties)
 
         // then
+        Assert.assertNull(result.syncWorkResult)
         Assert.assertNotNull(result.asyncWork)
     }
 
     @Test
-    fun `doWork triggers duplicateTrackableGuard startAddingTrackable when adding trackable in clean state`() {
+    fun `should start adding a trackable when adding a trackable that is not added and not being added`() {
         // given
         mockTrackableIsNeitherAddedNorCurrentlyBeingAdded()
 
@@ -69,7 +70,7 @@ class AddTrackableWorkerTest {
     }
 
     @Test
-    fun `doWork returns empty result if trackable is being added`() {
+    fun `should return empty result when adding a trackable that is being added`() {
         // given
         mockTrackableIsCurrentlyBeingAdded()
 
@@ -82,7 +83,7 @@ class AddTrackableWorkerTest {
     }
 
     @Test
-    fun `doWork triggers duplicateTrackableGuard saveDuplicateAddHandler when adding trackable that is being added`() {
+    fun `should save the trackable callback function when adding a trackable that is being added`() {
         // given
         mockTrackableIsCurrentlyBeingAdded()
 
@@ -96,7 +97,7 @@ class AddTrackableWorkerTest {
     }
 
     @Test
-    fun `doWork returns AlreadyIn result if trackable is already added`() {
+    fun `should return an 'AlreadyIn' result when adding a trackable that is already added`() {
         // given
         mockTrackableIsAlreadyAdded()
 
@@ -115,7 +116,7 @@ class AddTrackableWorkerTest {
 
     // async work tests
     @Test
-    fun `Async work returns successful result on successful connection`() {
+    fun `should successfully add a trackable when connection was successful`() {
         runBlocking {
             // given
             mockTrackableIsNeitherAddedNorCurrentlyBeingAdded()
@@ -125,10 +126,10 @@ class AddTrackableWorkerTest {
             val result = worker.doWork(publisherProperties)
 
             // then
-            // first make sure there is an asyncwork
+            // first make sure there is an asyncWork
             Assert.assertNotNull(result.asyncWork)
-            result.asyncWork?.let {
-                val asyncWorkResult = it()
+            result.asyncWork?.let { asyncWork ->
+                val asyncWorkResult = asyncWork()
                 Assert.assertTrue(asyncWorkResult is AddTrackableWorkResult.Success)
                 // also check content
                 val success = asyncWorkResult as AddTrackableWorkResult.Success
@@ -139,7 +140,7 @@ class AddTrackableWorkerTest {
     }
 
     @Test
-    fun `Async work returns failed result on failed connection`() {
+    fun `should fail to add a trackable when connection failed`() {
         runBlocking {
             // given
             mockTrackableIsNeitherAddedNorCurrentlyBeingAdded()
@@ -149,10 +150,10 @@ class AddTrackableWorkerTest {
             val result = worker.doWork(publisherProperties)
 
             // then
-            // first make sure there is an asyncwork
+            // first make sure there is an asyncWork
             Assert.assertNotNull(result.asyncWork)
-            result.asyncWork?.let {
-                val asyncWorkResult = it()
+            result.asyncWork?.let { asyncWork ->
+                val asyncWorkResult = asyncWork()
                 Assert.assertTrue(asyncWorkResult is AddTrackableWorkResult.Fail)
                 // also check content
                 val fail = asyncWorkResult as AddTrackableWorkResult.Fail
