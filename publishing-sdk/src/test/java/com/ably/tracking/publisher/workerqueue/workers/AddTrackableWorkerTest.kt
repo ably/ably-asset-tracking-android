@@ -55,7 +55,7 @@ class AddTrackableWorkerTest {
     }
 
     @Test
-    fun `doWork triggers dublicateTrackableGuard startAddingTrackable when adding trackable in clean state`() {
+    fun `doWork triggers duplicateTrackableGuard startAddingTrackable when adding trackable in clean state`() {
         // given
         mockTrackableIsNeitherAddedNorCurrentlyBeingAdded()
 
@@ -82,7 +82,7 @@ class AddTrackableWorkerTest {
     }
 
     @Test
-    fun `doWork triggers dublicateTrackableGuard saveDuplicateAddHandler when adding trackable that is being added`() {
+    fun `doWork triggers duplicateTrackableGuard saveDuplicateAddHandler when adding trackable that is being added`() {
         // given
         mockTrackableIsCurrentlyBeingAdded()
 
