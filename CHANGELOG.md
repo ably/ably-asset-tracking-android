@@ -1,5 +1,18 @@
 # Change log
 
+## [1.0.0-beta.15](https://github.com/ably/ably-asset-tracking-android/tree/v1.0.0-beta.15)
+
+[Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.0.0-beta.14...v1.0.0-beta.15)
+
+**Fixed bugs:**
+
+- API documentation is missing in the released SDK [\#571](https://github.com/ably/ably-asset-tracking-android/issues/571)
+
+**Merged pull requests:**
+
+- Add sources and javadoc JARs to the published library [\#580](https://github.com/ably/ably-asset-tracking-android/pull/580) ([KacperKluka](https://github.com/KacperKluka))
+- Add callback for retrieving the raw history data from Mapbox [\#576](https://github.com/ably/ably-asset-tracking-android/pull/576) ([KacperKluka](https://github.com/KacperKluka))
+
 ## [1.0.0-beta.14](https://github.com/ably/ably-asset-tracking-android/tree/v1.0.0-beta.14)
 
 [Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.0.0-beta.13...v1.0.0-beta.14)
