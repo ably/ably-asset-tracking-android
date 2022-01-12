@@ -6,6 +6,7 @@ import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.guards.DuplicateTrackableGuard
+import com.ably.tracking.publisher.workerqueue.assertNotNullAndExecute
 import com.ably.tracking.publisher.workerqueue.results.AddTrackableWorkResult
 import com.ably.tracking.test.common.mockSuspendingConnectFailure
 import com.ably.tracking.test.common.mockSuspendingConnectSuccess
@@ -126,16 +127,12 @@ class AddTrackableWorkerTest {
             val result = worker.doWork(publisherProperties)
 
             // then
-            // first make sure there is an asyncWork
-            Assert.assertNotNull(result.asyncWork)
-            result.asyncWork?.let { asyncWork ->
-                val asyncWorkResult = asyncWork()
-                Assert.assertTrue(asyncWorkResult is AddTrackableWorkResult.Success)
-                // also check content
-                val success = asyncWorkResult as AddTrackableWorkResult.Success
-                Assert.assertEquals(trackable, success.trackable)
-                Assert.assertEquals(resultCallbackFunction, success.callbackFunction)
-            }
+            val asyncWorkResult = result.asyncWork.assertNotNullAndExecute()
+            Assert.assertTrue(asyncWorkResult is AddTrackableWorkResult.Success)
+            // also check content
+            val success = asyncWorkResult as AddTrackableWorkResult.Success
+            Assert.assertEquals(trackable, success.trackable)
+            Assert.assertEquals(resultCallbackFunction, success.callbackFunction)
         }
     }
 
@@ -150,16 +147,12 @@ class AddTrackableWorkerTest {
             val result = worker.doWork(publisherProperties)
 
             // then
-            // first make sure there is an asyncWork
-            Assert.assertNotNull(result.asyncWork)
-            result.asyncWork?.let { asyncWork ->
-                val asyncWorkResult = asyncWork()
-                Assert.assertTrue(asyncWorkResult is AddTrackableWorkResult.Fail)
-                // also check content
-                val fail = asyncWorkResult as AddTrackableWorkResult.Fail
-                Assert.assertEquals(trackable, fail.trackable)
-                Assert.assertEquals(resultCallbackFunction, fail.callbackFunction)
-            }
+            val asyncWorkResult = result.asyncWork.assertNotNullAndExecute()
+            Assert.assertTrue(asyncWorkResult is AddTrackableWorkResult.Fail)
+            // also check content
+            val fail = asyncWorkResult as AddTrackableWorkResult.Fail
+            Assert.assertEquals(trackable, fail.trackable)
+            Assert.assertEquals(resultCallbackFunction, fail.callbackFunction)
         }
     }
 
