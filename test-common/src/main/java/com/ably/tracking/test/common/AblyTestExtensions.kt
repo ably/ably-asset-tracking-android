@@ -3,6 +3,8 @@ package com.ably.tracking.test.common
 import com.ably.tracking.ConnectionException
 import com.ably.tracking.ErrorInformation
 import com.ably.tracking.common.Ably
+import com.ably.tracking.common.PresenceData
+import io.mockk.CapturingSlot
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.slot
@@ -72,13 +74,38 @@ fun Ably.mockSubscribeToPresenceError(trackableId: String) {
     }
 }
 
-fun Ably.mockDisconnectSuccess(trackableId: String) {
+fun Ably.mockDisconnect(trackableId: String, result: Result<Unit>) {
     val callbackSlot = slot<(Result<Unit>) -> Unit>()
     every {
         disconnect(trackableId, any(), capture(callbackSlot))
     } answers {
+        callbackSlot.captured(result)
+    }
+}
+
+fun Ably.mockDisconnectSuccess(trackableId: String) {
+    mockDisconnect(trackableId, Result.success(Unit))
+}
+
+fun Ably.mockDisconnectSuccessAndCapturePresenceData(trackableId: String): CapturingSlot<PresenceData> {
+    val callbackSlot = slot<(Result<Unit>) -> Unit>()
+    val presenceDataSlot = slot<PresenceData>()
+    every {
+        disconnect(trackableId, capture(presenceDataSlot), capture(callbackSlot))
+    } answers {
         callbackSlot.captured(Result.success(Unit))
     }
+    return presenceDataSlot
+}
+
+fun Ably.mockSuspendingDisconnect(trackableId: String, result: Result<Unit>) {
+    coEvery { disconnect(trackableId, any()) } returns result
+}
+
+fun Ably.mockSuspendingDisconnectSuccessAndCapturePresenceData(trackableId: String): CapturingSlot<PresenceData> {
+    val presenceDataSlot = slot<PresenceData>()
+    coEvery { disconnect(trackableId, capture(presenceDataSlot)) } returns Result.success(Unit)
+    return presenceDataSlot
 }
 
 fun Ably.mockSendEnhancedLocationSuccess(trackableId: String) {
