@@ -3,6 +3,22 @@ apply plugin: 'maven-publish'
 final githubActor = findProperty('GITHUB_ACTOR')
 final githubToken = findProperty('GITHUB_TOKEN')
 
+task sourcesJar(type: Jar) {
+    // Copy files from main source directories to the JAR.
+    from android.sourceSets.main.java.srcDirs
+    // Specify the JAR type (it will be appended to its filename).
+    archiveClassifier.set("sources")
+}
+
+task dokkaJavadocJar(type: Jar) {
+    // Generate the javadocs.
+    dependsOn dokkaJavadoc
+    // Copy files from the javadocs directory to the jar.
+    from dokkaJavadoc.outputDirectory
+    // Specify the JAR type (it will be appended to its filename).
+    archiveClassifier.set("javadoc")
+}
+
 afterEvaluate {
     // Based on: https://developer.android.com/studio/build/maven-publish-plugin
     // See: https://docs.gradle.org/current/dsl/org.gradle.api.publish.PublishingExtension.html
@@ -10,6 +26,11 @@ afterEvaluate {
         publications {
             release(MavenPublication) {
                 from components.release
+
+                // Add a JAR with source code (to enable viewing the code when the library is included from a maven repository).
+                artifact sourcesJar
+                // Add a JAR with javadocs.
+                artifact dokkaJavadocJar
             }
         }
 
