@@ -21,6 +21,7 @@ import com.ably.tracking.logging.LogHandler
 import com.ably.tracking.publisher.guards.DublicateTrackableGuardImpl
 import com.ably.tracking.publisher.guards.DuplicateTrackableGuard
 import com.ably.tracking.publisher.guards.TrackableRemovalGuard
+import com.ably.tracking.publisher.guards.TrackableRemovalGuardImpl
 import com.ably.tracking.publisher.workerqueue.EventWorkerQueue
 import com.ably.tracking.publisher.workerqueue.WorkerQueue
 import com.ably.tracking.publisher.workerqueue.workers.AddTrackableFailedWorker
@@ -859,7 +860,7 @@ constructor(
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
         override val duplicateTrackableGuard: DuplicateTrackableGuard = DublicateTrackableGuardImpl()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        override val trackableRemovalGuard: TrackableRemovalGuard = TrackableRemovalGuard()
+        override val trackableRemovalGuard: TrackableRemovalGuard = TrackableRemovalGuardImpl()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
 
         override fun dispose() {
