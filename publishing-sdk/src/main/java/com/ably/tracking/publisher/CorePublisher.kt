@@ -27,6 +27,7 @@ import com.ably.tracking.publisher.workerqueue.WorkerQueue
 import com.ably.tracking.publisher.workerqueue.workers.AddTrackableFailedWorker
 import com.ably.tracking.publisher.workerqueue.workers.AddTrackableWorker
 import com.ably.tracking.publisher.workerqueue.workers.ConnectionCreatedWorker
+import com.ably.tracking.publisher.workerqueue.workers.ConnectionReadyWorker
 import com.ably.tracking.publisher.workerqueue.workers.PresenceMessageWorker
 import com.ably.tracking.publisher.workerqueue.workers.SetActiveTrackableWorker
 import com.ably.tracking.publisher.workerqueue.workers.StopWorker
@@ -42,7 +43,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 internal interface CorePublisher {
@@ -66,7 +66,12 @@ internal interface CorePublisher {
     fun removeSubscriber(id: String, trackable: Trackable, properties: PublisherProperties)
     fun setDestination(destination: Destination, properties: PublisherProperties)
     fun removeCurrentDestination(properties: PublisherProperties)
+    fun startLocationUpdates(properties: PublisherProperties)
     fun stopLocationUpdates(properties: PublisherProperties)
+
+    fun updateTrackables(properties: PublisherProperties)
+    fun updateTrackableStateFlows(properties: PublisherProperties)
+    fun resolveResolution(trackable: Trackable, properties: PublisherProperties)
 }
 
 @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
@@ -288,32 +293,17 @@ constructor(
                         )
                     }
                     is ConnectionForTrackableReadyEvent -> {
-                        if (properties.trackableRemovalGuard.isMarkedForRemoval(event.trackable)) {
-                            ably.disconnect(event.trackable.id, properties.presenceData) { result ->
-                                request(TrackableRemovalRequestedEvent(event.trackable, event.callbackFunction, result))
+                        workerQueue.execute(
+                            ConnectionReadyWorker(
+                                event.trackable,
+                                event.callbackFunction,
+                                ably,
+                                hooks,
+                                this@DefaultCorePublisher
+                            ) { channelStateChange ->
+                                enqueue(ChannelConnectionStateChangeEvent(channelStateChange, event.trackable.id))
                             }
-                            continue
-                        }
-                        ably.subscribeForChannelStateChange(event.trackable.id) {
-                            enqueue(ChannelConnectionStateChangeEvent(it, event.trackable.id))
-                        }
-                        if (!properties.isTracking) {
-                            properties.isTracking = true
-                            mapbox.startTrip()
-                        }
-                        properties.trackables.add(event.trackable)
-                        scope.launch { _trackables.emit(properties.trackables) }
-                        resolveResolution(event.trackable, properties)
-                        hooks.trackables?.onTrackableAdded(event.trackable)
-                        val trackableState = properties.trackableStates[event.trackable.id] ?: TrackableState.Offline()
-                        val trackableStateFlow =
-                            properties.trackableStateFlows[event.trackable.id] ?: MutableStateFlow(trackableState)
-                        properties.trackableStateFlows[event.trackable.id] = trackableStateFlow
-                        trackableStateFlows = properties.trackableStateFlows
-                        properties.trackableStates[event.trackable.id] = trackableState
-                        val successResult = Result.success(trackableStateFlow.asStateFlow())
-                        event.callbackFunction(successResult)
-                        properties.duplicateTrackableGuard.finishAddingTrackable(event.trackable, successResult)
+                        )
                     }
                     is ChangeLocationEngineResolutionEvent -> {
                         properties.locationEngineResolution = policy.resolve(properties.resolutions.values.toSet())
@@ -597,6 +587,12 @@ constructor(
         mapbox.stopAndClose()
     }
 
+    @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
+    override fun startLocationUpdates(properties: PublisherProperties) {
+        properties.isTracking = true
+        mapbox.startTrip()
+    }
+
     private fun updateTrackableState(properties: Properties, trackableId: String) {
         val hasSentAtLeastOneLocation: Boolean = properties.lastSentEnhancedLocations[trackableId] != null
         val lastChannelConnectionStateChange = getLastChannelConnectionStateChange(properties, trackableId)
@@ -685,7 +681,7 @@ constructor(
         }
     }
 
-    private fun resolveResolution(trackable: Trackable, properties: PublisherProperties) {
+    override fun resolveResolution(trackable: Trackable, properties: PublisherProperties) {
         val resolutionRequests: Set<Resolution> = properties.requests[trackable.id]?.values?.toSet() ?: emptySet()
         policy.resolve(TrackableResolutionRequest(trackable, resolutionRequests)).let { resolution ->
             properties.resolutions[trackable.id] = resolution
@@ -753,6 +749,14 @@ constructor(
         } else {
             true
         }
+    }
+
+    override fun updateTrackables(properties: PublisherProperties) {
+        scope.launch { _trackables.emit(properties.trackables) }
+    }
+
+    override fun updateTrackableStateFlows(properties: PublisherProperties) {
+        trackableStateFlows = properties.trackableStateFlows
     }
 
     internal inner class Hooks : ResolutionPolicy.Hooks {
