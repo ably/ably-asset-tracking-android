@@ -49,6 +49,7 @@ internal class DefaultResolutionPolicy(
                         if (allResolutions.isEmpty()) defaultResolution else createFinalResolution(allResolutions)
                     return adjustResolutionToBatteryLevel(finalResolution, constraints)
                 }
+                else -> throw WrongResolutionConstraintsException()
             }
         }
 
@@ -130,7 +131,8 @@ internal class DefaultResolutionPolicy(
             } else {
                 activeTrackable = trackable
                 trackable.constraints?.let {
-                    val constraints = it as DefaultResolutionConstraints
+                    val constraints = it as? DefaultResolutionConstraints
+                        ?: throw WrongResolutionConstraintsException()
                     methods.setProximityThreshold(constraints.proximityThreshold, proximityHandler)
                 }
             }

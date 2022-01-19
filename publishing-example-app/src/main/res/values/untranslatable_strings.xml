@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="preferences_location_source_key" translatable="false">location_source</string>
+  <string name="preferences_simulation_channel_name_key" translatable="false">simulation_channel_name</string>
+  <string name="preferences_s3_file_key" translatable="false">s3_file</string>
+  <string name="preferences_routing_profile_key" translatable="false">routing_profile</string>
+  <string name="preferences_resolution_accuracy_key" translatable="false">default_resolution_accuracy</string>
+  <string name="preferences_resolution_desired_interval_key" translatable="false">default_resolution_desired_interval</string>
+  <string name="preferences_resolution_minimum_displacement_key" translatable="false">default_resolution_minimum_displacement</string>
+  <string name="preferences_send_raw_locations_key" translatable="false">send_raw_locations</string>
+  <string name="preferences_send_resolution_key" translatable="false">send_resolution</string>
+  <string name="preferences_enable_predictions_key" translatable="false">enable_predictions</string>
+</resources>
+

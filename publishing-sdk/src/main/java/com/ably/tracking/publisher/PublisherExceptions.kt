@@ -7,3 +7,7 @@ class PublisherPropertiesDisposedException : Exception("Cannot access the publis
 class MapException(throwable: Throwable) : Exception(throwable)
 
 class RemoveTrackableRequestedException : Exception("This trackable is marked for removal.")
+
+class WrongResolutionConstraintsException : Exception("In the default resolution policy you need to use the DefaultResolutionConstraints.")
+
+class UnknownSetRouteException() : Exception("Setting route failed with an unknown exception.")

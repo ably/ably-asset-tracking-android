@@ -21,6 +21,8 @@ internal data class PublisherBuilder(
     val locationSource: LocationSource? = null,
     val areRawLocationsEnabled: Boolean? = null,
     val sendResolutionEnabled: Boolean = false,
+    val predictionsEnabled: Boolean = true,
+    val rawHistoryCallback: ((String) -> Unit)? = null,
 ) : Publisher.Builder {
 
     override fun connection(configuration: ConnectionConfiguration): Publisher.Builder =
@@ -56,6 +58,12 @@ internal data class PublisherBuilder(
     override fun sendResolution(enabled: Boolean): Publisher.Builder =
         this.copy(sendResolutionEnabled = enabled)
 
+    override fun predictions(enabled: Boolean): Publisher.Builder =
+        this.copy(predictionsEnabled = enabled)
+
+    override fun rawHistoryDataCallback(callback: (String) -> Unit): Publisher.Builder =
+        this.copy(rawHistoryCallback = callback)
+
     @RequiresPermission(anyOf = [ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION])
     override fun start(): Publisher {
         if (isMissingRequiredFields()) {
@@ -71,7 +79,9 @@ internal data class PublisherBuilder(
                 locationSource,
                 logHandler,
                 notificationProvider!!,
-                notificationId!!
+                notificationId!!,
+                predictionsEnabled,
+                rawHistoryCallback,
             ),
             resolutionPolicyFactory!!,
             routingProfile,

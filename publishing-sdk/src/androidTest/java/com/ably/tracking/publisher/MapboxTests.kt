@@ -49,7 +49,9 @@ class MapboxTests {
                         .setSmallIcon(R.drawable.aat_logo)
                         .build()
             },
-            12345
+            12345,
+            true,
+            null,
         )
 
     private fun getLocationData(context: Context): LocationHistoryData {

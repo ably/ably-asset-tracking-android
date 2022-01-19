@@ -1,7 +1,9 @@
 package com.ably.tracking.common
 
+import com.ably.tracking.Accuracy
 import com.ably.tracking.common.message.PresenceDataMessage
 import com.google.gson.Gson
+import com.google.gson.JsonObject
 import io.ably.lib.types.PresenceMessage
 import org.junit.Assert
 import org.junit.Test
@@ -51,5 +53,59 @@ class PresenceDataTests {
         Assert.assertEquals("abc", parsedMessage?.data?.type)
         Assert.assertEquals(null, parsedMessage?.data?.resolution)
         Assert.assertEquals(null, parsedMessage?.data?.rawLocations)
+    }
+
+    @Test
+    fun `parse presence message if presence data is in the correct JSON object format`() {
+        // given
+        val resolutionDataJson = JsonObject().apply {
+            addProperty("accuracy", "MAXIMUM")
+            addProperty("desiredInterval", 500)
+            addProperty("minimumDisplacement", 2)
+        }
+        val presenceDataJson = JsonObject().apply {
+            addProperty("type", "SUBSCRIBER")
+            add("resolution", resolutionDataJson)
+        }
+        val presenceMessage = PresenceMessage(PresenceMessage.Action.enter, clientId, presenceDataJson)
+
+        // when
+        val parsedMessage = presenceMessage.toTracking(gson)
+
+        // then
+        Assert.assertNotNull(parsedMessage)
+        Assert.assertNotNull(parsedMessage?.data)
+        Assert.assertEquals(ClientTypes.SUBSCRIBER, parsedMessage?.data?.type)
+        Assert.assertEquals(Accuracy.MAXIMUM, parsedMessage?.data?.resolution?.accuracy)
+        Assert.assertEquals(500L, parsedMessage?.data?.resolution?.desiredInterval)
+        Assert.assertEquals(2.0, parsedMessage?.data?.resolution?.minimumDisplacement)
+    }
+
+    @Test
+    fun `return null if presence data in wrong JSON object format`() {
+        // given
+        val presenceDataJson = JsonObject().apply {
+            addProperty("wrongKey", "wrongValue")
+        }
+        val presenceMessage = PresenceMessage(PresenceMessage.Action.enter, clientId, presenceDataJson)
+
+        // when
+        val parsedMessage = presenceMessage.toTracking(gson)
+
+        // then
+        Assert.assertNull(parsedMessage)
+    }
+
+    @Test
+    fun `return null if presence data is of wrong type`() {
+        // given
+        val presenceData = 123
+        val presenceMessage = PresenceMessage(PresenceMessage.Action.enter, clientId, presenceData)
+
+        // when
+        val parsedMessage = presenceMessage.toTracking(gson)
+
+        // then
+        Assert.assertNull(parsedMessage)
     }
 }

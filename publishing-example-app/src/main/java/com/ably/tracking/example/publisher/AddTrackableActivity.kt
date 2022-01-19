@@ -8,6 +8,7 @@ import android.os.Bundle
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.widget.ArrayAdapter
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresPermission
 import androidx.annotation.StringRes
 import androidx.core.content.ContextCompat
@@ -17,6 +18,7 @@ import com.ably.tracking.Resolution
 import com.ably.tracking.publisher.DefaultProximity
 import com.ably.tracking.publisher.DefaultResolutionConstraints
 import com.ably.tracking.publisher.DefaultResolutionSet
+import com.ably.tracking.publisher.Destination
 import com.ably.tracking.publisher.LocationHistoryData
 import com.ably.tracking.publisher.LocationSource
 import com.ably.tracking.publisher.LocationSourceAbly
@@ -34,6 +36,7 @@ import kotlinx.coroutines.launch
 
 class AddTrackableActivity : PublisherServiceActivity() {
     private lateinit var appPreferences: AppPreferences
+    private var destination: Destination? = null
 
     // SupervisorJob() is used to keep the scope working after any of its children fail
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
@@ -48,6 +51,32 @@ class AddTrackableActivity : PublisherServiceActivity() {
         setupResolutionFields()
         addTrackableButton.setOnClickListener { addTrackableClicked() }
         setupTrackableInputAction()
+        setupSetDestinationButton()
+    }
+
+    private fun setupSetDestinationButton() {
+        val resultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == RESULT_OK && result.data != null) {
+                val data: Intent = result.data!!
+                if (
+                    data.hasExtra(SetDestinationActivity.EXTRA_LATITUDE) &&
+                    data.hasExtra(SetDestinationActivity.EXTRA_LONGITUDE)
+                ) {
+                    val latitude = data.getDoubleExtra(SetDestinationActivity.EXTRA_LATITUDE, 0.0)
+                    val longitude = data.getDoubleExtra(SetDestinationActivity.EXTRA_LONGITUDE, 0.0)
+                    updateDestination(latitude, longitude)
+                }
+            }
+        }
+        setDestinationButton.setOnClickListener {
+            resultLauncher.launch(Intent(this, SetDestinationActivity::class.java))
+        }
+    }
+
+    private fun updateDestination(latitude: Double, longitude: Double) {
+        latitudeValueTextView.text = latitude.toString().take(7)
+        longitudeValueTextView.text = longitude.toString().take(7)
+        destination = Destination(latitude, longitude)
     }
 
     private fun setupResolutionFields() {
@@ -126,6 +155,7 @@ class AddTrackableActivity : PublisherServiceActivity() {
     private fun createTrackable(trackableId: String): Trackable =
         Trackable(
             trackableId,
+            destination = destination,
             constraints = DefaultResolutionConstraints(
                 DefaultResolutionSet(createResolution()),
                 DefaultProximity(spatial = 1.0),
