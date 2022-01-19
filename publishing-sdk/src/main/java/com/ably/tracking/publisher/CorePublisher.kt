@@ -2,7 +2,6 @@ package com.ably.tracking.publisher
 
 import android.Manifest
 import androidx.annotation.RequiresPermission
-import com.ably.tracking.ConnectionException
 import com.ably.tracking.EnhancedLocationUpdate
 import com.ably.tracking.Location
 import com.ably.tracking.LocationUpdate
@@ -13,15 +12,24 @@ import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ClientTypes
 import com.ably.tracking.common.ConnectionState
 import com.ably.tracking.common.ConnectionStateChange
-import com.ably.tracking.common.PresenceAction
 import com.ably.tracking.common.PresenceData
 import com.ably.tracking.common.createSingleThreadDispatcher
 import com.ably.tracking.common.logging.createLoggingTag
 import com.ably.tracking.common.logging.v
 import com.ably.tracking.common.logging.w
 import com.ably.tracking.logging.LogHandler
+import com.ably.tracking.publisher.guards.DublicateTrackableGuardImpl
 import com.ably.tracking.publisher.guards.DuplicateTrackableGuard
 import com.ably.tracking.publisher.guards.TrackableRemovalGuard
+import com.ably.tracking.publisher.workerqueue.EventWorkerQueue
+import com.ably.tracking.publisher.workerqueue.workers.AddTrackableFailedWorker
+import com.ably.tracking.publisher.workerqueue.WorkerQueue
+import com.ably.tracking.publisher.workerqueue.workers.AddTrackableWorker
+import com.ably.tracking.publisher.workerqueue.workers.ConnectionCreatedWorker
+import com.ably.tracking.publisher.workerqueue.workers.PresenceMessageWorker
+import com.ably.tracking.publisher.workerqueue.workers.SetActiveTrackableWorker
+import com.ably.tracking.publisher.workerqueue.workers.StopWorker
+import com.ably.tracking.publisher.workerqueue.workers.TrackableRemovalRequestedWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
@@ -45,6 +53,18 @@ internal interface CorePublisher {
     val active: Trackable?
     val routingProfile: RoutingProfile
     val trackableStateFlows: Map<String, StateFlow<TrackableState>>
+
+    fun addSubscriber(id: String, trackable: Trackable, data: PresenceData, properties: PublisherProperties)
+    fun updateSubscriber(
+        id: String,
+        trackable: Trackable,
+        data: PresenceData,
+        properties: PublisherProperties
+    )
+
+    fun removeSubscriber(id: String, trackable: Trackable, properties: PublisherProperties)
+    fun setDestination(destination: Destination, properties: PublisherProperties)
+    fun stopLocationUpdates(properties: PublisherProperties)
 }
 
 @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
@@ -73,13 +93,13 @@ internal fun createCorePublisher(
  */
 private val singleThreadDispatcher = createSingleThreadDispatcher()
 
-private class DefaultCorePublisher
+internal class DefaultCorePublisher
 @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
 constructor(
     private val ably: Ably,
     private val mapbox: Mapbox,
     resolutionPolicyFactory: ResolutionPolicy.Factory,
-    routingProfile: RoutingProfile,
+    override var routingProfile: RoutingProfile,
     private val logHandler: LogHandler?,
     private val areRawLocationsEnabled: Boolean?,
     private val sendResolutionEnabled: Boolean,
@@ -102,7 +122,6 @@ constructor(
         get() = _locationHistory.asSharedFlow()
 
     override var active: Trackable? = null
-    override var routingProfile: RoutingProfile = routingProfile
     override var trackableStateFlows: Map<String, StateFlow<TrackableState>> = emptyMap()
 
     init {
@@ -149,7 +168,7 @@ constructor(
     ) {
         launch {
             val properties = Properties(routingProfile, policy.resolve(emptySet()), areRawLocationsEnabled)
-
+            val workerQueue: WorkerQueue = EventWorkerQueue(this@DefaultCorePublisher, properties, scope)
             // processing
             for (event in receiveEventChannel) {
                 // handle events after the publisher is stopped
@@ -157,8 +176,8 @@ constructor(
                     if (event is Request<*>) {
                         // when the event is a request then call its handler
                         when (event) {
-                            is StopEvent -> event.handler(Result.success(Unit))
-                            else -> event.handler(Result.failure(PublisherStoppedException()))
+                            is StopEvent -> event.callbackFunction(Result.success(Unit))
+                            else -> event.callbackFunction(Result.failure(PublisherStoppedException()))
                         }
                         continue
                     } else if (event is AdhocEvent) {
@@ -207,128 +226,69 @@ constructor(
                         request(
                             AddTrackableEvent(event.trackable) { result ->
                                 if (result.isSuccess) {
-                                    request(SetActiveTrackableEvent(event.trackable) { event.handler(result) })
+                                    request(SetActiveTrackableEvent(event.trackable) { event.callbackFunction(result) })
                                 } else {
-                                    event.handler(result)
+                                    event.callbackFunction(result)
                                 }
                             }
                         )
                     }
                     is SetActiveTrackableEvent -> {
-                        if (properties.active != event.trackable) {
-                            properties.active = event.trackable
-                            hooks.trackables?.onActiveTrackableChanged(event.trackable)
-                            event.trackable.destination?.let {
-                                setDestination(it, properties)
-                            }
-                        }
-                        event.handler(Result.success(Unit))
+                        workerQueue.execute(
+                            SetActiveTrackableWorker(
+                                event.trackable, event.callbackFunction,
+                                this@DefaultCorePublisher, hooks
+                            )
+                        )
                     }
                     is AddTrackableEvent -> {
-                        when {
-                            properties.duplicateTrackableGuard.isCurrentlyAddingTrackable(event.trackable) -> {
-                                properties.duplicateTrackableGuard.saveDuplicateAddHandler(
-                                    event.trackable,
-                                    event.handler
-                                )
-                            }
-                            properties.trackables.contains(event.trackable) -> {
-                                event.handler(Result.success(properties.trackableStateFlows[event.trackable.id]!!))
-                            }
-                            else -> {
-                                properties.duplicateTrackableGuard.startAddingTrackable(event.trackable)
-                                ably.connect(
-                                    event.trackable.id,
-                                    properties.presenceData,
-                                    willPublish = true
-                                ) { result ->
-                                    try {
-                                        result.getOrThrow()
-                                        request(ConnectionForTrackableCreatedEvent(event.trackable, event.handler))
-                                    } catch (exception: ConnectionException) {
-                                        request(AddTrackableFailedEvent(event.trackable, event.handler, exception))
-                                    }
-                                }
-                            }
-                        }
+                        workerQueue.execute(
+                            AddTrackableWorker(event.trackable, event.callbackFunction, ably)
+                        )
                     }
                     is AddTrackableFailedEvent -> {
-                        val failureResult = Result.failure<AddTrackableResult>(event.exception)
-                        event.handler(failureResult)
-                        properties.duplicateTrackableGuard.finishAddingTrackable(event.trackable, failureResult)
-                        properties.trackableRemovalGuard.removeMarked(event.trackable, Result.success(true))
+                        workerQueue.execute(
+                            AddTrackableFailedWorker(
+                                event.trackable,
+                                event.callbackFunction,
+                                event.exception
+                            )
+                        )
                     }
                     is PresenceMessageEvent -> {
-                        when (event.presenceMessage.action) {
-                            PresenceAction.PRESENT_OR_ENTER -> {
-                                if (event.presenceMessage.data.type == ClientTypes.SUBSCRIBER) {
-                                    addSubscriber(
-                                        event.presenceMessage.clientId,
-                                        event.trackable,
-                                        event.presenceMessage.data,
-                                        properties
-                                    )
-                                }
-                            }
-                            PresenceAction.LEAVE_OR_ABSENT -> {
-                                if (event.presenceMessage.data.type == ClientTypes.SUBSCRIBER) {
-                                    removeSubscriber(event.presenceMessage.clientId, event.trackable, properties)
-                                }
-                            }
-                            PresenceAction.UPDATE -> {
-                                if (event.presenceMessage.data.type == ClientTypes.SUBSCRIBER) {
-                                    updateSubscriber(
-                                        event.presenceMessage.clientId,
-                                        event.trackable,
-                                        event.presenceMessage.data,
-                                        properties
-                                    )
-                                }
-                            }
-                        }
+                        workerQueue.execute(
+                            PresenceMessageWorker(
+                                event.trackable,
+                                event.presenceMessage,
+                                this@DefaultCorePublisher
+                            )
+                        )
                     }
                     is TrackableRemovalRequestedEvent -> {
-                        if (event.result.isSuccess) {
-                            properties.trackableRemovalGuard.removeMarked(event.trackable, Result.success(true))
-                        } else {
-                            properties.trackableRemovalGuard.removeMarked(
-                                event.trackable,
-                                Result.failure(event.result.exceptionOrNull()!!)
+                        workerQueue.execute(
+                            TrackableRemovalRequestedWorker(
+                                event.trackable, event.callbackFunction,
+                                event.result
                             )
-                        }
-                        event.handler(Result.failure(RemoveTrackableRequestedException()))
-                        properties.duplicateTrackableGuard.finishAddingTrackable(
-                            event.trackable,
-                            Result.failure(RemoveTrackableRequestedException())
                         )
                     }
                     is ConnectionForTrackableCreatedEvent -> {
-                        if (properties.trackableRemovalGuard.isMarkedForRemoval(event.trackable)) {
-                            // Leave Ably channel.
-                            ably.disconnect(event.trackable.id, properties.presenceData) { result ->
-                                request(TrackableRemovalRequestedEvent(event.trackable, event.handler, result))
-                            }
-                            continue
-                        }
-                        ably.subscribeForPresenceMessages(
-                            trackableId = event.trackable.id,
-                            listener = { enqueue(PresenceMessageEvent(event.trackable, it)) },
-                            callback = { result ->
-                                try {
-                                    result.getOrThrow()
-                                    request(ConnectionForTrackableReadyEvent(event.trackable, event.handler))
-                                } catch (exception: ConnectionException) {
-                                    ably.disconnect(event.trackable.id, properties.presenceData) {
-                                        request(AddTrackableFailedEvent(event.trackable, event.handler, exception))
-                                    }
-                                }
+                        // for now delegate the presence listening to here, this could likely be a new case for new
+                        // structure
+                        workerQueue.execute(
+                            ConnectionCreatedWorker(
+                                event.trackable,
+                                event.callbackFunction,
+                                ably
+                            ) { presenceMessage ->
+                                enqueue(PresenceMessageEvent(event.trackable, presenceMessage))
                             }
                         )
                     }
                     is ConnectionForTrackableReadyEvent -> {
                         if (properties.trackableRemovalGuard.isMarkedForRemoval(event.trackable)) {
                             ably.disconnect(event.trackable.id, properties.presenceData) { result ->
-                                request(TrackableRemovalRequestedEvent(event.trackable, event.handler, result))
+                                request(TrackableRemovalRequestedEvent(event.trackable, event.callbackFunction, result))
                             }
                             continue
                         }
@@ -350,7 +310,7 @@ constructor(
                         trackableStateFlows = properties.trackableStateFlows
                         properties.trackableStates[event.trackable.id] = trackableState
                         val successResult = Result.success(trackableStateFlow.asStateFlow())
-                        event.handler(successResult)
+                        event.callbackFunction(successResult)
                         properties.duplicateTrackableGuard.finishAddingTrackable(event.trackable, successResult)
                     }
                     is ChangeLocationEngineResolutionEvent -> {
@@ -365,21 +325,21 @@ constructor(
                                     request(
                                         DisconnectSuccessEvent(event.trackable) {
                                             if (it.isSuccess) {
-                                                event.handler(Result.success(true))
+                                                event.callbackFunction(Result.success(true))
                                             } else {
-                                                event.handler(Result.failure(it.exceptionOrNull()!!))
+                                                event.callbackFunction(Result.failure(it.exceptionOrNull()!!))
                                             }
                                         }
                                     )
                                 } else {
-                                    event.handler(Result.failure(result.exceptionOrNull()!!))
+                                    event.callbackFunction(Result.failure(result.exceptionOrNull()!!))
                                 }
                             }
                         } else if (properties.duplicateTrackableGuard.isCurrentlyAddingTrackable(event.trackable)) {
-                            properties.trackableRemovalGuard.markForRemoval(event.trackable, event.handler)
+                            properties.trackableRemovalGuard.markForRemoval(event.trackable, event.callbackFunction)
                         } else {
                             // notify with false to indicate that it was not removed
-                            event.handler(Result.success(false))
+                            event.callbackFunction(Result.success(false))
                         }
                     }
                     is DisconnectSuccessEvent -> {
@@ -411,7 +371,7 @@ constructor(
                             stopLocationUpdates(properties)
                         }
                         properties.lastChannelConnectionStateChanges.remove(event.trackable.id)
-                        event.handler(Result.success(Unit))
+                        event.callbackFunction(Result.success(Unit))
                     }
                     is RefreshResolutionPolicyEvent -> {
                         properties.trackables.forEach { resolveResolution(it, properties) }
@@ -421,17 +381,7 @@ constructor(
                         properties.currentDestination?.let { setDestination(it, properties) }
                     }
                     is StopEvent -> {
-                        if (properties.isTracking) {
-                            stopLocationUpdates(properties)
-                        }
-                        try {
-                            ably.close(properties.presenceData)
-                            properties.dispose()
-                            properties.isStopped = true
-                            event.handler(Result.success(Unit))
-                        } catch (exception: ConnectionException) {
-                            event.handler(Result.failure(exception))
-                        }
+                        workerQueue.execute(StopWorker(event.callbackFunction, ably, this@DefaultCorePublisher))
                     }
                     is AblyConnectionStateChangeEvent -> {
                         logHandler?.v("$TAG Ably connection state changed ${event.connectionStateChange.state}")
@@ -639,7 +589,7 @@ constructor(
         properties.skippedRawLocations.add(trackableId, location)
     }
 
-    private fun stopLocationUpdates(properties: Properties) {
+    override fun stopLocationUpdates(properties: PublisherProperties) {
         properties.isTracking = false
         mapbox.unregisterLocationObserver()
         mapbox.stopAndClose()
@@ -679,7 +629,7 @@ constructor(
         }
     }
 
-    private fun addSubscriber(id: String, trackable: Trackable, data: PresenceData, properties: Properties) {
+    override fun addSubscriber(id: String, trackable: Trackable, data: PresenceData, properties: PublisherProperties) {
         val subscriber = Subscriber(id, trackable)
         if (properties.subscribers[trackable.id] == null) {
             properties.subscribers[trackable.id] = mutableSetOf()
@@ -690,7 +640,12 @@ constructor(
         resolveResolution(trackable, properties)
     }
 
-    private fun updateSubscriber(id: String, trackable: Trackable, data: PresenceData, properties: Properties) {
+    override fun updateSubscriber(
+        id: String,
+        trackable: Trackable,
+        data: PresenceData,
+        properties: PublisherProperties
+    ) {
         properties.subscribers[trackable.id]?.let { subscribers ->
             subscribers.find { it.id == id }?.let { subscriber ->
                 data.resolution.let { resolution ->
@@ -701,7 +656,7 @@ constructor(
         }
     }
 
-    private fun removeSubscriber(id: String, trackable: Trackable, properties: Properties) {
+    override fun removeSubscriber(id: String, trackable: Trackable, properties: PublisherProperties) {
         properties.subscribers[trackable.id]?.let { subscribers ->
             subscribers.find { it.id == id }?.let { subscriber ->
                 subscribers.remove(subscriber)
@@ -716,7 +671,7 @@ constructor(
         resolution: Resolution?,
         trackable: Trackable,
         subscriber: Subscriber,
-        properties: Properties
+        properties: PublisherProperties
     ) {
         if (resolution != null) {
             if (properties.requests[trackable.id] == null) {
@@ -728,7 +683,7 @@ constructor(
         }
     }
 
-    private fun resolveResolution(trackable: Trackable, properties: Properties) {
+    private fun resolveResolution(trackable: Trackable, properties: PublisherProperties) {
         val resolutionRequests: Set<Resolution> = properties.requests[trackable.id]?.values?.toSet() ?: emptySet()
         policy.resolve(TrackableResolutionRequest(trackable, resolutionRequests)).let { resolution ->
             properties.resolutions[trackable.id] = resolution
@@ -739,7 +694,7 @@ constructor(
         }
     }
 
-    private fun setDestination(destination: Destination, properties: Properties) {
+    override fun setDestination(destination: Destination, properties: PublisherProperties) {
         properties.lastPublisherLocation.let { currentLocation ->
             if (currentLocation != null) {
                 removeCurrentDestination(properties)
@@ -759,7 +714,7 @@ constructor(
         }
     }
 
-    private fun removeCurrentDestination(properties: Properties) {
+    private fun removeCurrentDestination(properties: PublisherProperties) {
         mapbox.clearRoute()
         properties.currentDestination = null
         properties.estimatedArrivalTimeInMilliseconds = null
@@ -798,7 +753,7 @@ constructor(
         }
     }
 
-    private inner class Hooks : ResolutionPolicy.Hooks {
+    internal inner class Hooks : ResolutionPolicy.Hooks {
         var trackables: ResolutionPolicy.Hooks.TrackableSetListener? = null
         var subscribers: ResolutionPolicy.Hooks.SubscriberSetListener? = null
 
@@ -835,76 +790,78 @@ constructor(
         }
     }
 
-    private inner class Properties(
+    internal inner class Properties(
         routingProfile: RoutingProfile,
         locationEngineResolution: Resolution,
         areRawLocationsEnabled: Boolean?,
-    ) {
+    ) : PublisherProperties {
         private var isDisposed: Boolean = false
-        var isStopped: Boolean = false
-        var locationEngineResolution: Resolution = locationEngineResolution
+        override var isStopped: Boolean = false
+        override var locationEngineResolution: Resolution = locationEngineResolution
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        var isTracking: Boolean = false
+        override var isTracking: Boolean = false
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        val trackables: MutableSet<Trackable> = mutableSetOf()
+        override val trackables: MutableSet<Trackable> = mutableSetOf()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        val trackableStates: MutableMap<String, TrackableState> = mutableMapOf()
+        override val trackableStates: MutableMap<String, TrackableState> = mutableMapOf()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        val trackableStateFlows: MutableMap<String, MutableStateFlow<TrackableState>> = mutableMapOf()
+        override val trackableStateFlows: MutableMap<String, MutableStateFlow<TrackableState>> = mutableMapOf()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        val lastChannelConnectionStateChanges: MutableMap<String, ConnectionStateChange> = mutableMapOf()
+        override val lastChannelConnectionStateChanges: MutableMap<String, ConnectionStateChange> = mutableMapOf()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        var lastConnectionStateChange: ConnectionStateChange = ConnectionStateChange(
+        override var lastConnectionStateChange: ConnectionStateChange = ConnectionStateChange(
             ConnectionState.OFFLINE, null
         )
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        val resolutions: MutableMap<String, Resolution> = mutableMapOf()
+        override val resolutions: MutableMap<String, Resolution> = mutableMapOf()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        val lastSentEnhancedLocations: MutableMap<String, Location> = mutableMapOf()
+        override val lastSentEnhancedLocations: MutableMap<String, Location> = mutableMapOf()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        val lastSentRawLocations: MutableMap<String, Location> = mutableMapOf()
+        override val lastSentRawLocations: MutableMap<String, Location> = mutableMapOf()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        val skippedEnhancedLocations: SkippedLocations = SkippedLocations()
+        override val skippedEnhancedLocations: SkippedLocations = SkippedLocations()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        val skippedRawLocations: SkippedLocations = SkippedLocations()
+        override val skippedRawLocations: SkippedLocations = SkippedLocations()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        var estimatedArrivalTimeInMilliseconds: Long? = null
+        override var estimatedArrivalTimeInMilliseconds: Long? = null
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        var lastPublisherLocation: Location? = null
+        override var lastPublisherLocation: Location? = null
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        var currentDestination: Destination? = null
+        override var currentDestination: Destination? = null
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        val subscribers: MutableMap<String, MutableSet<Subscriber>> = mutableMapOf()
+        override val subscribers: MutableMap<String, MutableSet<Subscriber>> = mutableMapOf()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        val requests: MutableMap<String, MutableMap<Subscriber, Resolution>> = mutableMapOf()
+        override val requests: MutableMap<String, MutableMap<Subscriber, Resolution>> = mutableMapOf()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        var presenceData: PresenceData = PresenceData(ClientTypes.PUBLISHER, rawLocations = areRawLocationsEnabled)
+        override var presenceData: PresenceData =
+            PresenceData(ClientTypes.PUBLISHER, rawLocations = areRawLocationsEnabled)
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        var active: Trackable? = null
+        override var active: Trackable? = null
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
             set(value) {
                 this@DefaultCorePublisher.active = value
                 field = value
             }
-        var routingProfile: RoutingProfile = routingProfile
+        override var routingProfile: RoutingProfile = routingProfile
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
             set(value) {
                 this@DefaultCorePublisher.routingProfile = value
                 field = value
             }
-        val rawLocationChangedCommands: MutableList<(Properties) -> Unit> = mutableListOf()
+        override val rawLocationChangedCommands: MutableList<(Properties) -> Unit> = mutableListOf()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        val enhancedLocationsPublishingState: LocationsPublishingState<EnhancedLocationChangedEvent> =
+        override val enhancedLocationsPublishingState: LocationsPublishingState<EnhancedLocationChangedEvent> =
             LocationsPublishingState()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        val rawLocationsPublishingState: LocationsPublishingState<RawLocationChangedEvent> = LocationsPublishingState()
+        override val rawLocationsPublishingState: LocationsPublishingState<RawLocationChangedEvent> =
+            LocationsPublishingState()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        val duplicateTrackableGuard: DuplicateTrackableGuard = DuplicateTrackableGuard()
+        override val duplicateTrackableGuard: DuplicateTrackableGuard = DublicateTrackableGuardImpl()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        val trackableRemovalGuard: TrackableRemovalGuard = TrackableRemovalGuard()
+        override val trackableRemovalGuard: TrackableRemovalGuard = TrackableRemovalGuard()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
 
-        fun dispose() {
+        override fun dispose() {
             trackables.clear()
             trackableStates.clear()
             trackableStateFlows.clear()
