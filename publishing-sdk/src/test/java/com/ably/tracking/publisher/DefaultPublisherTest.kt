@@ -4,20 +4,19 @@ import android.annotation.SuppressLint
 import com.ably.tracking.ConnectionException
 import com.ably.tracking.common.Ably
 import com.ably.tracking.test.common.mockConnectFailureThenSuccess
-import com.ably.tracking.test.common.mockCreateSuspendingConnectionSuccess
+import com.ably.tracking.test.common.mockConnectSuccess
+import com.ably.tracking.test.common.mockCreateConnectionSuccess
 import com.ably.tracking.test.common.mockDisconnectSuccess
 import com.ably.tracking.test.common.mockSubscribeToPresenceError
 import com.ably.tracking.test.common.mockSubscribeToPresenceSuccess
-import com.ably.tracking.test.common.mockSuspendingConnectSuccess
-import io.mockk.coVerify
 import io.mockk.mockk
 import io.mockk.verify
+import java.util.UUID
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert
 import org.junit.Test
-import java.util.UUID
 
 class DefaultPublisherTest {
     private val ably = mockk<Ably>(relaxed = true)
@@ -36,7 +35,7 @@ class DefaultPublisherTest {
     fun `should return an error when adding a trackable with subscribing to presence error`() {
         // given
         val trackableId = UUID.randomUUID().toString()
-        ably.mockSuspendingConnectSuccess(trackableId)
+        ably.mockConnectSuccess(trackableId)
         ably.mockDisconnectSuccess(trackableId)
         ably.mockSubscribeToPresenceError(trackableId)
 
@@ -52,7 +51,7 @@ class DefaultPublisherTest {
     fun `should disconnect from the channel when adding a trackable with subscribing to presence error`() {
         // given
         val trackableId = UUID.randomUUID().toString()
-        ably.mockSuspendingConnectSuccess(trackableId)
+        ably.mockConnectSuccess(trackableId)
         ably.mockDisconnectSuccess(trackableId)
         ably.mockSubscribeToPresenceError(trackableId)
 
@@ -76,7 +75,7 @@ class DefaultPublisherTest {
         // given
         val trackableId = UUID.randomUUID().toString()
         val trackable = Trackable(trackableId)
-        ably.mockCreateSuspendingConnectionSuccess(trackableId)
+        ably.mockCreateConnectionSuccess(trackableId)
 
         // when
         runBlocking {
@@ -85,8 +84,8 @@ class DefaultPublisherTest {
         }
 
         // then
-        coVerify(exactly = 1) {
-            ably.connect(trackableId, any(), any(), any(), any())
+        verify(exactly = 1) {
+            ably.connect(trackableId, any(), any(), any(), any(), any())
         }
     }
 
@@ -109,8 +108,8 @@ class DefaultPublisherTest {
         }
 
         // then
-        coVerify(exactly = 2) {
-            ably.connect(trackableId, any(), any(), any(), any())
+        verify(exactly = 2) {
+            ably.connect(trackableId, any(), any(), any(), any(), any())
         }
     }
 
@@ -119,7 +118,7 @@ class DefaultPublisherTest {
         // given
         val trackableId = UUID.randomUUID().toString()
         val trackable = Trackable(trackableId)
-        ably.mockCreateSuspendingConnectionSuccess(trackableId)
+        ably.mockCreateConnectionSuccess(trackableId)
 
         // when
         runBlocking {
@@ -130,8 +129,8 @@ class DefaultPublisherTest {
         }
 
         // then
-        coVerify(exactly = 1) {
-            ably.connect(trackableId, any(), any(), any(), any())
+        verify(exactly = 1) {
+            ably.connect(trackableId, any(), any(), any(), any(), any())
         }
     }
 
@@ -169,8 +168,8 @@ class DefaultPublisherTest {
         // then
         Assert.assertTrue("First add should fail", didFirstAddFail)
         Assert.assertTrue("Second add should fail", didSecondAddFail)
-        coVerify(exactly = 1) {
-            ably.connect(trackableId, any(), any(), any(), any())
+        verify(exactly = 1) {
+            ably.connect(trackableId, any(), any(), any(), any(), any())
         }
     }
 
@@ -180,7 +179,7 @@ class DefaultPublisherTest {
         val trackableId = UUID.randomUUID().toString()
         val trackable = Trackable(trackableId)
         val callsOrder = mutableListOf<Int>()
-        ably.mockCreateSuspendingConnectionSuccess(trackableId)
+        ably.mockCreateConnectionSuccess(trackableId)
 
         // when
         runBlocking {

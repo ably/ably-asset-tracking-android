@@ -176,17 +176,6 @@ interface Ably {
     )
 
     /**
-     * A suspending version of [connect]
-     * */
-    suspend fun connect(
-        trackableId: String,
-        presenceData: PresenceData,
-        useRewind: Boolean = false,
-        willPublish: Boolean = false,
-        willSubscribe: Boolean = false
-    ): Result<Boolean>
-
-    /**
      * Updates presence data in the [trackableId] channel's presence.
      * Should be called only when there's an existing channel for the [trackableId].
      * If a channel for the [trackableId] doesn't exist then nothing happens.
@@ -206,11 +195,6 @@ interface Ably {
      * @param callback The function that will be called when disconnecting completes. If something goes wrong it will be called with [ConnectionException].
      */
     fun disconnect(trackableId: String, presenceData: PresenceData, callback: (Result<Unit>) -> Unit)
-
-    /**
-     * A suspending version of [disconnect]
-     * */
-    suspend fun disconnect(trackableId: String, presenceData: PresenceData): Result<Unit>
 
     /**
      * Cleanups and closes all the connected channels and their presence. In the end closes Ably connection.
@@ -326,25 +310,6 @@ constructor(
         }
     }
 
-    override suspend fun connect(
-        trackableId: String,
-        presenceData: PresenceData,
-        useRewind: Boolean,
-        willPublish: Boolean,
-        willSubscribe: Boolean
-    ): Result<Boolean> {
-        return suspendCoroutine { continuation ->
-            connect(trackableId, presenceData, useRewind, willPublish, willSubscribe) { result ->
-                try {
-                    result.getOrThrow()
-                    continuation.resume(Result.success(true))
-                } catch (exception: ConnectionException) {
-                    continuation.resume(Result.failure(exception))
-                }
-            }
-        }
-    }
-
     override fun disconnect(trackableId: String, presenceData: PresenceData, callback: (Result<Unit>) -> Unit) {
         if (channels.contains(trackableId)) {
             val channelToRemove = channels[trackableId]!!
@@ -382,15 +347,15 @@ constructor(
 
     /**
      * A suspend version of the [DefaultAbly.disconnect] method. It waits until disconnection is completed.
+     * @throws ConnectionException if something goes wrong during disconnect.
      */
-    override suspend fun disconnect(trackableId: String, presenceData: PresenceData): Result<Unit> {
-        return suspendCoroutine { continuation ->
+    private suspend fun disconnect(trackableId: String, presenceData: PresenceData) {
+        suspendCoroutine<Unit> { continuation ->
             disconnect(trackableId, presenceData) {
                 try {
-                    it.getOrThrow()
-                    continuation.resume(Result.success(Unit))
+                    continuation.resume(it.getOrThrow())
                 } catch (exception: ConnectionException) {
-                    continuation.resume(Result.failure(exception))
+                    continuation.resumeWithException(exception)
                 }
             }
         }

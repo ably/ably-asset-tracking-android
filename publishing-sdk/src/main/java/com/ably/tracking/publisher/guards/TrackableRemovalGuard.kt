@@ -1,6 +1,6 @@
 package com.ably.tracking.publisher.guards
 
-import com.ably.tracking.common.ResultCallbackFunction
+import com.ably.tracking.common.ResultHandler
 import com.ably.tracking.publisher.Trackable
 
 /**
@@ -13,13 +13,13 @@ internal class TrackableRemovalGuard {
      * A set of trackables that were marked for removal. This should be used to store / retrieve trackables
      * that did not finished adding.
      */
-    private val trackables = hashMapOf<Trackable, MutableList<ResultCallbackFunction<Boolean>>>()
+    private val trackables = hashMapOf<Trackable, MutableList<ResultHandler<Boolean>>>()
 
-    fun markForRemoval(trackable: Trackable, callbackFunction: ResultCallbackFunction<Boolean>) {
+    fun markForRemoval(trackable: Trackable, handler: ResultHandler<Boolean>) {
         trackables[trackable]?.let {
-            it.add(callbackFunction)
+            it.add(handler)
         } ?: kotlin.run {
-            val handlers = mutableListOf(callbackFunction)
+            val handlers = mutableListOf(handler)
             trackables[trackable] = handlers
         }
     }

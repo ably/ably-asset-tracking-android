@@ -3,15 +3,8 @@ package com.ably.tracking.test.common
 import com.ably.tracking.ConnectionException
 import com.ably.tracking.ErrorInformation
 import com.ably.tracking.common.Ably
-import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.slot
-import kotlinx.coroutines.delay
-
-fun Ably.mockCreateSuspendingConnectionSuccess(trackableId: String) {
-    mockSuspendingConnectSuccess(trackableId)
-    mockSubscribeToPresenceSuccess(trackableId)
-}
 
 fun Ably.mockCreateConnectionSuccess(trackableId: String) {
     mockConnectSuccess(trackableId)
@@ -27,29 +20,18 @@ fun Ably.mockConnectSuccess(trackableId: String) {
     }
 }
 
-fun Ably.mockSuspendingConnectSuccess(trackableId: String) {
-    coEvery {
-        connect(trackableId, any(), any(), any(), any())
-    } returns Result.success(true)
-}
-
-fun Ably.mockSuspendingConnectFailure(trackableId: String) {
-    coEvery {
-        connect(trackableId, any(), any(), any(), any())
-    } returns Result.failure(anyConnectionException())
-}
-
 fun Ably.mockConnectFailureThenSuccess(trackableId: String, callbackDelayInMilliseconds: Long? = null) {
-    var failed = false
-    coEvery {
-        connect(trackableId, any(), any(), any(), any())
-    }.coAnswers {
-        callbackDelayInMilliseconds?.let { delay(it) }
-        if (!failed) {
-            failed = true
-            Result.failure(anyConnectionException())
+    var hasFailed = false
+    val callbackSlot = slot<(Result<Unit>) -> Unit>()
+    every {
+        connect(trackableId, any(), any(), any(), any(), capture(callbackSlot))
+    } answers {
+        callbackDelayInMilliseconds?.let { Thread.sleep(it) }
+        if (hasFailed) {
+            callbackSlot.captured(Result.success(Unit))
         } else {
-            Result.success(true)
+            hasFailed = true
+            callbackSlot.captured(Result.failure(anyConnectionException()))
         }
     }
 }
