@@ -3,6 +3,8 @@ apply plugin: 'signing'
 
 final githubActor = findProperty('GITHUB_ACTOR')
 final githubToken = findProperty('GITHUB_TOKEN')
+final isPublishingToMavenCentral = findProperty('publishTarget') == 'MavenCentral'
+final isPublishingToGitHubPackages = findProperty('publishTarget') == 'GitHubPackages'
 
 task sourcesJar(type: Jar) {
     // Copy files from main source directories to the JAR.
@@ -58,7 +60,7 @@ afterEvaluate {
         }
 
         repositories {
-            if (githubActor != null && githubToken != null) {
+            if (isPublishingToGitHubPackages && githubActor != null && githubToken != null) {
                 // per: https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-gradle-registry
                 maven {
                     url = uri("https://maven.pkg.github.com/ably/ably-asset-tracking-android")
@@ -72,12 +74,14 @@ afterEvaluate {
     }
 }
 
-// Sign the artifacts
-signing {
-    useInMemoryPgpKeys(
-        findProperty("SIGNING_KEY_ID"),
-        findProperty("SIGNING_KEY"),
-        findProperty("SIGNING_PASSWORD"),
-    )
-    sign publishing.publications
+if (isPublishingToMavenCentral) {
+    // Sign the artifacts
+    signing {
+        useInMemoryPgpKeys(
+            findProperty("SIGNING_KEY_ID"),
+            findProperty("SIGNING_KEY"),
+            findProperty("SIGNING_PASSWORD"),
+        )
+        sign publishing.publications
+    }
 }
