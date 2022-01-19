@@ -11,4 +11,8 @@ dependencies {
     api project(':core-sdk')
 }
 
+ext {
+    PUBLISH_POM_DESCRIPTION = "Ably Asset Tracking shared code that is visible in the Java API."
+}
+
 apply from: '../publish.gradle'

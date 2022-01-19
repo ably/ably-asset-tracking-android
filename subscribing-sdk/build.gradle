@@ -18,4 +18,8 @@ dependencies {
     implementation project(':common')
 }
 
+ext {
+    PUBLISH_POM_DESCRIPTION = "Ably Asset Tracking Subscriber SDK for Kotlin."
+}
+
 apply from: '../publish.gradle'
