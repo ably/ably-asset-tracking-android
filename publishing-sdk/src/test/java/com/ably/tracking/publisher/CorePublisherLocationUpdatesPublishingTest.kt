@@ -8,7 +8,7 @@ import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
 import com.ably.tracking.test.common.createLocation
-import com.ably.tracking.test.common.mockCreateSuspendingConnectionSuccess
+import com.ably.tracking.test.common.mockCreateConnectionSuccess
 import com.ably.tracking.test.common.mockSendEnhancedLocationFailure
 import com.ably.tracking.test.common.mockSendEnhancedLocationFailureThenSuccess
 import com.ably.tracking.test.common.mockSendEnhancedLocationSuccess
@@ -161,7 +161,7 @@ class CorePublisherLocationUpdatesPublishingTest {
         trackable: Trackable,
         corePublisher: CorePublisher = this.corePublisher
     ) {
-        ably.mockCreateSuspendingConnectionSuccess(trackable.id)
+        ably.mockCreateConnectionSuccess(trackable.id)
         runBlocking(Dispatchers.IO) {
             addTrackableToCorePublisher(trackable, corePublisher)
         }
