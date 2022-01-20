@@ -3,7 +3,6 @@ apply plugin: 'signing'
 
 final githubActor = findProperty('GITHUB_ACTOR')
 final githubToken = findProperty('GITHUB_TOKEN')
-final isPublishingToMavenCentral = findProperty('publishTarget') == 'MavenCentral'
 final isPublishingToGitHubPackages = findProperty('publishTarget') == 'GitHubPackages'
 
 task sourcesJar(type: Jar) {
@@ -74,14 +73,12 @@ afterEvaluate {
     }
 }
 
-if (isPublishingToMavenCentral) {
-    // Sign the artifacts
-    signing {
-        useInMemoryPgpKeys(
-            findProperty("SIGNING_KEY_ID"),
-            findProperty("SIGNING_KEY"),
-            findProperty("SIGNING_PASSWORD"),
-        )
-        sign publishing.publications
-    }
+// Sign the artifacts
+signing {
+    useInMemoryPgpKeys(
+        findProperty("SIGNING_KEY_ID"),
+        findProperty("SIGNING_KEY"),
+        findProperty("SIGNING_PASSWORD"),
+    )
+    sign publishing.publications
 }
