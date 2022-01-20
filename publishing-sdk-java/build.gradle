@@ -13,4 +13,8 @@ dependencies {
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.4.2'
 }
 
+ext {
+    PUBLISH_POM_DESCRIPTION = "Ably Asset Tracking Publisher SDK for Java."
+}
+
 apply from: '../publish.gradle'

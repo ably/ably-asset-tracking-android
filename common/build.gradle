@@ -20,4 +20,8 @@ android {
     }
 }
 
+ext {
+    PUBLISH_POM_DESCRIPTION = "Ably Asset Tracking shared code that should not be visible in the API."
+}
+
 apply from: '../publish.gradle'
