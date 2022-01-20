@@ -35,5 +35,5 @@ jobs:
         ORG_GRADLE_PROJECT_GITHUB_ACTOR: ${{ github.actor }}
         ORG_GRADLE_PROJECT_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        echo "Publishing to GitHub Packages version ${{ github.event.inputs.version }}..."
+        echo "Publishing version ${{ github.event.inputs.version }} to GitHub Packages..."
         ./gradlew publish -PpublishTarget=GitHubPackages
