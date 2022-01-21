@@ -1,6 +1,7 @@
 # This is a manually triggered workflow (hence on: workflow_dispatch).
 # See: https://docs.github.com/en/actions/reference/events-that-trigger-workflows#manual-events
 
+name: Publish to GitHub Packages
 on:
   workflow_dispatch:
     inputs:
