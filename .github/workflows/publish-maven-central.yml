@@ -17,10 +17,8 @@ jobs:
     steps:
 
     - uses: actions/checkout@v2
-#      Temporarily disable tag checkout to test this workflow. According to checkout docs, if we don't specify any ref then:
-#      "When checking out the repository that triggered a workflow, this defaults to the reference or SHA for that event. Otherwise, uses the default branch."
-#      with:
-#        ref: v${{ github.event.inputs.version }}
+      with:
+        ref: v${{ github.event.inputs.version }}
 
     # Gradle 7 requires Java 11 to run
     - uses: actions/setup-java@v2
