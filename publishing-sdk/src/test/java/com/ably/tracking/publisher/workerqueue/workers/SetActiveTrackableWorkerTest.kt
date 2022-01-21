@@ -105,7 +105,7 @@ class SetActiveTrackableWorkerTest {
     }
 
     @Test
-    fun `should not set destination if the active trackable is different than the new trackable but does not have a destination`() {
+    fun `should remove the current destination if the active trackable is different than the new trackable and does not have a destination`() {
         // given
         prepareWorkerWithNewTrackable(Trackable("trackable-id", destination = null))
         mockActiveTrackable(Trackable("some-other-trackable-id"))
@@ -114,8 +114,8 @@ class SetActiveTrackableWorkerTest {
         worker.doWork(publisherProperties)
 
         // then
-        verify(exactly = 0) {
-            corePublisher.setDestination(any(), any())
+        verify(exactly = 1) {
+            corePublisher.removeCurrentDestination(any())
         }
     }
 
