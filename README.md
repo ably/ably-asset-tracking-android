@@ -59,7 +59,23 @@ Kotlin users will want to add either `publishing-sdk` or `subscribing-sdk`, acco
 Java users should add either `publishing-sdk-java` or `subscribing-sdk-java`.
 See [Android Runtime Requirements](#android-runtime-requirements) for more details.
 
-#### GitHub Packages
+#### Declaring AAT repository
+
+First, you need to declare the repository from which the AAT dependency will be installed. We support both Maven Central and GitHub Packages repositories.
+
+##### Using Maven Central
+
+We publish to [Maven Central](https://repo1.maven.org/maven2/com/ably/tracking/).
+
+To install the dependency you need to make sure that you have [declared the Maven Central repository](https://docs.gradle.org/current/userguide/declaring_repositories.html#sub:maven_central) in your build script:
+
+```groovy
+repositories {
+    mavenCentral()
+}
+```
+
+##### Using GitHub Packages
 
 We publish to [GitHub Packages](https://github.com/ably/ably-asset-tracking-android/packages/) for this repository.
 
@@ -80,7 +96,9 @@ repositories {
 }
 ```
 
-In order to resolve all AAT dependencies you will also need to authenticate in the Mapbox repository:
+#### Mapbox Repository
+
+Next, in order to resolve all AAT dependencies you will also need to authenticate in the Mapbox repository:
 
 ```gradle
 repositories {
@@ -98,7 +116,9 @@ repositories {
 }
 ```
 
-Finally, you can add the AAT dependency in the Gradle build script
+#### Declaring the AAT dependencies
+
+Finally, you can add the AAT dependency in the Gradle build script:
 
 ```gradle
 dependencies {
