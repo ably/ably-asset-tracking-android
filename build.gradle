@@ -269,4 +269,4 @@ task clean(type: Delete) {
     delete rootProject.buildDir
 }
 
-apply from: "setup-mavencentral-publishing.gradle"
+apply from: "maven-central.gradle"
