@@ -67,7 +67,7 @@ To [install the dependency](https://docs.github.com/en/packages/working-with-a-g
 You have to get either a `GITHUB_TOKEN` or a "Personal Access Token" (with the `read:packages` permission).
 Then use that token to authenticate with the AAT GitHub Packages repository:
 
-```gradle
+```groovy
 repositories {
     maven {
         name = "Ably Asset Tracking"
@@ -82,7 +82,7 @@ repositories {
 
 In order to resolve all AAT dependencies you will also need to authenticate in the Mapbox repository:
 
-```gradle
+```groovy
 repositories {
     maven {
         name = "Mapbox"
@@ -100,7 +100,7 @@ repositories {
 
 Finally, you can add the AAT dependency in the Gradle build script
 
-```gradle
+```groovy
 dependencies {
     // Publishing SDK for publishers
     implementation 'com.ably.tracking:publishing-sdk:1.0.0-beta.15'
