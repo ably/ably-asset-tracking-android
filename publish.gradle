@@ -52,12 +52,12 @@ afterEvaluate {
                     developers {
                         // https://docs.gradle.org/current/dsl/org.gradle.api.publish.maven.MavenPomDeveloper.html
                         developer {
-                            id 'ably' // our company org in GitHub: https://github.com/ably
-                            name 'Ably' // UK based company: Ably Real-time Ltd
-                            email 'support@ably.com'
-                            organization 'Ably' // UK based company: Ably Real-time Ltd
-                            organizationUrl 'https://ably.com/'
-                            url 'https://ably.com/'
+                            id = 'ably' // our company org in GitHub: https://github.com/ably
+                            name = 'Ably' // UK based company: Ably Real-time Ltd
+                            email = 'support@ably.com'
+                            organization = 'Ably' // UK based company: Ably Real-time Ltd
+                            organizationUrl = 'https://ably.com/'
+                            url = 'https://ably.com/'
                         }
                     }
                     scm {
