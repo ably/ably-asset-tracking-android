@@ -28,6 +28,7 @@ buildscript {
 plugins {
     id 'org.jlleitschuh.gradle.ktlint' version '10.1.0'
     id 'org.jetbrains.dokka' version '1.4.32'
+    id 'io.github.gradle-nexus.publish-plugin' version "1.1.0"
 }
 
 // https://github.com/Kotlin/dokka/issues/2202#issuecomment-950666269
@@ -44,6 +45,14 @@ allprojects {
     // version MUST conform to the Semantic Versioning Specification (https://semver.org/) version 2.0.0
     // on incrementing this value, ensure to also increment versionCode in android defaultConfig (also in this file)
     version = '1.0.0-beta.15'
+
+    // Values used to publish the SDK to maven repositories.
+    ext {
+        PUBLISH_GROUP_ID = group
+        PUBLISH_ARTIFACT_ID = project.name // This returns the module/project name, like "publishing-sdk".
+        PUBLISH_VERSION = version
+        PUBLISH_POM_NAME = "${PUBLISH_GROUP_ID}:${PUBLISH_ARTIFACT_ID}"
+    }
 
     repositories {
         google()
@@ -259,3 +268,5 @@ subprojects {
 task clean(type: Delete) {
     delete rootProject.buildDir
 }
+
+apply from: "maven-central.gradle"

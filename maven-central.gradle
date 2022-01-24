@@ -1,0 +1,18 @@
+// MavenCentral publishing Sonatype configuration
+final isPublishingToMavenCentral = findProperty('publishTarget') == 'MavenCentral'
+
+if (isPublishingToMavenCentral) {
+    nexusPublishing {
+        repositories {
+            sonatype {
+                username = findProperty('OSSRH_USERNAME') ?: ""
+                password = findProperty('OSSRH_PASSWORD') ?: ""
+
+                // According to the plugin docs the "nexusUrl" and "snapshotRepositoryUrl" have to be added as we've registered after February 2021.
+                // https://github.com/gradle-nexus/publish-plugin/#publishing-to-maven-central-via-sonatype-ossrh
+                nexusUrl.set(uri("https://s01.oss.sonatype.org/service/local/"))
+                snapshotRepositoryUrl.set(uri("https://s01.oss.sonatype.org/content/repositories/snapshots/"))
+            }
+        }
+    }
+}

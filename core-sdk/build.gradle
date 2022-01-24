@@ -11,5 +11,9 @@ android {
     }
 }
 
+ext {
+    PUBLISH_POM_DESCRIPTION = "Ably Asset Tracking shared code that is visible in the API."
+}
+
 apply from: '../jacoco.gradle'
 apply from: '../publish.gradle'
