@@ -4,25 +4,30 @@ import com.ably.tracking.logging.LogHandler
 import com.ably.tracking.logging.LogLevel
 
 fun LogHandler.v(message: String, throwable: Throwable? = null) {
-    logMessage(LogLevel.VERBOSE, message, throwable)
+    log(LogLevel.VERBOSE, message, throwable)
 }
 
 fun LogHandler.i(message: String, throwable: Throwable? = null) {
-    logMessage(LogLevel.INFO, message, throwable)
+    log(LogLevel.INFO, message, throwable)
 }
 
 fun LogHandler.d(message: String, throwable: Throwable? = null) {
-    logMessage(LogLevel.DEBUG, message, throwable)
+    log(LogLevel.DEBUG, message, throwable)
 }
 
 fun LogHandler.w(message: String, throwable: Throwable? = null) {
-    logMessage(LogLevel.WARN, message, throwable)
+    log(LogLevel.WARN, message, throwable)
 }
 
 fun LogHandler.e(message: String, throwable: Throwable? = null) {
-    logMessage(LogLevel.ERROR, message, throwable)
+    log(LogLevel.ERROR, message, throwable)
 }
 
 fun LogHandler.e(throwable: Throwable) {
-    logMessage(LogLevel.ERROR, "", throwable)
+    log(LogLevel.ERROR, "", throwable)
+}
+
+private fun LogHandler.log(level: LogLevel, message: String, throwable: Throwable? = null) {
+    val currentTimestamp = System.currentTimeMillis()
+    logMessage(level, "$currentTimestamp: $message", throwable)
 }
