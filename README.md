@@ -67,7 +67,7 @@ We support both [Maven Central](#downloading-from-maven-central) and [GitHub Pac
 We publish to [Maven Central](https://repo1.maven.org/maven2/com/ably/tracking/),
 which is the pubic repository that most users will choose to download the Ably Asset Tracking SDK from.
 
-To install the dependency you need to make sure that you have [declared the Maven Central repository](https://docs.gradle.org/current/userguide/declaring_repositories.html#sub:maven_central) in your build script:
+To install the dependency you need to make sure that you have [declared the Maven Central repository](https://docs.gradle.org/current/userguide/declaring_repositories.html#sub:maven_central) in your Gradle build script:
 
 ```groovy
 repositories {
@@ -82,7 +82,7 @@ which is an alternative option for those who do not wish to download the Ably As
 
 To [install the dependency](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-gradle-registry#using-a-published-package) you will first need to [authenticate to GitHub Packages](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-gradle-registry#authenticating-to-github-packages).
 You have to get either a `GITHUB_TOKEN` or a "Personal Access Token" (with the `read:packages` permission).
-Then use that token to authenticate with the Ably Asset Tracking GitHub Packages repository:
+Then use that token to authenticate with the Ably Asset Tracking GitHub Packages repository in your Gradle build script:
 
 ```gradle
 repositories {
@@ -99,7 +99,7 @@ repositories {
 
 #### Mapbox Repository
 
-Next, in order to resolve all Ably Asset Tracking dependencies you will also need to authenticate in the Mapbox repository:
+Next, in order to resolve all Ably Asset Tracking dependencies you will also need to authenticate with the Mapbox repository in your Gradle build script:
 
 ```gradle
 repositories {
