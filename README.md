@@ -60,11 +60,12 @@ Java users should add either `publishing-sdk-java` or `subscribing-sdk-java`.
 See [Android Runtime Requirements](#android-runtime-requirements) for more details.
 
 First, you need to declare the repository from which the Ably Asset Tracking dependency will be installed.
-We support both [Maven Central](#using-maven-central) and [GitHub Packages](#using-github-packages).
+We support both [Maven Central](#downloading-from-maven-central) and [GitHub Packages](#downloading-from-github-packages).
 
 #### Downloading from Maven Central
 
-We publish to [Maven Central](https://repo1.maven.org/maven2/com/ably/tracking/).
+We publish to [Maven Central](https://repo1.maven.org/maven2/com/ably/tracking/),
+which is the pubic repository that most users will choose to download the Ably Asset Tracking SDK from.
 
 To install the dependency you need to make sure that you have [declared the Maven Central repository](https://docs.gradle.org/current/userguide/declaring_repositories.html#sub:maven_central) in your build script:
 
@@ -76,7 +77,8 @@ repositories {
 
 #### Downloading from GitHub Packages
 
-We publish to [GitHub Packages](https://github.com/ably/ably-asset-tracking-android/packages/) for this repository.
+We publish to [GitHub Packages](https://github.com/ably/ably-asset-tracking-android/packages/) for this repository,
+which is an alternative option for those who do not wish to download the Ably Asset Tracking SDK from [Maven Central](#downloading-from-maven-central).
 
 To [install the dependency](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-gradle-registry#using-a-published-package) you will first need to [authenticate to GitHub Packages](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-gradle-registry#authenticating-to-github-packages).
 You have to get either a `GITHUB_TOKEN` or a "Personal Access Token" (with the `read:packages` permission).
