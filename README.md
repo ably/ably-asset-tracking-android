@@ -59,7 +59,7 @@ Kotlin users will want to add either `publishing-sdk` or `subscribing-sdk`, acco
 Java users should add either `publishing-sdk-java` or `subscribing-sdk-java`.
 See [Android Runtime Requirements](#android-runtime-requirements) for more details.
 
-First, you need to declare the repository from which the AAT dependency will be installed.
+First, you need to declare the repository from which the Ably Asset Tracking dependency will be installed.
 We support both [Maven Central](#using-maven-central) and [GitHub Packages](#using-github-packages).
 
 #### Downloading from Maven Central
@@ -80,7 +80,7 @@ We publish to [GitHub Packages](https://github.com/ably/ably-asset-tracking-andr
 
 To [install the dependency](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-gradle-registry#using-a-published-package) you will first need to [authenticate to GitHub Packages](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-gradle-registry#authenticating-to-github-packages).
 You have to get either a `GITHUB_TOKEN` or a "Personal Access Token" (with the `read:packages` permission).
-Then use that token to authenticate with the AAT GitHub Packages repository:
+Then use that token to authenticate with the Ably Asset Tracking GitHub Packages repository:
 
 ```gradle
 repositories {
@@ -97,7 +97,7 @@ repositories {
 
 #### Mapbox Repository
 
-Next, in order to resolve all AAT dependencies you will also need to authenticate in the Mapbox repository:
+Next, in order to resolve all Ably Asset Tracking dependencies you will also need to authenticate in the Mapbox repository:
 
 ```gradle
 repositories {
@@ -115,9 +115,9 @@ repositories {
 }
 ```
 
-#### Declaring the AAT dependencies
+#### Declaring the Ably Asset Tracking dependencies
 
-Finally, you can add the AAT dependency in the Gradle build script:
+Finally, you can add the Ably Asset Tracking dependency in the Gradle build script:
 
 ```gradle
 dependencies {
