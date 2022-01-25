@@ -1,5 +1,33 @@
 # Change log
 
+## [1.0.0](https://github.com/ably/ably-asset-tracking-android/tree/v1.0.0)
+
+The Ably Asset Tracking SDKs for Android are out of Beta! :tada:
+
+[Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.0.0-beta.15...v1.0.0)
+
+**Implemented enhancements:**
+
+- Add timestamps to logs [\#530](https://github.com/ably/ably-asset-tracking-android/issues/530)
+
+**Fixed bugs:**
+
+- The destination from previously active trackable is not cleared if the new active trackable has no destination [\#588](https://github.com/ably/ably-asset-tracking-android/issues/588)
+
+**Closed issues:**
+
+- Store app preferences key in a non-translatable string resources file [\#502](https://github.com/ably/ably-asset-tracking-android/issues/502)
+- Release to Maven Central [\#318](https://github.com/ably/ably-asset-tracking-android/issues/318)
+
+**Merged pull requests:**
+
+- Add timestamps to log statements [\#600](https://github.com/ably/ably-asset-tracking-android/pull/600) ([KacperKluka](https://github.com/KacperKluka))
+- Add info about installing the AAT SDK from the Maven Central repository [\#598](https://github.com/ably/ably-asset-tracking-android/pull/598) ([KacperKluka](https://github.com/KacperKluka))
+- Clear route when the new active trackable does not have a destination [\#594](https://github.com/ably/ably-asset-tracking-android/pull/594) ([KacperKluka](https://github.com/KacperKluka))
+- Publish to the MavenCentral [\#592](https://github.com/ably/ably-asset-tracking-android/pull/592) ([KacperKluka](https://github.com/KacperKluka))
+- Move untranslatable strings to a separate file [\#579](https://github.com/ably/ably-asset-tracking-android/pull/579) ([KacperKluka](https://github.com/KacperKluka))
+- Event queue refactoring [\#525](https://github.com/ably/ably-asset-tracking-android/pull/525) ([ikbalkaya](https://github.com/ikbalkaya))
+
 ## [1.0.0-beta.15](https://github.com/ably/ably-asset-tracking-android/tree/v1.0.0-beta.15)
 
 [Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.0.0-beta.14...v1.0.0-beta.15)
