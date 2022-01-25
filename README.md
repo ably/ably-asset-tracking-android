@@ -117,19 +117,23 @@ repositories {
 }
 ```
 
-#### Declaring the Ably Asset Tracking dependencies
+#### Adding Implementation Dependencies
 
-Finally, you can add the Ably Asset Tracking dependency in the Gradle build script:
+Once you have configured Gradle to know where it can download dependencies from (see above),
+you can then add the Ably Asset Tracking dependency that you require in your Gradle build script:
 
 ```groovy
 dependencies {
-    // Publishing SDK for publishers
+    // Publishers, developing in Kotlin, will need the Publishing SDK
     implementation 'com.ably.tracking:publishing-sdk:1.0.0-beta.15'
 
-    // Subscribing SDK for subscribers
+    // Subscribers, developing in Kotlin, will need the Subscribing SDK
     implementation 'com.ably.tracking:subscribing-sdk:1.0.0-beta.15'
 }
 ```
+
+It's likely that for most application use cases you will need one or the other
+(i.e. _either_ the Publishing SDK, _or_ the Subscribing SDK).
 
 ### Publishing SDK
 
