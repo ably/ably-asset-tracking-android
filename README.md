@@ -59,11 +59,10 @@ Kotlin users will want to add either `publishing-sdk` or `subscribing-sdk`, acco
 Java users should add either `publishing-sdk-java` or `subscribing-sdk-java`.
 See [Android Runtime Requirements](#android-runtime-requirements) for more details.
 
-#### Declaring AAT repository
+First, you need to declare the repository from which the AAT dependency will be installed.
+We support both [Maven Central](#using-maven-central) and [GitHub Packages](#using-github-packages).
 
-First, you need to declare the repository from which the AAT dependency will be installed. We support both Maven Central and GitHub Packages repositories.
-
-##### Using Maven Central
+#### Downloading from Maven Central
 
 We publish to [Maven Central](https://repo1.maven.org/maven2/com/ably/tracking/).
 
@@ -75,7 +74,7 @@ repositories {
 }
 ```
 
-##### Using GitHub Packages
+#### Downloading from GitHub Packages
 
 We publish to [GitHub Packages](https://github.com/ably/ably-asset-tracking-android/packages/) for this repository.
 
