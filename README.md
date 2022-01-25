@@ -97,9 +97,9 @@ repositories {
 }
 ```
 
-#### Mapbox Repository
+#### Downloading Transitive Dependencies from the Mapbox Repository
 
-Next, in order to resolve all Ably Asset Tracking dependencies you will also need to authenticate with the Mapbox repository in your Gradle build script:
+In order to resolve all dependencies required by the Ably Asset Tracking SDK, you will also need to authenticate with the Mapbox repository in your Gradle build script:
 
 ```groovy
 repositories {
