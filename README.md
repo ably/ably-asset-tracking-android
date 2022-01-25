@@ -84,7 +84,7 @@ To [install the dependency](https://docs.github.com/en/packages/working-with-a-g
 You have to get either a `GITHUB_TOKEN` or a "Personal Access Token" (with the `read:packages` permission).
 Then use that token to authenticate with the Ably Asset Tracking GitHub Packages repository in your Gradle build script:
 
-```gradle
+```groovy
 repositories {
     maven {
         name = "Ably Asset Tracking"
@@ -101,7 +101,7 @@ repositories {
 
 Next, in order to resolve all Ably Asset Tracking dependencies you will also need to authenticate with the Mapbox repository in your Gradle build script:
 
-```gradle
+```groovy
 repositories {
     maven {
         name = "Mapbox"
@@ -121,7 +121,7 @@ repositories {
 
 Finally, you can add the Ably Asset Tracking dependency in the Gradle build script:
 
-```gradle
+```groovy
 dependencies {
     // Publishing SDK for publishers
     implementation 'com.ably.tracking:publishing-sdk:1.0.0-beta.15'

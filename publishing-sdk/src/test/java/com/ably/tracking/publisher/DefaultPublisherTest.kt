@@ -200,4 +200,21 @@ class DefaultPublisherTest {
         Assert.assertEquals(1, callsOrder[0])
         Assert.assertEquals(2, callsOrder[1])
     }
+
+    @Test()
+    fun `should clear the route if the new active trackable does not have a destination`() {
+        // given
+        val trackableWithoutDestination = Trackable(UUID.randomUUID().toString())
+        ably.mockCreateConnectionSuccess(trackableWithoutDestination.id)
+
+        // when
+        runBlocking {
+            publisher.track(trackableWithoutDestination)
+        }
+
+        // then
+        verify(exactly = 1) {
+            mapbox.clearRoute()
+        }
+    }
 }
