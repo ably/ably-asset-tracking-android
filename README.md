@@ -65,7 +65,7 @@ We support both [Maven Central](#downloading-from-maven-central) and [GitHub Pac
 #### Downloading from Maven Central
 
 We publish to [Maven Central](https://repo1.maven.org/maven2/com/ably/tracking/),
-which is the pubic repository that most users will choose to download the Ably Asset Tracking SDK from.
+which is the public repository that most users will choose to download the Ably Asset Tracking SDK from.
 
 To install the dependency you need to make sure that you have [declared the Maven Central repository](https://docs.gradle.org/current/userguide/declaring_repositories.html#sub:maven_central) in your Gradle build script:
 
