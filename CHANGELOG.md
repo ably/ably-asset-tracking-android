@@ -26,7 +26,6 @@ The Ably Asset Tracking SDKs for Android are out of Beta! :tada:
 - Clear route when the new active trackable does not have a destination [\#594](https://github.com/ably/ably-asset-tracking-android/pull/594) ([KacperKluka](https://github.com/KacperKluka))
 - Publish to the MavenCentral [\#592](https://github.com/ably/ably-asset-tracking-android/pull/592) ([KacperKluka](https://github.com/KacperKluka))
 - Move untranslatable strings to a separate file [\#579](https://github.com/ably/ably-asset-tracking-android/pull/579) ([KacperKluka](https://github.com/KacperKluka))
-- Event queue refactoring [\#525](https://github.com/ably/ably-asset-tracking-android/pull/525) ([ikbalkaya](https://github.com/ikbalkaya))
 
 ## [1.0.0-beta.15](https://github.com/ably/ably-asset-tracking-android/tree/v1.0.0-beta.15)
 
