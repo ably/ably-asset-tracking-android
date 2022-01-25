@@ -59,7 +59,7 @@ Kotlin users will want to add either `publishing-sdk` or `subscribing-sdk`, acco
 Java users should add either `publishing-sdk-java` or `subscribing-sdk-java`.
 See [Android Runtime Requirements](#android-runtime-requirements) for more details.
 
-First, you need to declare the repository from which the Ably Asset Tracking dependency will be installed.
+You need to declare the repository from which the Ably Asset Tracking SDK dependency will be installed.
 We support both [Maven Central](#downloading-from-maven-central) and [GitHub Packages](#downloading-from-github-packages).
 
 #### Downloading from Maven Central
