@@ -218,8 +218,12 @@ constructor(
                         if (properties.active != event.trackable) {
                             properties.active = event.trackable
                             hooks.trackables?.onActiveTrackableChanged(event.trackable)
-                            event.trackable.destination?.let {
-                                setDestination(it, properties)
+                            event.trackable.destination.let {
+                                if (it != null) {
+                                    setDestination(it, properties)
+                                } else {
+                                    removeCurrentDestination(properties)
+                                }
                             }
                         }
                         event.handler(Result.success(Unit))

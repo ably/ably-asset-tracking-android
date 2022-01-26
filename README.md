@@ -59,15 +59,32 @@ Kotlin users will want to add either `publishing-sdk` or `subscribing-sdk`, acco
 Java users should add either `publishing-sdk-java` or `subscribing-sdk-java`.
 See [Android Runtime Requirements](#android-runtime-requirements) for more details.
 
-#### GitHub Packages
+You need to declare the repository from which the Ably Asset Tracking SDK dependency will be installed.
+We support both [Maven Central](#downloading-from-maven-central) and [GitHub Packages](#downloading-from-github-packages).
 
-We publish to [GitHub Packages](https://github.com/ably/ably-asset-tracking-android/packages/) for this repository.
+#### Downloading from Maven Central
+
+We publish to [Maven Central](https://repo1.maven.org/maven2/com/ably/tracking/),
+which is the public repository that most users will choose to download the Ably Asset Tracking SDK from.
+
+To install the dependency you need to make sure that you have [declared the Maven Central repository](https://docs.gradle.org/current/userguide/declaring_repositories.html#sub:maven_central) in your Gradle build script:
+
+```groovy
+repositories {
+    mavenCentral()
+}
+```
+
+#### Downloading from GitHub Packages
+
+We publish to [GitHub Packages](https://github.com/ably/ably-asset-tracking-android/packages/) for this repository,
+which is an alternative option for those who do not wish to download the Ably Asset Tracking SDK from [Maven Central](#downloading-from-maven-central).
 
 To [install the dependency](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-gradle-registry#using-a-published-package) you will first need to [authenticate to GitHub Packages](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-gradle-registry#authenticating-to-github-packages).
 You have to get either a `GITHUB_TOKEN` or a "Personal Access Token" (with the `read:packages` permission).
-Then use that token to authenticate with the AAT GitHub Packages repository:
+Then use that token to authenticate with the Ably Asset Tracking GitHub Packages repository in your Gradle build script:
 
-```gradle
+```groovy
 repositories {
     maven {
         name = "Ably Asset Tracking"
@@ -80,9 +97,11 @@ repositories {
 }
 ```
 
-In order to resolve all AAT dependencies you will also need to authenticate in the Mapbox repository:
+#### Downloading Transitive Dependencies from the Mapbox Repository
 
-```gradle
+In order to resolve all dependencies required by the Ably Asset Tracking SDK, you will also need to authenticate with the Mapbox repository in your Gradle build script:
+
+```groovy
 repositories {
     maven {
         name = "Mapbox"
@@ -98,17 +117,23 @@ repositories {
 }
 ```
 
-Finally, you can add the AAT dependency in the Gradle build script
+#### Adding Implementation Dependencies
 
-```gradle
+Once you have configured Gradle to know where it can download dependencies from (see above),
+you can then add the Ably Asset Tracking dependency that you require in your Gradle build script:
+
+```groovy
 dependencies {
-    // Publishing SDK for publishers
-    implementation 'com.ably.tracking:publishing-sdk:1.0.0-beta.15'
+    // Publishers, developing in Kotlin, will need the Publishing SDK
+    implementation 'com.ably.tracking:publishing-sdk:1.0.0'
 
-    // Subscribing SDK for subscribers
-    implementation 'com.ably.tracking:subscribing-sdk:1.0.0-beta.15'
+    // Subscribers, developing in Kotlin, will need the Subscribing SDK
+    implementation 'com.ably.tracking:subscribing-sdk:1.0.0'
 }
 ```
+
+It's likely that for most application use cases you will need one or the other
+(i.e. _either_ the Publishing SDK, _or_ the Subscribing SDK).
 
 ### Publishing SDK
 
