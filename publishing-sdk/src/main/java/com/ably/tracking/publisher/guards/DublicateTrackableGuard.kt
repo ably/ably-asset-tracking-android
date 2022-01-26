@@ -1,14 +1,26 @@
 package com.ably.tracking.publisher.guards
 
-import com.ably.tracking.publisher.AddTrackableHandler
+import com.ably.tracking.publisher.AddTrackableCallbackFunction
 import com.ably.tracking.publisher.AddTrackableResult
 import com.ably.tracking.publisher.Trackable
+
+/**
+ * Interface for [DublicateTrackableGuardImpl] is created to make it possible to create test fakes.
+ * */
+internal interface DuplicateTrackableGuard {
+    fun startAddingTrackable(trackable: Trackable)
+    fun finishAddingTrackable(trackable: Trackable, result: Result<AddTrackableResult>)
+    fun isCurrentlyAddingTrackable(trackable: Trackable): Boolean
+    fun saveDuplicateAddHandler(trackable: Trackable, callbackFunction: AddTrackableCallbackFunction)
+    fun clear(trackable: Trackable)
+    fun clearAll()
+}
 
 /**
  * Class that protects from adding duplicates of a trackable that is currently being added to the publisher.
  * This class is not safe to access from multiple threads at the same time.
  */
-class DuplicateTrackableGuard {
+internal class DublicateTrackableGuardImpl : DuplicateTrackableGuard {
     /**
      * Stores trackables that are currently being added (the adding process has started but hasn't finished yet).
      */
@@ -17,14 +29,14 @@ class DuplicateTrackableGuard {
     /**
      * Stores handlers from trackables that are duplicates of the trackables from [trackablesCurrentlyBeingAdded].
      */
-    private val duplicateAddCallsHandlers: MutableMap<Trackable, MutableList<AddTrackableHandler>> = mutableMapOf()
+    private val duplicateAddCallsHandlers: MutableMap<Trackable, MutableList<AddTrackableCallbackFunction>> = mutableMapOf()
 
     /**
      * Marks that the specified trackable adding process has started.
      *
      * @param trackable The trackable that's being added.
      */
-    fun startAddingTrackable(trackable: Trackable) {
+    override fun startAddingTrackable(trackable: Trackable) {
         trackablesCurrentlyBeingAdded.add(trackable)
     }
 
@@ -35,7 +47,7 @@ class DuplicateTrackableGuard {
      * @param trackable The trackable that was being added.
      * @param result The result of the adding process.
      */
-    fun finishAddingTrackable(trackable: Trackable, result: Result<AddTrackableResult>) {
+    override fun finishAddingTrackable(trackable: Trackable, result: Result<AddTrackableResult>) {
         trackablesCurrentlyBeingAdded.remove(trackable)
         duplicateAddCallsHandlers[trackable]?.forEach { handler -> handler(result) }
         duplicateAddCallsHandlers[trackable]?.clear()
@@ -47,7 +59,7 @@ class DuplicateTrackableGuard {
      * @param trackable The trackable that's being added.
      * @return True if the specified trackable is currently being added, false otherwise.
      */
-    fun isCurrentlyAddingTrackable(trackable: Trackable): Boolean {
+    override fun isCurrentlyAddingTrackable(trackable: Trackable): Boolean {
         return trackablesCurrentlyBeingAdded.contains(trackable)
     }
 
@@ -56,11 +68,11 @@ class DuplicateTrackableGuard {
      * This handler will be called when the original trackable adding process will finish in [finishAddingTrackable].
      *
      * @param trackable The duplicate trackable.
-     * @param handler The handler of the duplicate trackable adding process.
+     * @param callbackFunction The handler of the duplicate trackable adding process.
      */
-    fun saveDuplicateAddHandler(trackable: Trackable, handler: AddTrackableHandler) {
+    override fun saveDuplicateAddHandler(trackable: Trackable, callbackFunction: AddTrackableCallbackFunction) {
         val handlers = duplicateAddCallsHandlers[trackable] ?: mutableListOf()
-        handlers.add(handler)
+        handlers.add(callbackFunction)
         duplicateAddCallsHandlers[trackable] = handlers
     }
 
@@ -69,7 +81,7 @@ class DuplicateTrackableGuard {
      *
      * @param trackable The trackable to clear.
      */
-    fun clear(trackable: Trackable) {
+    override fun clear(trackable: Trackable) {
         trackablesCurrentlyBeingAdded.remove(trackable)
         duplicateAddCallsHandlers.remove(trackable)
     }
@@ -77,7 +89,7 @@ class DuplicateTrackableGuard {
     /**
      * Clears the state for all trackables.
      */
-    fun clearAll() {
+    override fun clearAll() {
         trackablesCurrentlyBeingAdded.clear()
         duplicateAddCallsHandlers.clear()
     }

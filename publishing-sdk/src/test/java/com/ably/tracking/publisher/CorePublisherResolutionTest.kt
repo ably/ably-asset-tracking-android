@@ -8,7 +8,7 @@ import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
 import com.ably.tracking.test.common.createLocation
-import com.ably.tracking.test.common.mockCreateConnectionSuccess
+import com.ably.tracking.test.common.mockCreateSuspendingConnectionSuccess
 import com.ably.tracking.test.common.mockSendEnhancedLocationSuccess
 import com.mapbox.geojson.LineString
 import com.mapbox.geojson.Point
@@ -150,7 +150,7 @@ class CorePublisherResolutionTest(
     }
 
     private fun addTrackable(trackable: Trackable) {
-        ably.mockCreateConnectionSuccess(trackable.id)
+        ably.mockCreateSuspendingConnectionSuccess(trackable.id)
         runBlocking(Dispatchers.IO) {
             addTrackableToCorePublisher(trackable)
         }
