@@ -27,6 +27,7 @@ import com.ably.tracking.publisher.workerqueue.EventWorkerQueue
 import com.ably.tracking.publisher.workerqueue.WorkerQueue
 import com.ably.tracking.publisher.workerqueue.workers.AddTrackableFailedWorker
 import com.ably.tracking.publisher.workerqueue.workers.AddTrackableWorker
+import com.ably.tracking.publisher.workerqueue.workers.ChangeLocationEngineResolutionWorker
 import com.ably.tracking.publisher.workerqueue.workers.ConnectionCreatedWorker
 import com.ably.tracking.publisher.workerqueue.workers.ConnectionReadyWorker
 import com.ably.tracking.publisher.workerqueue.workers.DestinationSetWorker
@@ -312,8 +313,7 @@ constructor(
                         )
                     }
                     is ChangeLocationEngineResolutionEvent -> {
-                        properties.locationEngineResolution = policy.resolve(properties.resolutions.values.toSet())
-                        mapbox.changeResolution(properties.locationEngineResolution)
+                        workerQueue.execute(ChangeLocationEngineResolutionWorker(policy, mapbox))
                     }
                     is RemoveTrackableEvent -> {
                         if (properties.trackables.contains(event.trackable)) {
