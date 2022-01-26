@@ -13,6 +13,7 @@ import com.ably.tracking.common.ClientTypes
 import com.ably.tracking.common.ConnectionState
 import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.PresenceData
+import com.ably.tracking.common.TimeProvider
 import com.ably.tracking.common.createSingleThreadDispatcher
 import com.ably.tracking.common.logging.createLoggingTag
 import com.ably.tracking.common.logging.v
@@ -28,6 +29,7 @@ import com.ably.tracking.publisher.workerqueue.workers.AddTrackableFailedWorker
 import com.ably.tracking.publisher.workerqueue.workers.AddTrackableWorker
 import com.ably.tracking.publisher.workerqueue.workers.ConnectionCreatedWorker
 import com.ably.tracking.publisher.workerqueue.workers.ConnectionReadyWorker
+import com.ably.tracking.publisher.workerqueue.workers.DestinationSetWorker
 import com.ably.tracking.publisher.workerqueue.workers.PresenceMessageWorker
 import com.ably.tracking.publisher.workerqueue.workers.SetActiveTrackableWorker
 import com.ably.tracking.publisher.workerqueue.workers.StopWorker
@@ -110,7 +112,7 @@ constructor(
     private val logHandler: LogHandler?,
     private val areRawLocationsEnabled: Boolean?,
     private val sendResolutionEnabled: Boolean,
-) : CorePublisher {
+) : CorePublisher, TimeProvider {
     private val TAG = createLoggingTag(this)
     private val scope = CoroutineScope(singleThreadDispatcher + SupervisorJob())
     private val sendEventChannel: SendChannel<Event>
@@ -194,8 +196,12 @@ constructor(
                 }
                 when (event) {
                     is SetDestinationSuccessEvent -> {
-                        properties.estimatedArrivalTimeInMilliseconds =
-                            System.currentTimeMillis() + event.routeDurationInMilliseconds
+                        workerQueue.execute(
+                            DestinationSetWorker(
+                                event.routeDurationInMilliseconds,
+                                this@DefaultCorePublisher
+                            )
+                        )
                     }
                     is RawLocationChangedEvent -> {
                         logHandler?.v("$TAG Raw location changed event received ${event.location}")
@@ -758,6 +764,8 @@ constructor(
     override fun updateTrackableStateFlows(properties: PublisherProperties) {
         trackableStateFlows = properties.trackableStateFlows
     }
+
+    override fun getCurrentTimeInMilliseconds(): Long = System.currentTimeMillis()
 
     internal inner class Hooks : ResolutionPolicy.Hooks {
         var trackables: ResolutionPolicy.Hooks.TrackableSetListener? = null
