@@ -7,6 +7,7 @@ import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.results.AddTrackableWorkResult
 import com.ably.tracking.publisher.workerqueue.results.ConnectionCreatedWorkResult
 import com.ably.tracking.publisher.workerqueue.results.ConnectionReadyWorkResult
+import com.ably.tracking.publisher.workerqueue.results.RemoveTrackableWorkResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Assert
 import org.junit.Test
@@ -26,6 +27,11 @@ class WorkResultHandlersTest {
     )
     private val connectionReadyWorkResults = listOf(
         ConnectionReadyWorkResult.RemovalRequested(Trackable(""), {}, Result.success(Unit)),
+    )
+    private val removeTrackableWorkResults = listOf(
+        RemoveTrackableWorkResult.Success({}, Trackable("")),
+        RemoveTrackableWorkResult.Fail({}, Exception()),
+        RemoveTrackableWorkResult.NotPresent({}),
     )
 
     @Test
@@ -75,6 +81,23 @@ class WorkResultHandlersTest {
             Assert.assertTrue(
                 "Work result ${it::class.simpleName} should return ConnectionReadyResultHandler",
                 handler is ConnectionReadyResultHandler
+            )
+        }
+    }
+
+    @Test
+    fun `should return RemoveTrackableResultHandler for each RemoveTrackableWorkResult`() {
+        removeTrackableWorkResults.forEach {
+            // given
+            val workResult = it
+
+            // when
+            val handler = getWorkResultHandler(workResult)
+
+            // then
+            Assert.assertTrue(
+                "Work result ${it::class.simpleName} should return RemoveTrackableResultHandler",
+                handler is RemoveTrackableResultHandler
             )
         }
     }

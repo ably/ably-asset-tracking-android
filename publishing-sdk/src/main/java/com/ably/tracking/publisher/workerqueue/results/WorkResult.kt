@@ -77,3 +77,19 @@ internal sealed class ConnectionReadyWorkResult : WorkResult() {
         val result: Result<Unit>
     ) : ConnectionReadyWorkResult()
 }
+
+internal sealed class RemoveTrackableWorkResult : WorkResult() {
+    internal data class Success(
+        val callbackFunction: ResultCallbackFunction<Boolean>,
+        val trackable: Trackable,
+    ) : RemoveTrackableWorkResult()
+
+    internal data class Fail(
+        val callbackFunction: ResultCallbackFunction<Boolean>,
+        val exception: Throwable,
+    ) : RemoveTrackableWorkResult()
+
+    internal data class NotPresent(
+        val callbackFunction: ResultCallbackFunction<Boolean>
+    ) : RemoveTrackableWorkResult()
+}

@@ -32,6 +32,7 @@ import com.ably.tracking.publisher.workerqueue.workers.ConnectionCreatedWorker
 import com.ably.tracking.publisher.workerqueue.workers.ConnectionReadyWorker
 import com.ably.tracking.publisher.workerqueue.workers.DestinationSetWorker
 import com.ably.tracking.publisher.workerqueue.workers.PresenceMessageWorker
+import com.ably.tracking.publisher.workerqueue.workers.RemoveTrackableWorker
 import com.ably.tracking.publisher.workerqueue.workers.SetActiveTrackableWorker
 import com.ably.tracking.publisher.workerqueue.workers.StopWorker
 import com.ably.tracking.publisher.workerqueue.workers.TrackableRemovalRequestedWorker
@@ -316,29 +317,7 @@ constructor(
                         workerQueue.execute(ChangeLocationEngineResolutionWorker(policy, mapbox))
                     }
                     is RemoveTrackableEvent -> {
-                        if (properties.trackables.contains(event.trackable)) {
-                            // Leave Ably channel.
-                            ably.disconnect(event.trackable.id, properties.presenceData) { result ->
-                                if (result.isSuccess) {
-                                    request(
-                                        DisconnectSuccessEvent(event.trackable) {
-                                            if (it.isSuccess) {
-                                                event.callbackFunction(Result.success(true))
-                                            } else {
-                                                event.callbackFunction(Result.failure(it.exceptionOrNull()!!))
-                                            }
-                                        }
-                                    )
-                                } else {
-                                    event.callbackFunction(Result.failure(result.exceptionOrNull()!!))
-                                }
-                            }
-                        } else if (properties.duplicateTrackableGuard.isCurrentlyAddingTrackable(event.trackable)) {
-                            properties.trackableRemovalGuard.markForRemoval(event.trackable, event.callbackFunction)
-                        } else {
-                            // notify with false to indicate that it was not removed
-                            event.callbackFunction(Result.success(false))
-                        }
+                        workerQueue.execute(RemoveTrackableWorker(event.trackable, event.callbackFunction, ably))
                     }
                     is DisconnectSuccessEvent -> {
                         properties.trackables.remove(event.trackable)
