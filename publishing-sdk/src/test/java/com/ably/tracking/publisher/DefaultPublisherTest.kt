@@ -12,12 +12,12 @@ import com.ably.tracking.test.common.mockSuspendingConnectSuccess
 import io.mockk.coVerify
 import io.mockk.mockk
 import io.mockk.verify
+import java.util.UUID
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert
 import org.junit.Test
-import java.util.UUID
 
 class DefaultPublisherTest {
     private val ably = mockk<Ably>(relaxed = true)
@@ -206,7 +206,7 @@ class DefaultPublisherTest {
     fun `should clear the route if the new active trackable does not have a destination`() {
         // given
         val trackableWithoutDestination = Trackable(UUID.randomUUID().toString())
-        ably.mockCreateConnectionSuccess(trackableWithoutDestination.id)
+        ably.mockCreateSuspendingConnectionSuccess(trackableWithoutDestination.id)
 
         // when
         runBlocking {

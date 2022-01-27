@@ -24,8 +24,12 @@ internal class SetActiveTrackableWorker(
 
             // In the future consider moving following lines to handler
             hooks.trackables?.onActiveTrackableChanged(trackable)
-            trackable.destination?.let {
-                publisher.setDestination(it, properties)
+            trackable.destination.let {
+                if (it != null) {
+                    publisher.setDestination(it, properties)
+                } else {
+                    publisher.removeCurrentDestination(properties)
+                }
             }
         }
         callbackFunction(Result.success(Unit))

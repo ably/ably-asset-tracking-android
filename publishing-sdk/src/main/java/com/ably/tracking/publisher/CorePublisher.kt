@@ -64,6 +64,7 @@ internal interface CorePublisher {
 
     fun removeSubscriber(id: String, trackable: Trackable, properties: PublisherProperties)
     fun setDestination(destination: Destination, properties: PublisherProperties)
+    fun removeCurrentDestination(properties: PublisherProperties)
     fun stopLocationUpdates(properties: PublisherProperties)
 }
 
@@ -714,7 +715,7 @@ constructor(
         }
     }
 
-    private fun removeCurrentDestination(properties: PublisherProperties) {
+    override fun removeCurrentDestination(properties: PublisherProperties) {
         mapbox.clearRoute()
         properties.currentDestination = null
         properties.estimatedArrivalTimeInMilliseconds = null
