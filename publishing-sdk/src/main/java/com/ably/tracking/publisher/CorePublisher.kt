@@ -31,6 +31,7 @@ import com.ably.tracking.publisher.workerqueue.workers.ChangeLocationEngineResol
 import com.ably.tracking.publisher.workerqueue.workers.ConnectionCreatedWorker
 import com.ably.tracking.publisher.workerqueue.workers.ConnectionReadyWorker
 import com.ably.tracking.publisher.workerqueue.workers.DestinationSetWorker
+import com.ably.tracking.publisher.workerqueue.workers.DisconnectSuccessWorker
 import com.ably.tracking.publisher.workerqueue.workers.PresenceMessageWorker
 import com.ably.tracking.publisher.workerqueue.workers.RemoveTrackableWorker
 import com.ably.tracking.publisher.workerqueue.workers.SetActiveTrackableWorker
@@ -68,6 +69,7 @@ internal interface CorePublisher {
     )
 
     fun removeSubscriber(id: String, trackable: Trackable, properties: PublisherProperties)
+    fun removeAllSubscribers(trackable: Trackable, properties: PublisherProperties)
     fun setDestination(destination: Destination, properties: PublisherProperties)
     fun removeCurrentDestination(properties: PublisherProperties)
     fun startLocationUpdates(properties: PublisherProperties)
@@ -75,6 +77,8 @@ internal interface CorePublisher {
 
     fun updateTrackables(properties: PublisherProperties)
     fun updateTrackableStateFlows(properties: PublisherProperties)
+    fun notifyResolutionPolicyThatTrackableWasRemoved(trackable: Trackable)
+    fun notifyResolutionPolicyThatActiveTrackableHasChanged(trackable: Trackable?)
     fun resolveResolution(trackable: Trackable, properties: PublisherProperties)
 }
 
@@ -320,35 +324,13 @@ constructor(
                         workerQueue.execute(RemoveTrackableWorker(event.trackable, event.callbackFunction, ably))
                     }
                     is DisconnectSuccessEvent -> {
-                        properties.trackables.remove(event.trackable)
-                        scope.launch { _trackables.emit(properties.trackables) }
-                        properties.trackableStateFlows.remove(event.trackable.id) // there is no way to stop the StateFlow so we just remove it
-                        trackableStateFlows = properties.trackableStateFlows
-                        properties.trackableStates.remove(event.trackable.id)
-                        hooks.trackables?.onTrackableRemoved(event.trackable)
-                        removeAllSubscribers(event.trackable, properties)
-                        properties.resolutions.remove(event.trackable.id)
-                            ?.let { enqueue(ChangeLocationEngineResolutionEvent()) }
-                        properties.requests.remove(event.trackable.id)
-                        properties.lastSentEnhancedLocations.remove(event.trackable.id)
-                        properties.lastSentRawLocations.remove(event.trackable.id)
-                        properties.skippedEnhancedLocations.clear(event.trackable.id)
-                        properties.skippedRawLocations.clear(event.trackable.id)
-                        properties.enhancedLocationsPublishingState.clear(event.trackable.id)
-                        properties.rawLocationsPublishingState.clear(event.trackable.id)
-                        properties.duplicateTrackableGuard.clear(event.trackable)
-                        // If this was the active Trackable then clear that state and remove destination.
-                        if (properties.active == event.trackable) {
-                            removeCurrentDestination(properties)
-                            properties.active = null
-                            hooks.trackables?.onActiveTrackableChanged(null)
-                        }
-                        // When we remove the last trackable then we should stop location updates
-                        if (properties.trackables.isEmpty() && properties.isTracking) {
-                            stopLocationUpdates(properties)
-                        }
-                        properties.lastChannelConnectionStateChanges.remove(event.trackable.id)
-                        event.callbackFunction(Result.success(Unit))
+                        workerQueue.execute(
+                            DisconnectSuccessWorker(
+                                event.trackable,
+                                event.callbackFunction,
+                                this@DefaultCorePublisher,
+                            )
+                        )
                     }
                     is RefreshResolutionPolicyEvent -> {
                         properties.trackables.forEach { resolveResolution(it, properties) }
@@ -605,7 +587,7 @@ constructor(
         properties.lastChannelConnectionStateChanges[trackableId]
             ?: ConnectionStateChange(ConnectionState.OFFLINE, null)
 
-    private fun removeAllSubscribers(trackable: Trackable, properties: Properties) {
+    override fun removeAllSubscribers(trackable: Trackable, properties: PublisherProperties) {
         properties.subscribers[trackable.id]?.let { subscribers ->
             subscribers.forEach { hooks.subscribers?.onSubscriberRemoved(it) }
             subscribers.clear()
@@ -664,6 +646,14 @@ constructor(
         } else {
             properties.requests[trackable.id]?.remove(subscriber)
         }
+    }
+
+    override fun notifyResolutionPolicyThatTrackableWasRemoved(trackable: Trackable) {
+        hooks.trackables?.onTrackableRemoved(trackable)
+    }
+
+    override fun notifyResolutionPolicyThatActiveTrackableHasChanged(trackable: Trackable?) {
+        hooks.trackables?.onActiveTrackableChanged(trackable)
     }
 
     override fun resolveResolution(trackable: Trackable, properties: PublisherProperties) {

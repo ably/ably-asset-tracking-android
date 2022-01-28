@@ -1,8 +1,8 @@
 package com.ably.tracking.publisher.workerqueue.resulthandlers
 
 import com.ably.tracking.publisher.CorePublisher
-import com.ably.tracking.publisher.DisconnectSuccessEvent
 import com.ably.tracking.publisher.workerqueue.results.RemoveTrackableWorkResult
+import com.ably.tracking.publisher.workerqueue.workers.DisconnectSuccessWorker
 import com.ably.tracking.publisher.workerqueue.workers.Worker
 
 internal class RemoveTrackableResultHandler : WorkResultHandler<RemoveTrackableWorkResult> {
@@ -11,15 +11,18 @@ internal class RemoveTrackableResultHandler : WorkResultHandler<RemoveTrackableW
         corePublisher: CorePublisher
     ): Worker? {
         when (workResult) {
-            is RemoveTrackableWorkResult.Success -> corePublisher.request(
-                DisconnectSuccessEvent(workResult.trackable) {
-                    if (it.isSuccess) {
-                        workResult.callbackFunction(Result.success(true))
-                    } else {
-                        workResult.callbackFunction(Result.failure(it.exceptionOrNull()!!))
-                    }
-                }
-            )
+            is RemoveTrackableWorkResult.Success ->
+                DisconnectSuccessWorker(
+                    trackable = workResult.trackable,
+                    callbackFunction = {
+                        if (it.isSuccess) {
+                            workResult.callbackFunction(Result.success(true))
+                        } else {
+                            workResult.callbackFunction(Result.failure(it.exceptionOrNull()!!))
+                        }
+                    },
+                    corePublisher = corePublisher,
+                )
             is RemoveTrackableWorkResult.Fail -> workResult.callbackFunction(
                 Result.failure(workResult.exception)
             )
