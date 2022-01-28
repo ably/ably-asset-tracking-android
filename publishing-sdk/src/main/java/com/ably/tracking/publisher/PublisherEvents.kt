@@ -199,7 +199,7 @@ internal data class PresenceMessageEvent(
  * Change the location engine resolution.
  * Should be created only from within the [CorePublisher].
  */
-internal class ChangeLocationEngineResolutionEvent : AdhocEvent()
+internal object ChangeLocationEngineResolutionEvent : AdhocEvent()
 
 /**
  * Change the navigation routing profile.

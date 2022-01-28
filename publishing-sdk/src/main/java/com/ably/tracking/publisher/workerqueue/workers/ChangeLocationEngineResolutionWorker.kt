@@ -12,7 +12,7 @@ internal class ChangeLocationEngineResolutionWorker(
     private val mapbox: Mapbox,
 ) : Worker {
     override val event: Event
-        get() = ChangeLocationEngineResolutionEvent()
+        get() = ChangeLocationEngineResolutionEvent
 
     override fun doWork(properties: PublisherProperties): SyncAsyncResult {
         val newResolution = policy.resolve(properties.resolutions.values.toSet())

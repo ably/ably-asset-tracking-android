@@ -660,7 +660,7 @@ constructor(
         val resolutionRequests: Set<Resolution> = properties.requests[trackable.id]?.values?.toSet() ?: emptySet()
         policy.resolve(TrackableResolutionRequest(trackable, resolutionRequests)).let { resolution ->
             properties.resolutions[trackable.id] = resolution
-            enqueue(ChangeLocationEngineResolutionEvent())
+            enqueue(ChangeLocationEngineResolutionEvent)
             if (sendResolutionEnabled) {
                 ably.sendResolution(trackable.id, resolution) {} // we ignore the result of this operation
             }

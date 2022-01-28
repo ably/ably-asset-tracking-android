@@ -29,7 +29,7 @@ internal class DisconnectSuccessWorker(
         corePublisher.removeAllSubscribers(trackable, properties)
 
         properties.resolutions.remove(trackable.id)
-            ?.let { corePublisher.enqueue(ChangeLocationEngineResolutionEvent()) }
+            ?.let { corePublisher.enqueue(ChangeLocationEngineResolutionEvent) }
         properties.requests.remove(trackable.id)
 
         properties.lastSentEnhancedLocations.remove(trackable.id)
