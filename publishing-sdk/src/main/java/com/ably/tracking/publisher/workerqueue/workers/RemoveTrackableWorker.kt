@@ -21,15 +21,17 @@ internal class RemoveTrackableWorker(
         return when {
             properties.trackables.contains(trackable) -> {
                 val presenceData = properties.presenceData.copy()
-                SyncAsyncResult(asyncWork = {
-                    // Leave Ably channel.
-                    val result = ably.disconnect(trackable.id, presenceData)
-                    if (result.isSuccess) {
-                        RemoveTrackableWorkResult.Success(callbackFunction, trackable)
-                    } else {
-                        RemoveTrackableWorkResult.Fail(callbackFunction, result.exceptionOrNull()!!)
+                SyncAsyncResult(
+                    asyncWork = {
+                        // Leave Ably channel.
+                        val result = ably.disconnect(trackable.id, presenceData)
+                        if (result.isSuccess) {
+                            RemoveTrackableWorkResult.Success(callbackFunction, trackable)
+                        } else {
+                            RemoveTrackableWorkResult.Fail(callbackFunction, result.exceptionOrNull()!!)
+                        }
                     }
-                })
+                )
             }
             properties.duplicateTrackableGuard.isCurrentlyAddingTrackable(trackable) -> {
                 properties.trackableRemovalGuard.markForRemoval(trackable, callbackFunction)
