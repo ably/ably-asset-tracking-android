@@ -25,6 +25,7 @@ import com.ably.tracking.publisher.guards.TrackableRemovalGuard
 import com.ably.tracking.publisher.guards.TrackableRemovalGuardImpl
 import com.ably.tracking.publisher.workerqueue.EventWorkerQueue
 import com.ably.tracking.publisher.workerqueue.WorkerQueue
+import com.ably.tracking.publisher.workerqueue.workers.AblyConnectionStateChangeWorker
 import com.ably.tracking.publisher.workerqueue.workers.AddTrackableFailedWorker
 import com.ably.tracking.publisher.workerqueue.workers.AddTrackableWorker
 import com.ably.tracking.publisher.workerqueue.workers.ChangeLocationEngineResolutionWorker
@@ -79,6 +80,7 @@ internal interface CorePublisher {
 
     fun updateTrackables(properties: PublisherProperties)
     fun updateTrackableStateFlows(properties: PublisherProperties)
+    fun updateTrackableState(properties: PublisherProperties, trackableId: String)
     fun notifyResolutionPolicyThatTrackableWasRemoved(trackable: Trackable)
     fun notifyResolutionPolicyThatActiveTrackableHasChanged(trackable: Trackable?)
     fun resolveResolution(trackable: Trackable, properties: PublisherProperties)
@@ -346,10 +348,12 @@ constructor(
                     }
                     is AblyConnectionStateChangeEvent -> {
                         logHandler?.v("$TAG Ably connection state changed ${event.connectionStateChange.state}")
-                        properties.lastConnectionStateChange = event.connectionStateChange
-                        properties.trackables.forEach {
-                            updateTrackableState(properties, it.id)
-                        }
+                        workerQueue.execute(
+                            AblyConnectionStateChangeWorker(
+                                event.connectionStateChange,
+                                this@DefaultCorePublisher
+                            )
+                        )
                     }
                     is ChannelConnectionStateChangeEvent -> {
                         logHandler?.v("$TAG Trackable ${event.trackableId} connection state changed ${event.connectionStateChange.state}")
@@ -562,7 +566,7 @@ constructor(
         mapbox.startTrip()
     }
 
-    private fun updateTrackableState(properties: Properties, trackableId: String) {
+    override fun updateTrackableState(properties: PublisherProperties, trackableId: String) {
         val hasSentAtLeastOneLocation: Boolean = properties.lastSentEnhancedLocations[trackableId] != null
         val lastChannelConnectionStateChange = getLastChannelConnectionStateChange(properties, trackableId)
         val newTrackableState = when (properties.lastConnectionStateChange.state) {
@@ -583,7 +587,7 @@ constructor(
     }
 
     private fun getLastChannelConnectionStateChange(
-        properties: Properties,
+        properties: PublisherProperties,
         trackableId: String
     ): ConnectionStateChange =
         properties.lastChannelConnectionStateChanges[trackableId]
