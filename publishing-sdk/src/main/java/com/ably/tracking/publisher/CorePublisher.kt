@@ -30,6 +30,7 @@ import com.ably.tracking.publisher.workerqueue.workers.AddTrackableFailedWorker
 import com.ably.tracking.publisher.workerqueue.workers.AddTrackableWorker
 import com.ably.tracking.publisher.workerqueue.workers.ChangeLocationEngineResolutionWorker
 import com.ably.tracking.publisher.workerqueue.workers.ChangeRoutingProfileWorker
+import com.ably.tracking.publisher.workerqueue.workers.ChannelConnectionStateChangeWorker
 import com.ably.tracking.publisher.workerqueue.workers.ConnectionCreatedWorker
 import com.ably.tracking.publisher.workerqueue.workers.ConnectionReadyWorker
 import com.ably.tracking.publisher.workerqueue.workers.DestinationSetWorker
@@ -357,8 +358,13 @@ constructor(
                     }
                     is ChannelConnectionStateChangeEvent -> {
                         logHandler?.v("$TAG Trackable ${event.trackableId} connection state changed ${event.connectionStateChange.state}")
-                        properties.lastChannelConnectionStateChanges[event.trackableId] = event.connectionStateChange
-                        updateTrackableState(properties, event.trackableId)
+                        workerQueue.execute(
+                            ChannelConnectionStateChangeWorker(
+                                event.connectionStateChange,
+                                event.trackableId,
+                                this@DefaultCorePublisher
+                            )
+                        )
                     }
                     is SendEnhancedLocationSuccessEvent -> {
                         logHandler?.v("$TAG Trackable ${event.trackableId} successfully sent enhanced location ${event.location}")
