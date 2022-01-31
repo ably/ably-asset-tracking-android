@@ -28,6 +28,7 @@ import com.ably.tracking.publisher.workerqueue.WorkerQueue
 import com.ably.tracking.publisher.workerqueue.workers.AddTrackableFailedWorker
 import com.ably.tracking.publisher.workerqueue.workers.AddTrackableWorker
 import com.ably.tracking.publisher.workerqueue.workers.ChangeLocationEngineResolutionWorker
+import com.ably.tracking.publisher.workerqueue.workers.ChangeRoutingProfileWorker
 import com.ably.tracking.publisher.workerqueue.workers.ConnectionCreatedWorker
 import com.ably.tracking.publisher.workerqueue.workers.ConnectionReadyWorker
 import com.ably.tracking.publisher.workerqueue.workers.DestinationSetWorker
@@ -338,8 +339,7 @@ constructor(
                         workerQueue.execute(RefreshResolutionPolicyWorker(this@DefaultCorePublisher))
                     }
                     is ChangeRoutingProfileEvent -> {
-                        properties.routingProfile = event.routingProfile
-                        properties.currentDestination?.let { setDestination(it, properties) }
+                        workerQueue.execute(ChangeRoutingProfileWorker(event.routingProfile, this@DefaultCorePublisher))
                     }
                     is StopEvent -> {
                         workerQueue.execute(StopWorker(event.callbackFunction, ably, this@DefaultCorePublisher))
