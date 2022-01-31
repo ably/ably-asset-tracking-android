@@ -1,7 +1,6 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
 import com.ably.tracking.common.ResultCallbackFunction
-import com.ably.tracking.publisher.ChangeLocationEngineResolutionEvent
 import com.ably.tracking.publisher.CorePublisher
 import com.ably.tracking.publisher.DisconnectSuccessEvent
 import com.ably.tracking.publisher.PublisherProperties
@@ -13,6 +12,7 @@ internal class DisconnectSuccessWorker(
     private val trackable: Trackable,
     private val callbackFunction: ResultCallbackFunction<Unit>,
     private val corePublisher: CorePublisher,
+    private val shouldRecalculateResolutionCallback: () -> Unit,
 ) : Worker {
     override val event: Request<*>
         get() = DisconnectSuccessEvent(trackable, callbackFunction)
@@ -29,7 +29,7 @@ internal class DisconnectSuccessWorker(
         corePublisher.removeAllSubscribers(trackable, properties)
 
         properties.resolutions.remove(trackable.id)
-            ?.let { corePublisher.enqueue(ChangeLocationEngineResolutionEvent) }
+            ?.let { shouldRecalculateResolutionCallback() }
         properties.requests.remove(trackable.id)
 
         properties.lastSentEnhancedLocations.remove(trackable.id)

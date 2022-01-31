@@ -329,6 +329,7 @@ constructor(
                                 event.trackable,
                                 event.callbackFunction,
                                 this@DefaultCorePublisher,
+                                shouldRecalculateResolutionCallback = { enqueue(ChangeLocationEngineResolutionEvent) }
                             )
                         )
                     }

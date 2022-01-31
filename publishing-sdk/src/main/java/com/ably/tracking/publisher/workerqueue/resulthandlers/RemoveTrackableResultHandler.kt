@@ -1,5 +1,6 @@
 package com.ably.tracking.publisher.workerqueue.resulthandlers
 
+import com.ably.tracking.publisher.ChangeLocationEngineResolutionEvent
 import com.ably.tracking.publisher.CorePublisher
 import com.ably.tracking.publisher.workerqueue.results.RemoveTrackableWorkResult
 import com.ably.tracking.publisher.workerqueue.workers.DisconnectSuccessWorker
@@ -22,6 +23,7 @@ internal class RemoveTrackableResultHandler : WorkResultHandler<RemoveTrackableW
                         }
                     },
                     corePublisher = corePublisher,
+                    shouldRecalculateResolutionCallback = { corePublisher.enqueue(ChangeLocationEngineResolutionEvent) }
                 )
             is RemoveTrackableWorkResult.Fail -> workResult.callbackFunction(
                 Result.failure(workResult.exception)

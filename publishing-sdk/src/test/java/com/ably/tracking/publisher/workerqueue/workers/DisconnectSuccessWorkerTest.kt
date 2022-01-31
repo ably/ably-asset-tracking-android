@@ -6,7 +6,6 @@ import com.ably.tracking.TrackableState
 import com.ably.tracking.common.ConnectionState
 import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.ResultCallbackFunction
-import com.ably.tracking.publisher.ChangeLocationEngineResolutionEvent
 import com.ably.tracking.publisher.CorePublisher
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.Trackable
@@ -27,11 +26,17 @@ class DisconnectSuccessWorkerTest {
     private val trackable = Trackable("testtrackable")
     private val resultCallbackFunction = mockk<ResultCallbackFunction<Unit>>(relaxed = true)
     private val corePublisher = mockk<CorePublisher>(relaxed = true)
+    private val recalculateResolutionCallbackFunction = mockk<() -> Unit>(relaxed = true)
     private val publisherProperties = mockk<PublisherProperties>(relaxed = true)
 
     @Before
     fun setUp() {
-        worker = DisconnectSuccessWorker(trackable, resultCallbackFunction, corePublisher)
+        worker = DisconnectSuccessWorker(
+            trackable,
+            resultCallbackFunction,
+            corePublisher,
+            recalculateResolutionCallbackFunction,
+        )
     }
 
     @After
@@ -110,7 +115,7 @@ class DisconnectSuccessWorkerTest {
     }
 
     @Test
-    fun `should request location engine resolution recalculation if this trackable had a resolution`() {
+    fun `should call the location engine resolution recalculation callback if this trackable had a resolution`() {
         // given
         every { publisherProperties.resolutions } returns mutableMapOf(
             trackable.id to Resolution(Accuracy.BALANCED, 1L, 1.0)
@@ -122,12 +127,12 @@ class DisconnectSuccessWorkerTest {
 
         // then
         verify(exactly = 1) {
-            corePublisher.enqueue(ChangeLocationEngineResolutionEvent)
+            recalculateResolutionCallbackFunction.invoke()
         }
     }
 
     @Test
-    fun `should not request location engine resolution recalculation if this trackable didn't have a resolution`() {
+    fun `should not call the location engine resolution recalculation callback if this trackable didn't have a resolution`() {
         // given
         every { publisherProperties.resolutions } returns mutableMapOf()
         Assert.assertFalse(publisherProperties.resolutions.contains(trackable.id))
@@ -137,7 +142,7 @@ class DisconnectSuccessWorkerTest {
 
         // then
         verify(exactly = 0) {
-            corePublisher.enqueue(ChangeLocationEngineResolutionEvent)
+            recalculateResolutionCallbackFunction.invoke()
         }
     }
 
