@@ -33,6 +33,7 @@ import com.ably.tracking.publisher.workerqueue.workers.ConnectionReadyWorker
 import com.ably.tracking.publisher.workerqueue.workers.DestinationSetWorker
 import com.ably.tracking.publisher.workerqueue.workers.DisconnectSuccessWorker
 import com.ably.tracking.publisher.workerqueue.workers.PresenceMessageWorker
+import com.ably.tracking.publisher.workerqueue.workers.RefreshResolutionPolicyWorker
 import com.ably.tracking.publisher.workerqueue.workers.RemoveTrackableWorker
 import com.ably.tracking.publisher.workerqueue.workers.SetActiveTrackableWorker
 import com.ably.tracking.publisher.workerqueue.workers.StopWorker
@@ -334,7 +335,7 @@ constructor(
                         )
                     }
                     is RefreshResolutionPolicyEvent -> {
-                        properties.trackables.forEach { resolveResolution(it, properties) }
+                        workerQueue.execute(RefreshResolutionPolicyWorker(this@DefaultCorePublisher))
                     }
                     is ChangeRoutingProfileEvent -> {
                         properties.routingProfile = event.routingProfile
