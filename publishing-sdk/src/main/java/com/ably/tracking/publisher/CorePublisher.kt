@@ -40,6 +40,7 @@ import com.ably.tracking.publisher.workerqueue.workers.RefreshResolutionPolicyWo
 import com.ably.tracking.publisher.workerqueue.workers.RemoveTrackableWorker
 import com.ably.tracking.publisher.workerqueue.workers.SendEnhancedLocationFailureWorker
 import com.ably.tracking.publisher.workerqueue.workers.SendEnhancedLocationSuccessWorker
+import com.ably.tracking.publisher.workerqueue.workers.SendRawLocationSuccessWorker
 import com.ably.tracking.publisher.workerqueue.workers.SetActiveTrackableWorker
 import com.ably.tracking.publisher.workerqueue.workers.StopWorker
 import com.ably.tracking.publisher.workerqueue.workers.TrackableRemovalRequestedWorker
@@ -87,6 +88,8 @@ internal interface CorePublisher {
         trackableId: String,
         locationUpdate: EnhancedLocationUpdate
     )
+
+    fun processNextWaitingRawLocationUpdate(properties: PublisherProperties, trackableId: String)
 
     fun updateTrackables(properties: PublisherProperties)
     fun updateTrackableStateFlows(properties: PublisherProperties)
@@ -401,10 +404,13 @@ constructor(
                     }
                     is SendRawLocationSuccessEvent -> {
                         logHandler?.v("$TAG Trackable ${event.trackableId} successfully sent raw location ${event.location}")
-                        properties.rawLocationsPublishingState.unmarkMessageAsPending(event.trackableId)
-                        properties.lastSentRawLocations[event.trackableId] = event.location
-                        properties.skippedRawLocations.clear(event.trackableId)
-                        processNextWaitingRawLocationUpdate(properties, event.trackableId)
+                        workerQueue.execute(
+                            SendRawLocationSuccessWorker(
+                                event.location,
+                                event.trackableId,
+                                this@DefaultCorePublisher
+                            )
+                        )
                     }
                     is SendRawLocationFailureEvent -> {
                         logHandler?.w(
@@ -517,7 +523,7 @@ constructor(
 
     private fun processRawLocationUpdate(
         event: RawLocationChangedEvent,
-        properties: Properties,
+        properties: PublisherProperties,
         trackableId: String
     ) {
         logHandler?.v("$TAG Processing raw location for trackable: $trackableId. ${event.location}")
@@ -540,7 +546,7 @@ constructor(
         }
     }
 
-    private fun processNextWaitingRawLocationUpdate(properties: Properties, trackableId: String) {
+    override fun processNextWaitingRawLocationUpdate(properties: PublisherProperties, trackableId: String) {
         properties.rawLocationsPublishingState.getNextWaiting(trackableId)?.let {
             logHandler?.v("$TAG Trackable: $trackableId. Process next waiting raw location ${it.location}")
             processRawLocationUpdate(it, properties, trackableId)
@@ -549,7 +555,7 @@ constructor(
 
     private fun sendRawLocationUpdate(
         event: RawLocationChangedEvent,
-        properties: Properties,
+        properties: PublisherProperties,
         trackableId: String
     ) {
         logHandler?.v("$TAG Trackable: $trackableId will send raw location ${event.location}")
@@ -567,7 +573,11 @@ constructor(
         }
     }
 
-    private fun saveRawLocationForFurtherSending(properties: Properties, trackableId: String, location: Location) {
+    private fun saveRawLocationForFurtherSending(
+        properties: PublisherProperties,
+        trackableId: String,
+        location: Location
+    ) {
         logHandler?.v("$TAG Trackable: $trackableId. Put raw location to the skippedLocations $location")
         properties.skippedRawLocations.add(trackableId, location)
     }
