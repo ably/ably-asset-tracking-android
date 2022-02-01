@@ -7,7 +7,14 @@ import com.ably.tracking.publisher.Trackable
  * This guard class will keep track of trackables that are requested for removal. The aim of this class is to
  * maintain a set of trackables and expose client functions.
  */
-internal class TrackableRemovalGuard {
+internal interface TrackableRemovalGuard {
+    fun markForRemoval(trackable: Trackable, callbackFunction: ResultCallbackFunction<Boolean>)
+    fun isMarkedForRemoval(trackable: Trackable): Boolean
+    fun removeMarked(trackable: Trackable, result: Result<Boolean>)
+    fun clearAll()
+}
+
+internal class TrackableRemovalGuardImpl : TrackableRemovalGuard {
 
     /**
      * A set of trackables that were marked for removal. This should be used to store / retrieve trackables
@@ -15,7 +22,7 @@ internal class TrackableRemovalGuard {
      */
     private val trackables = hashMapOf<Trackable, MutableList<ResultCallbackFunction<Boolean>>>()
 
-    fun markForRemoval(trackable: Trackable, callbackFunction: ResultCallbackFunction<Boolean>) {
+    override fun markForRemoval(trackable: Trackable, callbackFunction: ResultCallbackFunction<Boolean>) {
         trackables[trackable]?.let {
             it.add(callbackFunction)
         } ?: kotlin.run {
@@ -24,14 +31,14 @@ internal class TrackableRemovalGuard {
         }
     }
 
-    fun isMarkedForRemoval(trackable: Trackable): Boolean = trackables.contains(trackable)
+    override fun isMarkedForRemoval(trackable: Trackable): Boolean = trackables.contains(trackable)
 
-    fun removeMarked(trackable: Trackable, result: Result<Boolean>) {
+    override fun removeMarked(trackable: Trackable, result: Result<Boolean>) {
         val handlers = trackables.remove(trackable)
         handlers?.forEach {
             it(result)
         }
     }
 
-    fun clearAll() = trackables.clear()
+    override fun clearAll() = trackables.clear()
 }
