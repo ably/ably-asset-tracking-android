@@ -38,6 +38,7 @@ import com.ably.tracking.publisher.workerqueue.workers.DisconnectSuccessWorker
 import com.ably.tracking.publisher.workerqueue.workers.PresenceMessageWorker
 import com.ably.tracking.publisher.workerqueue.workers.RefreshResolutionPolicyWorker
 import com.ably.tracking.publisher.workerqueue.workers.RemoveTrackableWorker
+import com.ably.tracking.publisher.workerqueue.workers.SendEnhancedLocationSuccessWorker
 import com.ably.tracking.publisher.workerqueue.workers.SetActiveTrackableWorker
 import com.ably.tracking.publisher.workerqueue.workers.StopWorker
 import com.ably.tracking.publisher.workerqueue.workers.TrackableRemovalRequestedWorker
@@ -78,6 +79,7 @@ internal interface CorePublisher {
     fun removeCurrentDestination(properties: PublisherProperties)
     fun startLocationUpdates(properties: PublisherProperties)
     fun stopLocationUpdates(properties: PublisherProperties)
+    fun processNextWaitingEnhancedLocationUpdate(properties: PublisherProperties, trackableId: String)
 
     fun updateTrackables(properties: PublisherProperties)
     fun updateTrackableStateFlows(properties: PublisherProperties)
@@ -368,11 +370,13 @@ constructor(
                     }
                     is SendEnhancedLocationSuccessEvent -> {
                         logHandler?.v("$TAG Trackable ${event.trackableId} successfully sent enhanced location ${event.location}")
-                        properties.enhancedLocationsPublishingState.unmarkMessageAsPending(event.trackableId)
-                        properties.lastSentEnhancedLocations[event.trackableId] = event.location
-                        properties.skippedEnhancedLocations.clear(event.trackableId)
-                        updateTrackableState(properties, event.trackableId)
-                        processNextWaitingEnhancedLocationUpdate(properties, event.trackableId)
+                        workerQueue.execute(
+                            SendEnhancedLocationSuccessWorker(
+                                event.location,
+                                event.trackableId,
+                                this@DefaultCorePublisher
+                            )
+                        )
                     }
                     is SendEnhancedLocationFailureEvent -> {
                         logHandler?.w(
@@ -440,7 +444,7 @@ constructor(
 
     private fun processEnhancedLocationUpdate(
         event: EnhancedLocationChangedEvent,
-        properties: Properties,
+        properties: PublisherProperties,
         trackableId: String
     ) {
         logHandler?.v("$TAG Processing enhanced location for trackable: $trackableId. ${event.location}")
@@ -463,7 +467,7 @@ constructor(
         }
     }
 
-    private fun processNextWaitingEnhancedLocationUpdate(properties: Properties, trackableId: String) {
+    override fun processNextWaitingEnhancedLocationUpdate(properties: PublisherProperties, trackableId: String) {
         properties.enhancedLocationsPublishingState.getNextWaiting(trackableId)?.let {
             logHandler?.v("$TAG Trackable: $trackableId. Process next waiting enhanced location ${it.location}")
             processEnhancedLocationUpdate(it, properties, trackableId)
@@ -472,7 +476,7 @@ constructor(
 
     private fun sendEnhancedLocationUpdate(
         event: EnhancedLocationChangedEvent,
-        properties: Properties,
+        properties: PublisherProperties,
         trackableId: String
     ) {
         logHandler?.v("$TAG Trackable: $trackableId will send enhanced location ${event.location}")
@@ -492,7 +496,11 @@ constructor(
         }
     }
 
-    private fun saveEnhancedLocationForFurtherSending(properties: Properties, trackableId: String, location: Location) {
+    private fun saveEnhancedLocationForFurtherSending(
+        properties: PublisherProperties,
+        trackableId: String,
+        location: Location
+    ) {
         logHandler?.v("$TAG Trackable: $trackableId. Put enhanced location to the skippedLocations $location")
         properties.skippedEnhancedLocations.add(trackableId, location)
     }
