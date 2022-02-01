@@ -37,7 +37,11 @@ internal class AddTrackableWorker(
                         val connectResult = ably.connect(
                             trackableId = trackable.id,
                             presenceData = presenceData,
-                            willPublish = true
+                            willPublish = true,
+                            // Below arguments are default ones but due to a Mockk issue we have to specify them.
+                            // We should remove those lines when https://github.com/mockk/mockk/issues/777 is resolved.
+                            useRewind = false,
+                            willSubscribe = false,
                         )
                         if (connectResult.isSuccess) {
                             AddTrackableWorkResult.Success(trackable, callbackFunction)
