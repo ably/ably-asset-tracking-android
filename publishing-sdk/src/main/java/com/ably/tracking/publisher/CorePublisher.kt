@@ -38,6 +38,7 @@ import com.ably.tracking.publisher.workerqueue.workers.DisconnectSuccessWorker
 import com.ably.tracking.publisher.workerqueue.workers.PresenceMessageWorker
 import com.ably.tracking.publisher.workerqueue.workers.RefreshResolutionPolicyWorker
 import com.ably.tracking.publisher.workerqueue.workers.RemoveTrackableWorker
+import com.ably.tracking.publisher.workerqueue.workers.SendEnhancedLocationFailureWorker
 import com.ably.tracking.publisher.workerqueue.workers.SendEnhancedLocationSuccessWorker
 import com.ably.tracking.publisher.workerqueue.workers.SetActiveTrackableWorker
 import com.ably.tracking.publisher.workerqueue.workers.StopWorker
@@ -80,6 +81,12 @@ internal interface CorePublisher {
     fun startLocationUpdates(properties: PublisherProperties)
     fun stopLocationUpdates(properties: PublisherProperties)
     fun processNextWaitingEnhancedLocationUpdate(properties: PublisherProperties, trackableId: String)
+    fun saveEnhancedLocationForFurtherSending(properties: PublisherProperties, trackableId: String, location: Location)
+    fun retrySendingEnhancedLocation(
+        properties: PublisherProperties,
+        trackableId: String,
+        locationUpdate: EnhancedLocationUpdate
+    )
 
     fun updateTrackables(properties: PublisherProperties)
     fun updateTrackableStateFlows(properties: PublisherProperties)
@@ -383,17 +390,14 @@ constructor(
                             "$TAG Trackable ${event.trackableId} failed to send enhanced location ${event.locationUpdate.location}",
                             event.exception
                         )
-                        if (properties.enhancedLocationsPublishingState.shouldRetryPublishing(event.trackableId)) {
-                            retrySendingEnhancedLocation(properties, event.trackableId, event.locationUpdate)
-                        } else {
-                            properties.enhancedLocationsPublishingState.unmarkMessageAsPending(event.trackableId)
-                            saveEnhancedLocationForFurtherSending(
-                                properties,
+                        workerQueue.execute(
+                            SendEnhancedLocationFailureWorker(
+                                event.locationUpdate,
                                 event.trackableId,
-                                event.locationUpdate.location
+                                event.exception,
+                                this@DefaultCorePublisher
                             )
-                            processNextWaitingEnhancedLocationUpdate(properties, event.trackableId)
-                        }
+                        )
                     }
                     is SendRawLocationSuccessEvent -> {
                         logHandler?.v("$TAG Trackable ${event.trackableId} successfully sent raw location ${event.location}")
@@ -424,8 +428,8 @@ constructor(
         }
     }
 
-    private fun retrySendingEnhancedLocation(
-        properties: Properties,
+    override fun retrySendingEnhancedLocation(
+        properties: PublisherProperties,
         trackableId: String,
         locationUpdate: EnhancedLocationUpdate
     ) {
@@ -496,7 +500,7 @@ constructor(
         }
     }
 
-    private fun saveEnhancedLocationForFurtherSending(
+    override fun saveEnhancedLocationForFurtherSending(
         properties: PublisherProperties,
         trackableId: String,
         location: Location
