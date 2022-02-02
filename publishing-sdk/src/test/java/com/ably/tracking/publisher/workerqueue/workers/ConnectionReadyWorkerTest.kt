@@ -17,12 +17,14 @@ import com.ably.tracking.test.common.mockSuspendingDisconnect
 import com.ably.tracking.test.common.mockSuspendingDisconnectSuccessAndCapturePresenceData
 import io.mockk.clearAllMocks
 import io.mockk.coVerify
+import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.runs
 import io.mockk.slot
 import io.mockk.verify
+import io.mockk.verifyAll
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.runBlocking
@@ -71,27 +73,40 @@ class ConnectionReadyWorkerTest {
     }
 
     @Test
-    fun `should return empty result when executing normally`() {
-        // given
-
-        // when
+    fun `executing normally`() {
+        // WHEN
         val result = worker.doWork(publisherProperties)
 
-        // then
+        // THEN
+
+        // should return empty result
         Assert.assertNull(result.syncWorkResult)
         Assert.assertNull(result.asyncWork)
-    }
 
-    @Test
-    fun `should subscribe to Ably channel state updates when executing normally`() {
-        // given
-
-        // when
-        worker.doWork(publisherProperties)
-
-        // then
         verify(exactly = 1) {
+            // should subscribe to Ably channel state updates
             ably.subscribeForChannelStateChange(trackable.id, any())
+
+            // should add the trackable to the tracked trackables
+            trackables.add(trackable)
+
+            // should update the tracked trackables
+            corePublisher.updateTrackables(any())
+
+            // should calculate a resolution for the added trackable
+            corePublisher.resolveResolution(trackable, any())
+
+            // should set a state flow for the trackable
+            trackableStateFlows[trackable.id] = any()
+
+            // should update state flows
+            corePublisher.updateTrackableStateFlows(any())
+
+            // should set the initial trackable state to offline
+            trackableStates[trackable.id] = TrackableState.Offline()
+
+            // should finish adding the trackable with success
+            duplicateTrackableGuard.finishAddingTrackable(trackable, Result.success(any()))
         }
     }
 
@@ -124,84 +139,6 @@ class ConnectionReadyWorkerTest {
     }
 
     @Test
-    fun `should add the trackable to the tracked trackables when executing normally`() {
-        // given
-
-        // when
-        worker.doWork(publisherProperties)
-
-        // then
-        verify(exactly = 1) {
-            trackables.add(trackable)
-        }
-    }
-
-    @Test
-    fun `should update the tracked trackables when executing normally`() {
-        // given
-
-        // when
-        worker.doWork(publisherProperties)
-
-        // then
-        verify(exactly = 1) {
-            corePublisher.updateTrackables(any())
-        }
-    }
-
-    @Test
-    fun `should calculate a resolution for the added trackable when executing normally`() {
-        // given
-
-        // when
-        worker.doWork(publisherProperties)
-
-        // then
-        verify(exactly = 1) {
-            corePublisher.resolveResolution(trackable, any())
-        }
-    }
-
-    @Test
-    fun `should set a state flow for the trackable when executing normally`() {
-        // given
-
-        // when
-        worker.doWork(publisherProperties)
-
-        // then
-        verify(exactly = 1) {
-            trackableStateFlows[trackable.id] = any()
-        }
-    }
-
-    @Test
-    fun `should update state flows when executing normally`() {
-        // given
-
-        // when
-        worker.doWork(publisherProperties)
-
-        // then
-        verify(exactly = 1) {
-            corePublisher.updateTrackableStateFlows(any())
-        }
-    }
-
-    @Test
-    fun `should set the initial trackable state to offline when executing normally`() {
-        // given
-
-        // when
-        worker.doWork(publisherProperties)
-
-        // then
-        verify(exactly = 1) {
-            trackableStates[trackable.id] = TrackableState.Offline()
-        }
-    }
-
-    @Test
     fun `should call the adding trackable callback with a success when executing normally`() {
         // given
         val callbackResultSlot = slot<Result<StateFlow<TrackableState>>>()
@@ -212,19 +149,6 @@ class ConnectionReadyWorkerTest {
 
         // then
         Assert.assertTrue(callbackResultSlot.captured.isSuccess)
-    }
-
-    @Test
-    fun `should finish adding the trackable with a success when executing normally`() {
-        // given
-
-        // when
-        worker.doWork(publisherProperties)
-
-        // then
-        verify(exactly = 1) {
-            duplicateTrackableGuard.finishAddingTrackable(trackable, Result.success(any()))
-        }
     }
 
     @Test
