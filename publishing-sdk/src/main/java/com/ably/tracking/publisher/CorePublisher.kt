@@ -40,6 +40,7 @@ import com.ably.tracking.publisher.workerqueue.workers.RefreshResolutionPolicyWo
 import com.ably.tracking.publisher.workerqueue.workers.RemoveTrackableWorker
 import com.ably.tracking.publisher.workerqueue.workers.SendEnhancedLocationFailureWorker
 import com.ably.tracking.publisher.workerqueue.workers.SendEnhancedLocationSuccessWorker
+import com.ably.tracking.publisher.workerqueue.workers.SendRawLocationFailureWorker
 import com.ably.tracking.publisher.workerqueue.workers.SendRawLocationSuccessWorker
 import com.ably.tracking.publisher.workerqueue.workers.SetActiveTrackableWorker
 import com.ably.tracking.publisher.workerqueue.workers.StopWorker
@@ -90,6 +91,8 @@ internal interface CorePublisher {
     )
 
     fun processNextWaitingRawLocationUpdate(properties: PublisherProperties, trackableId: String)
+    fun retrySendingRawLocation(properties: PublisherProperties, trackableId: String, locationUpdate: LocationUpdate)
+    fun saveRawLocationForFurtherSending(properties: PublisherProperties, trackableId: String, location: Location)
 
     fun updateTrackables(properties: PublisherProperties)
     fun updateTrackableStateFlows(properties: PublisherProperties)
@@ -417,17 +420,14 @@ constructor(
                             "$TAG Trackable ${event.trackableId} failed to send raw location ${event.locationUpdate.location}",
                             event.exception
                         )
-                        if (properties.rawLocationsPublishingState.shouldRetryPublishing(event.trackableId)) {
-                            retrySendingRawLocation(properties, event.trackableId, event.locationUpdate)
-                        } else {
-                            properties.rawLocationsPublishingState.unmarkMessageAsPending(event.trackableId)
-                            saveRawLocationForFurtherSending(
-                                properties,
+                        workerQueue.execute(
+                            SendRawLocationFailureWorker(
+                                event.locationUpdate,
                                 event.trackableId,
-                                event.locationUpdate.location
+                                event.exception,
+                                this@DefaultCorePublisher
                             )
-                            processNextWaitingRawLocationUpdate(properties, event.trackableId)
-                        }
+                        )
                     }
                 }
             }
@@ -515,7 +515,11 @@ constructor(
         properties.skippedEnhancedLocations.add(trackableId, location)
     }
 
-    private fun retrySendingRawLocation(properties: Properties, trackableId: String, locationUpdate: LocationUpdate) {
+    override fun retrySendingRawLocation(
+        properties: PublisherProperties,
+        trackableId: String,
+        locationUpdate: LocationUpdate
+    ) {
         logHandler?.v("$TAG Trackable $trackableId retry sending raw location ${locationUpdate.location}")
         properties.rawLocationsPublishingState.incrementRetryCount(trackableId)
         sendRawLocationUpdate(RawLocationChangedEvent(locationUpdate.location), properties, trackableId)
@@ -573,7 +577,7 @@ constructor(
         }
     }
 
-    private fun saveRawLocationForFurtherSending(
+    override fun saveRawLocationForFurtherSending(
         properties: PublisherProperties,
         trackableId: String,
         location: Location
