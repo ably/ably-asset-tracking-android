@@ -36,6 +36,7 @@ import com.ably.tracking.publisher.workerqueue.workers.ConnectionReadyWorker
 import com.ably.tracking.publisher.workerqueue.workers.DestinationSetWorker
 import com.ably.tracking.publisher.workerqueue.workers.DisconnectSuccessWorker
 import com.ably.tracking.publisher.workerqueue.workers.PresenceMessageWorker
+import com.ably.tracking.publisher.workerqueue.workers.RawLocationChangedWorker
 import com.ably.tracking.publisher.workerqueue.workers.RefreshResolutionPolicyWorker
 import com.ably.tracking.publisher.workerqueue.workers.RemoveTrackableWorker
 import com.ably.tracking.publisher.workerqueue.workers.SendEnhancedLocationFailureWorker
@@ -93,6 +94,7 @@ internal interface CorePublisher {
     fun processNextWaitingRawLocationUpdate(properties: PublisherProperties, trackableId: String)
     fun retrySendingRawLocation(properties: PublisherProperties, trackableId: String, locationUpdate: LocationUpdate)
     fun saveRawLocationForFurtherSending(properties: PublisherProperties, trackableId: String, location: Location)
+    fun processRawLocationUpdate(event: RawLocationChangedEvent, properties: PublisherProperties, trackableId: String)
 
     fun updateTrackables(properties: PublisherProperties)
     fun updateTrackableStateFlows(properties: PublisherProperties)
@@ -136,7 +138,7 @@ constructor(
     resolutionPolicyFactory: ResolutionPolicy.Factory,
     override var routingProfile: RoutingProfile,
     private val logHandler: LogHandler?,
-    private val areRawLocationsEnabled: Boolean?,
+    areRawLocationsEnabled: Boolean?,
     private val sendResolutionEnabled: Boolean,
 ) : CorePublisher, TimeProvider {
     private val TAG = createLoggingTag(this)
@@ -168,7 +170,7 @@ constructor(
         sendEventChannel = channel
         scope.launch {
             coroutineScope {
-                sequenceEventsQueue(channel, routingProfile)
+                sequenceEventsQueue(channel, routingProfile, areRawLocationsEnabled)
             }
         }
         ably.subscribeForAblyStateChange { enqueue(AblyConnectionStateChangeEvent(it)) }
@@ -199,7 +201,8 @@ constructor(
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
     private fun CoroutineScope.sequenceEventsQueue(
         receiveEventChannel: ReceiveChannel<Event>,
-        routingProfile: RoutingProfile
+        routingProfile: RoutingProfile,
+        areRawLocationsEnabled: Boolean?,
     ) {
         launch {
             val properties = Properties(routingProfile, policy.resolve(emptySet()), areRawLocationsEnabled)
@@ -231,16 +234,7 @@ constructor(
                     }
                     is RawLocationChangedEvent -> {
                         logHandler?.v("$TAG Raw location changed event received ${event.location}")
-                        properties.lastPublisherLocation = event.location
-                        if (areRawLocationsEnabled == true) {
-                            properties.trackables.forEach { processRawLocationUpdate(event, properties, it.id) }
-                        }
-                        properties.rawLocationChangedCommands.apply {
-                            if (isNotEmpty()) {
-                                forEach { command -> command(properties) }
-                                clear()
-                            }
-                        }
+                        workerQueue.execute(RawLocationChangedWorker(event.location, this@DefaultCorePublisher))
                     }
                     is EnhancedLocationChangedEvent -> {
                         logHandler?.v("$TAG Enhanced location changed event received ${event.location}")
@@ -525,7 +519,7 @@ constructor(
         sendRawLocationUpdate(RawLocationChangedEvent(locationUpdate.location), properties, trackableId)
     }
 
-    private fun processRawLocationUpdate(
+    override fun processRawLocationUpdate(
         event: RawLocationChangedEvent,
         properties: PublisherProperties,
         trackableId: String
@@ -869,7 +863,7 @@ constructor(
                 this@DefaultCorePublisher.routingProfile = value
                 field = value
             }
-        override val rawLocationChangedCommands: MutableList<(Properties) -> Unit> = mutableListOf()
+        override val rawLocationChangedCommands: MutableList<(PublisherProperties) -> Unit> = mutableListOf()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
         override val enhancedLocationsPublishingState: LocationsPublishingState<EnhancedLocationChangedEvent> =
             LocationsPublishingState()
@@ -881,6 +875,7 @@ constructor(
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
         override val trackableRemovalGuard: TrackableRemovalGuard = TrackableRemovalGuardImpl()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
+        override val areRawLocationsEnabled: Boolean = areRawLocationsEnabled ?: false
 
         override fun dispose() {
             trackables.clear()
