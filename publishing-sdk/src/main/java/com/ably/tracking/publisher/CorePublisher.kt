@@ -35,6 +35,7 @@ import com.ably.tracking.publisher.workerqueue.workers.ConnectionCreatedWorker
 import com.ably.tracking.publisher.workerqueue.workers.ConnectionReadyWorker
 import com.ably.tracking.publisher.workerqueue.workers.DestinationSetWorker
 import com.ably.tracking.publisher.workerqueue.workers.DisconnectSuccessWorker
+import com.ably.tracking.publisher.workerqueue.workers.EnhancedLocationChangedWorker
 import com.ably.tracking.publisher.workerqueue.workers.PresenceMessageWorker
 import com.ably.tracking.publisher.workerqueue.workers.RawLocationChangedWorker
 import com.ably.tracking.publisher.workerqueue.workers.RefreshResolutionPolicyWorker
@@ -91,10 +92,22 @@ internal interface CorePublisher {
         locationUpdate: EnhancedLocationUpdate
     )
 
+    fun updateLocations(locationUpdate: LocationUpdate)
     fun processNextWaitingRawLocationUpdate(properties: PublisherProperties, trackableId: String)
     fun retrySendingRawLocation(properties: PublisherProperties, trackableId: String, locationUpdate: LocationUpdate)
     fun saveRawLocationForFurtherSending(properties: PublisherProperties, trackableId: String, location: Location)
     fun processRawLocationUpdate(event: RawLocationChangedEvent, properties: PublisherProperties, trackableId: String)
+    fun processEnhancedLocationUpdate(
+        event: EnhancedLocationChangedEvent,
+        properties: PublisherProperties,
+        trackableId: String
+    )
+
+    fun checkThreshold(
+        currentLocation: Location,
+        activeTrackable: Trackable?,
+        estimatedArrivalTimeInMilliseconds: Long?
+    )
 
     fun updateTrackables(properties: PublisherProperties)
     fun updateTrackableStateFlows(properties: PublisherProperties)
@@ -238,21 +251,13 @@ constructor(
                     }
                     is EnhancedLocationChangedEvent -> {
                         logHandler?.v("$TAG Enhanced location changed event received ${event.location}")
-                        properties.trackables.forEach { processEnhancedLocationUpdate(event, properties, it.id) }
-                        scope.launch {
-                            _locations.emit(
-                                EnhancedLocationUpdate(
-                                    event.location,
-                                    emptyList(),
-                                    event.intermediateLocations,
-                                    event.type
-                                )
+                        workerQueue.execute(
+                            EnhancedLocationChangedWorker(
+                                event.location,
+                                event.intermediateLocations,
+                                event.type,
+                                this@DefaultCorePublisher,
                             )
-                        }
-                        checkThreshold(
-                            event.location,
-                            properties.active,
-                            properties.estimatedArrivalTimeInMilliseconds
                         )
                     }
                     is TrackTrackableEvent -> {
@@ -446,7 +451,7 @@ constructor(
         )
     }
 
-    private fun processEnhancedLocationUpdate(
+    override fun processEnhancedLocationUpdate(
         event: EnhancedLocationChangedEvent,
         properties: PublisherProperties,
         trackableId: String
@@ -725,7 +730,7 @@ constructor(
         properties.estimatedArrivalTimeInMilliseconds = null
     }
 
-    private fun checkThreshold(
+    override fun checkThreshold(
         currentLocation: Location,
         activeTrackable: Trackable?,
         estimatedArrivalTimeInMilliseconds: Long?
@@ -764,6 +769,10 @@ constructor(
 
     override fun updateTrackableStateFlows(properties: PublisherProperties) {
         trackableStateFlows = properties.trackableStateFlows
+    }
+
+    override fun updateLocations(locationUpdate: LocationUpdate) {
+        scope.launch { _locations.emit(locationUpdate) }
     }
 
     override fun getCurrentTimeInMilliseconds(): Long = System.currentTimeMillis()
