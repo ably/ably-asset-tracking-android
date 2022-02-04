@@ -65,7 +65,7 @@ afterEvaluate {
                     scm {
                         connection = 'scm:git:git://github.com/ably/ably-asset-tracking-android.git'
                         developerConnection = 'scm:git:ssh://github.com/ably/ably-asset-tracking-android.git'
-                        url = 'https://github.com/ably/ably-asset-tracking-android/tree/main'
+                        url = 'https://github.com/ably/ably-asset-tracking-android'
                     }
                 }
             }
