@@ -261,14 +261,18 @@ constructor(
                         )
                     }
                     is TrackTrackableEvent -> {
-                        request(
-                            AddTrackableEvent(event.trackable) { result ->
-                                if (result.isSuccess) {
-                                    request(SetActiveTrackableEvent(event.trackable) { event.callbackFunction(result) })
-                                } else {
-                                    event.callbackFunction(result)
-                                }
-                            }
+                        workerQueue.execute(
+                            AddTrackableWorker(
+                                event.trackable,
+                                { result ->
+                                    if (result.isSuccess) {
+                                        request(SetActiveTrackableEvent(event.trackable) { event.callbackFunction(result) })
+                                    } else {
+                                        event.callbackFunction(result)
+                                    }
+                                },
+                                ably
+                            )
                         )
                     }
                     is SetActiveTrackableEvent -> {
