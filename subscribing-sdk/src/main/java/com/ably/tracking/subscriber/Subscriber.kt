@@ -68,6 +68,12 @@ interface Subscriber {
         @JvmSynthetic get
 
     /**
+     * The shared flow emitting the estimated next location update intervals in milliseconds when they become available.
+     */
+    val nextLocationUpdateIntervals: SharedFlow<Long>
+        @JvmSynthetic get
+
+    /**
      * Stops this subscriber from listening to published locations. Once a subscriber has been stopped, it cannot be
      * restarted.
      */
