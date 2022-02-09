@@ -56,6 +56,7 @@ internal fun createCorePublisher(
     logHandler: LogHandler?,
     areRawLocationsEnabled: Boolean?,
     sendResolutionEnabled: Boolean,
+    constantLocationEngineResolution: Resolution?,
 ): CorePublisher {
     return DefaultCorePublisher(
         ably,
@@ -65,6 +66,7 @@ internal fun createCorePublisher(
         logHandler,
         areRawLocationsEnabled,
         sendResolutionEnabled,
+        constantLocationEngineResolution,
     )
 }
 
@@ -83,6 +85,7 @@ constructor(
     private val logHandler: LogHandler?,
     private val areRawLocationsEnabled: Boolean?,
     private val sendResolutionEnabled: Boolean,
+    private val constantLocationEngineResolution: Resolution?,
 ) : CorePublisher {
     private val TAG = createLoggingTag(this)
     private val scope = CoroutineScope(singleThreadDispatcher + SupervisorJob())
@@ -148,7 +151,12 @@ constructor(
         routingProfile: RoutingProfile
     ) {
         launch {
-            val properties = Properties(routingProfile, policy.resolve(emptySet()), areRawLocationsEnabled)
+            val properties = Properties(
+                routingProfile,
+                policy.resolve(emptySet()),
+                constantLocationEngineResolution != null,
+                areRawLocationsEnabled,
+            )
 
             // processing
             for (event in receiveEventChannel) {
@@ -358,8 +366,10 @@ constructor(
                         properties.duplicateTrackableGuard.finishAddingTrackable(event.trackable, successResult)
                     }
                     is ChangeLocationEngineResolutionEvent -> {
-                        properties.locationEngineResolution = policy.resolve(properties.resolutions.values.toSet())
-                        mapbox.changeResolution(properties.locationEngineResolution)
+                        if (!properties.isLocationEngineResolutionConstant) {
+                            properties.locationEngineResolution = policy.resolve(properties.resolutions.values.toSet())
+                            mapbox.changeResolution(properties.locationEngineResolution)
+                        }
                     }
                     is RemoveTrackableEvent -> {
                         if (properties.trackables.contains(event.trackable)) {
@@ -842,11 +852,14 @@ constructor(
     private inner class Properties(
         routingProfile: RoutingProfile,
         locationEngineResolution: Resolution,
+        isLocationEngineResolutionConstant: Boolean,
         areRawLocationsEnabled: Boolean?,
     ) {
         private var isDisposed: Boolean = false
         var isStopped: Boolean = false
         var locationEngineResolution: Resolution = locationEngineResolution
+            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
+        val isLocationEngineResolutionConstant: Boolean = isLocationEngineResolutionConstant
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
         var isTracking: Boolean = false
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field

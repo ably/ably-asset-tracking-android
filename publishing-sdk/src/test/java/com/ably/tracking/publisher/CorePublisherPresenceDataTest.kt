@@ -39,7 +39,7 @@ class CorePublisherPresenceDataTest {
     @Test
     fun `Should se rawMessages to null in the presence data if they are disabled`() {
         val corePublisher: CorePublisher =
-            createCorePublisher(ably, mapbox, resolutionPolicyFactory, RoutingProfile.DRIVING, null, null, false)
+            createCorePublisher(ably, mapbox, resolutionPolicyFactory, RoutingProfile.DRIVING, null, null, false, null)
         // given
         val trackableId = UUID.randomUUID().toString()
 
@@ -59,7 +59,7 @@ class CorePublisherPresenceDataTest {
     @Test
     fun `Should set rawMessages to true in the presence data if they are enabled`() {
         val corePublisher: CorePublisher =
-            createCorePublisher(ably, mapbox, resolutionPolicyFactory, RoutingProfile.DRIVING, null, true, false)
+            createCorePublisher(ably, mapbox, resolutionPolicyFactory, RoutingProfile.DRIVING, null, true, false, null)
         // given
         val trackableId = UUID.randomUUID().toString()
 
