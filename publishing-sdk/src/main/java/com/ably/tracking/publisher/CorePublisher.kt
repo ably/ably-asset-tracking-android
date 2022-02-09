@@ -745,10 +745,12 @@ constructor(
     private fun resolveResolution(trackable: Trackable, properties: Properties) {
         val resolutionRequests: Set<Resolution> = properties.requests[trackable.id]?.values?.toSet() ?: emptySet()
         policy.resolve(TrackableResolutionRequest(trackable, resolutionRequests)).let { resolution ->
-            properties.resolutions[trackable.id] = resolution
-            enqueue(ChangeLocationEngineResolutionEvent())
-            if (sendResolutionEnabled) {
-                ably.sendResolution(trackable.id, resolution) {} // we ignore the result of this operation
+            if (properties.resolutions[trackable.id] != resolution) {
+                properties.resolutions[trackable.id] = resolution
+                enqueue(ChangeLocationEngineResolutionEvent())
+                if (sendResolutionEnabled) {
+                    ably.sendResolution(trackable.id, resolution) {} // we ignore the result of this operation
+                }
             }
         }
     }
