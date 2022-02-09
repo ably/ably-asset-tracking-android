@@ -21,7 +21,7 @@ internal data class PublisherBuilder(
     val notificationId: Int? = null,
     val locationSource: LocationSource? = null,
     val areRawLocationsEnabled: Boolean? = null,
-    val sendResolutionEnabled: Boolean = false,
+    val sendResolutionEnabled: Boolean = true,
     val predictionsEnabled: Boolean = true,
     val rawHistoryCallback: ((String) -> Unit)? = null,
     val constantLocationEngineResolution: Resolution? = null,
