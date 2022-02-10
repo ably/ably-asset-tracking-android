@@ -63,7 +63,6 @@ interface Subscriber {
 
     /**
      * The shared flow emitting resolution values when they become available.
-     * Resolutions are disabled by default. You need to enable them in the Publishing SDK.
      */
     val resolutions: SharedFlow<Resolution>
         @JvmSynthetic get

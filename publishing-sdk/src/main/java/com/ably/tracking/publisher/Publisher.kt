@@ -215,10 +215,8 @@ interface Publisher {
         fun rawLocations(enabled: Boolean): Builder
 
         /**
-         * EXPERIMENTAL API
-         * **OPTIONAL** Enables sending of calculated resolutions. This should only be enabled for diagnostics.
-         * In the production environment this should be always disabled.
-         * By default this is disabled.
+         * **OPTIONAL** Enables sending of calculated resolutions.
+         * By default this is enabled.
          *
          * @param enabled Whether the sending of calculated resolutions is enabled.
          * @return A new instance of the builder with this property changed.
