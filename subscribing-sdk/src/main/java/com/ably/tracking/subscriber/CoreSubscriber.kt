@@ -32,6 +32,7 @@ internal interface CoreSubscriber {
     val rawLocations: SharedFlow<LocationUpdate>
     val trackableStates: StateFlow<TrackableState>
     val resolutions: SharedFlow<Resolution>
+    val nextLocationUpdateIntervals: SharedFlow<Long>
 }
 
 internal fun createCoreSubscriber(
@@ -59,6 +60,7 @@ private class DefaultCoreSubscriber(
     private val _enhancedLocations: MutableSharedFlow<LocationUpdate> = MutableSharedFlow(replay = 1)
     private val _rawLocations: MutableSharedFlow<LocationUpdate> = MutableSharedFlow(replay = 1)
     private val _resolutions: MutableSharedFlow<Resolution> = MutableSharedFlow(replay = 1)
+    private val _nextLocationUpdateIntervals: MutableSharedFlow<Long> = MutableSharedFlow(replay = 1)
 
     override val enhancedLocations: SharedFlow<LocationUpdate>
         get() = _enhancedLocations.asSharedFlow()
@@ -71,6 +73,9 @@ private class DefaultCoreSubscriber(
 
     override val resolutions: SharedFlow<Resolution>
         get() = _resolutions.asSharedFlow()
+
+    override val nextLocationUpdateIntervals: SharedFlow<Long>
+        get() = _nextLocationUpdateIntervals.asSharedFlow()
 
     init {
         val channel = Channel<Event>()
@@ -229,6 +234,7 @@ private class DefaultCoreSubscriber(
     private fun subscribeForResolutionEvents() {
         ably.subscribeForResolutionEvents(trackableId) {
             scope.launch { _resolutions.emit(it) }
+            scope.launch { _nextLocationUpdateIntervals.emit(it.desiredInterval) }
         }
     }
 
