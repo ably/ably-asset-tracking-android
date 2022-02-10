@@ -19,6 +19,7 @@ import com.ably.tracking.publisher.locationengine.FusedAndroidLocationEngine
 import com.ably.tracking.publisher.locationengine.GoogleLocationEngine
 import com.ably.tracking.publisher.locationengine.LocationEngineUtils
 import com.ably.tracking.publisher.locationengine.ResolutionLocationEngine
+import com.ably.tracking.publisher.locationengine.toLocationEngineRequest
 import com.mapbox.api.directions.v5.models.DirectionsRoute
 import com.mapbox.api.directions.v5.models.RouteOptions
 import com.mapbox.module.Mapbox_TripNotificationModuleConfiguration
@@ -162,6 +163,7 @@ internal class DefaultMapbox(
     notificationId: Int,
     predictionsEnabled: Boolean,
     private val rawHistoryCallback: ((String) -> Unit)?,
+    constantLocationEngineResolution: Resolution?,
 ) : Mapbox {
     private val TAG = createLoggingTag(this)
 
@@ -196,6 +198,10 @@ internal class DefaultMapbox(
 
         if (!predictionsEnabled) {
             mapboxBuilder.navigatorPredictionMillis(0L) // Setting this to 0 disables location predictions
+        }
+
+        if (constantLocationEngineResolution != null) {
+            mapboxBuilder.locationEngineRequest(constantLocationEngineResolution.toLocationEngineRequest())
         }
 
         runBlocking(mainDispatcher) {
