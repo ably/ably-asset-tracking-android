@@ -39,6 +39,7 @@
   <string name="preferences_s3_file_label">S3 File</string>
   <string name="preferences_routing_profile_label">Routing profile</string>
   <string name="preferences_resolution_category_title">Default resolution</string>
+  <string name="preferences_constant_resolution_category_title">Constant location engine resolution</string>
   <string name="preferences_resolution_accuracy_label">Accuracy</string>
   <string name="preferences_resolution_desired_interval_label">Desired interval</string>
   <string name="preferences_update_resolution_desired_interval_message">Desired Interval [ms]</string>
@@ -50,6 +51,7 @@
   <string name="preferences_send_raw_locations_label">Send raw location updates</string>
   <string name="preferences_send_resolution_label">Send resolution</string>
   <string name="preferences_enable_predictions_label">Enable predictions</string>
+  <string name="preferences_enable_constant_resolution_label">Use constant location engine resolution</string>
   <string name="trackable_list_empty_state_header">No assets</string>
   <string name="trackable_list_empty_state_message">Trackable assets will be listed here when added</string>
   <string name="service_not_started_dialog_title">Publisher service not started</string>

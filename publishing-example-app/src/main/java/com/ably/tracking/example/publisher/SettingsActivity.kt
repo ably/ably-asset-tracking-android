@@ -22,7 +22,8 @@ class SettingsFragment : PreferenceFragmentCompat() {
         addPreferencesFromResource(R.xml.settings_preferences)
         setupLocationSourcePreference()
         setupRoutingProfilePreference()
-        setupResolutionPreferences()
+        setupDefaultResolutionPreferences()
+        setupConstantLocationEngineResolutionPreferences()
         loadS3Preferences()
     }
 
@@ -80,7 +81,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         }
     }
 
-    private fun setupResolutionPreferences() {
+    private fun setupDefaultResolutionPreferences() {
         val appPreferences = AppPreferences.getInstance(requireContext())
         (findPreference(getString(R.string.preferences_resolution_accuracy_key)) as ListPreference?)?.apply {
             entries = Accuracy.values()
@@ -95,6 +96,26 @@ class SettingsFragment : PreferenceFragmentCompat() {
         }
         (findPreference(getString(R.string.preferences_resolution_minimum_displacement_key)) as EditTextPreference?)?.apply {
             text = appPreferences.getResolutionMinimumDisplacement().toString()
+            setFloatNumberInputType()
+        }
+    }
+
+    private fun setupConstantLocationEngineResolutionPreferences() {
+        val appPreferences = AppPreferences.getInstance(requireContext())
+        val constantLocationEngineResolution = appPreferences.getConstantLocationEngineResolution()
+        (findPreference(getString(R.string.preferences_constant_resolution_accuracy_key)) as ListPreference?)?.apply {
+            entries = Accuracy.values()
+                .map { accuracy -> accuracy.name.lowercase().replaceFirstChar { it.uppercase() } }
+                .toTypedArray()
+            entryValues = Accuracy.values().map { it.name }.toTypedArray()
+            value = constantLocationEngineResolution.accuracy.name
+        }
+        (findPreference(getString(R.string.preferences_constant_resolution_desired_interval_key)) as EditTextPreference?)?.apply {
+            text = constantLocationEngineResolution.desiredInterval.toString()
+            setIntNumberInputType()
+        }
+        (findPreference(getString(R.string.preferences_constant_resolution_minimum_displacement_key)) as EditTextPreference?)?.apply {
+            text = constantLocationEngineResolution.minimumDisplacement.toString()
             setFloatNumberInputType()
         }
     }

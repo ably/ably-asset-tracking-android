@@ -120,6 +120,7 @@ class PublisherService : Service() {
             .rawLocations(appPreferences.shouldSendRawLocations())
             .sendResolution(appPreferences.shouldSendResolution())
             .predictions(appPreferences.shouldEnablePredictions())
+            .constantLocationEngineResolution(createConstantLocationEngineResolution())
             .start()
 
     private fun createDefaultResolution(): Resolution =
@@ -137,4 +138,11 @@ class PublisherService : Service() {
             ) { showShortToast(R.string.error_s3_not_initialized_history_data_upload_failed) }
         }
     }
+
+    private fun createConstantLocationEngineResolution(): Resolution? =
+        if (appPreferences.isConstantLocationEngineResolutionEnabled()) {
+            appPreferences.getConstantLocationEngineResolution()
+        } else {
+            null
+        }
 }
