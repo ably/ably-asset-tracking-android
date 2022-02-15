@@ -69,6 +69,40 @@
 
   <PreferenceCategory
     android:layout="@layout/preference_category_layout"
+    android:title="@string/preferences_constant_resolution_category_title">
+
+    <SwitchPreferenceCompat
+      android:defaultValue="false"
+      android:key="@string/preferences_enable_constant_resolution_key"
+      android:layout="@layout/switch_preference_layout"
+      android:title="@string/preferences_enable_constant_resolution_label" />
+
+    <ListPreference
+      android:key="@string/preferences_constant_resolution_accuracy_key"
+      android:layout="@layout/preference_with_summary_layout"
+      android:title="@string/preferences_resolution_accuracy_label"
+      app:useSimpleSummaryProvider="true" />
+
+    <EditTextPreference
+      android:dialogMessage="@string/preferences_update_resolution_desired_interval_message"
+      android:dialogTitle="@string/preferences_update_resolution_desired_interval_title"
+      android:key="@string/preferences_constant_resolution_desired_interval_key"
+      android:layout="@layout/preference_with_summary_layout"
+      android:title="@string/preferences_resolution_desired_interval_label"
+      app:useSimpleSummaryProvider="true" />
+
+    <EditTextPreference
+      android:dialogMessage="@string/preferences_update_resolution_minimum_displacement_message"
+      android:dialogTitle="@string/preferences_update_resolution_minimum_displacement_title"
+      android:key="@string/preferences_constant_resolution_minimum_displacement_key"
+      android:layout="@layout/preference_with_summary_layout"
+      android:title="@string/preferences_resolution_minimum_displacement_label"
+      app:useSimpleSummaryProvider="true" />
+
+  </PreferenceCategory>
+
+  <PreferenceCategory
+    android:layout="@layout/preference_category_layout"
     android:title="@string/preferences_debug_category_title">
 
     <SwitchPreferenceCompat
