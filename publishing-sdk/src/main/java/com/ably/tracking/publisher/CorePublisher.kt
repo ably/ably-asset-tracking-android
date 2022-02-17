@@ -749,7 +749,8 @@ constructor(
                 properties.resolutions[trackable.id] = resolution
                 enqueue(ChangeLocationEngineResolutionEvent())
                 if (sendResolutionEnabled) {
-                    ably.sendResolution(trackable.id, resolution) {} // we ignore the result of this operation
+                    // For now we ignore the result of this operation but perhaps we should retry it if it fails
+                    ably.updatePresenceData(trackable.id, properties.presenceData.copy(resolution = resolution)) {}
                 }
             }
         }

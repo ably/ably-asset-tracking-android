@@ -146,7 +146,6 @@ private class DefaultCoreSubscriber(
                         subscribeForChannelState()
                         subscribeForEnhancedEvents()
                         subscribeForRawEvents()
-                        subscribeForResolutionEvents()
                         event.handler(Result.success(Unit))
                     }
                     is PresenceMessageEvent -> {
@@ -155,6 +154,7 @@ private class DefaultCoreSubscriber(
                                 if (event.presenceMessage.data.type == ClientTypes.PUBLISHER) {
                                     properties.isPublisherOnline = true
                                     updateTrackableState(properties)
+                                    updatePublisherResolutionInformation(event.presenceMessage.data)
                                 }
                             }
                             PresenceAction.LEAVE_OR_ABSENT -> {
@@ -163,7 +163,11 @@ private class DefaultCoreSubscriber(
                                     updateTrackableState(properties)
                                 }
                             }
-                            else -> Unit
+                            PresenceAction.UPDATE -> {
+                                if (event.presenceMessage.data.type == ClientTypes.PUBLISHER) {
+                                    updatePublisherResolutionInformation(event.presenceMessage.data)
+                                }
+                            }
                         }
                     }
                     is ChangeResolutionEvent -> {
@@ -231,10 +235,10 @@ private class DefaultCoreSubscriber(
         }
     }
 
-    private fun subscribeForResolutionEvents() {
-        ably.subscribeForResolutionEvents(trackableId) {
-            scope.launch { _resolutions.emit(it) }
-            scope.launch { _nextLocationUpdateIntervals.emit(it.desiredInterval) }
+    private fun updatePublisherResolutionInformation(presenceData: PresenceData) {
+        presenceData.resolution?.let { publisherResolution ->
+            scope.launch { _resolutions.emit(publisherResolution) }
+            scope.launch { _nextLocationUpdateIntervals.emit(publisherResolution.desiredInterval) }
         }
     }
 
