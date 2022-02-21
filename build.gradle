@@ -67,6 +67,17 @@ allprojects {
                 password = property('MAPBOX_DOWNLOADS_TOKEN')
             }
         }
+        // Mapbox Snapshot repository required to get the new asset tracking navigation profile.
+        maven {
+            url 'https://api.mapbox.com/downloads/v2/snapshots/maven'
+            authentication {
+                basic(BasicAuthentication)
+            }
+            credentials {
+                username = 'mapbox'
+                password = property('MAPBOX_DOWNLOADS_TOKEN')
+            }
+        }
     }
 }
 

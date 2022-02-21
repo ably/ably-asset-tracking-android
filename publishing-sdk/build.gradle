@@ -27,6 +27,10 @@ dependencies {
         // https://docs.mapbox.com/android/navigation/guides/modularization/#tripnotification
         exclude group: "com.mapbox.navigation", module: "notification"
     }
+    // The special asset tracking profile for the Mapbox Navigation.
+    implementation("com.mapbox.navigator:mapbox-navigation-native:ak-2.1-tracking-profile-13-SNAPSHOT") {
+        force = true
+    }
 
     // Dependencies needed for replacing Mapbox modules.
     // https://docs.mapbox.com/android/navigation/guides/modularization/#replacing-a-module
