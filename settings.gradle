@@ -19,4 +19,5 @@ include ':android-test-common',
         ':subscribing-sdk',
         ':subscribing-sdk-java',
         ':subscribing-example-app',
-        ':subscribing-java-testing'
+        ':subscribing-java-testing',
+        ':animation'

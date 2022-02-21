@@ -1,0 +1,1 @@
+# Animation module specific rules
