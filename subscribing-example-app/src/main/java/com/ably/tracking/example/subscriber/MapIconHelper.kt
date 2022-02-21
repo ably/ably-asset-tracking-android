@@ -1,14 +1,5 @@
 package com.ably.tracking.example.subscriber
 
-import android.os.Handler
-import android.os.Looper
-import android.os.SystemClock
-import android.view.animation.LinearInterpolator
-import com.google.android.gms.maps.model.Circle
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.Marker
-import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
 import kotlin.math.roundToInt
 
 fun getMarkerResourceIdByBearing(bearing: Float, isRaw: Boolean): Int {
@@ -23,61 +14,3 @@ fun getMarkerResourceIdByBearing(bearing: Float, isRaw: Boolean): Int {
         else -> if (isRaw) R.drawable.driver_raw_n else R.drawable.driver_n
     }
 }
-
-suspend fun animateMarkerAndCircleMovement(
-    marker: Marker,
-    finalPosition: LatLng,
-    circle: Circle,
-    finalRadius: Double,
-    animationDurationInMillis: Float = 1000f,
-) {
-    suspendCoroutine<Unit> {
-        animateMarkerAndCircleMovement(marker, finalPosition, circle, finalRadius, animationDurationInMillis) {
-            it.resume(Unit)
-        }
-    }
-}
-
-fun animateMarkerAndCircleMovement(
-    marker: Marker,
-    finalPosition: LatLng,
-    circle: Circle,
-    finalRadius: Double,
-    animationDurationInMillis: Float = 1000f,
-    animationFinishedCallback: () -> Unit = {}
-) {
-    val startPosition = marker.position
-    val startRadius = circle.radius
-    val interpolator = LinearInterpolator()
-    val startTimeInMillis = SystemClock.uptimeMillis()
-    val nextCalculationDelayInMillis = 16L
-    val handler = Handler(Looper.getMainLooper())
-
-    handler.post(object : Runnable {
-        var timeElapsedFromStartInMillis = 0L
-        var timeProgressPercentage = 0f
-        var distanceProgressPercentage = 0f
-        override fun run() {
-            timeElapsedFromStartInMillis = SystemClock.uptimeMillis() - startTimeInMillis
-            timeProgressPercentage = timeElapsedFromStartInMillis / animationDurationInMillis
-            distanceProgressPercentage = interpolator.getInterpolation(timeProgressPercentage)
-            marker.position = interpolateLinear(distanceProgressPercentage, startPosition, finalPosition)
-            circle.center = interpolateLinear(distanceProgressPercentage, startPosition, finalPosition)
-            circle.radius = interpolateLinear(distanceProgressPercentage, startRadius, finalRadius)
-
-            if (timeProgressPercentage < 1) {
-                handler.postDelayed(this, nextCalculationDelayInMillis)
-            } else {
-                animationFinishedCallback()
-            }
-        }
-    })
-}
-
-private fun interpolateLinear(fraction: Float, a: LatLng, b: LatLng): LatLng {
-    val lat = interpolateLinear(fraction, a.latitude, b.latitude)
-    val lng = interpolateLinear(fraction, a.longitude, b.longitude)
-    return LatLng(lat, lng)
-}
-
-private fun interpolateLinear(fraction: Float, a: Double, b: Double): Double = (b - a) * fraction + a
