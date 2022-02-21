@@ -112,7 +112,7 @@
       android:title="@string/preferences_send_raw_locations_label" />
 
     <SwitchPreferenceCompat
-      android:defaultValue="false"
+      android:defaultValue="true"
       android:key="@string/preferences_send_resolution_key"
       android:layout="@layout/switch_preference_layout"
       android:title="@string/preferences_send_resolution_label" />

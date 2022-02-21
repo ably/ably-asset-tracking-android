@@ -50,7 +50,7 @@ class AppPreferences private constructor(context: Context) {
     private val DEFAULT_RESULTION_DESIRED_INTERVAL = 1000L
     private val DEFAULT_RESULTION_MINIMUM_DISPLACEMENT = 1.0f
     private val DEFAULT_SEND_RAW_LOCATIONS = false
-    private val DEFAULT_SEND_RESOLUTION = false
+    private val DEFAULT_SEND_RESOLUTION = true
     private val DEFAULT_ENABLE_PREDICTIONS = true
     private val DEFAULT_ENABLE_CONSTANT_LOCATION_ENGINE_RESOLUTION = false
 
