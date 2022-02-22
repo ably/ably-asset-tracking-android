@@ -14,9 +14,9 @@ import androidx.transition.TransitionManager
 import com.ably.tracking.Accuracy
 import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
-import com.ably.tracking.animation.CoreLocationAnimator
-import com.ably.tracking.animation.LocationAnimator
-import com.ably.tracking.animation.Position
+import com.ably.tracking.ui.CoreLocationAnimator
+import com.ably.tracking.ui.LocationAnimator
+import com.ably.tracking.ui.Position
 import com.ably.tracking.connection.Authentication
 import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.logging.LogHandler

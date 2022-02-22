@@ -15,6 +15,6 @@ android {
 
 dependencies {
     implementation project(':subscribing-sdk')
-    implementation project(':animation')
+    implementation project(':ui-sdk')
     implementation 'com.google.android.gms:play-services-maps:17.0.0'
 }
