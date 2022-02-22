@@ -53,7 +53,7 @@ GOOGLE_MAPS_API_KEY=create_api_key_with_geolocation_maps_sdk
 
 ## Usage
 
-Please see our [Upgrade / Migration Guide](UPDATING.md) for notes on changes you need to make to your code to update the AAT SDKs.
+Please see our [Upgrade / Migration Guide](UPDATING.md) for notes on changes you need to make to your code to update the Ably Asset Tracking SDKs.
 
 ### Maven / Gradle Dependencies
 

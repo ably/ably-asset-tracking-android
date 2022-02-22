@@ -2,9 +2,9 @@
 
 ## Version 1.0.0 to 1.1.0
 
-### Update the AAT dependency
+### Update the Ably Asset Tracking dependency
 
-Update the version of AAT dependency to `1.1.0-beta.1`.
+Update the versions of Ably Asset Tracking dependency (or dependencies) you're using to `1.1.0-beta.1`.
 
 ### Use the Mapbox snapshot repository
 
