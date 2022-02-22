@@ -1,4 +1,4 @@
-package com.ably.tracking.ui
+package com.ably.tracking.ui.animation
 
 import com.ably.tracking.LocationUpdate
 import kotlinx.coroutines.flow.Flow

@@ -1,4 +1,4 @@
-package com.ably.tracking.ui
+package com.ably.tracking.ui.animation
 
 import android.os.SystemClock
 import android.view.animation.LinearInterpolator
