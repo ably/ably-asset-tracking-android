@@ -19,6 +19,9 @@ import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.logging.LogHandler
 import com.ably.tracking.logging.LogLevel
 import com.ably.tracking.subscriber.Subscriber
+import com.ably.tracking.ui.animation.CoreLocationAnimator
+import com.ably.tracking.ui.animation.LocationAnimator
+import com.ably.tracking.ui.animation.Position
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.SupportMapFragment
