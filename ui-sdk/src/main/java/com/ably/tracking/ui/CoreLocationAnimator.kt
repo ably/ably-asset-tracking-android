@@ -9,8 +9,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.launch
 
 // This delay helps to smooth out movement when we receive a location update later than we've expected.
@@ -23,9 +23,9 @@ private const val CAMERA_POSITIONS_BUFFER_SIZE = 10
 private const val UNKNOWN_DURATION: Long = -1L
 
 class CoreLocationAnimator : LocationAnimator {
-    override val positionsFlow: SharedFlow<Position>
+    override val positionsFlow: Flow<Position>
         get() = _positionsFlow
-    override val cameraPositionsFlow: SharedFlow<Position>
+    override val cameraPositionsFlow: Flow<Position>
         get() = _cameraPositionsFlow
 
     private val _positionsFlow = MutableSharedFlow<Position>(replay = 1, extraBufferCapacity = POSITIONS_BUFFER_SIZE)

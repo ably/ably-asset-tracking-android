@@ -1,7 +1,7 @@
 package com.ably.tracking.ui
 
 import com.ably.tracking.LocationUpdate
-import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.Flow
 
 /**
  * Extension for the [com.ably.tracking.subscriber.Subscriber] that enables smooth location updates animation.
@@ -11,13 +11,13 @@ interface LocationAnimator {
      * The flow of subsequent map marker positions that create the animation.
      * The position of the map marker should be changed each time a new value arrives in this flow.
      */
-    val positionsFlow: SharedFlow<Position>
+    val positionsFlow: Flow<Position>
 
     /**
      * The flow of subsequent camera positions that helps to follow the animation progress from [positionsFlow].
      * The position of the camera can be changed each time a new value arrives in this flow.
      */
-    val cameraPositionsFlow: SharedFlow<Position>
+    val cameraPositionsFlow: Flow<Position>
 
     /**
      * Queues the location update for the animation.
