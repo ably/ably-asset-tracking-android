@@ -27,6 +27,11 @@ jobs:
           ORG_GRADLE_PROJECT_ABLY_API_KEY: ${{ secrets.ABLY_API_KEY }}
           ORG_GRADLE_PROJECT_GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
 
+      # Reveal potential locations of test build reports
+      # (temporary: we'll remove this once we've confirmed where they all end up)
+      - run: find . -name "index.html"
+        if: always()
+
       - uses: actions/upload-artifact@v2
         with:
           name: build-profile-report
