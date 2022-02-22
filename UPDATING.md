@@ -10,21 +10,21 @@ You can now download the dependencies from the Maven Central repository if you p
 ### Mapbox snapshot repository
 
 In AAT 1.1.0 we are using a special version of the navigation profile which requires us to enable the Mapbox snapshot repository. In order to do that you need to add this repository in you `build.gradle` file (preferably next to the main Mapbox repository declaration):
+
 ```groovy
 repositories {
-	// Mapbox Snapshot repository required to get the new asset tracking navigation profile.
-	maven {
-	    url 'https://api.mapbox.com/downloads/v2/snapshots/maven'
-	    authentication {
-	        basic(BasicAuthentication)
-	    }
-	    credentials {
-	        username = 'mapbox'
-	        password = property('MAPBOX_DOWNLOADS_TOKEN')
-	    }
-	}
+    // Mapbox Snapshot repository required to get the new asset tracking navigation profile.
+    maven {
+        url 'https://api.mapbox.com/downloads/v2/snapshots/maven'
+        authentication {
+            basic(BasicAuthentication)
+        }
+        credentials {
+            username = 'mapbox'
+            password = property('MAPBOX_DOWNLOADS_TOKEN')
+        }
+    }
 }
-
 ```
 
 ### Publisher builder adjustements
@@ -38,14 +38,17 @@ In order to be able to animate smoothly the publisher position on the subscriber
 ### Animation module
 
 In 1.1.0 we've added a new module that aims to improve the experience of AAT users on the subscriber side. For now, the module contains an extension that takes care of creating a smooth animations of the location updates received from the publisher. In order to use those features you first have to add the new dependency to your `build.gradle` file
+
 ```groovy
 dependencies {
     implementation 'com.ably.tracking:animation:1.1.0-beta.1'
 }
 ```
+
 Now you should have access to the `LocationAnimator`, `CoreLocationAnimator` and `Position` classes.
 
 To use the animation logic you need to create a new instance of the `CoreLocationAnimator` and use its shared flows to receive both map marker and map camera location updates.
+
 ```kotlin
 val locationAnimator: LocationAnimator = CoreLocationAnimator()
 locationAnimator.positionsFlow
@@ -58,6 +61,7 @@ locationAnimator.cameraPositionsFlow
 ```
 
 The last step is to notify the location animator each time a new location update from the subscriber arrives. You also need to provide the expected interval of location updates in milliseconds which since 1.1.0 can be received from the subscriber.
+
 ```kotlin
 var locationUpdateIntervalInMilliseconds = 0L
 
