@@ -16,7 +16,7 @@ ext {
 }
 
 dependencies {
-    implementation project(':subscribing-sdk')
+    implementation project(':core-sdk')
 }
 
 apply from: '../jacoco.gradle'
