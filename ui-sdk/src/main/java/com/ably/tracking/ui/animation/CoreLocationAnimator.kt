@@ -1,4 +1,4 @@
-package com.ably.tracking.example.subscriber
+package com.ably.tracking.ui.animation
 
 import android.os.SystemClock
 import android.view.animation.LinearInterpolator
@@ -9,69 +9,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.launch
-
-/**
- * Extension for the [com.ably.tracking.subscriber.Subscriber] that enables smooth location updates animation.
- */
-interface LocationAnimator {
-    /**
-     * The flow of subsequent map marker positions that create the animation.
-     * The position of the map marker should be changed each time a new value arrives in this flow.
-     */
-    val positionsFlow: SharedFlow<Position>
-
-    /**
-     * The flow of subsequent camera positions that helps to follow the animation progress from [positionsFlow].
-     * The position of the camera can be changed each time a new value arrives in this flow.
-     */
-    val cameraPositionsFlow: SharedFlow<Position>
-
-    /**
-     * Queues the location update for the animation.
-     * This should be called each time a new location update is received from the [com.ably.tracking.subscriber.Subscriber].
-     *
-     * @param locationUpdate The newest location update received from the Subscriber SDK.
-     * @param expectedIntervalBetweenLocationUpdatesInMilliseconds The expected interval of location updates in milliseconds.
-     */
-    fun animateLocationUpdate(
-        locationUpdate: LocationUpdate,
-        expectedIntervalBetweenLocationUpdatesInMilliseconds: Long,
-    )
-
-    /**
-     * Stops and cancels any ongoing animations.
-     * After stopping the [LocationAnimator] instance should not be used anymore.
-     */
-    fun stop()
-}
-
-/**
- * Represents a position on the map with additional properties required for a map marker animation.
- */
-data class Position(
-    /**
-     * The latitude of the location in degrees.
-     */
-    val latitude: Double,
-
-    /**
-     * The longitude of the location in degrees.
-     */
-    val longitude: Double,
-
-    /**
-     * The bearing of the location in degrees.
-     */
-    val bearing: Float,
-
-    /**
-     * The accuracy of the location in meters.
-     */
-    val accuracy: Float
-)
 
 // This delay helps to smooth out movement when we receive a location update later than we've expected.
 private const val INTENTIONAL_ANIMATION_DELAY_IN_MILLISECONDS: Long = 2_000L
@@ -83,9 +23,9 @@ private const val CAMERA_POSITIONS_BUFFER_SIZE = 10
 private const val UNKNOWN_DURATION: Long = -1L
 
 class CoreLocationAnimator : LocationAnimator {
-    override val positionsFlow: SharedFlow<Position>
+    override val positionsFlow: Flow<Position>
         get() = _positionsFlow
-    override val cameraPositionsFlow: SharedFlow<Position>
+    override val cameraPositionsFlow: Flow<Position>
         get() = _cameraPositionsFlow
 
     private val _positionsFlow = MutableSharedFlow<Position>(replay = 1, extraBufferCapacity = POSITIONS_BUFFER_SIZE)
