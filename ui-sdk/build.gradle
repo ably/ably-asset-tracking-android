@@ -12,7 +12,7 @@ android {
 }
 
 ext {
-    PUBLISH_POM_DESCRIPTION = "Ably Asset Tracking animation extensions module."
+    PUBLISH_POM_DESCRIPTION = "Ably Asset Tracking UI extensions module."
 }
 
 dependencies {
