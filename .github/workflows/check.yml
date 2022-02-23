@@ -33,48 +33,56 @@ jobs:
         if: always()
 
       - uses: actions/upload-artifact@v2
+        name: Build Reports for common
         if: always()
         with:
           name: api-level-${{ matrix.api-level }}-common-build-reports
           path: common/build/reports
 
       - uses: actions/upload-artifact@v2
+        name: Build Reports for integration-testing-app
         if: always()
         with:
           name: api-level-${{ matrix.api-level }}-integration-testing-app-build-reports
           path: integration-testing-app/build/reports
 
       - uses: actions/upload-artifact@v2
+        name: Build Reports for publishing-example-app
         if: always()
         with:
           name: api-level-${{ matrix.api-level }}-publishing-example-app-build-reports
           path: publishing-example-app/build/reports
 
       - uses: actions/upload-artifact@v2
+        name: Build Reports for publishing-java-testing
         if: always()
         with:
           name: api-level-${{ matrix.api-level }}-publishing-java-testing-build-reports
           path: publishing-java-testing/build/reports
 
       - uses: actions/upload-artifact@v2
+        name: Build Reports for publishing-sdk
         if: always()
         with:
           name: api-level-${{ matrix.api-level }}-publishing-sdk-build-reports
           path: publishing-sdk/build/reports
 
       - uses: actions/upload-artifact@v2
+        name: Build Reports for subscribing-example-app
         if: always()
         with:
           name: api-level-${{ matrix.api-level }}-subscribing-example-app-build-reports
           path: subscribing-example-app/build/reports
 
       - uses: actions/upload-artifact@v2
+        name: Build Reports for subscribing-java-testing
         if: always()
         with:
           name: api-level-${{ matrix.api-level }}-subscribing-java-testing-build-reports
           path: subscribing-java-testing/build/reports
 
       - uses: actions/upload-artifact@v2
+        name: Build Reports for subscribing-sdk
         if: always()
         with:
           name: api-level-${{ matrix.api-level }}-subscribing-sdk-build-reports
