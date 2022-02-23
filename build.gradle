@@ -112,7 +112,7 @@ subprojects {
 
         android {
             compileSdkVersion 31
-            buildToolsVersion '30.0.2'
+            buildToolsVersion '30.0.3'
 
             defaultConfig {
                 minSdkVersion((evaluatedSubProjectIsJava || evaluatedSubProjectIsAnExampleApp) ? 24 : 21)
@@ -240,8 +240,8 @@ subprojects {
         }
 
         dependencies {
-            implementation 'androidx.appcompat:appcompat:1.2.0'
-            implementation 'com.google.android.material:material:1.2.1'
+            implementation 'androidx.appcompat:appcompat:1.4.1'
+            implementation 'com.google.android.material:material:1.5.0'
 
             if (evaluatedSubProjectIsKotlin) {
                 implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
