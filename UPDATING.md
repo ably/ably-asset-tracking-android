@@ -4,7 +4,7 @@
 
 ### Update the Ably Asset Tracking dependency
 
-Update the versions of Ably Asset Tracking dependency (or dependencies) you're using to `1.1.0-beta.1`.
+Update the versions of Ably Asset Tracking dependency (or dependencies) you're using to `1.1.0-rc.1`.
 
 ### Use the Mapbox snapshot repository
 
@@ -40,7 +40,7 @@ In version 1.1.0 we've added a new module that aims to improve the experience of
 
 ```groovy
 dependencies {
-    implementation 'com.ably.tracking:ui-sdk:1.1.0-beta.1'
+    implementation 'com.ably.tracking:ui-sdk:1.1.0-rc.1'
 }
 ```
 
