@@ -47,5 +47,5 @@ jobs:
       - uses: actions/upload-artifact@v2
         if: always()
         with:
-          name: integration-testing-app-build-reports
+          name: api-level-${{ matrix.api-level }}-integration-testing-app-build-reports
           path: integration-testing-app/build/reports
