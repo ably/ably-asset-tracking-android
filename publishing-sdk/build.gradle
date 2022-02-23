@@ -22,7 +22,7 @@ dependencies {
     // The MapBox Navigation SDK for Android.
     // We're not using the pre-built UI components, so just need the core dependency.
     // https://docs.mapbox.com/android/navigation/overview/
-    implementation('com.mapbox.navigation:core:2.1.1') {
+    implementation('com.mapbox.navigation:core:2.3.0-rc.1') {
         // We provide a custom trip notification so we exclude the default one.
         // https://docs.mapbox.com/android/navigation/guides/modularization/#tripnotification
         exclude group: "com.mapbox.navigation", module: "notification"
