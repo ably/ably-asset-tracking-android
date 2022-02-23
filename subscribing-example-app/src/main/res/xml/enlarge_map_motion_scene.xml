@@ -30,7 +30,7 @@
       motion:layout_constraintTop_toTopOf="@id/headerBackground" />
     <!-- MAP -->
     <Constraint
-      android:id="@+id/mapFragment"
+      android:id="@+id/mapFragmentContainerView"
       android:layout_width="match_parent"
       android:layout_height="0dp"
       motion:layout_constraintBottom_toTopOf="@id/assetInformationContainer"
@@ -78,7 +78,7 @@
       motion:layout_constraintTop_toTopOf="@id/headerBackground" />
     <!-- MAP -->
     <Constraint
-      android:id="@+id/mapFragment"
+      android:id="@+id/mapFragmentContainerView"
       android:layout_width="match_parent"
       android:layout_height="0dp"
       motion:layout_constraintBottom_toTopOf="@id/assetInformationContainer"

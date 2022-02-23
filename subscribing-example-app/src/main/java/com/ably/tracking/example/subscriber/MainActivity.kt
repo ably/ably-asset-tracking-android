@@ -33,7 +33,7 @@ import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import kotlinx.android.synthetic.main.activity_main.assetInformationContainer
 import kotlinx.android.synthetic.main.activity_main.draggingAreaView
-import kotlinx.android.synthetic.main.activity_main.mapFragment
+import kotlinx.android.synthetic.main.activity_main.mapFragmentContainerView
 import kotlinx.android.synthetic.main.activity_main.rootContainer
 import kotlinx.android.synthetic.main.asset_information_view.animationSwitch
 import kotlinx.android.synthetic.main.asset_information_view.assetStateTextView
@@ -131,7 +131,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun prepareMap() {
-        (mapFragment as SupportMapFragment).let {
+        (mapFragmentContainerView.getFragment() as SupportMapFragment).let {
             it.getMapAsync { map ->
                 map.uiSettings.isZoomControlsEnabled = true
                 googleMap = map
