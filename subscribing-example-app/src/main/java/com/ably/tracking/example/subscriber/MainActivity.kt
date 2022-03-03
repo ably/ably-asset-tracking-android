@@ -35,7 +35,7 @@ import kotlinx.android.synthetic.main.activity_main.assetInformationContainer
 import kotlinx.android.synthetic.main.activity_main.draggingAreaView
 import kotlinx.android.synthetic.main.activity_main.mapFragmentContainerView
 import kotlinx.android.synthetic.main.activity_main.rootContainer
-import kotlinx.android.synthetic.main.asset_information_view.animationSwitch
+import kotlinx.android.synthetic.main.asset_information_view.animationSettingsImageView
 import kotlinx.android.synthetic.main.asset_information_view.assetStateTextView
 import kotlinx.android.synthetic.main.asset_information_view.publisherResolutionAccuracyTextView
 import kotlinx.android.synthetic.main.asset_information_view.publisherResolutionDisplacementTextView
@@ -77,6 +77,7 @@ class MainActivity : AppCompatActivity() {
     private var locationUpdateIntervalInMilliseconds = resolution.desiredInterval
     private val enhancedLocationAnimator: LocationAnimator = CoreLocationAnimator()
     private val rawLocationAnimator: LocationAnimator = CoreLocationAnimator()
+    private val animationOptionsManager = AnimationOptionsManager()
 
     // SupervisorJob() is used to keep the scope working after any of its children fail
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
@@ -89,6 +90,7 @@ class MainActivity : AppCompatActivity() {
         setTrackableIdEditTextListener()
         setupTrackableInputAction()
         setupLocationMarkerAnimations()
+        setupAnimationOptions()
 
         startButton.setOnClickListener {
             if (subscriber == null) {
@@ -97,6 +99,11 @@ class MainActivity : AppCompatActivity() {
                 stopSubscribing()
             }
         }
+    }
+
+    private fun setupAnimationOptions() {
+        animationSettingsImageView.setOnClickListener { animationOptionsManager.showAnimationOptionsDialog(this) }
+        animationOptionsManager.onOptionsChanged = { updateMapMarkersVisibility() }
     }
 
     private fun setupLocationMarkerAnimations() {
@@ -359,7 +366,7 @@ class MainActivity : AppCompatActivity() {
         } else {
             CameraUpdateFactory.newLatLngZoom(position, zoomLevel)
         }
-        if (animationSwitch.isChecked && zoomLevel == null) {
+        if (animationOptionsManager.animateCameraMovement && zoomLevel == null) {
             googleMap?.animateCamera(cameraPosition)
         } else {
             googleMap?.moveCamera(cameraPosition)
@@ -444,5 +451,12 @@ class MainActivity : AppCompatActivity() {
         progressIndicator.visibility = View.GONE
         startButton.isEnabled = true
         startButton.showText()
+    }
+
+    private fun updateMapMarkersVisibility() {
+        rawMarker?.isVisible = animationOptionsManager.showRawMarker
+        rawAccuracyCircle?.isVisible = animationOptionsManager.showRawAccuracy
+        enhancedMarker?.isVisible = animationOptionsManager.showEnhancedMarker
+        enhancedAccuracyCircle?.isVisible = animationOptionsManager.showEnhancedAccuracy
     }
 }
