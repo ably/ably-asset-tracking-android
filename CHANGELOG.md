@@ -1,5 +1,25 @@
 # Change log
 
+## [1.1.0-rc.2](https://github.com/ably/ably-asset-tracking-android/tree/v1.1.0-rc.2)
+
+Version 1.1 of the Ably Asset Tracking SDKs for Android brings changes to both the publishing and subscribing SDKs,
+and their corresponding example apps, that make the subscriber's marker animate much more smoothly.
+
+[Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.1.0-rc.1...v1.1.0-rc.2)
+
+**Implemented enhancements:**
+
+- Upgrade Mapbox dependencies [\#642](https://github.com/ably/ably-asset-tracking-android/issues/642)
+
+**Closed issues:**
+
+- Add a toggle in the example subscription app that would hide/show the raw locations marker on the map [\#649](https://github.com/ably/ably-asset-tracking-android/issues/649)
+
+**Merged pull requests:**
+
+- Add dialog with animation options in the subscriber example app [\#653](https://github.com/ably/ably-asset-tracking-android/pull/653) ([KacperKluka](https://github.com/KacperKluka))
+- Upgrade Mapbox to version 2.3.0 and other dependencies to the newest versions [\#652](https://github.com/ably/ably-asset-tracking-android/pull/652) ([KacperKluka](https://github.com/KacperKluka))
+
 ## [1.1.0-rc.1](https://github.com/ably/ably-asset-tracking-android/tree/v1.1.0-rc.1)
 
 Version 1.1 of the Ably Asset Tracking SDKs for Android brings changes to both the publishing and subscribing SDKs,
