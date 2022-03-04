@@ -21,8 +21,8 @@
     android:layout_height="@dimen/header_logo_full_height"
     android:src="@drawable/header_logo_with_title" />
 
-  <fragment
-    android:id="@+id/mapFragment"
+  <androidx.fragment.app.FragmentContainerView
+    android:id="@+id/mapFragmentContainerView"
     android:name="com.google.android.gms.maps.SupportMapFragment"
     android:layout_width="match_parent"
     android:layout_height="0dp" />

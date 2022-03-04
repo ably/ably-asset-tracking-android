@@ -33,7 +33,7 @@ class MapActivity : PublisherServiceActivity() {
             mapboxMap.loadStyleUri(Style.MAPBOX_STREETS)
             map = mapboxMap
         }
-        pointAnnotationManager = mapView.annotations.createPointAnnotationManager(mapView)
+        pointAnnotationManager = mapView.annotations.createPointAnnotationManager()
     }
 
     override fun onPublisherServiceConnected(publisherService: PublisherService) {
