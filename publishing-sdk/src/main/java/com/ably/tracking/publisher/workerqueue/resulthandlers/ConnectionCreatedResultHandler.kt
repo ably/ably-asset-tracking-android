@@ -3,14 +3,16 @@ package com.ably.tracking.publisher.workerqueue.resulthandlers
 import com.ably.tracking.publisher.ConnectionForTrackableReadyEvent
 import com.ably.tracking.publisher.CorePublisher
 import com.ably.tracking.publisher.TrackableRemovalRequestedEvent
+import com.ably.tracking.publisher.workerqueue.WorkerFactory
+import com.ably.tracking.publisher.workerqueue.WorkerParams
 import com.ably.tracking.publisher.workerqueue.results.ConnectionCreatedWorkResult
-import com.ably.tracking.publisher.workerqueue.workers.AddTrackableFailedWorker
 import com.ably.tracking.publisher.workerqueue.workers.Worker
 
 internal class ConnectionCreatedResultHandler : WorkResultHandler<ConnectionCreatedWorkResult> {
     override fun handle(
         workResult: ConnectionCreatedWorkResult,
-        corePublisher: CorePublisher
+        corePublisher: CorePublisher,
+        workerFactory: WorkerFactory,
     ): Worker? {
         when (workResult) {
             is ConnectionCreatedWorkResult.RemovalRequested ->
@@ -31,7 +33,11 @@ internal class ConnectionCreatedResultHandler : WorkResultHandler<ConnectionCrea
                 )
             }
             is ConnectionCreatedWorkResult.PresenceFail ->
-                return AddTrackableFailedWorker(workResult.trackable, workResult.callbackFunction, workResult.exception)
+                return workerFactory.createWorker(
+                    WorkerParams.AddTrackableFailed(
+                        workResult.trackable, workResult.callbackFunction, workResult.exception
+                    )
+                )
         }
         return null
     }

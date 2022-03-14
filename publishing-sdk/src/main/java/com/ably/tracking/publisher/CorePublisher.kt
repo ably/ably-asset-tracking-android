@@ -23,30 +23,11 @@ import com.ably.tracking.publisher.guards.DublicateTrackableGuardImpl
 import com.ably.tracking.publisher.guards.DuplicateTrackableGuard
 import com.ably.tracking.publisher.guards.TrackableRemovalGuard
 import com.ably.tracking.publisher.guards.TrackableRemovalGuardImpl
+import com.ably.tracking.publisher.workerqueue.DefaultWorkerFactory
 import com.ably.tracking.publisher.workerqueue.EventWorkerQueue
+import com.ably.tracking.publisher.workerqueue.WorkerFactory
+import com.ably.tracking.publisher.workerqueue.WorkerParams
 import com.ably.tracking.publisher.workerqueue.WorkerQueue
-import com.ably.tracking.publisher.workerqueue.workers.AblyConnectionStateChangeWorker
-import com.ably.tracking.publisher.workerqueue.workers.AddTrackableFailedWorker
-import com.ably.tracking.publisher.workerqueue.workers.AddTrackableWorker
-import com.ably.tracking.publisher.workerqueue.workers.ChangeLocationEngineResolutionWorker
-import com.ably.tracking.publisher.workerqueue.workers.ChangeRoutingProfileWorker
-import com.ably.tracking.publisher.workerqueue.workers.ChannelConnectionStateChangeWorker
-import com.ably.tracking.publisher.workerqueue.workers.ConnectionCreatedWorker
-import com.ably.tracking.publisher.workerqueue.workers.ConnectionReadyWorker
-import com.ably.tracking.publisher.workerqueue.workers.DestinationSetWorker
-import com.ably.tracking.publisher.workerqueue.workers.DisconnectSuccessWorker
-import com.ably.tracking.publisher.workerqueue.workers.EnhancedLocationChangedWorker
-import com.ably.tracking.publisher.workerqueue.workers.PresenceMessageWorker
-import com.ably.tracking.publisher.workerqueue.workers.RawLocationChangedWorker
-import com.ably.tracking.publisher.workerqueue.workers.RefreshResolutionPolicyWorker
-import com.ably.tracking.publisher.workerqueue.workers.RemoveTrackableWorker
-import com.ably.tracking.publisher.workerqueue.workers.SendEnhancedLocationFailureWorker
-import com.ably.tracking.publisher.workerqueue.workers.SendEnhancedLocationSuccessWorker
-import com.ably.tracking.publisher.workerqueue.workers.SendRawLocationFailureWorker
-import com.ably.tracking.publisher.workerqueue.workers.SendRawLocationSuccessWorker
-import com.ably.tracking.publisher.workerqueue.workers.SetActiveTrackableWorker
-import com.ably.tracking.publisher.workerqueue.workers.StopWorker
-import com.ably.tracking.publisher.workerqueue.workers.TrackableRemovalRequestedWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
@@ -173,6 +154,7 @@ constructor(
 
     override var active: Trackable? = null
     override var trackableStateFlows: Map<String, StateFlow<TrackableState>> = emptyMap()
+    private val workerFactory: WorkerFactory
 
     init {
         policy = resolutionPolicyFactory.createResolutionPolicy(
@@ -181,6 +163,7 @@ constructor(
         )
         val channel = Channel<Event>()
         sendEventChannel = channel
+        workerFactory = DefaultWorkerFactory(ably, hooks, this, policy, mapbox, this)
         scope.launch {
             coroutineScope {
                 sequenceEventsQueue(channel, routingProfile, areRawLocationsEnabled)
@@ -219,7 +202,7 @@ constructor(
     ) {
         launch {
             val properties = Properties(routingProfile, policy.resolve(emptySet()), areRawLocationsEnabled)
-            val workerQueue: WorkerQueue = EventWorkerQueue(this@DefaultCorePublisher, properties, scope)
+            val workerQueue: WorkerQueue = EventWorkerQueue(this@DefaultCorePublisher, properties, scope, workerFactory)
             // processing
             for (event in receiveEventChannel) {
                 // handle events after the publisher is stopped
@@ -239,78 +222,91 @@ constructor(
                 when (event) {
                     is SetDestinationSuccessEvent -> {
                         workerQueue.execute(
-                            DestinationSetWorker(
-                                event.routeDurationInMilliseconds,
-                                this@DefaultCorePublisher
-                            )
+                            workerFactory.createWorker(WorkerParams.DestinationSet(event.routeDurationInMilliseconds))
                         )
                     }
                     is RawLocationChangedEvent -> {
                         logHandler?.v("$TAG Raw location changed event received ${event.location}")
-                        workerQueue.execute(RawLocationChangedWorker(event.location, this@DefaultCorePublisher))
+                        workerQueue.execute(workerFactory.createWorker(WorkerParams.RawLocationChanged(event.location)))
                     }
                     is EnhancedLocationChangedEvent -> {
                         logHandler?.v("$TAG Enhanced location changed event received ${event.location}")
                         workerQueue.execute(
-                            EnhancedLocationChangedWorker(
-                                event.location,
-                                event.intermediateLocations,
-                                event.type,
-                                this@DefaultCorePublisher,
+                            workerFactory.createWorker(
+                                WorkerParams.EnhancedLocationChanged(
+                                    event.location,
+                                    event.intermediateLocations,
+                                    event.type,
+                                )
                             )
                         )
                     }
                     is TrackTrackableEvent -> {
                         workerQueue.execute(
-                            AddTrackableWorker(
-                                event.trackable,
-                                { result ->
+                            workerFactory.createWorker(
+                                WorkerParams.AddTrackable(
+                                    event.trackable,
+                                ) { result ->
                                     if (result.isSuccess) {
-                                        request(SetActiveTrackableEvent(event.trackable) { event.callbackFunction(result) })
+                                        request(
+                                            SetActiveTrackableEvent(event.trackable) { event.callbackFunction(result) }
+                                        )
                                     } else {
                                         event.callbackFunction(result)
                                     }
-                                },
-                                ably
+                                }
                             )
                         )
                     }
                     is SetActiveTrackableEvent -> {
                         workerQueue.execute(
-                            SetActiveTrackableWorker(
-                                event.trackable, event.callbackFunction,
-                                this@DefaultCorePublisher, hooks
+                            workerFactory.createWorker(
+                                WorkerParams.SetActiveTrackable(
+                                    event.trackable,
+                                    event.callbackFunction
+                                )
                             )
                         )
                     }
                     is AddTrackableEvent -> {
                         workerQueue.execute(
-                            AddTrackableWorker(event.trackable, event.callbackFunction, ably)
+                            workerFactory.createWorker(
+                                WorkerParams.AddTrackable(
+                                    event.trackable,
+                                    event.callbackFunction
+                                )
+                            )
                         )
                     }
                     is AddTrackableFailedEvent -> {
                         workerQueue.execute(
-                            AddTrackableFailedWorker(
-                                event.trackable,
-                                event.callbackFunction,
-                                event.exception
+                            workerFactory.createWorker(
+                                WorkerParams.AddTrackableFailed(
+                                    event.trackable,
+                                    event.callbackFunction,
+                                    event.exception
+                                )
                             )
                         )
                     }
                     is PresenceMessageEvent -> {
                         workerQueue.execute(
-                            PresenceMessageWorker(
-                                event.trackable,
-                                event.presenceMessage,
-                                this@DefaultCorePublisher
+                            workerFactory.createWorker(
+                                WorkerParams.PresenceMessage(
+                                    event.trackable,
+                                    event.presenceMessage,
+                                )
                             )
                         )
                     }
                     is TrackableRemovalRequestedEvent -> {
                         workerQueue.execute(
-                            TrackableRemovalRequestedWorker(
-                                event.trackable, event.callbackFunction,
-                                event.result
+                            workerFactory.createWorker(
+                                WorkerParams.TrackableRemovalRequested(
+                                    event.trackable,
+                                    event.callbackFunction,
+                                    event.result
+                                )
                             )
                         )
                     }
@@ -318,79 +314,92 @@ constructor(
                         // for now delegate the presence listening to here, this could likely be a new case for new
                         // structure
                         workerQueue.execute(
-                            ConnectionCreatedWorker(
-                                event.trackable,
-                                event.callbackFunction,
-                                ably
-                            ) { presenceMessage ->
-                                enqueue(PresenceMessageEvent(event.trackable, presenceMessage))
-                            }
+                            workerFactory.createWorker(
+                                WorkerParams.ConnectionCreated(
+                                    event.trackable,
+                                    event.callbackFunction,
+                                ) { presenceMessage ->
+                                    enqueue(PresenceMessageEvent(event.trackable, presenceMessage))
+                                }
+                            )
                         )
                     }
                     is ConnectionForTrackableReadyEvent -> {
                         workerQueue.execute(
-                            ConnectionReadyWorker(
-                                event.trackable,
-                                event.callbackFunction,
-                                ably,
-                                hooks,
-                                this@DefaultCorePublisher
-                            ) { channelStateChange ->
-                                enqueue(ChannelConnectionStateChangeEvent(channelStateChange, event.trackable.id))
-                            }
+                            workerFactory.createWorker(
+                                WorkerParams.ConnectionReady(
+                                    event.trackable,
+                                    event.callbackFunction,
+                                ) { channelStateChange ->
+                                    enqueue(ChannelConnectionStateChangeEvent(channelStateChange, event.trackable.id))
+                                }
+                            )
                         )
                     }
                     is ChangeLocationEngineResolutionEvent -> {
-                        workerQueue.execute(ChangeLocationEngineResolutionWorker(policy, mapbox))
+                        workerQueue.execute(workerFactory.createWorker(WorkerParams.ChangeLocationEngineResolution))
                     }
                     is RemoveTrackableEvent -> {
-                        workerQueue.execute(RemoveTrackableWorker(event.trackable, event.callbackFunction, ably))
+                        workerQueue.execute(
+                            workerFactory.createWorker(
+                                WorkerParams.RemoveTrackable(
+                                    event.trackable,
+                                    event.callbackFunction
+                                )
+                            )
+                        )
                     }
                     is DisconnectSuccessEvent -> {
                         workerQueue.execute(
-                            DisconnectSuccessWorker(
-                                event.trackable,
-                                event.callbackFunction,
-                                this@DefaultCorePublisher,
-                                shouldRecalculateResolutionCallback = { enqueue(ChangeLocationEngineResolutionEvent) }
+                            workerFactory.createWorker(
+                                WorkerParams.DisconnectSuccess(
+                                    event.trackable,
+                                    event.callbackFunction,
+                                    shouldRecalculateResolutionCallback = { enqueue(ChangeLocationEngineResolutionEvent) }
+                                )
                             )
                         )
                     }
                     is RefreshResolutionPolicyEvent -> {
-                        workerQueue.execute(RefreshResolutionPolicyWorker(this@DefaultCorePublisher))
+                        workerQueue.execute(workerFactory.createWorker(WorkerParams.RefreshResolutionPolicy))
                     }
                     is ChangeRoutingProfileEvent -> {
-                        workerQueue.execute(ChangeRoutingProfileWorker(event.routingProfile, this@DefaultCorePublisher))
+                        workerQueue.execute(
+                            workerFactory.createWorker(
+                                WorkerParams.ChangeRoutingProfile(event.routingProfile)
+                            )
+                        )
                     }
                     is StopEvent -> {
-                        workerQueue.execute(StopWorker(event.callbackFunction, ably, this@DefaultCorePublisher))
+                        workerQueue.execute(workerFactory.createWorker(WorkerParams.Stop(event.callbackFunction)))
                     }
                     is AblyConnectionStateChangeEvent -> {
                         logHandler?.v("$TAG Ably connection state changed ${event.connectionStateChange.state}")
                         workerQueue.execute(
-                            AblyConnectionStateChangeWorker(
-                                event.connectionStateChange,
-                                this@DefaultCorePublisher
+                            workerFactory.createWorker(
+                                WorkerParams.AblyConnectionStateChange(event.connectionStateChange)
                             )
                         )
                     }
                     is ChannelConnectionStateChangeEvent -> {
                         logHandler?.v("$TAG Trackable ${event.trackableId} connection state changed ${event.connectionStateChange.state}")
                         workerQueue.execute(
-                            ChannelConnectionStateChangeWorker(
-                                event.connectionStateChange,
-                                event.trackableId,
-                                this@DefaultCorePublisher
+                            workerFactory.createWorker(
+                                WorkerParams.ChannelConnectionStateChange(
+                                    event.trackableId,
+                                    event.connectionStateChange
+                                )
                             )
                         )
                     }
                     is SendEnhancedLocationSuccessEvent -> {
                         logHandler?.v("$TAG Trackable ${event.trackableId} successfully sent enhanced location ${event.location}")
                         workerQueue.execute(
-                            SendEnhancedLocationSuccessWorker(
-                                event.location,
-                                event.trackableId,
-                                this@DefaultCorePublisher
+                            workerFactory.createWorker(
+                                WorkerParams.SendEnhancedLocationSuccess(
+                                    event.location,
+                                    event.trackableId
+                                )
                             )
                         )
                     }
@@ -400,21 +409,23 @@ constructor(
                             event.exception
                         )
                         workerQueue.execute(
-                            SendEnhancedLocationFailureWorker(
-                                event.locationUpdate,
-                                event.trackableId,
-                                event.exception,
-                                this@DefaultCorePublisher
+                            workerFactory.createWorker(
+                                WorkerParams.SendEnhancedLocationFailure(
+                                    event.locationUpdate,
+                                    event.trackableId,
+                                    event.exception,
+                                )
                             )
                         )
                     }
                     is SendRawLocationSuccessEvent -> {
                         logHandler?.v("$TAG Trackable ${event.trackableId} successfully sent raw location ${event.location}")
                         workerQueue.execute(
-                            SendRawLocationSuccessWorker(
-                                event.location,
-                                event.trackableId,
-                                this@DefaultCorePublisher
+                            workerFactory.createWorker(
+                                WorkerParams.SendRawLocationSuccess(
+                                    event.location,
+                                    event.trackableId,
+                                )
                             )
                         )
                     }
@@ -424,11 +435,12 @@ constructor(
                             event.exception
                         )
                         workerQueue.execute(
-                            SendRawLocationFailureWorker(
-                                event.locationUpdate,
-                                event.trackableId,
-                                event.exception,
-                                this@DefaultCorePublisher
+                            workerFactory.createWorker(
+                                WorkerParams.SendRawLocationFailure(
+                                    event.locationUpdate,
+                                    event.trackableId,
+                                    event.exception,
+                                )
                             )
                         )
                     }
