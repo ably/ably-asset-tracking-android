@@ -23,7 +23,7 @@ class ChannelConnectionStateChangeWorkerTest {
 
     @Before
     fun setUp() {
-        worker = ChannelConnectionStateChangeWorker(connectionStateChange, trackableId, corePublisher)
+        worker = ChannelConnectionStateChangeWorker(connectionStateChange, trackableId, corePublisher, null)
         every { publisherProperties.lastChannelConnectionStateChanges } returns lastChannelConnectionStateChanges
     }
 

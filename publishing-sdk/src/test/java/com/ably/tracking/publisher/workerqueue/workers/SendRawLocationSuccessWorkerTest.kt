@@ -23,7 +23,7 @@ class SendRawLocationSuccessWorkerTest {
 
     @Before
     fun setUp() {
-        worker = SendRawLocationSuccessWorker(location, trackableId, corePublisher)
+        worker = SendRawLocationSuccessWorker(location, trackableId, corePublisher, null)
         every { publisherProperties.lastSentRawLocations } returns lastSentRawLocations
     }
 

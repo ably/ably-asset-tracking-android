@@ -30,7 +30,7 @@ class EnhancedLocationChangedWorkerTest {
 
     @Before
     fun setUp() {
-        worker = EnhancedLocationChangedWorker(location, intermediateLocations, type, corePublisher)
+        worker = EnhancedLocationChangedWorker(location, intermediateLocations, type, corePublisher, null)
     }
 
     @After

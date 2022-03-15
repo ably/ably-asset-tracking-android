@@ -23,7 +23,7 @@ class SendEnhancedLocationSuccessWorkerTest {
 
     @Before
     fun setUp() {
-        worker = SendEnhancedLocationSuccessWorker(location, trackableId, corePublisher)
+        worker = SendEnhancedLocationSuccessWorker(location, trackableId, corePublisher, null)
         every { publisherProperties.lastSentEnhancedLocations } returns lastSentEnhancedLocations
     }
 

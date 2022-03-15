@@ -22,7 +22,7 @@ class RawLocationChangedWorkerTest {
 
     @Before
     fun setUp() {
-        worker = RawLocationChangedWorker(location, corePublisher)
+        worker = RawLocationChangedWorker(location, corePublisher, null)
     }
 
     @After

@@ -163,7 +163,7 @@ constructor(
         )
         val channel = Channel<Event>()
         sendEventChannel = channel
-        workerFactory = DefaultWorkerFactory(ably, hooks, this, policy, mapbox, this)
+        workerFactory = DefaultWorkerFactory(ably, hooks, this, policy, mapbox, this, logHandler)
         scope.launch {
             coroutineScope {
                 sequenceEventsQueue(channel, routingProfile, areRawLocationsEnabled)
@@ -226,11 +226,9 @@ constructor(
                         )
                     }
                     is RawLocationChangedEvent -> {
-                        logHandler?.v("$TAG Raw location changed event received ${event.location}")
                         workerQueue.execute(workerFactory.createWorker(WorkerParams.RawLocationChanged(event.location)))
                     }
                     is EnhancedLocationChangedEvent -> {
-                        logHandler?.v("$TAG Enhanced location changed event received ${event.location}")
                         workerQueue.execute(
                             workerFactory.createWorker(
                                 WorkerParams.EnhancedLocationChanged(
@@ -374,7 +372,6 @@ constructor(
                         workerQueue.execute(workerFactory.createWorker(WorkerParams.Stop(event.callbackFunction)))
                     }
                     is AblyConnectionStateChangeEvent -> {
-                        logHandler?.v("$TAG Ably connection state changed ${event.connectionStateChange.state}")
                         workerQueue.execute(
                             workerFactory.createWorker(
                                 WorkerParams.AblyConnectionStateChange(event.connectionStateChange)
@@ -382,7 +379,6 @@ constructor(
                         )
                     }
                     is ChannelConnectionStateChangeEvent -> {
-                        logHandler?.v("$TAG Trackable ${event.trackableId} connection state changed ${event.connectionStateChange.state}")
                         workerQueue.execute(
                             workerFactory.createWorker(
                                 WorkerParams.ChannelConnectionStateChange(
@@ -393,7 +389,6 @@ constructor(
                         )
                     }
                     is SendEnhancedLocationSuccessEvent -> {
-                        logHandler?.v("$TAG Trackable ${event.trackableId} successfully sent enhanced location ${event.location}")
                         workerQueue.execute(
                             workerFactory.createWorker(
                                 WorkerParams.SendEnhancedLocationSuccess(
@@ -404,10 +399,6 @@ constructor(
                         )
                     }
                     is SendEnhancedLocationFailureEvent -> {
-                        logHandler?.w(
-                            "$TAG Trackable ${event.trackableId} failed to send enhanced location ${event.locationUpdate.location}",
-                            event.exception
-                        )
                         workerQueue.execute(
                             workerFactory.createWorker(
                                 WorkerParams.SendEnhancedLocationFailure(
@@ -419,7 +410,6 @@ constructor(
                         )
                     }
                     is SendRawLocationSuccessEvent -> {
-                        logHandler?.v("$TAG Trackable ${event.trackableId} successfully sent raw location ${event.location}")
                         workerQueue.execute(
                             workerFactory.createWorker(
                                 WorkerParams.SendRawLocationSuccess(
@@ -430,10 +420,6 @@ constructor(
                         )
                     }
                     is SendRawLocationFailureEvent -> {
-                        logHandler?.w(
-                            "$TAG Trackable ${event.trackableId} failed to send raw location ${event.locationUpdate.location}",
-                            event.exception
-                        )
                         workerQueue.execute(
                             workerFactory.createWorker(
                                 WorkerParams.SendRawLocationFailure(
