@@ -244,15 +244,18 @@ constructor(
                             workerFactory.createWorker(
                                 WorkerParams.AddTrackable(
                                     event.trackable,
-                                ) { result ->
-                                    if (result.isSuccess) {
-                                        request(
-                                            SetActiveTrackableEvent(event.trackable) { event.callbackFunction(result) }
-                                        )
-                                    } else {
-                                        event.callbackFunction(result)
-                                    }
-                                }
+                                    callbackFunction = { result ->
+                                        if (result.isSuccess) {
+                                            request(
+                                                SetActiveTrackableEvent(event.trackable) { event.callbackFunction(result) }
+                                            )
+                                        } else {
+                                            event.callbackFunction(result)
+                                        }
+                                    },
+                                    presenceUpdateListener = {}, // temporary placeholder
+                                    channelStateChangeListener = {}, // temporary placeholder
+                                )
                             )
                         )
                     }
@@ -271,7 +274,9 @@ constructor(
                             workerFactory.createWorker(
                                 WorkerParams.AddTrackable(
                                     event.trackable,
-                                    event.callbackFunction
+                                    event.callbackFunction,
+                                    presenceUpdateListener = {}, // temporary placeholder
+                                    channelStateChangeListener = {}, // temporary placeholder
                                 )
                             )
                         )
@@ -316,9 +321,11 @@ constructor(
                                 WorkerParams.ConnectionCreated(
                                     event.trackable,
                                     event.callbackFunction,
-                                ) { presenceMessage ->
-                                    enqueue(PresenceMessageEvent(event.trackable, presenceMessage))
-                                }
+                                    presenceUpdateListener = { presenceMessage ->
+                                        enqueue(PresenceMessageEvent(event.trackable, presenceMessage))
+                                    },
+                                    channelStateChangeListener = {}, // temporary placeholder
+                                )
                             )
                         )
                     }

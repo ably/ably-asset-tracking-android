@@ -17,12 +17,12 @@ import org.junit.Test
 class WorkResultHandlersTest {
     private val addTrackableWorkResults = listOf(
         AddTrackableWorkResult.AlreadyIn(MutableStateFlow(TrackableState.Online), {}),
-        AddTrackableWorkResult.Success(Trackable(""), {}),
+        AddTrackableWorkResult.Success(Trackable(""), {}, {}, {}),
         AddTrackableWorkResult.Fail(Trackable(""), null, {}),
     )
     private val connectionCreatedWorkResults = listOf(
         ConnectionCreatedWorkResult.RemovalRequested(Trackable(""), {}, Result.success(Unit)),
-        ConnectionCreatedWorkResult.PresenceSuccess(Trackable(""), {}, {}),
+        ConnectionCreatedWorkResult.PresenceSuccess(Trackable(""), {}, {}, {}),
         ConnectionCreatedWorkResult.PresenceFail(Trackable(""), {}, ConnectionException(ErrorInformation(""))),
     )
     private val connectionReadyWorkResults = listOf(
