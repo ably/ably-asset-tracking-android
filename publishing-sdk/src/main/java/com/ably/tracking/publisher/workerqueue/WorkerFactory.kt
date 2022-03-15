@@ -9,6 +9,7 @@ import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.common.TimeProvider
+import com.ably.tracking.logging.LogHandler
 import com.ably.tracking.publisher.CorePublisher
 import com.ably.tracking.publisher.DefaultCorePublisher
 import com.ably.tracking.publisher.Mapbox
@@ -60,6 +61,7 @@ internal class DefaultWorkerFactory(
     private val resolutionPolicy: ResolutionPolicy,
     private val mapbox: Mapbox,
     private val timeProvider: TimeProvider,
+    private val logHandler: LogHandler?,
 ) : WorkerFactory {
     override fun createWorker(params: WorkerParams): Worker {
         return when (params) {
@@ -101,6 +103,7 @@ internal class DefaultWorkerFactory(
             is WorkerParams.AblyConnectionStateChange -> AblyConnectionStateChangeWorker(
                 params.connectionStateChange,
                 corePublisher,
+                logHandler,
             )
             WorkerParams.ChangeLocationEngineResolution -> ChangeLocationEngineResolutionWorker(
                 resolutionPolicy,
@@ -114,6 +117,7 @@ internal class DefaultWorkerFactory(
                 params.connectionStateChange,
                 params.trackableId,
                 corePublisher,
+                logHandler,
             )
             is WorkerParams.DestinationSet -> DestinationSetWorker(
                 params.routeDurationInMilliseconds,
@@ -124,6 +128,7 @@ internal class DefaultWorkerFactory(
                 params.intermediateLocations,
                 params.type,
                 corePublisher,
+                logHandler,
             )
             is WorkerParams.PresenceMessage -> PresenceMessageWorker(
                 params.trackable,
@@ -133,6 +138,7 @@ internal class DefaultWorkerFactory(
             is WorkerParams.RawLocationChanged -> RawLocationChangedWorker(
                 params.location,
                 corePublisher,
+                logHandler,
             )
             WorkerParams.RefreshResolutionPolicy -> RefreshResolutionPolicyWorker(
                 corePublisher,
@@ -147,22 +153,26 @@ internal class DefaultWorkerFactory(
                 params.trackableId,
                 params.exception,
                 corePublisher,
+                logHandler,
             )
             is WorkerParams.SendEnhancedLocationSuccess -> SendEnhancedLocationSuccessWorker(
                 params.location,
                 params.trackableId,
                 corePublisher,
+                logHandler,
             )
             is WorkerParams.SendRawLocationFailure -> SendRawLocationFailureWorker(
                 params.locationUpdate,
                 params.trackableId,
                 params.exception,
                 corePublisher,
+                logHandler,
             )
             is WorkerParams.SendRawLocationSuccess -> SendRawLocationSuccessWorker(
                 params.location,
                 params.trackableId,
                 corePublisher,
+                logHandler,
             )
             is WorkerParams.SetActiveTrackable -> SetActiveTrackableWorker(
                 params.trackable,

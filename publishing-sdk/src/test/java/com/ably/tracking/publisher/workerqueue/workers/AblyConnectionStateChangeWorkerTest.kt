@@ -22,7 +22,7 @@ class AblyConnectionStateChangeWorkerTest {
 
     @Before
     fun setUp() {
-        worker = AblyConnectionStateChangeWorker(connectionStateChange, corePublisher)
+        worker = AblyConnectionStateChangeWorker(connectionStateChange, corePublisher, null)
     }
 
     @After

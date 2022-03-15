@@ -30,7 +30,7 @@ class SendEnhancedLocationFailureWorkerTest {
 
     @Before
     fun setUp() {
-        worker = SendEnhancedLocationFailureWorker(locationUpdate, trackableId, null, corePublisher)
+        worker = SendEnhancedLocationFailureWorker(locationUpdate, trackableId, null, corePublisher, null)
         every { publisherProperties.lastSentEnhancedLocations } returns lastSentEnhancedLocations
         every { publisherProperties.enhancedLocationsPublishingState } returns enhancedLocationsPublishingState
     }

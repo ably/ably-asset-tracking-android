@@ -27,7 +27,7 @@ class SendRawLocationFailureWorkerTest {
 
     @Before
     fun setUp() {
-        worker = SendRawLocationFailureWorker(locationUpdate, trackableId, null, corePublisher)
+        worker = SendRawLocationFailureWorker(locationUpdate, trackableId, null, corePublisher, null)
         every { publisherProperties.lastSentRawLocations } returns lastSentRawLocations
         every { publisherProperties.rawLocationsPublishingState } returns rawLocationsPublishingState
     }
