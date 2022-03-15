@@ -1,6 +1,5 @@
 package com.ably.tracking.publisher.workerqueue.resulthandlers
 
-import com.ably.tracking.publisher.ConnectionForTrackableReadyEvent
 import com.ably.tracking.publisher.CorePublisher
 import com.ably.tracking.publisher.TrackableRemovalRequestedEvent
 import com.ably.tracking.publisher.workerqueue.WorkerFactory
@@ -26,10 +25,9 @@ internal class ConnectionCreatedResultHandler(
                 )
 
             is ConnectionCreatedWorkResult.PresenceSuccess -> {
-                corePublisher.request(
-                    ConnectionForTrackableReadyEvent(
-                        workResult.trackable,
-                        workResult.callbackFunction
+                return workerFactory.createWorker(
+                    WorkerParams.ConnectionReady(
+                        workResult.trackable, workResult.callbackFunction, workResult.channelStateChangeListener
                     )
                 )
             }

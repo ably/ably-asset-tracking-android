@@ -68,6 +68,8 @@ internal class DefaultWorkerFactory(
             is WorkerParams.AddTrackable -> AddTrackableWorker(
                 params.trackable,
                 params.callbackFunction,
+                params.presenceUpdateListener,
+                params.channelStateChangeListener,
                 ably,
             )
             is WorkerParams.AddTrackableFailed -> AddTrackableFailedWorker(
@@ -80,6 +82,7 @@ internal class DefaultWorkerFactory(
                 params.callbackFunction,
                 ably,
                 params.presenceUpdateListener,
+                params.channelStateChangeListener,
             )
             is WorkerParams.ConnectionReady -> ConnectionReadyWorker(
                 params.trackable,
@@ -197,6 +200,8 @@ internal sealed class WorkerParams {
     data class AddTrackable(
         val trackable: Trackable,
         val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>,
+        val presenceUpdateListener: ((presenceMessage: com.ably.tracking.common.PresenceMessage) -> Unit),
+        val channelStateChangeListener: ((connectionStateChange: ConnectionStateChange) -> Unit),
     ) : WorkerParams()
 
     data class AddTrackableFailed(
@@ -220,6 +225,7 @@ internal sealed class WorkerParams {
         val trackable: Trackable,
         val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>,
         val presenceUpdateListener: ((presenceMessage: com.ably.tracking.common.PresenceMessage) -> Unit),
+        val channelStateChangeListener: ((connectionStateChange: ConnectionStateChange) -> Unit),
     ) : WorkerParams()
 
     data class ConnectionReady(

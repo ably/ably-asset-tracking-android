@@ -34,7 +34,7 @@ class AddTrackableWorkerTest {
 
     @Before
     fun setUp() {
-        worker = AddTrackableWorker(trackable, resultCallbackFunction, ably)
+        worker = AddTrackableWorker(trackable, resultCallbackFunction, {}, {}, ably)
         every { publisherProperties.duplicateTrackableGuard } returns duplicateTrackableGuard
     }
 
