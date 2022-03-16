@@ -36,8 +36,9 @@ internal interface PublisherProperties {
     var lastPublisherLocation: Location?
     var currentDestination: Destination?
     var routingProfile: RoutingProfile
-    val rawLocationChangedCommands: MutableList<(DefaultCorePublisher.Properties) -> Unit>
+    val rawLocationChangedCommands: MutableList<(PublisherProperties) -> Unit>
     val enhancedLocationsPublishingState: LocationsPublishingState<EnhancedLocationChangedEvent>
     val rawLocationsPublishingState: LocationsPublishingState<RawLocationChangedEvent>
+    val areRawLocationsEnabled: Boolean
     fun dispose()
 }

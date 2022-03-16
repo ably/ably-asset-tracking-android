@@ -5,9 +5,9 @@ import com.ably.tracking.publisher.CorePublisher
 import com.ably.tracking.publisher.DefaultCorePublisher
 import com.ably.tracking.publisher.Request
 import com.ably.tracking.publisher.workerqueue.resulthandlers.getWorkResultHandler
-import com.ably.tracking.publisher.workerqueue.workers.Worker
 import com.ably.tracking.publisher.workerqueue.results.SyncAsyncResult
 import com.ably.tracking.publisher.workerqueue.results.WorkResult
+import com.ably.tracking.publisher.workerqueue.workers.Worker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -19,7 +19,8 @@ import kotlinx.coroutines.launch
 internal class EventWorkerQueue(
     private val corePublisher: CorePublisher,
     private val publisherProperties: DefaultCorePublisher.Properties,
-    private val scope: CoroutineScope
+    private val scope: CoroutineScope,
+    private val workerFactory: WorkerFactory,
 ) : WorkerQueue {
 
     /**
@@ -44,7 +45,7 @@ internal class EventWorkerQueue(
     }
 
     private fun handleWorkResult(workResult: WorkResult) {
-        val resultHandler = getWorkResultHandler(workResult)
+        val resultHandler = getWorkResultHandler(workResult, workerFactory)
         val nextWorker = resultHandler.handle(workResult, corePublisher)
         nextWorker?.let {
             it.event.apply {

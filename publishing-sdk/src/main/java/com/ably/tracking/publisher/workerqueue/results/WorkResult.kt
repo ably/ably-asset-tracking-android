@@ -2,6 +2,7 @@ package com.ably.tracking.publisher.workerqueue.results
 
 import com.ably.tracking.ConnectionException
 import com.ably.tracking.TrackableState
+import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.PresenceMessage
 import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.publisher.Trackable
@@ -40,7 +41,9 @@ internal sealed class AddTrackableWorkResult : WorkResult() {
 
     internal data class Success(
         val trackable: Trackable,
-        val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>
+        val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>,
+        val presenceUpdateListener: ((presenceMessage: PresenceMessage) -> Unit),
+        val channelStateChangeListener: ((connectionStateChange: ConnectionStateChange) -> Unit),
     ) : AddTrackableWorkResult()
 
     internal data class Fail(
@@ -60,7 +63,8 @@ internal sealed class ConnectionCreatedWorkResult : WorkResult() {
     internal data class PresenceSuccess(
         val trackable: Trackable,
         val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>,
-        val presenceUpdateListener: (presenceMessage: PresenceMessage) -> Unit
+        val presenceUpdateListener: (presenceMessage: PresenceMessage) -> Unit,
+        val channelStateChangeListener: ((connectionStateChange: ConnectionStateChange) -> Unit),
     ) : ConnectionCreatedWorkResult()
 
     internal data class PresenceFail(
@@ -68,4 +72,28 @@ internal sealed class ConnectionCreatedWorkResult : WorkResult() {
         val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>,
         val exception: ConnectionException
     ) : ConnectionCreatedWorkResult()
+}
+
+internal sealed class ConnectionReadyWorkResult : WorkResult() {
+    internal data class RemovalRequested(
+        val trackable: Trackable,
+        val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>,
+        val result: Result<Unit>
+    ) : ConnectionReadyWorkResult()
+}
+
+internal sealed class RemoveTrackableWorkResult : WorkResult() {
+    internal data class Success(
+        val callbackFunction: ResultCallbackFunction<Boolean>,
+        val trackable: Trackable,
+    ) : RemoveTrackableWorkResult()
+
+    internal data class Fail(
+        val callbackFunction: ResultCallbackFunction<Boolean>,
+        val exception: Throwable,
+    ) : RemoveTrackableWorkResult()
+
+    internal data class NotPresent(
+        val callbackFunction: ResultCallbackFunction<Boolean>
+    ) : RemoveTrackableWorkResult()
 }
