@@ -6,11 +6,12 @@ import com.ably.tracking.publisher.workerqueue.WorkerParams
 import com.ably.tracking.publisher.workerqueue.results.ConnectionReadyWorkResult
 import com.ably.tracking.publisher.workerqueue.workers.Worker
 
-internal class ConnectionReadyResultHandler : WorkResultHandler<ConnectionReadyWorkResult> {
+internal class ConnectionReadyResultHandler(
+    private val workerFactory: WorkerFactory
+) : WorkResultHandler<ConnectionReadyWorkResult> {
     override fun handle(
         workResult: ConnectionReadyWorkResult,
         corePublisher: CorePublisher,
-        workerFactory: WorkerFactory
     ): Worker? {
         when (workResult) {
             is ConnectionReadyWorkResult.RemovalRequested ->

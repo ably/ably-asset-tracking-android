@@ -4,10 +4,12 @@ import com.ably.tracking.ConnectionException
 import com.ably.tracking.ErrorInformation
 import com.ably.tracking.TrackableState
 import com.ably.tracking.publisher.Trackable
+import com.ably.tracking.publisher.workerqueue.WorkerFactory
 import com.ably.tracking.publisher.workerqueue.results.AddTrackableWorkResult
 import com.ably.tracking.publisher.workerqueue.results.ConnectionCreatedWorkResult
 import com.ably.tracking.publisher.workerqueue.results.ConnectionReadyWorkResult
 import com.ably.tracking.publisher.workerqueue.results.RemoveTrackableWorkResult
+import io.mockk.mockk
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Assert
 import org.junit.Test
@@ -15,6 +17,7 @@ import org.junit.Test
 // Without it we're not allowed to check result handler type with `is`
 @Suppress("INCOMPATIBLE_TYPES")
 class WorkResultHandlersTest {
+    private val workerFactory = mockk<WorkerFactory>(relaxed = true)
     private val addTrackableWorkResults = listOf(
         AddTrackableWorkResult.AlreadyIn(MutableStateFlow(TrackableState.Online), {}),
         AddTrackableWorkResult.Success(Trackable(""), {}),
@@ -41,7 +44,7 @@ class WorkResultHandlersTest {
             val workResult = it
 
             // when
-            val handler = getWorkResultHandler(workResult)
+            val handler = getWorkResultHandler(workResult, workerFactory)
 
             // then
             Assert.assertTrue(
@@ -58,7 +61,7 @@ class WorkResultHandlersTest {
             val workResult = it
 
             // when
-            val handler = getWorkResultHandler(workResult)
+            val handler = getWorkResultHandler(workResult, workerFactory)
 
             // then
             Assert.assertTrue(
@@ -75,7 +78,7 @@ class WorkResultHandlersTest {
             val workResult = it
 
             // when
-            val handler = getWorkResultHandler(workResult)
+            val handler = getWorkResultHandler(workResult, workerFactory)
 
             // then
             Assert.assertTrue(
@@ -92,7 +95,7 @@ class WorkResultHandlersTest {
             val workResult = it
 
             // when
-            val handler = getWorkResultHandler(workResult)
+            val handler = getWorkResultHandler(workResult, workerFactory)
 
             // then
             Assert.assertTrue(
