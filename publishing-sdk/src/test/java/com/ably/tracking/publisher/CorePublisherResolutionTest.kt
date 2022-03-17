@@ -7,6 +7,7 @@ import com.ably.tracking.LocationUpdateType
 import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
+import com.ably.tracking.publisher.workerqueue.workers.EnhancedLocationChangedWorker
 import com.ably.tracking.test.common.createLocation
 import com.ably.tracking.test.common.mockCreateSuspendingConnectionSuccess
 import com.ably.tracking.test.common.mockSendEnhancedLocationSuccess
@@ -127,7 +128,7 @@ class CorePublisherResolutionTest(
         // when
         repeat(numberOfLocationUpdates) {
             val nextLocation = createNextPublisherLocation(location, distanceBetweenLocationUpdates, locationTimestamp)
-            corePublisher.enqueue(createEnhancedLocationChangedEvent(nextLocation))
+            corePublisher.enqueue(createEnhancedLocationChangedWorker(nextLocation))
             location = nextLocation
             locationTimestamp += intervalBetweenLocationUpdates
         }
@@ -142,8 +143,8 @@ class CorePublisherResolutionTest(
         }
     }
 
-    private fun createEnhancedLocationChangedEvent(location: Location) =
-        EnhancedLocationChangedEvent(location, emptyList(), LocationUpdateType.ACTUAL)
+    private fun createEnhancedLocationChangedWorker(location: Location) =
+        EnhancedLocationChangedWorker(location, emptyList(), LocationUpdateType.ACTUAL, corePublisher, null)
 
     private fun mockAllTrackablesResolution(resolution: Resolution) {
         every { resolutionPolicy.resolve(any<TrackableResolutionRequest>()) } returns resolution
@@ -158,29 +159,25 @@ class CorePublisherResolutionTest(
 
     private suspend fun addTrackableToCorePublisher(trackable: Trackable): StateFlow<TrackableState> {
         return suspendCoroutine { continuation ->
-            corePublisher.request(
-                AddTrackableEvent(trackable) {
-                    try {
-                        continuation.resume(it.getOrThrow())
-                    } catch (exception: Exception) {
-                        continuation.resumeWithException(exception)
-                    }
+            corePublisher.addTrackable(trackable) {
+                try {
+                    continuation.resume(it.getOrThrow())
+                } catch (exception: Exception) {
+                    continuation.resumeWithException(exception)
                 }
-            )
+            }
         }
     }
 
     private suspend fun stopCorePublisher() {
         suspendCoroutine<Unit> { continuation ->
-            corePublisher.request(
-                StopEvent {
-                    try {
-                        continuation.resume(it.getOrThrow())
-                    } catch (exception: Exception) {
-                        continuation.resumeWithException(exception)
-                    }
+            corePublisher.stop {
+                try {
+                    continuation.resume(it.getOrThrow())
+                } catch (exception: Exception) {
+                    continuation.resumeWithException(exception)
                 }
-            )
+            }
         }
     }
 

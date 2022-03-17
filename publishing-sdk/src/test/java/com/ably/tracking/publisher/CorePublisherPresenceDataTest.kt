@@ -11,15 +11,15 @@ import com.ably.tracking.test.common.mockCreateSuspendingConnectionSuccess
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import java.util.UUID
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.coroutines.suspendCoroutine
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Test
-import java.util.UUID
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
-import kotlin.coroutines.suspendCoroutine
 
 @SuppressLint("MissingPermission")
 class CorePublisherPresenceDataTest {
@@ -92,29 +92,25 @@ class CorePublisherPresenceDataTest {
         corePublisher: CorePublisher
     ): StateFlow<TrackableState> {
         return suspendCoroutine { continuation ->
-            corePublisher.request(
-                AddTrackableEvent(trackable) {
-                    try {
-                        continuation.resume(it.getOrThrow())
-                    } catch (exception: Exception) {
-                        continuation.resumeWithException(exception)
-                    }
+            corePublisher.addTrackable(trackable) {
+                try {
+                    continuation.resume(it.getOrThrow())
+                } catch (exception: Exception) {
+                    continuation.resumeWithException(exception)
                 }
-            )
+            }
         }
     }
 
     private suspend fun stopCorePublisher(corePublisher: CorePublisher) {
         suspendCoroutine<Unit> { continuation ->
-            corePublisher.request(
-                StopEvent {
-                    try {
-                        continuation.resume(it.getOrThrow())
-                    } catch (exception: Exception) {
-                        continuation.resumeWithException(exception)
-                    }
+            corePublisher.stop {
+                try {
+                    continuation.resume(it.getOrThrow())
+                } catch (exception: Exception) {
+                    continuation.resumeWithException(exception)
                 }
-            )
+            }
         }
     }
 }

@@ -5,6 +5,7 @@ import com.ably.tracking.ErrorInformation
 import com.ably.tracking.TrackableState
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.WorkerFactory
+import com.ably.tracking.publisher.workerqueue.WorkerQueue
 import com.ably.tracking.publisher.workerqueue.results.AddTrackableWorkResult
 import com.ably.tracking.publisher.workerqueue.results.ConnectionCreatedWorkResult
 import com.ably.tracking.publisher.workerqueue.results.ConnectionReadyWorkResult
@@ -18,6 +19,7 @@ import org.junit.Test
 @Suppress("INCOMPATIBLE_TYPES")
 class WorkResultHandlersTest {
     private val workerFactory = mockk<WorkerFactory>(relaxed = true)
+    private val workerQueue = mockk<WorkerQueue>(relaxed = true)
     private val addTrackableWorkResults = listOf(
         AddTrackableWorkResult.AlreadyIn(MutableStateFlow(TrackableState.Online), {}),
         AddTrackableWorkResult.Success(Trackable(""), {}, {}, {}),
@@ -44,7 +46,7 @@ class WorkResultHandlersTest {
             val workResult = it
 
             // when
-            val handler = getWorkResultHandler(workResult, workerFactory)
+            val handler = getWorkResultHandler(workResult, workerFactory, workerQueue)
 
             // then
             Assert.assertTrue(
@@ -61,7 +63,7 @@ class WorkResultHandlersTest {
             val workResult = it
 
             // when
-            val handler = getWorkResultHandler(workResult, workerFactory)
+            val handler = getWorkResultHandler(workResult, workerFactory, workerQueue)
 
             // then
             Assert.assertTrue(
@@ -78,7 +80,7 @@ class WorkResultHandlersTest {
             val workResult = it
 
             // when
-            val handler = getWorkResultHandler(workResult, workerFactory)
+            val handler = getWorkResultHandler(workResult, workerFactory, workerQueue)
 
             // then
             Assert.assertTrue(
@@ -95,7 +97,7 @@ class WorkResultHandlersTest {
             val workResult = it
 
             // when
-            val handler = getWorkResultHandler(workResult, workerFactory)
+            val handler = getWorkResultHandler(workResult, workerFactory, workerQueue)
 
             // then
             Assert.assertTrue(

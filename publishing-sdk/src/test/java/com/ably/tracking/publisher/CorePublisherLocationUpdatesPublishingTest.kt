@@ -7,6 +7,8 @@ import com.ably.tracking.LocationUpdateType
 import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
+import com.ably.tracking.publisher.workerqueue.workers.EnhancedLocationChangedWorker
+import com.ably.tracking.publisher.workerqueue.workers.RawLocationChangedWorker
 import com.ably.tracking.test.common.createLocation
 import com.ably.tracking.test.common.mockCreateSuspendingConnectionSuccess
 import com.ably.tracking.test.common.mockSendEnhancedLocationFailure
@@ -48,7 +50,7 @@ class CorePublisherLocationUpdatesPublishingTest {
         ably.mockSendEnhancedLocationSuccess(trackableId)
 
         // when
-        corePublisher.enqueue(createEnhancedLocationChangedEvent(createLocation()))
+        corePublisher.enqueue(createEnhancedLocationChangedWorker(createLocation()))
 
         // then
         runBlocking {
@@ -69,7 +71,7 @@ class CorePublisherLocationUpdatesPublishingTest {
         ably.mockSendEnhancedLocationFailureThenSuccess(trackableId)
 
         // when
-        corePublisher.enqueue(createEnhancedLocationChangedEvent(createLocation()))
+        corePublisher.enqueue(createEnhancedLocationChangedWorker(createLocation()))
 
         // then
         runBlocking {
@@ -90,7 +92,7 @@ class CorePublisherLocationUpdatesPublishingTest {
         ably.mockSendEnhancedLocationFailure(trackableId)
 
         // when
-        corePublisher.enqueue(createEnhancedLocationChangedEvent(createLocation()))
+        corePublisher.enqueue(createEnhancedLocationChangedWorker(createLocation()))
 
         // then
         runBlocking {
@@ -111,7 +113,7 @@ class CorePublisherLocationUpdatesPublishingTest {
         ably.mockSendRawLocationSuccess(trackableId)
 
         // when
-        corePublisher.enqueue(createRawLocationChangedEvent(createLocation()))
+        corePublisher.enqueue(createRawLocationChangedWorker(createLocation()))
 
         // then
         runBlocking {
@@ -135,7 +137,7 @@ class CorePublisherLocationUpdatesPublishingTest {
         ably.mockSendRawLocationSuccess(trackableId)
 
         // when
-        corePublisher.enqueue(createRawLocationChangedEvent(createLocation()))
+        corePublisher.enqueue(createRawLocationChangedWorker(createLocation()))
 
         // then
         runBlocking {
@@ -147,11 +149,11 @@ class CorePublisherLocationUpdatesPublishingTest {
         }
     }
 
-    private fun createEnhancedLocationChangedEvent(location: Location) =
-        EnhancedLocationChangedEvent(location, emptyList(), LocationUpdateType.ACTUAL)
+    private fun createEnhancedLocationChangedWorker(location: Location) =
+        EnhancedLocationChangedWorker(location, emptyList(), LocationUpdateType.ACTUAL, corePublisher, null)
 
-    private fun createRawLocationChangedEvent(location: Location) =
-        RawLocationChangedEvent(location)
+    private fun createRawLocationChangedWorker(location: Location) =
+        RawLocationChangedWorker(location, corePublisher, null)
 
     private fun mockAllTrackablesResolution(resolution: Resolution) {
         every { resolutionPolicy.resolve(any<TrackableResolutionRequest>()) } returns resolution
@@ -172,29 +174,25 @@ class CorePublisherLocationUpdatesPublishingTest {
         corePublisher: CorePublisher = this.corePublisher
     ): StateFlow<TrackableState> {
         return suspendCoroutine { continuation ->
-            corePublisher.request(
-                AddTrackableEvent(trackable) {
-                    try {
-                        continuation.resume(it.getOrThrow())
-                    } catch (exception: Exception) {
-                        continuation.resumeWithException(exception)
-                    }
+            corePublisher.addTrackable(trackable) {
+                try {
+                    continuation.resume(it.getOrThrow())
+                } catch (exception: Exception) {
+                    continuation.resumeWithException(exception)
                 }
-            )
+            }
         }
     }
 
     private suspend fun stopCorePublisher(corePublisher: CorePublisher = this.corePublisher) {
         suspendCoroutine<Unit> { continuation ->
-            corePublisher.request(
-                StopEvent {
-                    try {
-                        continuation.resume(it.getOrThrow())
-                    } catch (exception: Exception) {
-                        continuation.resumeWithException(exception)
-                    }
+            corePublisher.stop {
+                try {
+                    continuation.resume(it.getOrThrow())
+                } catch (exception: Exception) {
+                    continuation.resumeWithException(exception)
                 }
-            )
+            }
         }
     }
 }
