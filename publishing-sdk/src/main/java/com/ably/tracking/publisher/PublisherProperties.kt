@@ -24,6 +24,7 @@ internal interface PublisherProperties {
     var active: Trackable?
     var isStopped: Boolean
     var locationEngineResolution: Resolution
+    val isLocationEngineResolutionConstant: Boolean
     var isTracking: Boolean
     val trackableStates: MutableMap<String, TrackableState>
     val lastChannelConnectionStateChanges: MutableMap<String, ConnectionStateChange>

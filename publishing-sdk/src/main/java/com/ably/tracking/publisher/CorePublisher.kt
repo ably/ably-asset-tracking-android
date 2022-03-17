@@ -350,9 +350,7 @@ constructor(
                         )
                     }
                     is ChangeLocationEngineResolutionEvent -> {
-                        if (!properties.isLocationEngineResolutionConstant) {
                         workerQueue.execute(workerFactory.createWorker(WorkerParams.ChangeLocationEngineResolution))
-                        }
                     }
                     is RemoveTrackableEvent -> {
                         workerQueue.execute(
@@ -846,7 +844,7 @@ constructor(
         override var isStopped: Boolean = false
         override var locationEngineResolution: Resolution = locationEngineResolution
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        val isLocationEngineResolutionConstant: Boolean = isLocationEngineResolutionConstant
+        override val isLocationEngineResolutionConstant: Boolean = isLocationEngineResolutionConstant
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
         override var isTracking: Boolean = false
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field

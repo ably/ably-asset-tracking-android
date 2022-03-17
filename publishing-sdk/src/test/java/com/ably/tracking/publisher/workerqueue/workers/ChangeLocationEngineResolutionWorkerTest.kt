@@ -90,6 +90,22 @@ class ChangeLocationEngineResolutionWorkerTest {
         }
     }
 
+    @Test
+    fun `should do nothing if publisher is using constant location engine resolution`() {
+        // given
+        mockIsUsingConstantLocationEngineResolution()
+
+        // when
+        worker.doWork(publisherProperties)
+
+        // then
+        verify(exactly = 0) {
+            resolutionPolicy.resolve(any<Set<Resolution>>())
+            publisherProperties.locationEngineResolution = any()
+            mapbox.changeResolution(any())
+        }
+    }
+
     private fun mockResolutions(resolutionSet: Set<Resolution>) {
         val resolutions = resolutionSet
             .mapIndexed { index, resolution -> index.toString() to resolution }
@@ -100,5 +116,9 @@ class ChangeLocationEngineResolutionWorkerTest {
 
     private fun mockCalculatingResolution(resolution: Resolution) {
         every { resolutionPolicy.resolve(any() as Set<Resolution>) } returns resolution
+    }
+
+    private fun mockIsUsingConstantLocationEngineResolution() {
+        every { publisherProperties.isLocationEngineResolutionConstant } returns true
     }
 }
