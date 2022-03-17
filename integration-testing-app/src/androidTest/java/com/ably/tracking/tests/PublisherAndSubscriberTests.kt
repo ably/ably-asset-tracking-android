@@ -151,4 +151,53 @@ class PublisherAndSubscriberTests {
         // then
         subscriberReceivedLocationUpdateExpectation.assertFulfilled()
     }
+
+    @Test
+    fun shouldSendCalculatedResolutionsWhenTheyAreEnabled() {
+        // given
+        var hasNotReceivedResolution = true
+        val subscriberReceivedResolutionExpectation = UnitExpectation("subscriber received a publisher resolution")
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val trackableId = UUID.randomUUID().toString()
+        val scope = CoroutineScope(Dispatchers.Default)
+
+        // when
+        // create subscriber and publisher
+        var subscriber: Subscriber
+        runBlocking {
+            subscriber = createAndStartSubscriber(trackableId)
+        }
+
+        val publisher = createAndStartPublisher(context, sendResolution = true)
+
+        // listen for location updates
+        subscriber.resolutions
+            .onEach {
+                // UnitExpectation throws an error if it's fulfilled more than once so we need to have this check
+                if (hasNotReceivedResolution) {
+                    hasNotReceivedResolution = false
+                    subscriberReceivedResolutionExpectation.fulfill()
+                }
+            }
+            .launchIn(scope)
+
+        // start publishing location updates
+        runBlocking {
+            publisher.track(Trackable(trackableId))
+        }
+
+        // await for at least one received publisher resolution
+        subscriberReceivedResolutionExpectation.await()
+
+        // cleanup
+        runBlocking {
+            coroutineScope {
+                launch { publisher.stop() }
+                launch { subscriber.stop() }
+            }
+        }
+
+        // then
+        subscriberReceivedResolutionExpectation.assertFulfilled()
+    }
 }

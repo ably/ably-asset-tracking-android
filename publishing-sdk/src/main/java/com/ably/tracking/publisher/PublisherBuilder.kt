@@ -5,6 +5,7 @@ import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.content.Context
 import androidx.annotation.RequiresPermission
 import com.ably.tracking.BuilderConfigurationIncompleteException
+import com.ably.tracking.Resolution
 import com.ably.tracking.common.DefaultAbly
 import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.logging.LogHandler
@@ -20,9 +21,10 @@ internal data class PublisherBuilder(
     val notificationId: Int? = null,
     val locationSource: LocationSource? = null,
     val areRawLocationsEnabled: Boolean? = null,
-    val sendResolutionEnabled: Boolean = false,
+    val sendResolutionEnabled: Boolean = true,
     val predictionsEnabled: Boolean = true,
     val rawHistoryCallback: ((String) -> Unit)? = null,
+    val constantLocationEngineResolution: Resolution? = null,
 ) : Publisher.Builder {
 
     override fun connection(configuration: ConnectionConfiguration): Publisher.Builder =
@@ -64,6 +66,9 @@ internal data class PublisherBuilder(
     override fun rawHistoryDataCallback(callback: (String) -> Unit): Publisher.Builder =
         this.copy(rawHistoryCallback = callback)
 
+    override fun constantLocationEngineResolution(resolution: Resolution?): Publisher.Builder =
+        this.copy(constantLocationEngineResolution = resolution)
+
     @RequiresPermission(anyOf = [ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION])
     override fun start(): Publisher {
         if (isMissingRequiredFields()) {
@@ -82,12 +87,14 @@ internal data class PublisherBuilder(
                 notificationId!!,
                 predictionsEnabled,
                 rawHistoryCallback,
+                constantLocationEngineResolution,
             ),
             resolutionPolicyFactory!!,
             routingProfile,
             logHandler,
             areRawLocationsEnabled,
             sendResolutionEnabled,
+            constantLocationEngineResolution,
         )
     }
 

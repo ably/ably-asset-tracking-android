@@ -27,22 +27,63 @@ jobs:
           ORG_GRADLE_PROJECT_ABLY_API_KEY: ${{ secrets.ABLY_API_KEY }}
           ORG_GRADLE_PROJECT_GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
 
-      - uses: actions/upload-artifact@v2
-        with:
-          name: build-profile-report
-          path: build/reports/profile/
+      # Reveal potential locations of test build reports
+      # (temporary: we'll remove this once we've confirmed where they all end up)
+      - run: find . -name "index.html"
+        if: always()
 
       - uses: actions/upload-artifact@v2
+        name: Build Reports for common
+        if: always()
         with:
-          name: subscribing-sdk-coverage
-          path: subscribing-sdk/build/reports/jacoco/
+          name: java-version-${{ matrix.java-version }}-common-build-reports
+          path: common/build/reports
 
       - uses: actions/upload-artifact@v2
+        name: Build Reports for integration-testing-app
+        if: always()
         with:
-          name: publishing-sdk-coverage
-          path: publishing-sdk/build/reports/jacoco/
+          name: java-version-${{ matrix.java-version }}-integration-testing-app-build-reports
+          path: integration-testing-app/build/reports
 
       - uses: actions/upload-artifact@v2
+        name: Build Reports for publishing-example-app
+        if: always()
         with:
-          name: core-sdk-coverage
-          path: core-sdk/build/reports/jacoco/
+          name: java-version-${{ matrix.java-version }}-publishing-example-app-build-reports
+          path: publishing-example-app/build/reports
+
+      - uses: actions/upload-artifact@v2
+        name: Build Reports for publishing-java-testing
+        if: always()
+        with:
+          name: java-version-${{ matrix.java-version }}-publishing-java-testing-build-reports
+          path: publishing-java-testing/build/reports
+
+      - uses: actions/upload-artifact@v2
+        name: Build Reports for publishing-sdk
+        if: always()
+        with:
+          name: java-version-${{ matrix.java-version }}-publishing-sdk-build-reports
+          path: publishing-sdk/build/reports
+
+      - uses: actions/upload-artifact@v2
+        name: Build Reports for subscribing-example-app
+        if: always()
+        with:
+          name: java-version-${{ matrix.java-version }}-subscribing-example-app-build-reports
+          path: subscribing-example-app/build/reports
+
+      - uses: actions/upload-artifact@v2
+        name: Build Reports for subscribing-java-testing
+        if: always()
+        with:
+          name: java-version-${{ matrix.java-version }}-subscribing-java-testing-build-reports
+          path: subscribing-java-testing/build/reports
+
+      - uses: actions/upload-artifact@v2
+        name: Build Reports for subscribing-sdk
+        if: always()
+        with:
+          name: java-version-${{ matrix.java-version }}-subscribing-sdk-build-reports
+          path: subscribing-sdk/build/reports

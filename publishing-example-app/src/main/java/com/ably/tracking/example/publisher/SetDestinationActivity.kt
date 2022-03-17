@@ -32,7 +32,7 @@ class SetDestinationActivity : AppCompatActivity() {
         setContentView(R.layout.activity_set_destination)
         setupMap()
         setupDestinationClickListener()
-        pointAnnotationManager = mapView.annotations.createPointAnnotationManager(mapView)
+        pointAnnotationManager = mapView.annotations.createPointAnnotationManager()
     }
 
     private fun setupMap() {

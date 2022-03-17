@@ -52,6 +52,7 @@ class MapboxTests {
             12345,
             true,
             null,
+            null,
         )
 
     private fun getLocationData(context: Context): LocationHistoryData {

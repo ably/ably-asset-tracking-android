@@ -20,4 +20,11 @@
   <string name="error_changing_resolution_failed">Changing resolution error</string>
     <string name="subscriber_resolution_title">Subscriber\'s requested resolution</string>
   <string name="publisher_resolution_title">Publisher\'s calculated resolution</string>
+  <string name="animation_options_dialog_title">Animation Options</string>
+  <string name="dialog_ok_button">OK</string>
+  <string name="animation_option_show_raw_marker_title">Raw marker</string>
+  <string name="animation_option_show_raw_accuracy_title">Raw accuracy</string>
+  <string name="animation_option_show_enhanced_marker_title">Enhanced marker</string>
+  <string name="animation_option_show_enhanced_accuracy_title">Enhanced accuracy</string>
+  <string name="animation_option_animate_camera_movement_title">Camera animation</string>
 </resources>

@@ -53,6 +53,8 @@ GOOGLE_MAPS_API_KEY=create_api_key_with_geolocation_maps_sdk
 
 ## Usage
 
+Please see our [Upgrade / Migration Guide](UPDATING.md) for notes on changes you need to make to your code to update the Ably Asset Tracking SDKs.
+
 ### Maven / Gradle Dependencies
 
 Kotlin users will want to add either `publishing-sdk` or `subscribing-sdk`, according to the needs of their project.
@@ -125,10 +127,10 @@ you can then add the Ably Asset Tracking dependency that you require in your Gra
 ```groovy
 dependencies {
     // Publishers, developing in Kotlin, will need the Publishing SDK
-    implementation 'com.ably.tracking:publishing-sdk:1.0.0'
+    implementation 'com.ably.tracking:publishing-sdk:1.1.0-rc.2'
 
     // Subscribers, developing in Kotlin, will need the Subscribing SDK
-    implementation 'com.ably.tracking:subscribing-sdk:1.0.0'
+    implementation 'com.ably.tracking:subscribing-sdk:1.1.0-rc.2'
 }
 ```
 

@@ -12,8 +12,6 @@ import androidx.core.content.ContextCompat
 import androidx.core.widget.addTextChangedListener
 import androidx.transition.TransitionManager
 import com.ably.tracking.Accuracy
-import com.ably.tracking.Location
-import com.ably.tracking.LocationUpdate
 import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
 import com.ably.tracking.connection.Authentication
@@ -21,6 +19,9 @@ import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.logging.LogHandler
 import com.ably.tracking.logging.LogLevel
 import com.ably.tracking.subscriber.Subscriber
+import com.ably.tracking.ui.animation.CoreLocationAnimator
+import com.ably.tracking.ui.animation.LocationAnimator
+import com.ably.tracking.ui.animation.Position
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.SupportMapFragment
@@ -32,9 +33,9 @@ import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import kotlinx.android.synthetic.main.activity_main.assetInformationContainer
 import kotlinx.android.synthetic.main.activity_main.draggingAreaView
-import kotlinx.android.synthetic.main.activity_main.mapFragment
+import kotlinx.android.synthetic.main.activity_main.mapFragmentContainerView
 import kotlinx.android.synthetic.main.activity_main.rootContainer
-import kotlinx.android.synthetic.main.asset_information_view.animationSwitch
+import kotlinx.android.synthetic.main.asset_information_view.animationSettingsImageView
 import kotlinx.android.synthetic.main.asset_information_view.assetStateTextView
 import kotlinx.android.synthetic.main.asset_information_view.publisherResolutionAccuracyTextView
 import kotlinx.android.synthetic.main.asset_information_view.publisherResolutionDisplacementTextView
@@ -47,13 +48,10 @@ import kotlinx.android.synthetic.main.trackable_input_controls_view.startButton
 import kotlinx.android.synthetic.main.trackable_input_controls_view.trackableIdEditText
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.yield
 import timber.log.Timber
 
 // The client ID for the Ably SDK instance.
@@ -67,8 +65,6 @@ private const val ZOOM_LEVEL_STREETS = 15F
 private const val ZOOM_LEVEL_CITY = 10F
 private const val ZOOM_LEVEL_CONTINENT = 5F
 
-private const val INITIAL_LOCATION_UPDATE_INTERVAL_IN_MILLISECONDS = 1000L
-
 class MainActivity : AppCompatActivity() {
     private var subscriber: Subscriber? = null
     private var googleMap: GoogleMap? = null
@@ -78,7 +74,10 @@ class MainActivity : AppCompatActivity() {
     private var rawAccuracyCircle: Circle? = null
     private var resolution: Resolution =
         Resolution(Accuracy.MAXIMUM, desiredInterval = 1000L, minimumDisplacement = 1.0)
-    private var locationUpdateIntervalInMilliseconds = INITIAL_LOCATION_UPDATE_INTERVAL_IN_MILLISECONDS
+    private var locationUpdateIntervalInMilliseconds = resolution.desiredInterval
+    private val enhancedLocationAnimator: LocationAnimator = CoreLocationAnimator()
+    private val rawLocationAnimator: LocationAnimator = CoreLocationAnimator()
+    private val animationOptionsManager = AnimationOptionsManager()
 
     // SupervisorJob() is used to keep the scope working after any of its children fail
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
@@ -90,6 +89,8 @@ class MainActivity : AppCompatActivity() {
         prepareMap()
         setTrackableIdEditTextListener()
         setupTrackableInputAction()
+        setupLocationMarkerAnimations()
+        setupAnimationOptions()
 
         startButton.setOnClickListener {
             if (subscriber == null) {
@@ -98,6 +99,25 @@ class MainActivity : AppCompatActivity() {
                 stopSubscribing()
             }
         }
+    }
+
+    private fun setupAnimationOptions() {
+        animationSettingsImageView.setOnClickListener { animationOptionsManager.showAnimationOptionsDialog(this) }
+        animationOptionsManager.onOptionsChanged = { updateMapMarkersVisibility() }
+    }
+
+    private fun setupLocationMarkerAnimations() {
+        enhancedLocationAnimator.positionsFlow
+            .onEach { showMarkerOnMap(it, isRaw = false) }
+            .launchIn(scope)
+
+        enhancedLocationAnimator.cameraPositionsFlow
+            .onEach { moveCamera(it) }
+            .launchIn(scope)
+
+        rawLocationAnimator.positionsFlow
+            .onEach { showMarkerOnMap(it, isRaw = true) }
+            .launchIn(scope)
     }
 
     private fun setTrackableIdEditTextListener() {
@@ -118,7 +138,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun prepareMap() {
-        (mapFragment as SupportMapFragment).let {
+        (mapFragmentContainerView.getFragment() as SupportMapFragment).let {
             it.getMapAsync { map ->
                 map.uiSettings.isZoomControlsEnabled = true
                 googleMap = map
@@ -165,28 +185,22 @@ class MainActivity : AppCompatActivity() {
             })
             .start()
             .apply {
-                var processEnhancedLocationJob: Job? = null
-                var processRawLocationJob: Job? = null
                 locations
-                    .onEach {
-                        processEnhancedLocationJob?.cancel()
-                        processEnhancedLocationJob = scope.launch { processLocationUpdate(it, isRaw = false) }
-                    }
+                    .onEach { enhancedLocationAnimator.animateLocationUpdate(it, locationUpdateIntervalInMilliseconds) }
                     .launchIn(scope)
                 rawLocations
-                    .onEach {
-                        processRawLocationJob?.cancel()
-                        processRawLocationJob = scope.launch { processLocationUpdate(it, isRaw = true) }
-                    }
+                    .onEach { rawLocationAnimator.animateLocationUpdate(it, locationUpdateIntervalInMilliseconds) }
                     .launchIn(scope)
                 trackableStates
                     .onEach { updateAssetState(it) }
                     .launchIn(scope)
                 resolutions
                     .onEach {
-                        locationUpdateIntervalInMilliseconds = resolution.desiredInterval
                         updatePublisherResolutionInfo(it)
                     }
+                    .launchIn(scope)
+                nextLocationUpdateIntervals
+                    .onEach { locationUpdateIntervalInMilliseconds = it }
                     .launchIn(scope)
             }
     }
@@ -297,72 +311,65 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private suspend fun processLocationUpdate(locationUpdate: LocationUpdate, isRaw: Boolean) {
-        if (locationUpdate.skippedLocations.isNotEmpty()) {
-            val allLocations = locationUpdate.skippedLocations + locationUpdate.location
-            val singleLocationUpdateDuration: Float = locationUpdateIntervalInMilliseconds.toFloat() / allLocations.size
-            allLocations.forEach { location ->
-                yield() // this will break the coroutine if it was cancelled
-                showMarkerOnMap(location, isRaw, singleLocationUpdateDuration)
+    private fun showMarkerOnMap(newPosition: Position, isRaw: Boolean) {
+        val currentMarker = if (isRaw) rawMarker else enhancedMarker
+        val currentAccuracyCircle = if (isRaw) rawAccuracyCircle else enhancedAccuracyCircle
+        if (currentMarker == null || currentAccuracyCircle == null) {
+            createMarker(newPosition, isRaw)
+            if (!isRaw) {
+                moveCamera(newPosition, ZOOM_LEVEL_STREETS)
             }
         } else {
-            yield() // this will break the coroutine if it was cancelled
-            showMarkerOnMap(locationUpdate.location, isRaw, locationUpdateIntervalInMilliseconds.toFloat())
+            updateMarker(newPosition, currentMarker, currentAccuracyCircle, isRaw)
         }
     }
 
-    private suspend fun showMarkerOnMap(location: Location, isRaw: Boolean, animationDuration: Float) {
+    private fun createMarker(newPosition: Position, isRaw: Boolean) {
         googleMap?.apply {
-            val position = LatLng(location.latitude, location.longitude)
-            val currentMarker = if (isRaw) rawMarker else enhancedMarker
-            val currentAccuracyCircle = if (isRaw) rawAccuracyCircle else enhancedAccuracyCircle
-            if (currentMarker == null || currentAccuracyCircle == null) {
-                val marker = addMarker(
-                    MarkerOptions()
-                        .position(position)
-                        .icon(getMarkerIcon(location.bearing, isRaw))
-                        .alpha(if (isRaw) 0.5f else 1f)
-                )
-                val accuracyCircle = addCircle(
-                    CircleOptions()
-                        .center(position)
-                        .radius(location.accuracy.toDouble())
-                        .strokeColor(if (isRaw) COLOR_RED else COLOR_ORANGE)
-                        .fillColor(if (isRaw) COLOR_RED_TRANSPARENT else COLOR_ORANGE_TRANSPARENT)
-                        .strokeWidth(2f)
-                )
-                if (isRaw) {
-                    rawMarker = marker
-                    rawAccuracyCircle = accuracyCircle
-                } else {
-                    enhancedMarker = marker
-                    enhancedAccuracyCircle = accuracyCircle
-                    moveCamera(CameraUpdateFactory.newLatLngZoom(position, ZOOM_LEVEL_STREETS))
-                }
+            val position = LatLng(newPosition.latitude, newPosition.longitude)
+            val marker = addMarker(
+                MarkerOptions()
+                    .position(position)
+                    .icon(getMarkerIcon(newPosition.bearing, isRaw))
+                    .alpha(if (isRaw) 0.5f else 1f)
+            )
+            val accuracyCircle = addCircle(
+                CircleOptions()
+                    .center(position)
+                    .radius(newPosition.accuracy.toDouble())
+                    .strokeColor(if (isRaw) COLOR_RED else COLOR_ORANGE)
+                    .fillColor(if (isRaw) COLOR_RED_TRANSPARENT else COLOR_ORANGE_TRANSPARENT)
+                    .strokeWidth(2f)
+            )
+            if (isRaw) {
+                rawMarker = marker
+                rawAccuracyCircle = accuracyCircle
             } else {
-                val cameraPosition = CameraUpdateFactory.newLatLng(position)
-                currentMarker.setIcon(getMarkerIcon(location.bearing, isRaw))
-                if (animationSwitch.isChecked) {
-                    if (!isRaw) {
-                        animateCamera(cameraPosition)
-                    }
-                    animateMarkerAndCircleMovement(
-                        currentMarker,
-                        position,
-                        currentAccuracyCircle,
-                        location.accuracy.toDouble(),
-                        animationDuration,
-                    )
-                } else {
-                    if (!isRaw) {
-                        moveCamera(cameraPosition)
-                    }
-                    currentMarker.position = position
-                    currentAccuracyCircle.center = position
-                    currentAccuracyCircle.radius = location.accuracy.toDouble()
-                    delay(animationDuration.toLong())
-                }
+                enhancedMarker = marker
+                enhancedAccuracyCircle = accuracyCircle
             }
+        }
+    }
+
+    private fun updateMarker(newPosition: Position, marker: Marker, accuracyCircle: Circle, isRaw: Boolean) {
+        val position = LatLng(newPosition.latitude, newPosition.longitude)
+        marker.setIcon(getMarkerIcon(newPosition.bearing, isRaw))
+        marker.position = position
+        accuracyCircle.center = position
+        accuracyCircle.radius = newPosition.accuracy.toDouble()
+    }
+
+    private fun moveCamera(newPosition: Position, zoomLevel: Float? = null) {
+        val position = LatLng(newPosition.latitude, newPosition.longitude)
+        val cameraPosition = if (zoomLevel == null) {
+            CameraUpdateFactory.newLatLng(position)
+        } else {
+            CameraUpdateFactory.newLatLngZoom(position, zoomLevel)
+        }
+        if (animationOptionsManager.animateCameraMovement && zoomLevel == null) {
+            googleMap?.animateCamera(cameraPosition)
+        } else {
+            googleMap?.moveCamera(cameraPosition)
         }
     }
 
@@ -444,5 +451,12 @@ class MainActivity : AppCompatActivity() {
         progressIndicator.visibility = View.GONE
         startButton.isEnabled = true
         startButton.showText()
+    }
+
+    private fun updateMapMarkersVisibility() {
+        rawMarker?.isVisible = animationOptionsManager.showRawMarker
+        rawAccuracyCircle?.isVisible = animationOptionsManager.showRawAccuracy
+        enhancedMarker?.isVisible = animationOptionsManager.showEnhancedMarker
+        enhancedAccuracyCircle?.isVisible = animationOptionsManager.showEnhancedAccuracy
     }
 }

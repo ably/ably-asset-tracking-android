@@ -29,6 +29,9 @@ internal class DefaultSubscriber(
     override val resolutions: SharedFlow<Resolution>
         get() = core.resolutions
 
+    override val nextLocationUpdateIntervals: SharedFlow<Long>
+        get() = core.nextLocationUpdateIntervals
+
     init {
         core = createCoreSubscriber(ably, resolution, trackableId)
     }

@@ -63,9 +63,14 @@ interface Subscriber {
 
     /**
      * The shared flow emitting resolution values when they become available.
-     * Resolutions are disabled by default. You need to enable them in the Publishing SDK.
      */
     val resolutions: SharedFlow<Resolution>
+        @JvmSynthetic get
+
+    /**
+     * The shared flow emitting the estimated next location update intervals in milliseconds when they become available.
+     */
+    val nextLocationUpdateIntervals: SharedFlow<Long>
         @JvmSynthetic get
 
     /**

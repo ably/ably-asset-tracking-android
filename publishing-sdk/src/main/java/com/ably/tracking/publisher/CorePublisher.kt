@@ -107,6 +107,7 @@ internal fun createCorePublisher(
     logHandler: LogHandler?,
     areRawLocationsEnabled: Boolean?,
     sendResolutionEnabled: Boolean,
+    constantLocationEngineResolution: Resolution?,
 ): CorePublisher {
     return DefaultCorePublisher(
         ably,
@@ -116,6 +117,7 @@ internal fun createCorePublisher(
         logHandler,
         areRawLocationsEnabled,
         sendResolutionEnabled,
+        constantLocationEngineResolution,
     )
 }
 
@@ -134,6 +136,7 @@ constructor(
     private val logHandler: LogHandler?,
     areRawLocationsEnabled: Boolean?,
     private val sendResolutionEnabled: Boolean,
+    private val constantLocationEngineResolution: Resolution?,
 ) : CorePublisher, TimeProvider {
     private val TAG = createLoggingTag(this)
     private val scope = CoroutineScope(singleThreadDispatcher + SupervisorJob())
@@ -201,7 +204,12 @@ constructor(
         areRawLocationsEnabled: Boolean?,
     ) {
         launch {
-            val properties = Properties(routingProfile, policy.resolve(emptySet()), areRawLocationsEnabled)
+            val properties = Properties(
+                routingProfile,
+                policy.resolve(emptySet()),
+                constantLocationEngineResolution != null,
+                areRawLocationsEnabled,
+            )
             val workerQueue: WorkerQueue = EventWorkerQueue(this@DefaultCorePublisher, properties, scope, workerFactory)
             // processing
             for (event in receiveEventChannel) {
@@ -342,7 +350,9 @@ constructor(
                         )
                     }
                     is ChangeLocationEngineResolutionEvent -> {
+                        if (!properties.isLocationEngineResolutionConstant) {
                         workerQueue.execute(workerFactory.createWorker(WorkerParams.ChangeLocationEngineResolution))
+                        }
                     }
                     is RemoveTrackableEvent -> {
                         workerQueue.execute(
@@ -705,10 +715,13 @@ constructor(
     override fun resolveResolution(trackable: Trackable, properties: PublisherProperties) {
         val resolutionRequests: Set<Resolution> = properties.requests[trackable.id]?.values?.toSet() ?: emptySet()
         policy.resolve(TrackableResolutionRequest(trackable, resolutionRequests)).let { resolution ->
-            properties.resolutions[trackable.id] = resolution
-            enqueue(ChangeLocationEngineResolutionEvent)
-            if (sendResolutionEnabled) {
-                ably.sendResolution(trackable.id, resolution) {} // we ignore the result of this operation
+            if (properties.resolutions[trackable.id] != resolution) {
+                properties.resolutions[trackable.id] = resolution
+                enqueue(ChangeLocationEngineResolutionEvent)
+                if (sendResolutionEnabled) {
+                    // For now we ignore the result of this operation but perhaps we should retry it if it fails
+                    ably.updatePresenceData(trackable.id, properties.presenceData.copy(resolution = resolution)) {}
+                }
             }
         }
     }
@@ -826,11 +839,14 @@ constructor(
     internal inner class Properties(
         routingProfile: RoutingProfile,
         locationEngineResolution: Resolution,
+        isLocationEngineResolutionConstant: Boolean,
         areRawLocationsEnabled: Boolean?,
     ) : PublisherProperties {
         private var isDisposed: Boolean = false
         override var isStopped: Boolean = false
         override var locationEngineResolution: Resolution = locationEngineResolution
+            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
+        val isLocationEngineResolutionConstant: Boolean = isLocationEngineResolutionConstant
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
         override var isTracking: Boolean = false
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field

@@ -7,6 +7,7 @@ import androidx.annotation.RequiresPermission
 import com.ably.tracking.BuilderConfigurationIncompleteException
 import com.ably.tracking.ConnectionException
 import com.ably.tracking.LocationUpdate
+import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
 import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.logging.LogHandler
@@ -214,10 +215,8 @@ interface Publisher {
         fun rawLocations(enabled: Boolean): Builder
 
         /**
-         * EXPERIMENTAL API
-         * **OPTIONAL** Enables sending of calculated resolutions. This should only be enabled for diagnostics.
-         * In the production environment this should be always disabled.
-         * By default this is disabled.
+         * **OPTIONAL** Enables sending of calculated resolutions.
+         * By default this is enabled.
          *
          * @param enabled Whether the sending of calculated resolutions is enabled.
          * @return A new instance of the builder with this property changed.
@@ -242,6 +241,18 @@ interface Publisher {
          * @return A new instance of the builder with this property changed.
          */
         fun rawHistoryDataCallback(callback: (String) -> Unit): Builder
+
+        /**
+         * **OPTIONAL** Enables using a constant location engine resolution.
+         * If the [resolution] is not null then instead of using [ResolutionPolicy] to calculate a dynamic resolution for the location engine
+         * the [resolution] will be used as the location engine resolution.
+         * If the [resolution] is null then the constant resolution is disabled and the location engine resolution will be calculated by the [ResolutionPolicy].
+         * By default this is disabled.
+         *
+         * @param resolution The resolution that will be used as the location engine resolution.
+         * @return A new instance of the builder with this property changed.
+         */
+        fun constantLocationEngineResolution(resolution: Resolution?): Builder
 
         /**
          * Creates a [Publisher] and starts publishing.

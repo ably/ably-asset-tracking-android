@@ -5,6 +5,7 @@ import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.annotation.SuppressLint
 import androidx.annotation.RequiresPermission
 import com.ably.tracking.LocationUpdate
+import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
 import com.ably.tracking.logging.LogHandler
@@ -25,6 +26,7 @@ constructor(
     logHandler: LogHandler?,
     areRawLocationsEnabled: Boolean?,
     sendResolutionEnabled: Boolean,
+    constantLocationEngineResolution: Resolution?,
 ) :
     Publisher {
     private val core: CorePublisher
@@ -50,6 +52,7 @@ constructor(
             logHandler,
             areRawLocationsEnabled,
             sendResolutionEnabled,
+            constantLocationEngineResolution,
         )
     }
 

@@ -22,11 +22,11 @@
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:layout_marginStart="@dimen/medium_margin"
+    android:layout_marginTop="@dimen/medium_margin"
     android:text="@string/asset_status_label"
     android:textColor="@color/asset_information_label"
-    app:layout_constraintBottom_toBottomOf="@id/animationSwitch"
     app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintTop_toTopOf="@id/animationSwitch" />
+    app:layout_constraintTop_toTopOf="parent" />
 
   <TextView
     android:id="@+id/assetStateTextView"
@@ -44,25 +44,17 @@
     app:layout_constraintTop_toTopOf="@id/assetStateLabelTextView"
     tools:ignore="SmallSp" />
 
-  <TextView
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:layout_marginEnd="12dp"
-    android:text="@string/animation"
-    android:textColor="@color/asset_information_label"
-    app:layout_constraintBottom_toBottomOf="@id/animationSwitch"
-    app:layout_constraintEnd_toStartOf="@id/animationSwitch"
-    app:layout_constraintTop_toTopOf="@id/animationSwitch" />
-
-  <androidx.appcompat.widget.SwitchCompat
-    android:id="@+id/animationSwitch"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:layout_marginTop="12dp"
+  <androidx.appcompat.widget.AppCompatImageView
+    android:id="@+id/animationSettingsImageView"
+    android:layout_width="25dp"
+    android:layout_height="25dp"
     android:layout_marginEnd="@dimen/medium_margin"
-    android:checked="true"
+    android:src="@drawable/ic_settings"
+    android:text="@string/animation"
+    android:tint="@color/black"
+    app:layout_constraintBottom_toBottomOf="@id/assetStateTextView"
     app:layout_constraintEnd_toEndOf="parent"
-    app:layout_constraintTop_toTopOf="parent" />
+    app:layout_constraintTop_toTopOf="@id/assetStateTextView" />
 
   <TextView
     android:id="@+id/subscriberResolutionTitleTextView"

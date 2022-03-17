@@ -33,6 +33,7 @@ fun createAndStartPublisher(
     authentication: Authentication = defaultConnectionConfiguration,
     locationData: LocationHistoryData = getLocationData(context),
     rawLocations: Boolean = false,
+    sendResolution: Boolean = true,
     onLocationDataEnded: () -> Unit = {}
 ): Publisher {
     createNotificationChannel(context)
@@ -55,6 +56,7 @@ fun createAndStartPublisher(
             1234
         )
         .rawLocations(rawLocations)
+        .sendResolution(sendResolution)
         .start()
 }
 

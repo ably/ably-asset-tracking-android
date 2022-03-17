@@ -1,5 +1,61 @@
 # Change log
 
+## [1.1.0-rc.2](https://github.com/ably/ably-asset-tracking-android/tree/v1.1.0-rc.2)
+
+Version 1.1 of the Ably Asset Tracking SDKs for Android brings changes to both the publishing and subscribing SDKs,
+and their corresponding example apps, that make the subscriber's marker animate much more smoothly.
+
+[Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.1.0-rc.1...v1.1.0-rc.2)
+
+**Implemented enhancements:**
+
+- Upgrade Mapbox dependencies [\#642](https://github.com/ably/ably-asset-tracking-android/issues/642)
+
+**Closed issues:**
+
+- Add a toggle in the example subscription app that would hide/show the raw locations marker on the map [\#649](https://github.com/ably/ably-asset-tracking-android/issues/649)
+
+**Merged pull requests:**
+
+- Add dialog with animation options in the subscriber example app [\#653](https://github.com/ably/ably-asset-tracking-android/pull/653) ([KacperKluka](https://github.com/KacperKluka))
+- Upgrade Mapbox to version 2.3.0 and other dependencies to the newest versions [\#652](https://github.com/ably/ably-asset-tracking-android/pull/652) ([KacperKluka](https://github.com/KacperKluka))
+
+## [1.1.0-rc.1](https://github.com/ably/ably-asset-tracking-android/tree/v1.1.0-rc.1)
+
+Version 1.1 of the Ably Asset Tracking SDKs for Android brings changes to both the publishing and subscribing SDKs,
+and their corresponding example apps, that make the subscriber's marker animate much more smoothly.
+
+[Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.0.0...v1.1.0-rc.1)
+
+**Implemented enhancements:**
+
+- Include the latest Mapbox profile to the build [\#631](https://github.com/ably/ably-asset-tracking-android/issues/631)
+- Send batches of location updates [\#626](https://github.com/ably/ably-asset-tracking-android/issues/626)
+- Update `ably-android` dependency to version 1.2.11 [\#624](https://github.com/ably/ably-asset-tracking-android/issues/624)
+
+**Fixed bugs:**
+
+- Trackable channel rewind doesn't work properly after sending resolution data from the Publisher [\#638](https://github.com/ably/ably-asset-tracking-android/issues/638)
+
+**Closed issues:**
+
+- Use the next location update intervals to make the marker movement smoother in the example app [\#634](https://github.com/ably/ably-asset-tracking-android/issues/634)
+- Add constant location engine resolution to the publisher example app [\#633](https://github.com/ably/ably-asset-tracking-android/issues/633)
+
+**Merged pull requests:**
+
+- Add a migration guide to version 1.1.0 in the README file [\#646](https://github.com/ably/ably-asset-tracking-android/pull/646) ([KacperKluka](https://github.com/KacperKluka))
+- Add animations module with location animators [\#645](https://github.com/ably/ably-asset-tracking-android/pull/645) ([KacperKluka](https://github.com/KacperKluka))
+- Enable sending resolution from publisher example app by default [\#644](https://github.com/ably/ably-asset-tracking-android/pull/644) ([KacperKluka](https://github.com/KacperKluka))
+- Make map marker animations smoother [\#643](https://github.com/ably/ably-asset-tracking-android/pull/643) ([KacperKluka](https://github.com/KacperKluka))
+- Use the new asset tracking Mapbox profile snapshot [\#641](https://github.com/ably/ably-asset-tracking-android/pull/641) ([KacperKluka](https://github.com/KacperKluka))
+- Send publisher resolution data via presence data [\#640](https://github.com/ably/ably-asset-tracking-android/pull/640) ([KacperKluka](https://github.com/KacperKluka))
+- Update the Ably SDK to the version 1.2.11 [\#637](https://github.com/ably/ably-asset-tracking-android/pull/637) ([KacperKluka](https://github.com/KacperKluka))
+- Allow to specify the constant location engine resolution in the publisher example app [\#636](https://github.com/ably/ably-asset-tracking-android/pull/636) ([KacperKluka](https://github.com/KacperKluka))
+- Add next location update intervals to the Subscriber API [\#629](https://github.com/ably/ably-asset-tracking-android/pull/629) ([KacperKluka](https://github.com/KacperKluka))
+- Send resolution data from publisher [\#628](https://github.com/ably/ably-asset-tracking-android/pull/628) ([KacperKluka](https://github.com/KacperKluka))
+- Enable setting a constant location engine resolution [\#627](https://github.com/ably/ably-asset-tracking-android/pull/627) ([KacperKluka](https://github.com/KacperKluka))
+
 ## [1.0.0](https://github.com/ably/ably-asset-tracking-android/tree/v1.0.0)
 
 The Ably Asset Tracking SDKs for Android are out of Beta! :tada:

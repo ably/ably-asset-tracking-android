@@ -3,7 +3,6 @@ package com.ably.tracking.common
 import com.ably.tracking.ConnectionException
 import com.ably.tracking.EnhancedLocationUpdate
 import com.ably.tracking.LocationUpdate
-import com.ably.tracking.Resolution
 import com.ably.tracking.common.logging.d
 import com.ably.tracking.common.logging.e
 import com.ably.tracking.common.logging.i
@@ -11,7 +10,6 @@ import com.ably.tracking.common.logging.v
 import com.ably.tracking.common.logging.w
 import com.ably.tracking.common.message.getEnhancedLocationUpdate
 import com.ably.tracking.common.message.getRawLocationUpdate
-import com.ably.tracking.common.message.getResolution
 import com.ably.tracking.common.message.toMessage
 import com.ably.tracking.common.message.toMessageJson
 import com.ably.tracking.connection.ConnectionConfiguration
@@ -105,21 +103,6 @@ interface Ably {
     )
 
     /**
-     * Sends a resolution to the channel.
-     * Should be called only when there's an existing channel for the [trackableId].
-     * If a channel for the [trackableId] doesn't exist then it just calls [callback] with success.
-     *
-     * @param trackableId The ID of the trackable channel.
-     * @param resolution The resolution that is sent to the channel.
-     * @param callback The function that will be called when sending completes. If something goes wrong it will be called with [ConnectionException].
-     */
-    fun sendResolution(
-        trackableId: String,
-        resolution: Resolution,
-        callback: (Result<Unit>) -> Unit
-    )
-
-    /**
      * Adds a listener for the enhanced location updates that are received from the channel.
      * If a channel for the [trackableId] doesn't exist then nothing happens.
      *
@@ -141,18 +124,6 @@ interface Ably {
      * @throws ConnectionException if something goes wrong.
      */
     fun subscribeForRawEvents(trackableId: String, listener: (LocationUpdate) -> Unit)
-
-    /**
-     * Adds a listener for the resolutions that are received from the channel.
-     * The resolutions publishing needs to be enabled in the Publisher builder API in order to receive them here.
-     * If a channel for the [trackableId] doesn't exist then nothing happens.
-     *
-     * @param trackableId The ID of the trackable channel.
-     * @param listener The function that will be called each time a resolution event is received.
-     *
-     * @throws ConnectionException if something goes wrong.
-     */
-    fun subscribeForResolutionEvents(trackableId: String, listener: (Resolution) -> Unit)
 
     /**
      * Joins the presence of the channel for the given [trackableId] and add it to the connected channels.
@@ -438,21 +409,6 @@ constructor(
         }
     }
 
-    override fun sendResolution(trackableId: String, resolution: Resolution, callback: (Result<Unit>) -> Unit) {
-        val trackableChannel = channels[trackableId]
-        if (trackableChannel != null) {
-            val resolutionJson = resolution.toMessageJson(gson)
-            logHandler?.d("sendResolution: publishing: $resolutionJson")
-            sendMessage(
-                trackableChannel,
-                Message(EventNames.RESOLUTION, resolutionJson),
-                callback
-            )
-        } else {
-            callback(Result.success(Unit))
-        }
-    }
-
     private fun sendMessage(channel: Channel, message: Message?, callback: (Result<Unit>) -> Unit) {
         try {
             channel.publish(
@@ -489,18 +445,6 @@ constructor(
             try {
                 channel.subscribe(EventNames.RAW) { message ->
                     listener(message.getRawLocationUpdate(gson))
-                }
-            } catch (exception: AblyException) {
-                throw exception.errorInfo.toTrackingException()
-            }
-        }
-    }
-
-    override fun subscribeForResolutionEvents(trackableId: String, listener: (Resolution) -> Unit) {
-        channels[trackableId]?.let { channel ->
-            try {
-                channel.subscribe(EventNames.RESOLUTION) { message ->
-                    listener(message.getResolution(gson))
                 }
             } catch (exception: AblyException) {
                 throw exception.errorInfo.toTrackingException()

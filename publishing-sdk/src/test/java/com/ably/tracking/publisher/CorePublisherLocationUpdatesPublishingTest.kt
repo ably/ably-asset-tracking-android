@@ -37,7 +37,7 @@ class CorePublisherLocationUpdatesPublishingTest {
 
     @SuppressLint("MissingPermission")
     private val corePublisher: CorePublisher =
-        createCorePublisher(ably, mapbox, resolutionPolicyFactory, RoutingProfile.DRIVING, null, false, false)
+        createCorePublisher(ably, mapbox, resolutionPolicyFactory, RoutingProfile.DRIVING, null, false, false, null)
 
     @Test
     fun `Should send a message only once if publishing it succeeds`() {
@@ -128,7 +128,7 @@ class CorePublisherLocationUpdatesPublishingTest {
     fun `Should send raw messages if they are enabled`() {
         // given
         val corePublisher =
-            createCorePublisher(ably, mapbox, resolutionPolicyFactory, RoutingProfile.DRIVING, null, true, false)
+            createCorePublisher(ably, mapbox, resolutionPolicyFactory, RoutingProfile.DRIVING, null, true, false, null)
         val trackableId = UUID.randomUUID().toString()
         mockAllTrackablesResolution(Resolution(Accuracy.MAXIMUM, 0, 0.0))
         addTrackable(Trackable(trackableId), corePublisher)
