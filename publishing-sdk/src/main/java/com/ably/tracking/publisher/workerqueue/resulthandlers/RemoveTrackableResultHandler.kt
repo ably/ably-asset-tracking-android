@@ -1,6 +1,5 @@
 package com.ably.tracking.publisher.workerqueue.resulthandlers
 
-import com.ably.tracking.publisher.CorePublisher
 import com.ably.tracking.publisher.workerqueue.WorkerFactory
 import com.ably.tracking.publisher.workerqueue.WorkerParams
 import com.ably.tracking.publisher.workerqueue.WorkerQueue
@@ -11,10 +10,7 @@ internal class RemoveTrackableResultHandler(
     private val workerFactory: WorkerFactory,
     private val workerQueue: WorkerQueue,
 ) : WorkResultHandler<RemoveTrackableWorkResult> {
-    override fun handle(
-        workResult: RemoveTrackableWorkResult,
-        corePublisher: CorePublisher,
-    ): Worker? {
+    override fun handle(workResult: RemoveTrackableWorkResult): Worker? {
         when (workResult) {
             is RemoveTrackableWorkResult.Success ->
                 return workerFactory.createWorker(

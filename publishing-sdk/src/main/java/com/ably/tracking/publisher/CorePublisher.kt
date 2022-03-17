@@ -173,7 +173,7 @@ constructor(
             areRawLocationsEnabled,
         )
         workerFactory = DefaultWorkerFactory(ably, hooks, this, policy, mapbox, this, logHandler)
-        workerQueue = EventWorkerQueue(this@DefaultCorePublisher, properties, scope, workerFactory)
+        workerQueue = EventWorkerQueue(properties, scope, workerFactory)
         ably.subscribeForAblyStateChange { enqueue(workerFactory.createWorker(WorkerParams.AblyConnectionStateChange(it))) }
         mapbox.registerLocationObserver(object : LocationUpdatesObserver {
             override fun onRawLocationChanged(rawLocation: Location) {

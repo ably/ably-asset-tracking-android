@@ -1,6 +1,5 @@
 package com.ably.tracking.publisher.workerqueue
 
-import com.ably.tracking.publisher.CorePublisher
 import com.ably.tracking.publisher.DefaultCorePublisher
 import com.ably.tracking.publisher.workerqueue.resulthandlers.getWorkResultHandler
 import com.ably.tracking.publisher.workerqueue.results.SyncAsyncResult
@@ -16,7 +15,6 @@ import kotlinx.coroutines.launch
  * from the corresponding channel receivers.
  * */
 internal class EventWorkerQueue(
-    private val corePublisher: CorePublisher,
     private val publisherProperties: DefaultCorePublisher.Properties,
     private val scope: CoroutineScope,
     private val workerFactory: WorkerFactory,
@@ -61,7 +59,7 @@ internal class EventWorkerQueue(
 
     private fun handleWorkResult(workResult: WorkResult) {
         val resultHandler = getWorkResultHandler(workResult, workerFactory, this)
-        val nextWorker = resultHandler.handle(workResult, corePublisher)
+        val nextWorker = resultHandler.handle(workResult)
         nextWorker?.let { enqueue(it) }
     }
 }
