@@ -81,7 +81,7 @@ internal interface CorePublisher {
     fun saveRawLocationForFurtherSending(properties: PublisherProperties, trackableId: String, location: Location)
     fun processRawLocationUpdate(event: RawLocationChangedEvent, properties: PublisherProperties, trackableId: String)
     fun processEnhancedLocationUpdate(
-        event: EnhancedLocationChangedEvent,
+        enhancedLocationUpdate: EnhancedLocationUpdate,
         properties: PublisherProperties,
         trackableId: String
     )
@@ -262,36 +262,32 @@ constructor(
         logHandler?.v("$TAG Trackable $trackableId retry sending enhanced location ${locationUpdate.location}")
         properties.enhancedLocationsPublishingState.incrementRetryCount(trackableId)
         sendEnhancedLocationUpdate(
-            EnhancedLocationChangedEvent(
-                locationUpdate.location,
-                locationUpdate.intermediateLocations,
-                locationUpdate.type
-            ),
+            locationUpdate,
             properties,
             trackableId
         )
     }
 
     override fun processEnhancedLocationUpdate(
-        event: EnhancedLocationChangedEvent,
+        enhancedLocationUpdate: EnhancedLocationUpdate,
         properties: PublisherProperties,
         trackableId: String
     ) {
-        logHandler?.v("$TAG Processing enhanced location for trackable: $trackableId. ${event.location}")
+        logHandler?.v("$TAG Processing enhanced location for trackable: $trackableId. ${enhancedLocationUpdate.location}")
         when {
             properties.enhancedLocationsPublishingState.hasPendingMessage(trackableId) -> {
-                logHandler?.v("$TAG Trackable: $trackableId has pending message. Adding enhanced location to waiting ${event.location}")
-                properties.enhancedLocationsPublishingState.addToWaiting(trackableId, event)
+                logHandler?.v("$TAG Trackable: $trackableId has pending message. Adding enhanced location to waiting ${enhancedLocationUpdate.location}")
+                properties.enhancedLocationsPublishingState.addToWaiting(trackableId, enhancedLocationUpdate)
             }
             shouldSendLocation(
-                event.location,
+                enhancedLocationUpdate.location,
                 properties.lastSentEnhancedLocations[trackableId],
                 properties.resolutions[trackableId]
             ) -> {
-                sendEnhancedLocationUpdate(event, properties, trackableId)
+                sendEnhancedLocationUpdate(enhancedLocationUpdate, properties, trackableId)
             }
             else -> {
-                saveEnhancedLocationForFurtherSending(properties, trackableId, event.location)
+                saveEnhancedLocationForFurtherSending(properties, trackableId, enhancedLocationUpdate.location)
                 processNextWaitingEnhancedLocationUpdate(properties, trackableId)
             }
         }
@@ -305,16 +301,16 @@ constructor(
     }
 
     private fun sendEnhancedLocationUpdate(
-        event: EnhancedLocationChangedEvent,
+        enhancedLocationUpdate: EnhancedLocationUpdate,
         properties: PublisherProperties,
         trackableId: String
     ) {
-        logHandler?.v("$TAG Trackable: $trackableId will send enhanced location ${event.location}")
+        logHandler?.v("$TAG Trackable: $trackableId will send enhanced location ${enhancedLocationUpdate.location}")
         val locationUpdate = EnhancedLocationUpdate(
-            event.location,
+            enhancedLocationUpdate.location,
             properties.skippedEnhancedLocations.toList(trackableId),
-            event.intermediateLocations,
-            event.type
+            enhancedLocationUpdate.intermediateLocations,
+            enhancedLocationUpdate.type
         )
         properties.enhancedLocationsPublishingState.markMessageAsPending(trackableId)
         ably.sendEnhancedLocation(trackableId, locationUpdate) {
@@ -724,7 +720,7 @@ constructor(
             }
         override val rawLocationChangedCommands: MutableList<(PublisherProperties) -> Unit> = mutableListOf()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        override val enhancedLocationsPublishingState: LocationsPublishingState<EnhancedLocationChangedEvent> =
+        override val enhancedLocationsPublishingState: LocationsPublishingState<EnhancedLocationUpdate> =
             LocationsPublishingState()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
         override val rawLocationsPublishingState: LocationsPublishingState<RawLocationChangedEvent> =

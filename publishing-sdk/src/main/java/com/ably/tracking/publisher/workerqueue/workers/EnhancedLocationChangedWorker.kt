@@ -25,8 +25,9 @@ internal class EnhancedLocationChangedWorker(
 
     override fun doWork(properties: PublisherProperties): SyncAsyncResult {
         logHandler?.v("$TAG Enhanced location changed event received $location")
+        val enhancedLocationUpdate = EnhancedLocationUpdate(location, emptyList(), intermediateLocations, type)
         properties.trackables.forEach {
-            corePublisher.processEnhancedLocationUpdate(event as EnhancedLocationChangedEvent, properties, it.id)
+            corePublisher.processEnhancedLocationUpdate(enhancedLocationUpdate, properties, it.id)
         }
         corePublisher.updateLocations(EnhancedLocationUpdate(location, emptyList(), intermediateLocations, type))
         corePublisher.checkThreshold(location, properties.active, properties.estimatedArrivalTimeInMilliseconds)
