@@ -60,4 +60,8 @@ internal class DisconnectSuccessWorker(
 
         return SyncAsyncResult()
     }
+
+    override fun doWhenStopped(exception: Exception) {
+        callbackFunction(Result.failure(exception))
+    }
 }

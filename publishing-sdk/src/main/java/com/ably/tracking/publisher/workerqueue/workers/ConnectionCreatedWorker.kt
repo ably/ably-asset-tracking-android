@@ -77,4 +77,8 @@ internal class ConnectionCreatedWorker(
             )
         }
     }
+
+    override fun doWhenStopped(exception: Exception) {
+        callbackFunction(Result.failure(exception))
+    }
 }

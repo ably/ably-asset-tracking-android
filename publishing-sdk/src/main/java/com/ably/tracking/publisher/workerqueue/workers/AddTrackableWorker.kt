@@ -57,4 +57,8 @@ internal class AddTrackableWorker(
             }
         }
     }
+
+    override fun doWhenStopped(exception: Exception) {
+        callbackFunction(Result.failure(exception))
+    }
 }

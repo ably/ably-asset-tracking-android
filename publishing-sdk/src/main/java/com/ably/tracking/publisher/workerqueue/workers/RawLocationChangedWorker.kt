@@ -35,4 +35,6 @@ internal class RawLocationChangedWorker(
         }
         return SyncAsyncResult()
     }
+
+    override fun doWhenStopped(exception: Exception) = Unit
 }

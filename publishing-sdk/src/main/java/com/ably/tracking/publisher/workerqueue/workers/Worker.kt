@@ -29,4 +29,13 @@ internal interface Worker {
      * @return SyncAsyncResult which represents an optional synchronous work result and an optional asynchronous work
      * **/
     fun doWork(properties: PublisherProperties): SyncAsyncResult
+
+    /**
+     * This function is provided in order for implementors to define what should happen when the worker
+     * cannot [doWork] because the queue was stopped and no workers should be executed.
+     * This should usually be a call to the worker's callback function with a failure with the [exception].
+     *
+     * @param exception The exception created by the stopped worker queue.
+     * **/
+    fun doWhenStopped(exception: Exception)
 }

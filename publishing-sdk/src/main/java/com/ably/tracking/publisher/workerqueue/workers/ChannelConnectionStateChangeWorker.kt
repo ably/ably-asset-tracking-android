@@ -26,4 +26,6 @@ internal class ChannelConnectionStateChangeWorker(
         corePublisher.updateTrackableState(properties, trackableId)
         return SyncAsyncResult()
     }
+
+    override fun doWhenStopped(exception: Exception) = Unit
 }

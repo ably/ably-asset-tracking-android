@@ -35,4 +35,9 @@ internal class StopWorker(
         }
         return SyncAsyncResult()
     }
+
+    override fun doWhenStopped(exception: Exception) {
+        // If we are already stopped the stop worker should return success
+        callbackFunction(Result.success(Unit))
+    }
 }

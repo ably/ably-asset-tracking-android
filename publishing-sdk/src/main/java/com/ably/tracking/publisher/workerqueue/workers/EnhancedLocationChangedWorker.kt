@@ -32,4 +32,6 @@ internal class EnhancedLocationChangedWorker(
         corePublisher.checkThreshold(location, properties.active, properties.estimatedArrivalTimeInMilliseconds)
         return SyncAsyncResult()
     }
+
+    override fun doWhenStopped(exception: Exception) = Unit
 }

@@ -35,4 +35,8 @@ internal class SetActiveTrackableWorker(
         callbackFunction(Result.success(Unit))
         return SyncAsyncResult()
     }
+
+    override fun doWhenStopped(exception: Exception) {
+        callbackFunction(Result.failure(exception))
+    }
 }

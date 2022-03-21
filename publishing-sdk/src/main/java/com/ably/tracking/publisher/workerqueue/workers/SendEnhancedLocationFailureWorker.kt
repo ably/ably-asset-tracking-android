@@ -39,4 +39,6 @@ internal class SendEnhancedLocationFailureWorker(
         }
         return SyncAsyncResult()
     }
+
+    override fun doWhenStopped(exception: Exception) = Unit
 }

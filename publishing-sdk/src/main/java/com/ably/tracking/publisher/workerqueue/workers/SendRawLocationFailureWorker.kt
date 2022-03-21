@@ -36,4 +36,6 @@ internal class SendRawLocationFailureWorker(
         }
         return SyncAsyncResult()
     }
+
+    override fun doWhenStopped(exception: Exception) = Unit
 }

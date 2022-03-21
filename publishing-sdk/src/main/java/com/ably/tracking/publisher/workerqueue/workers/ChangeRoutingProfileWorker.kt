@@ -19,4 +19,6 @@ internal class ChangeRoutingProfileWorker(
         properties.currentDestination?.let { corePublisher.setDestination(it, properties) }
         return SyncAsyncResult()
     }
+
+    override fun doWhenStopped(exception: Exception) = Unit
 }

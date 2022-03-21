@@ -29,4 +29,6 @@ internal class SendEnhancedLocationSuccessWorker(
         corePublisher.processNextWaitingEnhancedLocationUpdate(properties, trackableId)
         return SyncAsyncResult()
     }
+
+    override fun doWhenStopped(exception: Exception) = Unit
 }

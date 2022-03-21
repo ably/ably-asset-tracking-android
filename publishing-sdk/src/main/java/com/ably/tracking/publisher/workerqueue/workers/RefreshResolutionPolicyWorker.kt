@@ -16,4 +16,6 @@ internal class RefreshResolutionPolicyWorker(
         properties.trackables.forEach { corePublisher.resolveResolution(it, properties) }
         return SyncAsyncResult()
     }
+
+    override fun doWhenStopped(exception: Exception) = Unit
 }

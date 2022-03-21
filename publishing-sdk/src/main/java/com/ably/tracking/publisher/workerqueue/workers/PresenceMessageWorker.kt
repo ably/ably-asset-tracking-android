@@ -49,4 +49,6 @@ internal class PresenceMessageWorker(
         }
         return SyncAsyncResult()
     }
+
+    override fun doWhenStopped(exception: Exception) = Unit
 }

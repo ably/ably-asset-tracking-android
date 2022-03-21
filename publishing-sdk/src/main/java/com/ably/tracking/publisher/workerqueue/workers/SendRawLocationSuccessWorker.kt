@@ -28,4 +28,6 @@ internal class SendRawLocationSuccessWorker(
         corePublisher.processNextWaitingRawLocationUpdate(properties, trackableId)
         return SyncAsyncResult()
     }
+
+    override fun doWhenStopped(exception: Exception) = Unit
 }

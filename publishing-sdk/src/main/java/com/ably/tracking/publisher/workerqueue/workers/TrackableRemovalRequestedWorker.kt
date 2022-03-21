@@ -31,4 +31,8 @@ internal class TrackableRemovalRequestedWorker(
         )
         return SyncAsyncResult()
     }
+
+    override fun doWhenStopped(exception: Exception) {
+        callbackFunction(Result.failure(exception))
+    }
 }

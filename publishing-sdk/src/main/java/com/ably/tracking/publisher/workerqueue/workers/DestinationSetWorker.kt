@@ -18,4 +18,6 @@ internal class DestinationSetWorker(
             timeProvider.getCurrentTimeInMilliseconds() + routeDurationInMilliseconds
         return SyncAsyncResult()
     }
+
+    override fun doWhenStopped(exception: Exception) = Unit
 }

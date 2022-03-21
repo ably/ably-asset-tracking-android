@@ -24,4 +24,8 @@ internal class AddTrackableFailedWorker(
 
         return SyncAsyncResult()
     }
+
+    override fun doWhenStopped(exception: Exception) {
+        callbackFunction(Result.failure(exception))
+    }
 }
