@@ -1,7 +1,5 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
-import com.ably.tracking.publisher.ChangeLocationEngineResolutionEvent
-import com.ably.tracking.publisher.Event
 import com.ably.tracking.publisher.Mapbox
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.ResolutionPolicy
@@ -11,9 +9,6 @@ internal class ChangeLocationEngineResolutionWorker(
     private val policy: ResolutionPolicy,
     private val mapbox: Mapbox,
 ) : Worker {
-    override val event: Event
-        get() = ChangeLocationEngineResolutionEvent
-
     override fun doWork(properties: PublisherProperties): SyncAsyncResult {
         if (!properties.isLocationEngineResolutionConstant) {
             val newResolution = policy.resolve(properties.resolutions.values.toSet())

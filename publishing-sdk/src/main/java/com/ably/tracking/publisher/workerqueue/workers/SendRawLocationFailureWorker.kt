@@ -5,9 +5,7 @@ import com.ably.tracking.common.logging.createLoggingTag
 import com.ably.tracking.common.logging.w
 import com.ably.tracking.logging.LogHandler
 import com.ably.tracking.publisher.CorePublisher
-import com.ably.tracking.publisher.Event
 import com.ably.tracking.publisher.PublisherProperties
-import com.ably.tracking.publisher.SendRawLocationFailureEvent
 import com.ably.tracking.publisher.workerqueue.results.SyncAsyncResult
 
 internal class SendRawLocationFailureWorker(
@@ -18,8 +16,6 @@ internal class SendRawLocationFailureWorker(
     private val logHandler: LogHandler?,
 ) : Worker {
     private val TAG = createLoggingTag(this)
-    override val event: Event
-        get() = SendRawLocationFailureEvent(locationUpdate, trackableId, exception)
 
     override fun doWork(properties: PublisherProperties): SyncAsyncResult {
         logHandler?.w("$TAG Trackable $trackableId failed to send raw location ${locationUpdate.location}", exception)

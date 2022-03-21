@@ -7,8 +7,6 @@ import com.ably.tracking.common.logging.createLoggingTag
 import com.ably.tracking.common.logging.v
 import com.ably.tracking.logging.LogHandler
 import com.ably.tracking.publisher.CorePublisher
-import com.ably.tracking.publisher.EnhancedLocationChangedEvent
-import com.ably.tracking.publisher.Event
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.workerqueue.results.SyncAsyncResult
 
@@ -20,8 +18,6 @@ internal class EnhancedLocationChangedWorker(
     private val logHandler: LogHandler?,
 ) : Worker {
     private val TAG = createLoggingTag(this)
-    override val event: Event
-        get() = EnhancedLocationChangedEvent(location, intermediateLocations, type)
 
     override fun doWork(properties: PublisherProperties): SyncAsyncResult {
         logHandler?.v("$TAG Enhanced location changed event received $location")

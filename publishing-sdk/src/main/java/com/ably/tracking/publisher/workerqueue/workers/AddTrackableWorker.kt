@@ -5,9 +5,7 @@ import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.PresenceMessage
 import com.ably.tracking.common.ResultCallbackFunction
-import com.ably.tracking.publisher.AddTrackableEvent
 import com.ably.tracking.publisher.PublisherProperties
-import com.ably.tracking.publisher.Request
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.results.AddTrackableWorkResult
 import com.ably.tracking.publisher.workerqueue.results.SyncAsyncResult
@@ -20,9 +18,6 @@ internal class AddTrackableWorker(
     private val channelStateChangeListener: ((connectionStateChange: ConnectionStateChange) -> Unit),
     private val ably: Ably
 ) : Worker {
-    override val event: Request<*>
-        get() = AddTrackableEvent(trackable, callbackFunction)
-
     override fun doWork(properties: PublisherProperties): SyncAsyncResult {
         return when {
             properties.duplicateTrackableGuard.isCurrentlyAddingTrackable(trackable) -> {

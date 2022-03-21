@@ -2,9 +2,7 @@ package com.ably.tracking.publisher.workerqueue.workers
 
 import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.publisher.CorePublisher
-import com.ably.tracking.publisher.DisconnectSuccessEvent
 import com.ably.tracking.publisher.PublisherProperties
-import com.ably.tracking.publisher.Request
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.results.SyncAsyncResult
 
@@ -14,9 +12,6 @@ internal class DisconnectSuccessWorker(
     private val corePublisher: CorePublisher,
     private val shouldRecalculateResolutionCallback: () -> Unit,
 ) : Worker {
-    override val event: Request<*>
-        get() = DisconnectSuccessEvent(trackable, callbackFunction)
-
     override fun doWork(properties: PublisherProperties): SyncAsyncResult {
         properties.trackables.remove(trackable)
 

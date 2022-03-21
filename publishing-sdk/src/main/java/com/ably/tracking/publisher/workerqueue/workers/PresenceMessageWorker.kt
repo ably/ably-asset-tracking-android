@@ -4,8 +4,6 @@ import com.ably.tracking.common.ClientTypes
 import com.ably.tracking.common.PresenceAction
 import com.ably.tracking.common.PresenceMessage
 import com.ably.tracking.publisher.CorePublisher
-import com.ably.tracking.publisher.Event
-import com.ably.tracking.publisher.PresenceMessageEvent
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.results.SyncAsyncResult
@@ -16,9 +14,6 @@ internal class PresenceMessageWorker(
     private val corePublisher: CorePublisher
 ) :
     Worker {
-    override val event: Event
-        get() = PresenceMessageEvent(trackable, presenceMessage)
-
     override fun doWork(properties: PublisherProperties): SyncAsyncResult {
         when (presenceMessage.action) {
             PresenceAction.PRESENT_OR_ENTER -> {

@@ -7,9 +7,7 @@ import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.PresenceData
 import com.ably.tracking.common.PresenceMessage
 import com.ably.tracking.common.ResultCallbackFunction
-import com.ably.tracking.publisher.ConnectionForTrackableCreatedEvent
 import com.ably.tracking.publisher.PublisherProperties
-import com.ably.tracking.publisher.Request
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.results.ConnectionCreatedWorkResult
 import com.ably.tracking.publisher.workerqueue.results.SyncAsyncResult
@@ -24,9 +22,6 @@ internal class ConnectionCreatedWorker(
     private val presenceUpdateListener: ((presenceMessage: PresenceMessage) -> Unit),
     private val channelStateChangeListener: ((connectionStateChange: ConnectionStateChange) -> Unit),
 ) : Worker {
-    override val event: Request<*>
-        get() = ConnectionForTrackableCreatedEvent(trackable, callbackFunction)
-
     override fun doWork(properties: PublisherProperties): SyncAsyncResult {
         if (properties.trackableRemovalGuard.isMarkedForRemoval(trackable)) {
             // Leave Ably channel.
