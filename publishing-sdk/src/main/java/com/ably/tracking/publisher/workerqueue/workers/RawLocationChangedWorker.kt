@@ -1,6 +1,7 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
 import com.ably.tracking.Location
+import com.ably.tracking.LocationUpdate
 import com.ably.tracking.common.logging.createLoggingTag
 import com.ably.tracking.common.logging.v
 import com.ably.tracking.logging.LogHandler
@@ -23,8 +24,9 @@ internal class RawLocationChangedWorker(
         logHandler?.v("$TAG Raw location changed event received $location")
         properties.lastPublisherLocation = location
         if (properties.areRawLocationsEnabled) {
+            val locationUpdate = LocationUpdate(location, emptyList())
             properties.trackables.forEach {
-                corePublisher.processRawLocationUpdate(event as RawLocationChangedEvent, properties, it.id)
+                corePublisher.processRawLocationUpdate(locationUpdate, properties, it.id)
             }
         }
         properties.rawLocationChangedCommands.apply {

@@ -2,6 +2,7 @@ package com.ably.tracking.publisher
 
 import com.ably.tracking.EnhancedLocationUpdate
 import com.ably.tracking.Location
+import com.ably.tracking.LocationUpdate
 import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.ConnectionStateChange
@@ -40,7 +41,7 @@ internal interface PublisherProperties {
     var routingProfile: RoutingProfile
     val rawLocationChangedCommands: MutableList<(PublisherProperties) -> Unit>
     val enhancedLocationsPublishingState: LocationsPublishingState<EnhancedLocationUpdate>
-    val rawLocationsPublishingState: LocationsPublishingState<RawLocationChangedEvent>
+    val rawLocationsPublishingState: LocationsPublishingState<LocationUpdate>
     val areRawLocationsEnabled: Boolean
     fun dispose()
 }

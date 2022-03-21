@@ -5,7 +5,6 @@ import com.ably.tracking.LocationUpdate
 import com.ably.tracking.publisher.CorePublisher
 import com.ably.tracking.publisher.LocationsPublishingState
 import com.ably.tracking.publisher.PublisherProperties
-import com.ably.tracking.publisher.RawLocationChangedEvent
 import com.ably.tracking.test.common.anyLocation
 import io.mockk.clearAllMocks
 import io.mockk.every
@@ -22,7 +21,7 @@ class SendRawLocationFailureWorkerTest {
     private val trackableId = "test-trackable"
     private val corePublisher = mockk<CorePublisher>(relaxed = true)
     private val lastSentRawLocations = mockk<MutableMap<String, Location>>(relaxed = true)
-    private val rawLocationsPublishingState = mockk<LocationsPublishingState<RawLocationChangedEvent>>(relaxed = true)
+    private val rawLocationsPublishingState = mockk<LocationsPublishingState<LocationUpdate>>(relaxed = true)
     private val publisherProperties = mockk<PublisherProperties>(relaxed = true)
 
     @Before

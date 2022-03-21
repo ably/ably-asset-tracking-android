@@ -79,7 +79,12 @@ internal interface CorePublisher {
     fun processNextWaitingRawLocationUpdate(properties: PublisherProperties, trackableId: String)
     fun retrySendingRawLocation(properties: PublisherProperties, trackableId: String, locationUpdate: LocationUpdate)
     fun saveRawLocationForFurtherSending(properties: PublisherProperties, trackableId: String, location: Location)
-    fun processRawLocationUpdate(event: RawLocationChangedEvent, properties: PublisherProperties, trackableId: String)
+    fun processRawLocationUpdate(
+        rawLocationUpdate: LocationUpdate,
+        properties: PublisherProperties,
+        trackableId: String
+    )
+
     fun processEnhancedLocationUpdate(
         enhancedLocationUpdate: EnhancedLocationUpdate,
         properties: PublisherProperties,
@@ -353,29 +358,29 @@ constructor(
     ) {
         logHandler?.v("$TAG Trackable $trackableId retry sending raw location ${locationUpdate.location}")
         properties.rawLocationsPublishingState.incrementRetryCount(trackableId)
-        sendRawLocationUpdate(RawLocationChangedEvent(locationUpdate.location), properties, trackableId)
+        sendRawLocationUpdate(locationUpdate, properties, trackableId)
     }
 
     override fun processRawLocationUpdate(
-        event: RawLocationChangedEvent,
+        rawLocationUpdate: LocationUpdate,
         properties: PublisherProperties,
         trackableId: String
     ) {
-        logHandler?.v("$TAG Processing raw location for trackable: $trackableId. ${event.location}")
+        logHandler?.v("$TAG Processing raw location for trackable: $trackableId. ${rawLocationUpdate.location}")
         when {
             properties.rawLocationsPublishingState.hasPendingMessage(trackableId) -> {
-                logHandler?.v("$TAG Trackable: $trackableId has pending message. Adding raw location to waiting ${event.location}")
-                properties.rawLocationsPublishingState.addToWaiting(trackableId, event)
+                logHandler?.v("$TAG Trackable: $trackableId has pending message. Adding raw location to waiting ${rawLocationUpdate.location}")
+                properties.rawLocationsPublishingState.addToWaiting(trackableId, rawLocationUpdate)
             }
             shouldSendLocation(
-                event.location,
+                rawLocationUpdate.location,
                 properties.lastSentRawLocations[trackableId],
                 properties.resolutions[trackableId]
             ) -> {
-                sendRawLocationUpdate(event, properties, trackableId)
+                sendRawLocationUpdate(rawLocationUpdate, properties, trackableId)
             }
             else -> {
-                saveRawLocationForFurtherSending(properties, trackableId, event.location)
+                saveRawLocationForFurtherSending(properties, trackableId, rawLocationUpdate.location)
                 processNextWaitingRawLocationUpdate(properties, trackableId)
             }
         }
@@ -389,13 +394,13 @@ constructor(
     }
 
     private fun sendRawLocationUpdate(
-        event: RawLocationChangedEvent,
+        rawLocationUpdate: LocationUpdate,
         properties: PublisherProperties,
         trackableId: String
     ) {
-        logHandler?.v("$TAG Trackable: $trackableId will send raw location ${event.location}")
+        logHandler?.v("$TAG Trackable: $trackableId will send raw location ${rawLocationUpdate.location}")
         val locationUpdate = LocationUpdate(
-            event.location,
+            rawLocationUpdate.location,
             properties.skippedRawLocations.toList(trackableId),
         )
         properties.rawLocationsPublishingState.markMessageAsPending(trackableId)
@@ -723,7 +728,7 @@ constructor(
         override val enhancedLocationsPublishingState: LocationsPublishingState<EnhancedLocationUpdate> =
             LocationsPublishingState()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        override val rawLocationsPublishingState: LocationsPublishingState<RawLocationChangedEvent> =
+        override val rawLocationsPublishingState: LocationsPublishingState<LocationUpdate> =
             LocationsPublishingState()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
         override val duplicateTrackableGuard: DuplicateTrackableGuard = DublicateTrackableGuardImpl()
