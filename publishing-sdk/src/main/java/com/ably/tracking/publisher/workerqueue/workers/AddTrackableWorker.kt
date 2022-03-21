@@ -11,9 +11,12 @@ import com.ably.tracking.publisher.workerqueue.results.AddTrackableWorkResult
 import com.ably.tracking.publisher.workerqueue.results.SyncAsyncResult
 import kotlinx.coroutines.flow.StateFlow
 
+internal typealias AddTrackableResult = StateFlow<TrackableState>
+internal typealias AddTrackableCallbackFunction = ResultCallbackFunction<AddTrackableResult>
+
 internal class AddTrackableWorker(
     private val trackable: Trackable,
-    private val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>,
+    private val callbackFunction: AddTrackableCallbackFunction,
     private val presenceUpdateListener: ((presenceMessage: PresenceMessage) -> Unit),
     private val channelStateChangeListener: ((connectionStateChange: ConnectionStateChange) -> Unit),
     private val ably: Ably

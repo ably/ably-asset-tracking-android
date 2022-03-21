@@ -1,7 +1,5 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
-import com.ably.tracking.publisher.AddTrackableCallbackFunction
-import com.ably.tracking.publisher.AddTrackableResult
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.results.SyncAsyncResult

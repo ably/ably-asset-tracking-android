@@ -1,5 +1,6 @@
 package com.ably.tracking.publisher
 
+import com.ably.tracking.EnhancedLocationUpdate
 import com.ably.tracking.LocationUpdateType
 import com.ably.tracking.test.common.createLocation
 import org.junit.Assert
@@ -8,7 +9,7 @@ import org.junit.Test
 
 class LocationsPublishingStateTest {
     private val trackableId = "test-trackable-id"
-    private lateinit var locationsPublishingState: LocationsPublishingState<EnhancedLocationChangedEvent>
+    private lateinit var locationsPublishingState: LocationsPublishingState<EnhancedLocationUpdate>
 
     @Before
     fun beforeEach() {
@@ -116,9 +117,9 @@ class LocationsPublishingStateTest {
     @Test
     fun `Should return events from the waiting list in the order they appeared in it (FIFO)`() {
         // given
-        locationsPublishingState.addToWaiting(trackableId, createEvent(1))
-        locationsPublishingState.addToWaiting(trackableId, createEvent(2))
-        locationsPublishingState.addToWaiting(trackableId, createEvent(3))
+        locationsPublishingState.addToWaiting(trackableId, createLocationUpdate(1))
+        locationsPublishingState.addToWaiting(trackableId, createLocationUpdate(2))
+        locationsPublishingState.addToWaiting(trackableId, createLocationUpdate(3))
 
         // when
         val firstNextWaitingEvent = locationsPublishingState.getNextWaiting(trackableId)
@@ -134,8 +135,8 @@ class LocationsPublishingStateTest {
     @Test
     fun `Should return null if has no more waiting events`() {
         // given
-        locationsPublishingState.addToWaiting(trackableId, createEvent(1))
-        locationsPublishingState.addToWaiting(trackableId, createEvent(2))
+        locationsPublishingState.addToWaiting(trackableId, createLocationUpdate(1))
+        locationsPublishingState.addToWaiting(trackableId, createLocationUpdate(2))
 
         // when
         locationsPublishingState.getNextWaiting(trackableId)
@@ -149,7 +150,7 @@ class LocationsPublishingStateTest {
     @Test
     fun `Should clear the state for the specified trackable`() {
         // given
-        locationsPublishingState.addToWaiting(trackableId, createEvent(1))
+        locationsPublishingState.addToWaiting(trackableId, createLocationUpdate(1))
         locationsPublishingState.markMessageAsPending(trackableId)
         locationsPublishingState.incrementRetryCount(trackableId)
 
@@ -166,8 +167,8 @@ class LocationsPublishingStateTest {
     fun `Should only clear the state for the specified trackable`() {
         // given
         val anotherTrackableId = "another-test-trackable-id"
-        locationsPublishingState.addToWaiting(trackableId, createEvent(1))
-        locationsPublishingState.addToWaiting(anotherTrackableId, createEvent(2))
+        locationsPublishingState.addToWaiting(trackableId, createLocationUpdate(1))
+        locationsPublishingState.addToWaiting(anotherTrackableId, createLocationUpdate(2))
         locationsPublishingState.markMessageAsPending(trackableId)
         locationsPublishingState.markMessageAsPending(anotherTrackableId)
         locationsPublishingState.incrementRetryCount(trackableId)
@@ -186,8 +187,8 @@ class LocationsPublishingStateTest {
     fun `Should clear the state for all trackables`() {
         // given
         val anotherTrackableId = "another-test-trackable-id"
-        locationsPublishingState.addToWaiting(trackableId, createEvent(1))
-        locationsPublishingState.addToWaiting(anotherTrackableId, createEvent(2))
+        locationsPublishingState.addToWaiting(trackableId, createLocationUpdate(1))
+        locationsPublishingState.addToWaiting(anotherTrackableId, createLocationUpdate(2))
         locationsPublishingState.markMessageAsPending(trackableId)
         locationsPublishingState.markMessageAsPending(anotherTrackableId)
         locationsPublishingState.incrementRetryCount(trackableId)
@@ -205,6 +206,11 @@ class LocationsPublishingStateTest {
         Assert.assertTrue(locationsPublishingState.shouldRetryPublishing(anotherTrackableId))
     }
 
-    private fun createEvent(timestamp: Long) =
-        EnhancedLocationChangedEvent(createLocation(timestamp = timestamp), emptyList(), LocationUpdateType.ACTUAL)
+    private fun createLocationUpdate(timestamp: Long) =
+        EnhancedLocationUpdate(
+            createLocation(timestamp = timestamp),
+            emptyList(),
+            emptyList(),
+            LocationUpdateType.ACTUAL
+        )
 }

@@ -2,8 +2,6 @@ package com.ably.tracking.publisher.workerqueue.workers
 
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.ResultCallbackFunction
-import com.ably.tracking.publisher.AddTrackableCallbackFunction
-import com.ably.tracking.publisher.AddTrackableResult
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.RemoveTrackableRequestedException
 import com.ably.tracking.publisher.Trackable
