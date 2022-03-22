@@ -2,13 +2,9 @@ package com.ably.tracking.publisher
 
 import android.annotation.SuppressLint
 import com.ably.tracking.Accuracy
-import com.ably.tracking.Location
-import com.ably.tracking.LocationUpdateType
 import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
-import com.ably.tracking.publisher.workerqueue.workers.EnhancedLocationChangedWorker
-import com.ably.tracking.publisher.workerqueue.workers.RawLocationChangedWorker
 import com.ably.tracking.test.common.createLocation
 import com.ably.tracking.test.common.mockCreateSuspendingConnectionSuccess
 import com.ably.tracking.test.common.mockSendEnhancedLocationFailure
@@ -16,7 +12,10 @@ import com.ably.tracking.test.common.mockSendEnhancedLocationFailureThenSuccess
 import com.ably.tracking.test.common.mockSendEnhancedLocationSuccess
 import com.ably.tracking.test.common.mockSendRawLocationSuccess
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.runs
+import io.mockk.slot
 import io.mockk.verify
 import java.util.UUID
 import kotlin.coroutines.resume
@@ -28,6 +27,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 
+@SuppressLint("MissingPermission")
 class CorePublisherLocationUpdatesPublishingTest {
     private val ably = mockk<Ably>(relaxed = true)
     private val mapbox = mockk<Mapbox>(relaxed = true)
@@ -37,9 +37,14 @@ class CorePublisherLocationUpdatesPublishingTest {
             resolutionPolicy
     }
 
-    @SuppressLint("MissingPermission")
-    private val corePublisher: CorePublisher =
-        createCorePublisher(ably, mapbox, resolutionPolicyFactory, RoutingProfile.DRIVING, null, false, false, null)
+    private val corePublisher: CorePublisher
+    private val locationUpdatesObserver: LocationUpdatesObserver
+
+    init {
+        val (corePublisher, locationUpdatesObserver) = createPublisherWithLocationObserver()
+        this.corePublisher = corePublisher
+        this.locationUpdatesObserver = locationUpdatesObserver
+    }
 
     @Test
     fun `Should send a message only once if publishing it succeeds`() {
@@ -50,7 +55,7 @@ class CorePublisherLocationUpdatesPublishingTest {
         ably.mockSendEnhancedLocationSuccess(trackableId)
 
         // when
-        corePublisher.enqueue(createEnhancedLocationChangedWorker(createLocation()))
+        locationUpdatesObserver.onEnhancedLocationChanged(createLocation(), emptyList())
 
         // then
         runBlocking {
@@ -71,7 +76,7 @@ class CorePublisherLocationUpdatesPublishingTest {
         ably.mockSendEnhancedLocationFailureThenSuccess(trackableId)
 
         // when
-        corePublisher.enqueue(createEnhancedLocationChangedWorker(createLocation()))
+        locationUpdatesObserver.onEnhancedLocationChanged(createLocation(), emptyList())
 
         // then
         runBlocking {
@@ -92,7 +97,7 @@ class CorePublisherLocationUpdatesPublishingTest {
         ably.mockSendEnhancedLocationFailure(trackableId)
 
         // when
-        corePublisher.enqueue(createEnhancedLocationChangedWorker(createLocation()))
+        locationUpdatesObserver.onEnhancedLocationChanged(createLocation(), emptyList())
 
         // then
         runBlocking {
@@ -113,7 +118,7 @@ class CorePublisherLocationUpdatesPublishingTest {
         ably.mockSendRawLocationSuccess(trackableId)
 
         // when
-        corePublisher.enqueue(createRawLocationChangedWorker(createLocation()))
+        locationUpdatesObserver.onRawLocationChanged(createLocation())
 
         // then
         runBlocking {
@@ -129,15 +134,14 @@ class CorePublisherLocationUpdatesPublishingTest {
     @Test
     fun `Should send raw messages if they are enabled`() {
         // given
-        val corePublisher =
-            createCorePublisher(ably, mapbox, resolutionPolicyFactory, RoutingProfile.DRIVING, null, true, false, null)
+        val (corePublisher, locationUpdatesObserver) = createPublisherWithLocationObserver(sendRawLocations = true)
         val trackableId = UUID.randomUUID().toString()
         mockAllTrackablesResolution(Resolution(Accuracy.MAXIMUM, 0, 0.0))
         addTrackable(Trackable(trackableId), corePublisher)
         ably.mockSendRawLocationSuccess(trackableId)
 
         // when
-        corePublisher.enqueue(createRawLocationChangedWorker(createLocation()))
+        locationUpdatesObserver.onRawLocationChanged(createLocation())
 
         // then
         runBlocking {
@@ -148,12 +152,6 @@ class CorePublisherLocationUpdatesPublishingTest {
             ably.sendRawLocation(trackableId, any(), any())
         }
     }
-
-    private fun createEnhancedLocationChangedWorker(location: Location) =
-        EnhancedLocationChangedWorker(location, emptyList(), LocationUpdateType.ACTUAL, corePublisher, null)
-
-    private fun createRawLocationChangedWorker(location: Location) =
-        RawLocationChangedWorker(location, corePublisher, null)
 
     private fun mockAllTrackablesResolution(resolution: Resolution) {
         every { resolutionPolicy.resolve(any<TrackableResolutionRequest>()) } returns resolution
@@ -194,5 +192,22 @@ class CorePublisherLocationUpdatesPublishingTest {
                 }
             }
         }
+    }
+
+    private fun createPublisherWithLocationObserver(sendRawLocations: Boolean = false): Pair<CorePublisher, LocationUpdatesObserver> {
+        val locationUpdatesObserverSlot = slot<LocationUpdatesObserver>()
+        every { mapbox.registerLocationObserver(capture(locationUpdatesObserverSlot)) } just runs
+        val corePublisher = createCorePublisher(
+            ably,
+            mapbox,
+            resolutionPolicyFactory,
+            RoutingProfile.DRIVING,
+            null,
+            sendRawLocations,
+            false,
+            null
+        )
+        val locationUpdatesObserver = locationUpdatesObserverSlot.captured
+        return Pair(corePublisher, locationUpdatesObserver)
     }
 }

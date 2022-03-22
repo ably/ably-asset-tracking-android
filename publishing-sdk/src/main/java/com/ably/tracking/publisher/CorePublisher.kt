@@ -40,7 +40,6 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 
 internal interface CorePublisher {
-    fun enqueue(worker: Worker)
     fun trackTrackable(trackable: Trackable, callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>)
     fun addTrackable(trackable: Trackable, callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>)
     fun removeTrackable(trackable: Trackable, callbackFunction: ResultCallbackFunction<Boolean>)
@@ -204,7 +203,7 @@ constructor(
         mapbox.setLocationHistoryListener { historyData -> scope.launch { _locationHistory.emit(historyData) } }
     }
 
-    override fun enqueue(worker: Worker) {
+    private fun enqueue(worker: Worker) {
         workerQueue.enqueue(worker)
     }
 

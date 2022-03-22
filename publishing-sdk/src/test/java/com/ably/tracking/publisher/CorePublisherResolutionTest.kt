@@ -3,11 +3,9 @@ package com.ably.tracking.publisher
 import android.annotation.SuppressLint
 import com.ably.tracking.Accuracy
 import com.ably.tracking.Location
-import com.ably.tracking.LocationUpdateType
 import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
-import com.ably.tracking.publisher.workerqueue.workers.EnhancedLocationChangedWorker
 import com.ably.tracking.test.common.createLocation
 import com.ably.tracking.test.common.mockCreateSuspendingConnectionSuccess
 import com.ably.tracking.test.common.mockSendEnhancedLocationSuccess
@@ -16,7 +14,10 @@ import com.mapbox.geojson.Point
 import com.mapbox.turf.TurfConstants
 import com.mapbox.turf.TurfMeasurement
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.runs
+import io.mockk.slot
 import io.mockk.verify
 import java.util.UUID
 import kotlin.coroutines.resume
@@ -30,6 +31,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
+@SuppressLint("MissingPermission")
 @RunWith(Parameterized::class)
 class CorePublisherResolutionTest(
     private val desiredInterval: Int,
@@ -111,9 +113,16 @@ class CorePublisherResolutionTest(
             resolutionPolicy
     }
 
-    @SuppressLint("MissingPermission")
-    private val corePublisher: CorePublisher =
-        createCorePublisher(ably, mapbox, resolutionPolicyFactory, RoutingProfile.DRIVING, null, false, false, null)
+    private val corePublisher: CorePublisher
+    private val locationUpdatesObserver: LocationUpdatesObserver
+
+    init {
+        val locationUpdatesObserverSlot = slot<LocationUpdatesObserver>()
+        every { mapbox.registerLocationObserver(capture(locationUpdatesObserverSlot)) } just runs
+        corePublisher =
+            createCorePublisher(ably, mapbox, resolutionPolicyFactory, RoutingProfile.DRIVING, null, false, false, null)
+        locationUpdatesObserver = locationUpdatesObserverSlot.captured
+    }
 
     @Test
     fun `Should send limited location updates`() {
@@ -128,7 +137,7 @@ class CorePublisherResolutionTest(
         // when
         repeat(numberOfLocationUpdates) {
             val nextLocation = createNextPublisherLocation(location, distanceBetweenLocationUpdates, locationTimestamp)
-            corePublisher.enqueue(createEnhancedLocationChangedWorker(nextLocation))
+            locationUpdatesObserver.onEnhancedLocationChanged(nextLocation, emptyList())
             location = nextLocation
             locationTimestamp += intervalBetweenLocationUpdates
         }
@@ -142,9 +151,6 @@ class CorePublisherResolutionTest(
             ably.sendEnhancedLocation(trackableId, any(), any())
         }
     }
-
-    private fun createEnhancedLocationChangedWorker(location: Location) =
-        EnhancedLocationChangedWorker(location, emptyList(), LocationUpdateType.ACTUAL, corePublisher, null)
 
     private fun mockAllTrackablesResolution(resolution: Resolution) {
         every { resolutionPolicy.resolve(any<TrackableResolutionRequest>()) } returns resolution
