@@ -13,6 +13,7 @@ import com.ably.tracking.common.ClientTypes
 import com.ably.tracking.common.ConnectionState
 import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.PresenceData
+import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.common.TimeProvider
 import com.ably.tracking.common.createSingleThreadDispatcher
 import com.ably.tracking.common.logging.createLoggingTag
@@ -28,12 +29,9 @@ import com.ably.tracking.publisher.workerqueue.EventWorkerQueue
 import com.ably.tracking.publisher.workerqueue.WorkerFactory
 import com.ably.tracking.publisher.workerqueue.WorkerParams
 import com.ably.tracking.publisher.workerqueue.WorkerQueue
+import com.ably.tracking.publisher.workerqueue.workers.Worker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.ReceiveChannel
-import kotlinx.coroutines.channels.SendChannel
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -42,8 +40,11 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 
 internal interface CorePublisher {
-    fun enqueue(event: AdhocEvent)
-    fun request(request: Request<*>)
+    fun trackTrackable(trackable: Trackable, callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>)
+    fun addTrackable(trackable: Trackable, callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>)
+    fun removeTrackable(trackable: Trackable, callbackFunction: ResultCallbackFunction<Boolean>)
+    fun changeRoutingProfile(routingProfile: RoutingProfile)
+    fun stop(callbackFunction: ResultCallbackFunction<Unit>)
     val locations: SharedFlow<LocationUpdate>
     val trackables: SharedFlow<Set<Trackable>>
     val locationHistory: SharedFlow<LocationHistoryData>
@@ -77,9 +78,14 @@ internal interface CorePublisher {
     fun processNextWaitingRawLocationUpdate(properties: PublisherProperties, trackableId: String)
     fun retrySendingRawLocation(properties: PublisherProperties, trackableId: String, locationUpdate: LocationUpdate)
     fun saveRawLocationForFurtherSending(properties: PublisherProperties, trackableId: String, location: Location)
-    fun processRawLocationUpdate(event: RawLocationChangedEvent, properties: PublisherProperties, trackableId: String)
+    fun processRawLocationUpdate(
+        rawLocationUpdate: LocationUpdate,
+        properties: PublisherProperties,
+        trackableId: String
+    )
+
     fun processEnhancedLocationUpdate(
-        event: EnhancedLocationChangedEvent,
+        enhancedLocationUpdate: EnhancedLocationUpdate,
         properties: PublisherProperties,
         trackableId: String
     )
@@ -140,7 +146,7 @@ constructor(
 ) : CorePublisher, TimeProvider {
     private val TAG = createLoggingTag(this)
     private val scope = CoroutineScope(singleThreadDispatcher + SupervisorJob())
-    private val sendEventChannel: SendChannel<Event>
+    private val workerQueue: WorkerQueue
     private val _locations = MutableSharedFlow<LocationUpdate>(replay = 1)
     private val _trackables = MutableSharedFlow<Set<Trackable>>(replay = 1)
     private val _locationHistory = MutableSharedFlow<LocationHistoryData>()
@@ -164,290 +170,92 @@ constructor(
             hooks,
             methods
         )
-        val channel = Channel<Event>()
-        sendEventChannel = channel
+        val properties = Properties(
+            routingProfile,
+            policy.resolve(emptySet()),
+            constantLocationEngineResolution != null,
+            areRawLocationsEnabled,
+        )
         workerFactory = DefaultWorkerFactory(ably, hooks, this, policy, mapbox, this, logHandler)
-        scope.launch {
-            coroutineScope {
-                sequenceEventsQueue(channel, routingProfile, areRawLocationsEnabled)
-            }
-        }
-        ably.subscribeForAblyStateChange { enqueue(AblyConnectionStateChangeEvent(it)) }
+        workerQueue = EventWorkerQueue(properties, scope, workerFactory)
+        ably.subscribeForAblyStateChange { enqueue(workerFactory.createWorker(WorkerParams.AblyConnectionStateChange(it))) }
         mapbox.registerLocationObserver(object : LocationUpdatesObserver {
             override fun onRawLocationChanged(rawLocation: Location) {
                 logHandler?.v("$TAG Raw location received: $rawLocation")
-                enqueue(RawLocationChangedEvent(rawLocation))
+                enqueue(workerFactory.createWorker(WorkerParams.RawLocationChanged(rawLocation)))
             }
 
             override fun onEnhancedLocationChanged(enhancedLocation: Location, intermediateLocations: List<Location>) {
                 logHandler?.v("$TAG Enhanced location received: $enhancedLocation")
                 val locationUpdateType =
                     if (intermediateLocations.isEmpty()) LocationUpdateType.ACTUAL else LocationUpdateType.PREDICTED
-                enqueue(EnhancedLocationChangedEvent(enhancedLocation, intermediateLocations, locationUpdateType))
+                enqueue(
+                    workerFactory.createWorker(
+                        WorkerParams.EnhancedLocationChanged(
+                            enhancedLocation,
+                            intermediateLocations,
+                            locationUpdateType
+                        )
+                    )
+                )
             }
         })
         mapbox.setLocationHistoryListener { historyData -> scope.launch { _locationHistory.emit(historyData) } }
     }
 
-    override fun enqueue(event: AdhocEvent) {
-        scope.launch { sendEventChannel.send(event) }
+    private fun enqueue(worker: Worker) {
+        workerQueue.enqueue(worker)
     }
 
-    override fun request(request: Request<*>) {
-        scope.launch { sendEventChannel.send(request) }
-    }
-
-    @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
-    private fun CoroutineScope.sequenceEventsQueue(
-        receiveEventChannel: ReceiveChannel<Event>,
-        routingProfile: RoutingProfile,
-        areRawLocationsEnabled: Boolean?,
+    override fun trackTrackable(
+        trackable: Trackable,
+        callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>
     ) {
-        launch {
-            val properties = Properties(
-                routingProfile,
-                policy.resolve(emptySet()),
-                constantLocationEngineResolution != null,
-                areRawLocationsEnabled,
-            )
-            val workerQueue: WorkerQueue = EventWorkerQueue(this@DefaultCorePublisher, properties, scope, workerFactory)
-            // processing
-            for (event in receiveEventChannel) {
-                // handle events after the publisher is stopped
-                if (properties.isStopped) {
-                    if (event is Request<*>) {
-                        // when the event is a request then call its handler
-                        when (event) {
-                            is StopEvent -> event.callbackFunction(Result.success(Unit))
-                            else -> event.callbackFunction(Result.failure(PublisherStoppedException()))
+        addTrackable(trackable) { addTrackableResult ->
+            if (addTrackableResult.isSuccess) {
+                enqueue(
+                    workerFactory.createWorker(
+                        WorkerParams.SetActiveTrackable(trackable) {
+                            callbackFunction(addTrackableResult)
                         }
-                        continue
-                    } else if (event is AdhocEvent) {
-                        // when the event is an adhoc event then just ignore it
-                        continue
-                    }
-                }
-                when (event) {
-                    is SetDestinationSuccessEvent -> {
-                        workerQueue.execute(
-                            workerFactory.createWorker(WorkerParams.DestinationSet(event.routeDurationInMilliseconds))
-                        )
-                    }
-                    is RawLocationChangedEvent -> {
-                        workerQueue.execute(workerFactory.createWorker(WorkerParams.RawLocationChanged(event.location)))
-                    }
-                    is EnhancedLocationChangedEvent -> {
-                        workerQueue.execute(
-                            workerFactory.createWorker(
-                                WorkerParams.EnhancedLocationChanged(
-                                    event.location,
-                                    event.intermediateLocations,
-                                    event.type,
-                                )
-                            )
-                        )
-                    }
-                    is TrackTrackableEvent -> {
-                        workerQueue.execute(
-                            workerFactory.createWorker(
-                                WorkerParams.AddTrackable(
-                                    event.trackable,
-                                    callbackFunction = { result ->
-                                        if (result.isSuccess) {
-                                            request(
-                                                SetActiveTrackableEvent(event.trackable) { event.callbackFunction(result) }
-                                            )
-                                        } else {
-                                            event.callbackFunction(result)
-                                        }
-                                    },
-                                    presenceUpdateListener = {}, // temporary placeholder
-                                    channelStateChangeListener = {}, // temporary placeholder
-                                )
-                            )
-                        )
-                    }
-                    is SetActiveTrackableEvent -> {
-                        workerQueue.execute(
-                            workerFactory.createWorker(
-                                WorkerParams.SetActiveTrackable(
-                                    event.trackable,
-                                    event.callbackFunction
-                                )
-                            )
-                        )
-                    }
-                    is AddTrackableEvent -> {
-                        workerQueue.execute(
-                            workerFactory.createWorker(
-                                WorkerParams.AddTrackable(
-                                    event.trackable,
-                                    event.callbackFunction,
-                                    presenceUpdateListener = {}, // temporary placeholder
-                                    channelStateChangeListener = {}, // temporary placeholder
-                                )
-                            )
-                        )
-                    }
-                    is AddTrackableFailedEvent -> {
-                        workerQueue.execute(
-                            workerFactory.createWorker(
-                                WorkerParams.AddTrackableFailed(
-                                    event.trackable,
-                                    event.callbackFunction,
-                                    event.exception
-                                )
-                            )
-                        )
-                    }
-                    is PresenceMessageEvent -> {
-                        workerQueue.execute(
-                            workerFactory.createWorker(
-                                WorkerParams.PresenceMessage(
-                                    event.trackable,
-                                    event.presenceMessage,
-                                )
-                            )
-                        )
-                    }
-                    is TrackableRemovalRequestedEvent -> {
-                        workerQueue.execute(
-                            workerFactory.createWorker(
-                                WorkerParams.TrackableRemovalRequested(
-                                    event.trackable,
-                                    event.callbackFunction,
-                                    event.result
-                                )
-                            )
-                        )
-                    }
-                    is ConnectionForTrackableCreatedEvent -> {
-                        // for now delegate the presence listening to here, this could likely be a new case for new
-                        // structure
-                        workerQueue.execute(
-                            workerFactory.createWorker(
-                                WorkerParams.ConnectionCreated(
-                                    event.trackable,
-                                    event.callbackFunction,
-                                    presenceUpdateListener = { presenceMessage ->
-                                        enqueue(PresenceMessageEvent(event.trackable, presenceMessage))
-                                    },
-                                    channelStateChangeListener = {}, // temporary placeholder
-                                )
-                            )
-                        )
-                    }
-                    is ConnectionForTrackableReadyEvent -> {
-                        workerQueue.execute(
-                            workerFactory.createWorker(
-                                WorkerParams.ConnectionReady(
-                                    event.trackable,
-                                    event.callbackFunction,
-                                ) { channelStateChange ->
-                                    enqueue(ChannelConnectionStateChangeEvent(channelStateChange, event.trackable.id))
-                                }
-                            )
-                        )
-                    }
-                    is ChangeLocationEngineResolutionEvent -> {
-                        workerQueue.execute(workerFactory.createWorker(WorkerParams.ChangeLocationEngineResolution))
-                    }
-                    is RemoveTrackableEvent -> {
-                        workerQueue.execute(
-                            workerFactory.createWorker(
-                                WorkerParams.RemoveTrackable(
-                                    event.trackable,
-                                    event.callbackFunction
-                                )
-                            )
-                        )
-                    }
-                    is DisconnectSuccessEvent -> {
-                        workerQueue.execute(
-                            workerFactory.createWorker(
-                                WorkerParams.DisconnectSuccess(
-                                    event.trackable,
-                                    event.callbackFunction,
-                                    shouldRecalculateResolutionCallback = { enqueue(ChangeLocationEngineResolutionEvent) }
-                                )
-                            )
-                        )
-                    }
-                    is RefreshResolutionPolicyEvent -> {
-                        workerQueue.execute(workerFactory.createWorker(WorkerParams.RefreshResolutionPolicy))
-                    }
-                    is ChangeRoutingProfileEvent -> {
-                        workerQueue.execute(
-                            workerFactory.createWorker(
-                                WorkerParams.ChangeRoutingProfile(event.routingProfile)
-                            )
-                        )
-                    }
-                    is StopEvent -> {
-                        workerQueue.execute(workerFactory.createWorker(WorkerParams.Stop(event.callbackFunction)))
-                    }
-                    is AblyConnectionStateChangeEvent -> {
-                        workerQueue.execute(
-                            workerFactory.createWorker(
-                                WorkerParams.AblyConnectionStateChange(event.connectionStateChange)
-                            )
-                        )
-                    }
-                    is ChannelConnectionStateChangeEvent -> {
-                        workerQueue.execute(
-                            workerFactory.createWorker(
-                                WorkerParams.ChannelConnectionStateChange(
-                                    event.trackableId,
-                                    event.connectionStateChange
-                                )
-                            )
-                        )
-                    }
-                    is SendEnhancedLocationSuccessEvent -> {
-                        workerQueue.execute(
-                            workerFactory.createWorker(
-                                WorkerParams.SendEnhancedLocationSuccess(
-                                    event.location,
-                                    event.trackableId
-                                )
-                            )
-                        )
-                    }
-                    is SendEnhancedLocationFailureEvent -> {
-                        workerQueue.execute(
-                            workerFactory.createWorker(
-                                WorkerParams.SendEnhancedLocationFailure(
-                                    event.locationUpdate,
-                                    event.trackableId,
-                                    event.exception,
-                                )
-                            )
-                        )
-                    }
-                    is SendRawLocationSuccessEvent -> {
-                        workerQueue.execute(
-                            workerFactory.createWorker(
-                                WorkerParams.SendRawLocationSuccess(
-                                    event.location,
-                                    event.trackableId,
-                                )
-                            )
-                        )
-                    }
-                    is SendRawLocationFailureEvent -> {
-                        workerQueue.execute(
-                            workerFactory.createWorker(
-                                WorkerParams.SendRawLocationFailure(
-                                    event.locationUpdate,
-                                    event.trackableId,
-                                    event.exception,
-                                )
-                            )
-                        )
-                    }
-                }
+                    )
+                )
+            } else {
+                callbackFunction(addTrackableResult)
             }
         }
+    }
+
+    override fun addTrackable(
+        trackable: Trackable,
+        callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>
+    ) {
+        enqueue(
+            workerFactory.createWorker(
+                WorkerParams.AddTrackable(
+                    trackable = trackable,
+                    callbackFunction = callbackFunction,
+                    presenceUpdateListener = {
+                        enqueue(workerFactory.createWorker(WorkerParams.PresenceMessage(trackable, it)))
+                    },
+                    channelStateChangeListener = {
+                        enqueue(workerFactory.createWorker(WorkerParams.ChannelConnectionStateChange(trackable.id, it)))
+                    },
+                )
+            )
+        )
+    }
+
+    override fun removeTrackable(trackable: Trackable, callbackFunction: ResultCallbackFunction<Boolean>) {
+        enqueue(workerFactory.createWorker(WorkerParams.RemoveTrackable(trackable, callbackFunction)))
+    }
+
+    override fun changeRoutingProfile(routingProfile: RoutingProfile) {
+        enqueue(workerFactory.createWorker(WorkerParams.ChangeRoutingProfile(routingProfile)))
+    }
+
+    override fun stop(callbackFunction: ResultCallbackFunction<Unit>) {
+        enqueue(workerFactory.createWorker(WorkerParams.Stop(callbackFunction)))
     }
 
     override fun retrySendingEnhancedLocation(
@@ -458,36 +266,32 @@ constructor(
         logHandler?.v("$TAG Trackable $trackableId retry sending enhanced location ${locationUpdate.location}")
         properties.enhancedLocationsPublishingState.incrementRetryCount(trackableId)
         sendEnhancedLocationUpdate(
-            EnhancedLocationChangedEvent(
-                locationUpdate.location,
-                locationUpdate.intermediateLocations,
-                locationUpdate.type
-            ),
+            locationUpdate,
             properties,
             trackableId
         )
     }
 
     override fun processEnhancedLocationUpdate(
-        event: EnhancedLocationChangedEvent,
+        enhancedLocationUpdate: EnhancedLocationUpdate,
         properties: PublisherProperties,
         trackableId: String
     ) {
-        logHandler?.v("$TAG Processing enhanced location for trackable: $trackableId. ${event.location}")
+        logHandler?.v("$TAG Processing enhanced location for trackable: $trackableId. ${enhancedLocationUpdate.location}")
         when {
             properties.enhancedLocationsPublishingState.hasPendingMessage(trackableId) -> {
-                logHandler?.v("$TAG Trackable: $trackableId has pending message. Adding enhanced location to waiting ${event.location}")
-                properties.enhancedLocationsPublishingState.addToWaiting(trackableId, event)
+                logHandler?.v("$TAG Trackable: $trackableId has pending message. Adding enhanced location to waiting ${enhancedLocationUpdate.location}")
+                properties.enhancedLocationsPublishingState.addToWaiting(trackableId, enhancedLocationUpdate)
             }
             shouldSendLocation(
-                event.location,
+                enhancedLocationUpdate.location,
                 properties.lastSentEnhancedLocations[trackableId],
                 properties.resolutions[trackableId]
             ) -> {
-                sendEnhancedLocationUpdate(event, properties, trackableId)
+                sendEnhancedLocationUpdate(enhancedLocationUpdate, properties, trackableId)
             }
             else -> {
-                saveEnhancedLocationForFurtherSending(properties, trackableId, event.location)
+                saveEnhancedLocationForFurtherSending(properties, trackableId, enhancedLocationUpdate.location)
                 processNextWaitingEnhancedLocationUpdate(properties, trackableId)
             }
         }
@@ -501,23 +305,38 @@ constructor(
     }
 
     private fun sendEnhancedLocationUpdate(
-        event: EnhancedLocationChangedEvent,
+        enhancedLocationUpdate: EnhancedLocationUpdate,
         properties: PublisherProperties,
         trackableId: String
     ) {
-        logHandler?.v("$TAG Trackable: $trackableId will send enhanced location ${event.location}")
+        logHandler?.v("$TAG Trackable: $trackableId will send enhanced location ${enhancedLocationUpdate.location}")
         val locationUpdate = EnhancedLocationUpdate(
-            event.location,
+            enhancedLocationUpdate.location,
             properties.skippedEnhancedLocations.toList(trackableId),
-            event.intermediateLocations,
-            event.type
+            enhancedLocationUpdate.intermediateLocations,
+            enhancedLocationUpdate.type
         )
         properties.enhancedLocationsPublishingState.markMessageAsPending(trackableId)
         ably.sendEnhancedLocation(trackableId, locationUpdate) {
             if (it.isSuccess) {
-                enqueue(SendEnhancedLocationSuccessEvent(locationUpdate.location, trackableId))
+                enqueue(
+                    workerFactory.createWorker(
+                        WorkerParams.SendEnhancedLocationSuccess(
+                            locationUpdate.location,
+                            trackableId
+                        )
+                    )
+                )
             } else {
-                enqueue(SendEnhancedLocationFailureEvent(locationUpdate, trackableId, it.exceptionOrNull()))
+                enqueue(
+                    workerFactory.createWorker(
+                        WorkerParams.SendEnhancedLocationFailure(
+                            locationUpdate,
+                            trackableId,
+                            it.exceptionOrNull()
+                        )
+                    )
+                )
             }
         }
     }
@@ -538,29 +357,29 @@ constructor(
     ) {
         logHandler?.v("$TAG Trackable $trackableId retry sending raw location ${locationUpdate.location}")
         properties.rawLocationsPublishingState.incrementRetryCount(trackableId)
-        sendRawLocationUpdate(RawLocationChangedEvent(locationUpdate.location), properties, trackableId)
+        sendRawLocationUpdate(locationUpdate, properties, trackableId)
     }
 
     override fun processRawLocationUpdate(
-        event: RawLocationChangedEvent,
+        rawLocationUpdate: LocationUpdate,
         properties: PublisherProperties,
         trackableId: String
     ) {
-        logHandler?.v("$TAG Processing raw location for trackable: $trackableId. ${event.location}")
+        logHandler?.v("$TAG Processing raw location for trackable: $trackableId. ${rawLocationUpdate.location}")
         when {
             properties.rawLocationsPublishingState.hasPendingMessage(trackableId) -> {
-                logHandler?.v("$TAG Trackable: $trackableId has pending message. Adding raw location to waiting ${event.location}")
-                properties.rawLocationsPublishingState.addToWaiting(trackableId, event)
+                logHandler?.v("$TAG Trackable: $trackableId has pending message. Adding raw location to waiting ${rawLocationUpdate.location}")
+                properties.rawLocationsPublishingState.addToWaiting(trackableId, rawLocationUpdate)
             }
             shouldSendLocation(
-                event.location,
+                rawLocationUpdate.location,
                 properties.lastSentRawLocations[trackableId],
                 properties.resolutions[trackableId]
             ) -> {
-                sendRawLocationUpdate(event, properties, trackableId)
+                sendRawLocationUpdate(rawLocationUpdate, properties, trackableId)
             }
             else -> {
-                saveRawLocationForFurtherSending(properties, trackableId, event.location)
+                saveRawLocationForFurtherSending(properties, trackableId, rawLocationUpdate.location)
                 processNextWaitingRawLocationUpdate(properties, trackableId)
             }
         }
@@ -574,21 +393,29 @@ constructor(
     }
 
     private fun sendRawLocationUpdate(
-        event: RawLocationChangedEvent,
+        rawLocationUpdate: LocationUpdate,
         properties: PublisherProperties,
         trackableId: String
     ) {
-        logHandler?.v("$TAG Trackable: $trackableId will send raw location ${event.location}")
+        logHandler?.v("$TAG Trackable: $trackableId will send raw location ${rawLocationUpdate.location}")
         val locationUpdate = LocationUpdate(
-            event.location,
+            rawLocationUpdate.location,
             properties.skippedRawLocations.toList(trackableId),
         )
         properties.rawLocationsPublishingState.markMessageAsPending(trackableId)
         ably.sendRawLocation(trackableId, locationUpdate) {
             if (it.isSuccess) {
-                enqueue(SendRawLocationSuccessEvent(locationUpdate.location, trackableId))
+                enqueue(
+                    workerFactory.createWorker(
+                        WorkerParams.SendRawLocationSuccess(locationUpdate.location, trackableId)
+                    )
+                )
             } else {
-                enqueue(SendRawLocationFailureEvent(locationUpdate, trackableId, it.exceptionOrNull()))
+                enqueue(
+                    workerFactory.createWorker(
+                        WorkerParams.SendRawLocationFailure(locationUpdate, trackableId, it.exceptionOrNull())
+                    )
+                )
             }
         }
     }
@@ -715,7 +542,7 @@ constructor(
         policy.resolve(TrackableResolutionRequest(trackable, resolutionRequests)).let { resolution ->
             if (properties.resolutions[trackable.id] != resolution) {
                 properties.resolutions[trackable.id] = resolution
-                enqueue(ChangeLocationEngineResolutionEvent)
+                enqueue(workerFactory.createWorker(WorkerParams.ChangeLocationEngineResolution))
                 if (sendResolutionEnabled) {
                     // For now we ignore the result of this operation but perhaps we should retry it if it fails
                     ably.updatePresenceData(trackable.id, properties.presenceData.copy(resolution = resolution)) {}
@@ -731,7 +558,7 @@ constructor(
                 properties.currentDestination = destination
                 mapbox.setRoute(currentLocation, destination, properties.routingProfile) {
                     try {
-                        enqueue(SetDestinationSuccessEvent(it.getOrThrow()))
+                        enqueue(workerFactory.createWorker(WorkerParams.DestinationSet(it.getOrThrow())))
                     } catch (exception: MapException) {
                         logHandler?.w("Setting trackable destination failed", exception)
                     }
@@ -814,7 +641,7 @@ constructor(
         var proximityHandler: ResolutionPolicy.Methods.ProximityHandler? = null
         var threshold: Proximity? = null
         override fun refresh() {
-            enqueue(RefreshResolutionPolicyEvent())
+            enqueue(workerFactory.createWorker(WorkerParams.RefreshResolutionPolicy))
         }
 
         override fun setProximityThreshold(
@@ -897,10 +724,10 @@ constructor(
             }
         override val rawLocationChangedCommands: MutableList<(PublisherProperties) -> Unit> = mutableListOf()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        override val enhancedLocationsPublishingState: LocationsPublishingState<EnhancedLocationChangedEvent> =
+        override val enhancedLocationsPublishingState: LocationsPublishingState<EnhancedLocationUpdate> =
             LocationsPublishingState()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        override val rawLocationsPublishingState: LocationsPublishingState<RawLocationChangedEvent> =
+        override val rawLocationsPublishingState: LocationsPublishingState<LocationUpdate> =
             LocationsPublishingState()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
         override val duplicateTrackableGuard: DuplicateTrackableGuard = DublicateTrackableGuardImpl()

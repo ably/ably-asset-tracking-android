@@ -1,7 +1,5 @@
 package com.ably.tracking.publisher.workerqueue.resulthandlers
 
-import com.ably.tracking.publisher.CorePublisher
-import com.ably.tracking.publisher.TrackableRemovalRequestedEvent
 import com.ably.tracking.publisher.workerqueue.WorkerFactory
 import com.ably.tracking.publisher.workerqueue.WorkerParams
 import com.ably.tracking.publisher.workerqueue.results.ConnectionCreatedWorkResult
@@ -10,17 +8,12 @@ import com.ably.tracking.publisher.workerqueue.workers.Worker
 internal class ConnectionCreatedResultHandler(
     private val workerFactory: WorkerFactory
 ) : WorkResultHandler<ConnectionCreatedWorkResult> {
-    override fun handle(
-        workResult: ConnectionCreatedWorkResult,
-        corePublisher: CorePublisher,
-    ): Worker? {
+    override fun handle(workResult: ConnectionCreatedWorkResult): Worker? {
         when (workResult) {
             is ConnectionCreatedWorkResult.RemovalRequested ->
-                corePublisher.request(
-                    TrackableRemovalRequestedEvent(
-                        trackable = workResult.trackable,
-                        callbackFunction = workResult.callbackFunction,
-                        result = workResult.result
+                return workerFactory.createWorker(
+                    WorkerParams.TrackableRemovalRequested(
+                        workResult.trackable, workResult.callbackFunction, workResult.result
                     )
                 )
 
@@ -38,6 +31,5 @@ internal class ConnectionCreatedResultHandler(
                     )
                 )
         }
-        return null
     }
 }

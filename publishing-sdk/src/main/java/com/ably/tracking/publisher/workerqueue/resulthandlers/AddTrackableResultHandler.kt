@@ -1,6 +1,5 @@
 package com.ably.tracking.publisher.workerqueue.resulthandlers
 
-import com.ably.tracking.publisher.CorePublisher
 import com.ably.tracking.publisher.workerqueue.WorkerFactory
 import com.ably.tracking.publisher.workerqueue.WorkerParams
 import com.ably.tracking.publisher.workerqueue.results.AddTrackableWorkResult
@@ -10,10 +9,7 @@ internal class AddTrackableResultHandler(
     private val workerFactory: WorkerFactory
 ) : WorkResultHandler<AddTrackableWorkResult> {
 
-    override fun handle(
-        workResult: AddTrackableWorkResult,
-        corePublisher: CorePublisher,
-    ): Worker? {
+    override fun handle(workResult: AddTrackableWorkResult): Worker? {
         when (workResult) {
             is AddTrackableWorkResult.AlreadyIn -> workResult.callbackFunction(
                 Result.success(workResult.trackableStateFlow)

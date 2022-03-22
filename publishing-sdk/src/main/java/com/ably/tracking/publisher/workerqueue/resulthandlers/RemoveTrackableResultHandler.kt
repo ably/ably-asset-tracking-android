@@ -1,22 +1,19 @@
 package com.ably.tracking.publisher.workerqueue.resulthandlers
 
-import com.ably.tracking.publisher.ChangeLocationEngineResolutionEvent
-import com.ably.tracking.publisher.CorePublisher
 import com.ably.tracking.publisher.workerqueue.WorkerFactory
 import com.ably.tracking.publisher.workerqueue.WorkerParams
+import com.ably.tracking.publisher.workerqueue.WorkerQueue
 import com.ably.tracking.publisher.workerqueue.results.RemoveTrackableWorkResult
 import com.ably.tracking.publisher.workerqueue.workers.Worker
 
 internal class RemoveTrackableResultHandler(
-    private val workerFactory: WorkerFactory
+    private val workerFactory: WorkerFactory,
+    private val workerQueue: WorkerQueue,
 ) : WorkResultHandler<RemoveTrackableWorkResult> {
-    override fun handle(
-        workResult: RemoveTrackableWorkResult,
-        corePublisher: CorePublisher,
-    ): Worker? {
+    override fun handle(workResult: RemoveTrackableWorkResult): Worker? {
         when (workResult) {
             is RemoveTrackableWorkResult.Success ->
-                workerFactory.createWorker(
+                return workerFactory.createWorker(
                     WorkerParams.DisconnectSuccess(
                         trackable = workResult.trackable,
                         callbackFunction = {
@@ -27,7 +24,7 @@ internal class RemoveTrackableResultHandler(
                             }
                         },
                         shouldRecalculateResolutionCallback = {
-                            corePublisher.enqueue(ChangeLocationEngineResolutionEvent)
+                            workerQueue.enqueue(workerFactory.createWorker(WorkerParams.ChangeLocationEngineResolution))
                         }
                     )
                 )

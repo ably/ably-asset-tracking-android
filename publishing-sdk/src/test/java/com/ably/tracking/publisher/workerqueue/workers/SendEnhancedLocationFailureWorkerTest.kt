@@ -4,7 +4,6 @@ import com.ably.tracking.EnhancedLocationUpdate
 import com.ably.tracking.Location
 import com.ably.tracking.LocationUpdateType
 import com.ably.tracking.publisher.CorePublisher
-import com.ably.tracking.publisher.EnhancedLocationChangedEvent
 import com.ably.tracking.publisher.LocationsPublishingState
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.test.common.anyLocation
@@ -25,7 +24,7 @@ class SendEnhancedLocationFailureWorkerTest {
     private val corePublisher = mockk<CorePublisher>(relaxed = true)
     private val lastSentEnhancedLocations = mockk<MutableMap<String, Location>>(relaxed = true)
     private val enhancedLocationsPublishingState =
-        mockk<LocationsPublishingState<EnhancedLocationChangedEvent>>(relaxed = true)
+        mockk<LocationsPublishingState<EnhancedLocationUpdate>>(relaxed = true)
     private val publisherProperties = mockk<PublisherProperties>(relaxed = true)
 
     @Before
