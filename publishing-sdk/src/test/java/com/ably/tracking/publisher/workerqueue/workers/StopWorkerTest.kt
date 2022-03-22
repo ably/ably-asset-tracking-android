@@ -1,16 +1,19 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
-import com.ably.tracking.ConnectionException
-import com.ably.tracking.ErrorInformation
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.publisher.CorePublisher
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.test.common.mockCloseFailure
+import com.ably.tracking.test.common.mockCloseSuccessWithDelay
+import io.mockk.CapturingSlot
 import io.mockk.clearAllMocks
 import io.mockk.coVerify
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.runs
+import io.mockk.slot
 import io.mockk.verify
 import org.junit.After
 import org.junit.Assert
@@ -26,7 +29,7 @@ class StopWorkerTest {
 
     @Before
     fun setUp() {
-        worker = StopWorker(resultCallbackFunction, ably, corePublisher)
+        worker = createWorker()
     }
 
     @After
@@ -128,7 +131,7 @@ class StopWorkerTest {
     }
 
     @Test
-    fun `should not mark that the publisher is stopped if closing Ably failed`() {
+    fun `should mark that the publisher is stopped if closing Ably failed`() {
         // given
         ably.mockCloseFailure()
 
@@ -136,7 +139,22 @@ class StopWorkerTest {
         worker.doWork(publisherProperties)
 
         // then
-        verify(exactly = 0) {
+        verify(exactly = 1) {
+            publisherProperties setProperty PublisherProperties::isStopped.name value true
+        }
+    }
+
+    @Test
+    fun `should mark that the publisher is stopped if stopping thrown a timeout`() {
+        // given
+        worker = createWorker(timeoutInMilliseconds = 10L)
+        ably.mockCloseSuccessWithDelay(delayInMilliseconds = 1000L)
+
+        // when
+        worker.doWork(publisherProperties)
+
+        // then
+        verify(exactly = 1) {
             publisherProperties setProperty PublisherProperties::isStopped.name value true
         }
     }
@@ -144,28 +162,48 @@ class StopWorkerTest {
     @Test
     fun `should call the callback function with a success if closing Ably was successful`() {
         // given
+        val resultSlot = captureCallbackFunctionResult()
 
         // when
         worker.doWork(publisherProperties)
 
         // then
-        verify(exactly = 1) {
-            resultCallbackFunction.invoke(Result.success(Unit))
-        }
+        Assert.assertTrue(resultSlot.captured.isSuccess)
     }
 
     @Test
     fun `should call the callback function with a failure if closing Ably failed`() {
         // given
-        val closeAblyException = ConnectionException(ErrorInformation(""))
-        ably.mockCloseFailure(closeAblyException)
+        ably.mockCloseFailure()
+        val resultSlot = captureCallbackFunctionResult()
 
         // when
         worker.doWork(publisherProperties)
 
         // then
-        verify(exactly = 1) {
-            resultCallbackFunction.invoke(Result.failure(closeAblyException))
-        }
+        Assert.assertTrue(resultSlot.captured.isFailure)
+    }
+
+    @Test
+    fun `should call the callback function with a failure if stopping thrown a timeout`() {
+        // given
+        worker = createWorker(timeoutInMilliseconds = 10L)
+        ably.mockCloseSuccessWithDelay(delayInMilliseconds = 1000L)
+        val resultSlot = captureCallbackFunctionResult()
+
+        // when
+        worker.doWork(publisherProperties)
+
+        // then
+        Assert.assertTrue(resultSlot.captured.isFailure)
+    }
+
+    private fun createWorker(timeoutInMilliseconds: Long = 30_000L) =
+        StopWorker(resultCallbackFunction, ably, corePublisher, timeoutInMilliseconds)
+
+    private fun captureCallbackFunctionResult(): CapturingSlot<Result<Unit>> {
+        val resultSlot = slot<Result<Unit>>()
+        every { resultCallbackFunction.invoke(capture(resultSlot)) } just runs
+        return resultSlot
     }
 }
