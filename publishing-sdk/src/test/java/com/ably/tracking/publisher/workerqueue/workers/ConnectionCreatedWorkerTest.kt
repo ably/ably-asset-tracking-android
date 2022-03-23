@@ -11,7 +11,6 @@ import com.ably.tracking.publisher.guards.TrackableRemovalGuard
 import com.ably.tracking.publisher.workerqueue.assertNotNullAndExecute
 import com.ably.tracking.publisher.workerqueue.results.ConnectionCreatedWorkResult
 import com.ably.tracking.test.common.mockDisconnectSuccess
-import com.ably.tracking.test.common.mockDisconnectSuccessAndCapturePresenceData
 import com.ably.tracking.test.common.mockSubscribeToPresenceError
 import com.ably.tracking.test.common.mockSubscribeToPresenceSuccess
 import com.ably.tracking.test.common.mockSuspendingDisconnect
@@ -110,7 +109,7 @@ class ConnectionCreatedWorkerTest {
 
             // then
             coVerify(exactly = 1) {
-                ably.disconnect(trackable.id, any(), any())
+                ably.disconnect(trackable.id, any())
             }
         }
     }
@@ -121,7 +120,7 @@ class ConnectionCreatedWorkerTest {
             // given
             val originalPresenceData = PresenceData("test-type")
             mockPresenceData(originalPresenceData)
-            val presenceDataSlot = ably.mockDisconnectSuccessAndCapturePresenceData(trackable.id)
+            val presenceDataSlot = ably.mockSuspendingDisconnectSuccessAndCapturePresenceData(trackable.id)
             ably.mockSubscribeToPresenceError(trackable.id)
 
             // when

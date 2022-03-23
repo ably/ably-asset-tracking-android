@@ -102,6 +102,10 @@ fun Ably.mockSuspendingDisconnect(trackableId: String, result: Result<Unit>) {
     coEvery { disconnect(trackableId, any()) } returns result
 }
 
+fun Ably.mockSuspendingDisconnectSuccess(trackableId: String) {
+    mockSuspendingDisconnect(trackableId, Result.success(Unit))
+}
+
 fun Ably.mockSuspendingDisconnectSuccessAndCapturePresenceData(trackableId: String): CapturingSlot<PresenceData> {
     val presenceDataSlot = slot<PresenceData>()
     coEvery { disconnect(trackableId, capture(presenceDataSlot)) } returns Result.success(Unit)

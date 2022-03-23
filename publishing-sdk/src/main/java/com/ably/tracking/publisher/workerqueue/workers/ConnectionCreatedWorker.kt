@@ -3,7 +3,6 @@ package com.ably.tracking.publisher.workerqueue.workers
 import com.ably.tracking.ConnectionException
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ConnectionStateChange
-import com.ably.tracking.common.PresenceData
 import com.ably.tracking.common.PresenceMessage
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.Trackable
@@ -33,40 +32,28 @@ internal class ConnectionCreatedWorker(
         val presenceData = properties.presenceData.copy()
         return SyncAsyncResult(
             asyncWork = {
-                subscribeToPresenceMessages(presenceData)
+                val subscribeToPresenceResult = subscribeToPresenceMessages()
+                try {
+                    subscribeToPresenceResult.getOrThrow()
+                    ConnectionCreatedWorkResult.PresenceSuccess(
+                        trackable,
+                        callbackFunction,
+                        presenceUpdateListener,
+                        channelStateChangeListener
+                    )
+                } catch (exception: ConnectionException) {
+                    ably.disconnect(trackable.id, presenceData)
+                    ConnectionCreatedWorkResult.PresenceFail(trackable, callbackFunction, exception)
+                }
             }
         )
     }
 
-    private suspend fun subscribeToPresenceMessages(presenceData: PresenceData): ConnectionCreatedWorkResult {
+    private suspend fun subscribeToPresenceMessages(): Result<Unit> {
         return suspendCoroutine { continuation ->
-            ably.subscribeForPresenceMessages(
-                trackableId = trackable.id,
-                listener = presenceUpdateListener,
-                callback = { result ->
-                    try {
-                        result.getOrThrow()
-                        continuation.resume(
-                            ConnectionCreatedWorkResult.PresenceSuccess(
-                                trackable,
-                                callbackFunction,
-                                presenceUpdateListener,
-                                channelStateChangeListener,
-                            )
-                        )
-                    } catch (exception: ConnectionException) {
-                        ably.disconnect(trackable.id, presenceData) {
-                            continuation.resume(
-                                ConnectionCreatedWorkResult.PresenceFail(
-                                    trackable,
-                                    callbackFunction,
-                                    exception
-                                )
-                            )
-                        }
-                    }
-                }
-            )
+            ably.subscribeForPresenceMessages(trackable.id, presenceUpdateListener) { result ->
+                continuation.resume(result)
+            }
         }
     }
 

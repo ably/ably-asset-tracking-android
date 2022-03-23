@@ -9,6 +9,7 @@ import com.ably.tracking.test.common.mockDisconnectSuccess
 import com.ably.tracking.test.common.mockSubscribeToPresenceError
 import com.ably.tracking.test.common.mockSubscribeToPresenceSuccess
 import com.ably.tracking.test.common.mockSuspendingConnectSuccess
+import com.ably.tracking.test.common.mockSuspendingDisconnectSuccess
 import io.mockk.coVerify
 import io.mockk.mockk
 import io.mockk.verify
@@ -53,7 +54,7 @@ class DefaultPublisherTest {
         // given
         val trackableId = UUID.randomUUID().toString()
         ably.mockSuspendingConnectSuccess(trackableId)
-        ably.mockDisconnectSuccess(trackableId)
+        ably.mockSuspendingDisconnectSuccess(trackableId)
         ably.mockSubscribeToPresenceError(trackableId)
 
         // when
@@ -66,8 +67,8 @@ class DefaultPublisherTest {
         }
 
         // then
-        verify(exactly = 1) {
-            ably.disconnect(trackableId, any(), any())
+        coVerify(exactly = 1) {
+            ably.disconnect(trackableId, any())
         }
     }
 
