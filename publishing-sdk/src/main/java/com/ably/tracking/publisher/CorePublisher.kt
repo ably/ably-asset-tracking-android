@@ -20,10 +20,10 @@ import com.ably.tracking.common.logging.createLoggingTag
 import com.ably.tracking.common.logging.v
 import com.ably.tracking.common.logging.w
 import com.ably.tracking.logging.LogHandler
-import com.ably.tracking.publisher.guards.DublicateTrackableGuardImpl
+import com.ably.tracking.publisher.guards.DefaultDuplicateTrackableGuard
 import com.ably.tracking.publisher.guards.DuplicateTrackableGuard
 import com.ably.tracking.publisher.guards.TrackableRemovalGuard
-import com.ably.tracking.publisher.guards.TrackableRemovalGuardImpl
+import com.ably.tracking.publisher.guards.DefaultTrackableRemovalGuard
 import com.ably.tracking.publisher.workerqueue.DefaultWorkerFactory
 import com.ably.tracking.publisher.workerqueue.DefaultWorkerQueue
 import com.ably.tracking.publisher.workerqueue.WorkerFactory
@@ -730,9 +730,9 @@ constructor(
         override val rawLocationsPublishingState: LocationsPublishingState<LocationUpdate> =
             LocationsPublishingState()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        override val duplicateTrackableGuard: DuplicateTrackableGuard = DublicateTrackableGuardImpl()
+        override val duplicateTrackableGuard: DuplicateTrackableGuard = DefaultDuplicateTrackableGuard()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        override val trackableRemovalGuard: TrackableRemovalGuard = TrackableRemovalGuardImpl()
+        override val trackableRemovalGuard: TrackableRemovalGuard = DefaultTrackableRemovalGuard()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
         override val areRawLocationsEnabled: Boolean = areRawLocationsEnabled ?: false
 

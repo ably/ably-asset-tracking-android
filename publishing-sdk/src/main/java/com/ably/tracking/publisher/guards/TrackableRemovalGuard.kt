@@ -14,7 +14,7 @@ internal interface TrackableRemovalGuard {
     fun clearAll()
 }
 
-internal class TrackableRemovalGuardImpl : TrackableRemovalGuard {
+internal class DefaultTrackableRemovalGuard : TrackableRemovalGuard {
 
     /**
      * A set of trackables that were marked for removal. This should be used to store / retrieve trackables

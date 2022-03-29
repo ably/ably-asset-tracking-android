@@ -6,7 +6,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class TrackableRemovalGuardTest {
-    private val trackableRemovalGuard = TrackableRemovalGuardImpl()
+    private val trackableRemovalGuard = DefaultTrackableRemovalGuard()
 
     @Test
     fun `marking trackable for removal really marks it for removal`() {

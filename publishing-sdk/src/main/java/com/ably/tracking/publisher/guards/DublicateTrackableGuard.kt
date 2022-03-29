@@ -5,7 +5,7 @@ import com.ably.tracking.publisher.workerqueue.workers.AddTrackableCallbackFunct
 import com.ably.tracking.publisher.workerqueue.workers.AddTrackableResult
 
 /**
- * Interface for [DublicateTrackableGuardImpl] is created to make it possible to create test fakes.
+ * Interface for [DefaultDuplicateTrackableGuard] is created to make it possible to create test fakes.
  * */
 internal interface DuplicateTrackableGuard {
     fun startAddingTrackable(trackable: Trackable)
@@ -20,7 +20,7 @@ internal interface DuplicateTrackableGuard {
  * Class that protects from adding duplicates of a trackable that is currently being added to the publisher.
  * This class is not safe to access from multiple threads at the same time.
  */
-internal class DublicateTrackableGuardImpl : DuplicateTrackableGuard {
+internal class DefaultDuplicateTrackableGuard : DuplicateTrackableGuard {
     /**
      * Stores trackables that are currently being added (the adding process has started but hasn't finished yet).
      */
