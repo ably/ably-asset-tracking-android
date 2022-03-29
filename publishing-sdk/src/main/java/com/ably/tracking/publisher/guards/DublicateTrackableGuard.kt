@@ -6,7 +6,7 @@ import com.ably.tracking.publisher.workerqueue.workers.AddTrackableResult
 
 /**
  * Interface for [DefaultDuplicateTrackableGuard] is created to make it possible to create test fakes.
- * */
+ */
 internal interface DuplicateTrackableGuard {
     fun startAddingTrackable(trackable: Trackable)
     fun finishAddingTrackable(trackable: Trackable, result: Result<AddTrackableResult>)
