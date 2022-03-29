@@ -4,7 +4,7 @@ import com.ably.tracking.publisher.workerqueue.workers.Worker
 
 /**
  * An interface for a  worker queue. A worker queue is responsible for enqueing [Worker]s, and executing them. See
- * implementors for the implementation details, For example [EventWorkerQueue].
+ * implementors for the implementation details, For example [DefaultWorkerQueue].
  *
  * Please note that this interface is likely change on the later phase of refactorings of event queue
  * **/

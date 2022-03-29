@@ -25,7 +25,7 @@ import com.ably.tracking.publisher.guards.DuplicateTrackableGuard
 import com.ably.tracking.publisher.guards.TrackableRemovalGuard
 import com.ably.tracking.publisher.guards.TrackableRemovalGuardImpl
 import com.ably.tracking.publisher.workerqueue.DefaultWorkerFactory
-import com.ably.tracking.publisher.workerqueue.EventWorkerQueue
+import com.ably.tracking.publisher.workerqueue.DefaultWorkerQueue
 import com.ably.tracking.publisher.workerqueue.WorkerFactory
 import com.ably.tracking.publisher.workerqueue.WorkerParams
 import com.ably.tracking.publisher.workerqueue.WorkerQueue
@@ -177,7 +177,7 @@ constructor(
             areRawLocationsEnabled,
         )
         workerFactory = DefaultWorkerFactory(ably, hooks, this, policy, mapbox, this, logHandler)
-        workerQueue = EventWorkerQueue(properties, scope, workerFactory)
+        workerQueue = DefaultWorkerQueue(properties, scope, workerFactory)
         ably.subscribeForAblyStateChange { enqueue(workerFactory.createWorker(WorkerParams.AblyConnectionStateChange(it))) }
         mapbox.registerLocationObserver(object : LocationUpdatesObserver {
             override fun onRawLocationChanged(rawLocation: Location) {
