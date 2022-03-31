@@ -12,22 +12,22 @@ import kotlinx.coroutines.flow.StateFlow
 internal typealias AsyncWork = (suspend () -> WorkResult)
 
 /**
- * This sealed class represents a base result from concrete  [Worker] instances after they finish doing their work.
+ * This sealed class represents a base result from concrete [Worker] instances after they finish doing their work.
  * It's also intended to be returned by [AsyncWork] coroutines.
- * **/
+ */
 internal sealed class WorkResult
 
 /**
  * A special [WorkResult] that contains an optional [syncWorkResult] and [asyncWork]
  *
- * @param syncWorkResult : Any work result that has resulted from synchronous work. This work result is expected to be
- * returned and processed in a blocking fashion
+ * @param syncWorkResult any work result that has resulted from synchronous work. This work result is expected to be
+ * returned and processed in a blocking fashion.
  * @param asyncWork is any work that is not immediately executed but returned to caller for background execution.
  *
  * [asyncWork] is a suspending work and it is intended to be launched in a different coroutine. However there is
  * nothing that prevents callers from executing this in the same coroutine. If any use case like this arise, you
  * should document the reason of such usage.
- * **/
+ */
 internal data class SyncAsyncResult(
     val syncWorkResult: WorkResult? = null,
     val asyncWork: AsyncWork? = null

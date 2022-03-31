@@ -13,50 +13,78 @@ internal class DisconnectSuccessWorker(
     private val shouldRecalculateResolutionCallback: () -> Unit,
 ) : Worker {
     override fun doWork(properties: PublisherProperties): SyncAsyncResult {
-        properties.trackables.remove(trackable)
-
-        corePublisher.updateTrackables(properties)
-        properties.trackableStateFlows.remove(trackable.id) // there is no way to stop the StateFlow so we just remove it
-        corePublisher.updateTrackableStateFlows(properties)
-        properties.trackableStates.remove(trackable.id)
-
-        corePublisher.notifyResolutionPolicyThatTrackableWasRemoved(trackable)
-        corePublisher.removeAllSubscribers(trackable, properties)
-
-        properties.resolutions.remove(trackable.id)
-            ?.let { shouldRecalculateResolutionCallback() }
-        properties.requests.remove(trackable.id)
-
-        properties.lastSentEnhancedLocations.remove(trackable.id)
-        properties.lastSentRawLocations.remove(trackable.id)
-        properties.skippedEnhancedLocations.clear(trackable.id)
-        properties.skippedRawLocations.clear(trackable.id)
-
-        properties.enhancedLocationsPublishingState.clear(trackable.id)
-        properties.rawLocationsPublishingState.clear(trackable.id)
-
-        properties.duplicateTrackableGuard.clear(trackable)
-
-        // If this was the active Trackable then clear that state and remove destination.
-        if (properties.active == trackable) {
-            corePublisher.removeCurrentDestination(properties)
-            properties.active = null
-            corePublisher.notifyResolutionPolicyThatActiveTrackableHasChanged(null)
+        removeTrackable(properties)
+        removeTrackableState(properties)
+        updateResolutions(properties)
+        clearSubscribersData(properties)
+        clearLocationUpdatesData(properties)
+        if (isRemovedTrackableTheActiveOne(properties)) {
+            clearActiveTrackableState(properties)
         }
-
-        // When we remove the last trackable then we should stop location updates
-        if (properties.trackables.isEmpty() && properties.isTracking) {
-            corePublisher.stopLocationUpdates(properties)
+        if (isRemovedTrackableTheLastOne(properties)) {
+            stopLocationUpdates(properties)
         }
-
-        properties.lastChannelConnectionStateChanges.remove(trackable.id)
-
-        callbackFunction(Result.success(Unit))
+        notifyRemoveOperationFinished()
 
         return SyncAsyncResult()
     }
 
     override fun doWhenStopped(exception: Exception) {
         callbackFunction(Result.failure(exception))
+    }
+
+    private fun removeTrackable(properties: PublisherProperties) {
+        properties.trackables.remove(trackable)
+        corePublisher.updateTrackables(properties)
+        properties.duplicateTrackableGuard.clear(trackable)
+    }
+
+    private fun removeTrackableState(properties: PublisherProperties) {
+        properties.trackableStateFlows.remove(trackable.id) // there is no way to stop the StateFlow so we just remove it
+        corePublisher.updateTrackableStateFlows(properties)
+        properties.trackableStates.remove(trackable.id)
+        properties.lastChannelConnectionStateChanges.remove(trackable.id)
+    }
+
+    private fun updateResolutions(properties: PublisherProperties) {
+        corePublisher.notifyResolutionPolicyThatTrackableWasRemoved(trackable)
+        properties.resolutions.remove(trackable.id)
+            ?.let { shouldRecalculateResolutionCallback() }
+    }
+
+    private fun clearSubscribersData(properties: PublisherProperties) {
+        corePublisher.removeAllSubscribers(trackable, properties)
+        properties.requests.remove(trackable.id)
+    }
+
+    private fun clearLocationUpdatesData(properties: PublisherProperties) {
+        properties.lastSentEnhancedLocations.remove(trackable.id)
+        properties.lastSentRawLocations.remove(trackable.id)
+        properties.skippedEnhancedLocations.clear(trackable.id)
+        properties.skippedRawLocations.clear(trackable.id)
+        properties.enhancedLocationsPublishingState.clear(trackable.id)
+        properties.rawLocationsPublishingState.clear(trackable.id)
+    }
+
+    private fun isRemovedTrackableTheActiveOne(properties: PublisherProperties): Boolean =
+        properties.active == trackable
+
+    private fun clearActiveTrackableState(properties: PublisherProperties) {
+        corePublisher.removeCurrentDestination(properties)
+        properties.active = null
+        corePublisher.notifyResolutionPolicyThatActiveTrackableHasChanged(null)
+    }
+
+    private fun isRemovedTrackableTheLastOne(properties: PublisherProperties): Boolean =
+        properties.trackables.isEmpty()
+
+    private fun stopLocationUpdates(properties: PublisherProperties) {
+        if (properties.isTracking) {
+            corePublisher.stopLocationUpdates(properties)
+        }
+    }
+
+    private fun notifyRemoveOperationFinished() {
+        callbackFunction(Result.success(Unit))
     }
 }

@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 
 /**
  * This interface is intended to make it easy to create fake properties for tests
- * */
+ */
 internal interface PublisherProperties {
     val duplicateTrackableGuard: DuplicateTrackableGuard
     val trackableRemovalGuard: TrackableRemovalGuard
