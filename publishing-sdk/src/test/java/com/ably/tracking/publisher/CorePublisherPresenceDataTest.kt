@@ -7,10 +7,10 @@ import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ClientTypes
 import com.ably.tracking.common.PresenceData
-import com.ably.tracking.test.common.mockCreateConnectionSuccess
+import com.ably.tracking.test.common.mockCreateSuspendingConnectionSuccess
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.verify
 import java.util.UUID
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -51,8 +51,8 @@ class CorePublisherPresenceDataTest {
             stopCorePublisher(corePublisher)
         }
         val expectedPresenceData = PresenceData(ClientTypes.PUBLISHER, null, null)
-        verify(exactly = 1) {
-            ably.connect(trackableId, expectedPresenceData, any(), any(), any(), any())
+        coVerify(exactly = 1) {
+            ably.connect(trackableId, expectedPresenceData, any(), any(), any())
         }
     }
 
@@ -71,8 +71,8 @@ class CorePublisherPresenceDataTest {
             stopCorePublisher(corePublisher)
         }
         val expectedPresenceData = PresenceData(ClientTypes.PUBLISHER, null, true)
-        verify(exactly = 1) {
-            ably.connect(trackableId, expectedPresenceData, any(), any(), any(), any())
+        coVerify(exactly = 1) {
+            ably.connect(trackableId, expectedPresenceData, any(), any(), any())
         }
     }
 
@@ -81,7 +81,7 @@ class CorePublisherPresenceDataTest {
     }
 
     private fun addTrackable(trackable: Trackable, corePublisher: CorePublisher) {
-        ably.mockCreateConnectionSuccess(trackable.id)
+        ably.mockCreateSuspendingConnectionSuccess(trackable.id)
         runBlocking(Dispatchers.IO) {
             addTrackableToCorePublisher(trackable, corePublisher)
         }
@@ -92,29 +92,25 @@ class CorePublisherPresenceDataTest {
         corePublisher: CorePublisher
     ): StateFlow<TrackableState> {
         return suspendCoroutine { continuation ->
-            corePublisher.request(
-                AddTrackableEvent(trackable) {
-                    try {
-                        continuation.resume(it.getOrThrow())
-                    } catch (exception: Exception) {
-                        continuation.resumeWithException(exception)
-                    }
+            corePublisher.addTrackable(trackable) {
+                try {
+                    continuation.resume(it.getOrThrow())
+                } catch (exception: Exception) {
+                    continuation.resumeWithException(exception)
                 }
-            )
+            }
         }
     }
 
     private suspend fun stopCorePublisher(corePublisher: CorePublisher) {
         suspendCoroutine<Unit> { continuation ->
-            corePublisher.request(
-                StopEvent {
-                    try {
-                        continuation.resume(it.getOrThrow())
-                    } catch (exception: Exception) {
-                        continuation.resumeWithException(exception)
-                    }
+            corePublisher.stop {
+                try {
+                    continuation.resume(it.getOrThrow())
+                } catch (exception: Exception) {
+                    continuation.resumeWithException(exception)
                 }
-            )
+            }
         }
     }
 }

@@ -35,7 +35,7 @@ constructor(
         get() = core.active
     override var routingProfile: RoutingProfile
         get() = core.routingProfile
-        set(value) = core.enqueue(ChangeRoutingProfileEvent(value))
+        set(value) = core.changeRoutingProfile(value)
     override val locations: SharedFlow<LocationUpdate>
         get() = core.locations
     override val trackables: SharedFlow<Set<Trackable>>
@@ -58,59 +58,52 @@ constructor(
 
     override suspend fun track(trackable: Trackable): StateFlow<TrackableState> {
         return suspendCoroutine { continuation ->
-            core.request(
-                TrackTrackableEvent(trackable) {
-                    try {
-                        continuation.resume(it.getOrThrow())
-                    } catch (exception: Exception) {
-                        continuation.resumeWithException(exception)
-                    }
+            core.trackTrackable(trackable) {
+                try {
+                    continuation.resume(it.getOrThrow())
+                } catch (exception: Exception) {
+                    continuation.resumeWithException(exception)
                 }
-            )
+            }
         }
     }
 
     override suspend fun add(trackable: Trackable): StateFlow<TrackableState> {
         return suspendCoroutine { continuation ->
-            core.request(
-                AddTrackableEvent(trackable) {
-                    try {
-                        continuation.resume(it.getOrThrow())
-                    } catch (exception: Exception) {
-                        continuation.resumeWithException(exception)
-                    }
+            core.addTrackable(trackable) {
+                try {
+                    continuation.resume(it.getOrThrow())
+                } catch (exception: Exception) {
+                    continuation.resumeWithException(exception)
                 }
-            )
+            }
         }
     }
 
     override suspend fun remove(trackable: Trackable): Boolean {
         return suspendCoroutine { continuation ->
-            core.request(
-                RemoveTrackableEvent(trackable) {
-                    try {
-                        continuation.resume(it.getOrThrow())
-                    } catch (exception: Exception) {
-                        continuation.resumeWithException(exception)
-                    }
+            core.removeTrackable(trackable) {
+                try {
+                    continuation.resume(it.getOrThrow())
+                } catch (exception: Exception) {
+                    continuation.resumeWithException(exception)
                 }
-            )
+            }
         }
     }
 
     override suspend fun stop() {
         suspendCoroutine<Unit> { continuation ->
-            core.request(
-                StopEvent {
-                    try {
-                        continuation.resume(it.getOrThrow())
-                    } catch (exception: Exception) {
-                        continuation.resumeWithException(exception)
-                    }
+            core.stop {
+                try {
+                    continuation.resume(it.getOrThrow())
+                } catch (exception: Exception) {
+                    continuation.resumeWithException(exception)
                 }
-            )
+            }
         }
     }
 
-    override fun getTrackableState(trackableId: String): StateFlow<TrackableState>? = core.trackableStateFlows[trackableId]
+    override fun getTrackableState(trackableId: String): StateFlow<TrackableState>? =
+        core.trackableStateFlows[trackableId]
 }
