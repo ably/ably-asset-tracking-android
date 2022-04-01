@@ -177,7 +177,7 @@ class CorePublisherResolutionTest(
 
     private suspend fun stopCorePublisher() {
         suspendCoroutine<Unit> { continuation ->
-            corePublisher.stop {
+            corePublisher.stop(30_000L) {
                 try {
                     continuation.resume(it.getOrThrow())
                 } catch (exception: Exception) {

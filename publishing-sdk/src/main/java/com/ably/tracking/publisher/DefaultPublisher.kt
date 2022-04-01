@@ -92,9 +92,9 @@ constructor(
         }
     }
 
-    override suspend fun stop() {
+    override suspend fun stop(timeoutInMilliseconds: Long) {
         suspendCoroutine<Unit> { continuation ->
-            core.stop {
+            core.stop(timeoutInMilliseconds) {
                 try {
                     continuation.resume(it.getOrThrow())
                 } catch (exception: Exception) {

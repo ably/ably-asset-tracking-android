@@ -117,9 +117,11 @@ interface Publisher {
     /**
      * Stops this publisher from publishing locations. Once a publisher has been stopped, it cannot be restarted.
      * Please note that calling this method will remove the notification provided by [Builder.backgroundTrackingNotificationProvider].
+     *
+     * @param timeoutInMilliseconds After this duration the stopping procedure will be canceled. Default value is 30 seconds.
      */
     @JvmSynthetic
-    suspend fun stop()
+    suspend fun stop(timeoutInMilliseconds: Long = 30_000L)
 
     /**
      * The methods implemented by builders capable of starting [Publisher] instances.

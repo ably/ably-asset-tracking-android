@@ -104,7 +104,7 @@ class CorePublisherPresenceDataTest {
 
     private suspend fun stopCorePublisher(corePublisher: CorePublisher) {
         suspendCoroutine<Unit> { continuation ->
-            corePublisher.stop {
+            corePublisher.stop(30_000L) {
                 try {
                     continuation.resume(it.getOrThrow())
                 } catch (exception: Exception) {

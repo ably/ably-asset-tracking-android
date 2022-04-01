@@ -187,6 +187,7 @@ internal class DefaultWorkerFactory(
                 params.callbackFunction,
                 ably,
                 corePublisher,
+                params.timeoutInMilliseconds,
             )
         }
     }
@@ -295,6 +296,7 @@ internal sealed class WorkerParams {
 
     data class Stop(
         val callbackFunction: ResultCallbackFunction<Unit>,
+        val timeoutInMilliseconds: Long,
     ) : WorkerParams()
 
     data class TrackableRemovalRequested(

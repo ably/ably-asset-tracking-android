@@ -33,6 +33,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
+import kotlinx.coroutines.suspendCancellableCoroutine
 
 /**
  * Wrapper for the [AblyRealtime] that's used to interact with the Ably SDK.
@@ -355,7 +356,7 @@ constructor(
      * A suspend version of the [DefaultAbly.disconnect] method. It waits until disconnection is completed.
      */
     override suspend fun disconnect(trackableId: String, presenceData: PresenceData): Result<Unit> {
-        return suspendCoroutine { continuation ->
+        return suspendCancellableCoroutine { continuation ->
             disconnect(trackableId, presenceData) {
                 try {
                     it.getOrThrow()
@@ -528,7 +529,7 @@ constructor(
      * @throws ConnectionException if the [AblyRealtime] state changes to [ConnectionState.failed].
      */
     private suspend fun closeConnection() {
-        suspendCoroutine<Unit> { continuation ->
+        suspendCancellableCoroutine<Unit> { continuation ->
             ably.connection.on {
                 if (it.current == ConnectionState.closed) {
                     continuation.resume(Unit)
