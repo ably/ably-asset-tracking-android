@@ -1,7 +1,5 @@
 package com.ably.tracking.publisher.workerqueue.resulthandlers
 
-import com.ably.tracking.ConnectionException
-import com.ably.tracking.ErrorInformation
 import com.ably.tracking.TrackableState
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.WorkerFactory
@@ -28,7 +26,7 @@ class WorkResultHandlersTest {
     private val connectionCreatedWorkResults = listOf(
         ConnectionCreatedWorkResult.RemovalRequested(Trackable(""), {}, Result.success(Unit)),
         ConnectionCreatedWorkResult.PresenceSuccess(Trackable(""), {}, {}, {}),
-        ConnectionCreatedWorkResult.PresenceFail(Trackable(""), {}, ConnectionException(ErrorInformation(""))),
+        ConnectionCreatedWorkResult.PresenceFail(Trackable(""), {}, {}, {}),
     )
     private val connectionReadyWorkResults = listOf(
         ConnectionReadyWorkResult.RemovalRequested(Trackable(""), {}, Result.success(Unit)),

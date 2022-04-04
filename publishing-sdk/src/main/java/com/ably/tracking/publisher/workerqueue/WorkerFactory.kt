@@ -91,6 +91,8 @@ internal class DefaultWorkerFactory(
                 hooks,
                 corePublisher,
                 params.channelStateChangeListener,
+                params.isSubscribedToPresence,
+                params.presenceUpdateListener,
             )
             is WorkerParams.DisconnectSuccess -> DisconnectSuccessWorker(
                 params.trackable,
@@ -233,6 +235,8 @@ internal sealed class WorkerParams {
         val trackable: Trackable,
         val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>,
         val channelStateChangeListener: ((connectionStateChange: ConnectionStateChange) -> Unit),
+        val presenceUpdateListener: ((presenceMessage: com.ably.tracking.common.PresenceMessage) -> Unit),
+        val isSubscribedToPresence: Boolean,
     ) : WorkerParams()
 
     data class DestinationSet(

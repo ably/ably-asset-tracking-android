@@ -29,7 +29,6 @@ internal class ConnectionCreatedWorker(
                 }
             )
         }
-        val presenceData = properties.presenceData.copy()
         return SyncAsyncResult(
             asyncWork = {
                 val subscribeToPresenceResult = subscribeToPresenceMessages()
@@ -42,8 +41,12 @@ internal class ConnectionCreatedWorker(
                         channelStateChangeListener
                     )
                 } catch (exception: ConnectionException) {
-                    ably.disconnect(trackable.id, presenceData)
-                    ConnectionCreatedWorkResult.PresenceFail(trackable, callbackFunction, exception)
+                    ConnectionCreatedWorkResult.PresenceFail(
+                        trackable,
+                        callbackFunction,
+                        presenceUpdateListener,
+                        channelStateChangeListener,
+                    )
                 }
             }
         )

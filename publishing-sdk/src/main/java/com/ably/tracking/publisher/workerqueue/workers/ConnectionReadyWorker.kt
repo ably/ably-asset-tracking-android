@@ -21,6 +21,8 @@ internal class ConnectionReadyWorker(
     private val hooks: DefaultCorePublisher.Hooks,
     private val corePublisher: CorePublisher,
     private val channelStateChangeListener: ((connectionStateChange: ConnectionStateChange) -> Unit),
+    private val isSubscribedToPresence: Boolean,
+    private val presenceUpdateListener: ((presenceMessage: com.ably.tracking.common.PresenceMessage) -> Unit),
 ) : Worker {
     override fun doWork(properties: PublisherProperties): SyncAsyncResult {
         if (properties.trackableRemovalGuard.isMarkedForRemoval(trackable)) {
@@ -33,7 +35,7 @@ internal class ConnectionReadyWorker(
         addTrackableToPublisher(properties)
         val trackableState = properties.trackableStates[trackable.id] ?: TrackableState.Offline()
         val trackableStateFlow = properties.trackableStateFlows[trackable.id] ?: MutableStateFlow(trackableState)
-        updateTrackableState(properties, trackableState, trackableStateFlow)
+        updateTrackableState(properties, trackableState, trackableStateFlow, isSubscribedToPresence)
         notifyAddOperationFinished(properties, trackableStateFlow)
 
         return SyncAsyncResult()
@@ -70,11 +72,13 @@ internal class ConnectionReadyWorker(
     private fun updateTrackableState(
         properties: PublisherProperties,
         trackableState: TrackableState,
-        trackableStateFlow: MutableStateFlow<TrackableState>
+        trackableStateFlow: MutableStateFlow<TrackableState>,
+        isSubscribedToPresence: Boolean,
     ) {
         properties.trackableStateFlows[trackable.id] = trackableStateFlow
         corePublisher.updateTrackableStateFlows(properties)
         properties.trackableStates[trackable.id] = trackableState
+        properties.trackableSubscribedToPresenceFlags[trackable.id] = isSubscribedToPresence
     }
 
     private fun notifyAddOperationFinished(

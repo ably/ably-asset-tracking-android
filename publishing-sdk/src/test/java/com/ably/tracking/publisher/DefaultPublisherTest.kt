@@ -33,8 +33,8 @@ class DefaultPublisherTest {
     private val publisher: Publisher =
         DefaultPublisher(ably, mapbox, resolutionPolicyFactory, RoutingProfile.DRIVING, null, false, false, null)
 
-    @Test(expected = ConnectionException::class)
-    fun `should return an error when adding a trackable with subscribing to presence error`() {
+    @Test()
+    fun `should not return an error when adding a trackable with subscribing to presence error`() {
         // given
         val trackableId = UUID.randomUUID().toString()
         ably.mockSuspendingConnectSuccess(trackableId)
@@ -50,7 +50,7 @@ class DefaultPublisherTest {
     }
 
     @Test()
-    fun `should disconnect from the channel when adding a trackable with subscribing to presence error`() {
+    fun `should not disconnect from the channel when adding a trackable with subscribing to presence error`() {
         // given
         val trackableId = UUID.randomUUID().toString()
         ably.mockSuspendingConnectSuccess(trackableId)
@@ -67,7 +67,7 @@ class DefaultPublisherTest {
         }
 
         // then
-        coVerify(exactly = 1) {
+        coVerify(exactly = 0) {
             ably.disconnect(trackableId, any())
         }
     }

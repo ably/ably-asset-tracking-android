@@ -4,6 +4,7 @@ import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.PresenceData
+import com.ably.tracking.common.PresenceMessage
 import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.publisher.CorePublisher
 import com.ably.tracking.publisher.DefaultCorePublisher
@@ -45,17 +46,11 @@ class ConnectionReadyWorkerTest {
     private val hooks = mockk<DefaultCorePublisher.Hooks>(relaxed = true)
     private val corePublisher = mockk<CorePublisher>(relaxed = true)
     private val connectionStateChangeListener: (ConnectionStateChange) -> Unit = {}
+    private val presenceUpdateListener: (PresenceMessage) -> Unit = {}
 
     @Before
     fun setUp() {
-        worker = ConnectionReadyWorker(
-            trackable,
-            resultCallbackFunction,
-            ably,
-            hooks,
-            corePublisher,
-            connectionStateChangeListener
-        )
+        worker = createWorker(isSubscribedToPresence = true)
         every { publisherProperties.trackableRemovalGuard } returns trackableRemovalGuard
         every { publisherProperties.duplicateTrackableGuard } returns duplicateTrackableGuard
         every { publisherProperties.trackables } returns trackables
@@ -324,4 +319,16 @@ class ConnectionReadyWorkerTest {
     private fun mockTrackableRemovalRequested() {
         every { trackableRemovalGuard.isMarkedForRemoval(trackable) } returns true
     }
+
+    private fun createWorker(isSubscribedToPresence: Boolean) =
+        ConnectionReadyWorker(
+            trackable,
+            resultCallbackFunction,
+            ably,
+            hooks,
+            corePublisher,
+            connectionStateChangeListener,
+            isSubscribedToPresence,
+            presenceUpdateListener,
+        )
 }

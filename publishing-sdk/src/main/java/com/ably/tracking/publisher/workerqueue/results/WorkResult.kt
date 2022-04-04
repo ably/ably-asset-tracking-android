@@ -1,6 +1,5 @@
 package com.ably.tracking.publisher.workerqueue.results
 
-import com.ably.tracking.ConnectionException
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.PresenceMessage
@@ -70,7 +69,8 @@ internal sealed class ConnectionCreatedWorkResult : WorkResult() {
     internal data class PresenceFail(
         val trackable: Trackable,
         val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>,
-        val exception: ConnectionException
+        val presenceUpdateListener: (presenceMessage: PresenceMessage) -> Unit,
+        val channelStateChangeListener: ((connectionStateChange: ConnectionStateChange) -> Unit),
     ) : ConnectionCreatedWorkResult()
 }
 
