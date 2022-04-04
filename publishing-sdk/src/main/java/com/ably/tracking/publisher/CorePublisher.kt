@@ -679,6 +679,8 @@ constructor(
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
         override val trackableStates: MutableMap<String, TrackableState> = mutableMapOf()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
+        override val trackableSubscribedToPresenceFlags: MutableMap<String, Boolean> = mutableMapOf()
+            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
         override val trackableStateFlows: MutableMap<String, MutableStateFlow<TrackableState>> = mutableMapOf()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
         override val lastChannelConnectionStateChanges: MutableMap<String, ConnectionStateChange> = mutableMapOf()
@@ -740,6 +742,7 @@ constructor(
             trackables.clear()
             trackableStates.clear()
             trackableStateFlows.clear()
+            trackableSubscribedToPresenceFlags.clear()
             lastChannelConnectionStateChanges.clear()
             resolutions.clear()
             lastSentEnhancedLocations.clear()
