@@ -31,6 +31,8 @@ class WorkResultHandlersTest {
     )
     private val connectionReadyWorkResults = listOf(
         ConnectionReadyWorkResult.RemovalRequested(Trackable(""), {}, Result.success(Unit)),
+        ConnectionReadyWorkResult.OptimalConnectionReady,
+        ConnectionReadyWorkResult.NonOptimalConnectionReady(Trackable(""), {})
     )
     private val removeTrackableWorkResults = listOf(
         RemoveTrackableWorkResult.Success({}, Trackable("")),

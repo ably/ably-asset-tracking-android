@@ -80,6 +80,13 @@ internal sealed class ConnectionReadyWorkResult : WorkResult() {
         val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>,
         val result: Result<Unit>
     ) : ConnectionReadyWorkResult()
+
+    internal object OptimalConnectionReady : ConnectionReadyWorkResult()
+
+    internal data class NonOptimalConnectionReady(
+        val trackable: Trackable,
+        val presenceUpdateListener: ((presenceMessage: PresenceMessage) -> Unit),
+    ) : ConnectionReadyWorkResult()
 }
 
 internal sealed class RetrySubscribeToPresenceWorkResult : WorkResult() {

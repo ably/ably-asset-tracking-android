@@ -38,7 +38,10 @@ internal class ConnectionReadyWorker(
         updateTrackableState(properties, trackableState, trackableStateFlow, isSubscribedToPresence)
         notifyAddOperationFinished(properties, trackableStateFlow)
 
-        return SyncAsyncResult()
+        return SyncAsyncResult(
+            if (isSubscribedToPresence) ConnectionReadyWorkResult.OptimalConnectionReady
+            else ConnectionReadyWorkResult.NonOptimalConnectionReady(trackable, presenceUpdateListener)
+        )
     }
 
     override fun doWhenStopped(exception: Exception) {

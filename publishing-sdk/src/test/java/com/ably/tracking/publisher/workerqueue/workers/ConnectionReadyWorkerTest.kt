@@ -66,14 +66,28 @@ class ConnectionReadyWorkerTest {
     }
 
     @Test
-    fun `should return empty result when executing normally`() {
+    fun `should return optimal connection result when is subscribed to presence`() {
         // given
+        worker = createWorker(isSubscribedToPresence = true)
 
         // when
         val result = worker.doWork(publisherProperties)
 
         // then
-        Assert.assertNull(result.syncWorkResult)
+        Assert.assertTrue(result.syncWorkResult is ConnectionReadyWorkResult.OptimalConnectionReady)
+        Assert.assertNull(result.asyncWork)
+    }
+
+    @Test
+    fun `should return non optimal connection result when is not subscribed to presence`() {
+        // given
+        worker = createWorker(isSubscribedToPresence = false)
+
+        // when
+        val result = worker.doWork(publisherProperties)
+
+        // then
+        Assert.assertTrue(result.syncWorkResult is ConnectionReadyWorkResult.NonOptimalConnectionReady)
         Assert.assertNull(result.asyncWork)
     }
 
