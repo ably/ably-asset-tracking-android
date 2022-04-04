@@ -117,7 +117,8 @@ class TrackableDetailsActivity : PublisherServiceActivity() {
         val textColor: Int
         val colorId: Int
         when (state) {
-            is TrackableState.Online -> {
+            is TrackableState.Online,
+            is TrackableState.OnlineNonOptimal -> {
                 textId = R.string.online
                 colorId = R.color.asset_status_online
                 textColor = R.color.black

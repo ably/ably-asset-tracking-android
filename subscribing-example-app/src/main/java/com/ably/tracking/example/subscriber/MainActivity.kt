@@ -274,16 +274,19 @@ class MainActivity : AppCompatActivity() {
     private fun updateAssetState(trackableState: TrackableState) {
         val textId = when (trackableState) {
             is TrackableState.Online -> R.string.asset_status_online
+            is TrackableState.OnlineNonOptimal -> R.string.asset_status_online
             is TrackableState.Offline -> R.string.asset_status_offline
             is TrackableState.Failed -> R.string.asset_status_failed
         }
         val textColorId = when (trackableState) {
             is TrackableState.Online -> R.color.black
+            is TrackableState.OnlineNonOptimal -> R.color.black
             is TrackableState.Offline -> R.color.mid_grey
             is TrackableState.Failed -> R.color.black
         }
         val backgroundColorId = when (trackableState) {
             is TrackableState.Online -> R.color.asset_online
+            is TrackableState.OnlineNonOptimal -> R.color.asset_online
             is TrackableState.Offline -> R.color.asset_offline
             is TrackableState.Failed -> R.color.asset_failed
         }

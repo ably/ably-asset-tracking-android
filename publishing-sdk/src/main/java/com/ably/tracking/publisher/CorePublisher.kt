@@ -444,10 +444,16 @@ constructor(
     override fun updateTrackableState(properties: PublisherProperties, trackableId: String) {
         val hasSentAtLeastOneLocation: Boolean = properties.lastSentEnhancedLocations[trackableId] != null
         val lastChannelConnectionStateChange = getLastChannelConnectionStateChange(properties, trackableId)
+        val isSubscribedToPresence = properties.trackableSubscribedToPresenceFlags[trackableId] == true
         val newTrackableState = when (properties.lastConnectionStateChange.state) {
             ConnectionState.ONLINE -> {
                 when (lastChannelConnectionStateChange.state) {
-                    ConnectionState.ONLINE -> if (hasSentAtLeastOneLocation) TrackableState.Online else TrackableState.Offline()
+                    ConnectionState.ONLINE ->
+                        when {
+                            hasSentAtLeastOneLocation && isSubscribedToPresence -> TrackableState.Online
+                            hasSentAtLeastOneLocation && !isSubscribedToPresence -> TrackableState.OnlineNonOptimal
+                            else -> TrackableState.Offline()
+                        }
                     ConnectionState.OFFLINE -> TrackableState.Offline()
                     ConnectionState.FAILED -> TrackableState.Failed(lastChannelConnectionStateChange.errorInformation!!) // are we sure error information will always be present?
                 }
