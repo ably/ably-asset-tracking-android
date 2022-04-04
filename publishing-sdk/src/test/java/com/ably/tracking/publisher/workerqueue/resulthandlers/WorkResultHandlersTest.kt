@@ -8,6 +8,7 @@ import com.ably.tracking.publisher.workerqueue.results.AddTrackableWorkResult
 import com.ably.tracking.publisher.workerqueue.results.ConnectionCreatedWorkResult
 import com.ably.tracking.publisher.workerqueue.results.ConnectionReadyWorkResult
 import com.ably.tracking.publisher.workerqueue.results.RemoveTrackableWorkResult
+import com.ably.tracking.publisher.workerqueue.results.RetrySubscribeToPresenceWorkResult
 import io.mockk.mockk
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Assert
@@ -35,6 +36,12 @@ class WorkResultHandlersTest {
         RemoveTrackableWorkResult.Success({}, Trackable("")),
         RemoveTrackableWorkResult.Fail({}, Exception()),
         RemoveTrackableWorkResult.NotPresent({}),
+    )
+    private val retrySubscribeToPresenceWorkResults = listOf(
+        RetrySubscribeToPresenceWorkResult.Success(Trackable("")),
+        RetrySubscribeToPresenceWorkResult.Failure(Trackable(""), {}),
+        RetrySubscribeToPresenceWorkResult.TrackableRemoved,
+        RetrySubscribeToPresenceWorkResult.ChannelFailed,
     )
 
     @Test
@@ -101,6 +108,23 @@ class WorkResultHandlersTest {
             Assert.assertTrue(
                 "Work result ${it::class.simpleName} should return RemoveTrackableResultHandler",
                 handler is RemoveTrackableResultHandler
+            )
+        }
+    }
+
+    @Test
+    fun `should return RetrySubscribeToPresenceResultHandler for each RetrySubscribeToPresenceWorkResult`() {
+        retrySubscribeToPresenceWorkResults.forEach {
+            // given
+            val workResult = it
+
+            // when
+            val handler = getWorkResultHandler(workResult, workerFactory, workerQueue)
+
+            // then
+            Assert.assertTrue(
+                "Work result ${it::class.simpleName} should return RetrySubscribeToPresenceResultHandler",
+                handler is RetrySubscribeToPresenceResultHandler
             )
         }
     }

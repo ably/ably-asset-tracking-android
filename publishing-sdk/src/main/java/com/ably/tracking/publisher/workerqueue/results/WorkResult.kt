@@ -82,6 +82,21 @@ internal sealed class ConnectionReadyWorkResult : WorkResult() {
     ) : ConnectionReadyWorkResult()
 }
 
+internal sealed class RetrySubscribeToPresenceWorkResult : WorkResult() {
+    internal object TrackableRemoved : RetrySubscribeToPresenceWorkResult()
+
+    internal object ChannelFailed : RetrySubscribeToPresenceWorkResult()
+
+    internal data class Success(
+        val trackable: Trackable,
+    ) : RetrySubscribeToPresenceWorkResult()
+
+    internal data class Failure(
+        val trackable: Trackable,
+        val presenceUpdateListener: (presenceMessage: PresenceMessage) -> Unit,
+    ) : RetrySubscribeToPresenceWorkResult()
+}
+
 internal sealed class RemoveTrackableWorkResult : WorkResult() {
     internal data class Success(
         val callbackFunction: ResultCallbackFunction<Boolean>,

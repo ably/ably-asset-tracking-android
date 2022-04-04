@@ -31,6 +31,8 @@ import com.ably.tracking.publisher.workerqueue.workers.PresenceMessageWorker
 import com.ably.tracking.publisher.workerqueue.workers.RawLocationChangedWorker
 import com.ably.tracking.publisher.workerqueue.workers.RefreshResolutionPolicyWorker
 import com.ably.tracking.publisher.workerqueue.workers.RemoveTrackableWorker
+import com.ably.tracking.publisher.workerqueue.workers.RetrySubscribeToPresenceSuccessWorker
+import com.ably.tracking.publisher.workerqueue.workers.RetrySubscribeToPresenceWorker
 import com.ably.tracking.publisher.workerqueue.workers.SendEnhancedLocationFailureWorker
 import com.ably.tracking.publisher.workerqueue.workers.SendEnhancedLocationSuccessWorker
 import com.ably.tracking.publisher.workerqueue.workers.SendRawLocationFailureWorker
@@ -93,6 +95,15 @@ internal class DefaultWorkerFactory(
                 params.channelStateChangeListener,
                 params.isSubscribedToPresence,
                 params.presenceUpdateListener,
+            )
+            is WorkerParams.RetrySubscribeToPresence -> RetrySubscribeToPresenceWorker(
+                params.trackable,
+                ably,
+                params.presenceUpdateListener,
+            )
+            is WorkerParams.RetrySubscribeToPresenceSuccess -> RetrySubscribeToPresenceSuccessWorker(
+                params.trackable,
+                corePublisher,
             )
             is WorkerParams.DisconnectSuccess -> DisconnectSuccessWorker(
                 params.trackable,
@@ -237,6 +248,15 @@ internal sealed class WorkerParams {
         val channelStateChangeListener: ((connectionStateChange: ConnectionStateChange) -> Unit),
         val presenceUpdateListener: ((presenceMessage: com.ably.tracking.common.PresenceMessage) -> Unit),
         val isSubscribedToPresence: Boolean,
+    ) : WorkerParams()
+
+    data class RetrySubscribeToPresence(
+        val trackable: Trackable,
+        val presenceUpdateListener: ((presenceMessage: com.ably.tracking.common.PresenceMessage) -> Unit),
+    ) : WorkerParams()
+
+    data class RetrySubscribeToPresenceSuccess(
+        val trackable: Trackable,
     ) : WorkerParams()
 
     data class DestinationSet(

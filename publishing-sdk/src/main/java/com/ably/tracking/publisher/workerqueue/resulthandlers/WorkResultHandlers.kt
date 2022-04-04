@@ -6,6 +6,7 @@ import com.ably.tracking.publisher.workerqueue.results.AddTrackableWorkResult
 import com.ably.tracking.publisher.workerqueue.results.ConnectionCreatedWorkResult
 import com.ably.tracking.publisher.workerqueue.results.ConnectionReadyWorkResult
 import com.ably.tracking.publisher.workerqueue.results.RemoveTrackableWorkResult
+import com.ably.tracking.publisher.workerqueue.results.RetrySubscribeToPresenceWorkResult
 import com.ably.tracking.publisher.workerqueue.results.WorkResult
 
 @Suppress("UNCHECKED_CAST")
@@ -19,5 +20,6 @@ internal fun getWorkResultHandler(
         is ConnectionCreatedWorkResult -> ConnectionCreatedResultHandler(workerFactory) as WorkResultHandler<WorkResult>
         is ConnectionReadyWorkResult -> ConnectionReadyResultHandler(workerFactory) as WorkResultHandler<WorkResult>
         is RemoveTrackableWorkResult -> RemoveTrackableResultHandler(workerFactory, workerQueue) as WorkResultHandler<WorkResult>
+        is RetrySubscribeToPresenceWorkResult -> RetrySubscribeToPresenceResultHandler(workerFactory) as WorkResultHandler<WorkResult>
         else -> throw IllegalArgumentException("Invalid workResult provided")
     }
