@@ -30,7 +30,7 @@ internal class RetrySubscribeToPresenceWorkerTest {
 
     @Before
     fun setUp() {
-        worker = RetrySubscribeToPresenceWorker(trackable, ably, presenceUpdateListener)
+        worker = RetrySubscribeToPresenceWorker(trackable, ably, null, presenceUpdateListener)
         mockTrackableIsAdded()
     }
 

@@ -83,6 +83,7 @@ internal class DefaultWorkerFactory(
                 params.trackable,
                 params.callbackFunction,
                 ably,
+                logHandler,
                 params.presenceUpdateListener,
                 params.channelStateChangeListener,
             )
@@ -99,6 +100,7 @@ internal class DefaultWorkerFactory(
             is WorkerParams.RetrySubscribeToPresence -> RetrySubscribeToPresenceWorker(
                 params.trackable,
                 ably,
+                logHandler,
                 params.presenceUpdateListener,
             )
             is WorkerParams.RetrySubscribeToPresenceSuccess -> RetrySubscribeToPresenceSuccessWorker(

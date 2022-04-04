@@ -36,7 +36,7 @@ class ConnectionCreatedWorkerTest {
 
     @Before
     fun setUp() {
-        worker = ConnectionCreatedWorker(trackable, resultCallbackFunction, ably, presenceUpdateListener, {})
+        worker = ConnectionCreatedWorker(trackable, resultCallbackFunction, ably, null, presenceUpdateListener, {})
         every { publisherProperties.trackableRemovalGuard } returns trackableRemovalGuard
     }
 

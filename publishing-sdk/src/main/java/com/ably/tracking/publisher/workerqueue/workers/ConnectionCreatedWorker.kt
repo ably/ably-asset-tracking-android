@@ -4,6 +4,8 @@ import com.ably.tracking.ConnectionException
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.PresenceMessage
+import com.ably.tracking.common.logging.w
+import com.ably.tracking.logging.LogHandler
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.results.ConnectionCreatedWorkResult
@@ -15,6 +17,7 @@ internal class ConnectionCreatedWorker(
     private val trackable: Trackable,
     private val callbackFunction: AddTrackableCallbackFunction,
     private val ably: Ably,
+    private val logHandler: LogHandler?,
     private val presenceUpdateListener: ((presenceMessage: PresenceMessage) -> Unit),
     private val channelStateChangeListener: ((connectionStateChange: ConnectionStateChange) -> Unit),
 ) : Worker {
@@ -41,6 +44,7 @@ internal class ConnectionCreatedWorker(
                         channelStateChangeListener
                     )
                 } catch (exception: ConnectionException) {
+                    logHandler?.w("Failed to subscribe to presence for trackable ${trackable.id}", exception)
                     ConnectionCreatedWorkResult.PresenceFail(
                         trackable,
                         callbackFunction,

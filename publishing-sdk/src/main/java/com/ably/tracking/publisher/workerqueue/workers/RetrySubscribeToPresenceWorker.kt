@@ -3,6 +3,8 @@ package com.ably.tracking.publisher.workerqueue.workers
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ConnectionState
 import com.ably.tracking.common.PresenceMessage
+import com.ably.tracking.common.logging.w
+import com.ably.tracking.logging.LogHandler
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.results.RetrySubscribeToPresenceWorkResult
@@ -13,6 +15,7 @@ import kotlin.coroutines.suspendCoroutine
 internal class RetrySubscribeToPresenceWorker(
     private val trackable: Trackable,
     private val ably: Ably,
+    private val logHandler: LogHandler?,
     private val presenceUpdateListener: ((presenceMessage: PresenceMessage) -> Unit),
 ) : Worker {
     override fun doWork(properties: PublisherProperties): SyncAsyncResult {
@@ -30,6 +33,10 @@ internal class RetrySubscribeToPresenceWorker(
                 return@SyncAsyncResult if (subscribeToPresenceResult.isSuccess) {
                     RetrySubscribeToPresenceWorkResult.Success(trackable)
                 } else {
+                    logHandler?.w(
+                        "Failed to resubscribe to presence for trackable ${trackable.id}",
+                        subscribeToPresenceResult.exceptionOrNull()
+                    )
                     RetrySubscribeToPresenceWorkResult.Failure(trackable, presenceUpdateListener)
                 }
             }
