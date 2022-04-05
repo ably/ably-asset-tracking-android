@@ -318,37 +318,65 @@ constructor(
     }
 
     override fun disconnect(trackableId: String, presenceData: PresenceData, callback: (Result<Unit>) -> Unit) {
-        if (channels.contains(trackableId)) {
-            val channelToRemove = channels[trackableId]!!
+        scope.launch {
+            if (channels.contains(trackableId)) {
+                val channelToRemove = channels[trackableId]!!
+                try {
+                    disconnectChannel(channelToRemove, presenceData)
+                    channels.remove(trackableId)
+                    callback(Result.success(Unit))
+                } catch (exception: ConnectionException) {
+                    callback(Result.failure(exception))
+                }
+            } else {
+                callback(Result.success(Unit))
+            }
+        }
+    }
+
+    private suspend fun disconnectChannel(channel: Channel, presenceData: PresenceData) {
+        leavePresence(channel, presenceData)
+        channel.unsubscribe()
+        channel.presence.unsubscribe()
+        detachFromChannel(channel)
+    }
+
+    private suspend fun leavePresence(channel: Channel, presenceData: PresenceData) {
+        suspendCancellableCoroutine<Unit> { continuation ->
             try {
-                channelToRemove.presence.leave(
+                channel.presence.leave(
                     gson.toJson(presenceData.toMessage()),
                     object : CompletionListener {
                         override fun onSuccess() {
-                            channelToRemove.unsubscribe()
-                            channelToRemove.presence.unsubscribe()
-                            channelToRemove.detach(object : CompletionListener {
-                                override fun onSuccess() {
-                                    channels.remove(trackableId)
-                                    callback(Result.success(Unit))
-                                }
-
-                                override fun onError(reason: ErrorInfo) {
-                                    callback(Result.failure(reason.toTrackingException()))
-                                }
-                            })
+                            continuation.resume(Unit)
                         }
 
                         override fun onError(reason: ErrorInfo) {
-                            callback(Result.failure(reason.toTrackingException()))
+                            continuation.resumeWithException(reason.toTrackingException())
                         }
                     }
                 )
             } catch (ablyException: AblyException) {
-                callback(Result.failure(ablyException.errorInfo.toTrackingException()))
+                continuation.resumeWithException(ablyException.errorInfo.toTrackingException())
             }
-        } else {
-            callback(Result.success(Unit))
+        }
+    }
+
+    private suspend fun detachFromChannel(channel: Channel) {
+        suspendCancellableCoroutine<Unit> { continuation ->
+            try {
+                channel.detach(object : CompletionListener {
+                    override fun onSuccess() {
+                        continuation.resume(Unit)
+                    }
+
+                    override fun onError(reason: ErrorInfo) {
+                        continuation.resumeWithException(reason.toTrackingException())
+                    }
+                })
+            } catch (ablyException: AblyException) {
+                continuation.resumeWithException(ablyException.errorInfo.toTrackingException())
+            }
         }
     }
 
@@ -411,21 +439,34 @@ constructor(
     }
 
     private fun sendMessage(channel: Channel, message: Message?, callback: (Result<Unit>) -> Unit) {
-        try {
-            channel.publish(
-                message,
-                object : CompletionListener {
-                    override fun onSuccess() {
-                        callback(Result.success(Unit))
-                    }
+        scope.launch {
+            try {
+                sendMessage(channel, message)
+                callback(Result.success(Unit))
+            } catch (exception: ConnectionException) {
+                callback(Result.failure(exception))
+            }
+        }
+    }
 
-                    override fun onError(reason: ErrorInfo) {
-                        callback(Result.failure(reason.toTrackingException()))
+    private suspend fun sendMessage(channel: Channel, message: Message?) {
+        suspendCancellableCoroutine<Unit> { continuation ->
+            try {
+                channel.publish(
+                    message,
+                    object : CompletionListener {
+                        override fun onSuccess() {
+                            continuation.resume(Unit)
+                        }
+
+                        override fun onError(reason: ErrorInfo) {
+                            continuation.resumeWithException(reason.toTrackingException())
+                        }
                     }
-                }
-            )
-        } catch (exception: AblyException) {
-            callback(Result.failure(exception.errorInfo.toTrackingException()))
+                )
+            } catch (exception: AblyException) {
+                continuation.resumeWithException(exception.errorInfo.toTrackingException())
+            }
         }
     }
 
@@ -502,21 +543,35 @@ constructor(
     }
 
     override fun updatePresenceData(trackableId: String, presenceData: PresenceData, callback: (Result<Unit>) -> Unit) {
-        try {
-            channels[trackableId]?.presence?.update(
-                gson.toJson(presenceData.toMessage()),
-                object : CompletionListener {
-                    override fun onSuccess() {
-                        callback(Result.success(Unit))
-                    }
+        scope.launch {
+            val trackableChannel = channels[trackableId] ?: return@launch
+            try {
+                updatePresenceData(trackableChannel, presenceData)
+                callback(Result.success(Unit))
+            } catch (exception: ConnectionException) {
+                callback(Result.failure(exception))
+            }
+        }
+    }
 
-                    override fun onError(reason: ErrorInfo) {
-                        callback(Result.failure(Exception(reason.toTrackingException())))
+    private suspend fun updatePresenceData(channel: Channel, presenceData: PresenceData) {
+        suspendCancellableCoroutine<Unit> { continuation ->
+            try {
+                channel.presence.update(
+                    gson.toJson(presenceData.toMessage()),
+                    object : CompletionListener {
+                        override fun onSuccess() {
+                            continuation.resume(Unit)
+                        }
+
+                        override fun onError(reason: ErrorInfo) {
+                            continuation.resumeWithException(reason.toTrackingException())
+                        }
                     }
-                }
-            )
-        } catch (exception: AblyException) {
-            callback(Result.failure(exception.errorInfo.toTrackingException()))
+                )
+            } catch (exception: AblyException) {
+                continuation.resumeWithException(exception.errorInfo.toTrackingException())
+            }
         }
     }
 
