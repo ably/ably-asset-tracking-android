@@ -2,6 +2,7 @@ package com.ably.tracking.common
 
 import com.ably.tracking.ConnectionException
 import com.ably.tracking.EnhancedLocationUpdate
+import com.ably.tracking.ErrorInformation
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.common.logging.d
 import com.ably.tracking.common.logging.e
@@ -17,6 +18,7 @@ import com.ably.tracking.logging.LogHandler
 import com.google.gson.Gson
 import io.ably.lib.realtime.AblyRealtime
 import io.ably.lib.realtime.Channel
+import io.ably.lib.realtime.ChannelState
 import io.ably.lib.realtime.CompletionListener
 import io.ably.lib.realtime.ConnectionState
 import io.ably.lib.types.AblyException
@@ -31,9 +33,11 @@ import kotlin.coroutines.suspendCoroutine
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withTimeout
 
 /**
  * Wrapper for the [AblyRealtime] that's used to interact with the Ably SDK.
@@ -322,7 +326,9 @@ constructor(
             if (channels.contains(trackableId)) {
                 val channelToRemove = channels[trackableId]!!
                 try {
-                    disconnectChannel(channelToRemove, presenceData)
+                    retryIfChannelConnectionFails(channelToRemove) {
+                        disconnectChannel(channelToRemove, presenceData)
+                    }
                     channels.remove(trackableId)
                     callback(Result.success(Unit))
                 } catch (exception: ConnectionException) {
@@ -441,7 +447,9 @@ constructor(
     private fun sendMessage(channel: Channel, message: Message?, callback: (Result<Unit>) -> Unit) {
         scope.launch {
             try {
-                sendMessage(channel, message)
+                retryIfChannelConnectionFails(channel) {
+                    sendMessage(channel, message)
+                }
                 callback(Result.success(Unit))
             } catch (exception: ConnectionException) {
                 callback(Result.failure(exception))
@@ -546,7 +554,9 @@ constructor(
         scope.launch {
             val trackableChannel = channels[trackableId] ?: return@launch
             try {
-                updatePresenceData(trackableChannel, presenceData)
+                retryIfChannelConnectionFails(trackableChannel) {
+                    updatePresenceData(trackableChannel, presenceData)
+                }
                 callback(Result.success(Unit))
             } catch (exception: ConnectionException) {
                 callback(Result.failure(exception))
@@ -601,4 +611,45 @@ constructor(
             ably.close()
         }
     }
+
+    /**
+     * Performs the [operation] and if a "connection resume" exception is thrown it waits for the [channel] to
+     * reconnect and retries the [operation], otherwise it rethrows the exception. If the [operation] fails for
+     * the second time the exception is rethrown no matter if it was the "connection resume" exception or not.
+     */
+    private suspend fun retryIfChannelConnectionFails(channel: Channel, operation: suspend () -> Unit) {
+        try {
+            operation()
+        } catch (exception: ConnectionException) {
+            if (exception.isConnectionResumeException()) {
+                waitForChannelReconnection(channel)
+                operation()
+            } else {
+                throw exception
+            }
+        }
+    }
+
+    /**
+     * Waits for the [channel] to change to the [ChannelState.attached] state.
+     * If this doesn't happen during the next [timeoutInMilliseconds] milliseconds, then an exception is thrown.
+     */
+    private suspend fun waitForChannelReconnection(channel: Channel, timeoutInMilliseconds: Long = 10_000L) {
+        try {
+            withTimeout(timeoutInMilliseconds) {
+                suspendCancellableCoroutine<Unit> { continuation ->
+                    channel.on { channelStateChange ->
+                        if (channelStateChange.current == ChannelState.attached) {
+                            continuation.resume(Unit)
+                        }
+                    }
+                }
+            }
+        } catch (exception: TimeoutCancellationException) {
+            throw ConnectionException(ErrorInformation("Timeout was thrown when waiting for channel to attach"))
+        }
+    }
+
+    private fun ConnectionException.isConnectionResumeException(): Boolean =
+        errorInformation.let { it.message == "Connection resume failed" && it.code == 50000 && it.statusCode == 500 }
 }
