@@ -622,8 +622,20 @@ constructor(
             operation()
         } catch (exception: ConnectionException) {
             if (exception.isConnectionResumeException()) {
-                waitForChannelReconnection(channel)
-                operation()
+                logHandler?.w(
+                    "Connection resume failed for channel ${channel.name}, waiting for the channel to be reconnected",
+                    exception
+                )
+                try {
+                    waitForChannelReconnection(channel)
+                    operation()
+                } catch (secondException: ConnectionException) {
+                    logHandler?.w(
+                        "Retrying the operation on channel ${channel.name} has failed for the second time",
+                        secondException
+                    )
+                    throw secondException
+                }
             } else {
                 throw exception
             }
