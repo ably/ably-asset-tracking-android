@@ -327,7 +327,7 @@ constructor(
                 val channelToRemove = channels[trackableId]!!
                 try {
                     retryChannelOperationIfConnectionResumeFails(channelToRemove) {
-                        disconnectChannel(channelToRemove, presenceData)
+                        disconnectChannel(it, presenceData)
                     }
                     channels.remove(trackableId)
                     callback(Result.success(Unit))
@@ -448,7 +448,7 @@ constructor(
         scope.launch {
             try {
                 retryChannelOperationIfConnectionResumeFails(channel) {
-                    sendMessage(channel, message)
+                    sendMessage(it, message)
                 }
                 callback(Result.success(Unit))
             } catch (exception: ConnectionException) {
@@ -555,7 +555,7 @@ constructor(
             val trackableChannel = channels[trackableId] ?: return@launch
             try {
                 retryChannelOperationIfConnectionResumeFails(trackableChannel) {
-                    updatePresenceData(trackableChannel, presenceData)
+                    updatePresenceData(it, presenceData)
                 }
                 callback(Result.success(Unit))
             } catch (exception: ConnectionException) {
@@ -617,9 +617,12 @@ constructor(
      * reconnect and retries the [operation], otherwise it rethrows the exception. If the [operation] fails for
      * the second time the exception is rethrown no matter if it was the "connection resume" exception or not.
      */
-    private suspend fun retryChannelOperationIfConnectionResumeFails(channel: Channel, operation: suspend () -> Unit) {
+    private suspend fun retryChannelOperationIfConnectionResumeFails(
+        channel: Channel,
+        operation: suspend (Channel) -> Unit
+    ) {
         try {
-            operation()
+            operation(channel)
         } catch (exception: ConnectionException) {
             if (exception.isConnectionResumeException()) {
                 logHandler?.w(
@@ -628,7 +631,7 @@ constructor(
                 )
                 try {
                     waitForChannelReconnection(channel)
-                    operation()
+                    operation(channel)
                 } catch (secondException: ConnectionException) {
                     logHandler?.w(
                         "Retrying the operation on channel ${channel.name} has failed for the second time",
