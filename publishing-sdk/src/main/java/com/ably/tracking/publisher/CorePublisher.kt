@@ -451,7 +451,7 @@ constructor(
                     ConnectionState.ONLINE ->
                         when {
                             hasSentAtLeastOneLocation && isSubscribedToPresence -> TrackableState.Online
-                            hasSentAtLeastOneLocation && !isSubscribedToPresence -> TrackableState.OnlineNonOptimal
+                            hasSentAtLeastOneLocation && !isSubscribedToPresence -> TrackableState.Publishing
                             else -> TrackableState.Offline()
                         }
                     ConnectionState.OFFLINE -> TrackableState.Offline()

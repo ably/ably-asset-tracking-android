@@ -11,10 +11,10 @@ sealed class TrackableState {
     object Online : TrackableState()
 
     /**
-     * Trackable state is [OnlineNonOptimal] when it's being actively tracked but is neither able to detect nor receive data from subscribers.
+     * Trackable state is [Publishing] when it's being actively tracked but is neither able to detect nor receive data from subscribers.
      * This state can change to either [Online] or [Offline] or [Failed].
      */
-    object OnlineNonOptimal : TrackableState()
+    object Publishing : TrackableState()
 
     /**
      * Trackable state is [Offline] when it's connecting or recovering from an error and hopefully will soon be back in the [Online].
