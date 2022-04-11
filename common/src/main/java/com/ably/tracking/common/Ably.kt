@@ -326,7 +326,7 @@ constructor(
             if (channels.contains(trackableId)) {
                 val channelToRemove = channels[trackableId]!!
                 try {
-                    retryIfChannelConnectionFails(channelToRemove) {
+                    retryChannelOperationIfConnectionResumeFails(channelToRemove) {
                         disconnectChannel(channelToRemove, presenceData)
                     }
                     channels.remove(trackableId)
@@ -447,7 +447,7 @@ constructor(
     private fun sendMessage(channel: Channel, message: Message?, callback: (Result<Unit>) -> Unit) {
         scope.launch {
             try {
-                retryIfChannelConnectionFails(channel) {
+                retryChannelOperationIfConnectionResumeFails(channel) {
                     sendMessage(channel, message)
                 }
                 callback(Result.success(Unit))
@@ -554,7 +554,7 @@ constructor(
         scope.launch {
             val trackableChannel = channels[trackableId] ?: return@launch
             try {
-                retryIfChannelConnectionFails(trackableChannel) {
+                retryChannelOperationIfConnectionResumeFails(trackableChannel) {
                     updatePresenceData(trackableChannel, presenceData)
                 }
                 callback(Result.success(Unit))
@@ -617,7 +617,7 @@ constructor(
      * reconnect and retries the [operation], otherwise it rethrows the exception. If the [operation] fails for
      * the second time the exception is rethrown no matter if it was the "connection resume" exception or not.
      */
-    private suspend fun retryIfChannelConnectionFails(channel: Channel, operation: suspend () -> Unit) {
+    private suspend fun retryChannelOperationIfConnectionResumeFails(channel: Channel, operation: suspend () -> Unit) {
         try {
             operation()
         } catch (exception: ConnectionException) {
