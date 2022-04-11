@@ -11,14 +11,15 @@ sealed class TrackableState {
     object Online : TrackableState()
 
     /**
-     * Trackable state is [Publishing] when it's being actively tracked but is neither able to detect nor receive data from subscribers.
+     * Trackable state is [Publishing] when its locations are being published but it is not able to detect subscribers or receive data from them.
+     * This state allows the trackable to be actively tracked, however, its features are limited compared to the [Online] state.
      * This state can change to either [Online] or [Offline] or [Failed].
      */
     object Publishing : TrackableState()
 
     /**
-     * Trackable state is [Offline] when it's connecting or recovering from an error and hopefully will soon be back in the [Online].
-     * This state can change to either [Online] or [Failed].
+     * Trackable state is [Offline] when it's connecting or recovering from an error and hopefully will soon be back in the [Online] or [Publishing].
+     * This state can change to either [Online] or [Publishing] or [Failed].
      */
     data class Offline(val errorInformation: ErrorInformation? = null) : TrackableState()
 
