@@ -2,6 +2,7 @@ package com.ably.tracking.common
 
 import com.ably.tracking.ConnectionException
 import com.ably.tracking.EnhancedLocationUpdate
+import com.ably.tracking.ErrorInformation
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.common.logging.d
 import com.ably.tracking.common.logging.e
@@ -17,6 +18,7 @@ import com.ably.tracking.logging.LogHandler
 import com.google.gson.Gson
 import io.ably.lib.realtime.AblyRealtime
 import io.ably.lib.realtime.Channel
+import io.ably.lib.realtime.ChannelState
 import io.ably.lib.realtime.CompletionListener
 import io.ably.lib.realtime.ConnectionState
 import io.ably.lib.types.AblyException
@@ -31,9 +33,11 @@ import kotlin.coroutines.suspendCoroutine
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withTimeout
 
 /**
  * Wrapper for the [AblyRealtime] that's used to interact with the Ably SDK.
@@ -318,37 +322,67 @@ constructor(
     }
 
     override fun disconnect(trackableId: String, presenceData: PresenceData, callback: (Result<Unit>) -> Unit) {
-        if (channels.contains(trackableId)) {
-            val channelToRemove = channels[trackableId]!!
+        scope.launch {
+            if (channels.contains(trackableId)) {
+                val channelToRemove = channels[trackableId]!!
+                try {
+                    retryChannelOperationIfConnectionResumeFails(channelToRemove) {
+                        disconnectChannel(it, presenceData)
+                    }
+                    channels.remove(trackableId)
+                    callback(Result.success(Unit))
+                } catch (exception: ConnectionException) {
+                    callback(Result.failure(exception))
+                }
+            } else {
+                callback(Result.success(Unit))
+            }
+        }
+    }
+
+    private suspend fun disconnectChannel(channel: Channel, presenceData: PresenceData) {
+        leavePresence(channel, presenceData)
+        channel.unsubscribe()
+        channel.presence.unsubscribe()
+        detachFromChannel(channel)
+    }
+
+    private suspend fun leavePresence(channel: Channel, presenceData: PresenceData) {
+        suspendCancellableCoroutine<Unit> { continuation ->
             try {
-                channelToRemove.presence.leave(
+                channel.presence.leave(
                     gson.toJson(presenceData.toMessage()),
                     object : CompletionListener {
                         override fun onSuccess() {
-                            channelToRemove.unsubscribe()
-                            channelToRemove.presence.unsubscribe()
-                            channelToRemove.detach(object : CompletionListener {
-                                override fun onSuccess() {
-                                    channels.remove(trackableId)
-                                    callback(Result.success(Unit))
-                                }
-
-                                override fun onError(reason: ErrorInfo) {
-                                    callback(Result.failure(reason.toTrackingException()))
-                                }
-                            })
+                            continuation.resume(Unit)
                         }
 
                         override fun onError(reason: ErrorInfo) {
-                            callback(Result.failure(reason.toTrackingException()))
+                            continuation.resumeWithException(reason.toTrackingException())
                         }
                     }
                 )
             } catch (ablyException: AblyException) {
-                callback(Result.failure(ablyException.errorInfo.toTrackingException()))
+                continuation.resumeWithException(ablyException.errorInfo.toTrackingException())
             }
-        } else {
-            callback(Result.success(Unit))
+        }
+    }
+
+    private suspend fun detachFromChannel(channel: Channel) {
+        suspendCancellableCoroutine<Unit> { continuation ->
+            try {
+                channel.detach(object : CompletionListener {
+                    override fun onSuccess() {
+                        continuation.resume(Unit)
+                    }
+
+                    override fun onError(reason: ErrorInfo) {
+                        continuation.resumeWithException(reason.toTrackingException())
+                    }
+                })
+            } catch (ablyException: AblyException) {
+                continuation.resumeWithException(ablyException.errorInfo.toTrackingException())
+            }
         }
     }
 
@@ -411,21 +445,36 @@ constructor(
     }
 
     private fun sendMessage(channel: Channel, message: Message?, callback: (Result<Unit>) -> Unit) {
-        try {
-            channel.publish(
-                message,
-                object : CompletionListener {
-                    override fun onSuccess() {
-                        callback(Result.success(Unit))
-                    }
-
-                    override fun onError(reason: ErrorInfo) {
-                        callback(Result.failure(reason.toTrackingException()))
-                    }
+        scope.launch {
+            try {
+                retryChannelOperationIfConnectionResumeFails(channel) {
+                    sendMessage(it, message)
                 }
-            )
-        } catch (exception: AblyException) {
-            callback(Result.failure(exception.errorInfo.toTrackingException()))
+                callback(Result.success(Unit))
+            } catch (exception: ConnectionException) {
+                callback(Result.failure(exception))
+            }
+        }
+    }
+
+    private suspend fun sendMessage(channel: Channel, message: Message?) {
+        suspendCancellableCoroutine<Unit> { continuation ->
+            try {
+                channel.publish(
+                    message,
+                    object : CompletionListener {
+                        override fun onSuccess() {
+                            continuation.resume(Unit)
+                        }
+
+                        override fun onError(reason: ErrorInfo) {
+                            continuation.resumeWithException(reason.toTrackingException())
+                        }
+                    }
+                )
+            } catch (exception: AblyException) {
+                continuation.resumeWithException(exception.errorInfo.toTrackingException())
+            }
         }
     }
 
@@ -502,21 +551,37 @@ constructor(
     }
 
     override fun updatePresenceData(trackableId: String, presenceData: PresenceData, callback: (Result<Unit>) -> Unit) {
-        try {
-            channels[trackableId]?.presence?.update(
-                gson.toJson(presenceData.toMessage()),
-                object : CompletionListener {
-                    override fun onSuccess() {
-                        callback(Result.success(Unit))
-                    }
-
-                    override fun onError(reason: ErrorInfo) {
-                        callback(Result.failure(Exception(reason.toTrackingException())))
-                    }
+        scope.launch {
+            val trackableChannel = channels[trackableId] ?: return@launch
+            try {
+                retryChannelOperationIfConnectionResumeFails(trackableChannel) {
+                    updatePresenceData(it, presenceData)
                 }
-            )
-        } catch (exception: AblyException) {
-            callback(Result.failure(exception.errorInfo.toTrackingException()))
+                callback(Result.success(Unit))
+            } catch (exception: ConnectionException) {
+                callback(Result.failure(exception))
+            }
+        }
+    }
+
+    private suspend fun updatePresenceData(channel: Channel, presenceData: PresenceData) {
+        suspendCancellableCoroutine<Unit> { continuation ->
+            try {
+                channel.presence.update(
+                    gson.toJson(presenceData.toMessage()),
+                    object : CompletionListener {
+                        override fun onSuccess() {
+                            continuation.resume(Unit)
+                        }
+
+                        override fun onError(reason: ErrorInfo) {
+                            continuation.resumeWithException(reason.toTrackingException())
+                        }
+                    }
+                )
+            } catch (exception: AblyException) {
+                continuation.resumeWithException(exception.errorInfo.toTrackingException())
+            }
         }
     }
 
@@ -546,4 +611,60 @@ constructor(
             ably.close()
         }
     }
+
+    /**
+     * Performs the [operation] and if a "connection resume" exception is thrown it waits for the [channel] to
+     * reconnect and retries the [operation], otherwise it rethrows the exception. If the [operation] fails for
+     * the second time the exception is rethrown no matter if it was the "connection resume" exception or not.
+     */
+    private suspend fun retryChannelOperationIfConnectionResumeFails(
+        channel: Channel,
+        operation: suspend (Channel) -> Unit
+    ) {
+        try {
+            operation(channel)
+        } catch (exception: ConnectionException) {
+            if (exception.isConnectionResumeException()) {
+                logHandler?.w(
+                    "Connection resume failed for channel ${channel.name}, waiting for the channel to be reconnected",
+                    exception
+                )
+                try {
+                    waitForChannelReconnection(channel)
+                    operation(channel)
+                } catch (secondException: ConnectionException) {
+                    logHandler?.w(
+                        "Retrying the operation on channel ${channel.name} has failed for the second time",
+                        secondException
+                    )
+                    throw secondException
+                }
+            } else {
+                throw exception
+            }
+        }
+    }
+
+    /**
+     * Waits for the [channel] to change to the [ChannelState.attached] state.
+     * If this doesn't happen during the next [timeoutInMilliseconds] milliseconds, then an exception is thrown.
+     */
+    private suspend fun waitForChannelReconnection(channel: Channel, timeoutInMilliseconds: Long = 10_000L) {
+        try {
+            withTimeout(timeoutInMilliseconds) {
+                suspendCancellableCoroutine<Unit> { continuation ->
+                    channel.on { channelStateChange ->
+                        if (channelStateChange.current == ChannelState.attached) {
+                            continuation.resume(Unit)
+                        }
+                    }
+                }
+            }
+        } catch (exception: TimeoutCancellationException) {
+            throw ConnectionException(ErrorInformation("Timeout was thrown when waiting for channel to attach"))
+        }
+    }
+
+    private fun ConnectionException.isConnectionResumeException(): Boolean =
+        errorInformation.let { it.message == "Connection resume failed" && it.code == 50000 && it.statusCode == 500 }
 }
