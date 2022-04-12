@@ -29,6 +29,7 @@ internal interface PublisherProperties {
     val isLocationEngineResolutionConstant: Boolean
     var isTracking: Boolean
     val trackableStates: MutableMap<String, TrackableState>
+    val trackableSubscribedToPresenceFlags: MutableMap<String, Boolean>
     val lastChannelConnectionStateChanges: MutableMap<String, ConnectionStateChange>
     var lastConnectionStateChange: ConnectionStateChange
     val lastSentEnhancedLocations: MutableMap<String, Location>

@@ -10,7 +10,6 @@ import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.guards.TrackableRemovalGuard
 import com.ably.tracking.publisher.workerqueue.assertNotNullAndExecute
 import com.ably.tracking.publisher.workerqueue.results.ConnectionCreatedWorkResult
-import com.ably.tracking.test.common.mockDisconnectSuccess
 import com.ably.tracking.test.common.mockSubscribeToPresenceError
 import com.ably.tracking.test.common.mockSubscribeToPresenceSuccess
 import com.ably.tracking.test.common.mockSuspendingDisconnect
@@ -37,7 +36,7 @@ class ConnectionCreatedWorkerTest {
 
     @Before
     fun setUp() {
-        worker = ConnectionCreatedWorker(trackable, resultCallbackFunction, ably, presenceUpdateListener, {})
+        worker = ConnectionCreatedWorker(trackable, resultCallbackFunction, ably, null, presenceUpdateListener, {})
         every { publisherProperties.trackableRemovalGuard } returns trackableRemovalGuard
     }
 
@@ -82,7 +81,6 @@ class ConnectionCreatedWorkerTest {
         runBlocking {
             // given
             ably.mockSubscribeToPresenceError(trackable.id)
-            ably.mockDisconnectSuccess(trackable.id)
 
             // when
             val asyncResult = worker.doWork(publisherProperties).asyncWork.assertNotNullAndExecute()
@@ -93,43 +91,6 @@ class ConnectionCreatedWorkerTest {
             val presenceFailResult = asyncResult as ConnectionCreatedWorkResult.PresenceFail
             Assert.assertEquals(trackable, presenceFailResult.trackable)
             Assert.assertEquals(resultCallbackFunction, presenceFailResult.callbackFunction)
-            Assert.assertNotNull(presenceFailResult.exception)
-        }
-    }
-
-    @Test
-    fun `should disconnect from Ably when executing normally and presence enter failed`() {
-        runBlocking {
-            // given
-            ably.mockSubscribeToPresenceError(trackable.id)
-            ably.mockDisconnectSuccess(trackable.id)
-
-            // when
-            worker.doWork(publisherProperties).asyncWork.assertNotNullAndExecute()
-
-            // then
-            coVerify(exactly = 1) {
-                ably.disconnect(trackable.id, any())
-            }
-        }
-    }
-
-    @Test
-    fun `should use a copy of presence data when disconnecting when executing normally and presence enter failed`() {
-        runBlocking {
-            // given
-            val originalPresenceData = PresenceData("test-type")
-            mockPresenceData(originalPresenceData)
-            val presenceDataSlot = ably.mockSuspendingDisconnectSuccessAndCapturePresenceData(trackable.id)
-            ably.mockSubscribeToPresenceError(trackable.id)
-
-            // when
-            worker.doWork(publisherProperties).asyncWork.assertNotNullAndExecute()
-
-            // then
-            val disconnectPresenceData = presenceDataSlot.captured
-            Assert.assertNotSame("A copy of presence data should be used", originalPresenceData, disconnectPresenceData)
-            Assert.assertEquals("Presence data should be an exact copy", originalPresenceData, disconnectPresenceData)
         }
     }
 

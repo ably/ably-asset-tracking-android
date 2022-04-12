@@ -460,23 +460,10 @@ constructor(
     ) {
         val channel = channels[trackableId]
         if (channel != null) {
-            // Launching on a separate thread as the presence.get(true) might block the current thread
+            // Launching on a separate thread as emitting the current presence messages might block the current thread
             scope.launch {
                 try {
-                    // Emit the current presence messages of the channel
-                    channel.presence.get(true).let { messages ->
-                        messages.forEach { presenceMessage ->
-                            // Each message is launched in a fire-and-forget manner to not block this method on the listener() call
-                            scope.launch {
-                                val parsedMessage = presenceMessage.toTracking(gson)
-                                if (parsedMessage != null) {
-                                    listener(parsedMessage)
-                                } else {
-                                    logHandler?.w("Presence message in unexpected format: $presenceMessage")
-                                }
-                            }
-                        }
-                    }
+                    emitAllCurrentMessagesFromPresence(channel, listener)
                     channel.presence.subscribe {
                         val parsedMessage = it.toTracking(gson)
                         if (parsedMessage != null) {
@@ -492,6 +479,25 @@ constructor(
             }
         } else {
             callback(Result.success(Unit))
+        }
+    }
+
+    /**
+     * Warning: This method might block the current thread due to the presence.get(true) call.
+     */
+    private fun emitAllCurrentMessagesFromPresence(channel: Channel, listener: (PresenceMessage) -> Unit) {
+        channel.presence.get(true).let { messages ->
+            messages.forEach { presenceMessage ->
+                // Each message is launched in a fire-and-forget manner to not block this method on the listener() call
+                scope.launch {
+                    val parsedMessage = presenceMessage.toTracking(gson)
+                    if (parsedMessage != null) {
+                        listener(parsedMessage)
+                    } else {
+                        logHandler?.w("Presence message in unexpected format: $presenceMessage")
+                    }
+                }
+            }
         }
     }
 

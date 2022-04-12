@@ -16,6 +16,15 @@ internal class ConnectionReadyResultHandler(
                         workResult.trackable, workResult.callbackFunction, workResult.result
                     )
                 )
+            is ConnectionReadyWorkResult.NonOptimalConnectionReady ->
+                return workerFactory.createWorker(
+                    WorkerParams.RetrySubscribeToPresence(
+                        workResult.trackable,
+                        workResult.presenceUpdateListener
+                    )
+                )
+            is ConnectionReadyWorkResult.OptimalConnectionReady ->
+                return null
         }
     }
 }

@@ -20,14 +20,22 @@ internal class ConnectionCreatedResultHandler(
             is ConnectionCreatedWorkResult.PresenceSuccess -> {
                 return workerFactory.createWorker(
                     WorkerParams.ConnectionReady(
-                        workResult.trackable, workResult.callbackFunction, workResult.channelStateChangeListener
+                        workResult.trackable,
+                        workResult.callbackFunction,
+                        workResult.channelStateChangeListener,
+                        workResult.presenceUpdateListener,
+                        isSubscribedToPresence = true,
                     )
                 )
             }
             is ConnectionCreatedWorkResult.PresenceFail ->
                 return workerFactory.createWorker(
-                    WorkerParams.AddTrackableFailed(
-                        workResult.trackable, workResult.callbackFunction, workResult.exception
+                    WorkerParams.ConnectionReady(
+                        workResult.trackable,
+                        workResult.callbackFunction,
+                        workResult.channelStateChangeListener,
+                        workResult.presenceUpdateListener,
+                        isSubscribedToPresence = false,
                     )
                 )
         }
