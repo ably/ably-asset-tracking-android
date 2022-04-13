@@ -1,5 +1,28 @@
 # Change log
 
+## [1.1.0-rc.3](https://github.com/ably/ably-asset-tracking-android/tree/v1.1.0-rc.3)
+
+Version 1.1 of the Ably Asset Tracking SDKs for Android brings changes to both the publishing and subscribing SDKs,
+and their corresponding example apps, that make the subscriber's marker animate much more smoothly.
+
+[Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.1.0-rc.2...v1.1.0-rc.3)
+
+**Fixed bugs:**
+
+- Handle exception when getting presence messages but channel is in the suspended state [\#663](https://github.com/ably/ably-asset-tracking-android/issues/663)
+- Handle the "Connection resume failed" exception from ably-java [\#662](https://github.com/ably/ably-asset-tracking-android/issues/662)
+
+**Closed issues:**
+
+- Refactor / simplify event queue that is implemented in CorePublisher [\#522](https://github.com/ably/ably-asset-tracking-android/issues/522)
+
+**Merged pull requests:**
+
+- Handle connection resume exception [\#665](https://github.com/ably/ably-asset-tracking-android/pull/665) ([KacperKluka](https://github.com/KacperKluka))
+- Improve add trackable process [\#664](https://github.com/ably/ably-asset-tracking-android/pull/664) ([KacperKluka](https://github.com/KacperKluka))
+- Add timeout to stopping the publisher [\#661](https://github.com/ably/ably-asset-tracking-android/pull/661) ([KacperKluka](https://github.com/KacperKluka))
+- Integration: Refactor event queue [\#607](https://github.com/ably/ably-asset-tracking-android/pull/607) ([KacperKluka](https://github.com/KacperKluka))
+
 ## [1.1.0-rc.2](https://github.com/ably/ably-asset-tracking-android/tree/v1.1.0-rc.2)
 
 Version 1.1 of the Ably Asset Tracking SDKs for Android brings changes to both the publishing and subscribing SDKs,
