@@ -66,6 +66,7 @@ internal interface CorePublisher {
     fun removeCurrentDestination(properties: PublisherProperties)
     fun startLocationUpdates(properties: PublisherProperties)
     fun stopLocationUpdates(properties: PublisherProperties)
+    fun closeMapbox()
     fun processNextWaitingEnhancedLocationUpdate(properties: PublisherProperties, trackableId: String)
     fun saveEnhancedLocationForFurtherSending(properties: PublisherProperties, trackableId: String, location: Location)
     fun retrySendingEnhancedLocation(
@@ -433,6 +434,10 @@ constructor(
         properties.isTracking = false
         mapbox.unregisterLocationObserver()
         mapbox.stopTrip()
+    }
+
+    override fun closeMapbox() {
+        mapbox.close()
     }
 
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
