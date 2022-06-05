@@ -180,6 +180,10 @@ constructor(
         workerFactory = DefaultWorkerFactory(ably, hooks, this, policy, mapbox, this, logHandler)
         workerQueue = DefaultWorkerQueue(properties, scope, workerFactory)
         ably.subscribeForAblyStateChange { enqueue(workerFactory.createWorker(WorkerParams.AblyConnectionStateChange(it))) }
+        mapbox.setLocationHistoryListener { historyData -> scope.launch { _locationHistory.emit(historyData) } }
+    }
+
+    private fun registerLocationObserver() {
         mapbox.registerLocationObserver(object : LocationUpdatesObserver {
             override fun onRawLocationChanged(rawLocation: Location) {
                 logHandler?.v("$TAG Raw location received: $rawLocation")
@@ -201,7 +205,6 @@ constructor(
                 )
             }
         })
-        mapbox.setLocationHistoryListener { historyData -> scope.launch { _locationHistory.emit(historyData) } }
     }
 
     private fun enqueue(worker: Worker) {
@@ -443,6 +446,7 @@ constructor(
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
     override fun startLocationUpdates(properties: PublisherProperties) {
         properties.isTracking = true
+        registerLocationObserver()
         mapbox.startTrip()
     }
 
