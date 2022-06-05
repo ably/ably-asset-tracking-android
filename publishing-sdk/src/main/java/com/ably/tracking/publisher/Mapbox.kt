@@ -78,9 +78,14 @@ internal interface Mapbox {
     fun startTrip()
 
     /**
-     * Stops the navigation trip and closes the whole [MapboxNavigation].
+     * Stops the navigation trip.
      */
-    fun stopAndClose()
+    fun stopTrip()
+
+    /**
+     * Closes the whole [MapboxNavigation].
+     */
+    fun close()
 
     /**
      * Sets a location observer that gets notified when a new raw or enhanced location is received.
@@ -249,13 +254,20 @@ internal class DefaultMapbox(
         }
     }
 
-    override fun stopAndClose() {
+    override fun stopTrip() {
         runBlocking(mainDispatcher) {
-            logHandler?.v("$TAG Stop and close Mapbox")
+            logHandler?.v("$TAG Stop trip and location updates")
             mapboxReplayer?.stop()
+            mapboxReplayer?.seekTo(0.0)
+            mapboxNavigation.stopTripSession()
+        }
+    }
+
+    override fun close() {
+        runBlocking(mainDispatcher) {
+            logHandler?.v("$TAG Close Mapbox")
             mapboxNavigation.apply {
-                stopTripSession()
-                mapboxNavigation.unregisterArrivalObserver(arrivalObserver)
+                unregisterArrivalObserver(arrivalObserver)
                 this@DefaultMapbox.mapboxReplayer?.finish()
                 historyRecorder.stopRecording { historyDataFilepath ->
                     if (historyDataFilepath != null) {
