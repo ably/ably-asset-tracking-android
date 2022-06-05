@@ -432,7 +432,7 @@ constructor(
     override fun stopLocationUpdates(properties: PublisherProperties) {
         properties.isTracking = false
         mapbox.unregisterLocationObserver()
-        mapbox.stopAndClose()
+        mapbox.stopTrip()
     }
 
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
