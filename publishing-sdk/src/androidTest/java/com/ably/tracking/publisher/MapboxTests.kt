@@ -29,7 +29,7 @@ class MapboxTests {
         val mapbox: Mapbox = createMapbox(context)
 
         // when
-        mapbox.stopAndClose()
+        mapbox.close()
 
         // then
     }
