@@ -197,7 +197,7 @@ interface Publisher {
         fun logHandler(logHandler: LogHandler): Builder
 
         /**
-         * Sets the notification that will be displayed for the background tracking service.
+         * **REQUIRED** Sets the notification that will be displayed for the background tracking service.
          * Please note that this notification will be removed when you call the [stop] method.
          *
          * @param notificationProvider It will be used to create the notification.
