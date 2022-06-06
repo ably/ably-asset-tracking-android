@@ -114,14 +114,11 @@ class CorePublisherResolutionTest(
     }
 
     private val corePublisher: CorePublisher
-    private val locationUpdatesObserver: LocationUpdatesObserver
+    private lateinit var locationUpdatesObserver: LocationUpdatesObserver
 
     init {
-        val locationUpdatesObserverSlot = slot<LocationUpdatesObserver>()
-        every { mapbox.registerLocationObserver(capture(locationUpdatesObserverSlot)) } just runs
         corePublisher =
             createCorePublisher(ably, mapbox, resolutionPolicyFactory, RoutingProfile.DRIVING, null, false, false, null)
-        locationUpdatesObserver = locationUpdatesObserverSlot.captured
     }
 
     @Test
@@ -157,10 +154,13 @@ class CorePublisherResolutionTest(
     }
 
     private fun addTrackable(trackable: Trackable) {
+        val locationUpdatesObserverSlot = slot<LocationUpdatesObserver>()
+        every { mapbox.registerLocationObserver(capture(locationUpdatesObserverSlot)) } just runs
         ably.mockCreateSuspendingConnectionSuccess(trackable.id)
         runBlocking(Dispatchers.IO) {
             addTrackableToCorePublisher(trackable)
         }
+        locationUpdatesObserver = locationUpdatesObserverSlot.captured
     }
 
     private suspend fun addTrackableToCorePublisher(trackable: Trackable): StateFlow<TrackableState> {

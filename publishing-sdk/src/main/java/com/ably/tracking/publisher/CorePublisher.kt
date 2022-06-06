@@ -66,6 +66,7 @@ internal interface CorePublisher {
     fun removeCurrentDestination(properties: PublisherProperties)
     fun startLocationUpdates(properties: PublisherProperties)
     fun stopLocationUpdates(properties: PublisherProperties)
+    fun closeMapbox()
     fun processNextWaitingEnhancedLocationUpdate(properties: PublisherProperties, trackableId: String)
     fun saveEnhancedLocationForFurtherSending(properties: PublisherProperties, trackableId: String, location: Location)
     fun retrySendingEnhancedLocation(
@@ -179,6 +180,10 @@ constructor(
         workerFactory = DefaultWorkerFactory(ably, hooks, this, policy, mapbox, this, logHandler)
         workerQueue = DefaultWorkerQueue(properties, scope, workerFactory)
         ably.subscribeForAblyStateChange { enqueue(workerFactory.createWorker(WorkerParams.AblyConnectionStateChange(it))) }
+        mapbox.setLocationHistoryListener { historyData -> scope.launch { _locationHistory.emit(historyData) } }
+    }
+
+    private fun registerLocationObserver() {
         mapbox.registerLocationObserver(object : LocationUpdatesObserver {
             override fun onRawLocationChanged(rawLocation: Location) {
                 logHandler?.v("$TAG Raw location received: $rawLocation")
@@ -200,7 +205,6 @@ constructor(
                 )
             }
         })
-        mapbox.setLocationHistoryListener { historyData -> scope.launch { _locationHistory.emit(historyData) } }
     }
 
     private fun enqueue(worker: Worker) {
@@ -432,12 +436,17 @@ constructor(
     override fun stopLocationUpdates(properties: PublisherProperties) {
         properties.isTracking = false
         mapbox.unregisterLocationObserver()
-        mapbox.stopAndClose()
+        mapbox.stopTrip()
+    }
+
+    override fun closeMapbox() {
+        mapbox.close()
     }
 
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
     override fun startLocationUpdates(properties: PublisherProperties) {
         properties.isTracking = true
+        registerLocationObserver()
         mapbox.startTrip()
     }
 

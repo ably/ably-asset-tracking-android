@@ -78,6 +78,19 @@ class StopWorkerTest {
     }
 
     @Test
+    fun `should close the whole Mapbox`() {
+        // given
+
+        // when
+        worker.doWork(publisherProperties)
+
+        // then
+        verify(exactly = 1) {
+            corePublisher.closeMapbox()
+        }
+    }
+
+    @Test
     fun `should close the whole Ably object`() {
         // given
 

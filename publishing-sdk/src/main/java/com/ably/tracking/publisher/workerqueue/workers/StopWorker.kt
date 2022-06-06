@@ -24,6 +24,7 @@ internal class StopWorker(
                     if (properties.isTracking) {
                         corePublisher.stopLocationUpdates(properties)
                     }
+                    corePublisher.closeMapbox()
                     ably.close(properties.presenceData)
                     properties.dispose()
                     callbackFunction(Result.success(Unit))

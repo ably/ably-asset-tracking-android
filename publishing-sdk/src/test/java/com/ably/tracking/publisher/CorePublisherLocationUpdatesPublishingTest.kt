@@ -38,12 +38,10 @@ class CorePublisherLocationUpdatesPublishingTest {
     }
 
     private val corePublisher: CorePublisher
-    private val locationUpdatesObserver: LocationUpdatesObserver
+    private lateinit var locationUpdatesObserver: LocationUpdatesObserver
 
     init {
-        val (corePublisher, locationUpdatesObserver) = createPublisherWithLocationObserver()
-        this.corePublisher = corePublisher
-        this.locationUpdatesObserver = locationUpdatesObserver
+        this.corePublisher = createPublisherWithLocationObserver()
     }
 
     @Test
@@ -134,7 +132,7 @@ class CorePublisherLocationUpdatesPublishingTest {
     @Test
     fun `Should send raw messages if they are enabled`() {
         // given
-        val (corePublisher, locationUpdatesObserver) = createPublisherWithLocationObserver(sendRawLocations = true)
+        val corePublisher = createPublisherWithLocationObserver(sendRawLocations = true)
         val trackableId = UUID.randomUUID().toString()
         mockAllTrackablesResolution(Resolution(Accuracy.MAXIMUM, 0, 0.0))
         addTrackable(Trackable(trackableId), corePublisher)
@@ -161,10 +159,13 @@ class CorePublisherLocationUpdatesPublishingTest {
         trackable: Trackable,
         corePublisher: CorePublisher = this.corePublisher
     ) {
+        val locationUpdatesObserverSlot = slot<LocationUpdatesObserver>()
+        every { mapbox.registerLocationObserver(capture(locationUpdatesObserverSlot)) } just runs
         ably.mockCreateSuspendingConnectionSuccess(trackable.id)
         runBlocking(Dispatchers.IO) {
             addTrackableToCorePublisher(trackable, corePublisher)
         }
+        locationUpdatesObserver = locationUpdatesObserverSlot.captured
     }
 
     private suspend fun addTrackableToCorePublisher(
@@ -194,10 +195,8 @@ class CorePublisherLocationUpdatesPublishingTest {
         }
     }
 
-    private fun createPublisherWithLocationObserver(sendRawLocations: Boolean = false): Pair<CorePublisher, LocationUpdatesObserver> {
-        val locationUpdatesObserverSlot = slot<LocationUpdatesObserver>()
-        every { mapbox.registerLocationObserver(capture(locationUpdatesObserverSlot)) } just runs
-        val corePublisher = createCorePublisher(
+    private fun createPublisherWithLocationObserver(sendRawLocations: Boolean = false): CorePublisher {
+        return createCorePublisher(
             ably,
             mapbox,
             resolutionPolicyFactory,
@@ -207,7 +206,5 @@ class CorePublisherLocationUpdatesPublishingTest {
             false,
             null
         )
-        val locationUpdatesObserver = locationUpdatesObserverSlot.captured
-        return Pair(corePublisher, locationUpdatesObserver)
     }
 }
