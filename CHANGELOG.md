@@ -1,5 +1,20 @@
 # Change log
 
+## [1.1.0-rc.4](https://github.com/ably/ably-asset-tracking-android/tree/v1.1.0-rc.4)
+
+Version 1.1 of the Ably Asset Tracking SDKs for Android brings changes to both the publishing and subscribing SDKs,
+and their corresponding example apps, that make the subscriber's marker animate much more smoothly.
+
+[Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.1.0-rc.3...v1.1.0-rc.4)
+
+**Fixed bugs:**
+
+- Fatal error when adding a trackable after removing all previous ones [\#676](https://github.com/ably/ably-asset-tracking-android/issues/676)
+
+**Closed issues:**
+
+- Upgrade `ably-java` dependency to version 1.2.12 [\#669](https://github.com/ably/ably-asset-tracking-android/issues/669)
+
 ## [1.1.0-rc.3](https://github.com/ably/ably-asset-tracking-android/tree/v1.1.0-rc.3)
 
 Version 1.1 of the Ably Asset Tracking SDKs for Android brings changes to both the publishing and subscribing SDKs,
