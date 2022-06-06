@@ -11,6 +11,7 @@ import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
 import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.logging.LogHandler
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -119,6 +120,9 @@ interface Publisher {
      * Please note that calling this method will remove the notification provided by [Builder.backgroundTrackingNotificationProvider].
      *
      * @param timeoutInMilliseconds After this duration the stopping procedure will be canceled. Default value is 30 seconds.
+     *
+     * @throws ConnectionException If something goes wrong during connection closing
+     * @throws TimeoutCancellationException If the operation does not complete in the [timeoutInMilliseconds] time
      */
     @JvmSynthetic
     suspend fun stop(timeoutInMilliseconds: Long = 30_000L)
@@ -193,7 +197,7 @@ interface Publisher {
         fun logHandler(logHandler: LogHandler): Builder
 
         /**
-         * Sets the notification that will be displayed for the background tracking service.
+         * **REQUIRED** Sets the notification that will be displayed for the background tracking service.
          * Please note that this notification will be removed when you call the [stop] method.
          *
          * @param notificationProvider It will be used to create the notification.
