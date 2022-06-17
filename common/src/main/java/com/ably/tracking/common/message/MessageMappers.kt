@@ -8,6 +8,7 @@ import com.ably.tracking.LocationUpdateType
 import com.ably.tracking.Resolution
 import com.ably.tracking.common.MILLISECONDS_PER_SECOND
 import com.ably.tracking.common.PresenceData
+import com.ably.tracking.common.fromJsonOrNull
 import com.google.gson.Gson
 import io.ably.lib.types.Message
 
@@ -60,9 +61,13 @@ fun EnhancedLocationUpdate.toMessageJson(gson: Gson): String =
         )
     )
 
-fun Message.getEnhancedLocationUpdate(gson: Gson): EnhancedLocationUpdate =
-    gson.fromJson(data as String, EnhancedLocationUpdateMessage::class.java)
-        .let { message ->
+/**
+ * Maps data from an Ably message to an AAT location update. Returns null if data is unavailable or not valid.
+ */
+fun Message.getEnhancedLocationUpdate(gson: Gson): EnhancedLocationUpdate? =
+    gson.fromJsonOrNull(data as? String, EnhancedLocationUpdateMessage::class.java)
+        ?.takeIf { it.isValid() }
+        ?.let { message ->
             EnhancedLocationUpdate(
                 message.location.toTracking(),
                 message.skippedLocations.map { it.toTracking() },
@@ -71,9 +76,13 @@ fun Message.getEnhancedLocationUpdate(gson: Gson): EnhancedLocationUpdate =
             )
         }
 
-fun Message.getRawLocationUpdate(gson: Gson): LocationUpdate =
-    gson.fromJson(data as String, LocationUpdateMessage::class.java)
-        .let { message ->
+/**
+ * Maps data from an Ably message to an AAT location update. Returns null if data is unavailable or not valid.
+ */
+fun Message.getRawLocationUpdate(gson: Gson): LocationUpdate? =
+    gson.fromJsonOrNull(data as? String, LocationUpdateMessage::class.java)
+        ?.takeIf { it.isValid() }
+        ?.let { message ->
             LocationUpdate(
                 message.location.toTracking(),
                 message.skippedLocations.map { it.toTracking() },
@@ -116,4 +125,7 @@ fun LocationMessage.toTracking(): Location =
     )
 
 fun Message.getLocationMessages(gson: Gson): List<LocationMessage> =
-    gson.fromJson(data as String, Array<LocationMessage>::class.java).toList()
+    gson.fromJsonOrNull(data as? String, Array<LocationMessage>::class.java)
+        ?.toList()
+        ?.filter { it.isValid() }
+        ?: emptyList()

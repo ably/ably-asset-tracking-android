@@ -482,7 +482,12 @@ constructor(
         channels[trackableId]?.let { channel ->
             try {
                 channel.subscribe(EventNames.ENHANCED) { message ->
-                    listener(message.getEnhancedLocationUpdate(gson))
+                    val locationUpdate = message.getEnhancedLocationUpdate(gson)
+                    if (locationUpdate != null) {
+                        listener(locationUpdate)
+                    } else {
+                        logHandler?.w("Could not deserialize an enhanced location update message")
+                    }
                 }
             } catch (exception: AblyException) {
                 throw exception.errorInfo.toTrackingException()
@@ -494,7 +499,12 @@ constructor(
         channels[trackableId]?.let { channel ->
             try {
                 channel.subscribe(EventNames.RAW) { message ->
-                    listener(message.getRawLocationUpdate(gson))
+                    val locationUpdate = message.getRawLocationUpdate(gson)
+                    if (locationUpdate != null) {
+                        listener(locationUpdate)
+                    } else {
+                        logHandler?.w("Could not deserialize a raw location update message")
+                    }
                 }
             } catch (exception: AblyException) {
                 throw exception.errorInfo.toTrackingException()

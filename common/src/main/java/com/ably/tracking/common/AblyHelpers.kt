@@ -180,7 +180,7 @@ fun io.ably.lib.realtime.ChannelStateListener.ChannelStateChange.toTracking() =
  */
 fun io.ably.lib.types.PresenceMessage.getPresenceData(gson: Gson): PresenceData? =
     when (data) {
-        is String -> gson.fromJson(data as? String, PresenceDataMessage::class.java)?.toTracking()
-        is JsonObject -> gson.fromJson(data.toString(), PresenceDataMessage::class.java)?.toTracking()
+        is String -> gson.fromJsonOrNull(data as? String, PresenceDataMessage::class.java)?.toTracking()
+        is JsonObject -> gson.fromJsonOrNull(data.toString(), PresenceDataMessage::class.java)?.toTracking()
         else -> null
     }
