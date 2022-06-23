@@ -289,7 +289,7 @@ constructor(
                             }
 
                             override fun onError(reason: ErrorInfo) {
-                                callback(Result.failure(Exception(reason.toTrackingException())))
+                                callback(Result.failure(reason.toTrackingException()))
                             }
                         }
                     )
