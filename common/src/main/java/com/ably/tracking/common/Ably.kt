@@ -274,12 +274,12 @@ constructor(
                 }
                 modes = modesList.toTypedArray()
             }
-            val channel = if (useRewind)
-                ably.channels.get(channelName, channelOptions.apply { params = mapOf("rewind" to "1") })
-            else
-                ably.channels.get(channelName, channelOptions)
-            channel.apply {
-                try {
+            try {
+                val channel = if (useRewind)
+                    ably.channels.get(channelName, channelOptions.apply { params = mapOf("rewind" to "1") })
+                else
+                    ably.channels.get(channelName, channelOptions)
+                channel.apply {
                     presence.enter(
                         gson.toJson(presenceData.toMessage()),
                         object : CompletionListener {
@@ -293,9 +293,9 @@ constructor(
                             }
                         }
                     )
-                } catch (ablyException: AblyException) {
-                    callback(Result.failure(ablyException.errorInfo.toTrackingException()))
                 }
+            } catch (ablyException: AblyException) {
+                callback(Result.failure(ablyException.errorInfo.toTrackingException()))
             }
         } else {
             callback(Result.success(Unit))
