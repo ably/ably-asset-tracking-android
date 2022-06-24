@@ -667,4 +667,51 @@ constructor(
 
     private fun ConnectionException.isConnectionResumeException(): Boolean =
         errorInformation.let { it.message == "Connection resume failed" && it.code == 50000 && it.statusCode == 500 }
+
+    /**
+     * Enter the presence of the [Channel] and waits for this operation to complete.
+     * If something goes wrong then it throws a [ConnectionException].
+     */
+    private suspend fun Channel.enterPresenceSuspending(presenceData: PresenceData) {
+        suspendCancellableCoroutine<Unit> { continuation ->
+            try {
+                presence.enter(
+                    gson.toJson(presenceData.toMessage()),
+                    object : CompletionListener {
+                        override fun onSuccess() {
+                            continuation.resume(Unit)
+                        }
+
+                        override fun onError(reason: ErrorInfo) {
+                            continuation.resumeWithException(reason.toTrackingException())
+                        }
+                    }
+                )
+            } catch (ablyException: AblyException) {
+                continuation.resumeWithException(ablyException.errorInfo.toTrackingException())
+            }
+        }
+    }
+
+    /**
+     * Attaches the [Channel] and waits for this operation to complete.
+     * If something goes wrong then it throws a [ConnectionException].
+     */
+    private suspend fun Channel.attachSuspending() {
+        suspendCancellableCoroutine<Unit> { continuation ->
+            try {
+                attach(object : CompletionListener {
+                    override fun onSuccess() {
+                        continuation.resume(Unit)
+                    }
+
+                    override fun onError(reason: ErrorInfo) {
+                        continuation.resumeWithException(reason.toTrackingException())
+                    }
+                })
+            } catch (ablyException: AblyException) {
+                continuation.resumeWithException(ablyException.errorInfo.toTrackingException())
+            }
+        }
+    }
 }
