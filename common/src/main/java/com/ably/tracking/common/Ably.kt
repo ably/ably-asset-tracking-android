@@ -200,6 +200,7 @@ interface Ably {
 
 private const val CHANNEL_NAME_PREFIX = "tracking:"
 private const val AGENT_HEADER_NAME = "ably-asset-tracking-android"
+private const val AUTH_TOKEN_CAPABILITY_ERROR_CODE = 40160
 
 class DefaultAbly
 /**
@@ -254,6 +255,29 @@ constructor(
         }
     }
 
+    /**
+     * Enters the presence of a channel. If it can't enter because of the auth token capabilities,
+     * a new auth token is requested and the operation is retried once more.
+     * @throws ConnectionException if something goes wrong or the retry fails
+     */
+    private suspend fun enterChannelPresence(channel: Channel, presenceData: PresenceData) {
+        try {
+            channel.enterPresenceSuspending(presenceData)
+        } catch (connectionException: ConnectionException) {
+            if (connectionException.errorInformation.code == AUTH_TOKEN_CAPABILITY_ERROR_CODE) {
+                try {
+                    ably.auth.renew()
+                } catch (ablyException: AblyException) {
+                    throw ablyException.errorInfo.toTrackingException()
+                }
+                channel.attachSuspending()
+                channel.enterPresenceSuspending(presenceData)
+            } else {
+                throw connectionException
+            }
+        }
+    }
+
     override fun connect(
         trackableId: String,
         presenceData: PresenceData,
@@ -279,20 +303,14 @@ constructor(
                     ably.channels.get(channelName, channelOptions.apply { params = mapOf("rewind" to "1") })
                 else
                     ably.channels.get(channelName, channelOptions)
-                channel.apply {
-                    presence.enter(
-                        gson.toJson(presenceData.toMessage()),
-                        object : CompletionListener {
-                            override fun onSuccess() {
-                                channels[trackableId] = this@apply
-                                callback(Result.success(Unit))
-                            }
-
-                            override fun onError(reason: ErrorInfo) {
-                                callback(Result.failure(reason.toTrackingException()))
-                            }
-                        }
-                    )
+                scope.launch {
+                    try {
+                        enterChannelPresence(channel, presenceData)
+                        channels[trackableId] = channel
+                        callback(Result.success(Unit))
+                    } catch (connectionException: ConnectionException) {
+                        callback(Result.failure(connectionException))
+                    }
                 }
             } catch (ablyException: AblyException) {
                 callback(Result.failure(ablyException.errorInfo.toTrackingException()))
