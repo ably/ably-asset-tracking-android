@@ -8,7 +8,7 @@ plugins {
 android {
     defaultConfig {
         applicationId 'com.ably.tracking.example.subscriber'
-        resValue 'string', 'google_maps_api_key', "${property('GOOGLE_MAPS_API_KEY')}"
+        resValue 'string', 'google_maps_api_key', "${findProperty('GOOGLE_MAPS_API_KEY') ?: ""}"
         proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
     }
 }
