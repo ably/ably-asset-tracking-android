@@ -17,8 +17,8 @@ open class LocationUpdate(
     val skippedLocations: List<Location>,
 ) {
     override fun equals(other: Any?): Boolean =
-        when (other) {
-            is LocationUpdate -> location == other.location && skippedLocations == other.skippedLocations
+        when {
+            other is LocationUpdate -> location == other.location && skippedLocations == other.skippedLocations
             else -> false
         }
 
@@ -50,9 +50,9 @@ class EnhancedLocationUpdate(
     val type: LocationUpdateType
 ) : LocationUpdate(location, skippedLocations) {
     override fun equals(other: Any?): Boolean =
-        when (other) {
+        when {
             !super.equals(other) -> false
-            is EnhancedLocationUpdate -> intermediateLocations == other.intermediateLocations && type == other.type
+            other is EnhancedLocationUpdate -> intermediateLocations == other.intermediateLocations && type == other.type
             else -> false
         }
 
