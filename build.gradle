@@ -4,7 +4,7 @@ buildscript {
     // The version of Ably's client library for Java that we're using.
     // Source code: https://github.com/ably/ably-java
     // Maven coordinates: groupId 'io.ably', artifactId ':'ably-android'.
-    ext.ably_core_version = '1.2.12'
+    ext.ably_core_version = '1.2.14'
 
     repositories {
         google()
@@ -195,8 +195,8 @@ subprojects {
                     // Configuration that must not be applied to SDK project main source set builds for the release variant/buildType.
                     // This configuration is, however, required for Android's connectedCheck task (which uses the androidTest source set
                     // with the debug variant/buildType).
-                    buildConfigField 'String', 'ABLY_API_KEY', "\"${property('ABLY_API_KEY')}\""
-                    buildConfigField 'String', 'MAPBOX_ACCESS_TOKEN', "\"${property('MAPBOX_ACCESS_TOKEN')}\""
+                    buildConfigField 'String', 'ABLY_API_KEY', "\"${findProperty('ABLY_API_KEY') ?: ""}\""
+                    buildConfigField 'String', 'MAPBOX_ACCESS_TOKEN', "\"${findProperty('MAPBOX_ACCESS_TOKEN') ?: ""}\""
                 }
 
                 def versionConfigFields = {
