@@ -279,20 +279,14 @@ constructor(
                     ably.channels.get(channelName, channelOptions.apply { params = mapOf("rewind" to "1") })
                 else
                     ably.channels.get(channelName, channelOptions)
-                channel.apply {
-                    presence.enter(
-                        gson.toJson(presenceData.toMessage()),
-                        object : CompletionListener {
-                            override fun onSuccess() {
-                                channels[trackableId] = this@apply
-                                callback(Result.success(Unit))
-                            }
-
-                            override fun onError(reason: ErrorInfo) {
-                                callback(Result.failure(reason.toTrackingException()))
-                            }
-                        }
-                    )
+                scope.launch {
+                    try {
+                        channel.enterPresenceSuspending(presenceData)
+                        channels[trackableId] = channel
+                        callback(Result.success(Unit))
+                    } catch (connectionException: ConnectionException) {
+                        callback(Result.failure(connectionException))
+                    }
                 }
             } catch (ablyException: AblyException) {
                 callback(Result.failure(ablyException.errorInfo.toTrackingException()))
