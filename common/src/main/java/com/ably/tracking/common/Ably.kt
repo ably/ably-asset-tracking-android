@@ -279,20 +279,17 @@ constructor(
                     ably.channels.get(channelName, channelOptions.apply { params = mapOf("rewind" to "1") })
                 else
                     ably.channels.get(channelName, channelOptions)
-                channel.apply {
-                    presence.enter(
-                        gson.toJson(presenceData.toMessage()),
-                        object : CompletionListener {
-                            override fun onSuccess() {
-                                channels[trackableId] = this@apply
-                                callback(Result.success(Unit))
-                            }
-
-                            override fun onError(reason: ErrorInfo) {
-                                callback(Result.failure(reason.toTrackingException()))
-                            }
+                scope.launch {
+                    try {
+                        if (channel.isDetachedOrFailed()) {
+                            channel.attachSuspending()
                         }
-                    )
+                        channel.enterPresenceSuspending(presenceData)
+                        channels[trackableId] = channel
+                        callback(Result.success(Unit))
+                    } catch (connectionException: ConnectionException) {
+                        callback(Result.failure(connectionException))
+                    }
                 }
             } catch (ablyException: AblyException) {
                 callback(Result.failure(ablyException.errorInfo.toTrackingException()))
@@ -667,4 +664,54 @@ constructor(
 
     private fun ConnectionException.isConnectionResumeException(): Boolean =
         errorInformation.let { it.message == "Connection resume failed" && it.code == 50000 && it.statusCode == 500 }
+
+    /**
+     * Enter the presence of the [Channel] and waits for this operation to complete.
+     * If something goes wrong then it throws a [ConnectionException].
+     */
+    private suspend fun Channel.enterPresenceSuspending(presenceData: PresenceData) {
+        suspendCancellableCoroutine<Unit> { continuation ->
+            try {
+                presence.enter(
+                    gson.toJson(presenceData.toMessage()),
+                    object : CompletionListener {
+                        override fun onSuccess() {
+                            continuation.resume(Unit)
+                        }
+
+                        override fun onError(reason: ErrorInfo) {
+                            continuation.resumeWithException(reason.toTrackingException())
+                        }
+                    }
+                )
+            } catch (ablyException: AblyException) {
+                continuation.resumeWithException(ablyException.errorInfo.toTrackingException())
+            }
+        }
+    }
+
+    /**
+     * Attaches the [Channel] and waits for this operation to complete.
+     * If something goes wrong then it throws a [ConnectionException].
+     */
+    private suspend fun Channel.attachSuspending() {
+        suspendCancellableCoroutine<Unit> { continuation ->
+            try {
+                attach(object : CompletionListener {
+                    override fun onSuccess() {
+                        continuation.resume(Unit)
+                    }
+
+                    override fun onError(reason: ErrorInfo) {
+                        continuation.resumeWithException(reason.toTrackingException())
+                    }
+                })
+            } catch (ablyException: AblyException) {
+                continuation.resumeWithException(ablyException.errorInfo.toTrackingException())
+            }
+        }
+    }
+
+    private fun Channel.isDetachedOrFailed(): Boolean =
+        state == ChannelState.detached || state == ChannelState.failed
 }
