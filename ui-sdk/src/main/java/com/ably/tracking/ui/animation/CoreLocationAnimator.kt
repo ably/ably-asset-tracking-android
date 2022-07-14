@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 
 private const val DEFAULT_INTENTIONAL_ANIMATION_DELAY_IN_MILLISECONDS: Long = 2_000L
+private const val DEFAULT_ANIMATION_STEPS_BETWEEN_CAMERA_UPDATES: Int = 1
 private const val IDLE_ANIMATION_LOOP_DELAY_IN_MILLISECONDS: Long = 50L
 private const val SINGLE_ANIMATION_FRAME_INTERVAL_IN_MILLISECONDS: Long = (1000 / 60.0).toLong() // 60 FPS
 private const val ANIMATION_REQUESTS_BUFFER_SIZE = 20
@@ -27,6 +28,10 @@ class CoreLocationAnimator(
      * when we receive a location update later than we've expected.
      */
     private val intentionalAnimationDelayInMilliseconds: Long = DEFAULT_INTENTIONAL_ANIMATION_DELAY_IN_MILLISECONDS,
+    /**
+     * How often should the camera updates be sent.
+     */
+    private val animationStepsBetweenCameraUpdates: Int = DEFAULT_ANIMATION_STEPS_BETWEEN_CAMERA_UPDATES,
 ) : LocationAnimator {
     override val positionsFlow: Flow<Position>
         get() = _positionsFlow
@@ -40,6 +45,7 @@ class CoreLocationAnimator(
     private var animationRequestsChannel: Channel<AnimationRequest> = Channel(ANIMATION_REQUESTS_BUFFER_SIZE)
     private val animationSteps: MutableList<AnimationStep> = mutableListOf()
     private var previousFinalPosition: Position? = null
+    private var animationStepsCounter: Int = 0
 
     init {
         scope.launch {
@@ -115,9 +121,11 @@ class CoreLocationAnimator(
         var timeProgressPercentage = 0f
         var distanceProgressPercentage: Float
 
-        _cameraPositionsFlow.emit(
-            animationStep.endPosition
-        )
+        animationStepsCounter++
+        if (animationStepsCounter >= animationStepsBetweenCameraUpdates) {
+            _cameraPositionsFlow.emit(animationStep.endPosition)
+            animationStepsCounter = 0
+        }
 
         while (timeProgressPercentage < 1) {
             timeElapsedFromStartInMilliseconds = SystemClock.uptimeMillis() - startTimeInMillis
