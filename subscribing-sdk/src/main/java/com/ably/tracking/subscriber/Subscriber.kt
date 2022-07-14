@@ -131,7 +131,7 @@ interface Subscriber {
          * Creates a [Subscriber] and starts listening for location updates.
          *
          * @return A new subscriber instance.
-         * @throws com.ably.tracking.BuilderConfigurationIncompleteException If all required params aren't set
+         * @throws BuilderConfigurationIncompleteException If all required params aren't set
          * @throws ConnectionException If something goes wrong during connection initialization
          */
         @JvmSynthetic
