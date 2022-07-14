@@ -12,6 +12,7 @@ import com.google.gson.JsonObject
 import io.ably.lib.realtime.ChannelState
 import io.ably.lib.rest.Auth
 import io.ably.lib.types.ClientOptions
+import kotlinx.coroutines.runBlocking
 
 /**
  * Extension converting Ably Realtime connection state to the equivalent [ConnectionState] API presented to users of
@@ -84,13 +85,17 @@ val Authentication.clientOptions: ClientOptions
 
         this@clientOptions.tokenRequestCallback?.let { tokenRequestCallback ->
             authCallback = Auth.TokenCallback {
-                tokenRequestCallback(it.toTracking()).toAuth()
+                runBlocking {
+                    tokenRequestCallback(it.toTracking()).toAuth()
+                }
             }
         }
 
         this@clientOptions.jwtCallback?.let { jwtCallback ->
             authCallback = Auth.TokenCallback {
-                jwtCallback(it.toTracking())
+                runBlocking {
+                    jwtCallback(it.toTracking())
+                }
             }
         }
 
