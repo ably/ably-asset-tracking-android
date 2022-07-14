@@ -38,6 +38,8 @@ interface Subscriber {
      * however this does not necessarily mean that the request has been received and actioned by the publisher.
      *
      * @param resolution The preferred resolution or null if has no resolution preference.
+     *
+     * @throws ConnectionException If something goes wrong when sending the preferred resolution.
      */
     @JvmSynthetic
     suspend fun resolutionPreference(resolution: Resolution?)
