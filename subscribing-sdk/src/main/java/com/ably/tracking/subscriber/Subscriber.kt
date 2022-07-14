@@ -135,7 +135,6 @@ interface Subscriber {
          * @throws ConnectionException If something goes wrong during connection initialization
          */
         @JvmSynthetic
-        @Throws(BuilderConfigurationIncompleteException::class, ConnectionException::class)
         suspend fun start(): Subscriber
     }
 }
