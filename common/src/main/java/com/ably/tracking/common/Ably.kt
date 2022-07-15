@@ -21,6 +21,7 @@ import io.ably.lib.realtime.Channel
 import io.ably.lib.realtime.ChannelState
 import io.ably.lib.realtime.CompletionListener
 import io.ably.lib.realtime.ConnectionState
+import io.ably.lib.rest.Auth
 import io.ably.lib.types.AblyException
 import io.ably.lib.types.ChannelMode
 import io.ably.lib.types.ChannelOptions
@@ -265,15 +266,24 @@ constructor(
             channel.enterPresenceSuspending(presenceData)
         } catch (connectionException: ConnectionException) {
             if (connectionException.errorInformation.code == AUTH_TOKEN_CAPABILITY_ERROR_CODE) {
-                try {
-                    ably.auth.renew()
-                } catch (ablyException: AblyException) {
-                    throw ablyException.errorInfo.toTrackingException()
+                val renewAuthResult = renewAuthSuspending()
+                renewAuthResult.errorInfo?.let {
+                    throw it.toTrackingException()
                 }
                 channel.attachSuspending()
                 channel.enterPresenceSuspending(presenceData)
             } else {
                 throw connectionException
+            }
+        }
+    }
+
+    data class RenewAuthResult(val success: Boolean, val tokenDetails: Auth.TokenDetails?, val errorInfo: ErrorInfo?)
+
+    private suspend fun renewAuthSuspending(): RenewAuthResult {
+        return suspendCoroutine { continuation ->
+            ably.auth.renewAuth { success, tokenDetails, errorInfo ->
+                continuation.resume(RenewAuthResult(success, tokenDetails, errorInfo))
             }
         }
     }
