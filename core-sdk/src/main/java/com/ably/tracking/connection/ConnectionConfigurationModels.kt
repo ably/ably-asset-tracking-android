@@ -5,6 +5,9 @@ data class ConnectionConfiguration(val authentication: Authentication)
 typealias TokenRequestCallback = (TokenParams) -> TokenRequest
 typealias JwtCallback = (TokenParams) -> String
 
+// We have to duplicate the KotlinOnly annotation from the "common" module as this module does not have access to it
+private typealias KotlinOnly = JvmSynthetic
+
 sealed class Authentication(
     val clientId: String,
     val basicApiKey: String?,
@@ -38,7 +41,7 @@ sealed class Authentication(
          * @param callback Callback that will be called with [TokenParams] each time a [TokenRequest] needs to be obtained.
          * @param clientId ID of the client
          */
-        @JvmSynthetic
+        @KotlinOnly
         fun tokenRequest(clientId: String, callback: TokenRequestCallback): Authentication =
             TokenAuthentication(clientId, callback)
 
@@ -46,7 +49,7 @@ sealed class Authentication(
          * @param callback Callback that will be called with [TokenParams] each time a JWT string needs to be obtained.
          * @param clientId ID of the client
          */
-        @JvmSynthetic
+        @KotlinOnly
         fun jwt(clientId: String, callback: JwtCallback): Authentication =
             JwtAuthentication(clientId, callback)
     }

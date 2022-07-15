@@ -2,6 +2,7 @@ package com.ably.tracking.publisher
 
 import android.app.Notification
 import com.ably.tracking.Resolution
+import com.ably.tracking.common.annotation.KotlinOnly
 
 data class MapConfiguration(val apiKey: String)
 
@@ -403,7 +404,7 @@ class LocationSourceRaw private constructor(
 ) :
     LocationSource() {
     companion object {
-        @JvmSynthetic
+        @KotlinOnly
         fun create(historyData: LocationHistoryData, onDataEnded: (() -> Unit)? = null) =
             LocationSourceRaw(historyData, onDataEnded)
 
