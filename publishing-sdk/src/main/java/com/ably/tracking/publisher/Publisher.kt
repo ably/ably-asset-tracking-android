@@ -9,6 +9,7 @@ import com.ably.tracking.ConnectionException
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
+import com.ably.tracking.common.annotation.KotlinOnly
 import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.logging.LogHandler
 import kotlinx.coroutines.TimeoutCancellationException
@@ -44,7 +45,7 @@ interface Publisher {
      *
      * @throws ConnectionException when something goes wrong with the Ably connection
      */
-    @JvmSynthetic
+    @KotlinOnly
     suspend fun track(trackable: Trackable): StateFlow<TrackableState>
 
     /**
@@ -58,7 +59,7 @@ interface Publisher {
      *
      * @throws ConnectionException when something goes wrong with the Ably connection
      */
-    @JvmSynthetic
+    @KotlinOnly
     suspend fun add(trackable: Trackable): StateFlow<TrackableState>
 
     /**
@@ -72,7 +73,7 @@ interface Publisher {
      * @return `true` if the object was known to this publisher, otherise `false`.
      * @throws ConnectionException when something goes wrong with the Ably connection
      */
-    @JvmSynthetic
+    @KotlinOnly
     suspend fun remove(trackable: Trackable): Boolean
 
     /**
@@ -92,19 +93,19 @@ interface Publisher {
      * The shared flow emitting location values when they become available.
      */
     val locations: SharedFlow<LocationUpdate>
-        @JvmSynthetic get
+        @KotlinOnly get
 
     /**
      * The shared flow emitting all trackables tracked by the publisher.
      */
     val trackables: SharedFlow<Set<Trackable>>
-        @JvmSynthetic get
+        @KotlinOnly get
 
     /**
      * The shared flow emitting trip location history when it becomes available.
      */
     val locationHistory: SharedFlow<LocationHistoryData>
-        @JvmSynthetic get
+        @KotlinOnly get
 
     /**
      * Returns a trackable state flow representing the [TrackableState] for an already added [Trackable].
@@ -112,7 +113,7 @@ interface Publisher {
      * @param trackableId The ID of an already added trackable.
      * @return [StateFlow] that represents the [TrackableState] of the added [Trackable]. If the trackable doesn't exist it returns null.
      */
-    @JvmSynthetic
+    @KotlinOnly
     fun getTrackableState(trackableId: String): StateFlow<TrackableState>?
 
     /**
@@ -124,7 +125,7 @@ interface Publisher {
      * @throws ConnectionException If something goes wrong during connection closing
      * @throws TimeoutCancellationException If the operation does not complete in the [timeoutInMilliseconds] time
      */
-    @JvmSynthetic
+    @KotlinOnly
     suspend fun stop(timeoutInMilliseconds: Long = 30_000L)
 
     /**

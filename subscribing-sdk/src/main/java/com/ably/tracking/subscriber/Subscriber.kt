@@ -5,6 +5,7 @@ import com.ably.tracking.ConnectionException
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
+import com.ably.tracking.common.annotation.KotlinOnly
 import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.logging.LogHandler
 import kotlinx.coroutines.flow.SharedFlow
@@ -39,39 +40,39 @@ interface Subscriber {
      *
      * @param resolution The preferred resolution or null if has no resolution preference.
      */
-    @JvmSynthetic
+    @KotlinOnly
     suspend fun resolutionPreference(resolution: Resolution?)
 
     /**
      * The shared flow emitting enhanced location values when they become available.
      */
     val locations: SharedFlow<LocationUpdate>
-        @JvmSynthetic get
+        @KotlinOnly get
 
     /**
      * The shared flow emitting raw location values when they become available.
      * Raw locations are disabled by default. You need to enable them in the Publishing SDK.
      */
     val rawLocations: SharedFlow<LocationUpdate>
-        @JvmSynthetic get
+        @KotlinOnly get
 
     /**
      * The shared flow emitting values when the state of the trackable changes.
      */
     val trackableStates: StateFlow<TrackableState>
-        @JvmSynthetic get
+        @KotlinOnly get
 
     /**
      * The shared flow emitting resolution values when they become available.
      */
     val resolutions: SharedFlow<Resolution>
-        @JvmSynthetic get
+        @KotlinOnly get
 
     /**
      * The shared flow emitting the estimated next location update intervals in milliseconds when they become available.
      */
     val nextLocationUpdateIntervals: SharedFlow<Long>
-        @JvmSynthetic get
+        @KotlinOnly get
 
     /**
      * Stops this subscriber from listening to published locations. Once a subscriber has been stopped, it cannot be
@@ -79,7 +80,7 @@ interface Subscriber {
      *
      * @throws ConnectionException If something goes wrong during connection closing
      */
-    @JvmSynthetic
+    @KotlinOnly
     suspend fun stop()
 
     /**
@@ -132,7 +133,7 @@ interface Subscriber {
          * @throws com.ably.tracking.BuilderConfigurationIncompleteException If all required params aren't set
          * @throws ConnectionException If something goes wrong during connection initialization
          */
-        @JvmSynthetic
+        @KotlinOnly
         @Throws(BuilderConfigurationIncompleteException::class, ConnectionException::class)
         suspend fun start(): Subscriber
     }
