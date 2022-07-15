@@ -315,6 +315,9 @@ constructor(
                     ably.channels.get(channelName, channelOptions)
                 scope.launch {
                     try {
+                        if (channel.isDetachedOrFailed()) {
+                            channel.attachSuspending()
+                        }
                         enterChannelPresence(channel, presenceData)
                         channels[trackableId] = channel
                         callback(Result.success(Unit))
@@ -742,4 +745,7 @@ constructor(
             }
         }
     }
+
+    private fun Channel.isDetachedOrFailed(): Boolean =
+        state == ChannelState.detached || state == ChannelState.failed
 }
