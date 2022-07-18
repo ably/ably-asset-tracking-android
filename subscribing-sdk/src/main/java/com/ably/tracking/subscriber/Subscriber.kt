@@ -38,6 +38,8 @@ interface Subscriber {
      * however this does not necessarily mean that the request has been received and actioned by the publisher.
      *
      * @param resolution The preferred resolution or null if has no resolution preference.
+     *
+     * @throws ConnectionException If something goes wrong when sending the preferred resolution.
      */
     @JvmSynthetic
     suspend fun resolutionPreference(resolution: Resolution?)
@@ -129,11 +131,10 @@ interface Subscriber {
          * Creates a [Subscriber] and starts listening for location updates.
          *
          * @return A new subscriber instance.
-         * @throws com.ably.tracking.BuilderConfigurationIncompleteException If all required params aren't set
+         * @throws BuilderConfigurationIncompleteException If all required params aren't set
          * @throws ConnectionException If something goes wrong during connection initialization
          */
         @JvmSynthetic
-        @Throws(BuilderConfigurationIncompleteException::class, ConnectionException::class)
         suspend fun start(): Subscriber
     }
 }
