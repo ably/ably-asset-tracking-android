@@ -610,7 +610,8 @@ constructor(
     }
 
     /**
-     * Performs the [operation] and if a "connection resume" exception is thrown it waits for the [channel] to
+     * Performs the [operation], waiting for the connection to resume if it's in the "suspended" state,
+     * and if a "connection resume" exception is thrown it waits for the [channel] to
      * reconnect and retries the [operation], otherwise it rethrows the exception. If the [operation] fails for
      * the second time the exception is rethrown no matter if it was the "connection resume" exception or not.
      */
@@ -619,6 +620,10 @@ constructor(
         operation: suspend (Channel) -> Unit
     ) {
         try {
+            if (channel.state == ChannelState.suspended) {
+                logHandler?.w("Trying to perform an operation on a suspended channel ${channel.name}, waiting for the channel to be reconnected")
+                waitForChannelReconnection(channel)
+            }
             operation(channel)
         } catch (exception: ConnectionException) {
             if (exception.isConnectionResumeException()) {
