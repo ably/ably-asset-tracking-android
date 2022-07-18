@@ -2,8 +2,8 @@ package com.ably.tracking.connection
 
 data class ConnectionConfiguration(val authentication: Authentication)
 
-typealias TokenRequestCallback = (TokenParams) -> TokenRequest
-typealias JwtCallback = (TokenParams) -> String
+typealias TokenRequestCallback = suspend (TokenParams) -> TokenRequest
+typealias JwtCallback = suspend (TokenParams) -> String
 
 sealed class Authentication(
     val clientId: String,
