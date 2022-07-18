@@ -1,5 +1,20 @@
 # Change log
 
+## [1.1.0-rc.6](https://github.com/ably/ably-asset-tracking-android/tree/v1.1.0-rc.6)
+
+Version 1.1 of the Ably Asset Tracking SDKs for Android brings changes to both the publishing and subscribing SDKs,
+and their corresponding example apps, that make the subscriber's marker animate much more smoothly.
+
+[Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.1.0-rc.5...v1.1.0-rc.6)
+
+**Fixed bugs:**
+
+- ConnectionException after waking up a device with subscriber running [\#702](https://github.com/ably/ably-asset-tracking-android/issues/702)
+
+**Merged pull requests:**
+
+- Wait for the suspended channel to reconnect before performing an operation [\#710](https://github.com/ably/ably-asset-tracking-android/pull/710) ([KacperKluka](https://github.com/KacperKluka))
+
 ## [1.1.0-rc.5](https://github.com/ably/ably-asset-tracking-android/tree/v1.1.0-rc.5)
 
 Version 1.1 of the Ably Asset Tracking SDKs for Android brings changes to both the publishing and subscribing SDKs,
