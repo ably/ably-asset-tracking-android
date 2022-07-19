@@ -35,6 +35,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -267,9 +268,11 @@ constructor(
         } catch (connectionException: ConnectionException) {
             if (connectionException.errorInformation.code == AUTH_TOKEN_CAPABILITY_ERROR_CODE) {
                 val renewAuthResult = renewAuthSuspending()
+
                 renewAuthResult.errorInfo?.let {
                     throw it.toTrackingException()
                 }
+                Log.d("Ably", Thread.currentThread().name)
                 channel.attachSuspending()
                 channel.enterPresenceSuspending(presenceData)
             } else {
@@ -282,9 +285,15 @@ constructor(
 
     private suspend fun renewAuthSuspending(): RenewAuthResult {
         return suspendCoroutine { continuation ->
-            ably.auth.renewAuth { success, tokenDetails, errorInfo ->
-                continuation.resume(RenewAuthResult(success, tokenDetails, errorInfo))
+            try {
+                ably.auth.renewAuth { success, tokenDetails, errorInfo ->
+                    continuation.resume(RenewAuthResult(success, tokenDetails, errorInfo))
+                }
+            }catch (e:Exception){
+                e.printStackTrace()
+                continuation.resumeWithException(e)
             }
+
         }
     }
 
