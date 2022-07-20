@@ -271,7 +271,6 @@ constructor(
                 renewAuthResult.errorInfo?.let {
                     throw it.toTrackingException()
                 }
-                Log.d("Ably", Thread.currentThread().name)
                 channel.attachSuspending()
                 channel.enterPresenceSuspending(presenceData)
             } else {
