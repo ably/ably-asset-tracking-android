@@ -21,15 +21,13 @@ import io.ably.lib.realtime.Channel
 import io.ably.lib.realtime.ChannelState
 import io.ably.lib.realtime.CompletionListener
 import io.ably.lib.realtime.ConnectionState
+import io.ably.lib.rest.Auth
 import io.ably.lib.types.AblyException
 import io.ably.lib.types.ChannelMode
 import io.ably.lib.types.ChannelOptions
 import io.ably.lib.types.ErrorInfo
 import io.ably.lib.types.Message
 import io.ably.lib.util.Log
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
-import kotlin.coroutines.suspendCoroutine
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -38,6 +36,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeout
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.coroutines.suspendCoroutine
 
 /**
  * Wrapper for the [AblyRealtime] that's used to interact with the Ably SDK.
@@ -200,6 +201,7 @@ interface Ably {
 
 private const val CHANNEL_NAME_PREFIX = "tracking:"
 private const val AGENT_HEADER_NAME = "ably-asset-tracking-android"
+private const val AUTH_TOKEN_CAPABILITY_ERROR_CODE = 40160
 
 class DefaultAbly
 /**
@@ -254,6 +256,44 @@ constructor(
         }
     }
 
+    /**
+     * Enters the presence of a channel. If it can't enter because of the auth token capabilities,
+     * a new auth token is requested and the operation is retried once more.
+     * @throws ConnectionException if something goes wrong or the retry fails
+     */
+    private suspend fun enterChannelPresence(channel: Channel, presenceData: PresenceData) {
+        try {
+            channel.enterPresenceSuspending(presenceData)
+        } catch (connectionException: ConnectionException) {
+            if (connectionException.errorInformation.code == AUTH_TOKEN_CAPABILITY_ERROR_CODE) {
+                val renewAuthResult = renewAuthSuspending()
+
+                renewAuthResult.errorInfo?.let {
+                    throw it.toTrackingException()
+                }
+                channel.attachSuspending()
+                channel.enterPresenceSuspending(presenceData)
+            } else {
+                throw connectionException
+            }
+        }
+    }
+
+    data class RenewAuthResult(val success: Boolean, val tokenDetails: Auth.TokenDetails?, val errorInfo: ErrorInfo?)
+
+    private suspend fun renewAuthSuspending(): RenewAuthResult {
+        return suspendCoroutine { continuation ->
+            try {
+                ably.auth.renewAuth { success, tokenDetails, errorInfo ->
+                    continuation.resume(RenewAuthResult(success, tokenDetails, errorInfo))
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                continuation.resumeWithException(e)
+            }
+        }
+    }
+
     override fun connect(
         trackableId: String,
         presenceData: PresenceData,
@@ -284,7 +324,7 @@ constructor(
                         if (channel.isDetachedOrFailed()) {
                             channel.attachSuspending()
                         }
-                        channel.enterPresenceSuspending(presenceData)
+                        enterChannelPresence(channel, presenceData)
                         channels[trackableId] = channel
                         callback(Result.success(Unit))
                     } catch (connectionException: ConnectionException) {
