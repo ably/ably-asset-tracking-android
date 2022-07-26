@@ -23,6 +23,7 @@ import com.ably.tracking.publisher.locationengine.toLocationEngineRequest
 import com.mapbox.api.directions.v5.models.DirectionsRoute
 import com.mapbox.api.directions.v5.models.RouteOptions
 import com.mapbox.module.Mapbox_TripNotificationModuleConfiguration
+import com.mapbox.navigation.base.options.DeviceProfile
 import com.mapbox.navigation.base.options.NavigationOptions
 import com.mapbox.navigation.base.route.RouterCallback
 import com.mapbox.navigation.base.route.RouterFailure
@@ -186,7 +187,12 @@ internal class DefaultMapbox(
 
     init {
         setupTripNotification(notificationProvider, notificationId)
+
+        val deviceProfile = DeviceProfile.Builder()
+            .customConfig(getCustomConfig(true))
+            .build()
         val mapboxBuilder = NavigationOptions.Builder(context).accessToken(mapConfiguration.apiKey)
+            .deviceProfile(deviceProfile)
             .locationEngine(getBestLocationEngine(context, logHandler))
         locationSource?.let {
             when (it) {
@@ -222,6 +228,23 @@ internal class DefaultMapbox(
         }
     }
 
+    private fun getCustomConfig(isAssetTracking: Boolean): String {
+        return if (isAssetTracking)
+            """
+{
+   "cache": {
+       "enableAssetsTrackingMode": true
+   },
+   "navigation": {
+       "routeLineFallbackPolicy": {
+           "policy": 1
+       }
+   }
+}
+"""
+        else
+            ""
+    }
     private fun setupTripNotification(notificationProvider: PublisherNotificationProvider, notificationId: Int) {
         Mapbox_TripNotificationModuleConfiguration.moduleProvider =
             object : Mapbox_TripNotificationModuleConfiguration.ModuleProvider {
