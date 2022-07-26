@@ -28,7 +28,7 @@ dependencies {
         exclude group: "com.mapbox.navigation", module: "notification"
     }
     // The special asset tracking profile for the Mapbox Navigation.
-    implementation("com.mapbox.navigator:mapbox-navigation-native:ak-2.3-tracking-profile-4-SNAPSHOT") {
+    implementation("com.mapbox.navigator:mapbox-navigation-native:ms-2.3-configurable-assets-tracking-profile-7-SNAPSHOT") {
         force = true
     }
 
