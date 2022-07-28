@@ -21,15 +21,13 @@ import io.ably.lib.realtime.Channel
 import io.ably.lib.realtime.ChannelState
 import io.ably.lib.realtime.CompletionListener
 import io.ably.lib.realtime.ConnectionState
+import io.ably.lib.rest.Auth
 import io.ably.lib.types.AblyException
 import io.ably.lib.types.ChannelMode
 import io.ably.lib.types.ChannelOptions
 import io.ably.lib.types.ErrorInfo
 import io.ably.lib.types.Message
 import io.ably.lib.util.Log
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
-import kotlin.coroutines.suspendCoroutine
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -38,6 +36,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeout
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.coroutines.suspendCoroutine
 
 /**
  * Wrapper for the [AblyRealtime] that's used to interact with the Ably SDK.
@@ -200,6 +201,7 @@ interface Ably {
 
 private const val CHANNEL_NAME_PREFIX = "tracking:"
 private const val AGENT_HEADER_NAME = "ably-asset-tracking-android"
+private const val AUTH_TOKEN_CAPABILITY_ERROR_CODE = 40160
 
 class DefaultAbly
 /**
@@ -254,6 +256,44 @@ constructor(
         }
     }
 
+    /**
+     * Enters the presence of a channel. If it can't enter because of the auth token capabilities,
+     * a new auth token is requested and the operation is retried once more.
+     * @throws ConnectionException if something goes wrong or the retry fails
+     */
+    private suspend fun enterChannelPresence(channel: Channel, presenceData: PresenceData) {
+        try {
+            channel.enterPresenceSuspending(presenceData)
+        } catch (connectionException: ConnectionException) {
+            if (connectionException.errorInformation.code == AUTH_TOKEN_CAPABILITY_ERROR_CODE) {
+                val renewAuthResult = renewAuthSuspending()
+
+                renewAuthResult.errorInfo?.let {
+                    throw it.toTrackingException()
+                }
+                channel.attachSuspending()
+                channel.enterPresenceSuspending(presenceData)
+            } else {
+                throw connectionException
+            }
+        }
+    }
+
+    data class RenewAuthResult(val success: Boolean, val tokenDetails: Auth.TokenDetails?, val errorInfo: ErrorInfo?)
+
+    private suspend fun renewAuthSuspending(): RenewAuthResult {
+        return suspendCoroutine { continuation ->
+            try {
+                ably.auth.renewAuth { success, tokenDetails, errorInfo ->
+                    continuation.resume(RenewAuthResult(success, tokenDetails, errorInfo))
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                continuation.resumeWithException(e)
+            }
+        }
+    }
+
     override fun connect(
         trackableId: String,
         presenceData: PresenceData,
@@ -274,28 +314,25 @@ constructor(
                 }
                 modes = modesList.toTypedArray()
             }
-            val channel = if (useRewind)
-                ably.channels.get(channelName, channelOptions.apply { params = mapOf("rewind" to "1") })
-            else
-                ably.channels.get(channelName, channelOptions)
-            channel.apply {
-                try {
-                    presence.enter(
-                        gson.toJson(presenceData.toMessage()),
-                        object : CompletionListener {
-                            override fun onSuccess() {
-                                channels[trackableId] = this@apply
-                                callback(Result.success(Unit))
-                            }
-
-                            override fun onError(reason: ErrorInfo) {
-                                callback(Result.failure(Exception(reason.toTrackingException())))
-                            }
+            try {
+                val channel = if (useRewind)
+                    ably.channels.get(channelName, channelOptions.apply { params = mapOf("rewind" to "1") })
+                else
+                    ably.channels.get(channelName, channelOptions)
+                scope.launch {
+                    try {
+                        if (channel.isDetachedOrFailed()) {
+                            channel.attachSuspending()
                         }
-                    )
-                } catch (ablyException: AblyException) {
-                    callback(Result.failure(ablyException.errorInfo.toTrackingException()))
+                        enterChannelPresence(channel, presenceData)
+                        channels[trackableId] = channel
+                        callback(Result.success(Unit))
+                    } catch (connectionException: ConnectionException) {
+                        callback(Result.failure(connectionException))
+                    }
                 }
+            } catch (ablyException: AblyException) {
+                callback(Result.failure(ablyException.errorInfo.toTrackingException()))
             }
         } else {
             callback(Result.success(Unit))
@@ -623,7 +660,8 @@ constructor(
     }
 
     /**
-     * Performs the [operation] and if a "connection resume" exception is thrown it waits for the [channel] to
+     * Performs the [operation], waiting for the connection to resume if it's in the "suspended" state,
+     * and if a "connection resume" exception is thrown it waits for the [channel] to
      * reconnect and retries the [operation], otherwise it rethrows the exception. If the [operation] fails for
      * the second time the exception is rethrown no matter if it was the "connection resume" exception or not.
      */
@@ -632,6 +670,10 @@ constructor(
         operation: suspend (Channel) -> Unit
     ) {
         try {
+            if (channel.state == ChannelState.suspended) {
+                logHandler?.w("Trying to perform an operation on a suspended channel ${channel.name}, waiting for the channel to be reconnected")
+                waitForChannelReconnection(channel)
+            }
             operation(channel)
         } catch (exception: ConnectionException) {
             if (exception.isConnectionResumeException()) {
@@ -677,4 +719,54 @@ constructor(
 
     private fun ConnectionException.isConnectionResumeException(): Boolean =
         errorInformation.let { it.message == "Connection resume failed" && it.code == 50000 && it.statusCode == 500 }
+
+    /**
+     * Enter the presence of the [Channel] and waits for this operation to complete.
+     * If something goes wrong then it throws a [ConnectionException].
+     */
+    private suspend fun Channel.enterPresenceSuspending(presenceData: PresenceData) {
+        suspendCancellableCoroutine<Unit> { continuation ->
+            try {
+                presence.enter(
+                    gson.toJson(presenceData.toMessage()),
+                    object : CompletionListener {
+                        override fun onSuccess() {
+                            continuation.resume(Unit)
+                        }
+
+                        override fun onError(reason: ErrorInfo) {
+                            continuation.resumeWithException(reason.toTrackingException())
+                        }
+                    }
+                )
+            } catch (ablyException: AblyException) {
+                continuation.resumeWithException(ablyException.errorInfo.toTrackingException())
+            }
+        }
+    }
+
+    /**
+     * Attaches the [Channel] and waits for this operation to complete.
+     * If something goes wrong then it throws a [ConnectionException].
+     */
+    private suspend fun Channel.attachSuspending() {
+        suspendCancellableCoroutine<Unit> { continuation ->
+            try {
+                attach(object : CompletionListener {
+                    override fun onSuccess() {
+                        continuation.resume(Unit)
+                    }
+
+                    override fun onError(reason: ErrorInfo) {
+                        continuation.resumeWithException(reason.toTrackingException())
+                    }
+                })
+            } catch (ablyException: AblyException) {
+                continuation.resumeWithException(ablyException.errorInfo.toTrackingException())
+            }
+        }
+    }
+
+    private fun Channel.isDetachedOrFailed(): Boolean =
+        state == ChannelState.detached || state == ChannelState.failed
 }

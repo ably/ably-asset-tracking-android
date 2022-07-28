@@ -1,5 +1,42 @@
 # Change log
 
+## [1.1.0-rc.6](https://github.com/ably/ably-asset-tracking-android/tree/v1.1.0-rc.6)
+
+Version 1.1 of the Ably Asset Tracking SDKs for Android brings changes to both the publishing and subscribing SDKs,
+and their corresponding example apps, that make the subscriber's marker animate much more smoothly.
+
+[Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.1.0-rc.5...v1.1.0-rc.6)
+
+**Fixed bugs:**
+
+- ConnectionException after waking up a device with subscriber running [\#702](https://github.com/ably/ably-asset-tracking-android/issues/702)
+
+**Merged pull requests:**
+
+- Wait for the suspended channel to reconnect before performing an operation [\#710](https://github.com/ably/ably-asset-tracking-android/pull/710) ([KacperKluka](https://github.com/KacperKluka))
+
+## [1.1.0-rc.5](https://github.com/ably/ably-asset-tracking-android/tree/v1.1.0-rc.5)
+
+Version 1.1 of the Ably Asset Tracking SDKs for Android brings changes to both the publishing and subscribing SDKs,
+and their corresponding example apps, that make the subscriber's marker animate much more smoothly.
+
+[Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.1.0-rc.4...v1.1.0-rc.5)
+
+**Fixed bugs:**
+
+- Removing and adding new trackable with the same name leads to an exception [\#701](https://github.com/ably/ably-asset-tracking-android/issues/701)
+- Exception handling issues when connecting to Ably [\#700](https://github.com/ably/ably-asset-tracking-android/issues/700)
+- EnhancedLocationUpdate equals returns true for different locations [\#694](https://github.com/ably/ably-asset-tracking-android/issues/694)
+- Fix Java-WebSockets security issue [\#688](https://github.com/ably/ably-asset-tracking-android/issues/688)
+- Fix gson dependency vulnerability [\#687](https://github.com/ably/ably-asset-tracking-android/issues/687)
+
+**Merged pull requests:**
+
+- Fix error when trying to connect to a previously closed channel [\#708](https://github.com/ably/ably-asset-tracking-android/pull/708) ([KacperKluka](https://github.com/KacperKluka))
+- Fix exception throwing issues when connecting to Ably [\#699](https://github.com/ably/ably-asset-tracking-android/pull/699) ([KacperKluka](https://github.com/KacperKluka))
+- Fix location updates equals implementation [\#697](https://github.com/ably/ably-asset-tracking-android/pull/697) ([KacperKluka](https://github.com/KacperKluka))
+- Update ably-android version to 1.2.14 [\#693](https://github.com/ably/ably-asset-tracking-android/pull/693) ([KacperKluka](https://github.com/KacperKluka))
+
 ## [1.1.0-rc.4](https://github.com/ably/ably-asset-tracking-android/tree/v1.1.0-rc.4)
 
 Version 1.1 of the Ably Asset Tracking SDKs for Android brings changes to both the publishing and subscribing SDKs,

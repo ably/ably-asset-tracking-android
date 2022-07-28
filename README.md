@@ -16,7 +16,7 @@ Ably Asset Tracking is:
 
 - **easy to integrate** - comprising two complementary SDKs with easy to use APIs, available for multiple platforms:
     - Asset Publishing SDK, for embedding in apps running on the courier's device
-    - Asset Subscribing SDK, for embedding in apps runnong on the customer's observing device
+    - Asset Subscribing SDK, for embedding in apps running on the customer's observing device
 - **extensible** - as Ably is used as the underlying transport, you have direct access to your data and can use Ably integrations for a wide range of applications in addition to direct realtime subscriptions - examples include:
     - passing to a 3rd party system
     - persistence for later retrieval
@@ -127,10 +127,10 @@ you can then add the Ably Asset Tracking dependency that you require in your Gra
 ```groovy
 dependencies {
     // Publishers, developing in Kotlin, will need the Publishing SDK
-    implementation 'com.ably.tracking:publishing-sdk:1.1.0-rc.4'
+    implementation 'com.ably.tracking:publishing-sdk:1.1.0-rc.6'
 
     // Subscribers, developing in Kotlin, will need the Subscribing SDK
-    implementation 'com.ably.tracking:subscribing-sdk:1.1.0-rc.4'
+    implementation 'com.ably.tracking:subscribing-sdk:1.1.0-rc.6'
 }
 ```
 
@@ -202,7 +202,7 @@ val subscriber = Subscriber.subscribers() // Get an AssetSubscriber
 
 // Listen for location updates
 locations
-    .onEach { locationUpdate -> print(locationUpdate } // provide a function to be called when enhanced location updates are received
+    .onEach { locationUpdate -> print(locationUpdate) } // provide a function to be called when enhanced location updates are received
     .launchIn(scope) // coroutines scope on which the locations are received
 
 // Listen for asset state changes
