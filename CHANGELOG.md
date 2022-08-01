@@ -1,5 +1,20 @@
 # Change log
 
+## [1.1.0-rc.7](https://github.com/ably/ably-asset-tracking-android/tree/v1.1.0-rc.7)
+
+Version 1.1 of the Ably Asset Tracking SDKs for Android brings changes to both the publishing and subscribing SDKs,
+and their corresponding example apps, that make the subscriber's marker animate much more smoothly.
+
+[Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.1.0-rc.6...v1.1.0-rc.7)
+
+**Implemented enhancements:**
+
+- Request new auth token when channel attach fails due to permission failure [\#695](https://github.com/ably/ably-asset-tracking-android/issues/695)
+- Change authentication callback functions to suspending functions [\#686](https://github.com/ably/ably-asset-tracking-android/issues/686)
+- Allow to configure the interval of camera updates for the location animator [\#685](https://github.com/ably/ably-asset-tracking-android/issues/685)
+- Allow to configure the intentional delay of the location animator [\#684](https://github.com/ably/ably-asset-tracking-android/issues/684)
+
+
 ## [1.1.0-rc.6](https://github.com/ably/ably-asset-tracking-android/tree/v1.1.0-rc.6)
 
 Version 1.1 of the Ably Asset Tracking SDKs for Android brings changes to both the publishing and subscribing SDKs,
