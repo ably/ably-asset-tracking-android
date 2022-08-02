@@ -28,6 +28,9 @@ import io.ably.lib.types.ChannelOptions
 import io.ably.lib.types.ErrorInfo
 import io.ably.lib.types.Message
 import io.ably.lib.util.Log
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.coroutines.suspendCoroutine
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -36,9 +39,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeout
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
-import kotlin.coroutines.suspendCoroutine
 
 /**
  * Wrapper for the [AblyRealtime] that's used to interact with the Ably SDK.
@@ -117,7 +117,7 @@ interface Ably {
      *
      * @throws ConnectionException if something goes wrong.
      */
-    fun subscribeForEnhancedEvents(trackableId: String, listener: (LocationUpdate) -> Unit)
+    fun subscribeForEnhancedEvents(trackableId: String, presenceData: PresenceData, listener: (LocationUpdate) -> Unit)
 
     /**
      * Adds a listener for the raw location updates that are received from the channel.
@@ -129,7 +129,7 @@ interface Ably {
      *
      * @throws ConnectionException if something goes wrong.
      */
-    fun subscribeForRawEvents(trackableId: String, listener: (LocationUpdate) -> Unit)
+    fun subscribeForRawEvents(trackableId: String, presenceData: PresenceData, listener: (LocationUpdate) -> Unit)
 
     /**
      * Joins the presence of the channel for the given [trackableId] and add it to the connected channels.
@@ -384,6 +384,13 @@ constructor(
         detachFromChannel(channel)
     }
 
+    private suspend fun failChannel(channel: Channel, presenceData: PresenceData, errorInfo: ErrorInfo) {
+        leavePresence(channel, presenceData)
+        channel.unsubscribe()
+        channel.presence.unsubscribe()
+        channel.setConnectionFailed(errorInfo)
+    }
+
     private suspend fun leavePresence(channel: Channel, presenceData: PresenceData) {
         suspendCancellableCoroutine<Unit> { continuation ->
             try {
@@ -515,16 +522,22 @@ constructor(
         }
     }
 
-    override fun subscribeForEnhancedEvents(trackableId: String, listener: (LocationUpdate) -> Unit) {
+    override fun subscribeForEnhancedEvents(
+        trackableId: String,
+        presenceData: PresenceData,
+        listener: (LocationUpdate) -> Unit
+    ) {
         channels[trackableId]?.let { channel ->
             try {
                 channel.subscribe(EventNames.ENHANCED) { message ->
-                    val locationUpdate = message.getEnhancedLocationUpdate(gson)
-                    if (locationUpdate != null) {
-                        listener(locationUpdate)
-                    } else {
-                        logHandler?.w("Could not deserialize an enhanced location update message")
-                    }
+                    processReceivedLocationUpdateMessage(
+                        channel,
+                        trackableId,
+                        presenceData,
+                        message,
+                        listener,
+                        isRawLocation = false
+                    )
                 }
             } catch (exception: AblyException) {
                 throw exception.errorInfo.toTrackingException()
@@ -532,19 +545,46 @@ constructor(
         }
     }
 
-    override fun subscribeForRawEvents(trackableId: String, listener: (LocationUpdate) -> Unit) {
+    override fun subscribeForRawEvents(
+        trackableId: String,
+        presenceData: PresenceData,
+        listener: (LocationUpdate) -> Unit
+    ) {
         channels[trackableId]?.let { channel ->
             try {
                 channel.subscribe(EventNames.RAW) { message ->
-                    val locationUpdate = message.getRawLocationUpdate(gson)
-                    if (locationUpdate != null) {
-                        listener(locationUpdate)
-                    } else {
-                        logHandler?.w("Could not deserialize a raw location update message")
-                    }
+                    processReceivedLocationUpdateMessage(
+                        channel,
+                        trackableId,
+                        presenceData,
+                        message,
+                        listener,
+                        isRawLocation = true
+                    )
                 }
             } catch (exception: AblyException) {
                 throw exception.errorInfo.toTrackingException()
+            }
+        }
+    }
+
+    private fun processReceivedLocationUpdateMessage(
+        channel: Channel,
+        trackableId: String,
+        presenceData: PresenceData,
+        message: Message,
+        listener: (LocationUpdate) -> Unit,
+        isRawLocation: Boolean
+    ) {
+        val locationUpdate =
+            if (isRawLocation) message.getRawLocationUpdate(gson) else message.getEnhancedLocationUpdate(gson)
+        if (locationUpdate != null) {
+            listener(locationUpdate)
+        } else {
+            logHandler?.e("Could not deserialize ${if (isRawLocation) "raw" else "enhanced"} location update message")
+            scope.launch {
+                failChannel(channel, presenceData, createMalformedMessageErrorInfo())
+                channels.remove(trackableId)
             }
         }
     }
@@ -769,4 +809,6 @@ constructor(
 
     private fun Channel.isDetachedOrFailed(): Boolean =
         state == ChannelState.detached || state == ChannelState.failed
+
+    private fun createMalformedMessageErrorInfo(): ErrorInfo = ErrorInfo("Received a malformed message", 100_001, 400)
 }
