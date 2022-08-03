@@ -2,7 +2,9 @@ package com.ably.tracking.publisher
 
 import android.Manifest
 import android.content.Context
+import android.os.Build
 import androidx.annotation.RequiresPermission
+import androidx.core.app.NotificationManagerCompat
 import com.ably.tracking.Location
 import com.ably.tracking.Resolution
 import com.ably.tracking.common.MILLISECONDS_PER_SECOND
@@ -159,13 +161,13 @@ private object MapboxInstancesCounter {
  * This enables us to switch threads and run the required method in the main thread.
  */
 internal class DefaultMapbox(
-    context: Context,
+    private val context: Context,
     mapConfiguration: MapConfiguration,
     connectionConfiguration: ConnectionConfiguration,
     locationSource: LocationSource? = null,
     private val logHandler: LogHandler?,
-    notificationProvider: PublisherNotificationProvider,
-    notificationId: Int,
+    private val notificationProvider: PublisherNotificationProvider,
+    private val notificationId: Int,
     predictionsEnabled: Boolean,
     private val rawHistoryCallback: ((String) -> Unit)?,
     constantLocationEngineResolution: Resolution?,
@@ -222,6 +224,16 @@ internal class DefaultMapbox(
         }
     }
 
+    /**
+     * On Android 24 and below the shared notification is removed when [MapboxNavigation.stopTripSession] is called.
+     * This notification should be always visible when the [Publisher] is running so we show it once again manually.
+     */
+    private fun reshowTripNotification() {
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.N) {
+            NotificationManagerCompat.from(context).notify(notificationId, notificationProvider.getNotification())
+        }
+    }
+
     private fun setupTripNotification(notificationProvider: PublisherNotificationProvider, notificationId: Int) {
         Mapbox_TripNotificationModuleConfiguration.moduleProvider =
             object : Mapbox_TripNotificationModuleConfiguration.ModuleProvider {
@@ -260,6 +272,7 @@ internal class DefaultMapbox(
             mapboxReplayer?.stop()
             mapboxReplayer?.seekTo(0.0)
             mapboxNavigation.stopTripSession()
+            reshowTripNotification()
         }
     }
 
