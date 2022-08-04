@@ -13,7 +13,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 
+// This value is documented in our README and UPDATING docs. If you change it remember to update those docs.
 private const val DEFAULT_INTENTIONAL_ANIMATION_DELAY_IN_MILLISECONDS: Long = 2_000L
+// This value is documented in our README and UPDATING docs. If you change it remember to update those docs.
 private const val DEFAULT_ANIMATION_STEPS_BETWEEN_CAMERA_UPDATES: Int = 1
 private const val IDLE_ANIMATION_LOOP_DELAY_IN_MILLISECONDS: Long = 50L
 private const val SINGLE_ANIMATION_FRAME_INTERVAL_IN_MILLISECONDS: Long = (1000 / 60.0).toLong() // 60 FPS
