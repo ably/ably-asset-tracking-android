@@ -3,11 +3,13 @@ package com.ably.tracking.tests
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ably.tracking.LocationUpdate
+import com.ably.tracking.TrackableState
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.subscriber.Subscriber
 import com.ably.tracking.test.android.common.BooleanExpectation
 import com.ably.tracking.test.android.common.UnitExpectation
 import com.ably.tracking.test.android.common.testLogD
+import io.ably.lib.realtime.AblyRealtime
 import java.util.UUID
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -199,5 +201,42 @@ class PublisherAndSubscriberTests {
 
         // then
         subscriberReceivedResolutionExpectation.assertFulfilled()
+    }
+
+    @Test
+    fun shouldFailSubscriberWhenItReceivesMalformedMessage() {
+        // given
+        val subscriberFailedExpectation = UnitExpectation("subscriber failed")
+        val trackableId = UUID.randomUUID().toString()
+        val scope = CoroutineScope(Dispatchers.Default)
+        val ably = AblyRealtime(ABLY_API_KEY)
+
+        // when
+        var subscriber: Subscriber
+        runBlocking {
+            subscriber = createAndStartSubscriber(trackableId)
+        }
+
+        subscriber.trackableStates
+            .onEach {
+                if (it is TrackableState.Failed) {
+                    subscriberFailedExpectation.fulfill()
+                }
+            }
+            .launchIn(scope)
+
+        // publish malformed (empty) message
+        ably.channels.get("tracking:$trackableId").publish("enhanced", "{}")
+
+        // await
+        subscriberFailedExpectation.await()
+
+        // cleanup
+        runBlocking {
+            subscriber.stop()
+        }
+
+        // then
+        subscriberFailedExpectation.assertFulfilled()
     }
 }
