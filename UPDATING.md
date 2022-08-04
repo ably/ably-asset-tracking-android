@@ -47,9 +47,9 @@ dependencies {
 Now you should have access to the `LocationAnimator`, `CoreLocationAnimator` and `Position` classes.
 
 To use the animation logic you need to create a new instance of the `CoreLocationAnimator` and use its shared flows to receive both map marker and map camera location updates.
-You can add optional configuration options during `CoreLocationAnimator` creation:
+The `CoreLocationAnimator` class takes the following configuration options:
 
-- `intentionalAnimationDelayInMilliseconds` - A constant delay added to the animation duration. It helps to smooth out movement when we receive a location update later than we've expected.
+- `intentionalAnimationDelayInMilliseconds` - A constant delay added to the animation duration. This helps to smooth out movement when a location update is received later than expected due to network latency.
   The higher value the less realtime the animation becomes.
 - `animationStepsBetweenCameraUpdates` - How often should the camera updates be sent. Setting a higher value might improve UX but if it's too big it can lead to map marker moving out of the screen.
 
@@ -61,7 +61,7 @@ val locationAnimator: LocationAnimator = CoreLocationAnimator(
 ```
 
 The animator exposes two flows, one for map marker (`positionsFlow`) and the other for camera updates (`cameraPositionsFlow`).
-The map marker flow emits 60 positions per second, so you should simply update marker's position each time the flow emits a new position.
+The map marker flow emits 60 positions per second, so you should simply update the marker's position each time the flow emits a new position.
 The camera flow emits 1 position when a new camera update is ready, so you can either move the camera there or animate its movement by yourself.
 
 ```kotlin
