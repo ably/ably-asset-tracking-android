@@ -160,7 +160,7 @@ private object MapboxInstancesCounter {
 /**
  * The special Mapbox configuration that enables the Asset Tracking Profile (a.k.a. the Cycling Profile).
  */
-private const val ASSET_TRACKING_PROFILE_CONFIGURATION: String = """
+private const val ASSET_TRACKING_PROFILE_ENABLED_CONFIGURATION: String = """
 {
    "cache": {
        "enableAssetsTrackingMode": true
@@ -172,6 +172,11 @@ private const val ASSET_TRACKING_PROFILE_CONFIGURATION: String = """
    }
 }
 """
+
+/**
+ * The Mapbox configuration that disables the Asset Tracking Profile (a.k.a. the Cycling Profile).
+ */
+private const val ASSET_TRACKING_PROFILE_DISABLED_CONFIGURATION: String = ""
 
 /**
  * The default implementation of the [Mapbox] wrapper.
@@ -189,6 +194,7 @@ internal class DefaultMapbox(
     predictionsEnabled: Boolean,
     private val rawHistoryCallback: ((String) -> Unit)?,
     constantLocationEngineResolution: Resolution?,
+    vehicleProfile: VehicleProfile,
 ) : Mapbox {
     private val TAG = createLoggingTag(this)
 
@@ -207,7 +213,7 @@ internal class DefaultMapbox(
     init {
         setupTripNotification(notificationProvider, notificationId)
         val mapboxBuilder = NavigationOptions.Builder(context).accessToken(mapConfiguration.apiKey)
-            .deviceProfile(createCyclingDeviceProfile())
+            .deviceProfile(createDeviceProfile(vehicleProfile))
             .locationEngine(getBestLocationEngine(context, logHandler))
         locationSource?.let {
             when (it) {
@@ -246,9 +252,14 @@ internal class DefaultMapbox(
         }
     }
 
-    private fun createCyclingDeviceProfile(): DeviceProfile =
+    private fun createDeviceProfile(vehicleProfile: VehicleProfile): DeviceProfile =
         DeviceProfile.Builder()
-            .customConfig(ASSET_TRACKING_PROFILE_CONFIGURATION)
+            .customConfig(
+                when (vehicleProfile) {
+                    VehicleProfile.CAR -> ASSET_TRACKING_PROFILE_DISABLED_CONFIGURATION
+                    VehicleProfile.BICYCLE -> ASSET_TRACKING_PROFILE_ENABLED_CONFIGURATION
+                }
+            )
             .build()
 
     /**

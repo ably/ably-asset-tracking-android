@@ -422,3 +422,18 @@ class LocationSourceRaw private constructor(
 interface DataEndedCallback {
     fun onDataEnded()
 }
+
+/**
+ * Represents the vehicle that's used by the publisher.
+ */
+enum class VehicleProfile {
+    /**
+     * For cars and motorcycles.
+     */
+    CAR,
+
+    /**
+     * For bicycles and pedestrians.
+     */
+    BICYCLE,
+}
