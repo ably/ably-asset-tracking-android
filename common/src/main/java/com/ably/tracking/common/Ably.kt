@@ -581,12 +581,17 @@ constructor(
         if (locationUpdate != null) {
             listener(locationUpdate)
         } else {
-            logHandler?.e("Could not deserialize ${if (isRawLocation) "raw" else "enhanced"} location update message")
+            logHandler?.e(createMalformedLocationUpdateLogMessage(isRawLocation))
             scope.launch {
                 failChannel(channel, presenceData, createMalformedMessageErrorInfo())
                 channels.remove(trackableId)
             }
         }
+    }
+
+    private fun createMalformedLocationUpdateLogMessage(isRawLocation: Boolean): String {
+        val locationType = if (isRawLocation) "raw" else "enhanced"
+        return "Could not deserialize $locationType location update message"
     }
 
     override fun subscribeForPresenceMessages(
