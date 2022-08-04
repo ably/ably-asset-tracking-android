@@ -22,11 +22,12 @@ import com.ably.tracking.publisher.locationengine.GoogleLocationEngine
 import com.ably.tracking.publisher.locationengine.LocationEngineUtils
 import com.ably.tracking.publisher.locationengine.ResolutionLocationEngine
 import com.ably.tracking.publisher.locationengine.toLocationEngineRequest
-import com.mapbox.api.directions.v5.models.DirectionsRoute
 import com.mapbox.api.directions.v5.models.RouteOptions
 import com.mapbox.module.Mapbox_TripNotificationModuleConfiguration
+import com.mapbox.navigation.base.options.DeviceProfile
 import com.mapbox.navigation.base.options.NavigationOptions
-import com.mapbox.navigation.base.route.RouterCallback
+import com.mapbox.navigation.base.route.NavigationRoute
+import com.mapbox.navigation.base.route.NavigationRouterCallback
 import com.mapbox.navigation.base.route.RouterFailure
 import com.mapbox.navigation.base.route.RouterOrigin
 import com.mapbox.navigation.base.trip.model.RouteLegProgress
@@ -36,6 +37,7 @@ import com.mapbox.navigation.core.MapboxNavigation
 import com.mapbox.navigation.core.MapboxNavigationProvider
 import com.mapbox.navigation.core.arrival.ArrivalObserver
 import com.mapbox.navigation.core.history.MapboxHistoryReader
+import com.mapbox.navigation.core.internal.utils.InternalUtils
 import com.mapbox.navigation.core.replay.MapboxReplayer
 import com.mapbox.navigation.core.replay.ReplayLocationEngine
 import com.mapbox.navigation.core.replay.history.ReplayEventBase
@@ -156,6 +158,22 @@ private object MapboxInstancesCounter {
 }
 
 /**
+ * The special Mapbox configuration that enables the Asset Tracking Profile (a.k.a. the Cycling Profile).
+ */
+private const val ASSET_TRACKING_PROFILE_CONFIGURATION: String = """
+{
+   "cache": {
+       "enableAssetsTrackingMode": true
+   },
+   "navigation": {
+       "routeLineFallbackPolicy": {
+           "policy": 1
+       }
+   }
+}
+"""
+
+/**
  * The default implementation of the [Mapbox] wrapper.
  * The [MapboxNavigation] needs to be called from the main thread. To achieve that we use the [runBlocking] method with the [mainDispatcher].
  * This enables us to switch threads and run the required method in the main thread.
@@ -189,6 +207,7 @@ internal class DefaultMapbox(
     init {
         setupTripNotification(notificationProvider, notificationId)
         val mapboxBuilder = NavigationOptions.Builder(context).accessToken(mapConfiguration.apiKey)
+            .deviceProfile(createCyclingDeviceProfile())
             .locationEngine(getBestLocationEngine(context, logHandler))
         locationSource?.let {
             when (it) {
@@ -202,6 +221,9 @@ internal class DefaultMapbox(
                 }
             }
         }
+
+        // We were instructed to use this method by the Mapbox team
+        InternalUtils.setUnconditionalPollingPatience(Long.MAX_VALUE)
 
         if (!predictionsEnabled) {
             mapboxBuilder.navigatorPredictionMillis(0L) // Setting this to 0 disables location predictions
@@ -223,6 +245,11 @@ internal class DefaultMapbox(
             setupRouteClearingWhenDestinationIsReached()
         }
     }
+
+    private fun createCyclingDeviceProfile(): DeviceProfile =
+        DeviceProfile.Builder()
+            .customConfig(ASSET_TRACKING_PROFILE_CONFIGURATION)
+            .build()
 
     /**
      * On Android 24 and below the shared notification is removed when [MapboxNavigation.stopTripSession] is called.
@@ -359,15 +386,15 @@ internal class DefaultMapbox(
                     .coordinatesList(getRouteCoordinates(currentLocation, destination))
                     .profile(routingProfile.toMapboxProfileName())
                     .build(),
-                object : RouterCallback {
-                    override fun onRoutesReady(routes: List<DirectionsRoute>, routerOrigin: RouterOrigin) {
+                object : NavigationRouterCallback {
+                    override fun onRoutesReady(routes: List<NavigationRoute>, routerOrigin: RouterOrigin) {
                         logHandler?.v("$TAG Set route successful")
                         routes.firstOrNull()?.let {
                             // According to the migration guide, we need to manually call [setRoutes] with routes list.
                             // https://docs.mapbox.com/android/navigation/guides/migrate-to-v2/#request-a-route
-                            mapboxNavigation.setRoutes(routes)
-                            val routeDurationInMilliseconds =
-                                (it.durationTypical() ?: it.duration()) * MILLISECONDS_PER_SECOND
+                            mapboxNavigation.setNavigationRoutes(routes)
+                            val routeDuration = (it.directionsRoute.durationTypical() ?: it.directionsRoute.duration())
+                            val routeDurationInMilliseconds = routeDuration * MILLISECONDS_PER_SECOND
                             routeDurationCallback(Result.success(routeDurationInMilliseconds.toLong()))
                         }
                     }
@@ -389,7 +416,7 @@ internal class DefaultMapbox(
     override fun clearRoute() {
         runBlocking(mainDispatcher) {
             logHandler?.v("$TAG Clear route")
-            mapboxNavigation.setRoutes(emptyList())
+            mapboxNavigation.setNavigationRoutes(emptyList())
         }
     }
 
