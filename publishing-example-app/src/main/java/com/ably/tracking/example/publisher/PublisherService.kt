@@ -18,6 +18,7 @@ import com.ably.tracking.publisher.LocationSource
 import com.ably.tracking.publisher.MapConfiguration
 import com.ably.tracking.publisher.Publisher
 import com.ably.tracking.publisher.PublisherNotificationProvider
+import com.ably.tracking.publisher.VehicleProfile
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -121,6 +122,7 @@ class PublisherService : Service() {
             .sendResolution(appPreferences.shouldSendResolution())
             .predictions(appPreferences.shouldEnablePredictions())
             .constantLocationEngineResolution(createConstantLocationEngineResolution())
+            .vehicleProfile(VehicleProfile.BICYCLE)
             .start()
 
     private fun createDefaultResolution(): Resolution =
