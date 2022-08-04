@@ -33,8 +33,15 @@ class CoreLocationAnimator(
      */
     private val animationStepsBetweenCameraUpdates: Int = DEFAULT_ANIMATION_STEPS_BETWEEN_CAMERA_UPDATES,
 ) : LocationAnimator {
+    /**
+     * Emits 60 positions per second.
+     */
     override val positionsFlow: Flow<Position>
         get() = _positionsFlow
+
+    /**
+     * Emits 1 position when a new camera update is ready.
+     */
     override val cameraPositionsFlow: Flow<Position>
         get() = _cameraPositionsFlow
 
