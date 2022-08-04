@@ -51,7 +51,9 @@ The `CoreLocationAnimator` class takes the following configuration options:
 
 - `intentionalAnimationDelayInMilliseconds` - A constant delay added to the animation duration. This helps to smooth out movement when a location update is received later than expected due to network latency.
   The higher value the less realtime the animation becomes.
-- `animationStepsBetweenCameraUpdates` - How often should the camera updates be sent. Setting a higher value might improve UX but if it's too big it can lead to map marker moving out of the screen.
+- `animationStepsBetweenCameraUpdates` - How many map marker steps need to be animated before a camera update is sent.
+  One step is created for each location from a location update, so this can be thought of as amount of locations between camera updates.
+  Setting a higher value might improve UX but, if set too high, may cause the map marker to move out of the screen.
 
 ```kotlin
 val locationAnimator: LocationAnimator = CoreLocationAnimator(
