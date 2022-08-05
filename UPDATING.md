@@ -6,26 +6,6 @@
 
 Update the versions of Ably Asset Tracking dependency (or dependencies) you're using to `1.1.0-rc.7`.
 
-### Use the Mapbox snapshot repository
-
-In Ably Asset Tracking version 1.1.0 we are using a special version of the navigation profile which requires us to use the Mapbox snapshot repository. In order to do that you need to add this repository in you `build.gradle` file (preferably next to the main Mapbox repository declaration):
-
-```groovy
-repositories {
-    // Mapbox Snapshot repository required to get the new asset tracking navigation profile.
-    maven {
-        url 'https://api.mapbox.com/downloads/v2/snapshots/maven'
-        authentication {
-            basic(BasicAuthentication)
-        }
-        credentials {
-            username = 'mapbox'
-            password = property('MAPBOX_DOWNLOADS_TOKEN')
-        }
-    }
-}
-```
-
 ### Publisher builder adjustments
 
 It is not required, but highly advisable, to turn off the location predictions for the publisher. This can be done through the publisher builder by calling `predictions(false)`.
