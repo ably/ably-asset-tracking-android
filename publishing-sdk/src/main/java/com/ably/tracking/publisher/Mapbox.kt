@@ -228,7 +228,7 @@ internal class DefaultMapbox(
             }
         }
 
-        // We were instructed to use this method by the Mapbox team
+        // Explanation from the Mapbox team: "By disabling this setting we strive for predictability and stability"
         InternalUtils.setUnconditionalPollingPatience(Long.MAX_VALUE)
 
         if (!predictionsEnabled) {
