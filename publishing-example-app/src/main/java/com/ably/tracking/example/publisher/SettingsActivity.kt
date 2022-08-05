@@ -22,6 +22,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         addPreferencesFromResource(R.xml.settings_preferences)
         setupLocationSourcePreference()
         setupRoutingProfilePreference()
+        setupVehicleProfilePreference()
         setupDefaultResolutionPreferences()
         setupConstantLocationEngineResolutionPreferences()
         loadS3Preferences()
@@ -78,6 +79,17 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 .toTypedArray()
             entryValues = RoutingProfileType.values().map { it.name }.toTypedArray()
             value = appPreferences.getRoutingProfile().name
+        }
+    }
+
+    private fun setupVehicleProfilePreference() {
+        val appPreferences = AppPreferences.getInstance(requireContext())
+        (findPreference(getString(R.string.preferences_vehicle_profile_key)) as ListPreference?)?.apply {
+            entries = VehicleProfileType.values()
+                .map { getString(it.displayNameResourceId) }
+                .toTypedArray()
+            entryValues = VehicleProfileType.values().map { it.name }.toTypedArray()
+            value = appPreferences.getVehicleProfile().name
         }
     }
 

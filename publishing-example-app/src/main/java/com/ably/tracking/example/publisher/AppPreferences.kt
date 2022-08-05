@@ -26,6 +26,7 @@ class AppPreferences private constructor(context: Context) {
         context.getString(R.string.preferences_simulation_channel_name_key)
     private val S3_FILE_KEY = context.getString(R.string.preferences_s3_file_key)
     private val ROUTING_PROFILE_KEY = context.getString(R.string.preferences_routing_profile_key)
+    private val VEHICLE_PROFILE_KEY = context.getString(R.string.preferences_vehicle_profile_key)
     private val RESOLUTION_ACCURACY_KEY = context.getString(R.string.preferences_resolution_accuracy_key)
     private val RESOLUTION_DESIRED_INTERVAL_KEY =
         context.getString(R.string.preferences_resolution_desired_interval_key)
@@ -46,6 +47,7 @@ class AppPreferences private constructor(context: Context) {
     private val DEFAULT_SIMULATION_CHANNEL = context.getString(R.string.default_simulation_channel)
     private val DEFAULT_S3_FILE = ""
     private val DEFAULT_ROUTING_PROFILE = RoutingProfileType.DRIVING.name
+    private val DEFAULT_VEHICLE_PROFILE = VehicleProfileType.CAR.name
     private val DEFAULT_RESULTION_ACCURACY = Accuracy.BALANCED.name
     private val DEFAULT_RESULTION_DESIRED_INTERVAL = 1000L
     private val DEFAULT_RESULTION_MINIMUM_DISPLACEMENT = 1.0f
@@ -65,6 +67,9 @@ class AppPreferences private constructor(context: Context) {
 
     fun getRoutingProfile(): RoutingProfileType =
         RoutingProfileType.valueOf(preferences.getString(ROUTING_PROFILE_KEY, DEFAULT_ROUTING_PROFILE)!!)
+
+    fun getVehicleProfile(): VehicleProfileType =
+        VehicleProfileType.valueOf(preferences.getString(VEHICLE_PROFILE_KEY, DEFAULT_VEHICLE_PROFILE)!!)
 
     fun getResolutionAccuracy(): Accuracy =
         preferences.getString(RESOLUTION_ACCURACY_KEY, DEFAULT_RESULTION_ACCURACY)!!.let { Accuracy.valueOf(it) }

@@ -14,5 +14,6 @@
   <string name="preferences_constant_resolution_accuracy_key" translatable="false">constant_resolution_accuracy</string>
   <string name="preferences_constant_resolution_desired_interval_key" translatable="false">constant_resolution_desired_interval</string>
   <string name="preferences_constant_resolution_minimum_displacement_key" translatable="false">constant_resolution_minimum_displacement</string>
+  <string name="preferences_vehicle_profile_key" translatable="false">vehicle_profile</string>
 </resources>
 
