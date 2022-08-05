@@ -131,6 +131,9 @@ dependencies {
 
     // Subscribers, developing in Kotlin, will need the Subscribing SDK
     implementation 'com.ably.tracking:subscribing-sdk:1.1.0'
+
+    // Subscribers, developing in Kotlin, can optionally use the UI utilities
+    implementation 'com.ably.tracking:ui-sdk:1.1.0'
 }
 ```
 
@@ -219,6 +222,12 @@ try {
 }
 ```
 
+### UI utilities
+
+#### Location Animator
+
+The Location Animator helps to achieve smooth trackable animations on the subscriber side. For more information see our [updating guide](UPDATING.md#Animation module).
+
 ## Resolution Policies
 
 In order to provide application developers with flexibility when it comes to choosing their own balance between higher frequency of updates and optimal battery usage, we provide several ways for them to define the logic used to determine the frequency of updates:
@@ -256,6 +265,10 @@ Please see `DefaultResolutionPolicy` [implementation](publishing-sdk/src/main/ja
 ### Resources
 
 Visit the [Ably Asset Tracking](https://ably.com/docs/asset-tracking) documentation for a complete API reference and code examples.
+
+#### Upgrade / Migration Guide
+
+Please see our [Upgrade / Migration Guide](UPDATING.md) for notes on changes you need to make to your code to update it to use new APIs.
 
 #### Useful links
 
