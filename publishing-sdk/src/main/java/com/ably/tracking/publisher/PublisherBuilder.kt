@@ -25,6 +25,7 @@ internal data class PublisherBuilder(
     val predictionsEnabled: Boolean = true,
     val rawHistoryCallback: ((String) -> Unit)? = null,
     val constantLocationEngineResolution: Resolution? = null,
+    val vehicleProfile: VehicleProfile = VehicleProfile.CAR,
 ) : Publisher.Builder {
 
     override fun connection(configuration: ConnectionConfiguration): Publisher.Builder =
@@ -69,6 +70,9 @@ internal data class PublisherBuilder(
     override fun constantLocationEngineResolution(resolution: Resolution?): Publisher.Builder =
         this.copy(constantLocationEngineResolution = resolution)
 
+    override fun vehicleProfile(profile: VehicleProfile): Publisher.Builder =
+        this.copy(vehicleProfile = profile)
+
     @RequiresPermission(anyOf = [ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION])
     override fun start(): Publisher {
         if (isMissingRequiredFields()) {
@@ -88,6 +92,7 @@ internal data class PublisherBuilder(
                 predictionsEnabled,
                 rawHistoryCallback,
                 constantLocationEngineResolution,
+                vehicleProfile,
             ),
             resolutionPolicyFactory!!,
             routingProfile,

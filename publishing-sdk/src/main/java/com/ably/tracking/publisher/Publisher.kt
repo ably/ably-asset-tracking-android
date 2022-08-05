@@ -261,6 +261,15 @@ interface Publisher {
         fun constantLocationEngineResolution(resolution: Resolution?): Builder
 
         /**
+         * **OPTIONAL** Set the type of vehicle being used by the publisher user.
+         * If not set then the default value is [VehicleProfile.CAR].
+         *
+         * @param profile The type of vehicle.
+         * @return A new instance of the builder with this property changed.
+         */
+        fun vehicleProfile(profile: VehicleProfile): Builder
+
+        /**
          * Creates a [Publisher] and starts publishing.
          *
          * The returned publisher instance does not start in a state whereby it is actively tracking anything. If

@@ -53,6 +53,7 @@ class MapboxTests {
             true,
             null,
             null,
+            VehicleProfile.CAR,
         )
 
     private fun getLocationData(context: Context): LocationHistoryData {
