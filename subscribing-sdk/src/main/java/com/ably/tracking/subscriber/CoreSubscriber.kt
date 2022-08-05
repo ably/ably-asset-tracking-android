@@ -144,8 +144,8 @@ private class DefaultCoreSubscriber(
                     }
                     is ConnectionReadyEvent -> {
                         subscribeForChannelState()
-                        subscribeForEnhancedEvents()
-                        subscribeForRawEvents()
+                        subscribeForEnhancedEvents(properties.presenceData)
+                        subscribeForRawEvents(properties.presenceData)
                         event.callbackFunction(Result.success(Unit))
                     }
                     is PresenceMessageEvent -> {
@@ -223,14 +223,14 @@ private class DefaultCoreSubscriber(
         }
     }
 
-    private fun subscribeForEnhancedEvents() {
-        ably.subscribeForEnhancedEvents(trackableId) {
+    private fun subscribeForEnhancedEvents(presenceData: PresenceData) {
+        ably.subscribeForEnhancedEvents(trackableId, presenceData) {
             scope.launch { _enhancedLocations.emit(it) }
         }
     }
 
-    private fun subscribeForRawEvents() {
-        ably.subscribeForRawEvents(trackableId) {
+    private fun subscribeForRawEvents(presenceData: PresenceData) {
+        ably.subscribeForRawEvents(trackableId, presenceData) {
             scope.launch { _rawLocations.emit(it) }
         }
     }
