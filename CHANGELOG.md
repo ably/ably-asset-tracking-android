@@ -1,5 +1,32 @@
 # Change log
 
+## [1.1.0](https://github.com/ably/ably-asset-tracking-android/tree/v1.1.0)
+
+Version 1.1 of the Ably Asset Tracking SDKs for Android brings changes to both the publishing and subscribing SDKs,
+and their corresponding example apps, that make the subscriber's marker animate much more smoothly.
+
+[Full Changelog from version 1.1.0 RC 7 (last pre-release)](https://github.com/ably/ably-asset-tracking-android/compare/v1.1.0-rc.7...v1.1.0)
+
+[Full Changelog from version 1.0.0 (last release)](https://github.com/ably/ably-asset-tracking-android/compare/v1.0.0...v1.1.0)
+
+**Implemented enhancements:**
+
+- Allow to enable and disable the cycling profile [\#726](https://github.com/ably/ably-asset-tracking-android/issues/726)
+
+**Fixed bugs:**
+
+- Validate messages received from Ably [\#691](https://github.com/ably/ably-asset-tracking-android/issues/691)
+- Publisher service notification disappearing after stopping the publisher [\#528](https://github.com/ably/ably-asset-tracking-android/issues/528)
+
+**Closed issues:**
+
+- Add option to enable or disable the cycling profile in the publisher example app [\#728](https://github.com/ably/ably-asset-tracking-android/issues/728)
+
+**Merged pull requests:**
+
+- Upgrade Mapbox Nav SDK to 2.7.0 [\#727](https://github.com/ably/ably-asset-tracking-android/pull/727) ([KacperKluka](https://github.com/KacperKluka))
+- Add documentation about location animator flows [\#725](https://github.com/ably/ably-asset-tracking-android/pull/725) ([KacperKluka](https://github.com/KacperKluka))
+
 ## [1.1.0-rc.7](https://github.com/ably/ably-asset-tracking-android/tree/v1.1.0-rc.7)
 
 Version 1.1 of the Ably Asset Tracking SDKs for Android brings changes to both the publishing and subscribing SDKs,
