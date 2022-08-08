@@ -5,7 +5,9 @@
 Version 1.1 of the Ably Asset Tracking SDKs for Android brings changes to both the publishing and subscribing SDKs,
 and their corresponding example apps, that make the subscriber's marker animate much more smoothly.
 
-[Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.1.0-rc.7...v1.1.0)
+[Full Changelog from version 1.1.0 RC 7 (last pre-release)](https://github.com/ably/ably-asset-tracking-android/compare/v1.1.0-rc.7...v1.1.0)
+
+[Full Changelog from version 1.0.0 (last release)](https://github.com/ably/ably-asset-tracking-android/compare/v1.0.0...v1.1.0)
 
 **Implemented enhancements:**
 

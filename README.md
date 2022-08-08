@@ -268,7 +268,7 @@ Visit the [Ably Asset Tracking](https://ably.com/docs/asset-tracking) documentat
 
 #### Upgrade / Migration Guide
 
-Please see our [Upgrade / Migration Guide](UPDATING.md) for notes on changes you need to make to your code to update it to use new APIs.
+Please see our [Upgrade / Migration Guide](UPDATING.md) for notes on changes you need to make to your code to update it to use the latest version of these SDKs.
 
 #### Useful links
 
