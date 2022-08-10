@@ -230,15 +230,6 @@ interface Publisher {
         fun sendResolution(enabled: Boolean): Builder
 
         /**
-         * **OPTIONAL** Enables using predictions for enhanced location updates.
-         * By default this is enabled.
-         *
-         * @param enabled Whether the predictions for enhanced locations are enabled.
-         * @return A new instance of the builder with this property changed.
-         */
-        fun predictions(enabled: Boolean): Builder
-
-        /**
          * EXPERIMENTAL API
          * **OPTIONAL** Specifies a callback that will be called with the filepath of raw history data from the Navigation SDK component.
          * This will be probably removed in the future. Do not use this in the production environment.

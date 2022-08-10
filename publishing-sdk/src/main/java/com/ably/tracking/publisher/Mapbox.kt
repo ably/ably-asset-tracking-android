@@ -191,7 +191,6 @@ internal class DefaultMapbox(
     private val logHandler: LogHandler?,
     private val notificationProvider: PublisherNotificationProvider,
     private val notificationId: Int,
-    predictionsEnabled: Boolean,
     private val rawHistoryCallback: ((String) -> Unit)?,
     constantLocationEngineResolution: Resolution?,
     vehicleProfile: VehicleProfile,
@@ -214,6 +213,7 @@ internal class DefaultMapbox(
         setupTripNotification(notificationProvider, notificationId)
         val mapboxBuilder = NavigationOptions.Builder(context).accessToken(mapConfiguration.apiKey)
             .deviceProfile(createDeviceProfile(vehicleProfile))
+            .navigatorPredictionMillis(0L) // Setting this to 0 disables location predictions
             .locationEngine(getBestLocationEngine(context, logHandler))
         locationSource?.let {
             when (it) {
@@ -230,10 +230,6 @@ internal class DefaultMapbox(
 
         // Explanation from the Mapbox team: "By disabling this setting we strive for predictability and stability"
         InternalUtils.setUnconditionalPollingPatience(Long.MAX_VALUE)
-
-        if (!predictionsEnabled) {
-            mapboxBuilder.navigatorPredictionMillis(0L) // Setting this to 0 disables location predictions
-        }
 
         if (constantLocationEngineResolution != null) {
             mapboxBuilder.locationEngineRequest(constantLocationEngineResolution.toLocationEngineRequest())
