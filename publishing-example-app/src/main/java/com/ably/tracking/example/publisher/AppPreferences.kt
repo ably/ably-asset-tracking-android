@@ -34,7 +34,6 @@ class AppPreferences private constructor(context: Context) {
         context.getString(R.string.preferences_resolution_minimum_displacement_key)
     private val SEND_RAW_LOCATIONS_KEY = context.getString(R.string.preferences_send_raw_locations_key)
     private val SEND_RESOLUTION_KEY = context.getString(R.string.preferences_send_resolution_key)
-    private val ENABLE_PREDICTIONS_KEY = context.getString(R.string.preferences_send_resolution_key)
     private val ENABLE_CONSTANT_LOCATION_ENGINE_RESOLUTION_KEY =
         context.getString(R.string.preferences_enable_constant_resolution_key)
     private val CONSTANT_RESOLUTION_ACCURACY_KEY =
@@ -53,7 +52,6 @@ class AppPreferences private constructor(context: Context) {
     private val DEFAULT_RESULTION_MINIMUM_DISPLACEMENT = 1.0f
     private val DEFAULT_SEND_RAW_LOCATIONS = false
     private val DEFAULT_SEND_RESOLUTION = true
-    private val DEFAULT_ENABLE_PREDICTIONS = true
     private val DEFAULT_ENABLE_CONSTANT_LOCATION_ENGINE_RESOLUTION = false
 
     fun getLocationSource(): LocationSourceType =
@@ -87,9 +85,6 @@ class AppPreferences private constructor(context: Context) {
 
     fun shouldSendResolution() =
         preferences.getBoolean(SEND_RESOLUTION_KEY, DEFAULT_SEND_RESOLUTION)
-
-    fun shouldEnablePredictions() =
-        preferences.getBoolean(ENABLE_PREDICTIONS_KEY, DEFAULT_ENABLE_PREDICTIONS)
 
     fun isConstantLocationEngineResolutionEnabled() = preferences.getBoolean(
         ENABLE_CONSTANT_LOCATION_ENGINE_RESOLUTION_KEY,

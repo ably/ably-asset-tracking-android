@@ -123,12 +123,6 @@
       android:layout="@layout/switch_preference_layout"
       android:title="@string/preferences_send_resolution_label" />
 
-    <SwitchPreferenceCompat
-      android:defaultValue="true"
-      android:key="@string/preferences_enable_predictions_key"
-      android:layout="@layout/switch_preference_layout"
-      android:title="@string/preferences_enable_predictions_label" />
-
   </PreferenceCategory>
 
 </PreferenceScreen>

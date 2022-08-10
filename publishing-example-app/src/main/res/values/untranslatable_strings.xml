@@ -9,7 +9,6 @@
   <string name="preferences_resolution_minimum_displacement_key" translatable="false">default_resolution_minimum_displacement</string>
   <string name="preferences_send_raw_locations_key" translatable="false">send_raw_locations</string>
   <string name="preferences_send_resolution_key" translatable="false">send_resolution</string>
-  <string name="preferences_enable_predictions_key" translatable="false">enable_predictions</string>
   <string name="preferences_enable_constant_resolution_key" translatable="false">enable_constant_resolution</string>
   <string name="preferences_constant_resolution_accuracy_key" translatable="false">constant_resolution_accuracy</string>
   <string name="preferences_constant_resolution_desired_interval_key" translatable="false">constant_resolution_desired_interval</string>
