@@ -75,7 +75,9 @@ class MainActivity : AppCompatActivity() {
     private var resolution: Resolution =
         Resolution(Accuracy.MAXIMUM, desiredInterval = 1000L, minimumDisplacement = 1.0)
     private var locationUpdateIntervalInMilliseconds = resolution.desiredInterval
-    private val enhancedLocationAnimator: LocationAnimator = CoreLocationAnimator()
+    private val enhancedLocationAnimator: LocationAnimator = CoreLocationAnimator(
+        animationStepsBetweenCameraUpdates = 5,
+    )
     private val rawLocationAnimator: LocationAnimator = CoreLocationAnimator()
     private val animationOptionsManager = AnimationOptionsManager()
 
