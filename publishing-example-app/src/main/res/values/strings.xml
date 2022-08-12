@@ -50,7 +50,6 @@
   <string name="preferences_debug_category_title">Debug</string>
   <string name="preferences_send_raw_locations_label">Send raw location updates</string>
   <string name="preferences_send_resolution_label">Send resolution</string>
-  <string name="preferences_enable_predictions_label">Enable predictions</string>
   <string name="preferences_enable_constant_resolution_label">Use constant location engine resolution</string>
   <string name="trackable_list_empty_state_header">No assets</string>
   <string name="trackable_list_empty_state_message">Trackable assets will be listed here when added</string>

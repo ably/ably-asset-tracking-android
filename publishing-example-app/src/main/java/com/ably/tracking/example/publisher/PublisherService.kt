@@ -119,7 +119,6 @@ class PublisherService : Service() {
             )
             .rawLocations(appPreferences.shouldSendRawLocations())
             .sendResolution(appPreferences.shouldSendResolution())
-            .predictions(appPreferences.shouldEnablePredictions())
             .constantLocationEngineResolution(createConstantLocationEngineResolution())
             .vehicleProfile(appPreferences.getVehicleProfile().toAssetTracking())
             .start()

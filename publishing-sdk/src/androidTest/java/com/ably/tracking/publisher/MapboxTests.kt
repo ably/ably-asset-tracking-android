@@ -50,7 +50,6 @@ class MapboxTests {
                         .build()
             },
             12345,
-            true,
             null,
             null,
             VehicleProfile.CAR,
