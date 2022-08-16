@@ -1,5 +1,16 @@
 # Upgrade / Migration Guide
 
+## Version 1.1.0 to 1.1.1
+
+### Update the Ably Asset Tracking dependency
+
+Update the versions of Ably Asset Tracking dependency (or dependencies) you're using to `1.1.1`.
+
+### Publisher builder adjustments
+
+Because AAT works best when the predictions are disabled we decided to remove the option to enable predictions.
+Since this version the predictions are always disabled and the method `predictions()` was removed from the publisher builder.
+
 ## Version 1.0.0 to 1.1.0
 
 ### Update the Ably Asset Tracking dependency
