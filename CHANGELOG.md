@@ -1,5 +1,18 @@
 # Change log
 
+## [1.1.1](https://github.com/ably/ably-asset-tracking-android/tree/v1.1.1)
+
+[Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.1.0...v1.1.1)
+
+**Fixed bugs:**
+
+- Bad location updates when predictions are enabled [\#734](https://github.com/ably/ably-asset-tracking-android/issues/734)
+
+**Merged pull requests:**
+
+- Update camera less frequently in the subscriber example app [\#737](https://github.com/ably/ably-asset-tracking-android/pull/737) ([KacperKluka](https://github.com/KacperKluka))
+- Always disable the predictions mechanism [\#733](https://github.com/ably/ably-asset-tracking-android/pull/733) ([KacperKluka](https://github.com/KacperKluka))
+
 ## [1.1.0](https://github.com/ably/ably-asset-tracking-android/tree/v1.1.0)
 
 Version 1.1 of the Ably Asset Tracking SDKs for Android brings changes to both the publishing and subscribing SDKs,

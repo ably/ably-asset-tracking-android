@@ -127,13 +127,13 @@ you can then add the Ably Asset Tracking dependency that you require in your Gra
 ```groovy
 dependencies {
     // Publishers, developing in Kotlin, will need the Publishing SDK
-    implementation 'com.ably.tracking:publishing-sdk:1.1.0'
+    implementation 'com.ably.tracking:publishing-sdk:1.1.1'
 
     // Subscribers, developing in Kotlin, will need the Subscribing SDK
-    implementation 'com.ably.tracking:subscribing-sdk:1.1.0'
+    implementation 'com.ably.tracking:subscribing-sdk:1.1.1'
 
     // Subscribers, developing in Kotlin, can optionally use the UI utilities
-    implementation 'com.ably.tracking:ui-sdk:1.1.0'
+    implementation 'com.ably.tracking:ui-sdk:1.1.1'
 }
 ```
 
