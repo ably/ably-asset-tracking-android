@@ -1,5 +1,22 @@
 # Upgrade / Migration Guide
 
+## Version 1.1.1 to 1.2.0
+
+### Update the Ably Asset Tracking dependency
+
+Update the versions of Ably Asset Tracking dependency (or dependencies) you're using to `1.2.0`.
+
+### Connection configuration enhancements
+
+The option to specify a non-default Ably environment such as 'sandbox' was added to the `ConnectionConfiguration`.
+
+```kotlin
+ConnectionConfiguration(
+    authentication = Authentication.basic(CLIENT_ID, ABLY_API_KEY),
+    environment = "custom-environment",
+)
+```
+
 ## Version 1.1.0 to 1.1.1
 
 ### Update the Ably Asset Tracking dependency
