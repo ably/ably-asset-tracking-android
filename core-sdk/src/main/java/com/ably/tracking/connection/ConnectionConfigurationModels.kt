@@ -9,7 +9,8 @@ data class ConnectionConfiguration(
      */
     val authentication: Authentication,
     /**
-     * For development environments only; allows a non-default Ably environment to be used such as 'sandbox'.
+     * For development or non-default production environments.
+     * Allows a non-default Ably environment to be used such as 'sandbox'.
      */
     val environment: String? = null,
 )
