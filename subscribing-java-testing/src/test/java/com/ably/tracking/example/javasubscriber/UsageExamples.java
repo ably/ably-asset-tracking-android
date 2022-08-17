@@ -1,26 +1,23 @@
 package com.ably.tracking.example.javasubscriber;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.RETURNS_SELF;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.withSettings;
+
 import com.ably.tracking.Accuracy;
 import com.ably.tracking.Resolution;
 import com.ably.tracking.connection.Authentication;
 import com.ably.tracking.connection.ConnectionConfiguration;
-import com.ably.tracking.connection.TokenRequest;
 import com.ably.tracking.subscriber.Subscriber;
 import com.ably.tracking.subscriber.java.SubscriberFacade;
 
-import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.RETURNS_SELF;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.withSettings;
 
 public class UsageExamples {
     SubscriberFacade subscriberFacade;
@@ -42,7 +39,7 @@ public class UsageExamples {
     @Test
     public void subscriberBuilderUsageExample() {
         Subscriber.Builder nativeBuilder = Subscriber.subscribers()
-            .connection(new ConnectionConfiguration(Authentication.basic("CLIENT_ID", "API_KEY")))
+            .connection(new ConnectionConfiguration(Authentication.basic("CLIENT_ID", "API_KEY"), null))
             .trackingId("TRACKING_ID")
             .resolution(new Resolution(Accuracy.BALANCED, 1000L, 1.0));
         SubscriberFacade.Builder wrappedSubscriberBuilder = SubscriberFacade.Builder.wrap(nativeBuilder);

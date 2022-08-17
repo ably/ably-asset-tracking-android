@@ -1,6 +1,18 @@
 package com.ably.tracking.connection
 
-data class ConnectionConfiguration(val authentication: Authentication)
+/**
+ * Specifies the configuration for the Ably connection.
+ */
+data class ConnectionConfiguration(
+    /**
+     * The method of authentication; supported methods: basic, token request, jwt.
+     */
+    val authentication: Authentication,
+    /**
+     * For development environments only; allows a non-default Ably environment to be used such as 'sandbox'.
+     */
+    val environment: String? = null,
+)
 
 typealias TokenRequestCallback = suspend (TokenParams) -> TokenRequest
 typealias JwtCallback = suspend (TokenParams) -> String
