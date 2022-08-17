@@ -1,5 +1,13 @@
 # Change log
 
+## [1.2.0](https://github.com/ably/ably-asset-tracking-android/tree/v1.2.0)
+
+[Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.1.1...v1.2.0)
+
+**Implemented enhancements:**
+
+- Add support for the "environment" Ably client option [\#739](https://github.com/ably/ably-asset-tracking-android/issues/739)
+
 ## [1.1.1](https://github.com/ably/ably-asset-tracking-android/tree/v1.1.1)
 
 [Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.1.0...v1.1.1)
