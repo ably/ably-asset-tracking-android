@@ -209,7 +209,7 @@ fun io.ably.lib.types.PresenceMessage.getPresenceData(gson: Gson): PresenceData?
 private fun TokenAuthException.toAblyException(): AblyException =
     when (this) {
         is TokenAuthForbiddenException ->
-            AblyException.fromErrorInfo(ErrorInfo("Auth flow failed and should not be retried", 403, 100_000))
+            AblyException.fromErrorInfo(ErrorInfo(message, 403, 100_000))
         is NoTokenException ->
-            AblyException.fromErrorInfo(ErrorInfo("Auth flow failed but will be retried", 100_000))
+            AblyException.fromErrorInfo(ErrorInfo(message, 401, 100_000))
     }
