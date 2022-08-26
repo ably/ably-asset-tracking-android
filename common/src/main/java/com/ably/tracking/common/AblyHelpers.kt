@@ -3,8 +3,8 @@ package com.ably.tracking.common
 import com.ably.tracking.ConnectionException
 import com.ably.tracking.ErrorInformation
 import com.ably.tracking.TokenAuthException
-import com.ably.tracking.TokenAuthNoRetryException
-import com.ably.tracking.TokenAuthRetryException
+import com.ably.tracking.TokenAuthForbiddenException
+import com.ably.tracking.NoTokenException
 import com.ably.tracking.common.message.PresenceDataMessage
 import com.ably.tracking.common.message.toTracking
 import com.ably.tracking.connection.Authentication
@@ -208,8 +208,8 @@ fun io.ably.lib.types.PresenceMessage.getPresenceData(gson: Gson): PresenceData?
  */
 private fun TokenAuthException.toAblyException(): AblyException =
     when (this) {
-        is TokenAuthNoRetryException ->
+        is TokenAuthForbiddenException ->
             AblyException.fromErrorInfo(ErrorInfo("Auth flow failed and should not be retried", 403, 100_000))
-        is TokenAuthRetryException ->
+        is NoTokenException ->
             AblyException.fromErrorInfo(ErrorInfo("Auth flow failed but will be retried", 100_000))
     }
