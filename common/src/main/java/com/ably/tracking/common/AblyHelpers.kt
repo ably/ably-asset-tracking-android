@@ -3,7 +3,7 @@ package com.ably.tracking.common
 import com.ably.tracking.ConnectionException
 import com.ably.tracking.ErrorInformation
 import com.ably.tracking.TokenAuthException
-import com.ably.tracking.TokenAuthForbiddenException
+import com.ably.tracking.TokenAuthNonRetriableException
 import com.ably.tracking.NoTokenException
 import com.ably.tracking.common.message.PresenceDataMessage
 import com.ably.tracking.common.message.toTracking
@@ -208,7 +208,7 @@ fun io.ably.lib.types.PresenceMessage.getPresenceData(gson: Gson): PresenceData?
  */
 private fun TokenAuthException.toAblyException(): AblyException =
     when (this) {
-        is TokenAuthForbiddenException ->
+        is TokenAuthNonRetriableException ->
             AblyException.fromErrorInfo(ErrorInfo(message, 403, 100_000))
         is NoTokenException ->
             AblyException.fromErrorInfo(ErrorInfo(message, 401, 100_000))

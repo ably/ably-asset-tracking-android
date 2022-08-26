@@ -20,4 +20,4 @@ class NoTokenException(message: String) : TokenAuthException(message)
  * This exception should be thrown when there's an error during the token auth flow.
  * When it is thrown the SDK will not retry the auth flow automatically.
  */
-class TokenAuthForbiddenException(message: String) : TokenAuthException(message)
+class TokenAuthNonRetriableException(message: String) : TokenAuthException(message)
