@@ -290,6 +290,40 @@ We also provide support for applications written in Java, however the requiremen
 - require Java 1.8 or later
 - require a minimum of Android API Level 24 at runtime
 
+## Known Limitations
+
+### Using AAT together with Mapbox Navigation SDK
+
+There are some limitations when you want to use both AAT SDK and Mapbox Navigation SDK in the same project.
+
+Firstly, you have to exclude the notification module from Mapbox Navigation SDK dependency in your `build.gradle` file.
+
+```groovy
+// The Ably Asset Tracking Publisher SDK for Android.
+implementation ('com.ably.tracking:publishing-sdk:1.2.0')
+
+// The Mapbox Navigation SDK.
+implementation ('com.mapbox.navigation:android:2.7.0') {
+    exclude group: "com.mapbox.navigation", module: "notification"
+}
+```
+
+Secondly, you have to use AAT's `MapboxNavigation` configuration and make sure that a publisher is started before you try to use the Mapbox Navigation.
+As there can only be one `MapboxNavigation` instance per application, instead of creating a new instance you have to use the `MapboxNavigationProvider` to retrieve the instance created by AAT.
+
+```kotlin
+// Start a publisher before accessing Mapbox Navigation SDK
+val publisher = Publisher.publishers()
+    // add publisher configuration
+    .start()
+
+// Retrieve the instance created by the publisher
+val mapboxNavigation = MapboxNavigationProvider.retrieve()
+```
+
+Because there is only one `MapboxNavigation` instance, both your app and AAT will use the same object. This means that there can be possible conflicts in usage that can lead to unexpected behaviour.
+Therefore, we do not advise using AAT in applications that already use Mapbox Navigation SDK.
+
 ## Contributing
 
 For guidance on how to contribute to this project, see [CONTRIBUTING.md](CONTRIBUTING.md).
