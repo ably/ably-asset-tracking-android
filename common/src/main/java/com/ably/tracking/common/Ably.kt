@@ -751,6 +751,9 @@ constructor(
         try {
             withTimeout(timeoutInMilliseconds) {
                 suspendCancellableCoroutine<Unit> { continuation ->
+                    if (channel.state == ChannelState.attached) {
+                        continuation.resume(Unit)
+                    }
                     channel.on { channelStateChange ->
                         if (channelStateChange.current == ChannelState.attached) {
                             continuation.resume(Unit)
