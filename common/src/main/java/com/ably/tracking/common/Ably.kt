@@ -751,11 +751,11 @@ constructor(
         try {
             withTimeout(timeoutInMilliseconds) {
                 suspendCancellableCoroutine<Unit> { continuation ->
-                    if (channel.state == ChannelState.attached) {
+                    if (channel.state.isConnected()) {
                         continuation.resume(Unit)
                     }
                     channel.on { channelStateChange ->
-                        if (channelStateChange.current == ChannelState.attached) {
+                        if (channelStateChange.current.isConnected()) {
                             continuation.resume(Unit)
                         }
                     }
@@ -765,6 +765,8 @@ constructor(
             throw ConnectionException(ErrorInformation("Timeout was thrown when waiting for channel to attach"))
         }
     }
+
+    private fun ChannelState.isConnected(): Boolean = this == ChannelState.attached
 
     private fun ConnectionException.isConnectionResumeException(): Boolean =
         errorInformation.let { it.message == "Connection resume failed" && it.code == 50000 && it.statusCode == 500 }
