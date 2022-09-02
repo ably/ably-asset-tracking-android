@@ -174,7 +174,7 @@ val publisher = Publisher.publishers() // get the Publisher builder in default s
     .backgroundTrackingNotificationProvider(
       object : PublisherNotificationProvider {
         override fun getNotification(): Notification {
-            // create the notification for location updates background service
+            // TODO: create the notification for location updates background service
         }
       },
       NOTIFICATION_ID
@@ -183,7 +183,7 @@ val publisher = Publisher.publishers() // get the Publisher builder in default s
     .profile(RoutingProfile.DRIVING) // provide mode of transportation for better location enhancements
     .logHandler(object : LogHandler {
         override fun logMessage(level: LogLevel, message: String, throwable: Throwable?) {
-          // log the message to internal or external loggers
+          // TODO: log the message to internal or external loggers
         }
       })
     .rawLocations(false) // send raw location updates to subscribers
@@ -226,7 +226,7 @@ val subscriber = Subscriber.subscribers() // Get an AssetSubscriber
     )
     .logHandler(object : LogHandler {
       override fun logMessage(level: LogLevel, message: String, throwable: Throwable?) {
-        // log the message to internal or external loggers
+        // TODO: log the message to internal or external loggers
       }
     })
     // Create and start the subscriber
