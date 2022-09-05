@@ -166,11 +166,32 @@ val defaultResolution = Resolution(Accuracy.BALANCED, desiredInterval = 1000L, m
 
 // Initialise and Start the Publisher
 val publisher = Publisher.publishers() // get the Publisher builder in default state
+    // Required configuration
     .connection(ConnectionConfiguration(Authentication.basic(CLIENT_ID, ABLY_API_KEY))) // provide Ably configuration with credentials
     .map(MapConfiguration(MAPBOX_ACCESS_TOKEN)) // provide Mapbox configuration with credentials
     .androidContext(this) // provide Android runtime context
     .resolutionPolicy(DefaultResolutionPolicyFactory(defaultResolution, this)) // provide either the default resolution policy factory or your custom implementation
+    .backgroundTrackingNotificationProvider(
+      object : PublisherNotificationProvider {
+        override fun getNotification(): Notification {
+            // TODO: create the notification for location updates background service
+        }
+      },
+      NOTIFICATION_ID
+    )
+    // Optional configuration
     .profile(RoutingProfile.DRIVING) // provide mode of transportation for better location enhancements
+    .logHandler(object : LogHandler {
+        override fun logMessage(level: LogLevel, message: String, throwable: Throwable?) {
+          // TODO: log the message to internal or external loggers
+        }
+      })
+    .rawLocations(false) // send raw location updates to subscribers
+    .sendResolution(true) // send calculated trackable network resolution to subscribers
+    .constantLocationEngineResolution(constantLocationEngineResolution) // provide a constant resolution for the GPS engine
+    .vehicleProfile(VehicleProfile.CAR) // provide vehicle type for better location enhancements
+    .locationSource(LocationSourceRaw.create(historyData)) // use an alternative location source for GPS locations
+    // Create and start the publisher
     .start()
 
 // Start tracking an asset
@@ -196,11 +217,19 @@ Here is an example of how Asset Subscribing SDK can be used:
 ```kotlin
 // Initialise and Start the Subscriber
 val subscriber = Subscriber.subscribers() // Get an AssetSubscriber
+    // Required configuration
     .connection(ConnectionConfiguration(Authentication.basic(CLIENT_ID, ABLY_API_KEY))) // provide Ably configuration with credentials
-    .resolution( // request a specific resolution to be considered by the publisher
-        Resolution(Accuracy.MAXIMUM, desiredInterval = 1000L, minimumDisplacement = 1.0)
-    )
     .trackingId(trackingId) // provide the tracking identifier for the asset that needs to be tracked
+    // Optional configuration
+    .resolution( // request a specific resolution to be considered by the publisher
+      Resolution(Accuracy.MAXIMUM, desiredInterval = 1000L, minimumDisplacement = 1.0)
+    )
+    .logHandler(object : LogHandler {
+      override fun logMessage(level: LogLevel, message: String, throwable: Throwable?) {
+        // TODO: log the message to internal or external loggers
+      }
+    })
+    // Create and start the subscriber
     .start() // start listening for updates
 
 // Listen for location updates
