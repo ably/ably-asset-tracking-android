@@ -745,14 +745,18 @@ constructor(
 
     /**
      * Waits for the [channel] to change to the [ChannelState.attached] state.
+     * If the [channel] state already is the [ChannelState.attached] state it does not wait and returns immediately.
      * If this doesn't happen during the next [timeoutInMilliseconds] milliseconds, then an exception is thrown.
      */
     private suspend fun waitForChannelReconnection(channel: Channel, timeoutInMilliseconds: Long = 10_000L) {
+        if (channel.state.isConnected()) {
+            return
+        }
         try {
             withTimeout(timeoutInMilliseconds) {
                 suspendCancellableCoroutine<Unit> { continuation ->
                     channel.on { channelStateChange ->
-                        if (channelStateChange.current == ChannelState.attached) {
+                        if (channelStateChange.current.isConnected()) {
                             continuation.resume(Unit)
                         }
                     }
@@ -762,6 +766,8 @@ constructor(
             throw ConnectionException(ErrorInformation("Timeout was thrown when waiting for channel to attach"))
         }
     }
+
+    private fun ChannelState.isConnected(): Boolean = this == ChannelState.attached
 
     private fun ConnectionException.isConnectionResumeException(): Boolean =
         errorInformation.let { it.message == "Connection resume failed" && it.code == 50000 && it.statusCode == 500 }
