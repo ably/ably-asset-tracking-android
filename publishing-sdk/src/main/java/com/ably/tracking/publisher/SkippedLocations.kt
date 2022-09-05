@@ -31,6 +31,17 @@ internal class SkippedLocations {
     }
 
     /**
+     * Adds locations from the [locations] list to the list of skipped locations for the specified trackable.
+     * If by adding a location the list exceeds its size limit, then the oldest location from the list is removed.
+     *
+     * @param trackableId The ID of the trackable.
+     * @param locations The list of locations that will be added to the skipped locations list.
+     */
+    fun addAll(trackableId: String, locations: List<Location>) {
+        locations.forEach { add(trackableId, it) }
+    }
+
+    /**
      * Returns the skipped locations list sorted by time for the specified trackable.
      * If no locations are added for a trackable then it returns an empty list.
      *

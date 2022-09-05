@@ -292,9 +292,11 @@ constructor(
                 properties.lastSentEnhancedLocations[trackableId],
                 properties.resolutions[trackableId]
             ) -> {
+                properties.skippedEnhancedLocations.addAll(trackableId, enhancedLocationUpdate.intermediateLocations)
                 sendEnhancedLocationUpdate(enhancedLocationUpdate, properties, trackableId)
             }
             else -> {
+                properties.skippedEnhancedLocations.addAll(trackableId, enhancedLocationUpdate.intermediateLocations)
                 saveEnhancedLocationForFurtherSending(properties, trackableId, enhancedLocationUpdate.location)
                 processNextWaitingEnhancedLocationUpdate(properties, trackableId)
             }
