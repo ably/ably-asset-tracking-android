@@ -4,6 +4,7 @@ import android.os.SystemClock
 import android.view.animation.LinearInterpolator
 import com.ably.tracking.Location
 import com.ably.tracking.LocationUpdate
+import kotlin.math.min
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -140,6 +141,7 @@ class CoreLocationAnimator(
             timeElapsedFromStartInMilliseconds = SystemClock.uptimeMillis() - startTimeInMillis
             timeProgressPercentage = timeElapsedFromStartInMilliseconds / animationStep.durationInMilliseconds.toFloat()
             distanceProgressPercentage = interpolator.getInterpolation(timeProgressPercentage)
+            distanceProgressPercentage = min(distanceProgressPercentage, 1f) // the progress should be 100% max
             _positionsFlow.emit(
                 interpolateLinear(distanceProgressPercentage, animationStep.startPosition, animationStep.endPosition)
             )
