@@ -3,6 +3,7 @@ package com.ably.tracking.example.subscriber
 import com.ably.tracking.Accuracy
 import com.ably.tracking.connection.Authentication
 import com.ably.tracking.Resolution
+import com.ably.tracking.annotations.Experimental
 import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.subscriber.Subscriber
 import kotlinx.coroutines.CoroutineScope
@@ -20,6 +21,7 @@ val ABLY_API_KEY = ""
 // The client ID for the Ably SDK instance.
 val CLIENT_ID = ""
 
+@OptIn(Experimental::class)
 fun exampleUsage(trackingId: String) {
     val scope = CoroutineScope(Dispatchers.Main)
     // EXAMPLE SNIPPET FROM HERE, WITH EXCESS INDENT REMOVED:
@@ -54,7 +56,11 @@ fun exampleUsage(trackingId: String) {
             // provide a function to be called when the asset changes online/offline status
         }
         .launchIn(scope)
-
+     subscriber.publisherPresence
+        .onEach {
+            // provide a function to be called when the publisher changes online/offline status
+        }
+        .launchIn(scope)
     // Request a different resolution when needed.
     scope.launch {
         try {
