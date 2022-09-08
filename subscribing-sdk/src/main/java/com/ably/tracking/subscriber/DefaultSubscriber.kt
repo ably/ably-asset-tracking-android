@@ -3,6 +3,7 @@ package com.ably.tracking.subscriber
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
+import com.ably.tracking.annotations.Experimental
 import com.ably.tracking.common.Ably
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -26,6 +27,7 @@ internal class DefaultSubscriber(
     override val trackableStates: StateFlow<TrackableState>
         get() = core.trackableStates
 
+    @Experimental
     override val publisherPresence: StateFlow<Boolean>
         get() = core.publisherPresence
 
