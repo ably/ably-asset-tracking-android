@@ -26,6 +26,9 @@ internal class DefaultSubscriber(
     override val trackableStates: StateFlow<TrackableState>
         get() = core.trackableStates
 
+    override val publisherPresence: StateFlow<Boolean>
+        get() = core.publisherPresence
+
     override val resolutions: SharedFlow<Resolution>
         get() = core.resolutions
 

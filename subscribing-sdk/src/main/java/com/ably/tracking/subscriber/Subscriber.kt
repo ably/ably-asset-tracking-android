@@ -64,6 +64,13 @@ interface Subscriber {
         @JvmSynthetic get
 
     /**
+     * The shared flow emitting values when the presence of the publisher changes.
+     * The publisher is present when the value is "true". If the value is "false" the publisher is not present.
+     */
+    val publisherPresence: StateFlow<Boolean>
+        @JvmSynthetic get
+
+    /**
      * The shared flow emitting resolution values when they become available.
      */
     val resolutions: SharedFlow<Resolution>
