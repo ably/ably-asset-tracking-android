@@ -252,6 +252,7 @@ try {
 ```
 
 ### Publisher presence
+
 Publisher presence is provided as an experimental API for subscribers which you can use to get information about
 whether the publisher is online or offline. This API is not yet stable and may change in the future.
 
@@ -264,9 +265,11 @@ android {
     }
 }
 ```
+
 Then you can annotate your element of the desired scope with ``@OptIn(Experimental::class)`` annotation.
 
 An example usage of the API is shown below:
+
 ```kotlin
 subscriber.publisherPresence
     .onEach { isOnline -> print(isOnline) } // provide a function to be called when the asset's presnec is changed
