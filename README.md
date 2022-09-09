@@ -127,13 +127,13 @@ you can then add the Ably Asset Tracking dependency that you require in your Gra
 ```groovy
 dependencies {
     // Publishers, developing in Kotlin, will need the Publishing SDK
-    implementation 'com.ably.tracking:publishing-sdk:1.2.1'
+    implementation 'com.ably.tracking:publishing-sdk:1.3.0'
 
     // Subscribers, developing in Kotlin, will need the Subscribing SDK
-    implementation 'com.ably.tracking:subscribing-sdk:1.2.1'
+    implementation 'com.ably.tracking:subscribing-sdk:1.3.0'
 
     // Subscribers, developing in Kotlin, can optionally use the UI utilities
-    implementation 'com.ably.tracking:ui-sdk:1.2.1'
+    implementation 'com.ably.tracking:ui-sdk:1.3.0'
 }
 ```
 
@@ -354,7 +354,7 @@ Firstly, you have to exclude the notification module from Mapbox Navigation SDK 
 
 ```groovy
 // The Ably Asset Tracking Publisher SDK for Android.
-implementation ('com.ably.tracking:publishing-sdk:1.2.1')
+implementation ('com.ably.tracking:publishing-sdk:1.3.0')
 
 // The Mapbox Navigation SDK.
 implementation ('com.mapbox.navigation:android:2.7.0') {
