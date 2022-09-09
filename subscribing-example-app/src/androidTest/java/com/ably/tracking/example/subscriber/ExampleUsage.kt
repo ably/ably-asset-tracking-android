@@ -56,7 +56,7 @@ fun exampleUsage(trackingId: String) {
             // provide a function to be called when the asset changes online/offline status
         }
         .launchIn(scope)
-     subscriber.publisherPresence
+    subscriber.publisherPresence
         .onEach {
             // provide a function to be called when the publisher changes online/offline status
         }

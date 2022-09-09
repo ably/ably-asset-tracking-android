@@ -292,16 +292,19 @@ class MainActivity : AppCompatActivity() {
 
     private fun updatePresenceState(trackableState: Boolean) {
         val textColorId = when (trackableState) {
-            true-> R.color.black
+            true -> R.color.black
             false -> R.color.mid_grey
         }
+
         val backgroundColorId = when (trackableState) {
             true -> R.color.asset_online
             false -> R.color.asset_offline
         }
+
         assetPresenceStateTextView.text = if (trackableState) "Presence: Online" else "Presence: Offline"
         assetPresenceStateTextView.setTextColor(ContextCompat.getColor(this, textColorId))
-        assetPresenceStateTextView.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this, backgroundColorId))
+        assetPresenceStateTextView.backgroundTintList =
+            ColorStateList.valueOf(ContextCompat.getColor(this, backgroundColorId))
     }
 
     private fun stopSubscribing() {
