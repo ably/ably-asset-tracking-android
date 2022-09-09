@@ -14,7 +14,6 @@ import androidx.transition.TransitionManager
 import com.ably.tracking.Accuracy
 import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
-import com.ably.tracking.annotations.Experimental
 import com.ably.tracking.connection.Authentication
 import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.logging.LogHandler
@@ -32,9 +31,22 @@ import com.google.android.gms.maps.model.CircleOptions
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
-import kotlinx.android.synthetic.main.activity_main.*
-import kotlinx.android.synthetic.main.asset_information_view.*
-import kotlinx.android.synthetic.main.trackable_input_controls_view.*
+import kotlinx.android.synthetic.main.activity_main.assetInformationContainer
+import kotlinx.android.synthetic.main.activity_main.draggingAreaView
+import kotlinx.android.synthetic.main.activity_main.mapFragmentContainerView
+import kotlinx.android.synthetic.main.activity_main.rootContainer
+import kotlinx.android.synthetic.main.asset_information_view.animationSettingsImageView
+import kotlinx.android.synthetic.main.asset_information_view.assetStateTextView
+import kotlinx.android.synthetic.main.asset_information_view.assetPresenceStateTextView
+import kotlinx.android.synthetic.main.asset_information_view.publisherResolutionAccuracyTextView
+import kotlinx.android.synthetic.main.asset_information_view.publisherResolutionDisplacementTextView
+import kotlinx.android.synthetic.main.asset_information_view.publisherResolutionIntervalTextView
+import kotlinx.android.synthetic.main.asset_information_view.resolutionAccuracyTextView
+import kotlinx.android.synthetic.main.asset_information_view.resolutionDisplacementTextView
+import kotlinx.android.synthetic.main.asset_information_view.resolutionIntervalTextView
+import kotlinx.android.synthetic.main.trackable_input_controls_view.progressIndicator
+import kotlinx.android.synthetic.main.trackable_input_controls_view.startButton
+import kotlinx.android.synthetic.main.trackable_input_controls_view.trackableIdEditText
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -42,6 +54,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import com.ably.tracking.annotations.Experimental
 
 // The client ID for the Ably SDK instance.
 private const val CLIENT_ID = "<INSERT_CLIENT_ID_HERE>"
@@ -290,18 +303,11 @@ class MainActivity : AppCompatActivity() {
         assetStateTextView.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this, backgroundColorId))
     }
 
-    private fun updatePresenceState(trackableState: Boolean) {
-        val textColorId = when (trackableState) {
-            true -> R.color.black
-            false -> R.color.mid_grey
-        }
+    private fun updatePresenceState(isPresent: Boolean) {
+        val textColorId = if (isPresent) R.color.black else R.color.mid_grey
+        val backgroundColorId = if (isPresent) R.color.asset_online else R.color.asset_offline
 
-        val backgroundColorId = when (trackableState) {
-            true -> R.color.asset_online
-            false -> R.color.asset_offline
-        }
-
-        assetPresenceStateTextView.text = if (trackableState) "Presence: Online" else "Presence: Offline"
+        assetPresenceStateTextView.text = if (isPresent) "Presence: Online" else "Presence: Offline"
         assetPresenceStateTextView.setTextColor(ContextCompat.getColor(this, textColorId))
         assetPresenceStateTextView.backgroundTintList =
             ColorStateList.valueOf(ContextCompat.getColor(this, backgroundColorId))

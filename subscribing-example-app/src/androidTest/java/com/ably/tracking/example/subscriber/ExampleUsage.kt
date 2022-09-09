@@ -58,7 +58,7 @@ fun exampleUsage(trackingId: String) {
         .launchIn(scope)
     subscriber.publisherPresence
         .onEach {
-            //TODO provide a function to be called when the publisher changes online/offline status
+            // TODO provide a function to be called when the publisher changes online/offline status
         }
         .launchIn(scope)
     // Request a different resolution when needed.
