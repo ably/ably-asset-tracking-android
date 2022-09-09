@@ -291,15 +291,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updatePresenceState(isPresent: Boolean) {
-        val textColorId = when (isPresent) {
-            true -> R.color.black
-            false -> R.color.mid_grey
-        }
-
-        val backgroundColorId = when (isPresent) {
-            true -> R.color.asset_online
-            false -> R.color.asset_offline
-        }
+        val textColorId = if (isPresent) R.color.black else R.color.mid_grey
+        val backgroundColorId = if (isPresent) R.color.asset_online else R.color.asset_offline
 
         assetPresenceStateTextView.text = if (isPresent) "Presence: Online" else "Presence: Offline"
         assetPresenceStateTextView.setTextColor(ContextCompat.getColor(this, textColorId))
