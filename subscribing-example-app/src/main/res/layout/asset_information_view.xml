@@ -44,6 +44,21 @@
     app:layout_constraintTop_toTopOf="@id/assetStateLabelTextView"
     tools:ignore="SmallSp" />
 
+  <TextView
+    android:id="@+id/assetPresenceStateTextView"
+    android:layout_width="52dp"
+    android:layout_height="20dp"
+    android:layout_marginStart="16dp"
+    android:background="@drawable/round_rectangle"
+    android:backgroundTint="@color/asset_offline"
+    android:gravity="center"
+    android:text="@string/asset_status_offline"
+    android:textColor="@color/mid_grey"
+    android:textSize="8sp"
+    app:layout_constraintStart_toEndOf="@+id/assetStateTextView"
+    app:layout_constraintTop_toTopOf="@+id/assetStateTextView"
+    tools:ignore="SmallSp" />
+
   <androidx.appcompat.widget.AppCompatImageView
     android:id="@+id/animationSettingsImageView"
     android:layout_width="25dp"

@@ -5,6 +5,7 @@ import com.ably.tracking.ConnectionException
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
+import com.ably.tracking.annotations.Experimental
 import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.logging.LogHandler
 import kotlinx.coroutines.flow.SharedFlow
@@ -61,6 +62,14 @@ interface Subscriber {
      * The shared flow emitting values when the state of the trackable changes.
      */
     val trackableStates: StateFlow<TrackableState>
+        @JvmSynthetic get
+
+    /**
+     * The shared flow emitting values when the presence of the publisher changes.
+     * The publisher is present when the value is "true". If the value is "false" the publisher is not present.
+     */
+    @Experimental
+    val publisherPresence: StateFlow<Boolean>
         @JvmSynthetic get
 
     /**
