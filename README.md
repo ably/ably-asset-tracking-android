@@ -274,7 +274,7 @@ An example usage of the API is shown below:
 subscriber.publisherPresence
     .onEach { isOnline -> print(isOnline) } // provide a function to be called when the asset's presnec is changed
     .launchIn(scope) // coroutines scope on which the statuses are received
-```kotlin
+```
 
 ### UI utilities
 
