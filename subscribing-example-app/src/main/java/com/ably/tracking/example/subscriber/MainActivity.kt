@@ -37,6 +37,7 @@ import kotlinx.android.synthetic.main.activity_main.mapFragmentContainerView
 import kotlinx.android.synthetic.main.activity_main.rootContainer
 import kotlinx.android.synthetic.main.asset_information_view.animationSettingsImageView
 import kotlinx.android.synthetic.main.asset_information_view.assetStateTextView
+import kotlinx.android.synthetic.main.asset_information_view.assetPresenceStateTextView
 import kotlinx.android.synthetic.main.asset_information_view.publisherResolutionAccuracyTextView
 import kotlinx.android.synthetic.main.asset_information_view.publisherResolutionDisplacementTextView
 import kotlinx.android.synthetic.main.asset_information_view.publisherResolutionIntervalTextView
@@ -53,6 +54,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import com.ably.tracking.annotations.Experimental
 
 // The client ID for the Ably SDK instance.
 private const val CLIENT_ID = "<INSERT_CLIENT_ID_HERE>"
@@ -169,6 +171,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    @OptIn(Experimental::class)
     private suspend fun createAndStartAssetSubscriber(trackableId: String) {
         subscriber = Subscriber.subscribers()
             .connection(ConnectionConfiguration(Authentication.basic(CLIENT_ID, ABLY_API_KEY)))
@@ -195,6 +198,9 @@ class MainActivity : AppCompatActivity() {
                     .launchIn(scope)
                 trackableStates
                     .onEach { updateAssetState(it) }
+                    .launchIn(scope)
+                publisherPresence
+                    .onEach { updatePresenceState(it) }
                     .launchIn(scope)
                 resolutions
                     .onEach {
@@ -295,6 +301,16 @@ class MainActivity : AppCompatActivity() {
         assetStateTextView.text = getString(textId)
         assetStateTextView.setTextColor(ContextCompat.getColor(this, textColorId))
         assetStateTextView.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this, backgroundColorId))
+    }
+
+    private fun updatePresenceState(isPresent: Boolean) {
+        val textColorId = if (isPresent) R.color.black else R.color.mid_grey
+        val backgroundColorId = if (isPresent) R.color.asset_online else R.color.asset_offline
+
+        assetPresenceStateTextView.text = if (isPresent) "Presence: Online" else "Presence: Offline"
+        assetPresenceStateTextView.setTextColor(ContextCompat.getColor(this, textColorId))
+        assetPresenceStateTextView.backgroundTintList =
+            ColorStateList.valueOf(ContextCompat.getColor(this, backgroundColorId))
     }
 
     private fun stopSubscribing() {

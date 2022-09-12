@@ -127,13 +127,13 @@ you can then add the Ably Asset Tracking dependency that you require in your Gra
 ```groovy
 dependencies {
     // Publishers, developing in Kotlin, will need the Publishing SDK
-    implementation 'com.ably.tracking:publishing-sdk:1.2.0'
+    implementation 'com.ably.tracking:publishing-sdk:1.3.0'
 
     // Subscribers, developing in Kotlin, will need the Subscribing SDK
-    implementation 'com.ably.tracking:subscribing-sdk:1.2.0'
+    implementation 'com.ably.tracking:subscribing-sdk:1.3.0'
 
     // Subscribers, developing in Kotlin, can optionally use the UI utilities
-    implementation 'com.ably.tracking:ui-sdk:1.2.0'
+    implementation 'com.ably.tracking:ui-sdk:1.3.0'
 }
 ```
 
@@ -251,6 +251,31 @@ try {
 }
 ```
 
+### Publisher presence
+
+Publisher presence is provided as an experimental API for subscribers which you can use to get information about
+whether the publisher is online or offline. This API is not yet stable and may change in the future.
+
+To use the API you must explicitly opt in to it by adding the following to your `build.gradle` file:
+
+```groovy
+android {
+    kotlinOptions {
+        freeCompilerArgs += "-Xopt-in=kotlin.RequiresOptIn"
+    }
+}
+```
+
+Then you can annotate your element of the desired scope with ``@OptIn(Experimental::class)`` annotation.
+
+An example usage of the API is shown below:
+
+```kotlin
+subscriber.publisherPresence
+    .onEach { isOnline -> print(isOnline) } // provide a function to be called when the asset's presnec is changed
+    .launchIn(scope) // coroutines scope on which the statuses are received
+```
+
 ### UI utilities
 
 #### Location Animator
@@ -331,7 +356,7 @@ Firstly, you have to exclude the notification module from Mapbox Navigation SDK 
 
 ```groovy
 // The Ably Asset Tracking Publisher SDK for Android.
-implementation ('com.ably.tracking:publishing-sdk:1.2.0')
+implementation ('com.ably.tracking:publishing-sdk:1.3.0')
 
 // The Mapbox Navigation SDK.
 implementation ('com.mapbox.navigation:android:2.7.0') {

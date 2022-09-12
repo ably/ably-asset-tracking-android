@@ -1,5 +1,27 @@
 # Change log
 
+## [1.3.0](https://github.com/ably/ably-asset-tracking-android/tree/1.3.0)
+
+[Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.2.0...1.3.0)
+
+**Implemented enhancements:**
+
+- Upgrade Mapbox Nav SDK to the GA 2.7.0 version [\#742](https://github.com/ably/ably-asset-tracking-android/issues/742)
+
+**Fixed bugs:**
+
+- CoreLocationAnimator progress may be bigger than 100% [\#751](https://github.com/ably/ably-asset-tracking-android/issues/751)
+- Fix the waitForChannelReconnection\(\) method implementation [\#744](https://github.com/ably/ably-asset-tracking-android/issues/744)
+
+**Merged pull requests:**
+
+- Expose publisher presence flow from the subscriber SDK [\#754](https://github.com/ably/ably-asset-tracking-android/pull/754) ([KacperKluka](https://github.com/KacperKluka))
+- Fix location animator progress exceeding 100% [\#752](https://github.com/ably/ably-asset-tracking-android/pull/752) ([KacperKluka](https://github.com/KacperKluka))
+- Update builder examples for publisher and subscriber in the README [\#750](https://github.com/ably/ably-asset-tracking-android/pull/750) ([KacperKluka](https://github.com/KacperKluka))
+- Fix the waitForChannelReconnection\(\) method implementation [\#749](https://github.com/ably/ably-asset-tracking-android/pull/749) ([KacperKluka](https://github.com/KacperKluka))
+- Upgrade Mapbox to 2.7.0 [\#748](https://github.com/ably/ably-asset-tracking-android/pull/748) ([KacperKluka](https://github.com/KacperKluka))
+- Add known limitations section to the README [\#747](https://github.com/ably/ably-asset-tracking-android/pull/747) ([KacperKluka](https://github.com/KacperKluka))
+
 ## [1.2.0](https://github.com/ably/ably-asset-tracking-android/tree/v1.2.0)
 
 [Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.1.1...v1.2.0)

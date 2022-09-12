@@ -31,6 +31,7 @@ internal interface CoreSubscriber {
     val enhancedLocations: SharedFlow<LocationUpdate>
     val rawLocations: SharedFlow<LocationUpdate>
     val trackableStates: StateFlow<TrackableState>
+    val publisherPresence: StateFlow<Boolean>
     val resolutions: SharedFlow<Resolution>
     val nextLocationUpdateIntervals: SharedFlow<Long>
 }
@@ -57,6 +58,7 @@ private class DefaultCoreSubscriber(
     private val scope = CoroutineScope(singleThreadDispatcher + SupervisorJob())
     private val sendEventChannel: SendChannel<Event>
     private val _trackableStates: MutableStateFlow<TrackableState> = MutableStateFlow(TrackableState.Offline())
+    private val _publisherPresence: MutableStateFlow<Boolean> = MutableStateFlow(false)
     private val _enhancedLocations: MutableSharedFlow<LocationUpdate> = MutableSharedFlow(replay = 1)
     private val _rawLocations: MutableSharedFlow<LocationUpdate> = MutableSharedFlow(replay = 1)
     private val _resolutions: MutableSharedFlow<Resolution> = MutableSharedFlow(replay = 1)
@@ -70,6 +72,9 @@ private class DefaultCoreSubscriber(
 
     override val trackableStates: StateFlow<TrackableState>
         get() = _trackableStates.asStateFlow()
+
+    override val publisherPresence: StateFlow<Boolean>
+        get() = _publisherPresence
 
     override val resolutions: SharedFlow<Resolution>
         get() = _resolutions.asSharedFlow()
@@ -152,14 +157,14 @@ private class DefaultCoreSubscriber(
                         when (event.presenceMessage.action) {
                             PresenceAction.PRESENT_OR_ENTER -> {
                                 if (event.presenceMessage.data.type == ClientTypes.PUBLISHER) {
-                                    properties.isPublisherOnline = true
+                                    updatePublisherPresence(properties, true)
                                     updateTrackableState(properties)
                                     updatePublisherResolutionInformation(event.presenceMessage.data)
                                 }
                             }
                             PresenceAction.LEAVE_OR_ABSENT -> {
                                 if (event.presenceMessage.data.type == ClientTypes.PUBLISHER) {
-                                    properties.isPublisherOnline = false
+                                    updatePublisherPresence(properties, false)
                                     updateTrackableState(properties)
                                 }
                             }
@@ -196,6 +201,13 @@ private class DefaultCoreSubscriber(
                     }
                 }
             }
+        }
+    }
+
+    private fun updatePublisherPresence(properties: Properties, isPublisherPresent: Boolean) {
+        if (isPublisherPresent != properties.isPublisherOnline) {
+            properties.isPublisherOnline = isPublisherPresent
+            scope.launch { _publisherPresence.emit(isPublisherPresent) }
         }
     }
 
