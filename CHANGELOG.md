@@ -15,8 +15,7 @@
 
 **Merged pull requests:**
 
-- Expose publisher presence flow from the subscriber SDK [\#754](https://github
-.com/ably/ably-asset-tracking-android/pull/754) ([KacperKluka](https://github.com/KacperKluka))
+- Expose publisher presence flow from the subscriber SDK [\#754](https://github.com/ably/ably-asset-tracking-android/pull/754) ([KacperKluka](https://github.com/KacperKluka))
 - Fix location animator progress exceeding 100% [\#752](https://github.com/ably/ably-asset-tracking-android/pull/752) ([KacperKluka](https://github.com/KacperKluka))
 - Update builder examples for publisher and subscriber in the README [\#750](https://github.com/ably/ably-asset-tracking-android/pull/750) ([KacperKluka](https://github.com/KacperKluka))
 - Fix the waitForChannelReconnection\(\) method implementation [\#749](https://github.com/ably/ably-asset-tracking-android/pull/749) ([KacperKluka](https://github.com/KacperKluka))
