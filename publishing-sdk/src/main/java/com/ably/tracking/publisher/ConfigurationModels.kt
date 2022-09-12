@@ -224,9 +224,22 @@ data class Destination(
     val longitude: Double
 )
 
+/**
+ * TODO: add description.
+ *
+ */
 data class Trackable(
+    /**
+     * TODO: Specifies a tracking identifier for the asset.
+     */
     val id: String,
+    /**
+     * TODO: Destination of the trackable as a latitude and longitude.
+     */
     val destination: Destination? = null,
+    /**
+     * TODO: A set of Resolution Constraints.
+     */
     val constraints: ResolutionConstraints? = null
 ) {
     override fun equals(other: Any?): Boolean =
