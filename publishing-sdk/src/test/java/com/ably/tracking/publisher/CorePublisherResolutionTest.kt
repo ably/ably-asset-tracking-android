@@ -13,6 +13,7 @@ import com.mapbox.geojson.LineString
 import com.mapbox.geojson.Point
 import com.mapbox.turf.TurfConstants
 import com.mapbox.turf.TurfMeasurement
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -155,7 +156,7 @@ class CorePublisherResolutionTest(
 
     private fun addTrackable(trackable: Trackable) {
         val locationUpdatesObserverSlot = slot<LocationUpdatesObserver>()
-        every { mapbox.registerLocationObserver(capture(locationUpdatesObserverSlot)) } just runs
+        coEvery { mapbox.registerLocationObserver(capture(locationUpdatesObserverSlot)) } just runs
         ably.mockCreateSuspendingConnectionSuccess(trackable.id)
         runBlocking(Dispatchers.IO) {
             addTrackableToCorePublisher(trackable)

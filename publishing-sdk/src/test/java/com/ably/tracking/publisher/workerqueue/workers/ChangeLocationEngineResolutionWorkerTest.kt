@@ -6,6 +6,7 @@ import com.ably.tracking.publisher.Mapbox
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.ResolutionPolicy
 import io.mockk.clearAllMocks
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -85,7 +86,7 @@ class ChangeLocationEngineResolutionWorkerTest {
         worker.doWork(publisherProperties)
 
         // then
-        verify(exactly = 1) {
+        coVerify(exactly = 1) {
             mapbox.changeResolution(newlyCalculatedResolution)
         }
     }
@@ -99,7 +100,7 @@ class ChangeLocationEngineResolutionWorkerTest {
         worker.doWork(publisherProperties)
 
         // then
-        verify(exactly = 0) {
+        coVerify(exactly = 0) {
             resolutionPolicy.resolve(any<Set<Resolution>>())
             publisherProperties.locationEngineResolution = any()
             mapbox.changeResolution(any())

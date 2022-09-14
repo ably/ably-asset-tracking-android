@@ -38,6 +38,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
 internal interface CorePublisher {
     fun trackTrackable(trackable: Trackable, callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>)
@@ -143,7 +144,7 @@ constructor(
     private val logHandler: LogHandler?,
     areRawLocationsEnabled: Boolean?,
     private val sendResolutionEnabled: Boolean,
-    private val constantLocationEngineResolution: Resolution?,
+    constantLocationEngineResolution: Resolution?,
 ) : CorePublisher, TimeProvider {
     private val TAG = createLoggingTag(this)
     private val scope = CoroutineScope(singleThreadDispatcher + SupervisorJob())
@@ -181,30 +182,6 @@ constructor(
         workerQueue = DefaultWorkerQueue(properties, scope, workerFactory)
         ably.subscribeForAblyStateChange { enqueue(workerFactory.createWorker(WorkerParams.AblyConnectionStateChange(it))) }
         mapbox.setLocationHistoryListener { historyData -> scope.launch { _locationHistory.emit(historyData) } }
-    }
-
-    private fun registerLocationObserver() {
-        mapbox.registerLocationObserver(object : LocationUpdatesObserver {
-            override fun onRawLocationChanged(rawLocation: Location) {
-                logHandler?.v("$TAG Raw location received: $rawLocation")
-                enqueue(workerFactory.createWorker(WorkerParams.RawLocationChanged(rawLocation)))
-            }
-
-            override fun onEnhancedLocationChanged(enhancedLocation: Location, intermediateLocations: List<Location>) {
-                logHandler?.v("$TAG Enhanced location received: $enhancedLocation")
-                val locationUpdateType =
-                    if (intermediateLocations.isEmpty()) LocationUpdateType.ACTUAL else LocationUpdateType.PREDICTED
-                enqueue(
-                    workerFactory.createWorker(
-                        WorkerParams.EnhancedLocationChanged(
-                            enhancedLocation,
-                            intermediateLocations,
-                            locationUpdateType
-                        )
-                    )
-                )
-            }
-        })
     }
 
     private fun enqueue(worker: Worker) {
@@ -435,19 +412,25 @@ constructor(
 
     override fun stopLocationUpdates(properties: PublisherProperties) {
         properties.isTracking = false
-        mapbox.unregisterLocationObserver()
-        mapbox.stopTrip()
+        runBlocking {
+            mapbox.unregisterLocationObserver()
+            mapbox.stopTrip()
+        }
     }
 
     override fun closeMapbox() {
-        mapbox.close()
+        runBlocking {
+            mapbox.close()
+        }
     }
 
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
     override fun startLocationUpdates(properties: PublisherProperties) {
         properties.isTracking = true
-        registerLocationObserver()
-        mapbox.startTrip()
+        runBlocking {
+            mapbox.registerLocationObserver(DefaultLocationUpdatesObserver())
+            mapbox.startTrip()
+        }
     }
 
     override fun updateTrackableState(properties: PublisherProperties, trackableId: String) {
@@ -571,11 +554,13 @@ constructor(
             if (currentLocation != null) {
                 removeCurrentDestination(properties)
                 properties.currentDestination = destination
-                mapbox.setRoute(currentLocation, destination, properties.routingProfile) {
-                    try {
-                        enqueue(workerFactory.createWorker(WorkerParams.DestinationSet(it.getOrThrow())))
-                    } catch (exception: MapException) {
-                        logHandler?.w("Setting trackable destination failed", exception)
+                runBlocking {
+                    mapbox.setRoute(currentLocation, destination, properties.routingProfile) {
+                        try {
+                            enqueue(workerFactory.createWorker(WorkerParams.DestinationSet(it.getOrThrow())))
+                        } catch (exception: MapException) {
+                            logHandler?.w("Setting trackable destination failed", exception)
+                        }
                     }
                 }
             } else {
@@ -587,7 +572,9 @@ constructor(
     }
 
     override fun removeCurrentDestination(properties: PublisherProperties) {
-        mapbox.clearRoute()
+        runBlocking {
+            mapbox.clearRoute()
+        }
         properties.currentDestination = null
         properties.estimatedArrivalTimeInMilliseconds = null
     }
@@ -638,6 +625,31 @@ constructor(
     }
 
     override fun getCurrentTimeInMilliseconds(): Long = System.currentTimeMillis()
+
+    internal inner class DefaultLocationUpdatesObserver : LocationUpdatesObserver {
+        override fun onRawLocationChanged(rawLocation: Location) {
+            logHandler?.v("$TAG Raw location received: $rawLocation")
+            enqueue(workerFactory.createWorker(WorkerParams.RawLocationChanged(rawLocation)))
+        }
+
+        override fun onEnhancedLocationChanged(
+            enhancedLocation: Location,
+            intermediateLocations: List<Location>
+        ) {
+            logHandler?.v("$TAG Enhanced location received: $enhancedLocation")
+            val locationUpdateType =
+                if (intermediateLocations.isEmpty()) LocationUpdateType.ACTUAL else LocationUpdateType.PREDICTED
+            enqueue(
+                workerFactory.createWorker(
+                    WorkerParams.EnhancedLocationChanged(
+                        enhancedLocation,
+                        intermediateLocations,
+                        locationUpdateType
+                    )
+                )
+            )
+        }
+    }
 
     internal inner class Hooks : ResolutionPolicy.Hooks {
         var trackables: ResolutionPolicy.Hooks.TrackableSetListener? = null

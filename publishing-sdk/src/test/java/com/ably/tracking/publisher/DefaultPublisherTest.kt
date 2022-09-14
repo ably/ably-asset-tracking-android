@@ -12,7 +12,6 @@ import com.ably.tracking.test.common.mockSuspendingConnectSuccess
 import com.ably.tracking.test.common.mockSuspendingDisconnectSuccess
 import io.mockk.coVerify
 import io.mockk.mockk
-import io.mockk.verify
 import java.util.UUID
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -215,7 +214,7 @@ class DefaultPublisherTest {
         }
 
         // then
-        verify(exactly = 1) {
+        coVerify(exactly = 1) {
             mapbox.clearRoute()
         }
     }

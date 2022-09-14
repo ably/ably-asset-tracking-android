@@ -48,6 +48,7 @@ import com.mapbox.navigation.core.trip.session.LocationObserver
 import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 
 typealias LocationHistoryListener = (LocationHistoryData) -> Unit
 
@@ -79,17 +80,17 @@ internal interface Mapbox {
      * Starts the navigation trip which results in location updates from the location engine.
      */
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
-    fun startTrip()
+    suspend fun startTrip()
 
     /**
      * Stops the navigation trip.
      */
-    fun stopTrip()
+    suspend fun stopTrip()
 
     /**
      * Closes the whole [MapboxNavigation].
      */
-    fun close()
+    suspend fun close()
 
     /**
      * Sets a location observer that gets notified when a new raw or enhanced location is received.
@@ -97,24 +98,24 @@ internal interface Mapbox {
      *
      * @param locationUpdatesObserver The location observer to register.
      */
-    fun registerLocationObserver(locationUpdatesObserver: LocationUpdatesObserver)
+    suspend fun registerLocationObserver(locationUpdatesObserver: LocationUpdatesObserver)
 
     /**
      * Removes a location observer if it was previously set with [registerLocationObserver].
      */
-    fun unregisterLocationObserver()
+    suspend fun unregisterLocationObserver()
 
     /**
      * Changes the [resolution] of the location engine if it's a subtype of the [ResolutionLocationEngine].
      *
      * @param resolution The new resolution to set.
      */
-    fun changeResolution(resolution: Resolution)
+    suspend fun changeResolution(resolution: Resolution)
 
     /**
      * Removes the currently active route.
      */
-    fun clearRoute()
+    suspend fun clearRoute()
 
     /**
      * Sets a route with the provided parameters. The route starts in [currentLocation] and ends in [destination].
@@ -125,7 +126,7 @@ internal interface Mapbox {
      * @param routingProfile The routing profile for the route.
      * @param routeDurationCallback The function that's called with the ETA of the route in milliseconds. If something goes wrong it will be called with [MapException].
      */
-    fun setRoute(
+    suspend fun setRoute(
         currentLocation: Location,
         destination: Destination,
         routingProfile: RoutingProfile,
@@ -279,7 +280,9 @@ internal class DefaultMapbox(
     private fun setupRouteClearingWhenDestinationIsReached() {
         arrivalObserver = object : ArrivalObserver {
             override fun onFinalDestinationArrival(routeProgress: RouteProgress) {
-                clearRoute()
+                runBlocking {
+                    clearRoute()
+                }
             }
 
             override fun onNextRouteLegStart(routeLegProgress: RouteLegProgress) = Unit
@@ -289,8 +292,8 @@ internal class DefaultMapbox(
     }
 
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
-    override fun startTrip() {
-        runBlocking(mainDispatcher) {
+    override suspend fun startTrip() {
+        withContext(mainDispatcher) {
             logHandler?.v("$TAG Start trip and location updates")
             mapboxNavigation.apply {
                 historyRecorder.startRecording()
@@ -300,8 +303,8 @@ internal class DefaultMapbox(
         }
     }
 
-    override fun stopTrip() {
-        runBlocking(mainDispatcher) {
+    override suspend fun stopTrip() {
+        withContext(mainDispatcher) {
             logHandler?.v("$TAG Stop trip and location updates")
             mapboxReplayer?.stop()
             mapboxReplayer?.seekTo(0.0)
@@ -310,8 +313,8 @@ internal class DefaultMapbox(
         }
     }
 
-    override fun close() {
-        runBlocking(mainDispatcher) {
+    override suspend fun close() {
+        withContext(mainDispatcher) {
             logHandler?.v("$TAG Close Mapbox")
             mapboxNavigation.apply {
                 unregisterArrivalObserver(arrivalObserver)
@@ -362,31 +365,31 @@ internal class DefaultMapbox(
             }
         }
 
-    override fun registerLocationObserver(locationUpdatesObserver: LocationUpdatesObserver) {
+    override suspend fun registerLocationObserver(locationUpdatesObserver: LocationUpdatesObserver) {
         unregisterLocationObserver()
-        runBlocking(mainDispatcher) {
+        withContext(mainDispatcher) {
             logHandler?.v("$TAG Register location observer")
             locationObserver = createLocationObserver(locationUpdatesObserver)
             locationObserver?.let { mapboxNavigation.registerLocationObserver(it) }
         }
     }
 
-    override fun unregisterLocationObserver() {
+    override suspend fun unregisterLocationObserver() {
         locationObserver?.let {
-            runBlocking(mainDispatcher) {
+            withContext(mainDispatcher) {
                 logHandler?.v("$TAG Unregister location observer")
                 mapboxNavigation.unregisterLocationObserver(it)
             }
         }
     }
 
-    override fun setRoute(
+    override suspend fun setRoute(
         currentLocation: Location,
         destination: Destination,
         routingProfile: RoutingProfile,
         routeDurationCallback: ResultCallbackFunction<Long>
     ) {
-        runBlocking(mainDispatcher) {
+        withContext(mainDispatcher) {
             logHandler?.v("$TAG Set route to: $destination")
             mapboxNavigation.requestRoutes(
                 RouteOptions.builder()
@@ -420,15 +423,15 @@ internal class DefaultMapbox(
         }
     }
 
-    override fun clearRoute() {
-        runBlocking(mainDispatcher) {
+    override suspend fun clearRoute() {
+        withContext(mainDispatcher) {
             logHandler?.v("$TAG Clear route")
             mapboxNavigation.setNavigationRoutes(emptyList())
         }
     }
 
-    override fun changeResolution(resolution: Resolution) {
-        runBlocking(mainDispatcher) {
+    override suspend fun changeResolution(resolution: Resolution) {
+        withContext(mainDispatcher) {
             logHandler?.v("$TAG Change location engine resolution")
             mapboxNavigation.navigationOptions.locationEngine.let {
                 if (it is ResolutionLocationEngine) {

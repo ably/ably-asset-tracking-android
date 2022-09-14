@@ -11,6 +11,7 @@ import com.ably.tracking.test.common.mockSendEnhancedLocationFailure
 import com.ably.tracking.test.common.mockSendEnhancedLocationFailureThenSuccess
 import com.ably.tracking.test.common.mockSendEnhancedLocationSuccess
 import com.ably.tracking.test.common.mockSendRawLocationSuccess
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -160,7 +161,7 @@ class CorePublisherLocationUpdatesPublishingTest {
         corePublisher: CorePublisher = this.corePublisher
     ) {
         val locationUpdatesObserverSlot = slot<LocationUpdatesObserver>()
-        every { mapbox.registerLocationObserver(capture(locationUpdatesObserverSlot)) } just runs
+        coEvery { mapbox.registerLocationObserver(capture(locationUpdatesObserverSlot)) } just runs
         ably.mockCreateSuspendingConnectionSuccess(trackable.id)
         runBlocking(Dispatchers.IO) {
             addTrackableToCorePublisher(trackable, corePublisher)

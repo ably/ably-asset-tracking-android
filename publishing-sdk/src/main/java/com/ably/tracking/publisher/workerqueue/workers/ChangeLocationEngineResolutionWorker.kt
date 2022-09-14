@@ -4,6 +4,7 @@ import com.ably.tracking.publisher.Mapbox
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.ResolutionPolicy
 import com.ably.tracking.publisher.workerqueue.results.SyncAsyncResult
+import kotlinx.coroutines.runBlocking
 
 internal class ChangeLocationEngineResolutionWorker(
     private val policy: ResolutionPolicy,
@@ -13,7 +14,9 @@ internal class ChangeLocationEngineResolutionWorker(
         if (!properties.isLocationEngineResolutionConstant) {
             val newResolution = policy.resolve(properties.resolutions.values.toSet())
             properties.locationEngineResolution = newResolution
-            mapbox.changeResolution(newResolution)
+            runBlocking {
+                mapbox.changeResolution(newResolution)
+            }
         }
         return SyncAsyncResult()
     }
