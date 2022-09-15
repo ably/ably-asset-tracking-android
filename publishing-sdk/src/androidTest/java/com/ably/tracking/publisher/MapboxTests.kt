@@ -10,6 +10,7 @@ import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.test.android.common.NOTIFICATION_CHANNEL_ID
 import com.ably.tracking.test.android.common.createNotificationChannel
 import com.google.gson.Gson
+import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -22,7 +23,7 @@ class MapboxTests {
     private val gson = Gson()
 
     @Test
-    fun shouldNotThrowErrorWhenMapboxIsStartedAndStoppedWithoutStartingTrip() {
+    fun shouldNotThrowErrorWhenMapboxIsStartedAndStoppedWithoutStartingTrip() = runBlocking {
         // given
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         createNotificationChannel(context)
@@ -56,7 +57,8 @@ class MapboxTests {
         )
 
     private fun getLocationData(context: Context): LocationHistoryData {
-        val historyString = context.assets.open("location_history_small.txt").use { String(it.readBytes()) }
+        val historyString =
+            context.assets.open("location_history_small.txt").use { String(it.readBytes()) }
         return gson.fromJson(historyString, LocationHistoryData::class.java)
     }
 }
