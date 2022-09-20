@@ -1,8 +1,4 @@
-package com.ably.tracking.publisher.workerqueue.workers
-
-import com.ably.tracking.publisher.PublisherProperties
-import com.ably.tracking.publisher.workerqueue.WorkerParams
-import com.ably.tracking.publisher.workerqueue.results.SyncAsyncResult
+package com.ably.tracking.subscriber.workerqueue
 
 /**
  * A [Worker] interface represents workers which executes synchronous work with an optional synchronous work result
@@ -21,7 +17,11 @@ internal interface Worker {
      *
      * @return SyncAsyncResult which represents an optional synchronous work result and an optional asynchronous work
      */
-    fun doWork(properties: PublisherProperties): SyncAsyncResult
+    fun doWork(
+        properties: Any,
+        doAsyncWork: (suspend () -> Unit) -> Unit,
+        postWork: (WorkerParams) -> Unit
+    )
 
     /**
      * This function is provided in order for implementors to define what should happen when the worker

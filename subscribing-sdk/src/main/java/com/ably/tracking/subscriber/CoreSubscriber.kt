@@ -11,6 +11,10 @@ import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.PresenceAction
 import com.ably.tracking.common.PresenceData
 import com.ably.tracking.common.createSingleThreadDispatcher
+import com.ably.tracking.subscriber.workerqueue.Worker
+import com.ably.tracking.subscriber.workerqueue.WorkerFactory
+import com.ably.tracking.subscriber.workerqueue.WorkerParams
+import com.ably.tracking.subscriber.workerqueue.WorkerQueue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
@@ -28,6 +32,7 @@ import kotlinx.coroutines.launch
 internal interface CoreSubscriber {
     fun enqueue(event: AdhocEvent)
     fun request(request: Request<*>)
+    fun enqueue(workerParams: WorkerParams)
     val enhancedLocations: SharedFlow<LocationUpdate>
     val rawLocations: SharedFlow<LocationUpdate>
     val trackableStates: StateFlow<TrackableState>
@@ -56,13 +61,17 @@ private class DefaultCoreSubscriber(
 ) :
     CoreSubscriber {
     private val scope = CoroutineScope(singleThreadDispatcher + SupervisorJob())
+    private val workerQueue: WorkerQueue
     private val sendEventChannel: SendChannel<Event>
-    private val _trackableStates: MutableStateFlow<TrackableState> = MutableStateFlow(TrackableState.Offline())
+    private val _trackableStates: MutableStateFlow<TrackableState> =
+        MutableStateFlow(TrackableState.Offline())
     private val _publisherPresence: MutableStateFlow<Boolean> = MutableStateFlow(false)
-    private val _enhancedLocations: MutableSharedFlow<LocationUpdate> = MutableSharedFlow(replay = 1)
+    private val _enhancedLocations: MutableSharedFlow<LocationUpdate> =
+        MutableSharedFlow(replay = 1)
     private val _rawLocations: MutableSharedFlow<LocationUpdate> = MutableSharedFlow(replay = 1)
     private val _resolutions: MutableSharedFlow<Resolution> = MutableSharedFlow(replay = 1)
-    private val _nextLocationUpdateIntervals: MutableSharedFlow<Long> = MutableSharedFlow(replay = 1)
+    private val _nextLocationUpdateIntervals: MutableSharedFlow<Long> =
+        MutableSharedFlow(replay = 1)
 
     override val enhancedLocations: SharedFlow<LocationUpdate>
         get() = _enhancedLocations.asSharedFlow()
@@ -85,6 +94,10 @@ private class DefaultCoreSubscriber(
     init {
         val channel = Channel<Event>()
         sendEventChannel = channel
+
+        val workerFactory = WorkerFactory()
+        workerQueue = WorkerQueue(scope, workerFactory)
+
         scope.launch {
             coroutineScope {
                 sequenceEventsQueue(channel)
@@ -99,6 +112,10 @@ private class DefaultCoreSubscriber(
 
     override fun request(request: Request<*>) {
         scope.launch { sendEventChannel.send(request) }
+    }
+
+    override fun enqueue(workerParams: WorkerParams) {
+        workerQueue.enqueue(workerParams)
     }
 
     private fun CoroutineScope.sequenceEventsQueue(receiveEventChannel: ReceiveChannel<Event>) {
@@ -124,7 +141,12 @@ private class DefaultCoreSubscriber(
                 when (event) {
                     is StartEvent -> {
                         updateTrackableState(properties)
-                        ably.connect(trackableId, properties.presenceData, useRewind = true, willSubscribe = true) {
+                        ably.connect(
+                            trackableId,
+                            properties.presenceData,
+                            useRewind = true,
+                            willSubscribe = true
+                        ) {
                             if (it.isSuccess) {
                                 request(ConnectionCreatedEvent(event.callbackFunction))
                             } else {
@@ -176,7 +198,8 @@ private class DefaultCoreSubscriber(
                         }
                     }
                     is ChangeResolutionEvent -> {
-                        properties.presenceData = properties.presenceData.copy(resolution = event.resolution)
+                        properties.presenceData =
+                            properties.presenceData.copy(resolution = event.resolution)
                         ably.updatePresenceData(trackableId, properties.presenceData) {
                             event.callbackFunction(it)
                         }
