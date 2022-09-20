@@ -1,5 +1,7 @@
 package com.ably.tracking.subscriber.workerqueue
 
+import com.ably.tracking.subscriber.Properties
+import com.ably.tracking.subscriber.SubscriberStoppedException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
@@ -8,6 +10,7 @@ import kotlinx.coroutines.launch
  * A worker queue is responsible for enqueueing [Worker]s and executing them.
  */
 internal class WorkerQueue(
+    private val subscriberProperties: Properties,
     private val scope: CoroutineScope,
     private val workerFactory: WorkerFactory,
     maximumWorkerQueueCapacity: Int = 100,
@@ -28,17 +31,17 @@ internal class WorkerQueue(
      */
     private suspend fun executeWorkers() {
         for (worker in workerChannel) {
-//            if (publisherProperties.isStopped) {
-//                worker.doWhenStopped(PublisherStoppedException())
-//            } else {
-            execute(worker)
-//            }
+            if (subscriberProperties.isStopped) {
+                worker.doWhenStopped(SubscriberStoppedException())
+            } else {
+                execute(worker)
+            }
         }
     }
 
     private fun execute(worker: Worker) {
         worker.doWork(
-            properties = worker,
+            properties = subscriberProperties,
             doAsyncWork = { block -> scope.launch { block() } },
             postWork = ::enqueue
         )

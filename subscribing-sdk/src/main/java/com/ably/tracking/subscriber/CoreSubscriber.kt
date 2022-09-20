@@ -39,6 +39,7 @@ internal interface CoreSubscriber {
     val publisherPresence: StateFlow<Boolean>
     val resolutions: SharedFlow<Resolution>
     val nextLocationUpdateIntervals: SharedFlow<Long>
+    fun updateTrackableState(properties: Properties)
 }
 
 internal fun createCoreSubscriber(
@@ -62,6 +63,7 @@ private class DefaultCoreSubscriber(
     CoreSubscriber {
     private val scope = CoroutineScope(singleThreadDispatcher + SupervisorJob())
     private val workerQueue: WorkerQueue
+    private val properties = Properties(initialResolution)
     private val sendEventChannel: SendChannel<Event>
     private val _trackableStates: MutableStateFlow<TrackableState> =
         MutableStateFlow(TrackableState.Offline())
@@ -95,15 +97,15 @@ private class DefaultCoreSubscriber(
         val channel = Channel<Event>()
         sendEventChannel = channel
 
-        val workerFactory = WorkerFactory()
-        workerQueue = WorkerQueue(scope, workerFactory)
+        val workerFactory = WorkerFactory(this)
+        workerQueue = WorkerQueue(properties, scope, workerFactory)
 
         scope.launch {
             coroutineScope {
                 sequenceEventsQueue(channel)
             }
         }
-        ably.subscribeForAblyStateChange { enqueue(AblyConnectionStateChangeEvent(it)) }
+        ably.subscribeForAblyStateChange { enqueue(WorkerParams.UpdateConnectionState(it)) }
     }
 
     override fun enqueue(event: AdhocEvent) {
@@ -120,7 +122,7 @@ private class DefaultCoreSubscriber(
 
     private fun CoroutineScope.sequenceEventsQueue(receiveEventChannel: ReceiveChannel<Event>) {
         launch {
-            val properties = Properties()
+            val properties = Properties(initialResolution)
 
             // processing
             for (event in receiveEventChannel) {
@@ -234,7 +236,7 @@ private class DefaultCoreSubscriber(
         }
     }
 
-    private fun updateTrackableState(properties: Properties) {
+    override fun updateTrackableState(properties: Properties) {
         val newTrackableState = when (properties.lastConnectionStateChange.state) {
             ConnectionState.ONLINE -> {
                 when (properties.lastChannelConnectionStateChange.state) {
@@ -280,17 +282,15 @@ private class DefaultCoreSubscriber(
     private fun notifyAssetIsOffline() {
         scope.launch { _trackableStates.emit(TrackableState.Offline()) }
     }
+}
 
-    private inner class Properties(
-        var isStopped: Boolean = false,
-        var isPublisherOnline: Boolean = false,
-        var trackableState: TrackableState = TrackableState.Offline(),
-        var lastConnectionStateChange: ConnectionStateChange = ConnectionStateChange(
-            ConnectionState.OFFLINE, null
-        ),
-        var lastChannelConnectionStateChange: ConnectionStateChange = ConnectionStateChange(
-            ConnectionState.OFFLINE, null
-        ),
-        var presenceData: PresenceData = PresenceData(ClientTypes.SUBSCRIBER, initialResolution)
-    )
+internal class Properties(initialResolution: Resolution?) {
+    var isStopped: Boolean = false
+    var isPublisherOnline: Boolean = false
+    var trackableState: TrackableState = TrackableState.Offline()
+    var lastConnectionStateChange: ConnectionStateChange =
+        ConnectionStateChange(ConnectionState.OFFLINE, null)
+    var lastChannelConnectionStateChange: ConnectionStateChange =
+        ConnectionStateChange(ConnectionState.OFFLINE, null)
+    var presenceData: PresenceData = PresenceData(ClientTypes.SUBSCRIBER, initialResolution)
 }

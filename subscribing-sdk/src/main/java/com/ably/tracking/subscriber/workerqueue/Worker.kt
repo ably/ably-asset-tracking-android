@@ -1,5 +1,7 @@
 package com.ably.tracking.subscriber.workerqueue
 
+import com.ably.tracking.subscriber.Properties
+
 /**
  * A [Worker] interface represents workers which executes synchronous work with an optional synchronous work result
  * and another optional asynchronous work.
@@ -18,7 +20,7 @@ internal interface Worker {
      * @return SyncAsyncResult which represents an optional synchronous work result and an optional asynchronous work
      */
     fun doWork(
-        properties: Any,
+        properties: Properties,
         doAsyncWork: (suspend () -> Unit) -> Unit,
         postWork: (WorkerParams) -> Unit
     )
