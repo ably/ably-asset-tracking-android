@@ -101,7 +101,7 @@ private class DefaultCoreSubscriber(
         val channel = Channel<Event>()
         sendEventChannel = channel
 
-        val workerFactory = WorkerFactory(this)
+        val workerFactory = WorkerFactory(this, ably)
         workerQueue = WorkerQueue(properties, scope, workerFactory)
 
         scope.launch {
@@ -147,26 +147,16 @@ private class DefaultCoreSubscriber(
                             willSubscribe = true
                         ) {
                             if (it.isSuccess) {
-                                request(ConnectionCreatedEvent(event.callbackFunction))
+                                enqueue(
+                                    WorkerParams.HandleConnectionCreated(
+                                        trackableId,
+                                        event.callbackFunction
+                                    )
+                                )
                             } else {
                                 event.callbackFunction(it)
                             }
                         }
-                    }
-                    is ConnectionCreatedEvent -> {
-                        ably.subscribeForPresenceMessages(
-                            trackableId = trackableId,
-                            listener = { enqueue(WorkerParams.HandlePresenceMessage(it)) },
-                            callback = { subscribeResult ->
-                                if (subscribeResult.isSuccess) {
-                                    enqueue(WorkerParams.HandleConnectionReady(event.callbackFunction))
-                                } else {
-                                    ably.disconnect(trackableId, properties.presenceData) {
-                                        event.callbackFunction(subscribeResult)
-                                    }
-                                }
-                            }
-                        )
                     }
                     is ChangeResolutionEvent -> {
                         properties.presenceData =

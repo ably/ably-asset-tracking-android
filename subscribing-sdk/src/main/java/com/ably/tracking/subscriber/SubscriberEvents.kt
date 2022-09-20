@@ -20,14 +20,6 @@ internal class StartEvent(
 ) : Request<Unit>(callbackFunction)
 
 /**
- * Successfully created a connection for a trackable.
- * Should be created only from within the [CoreSubscriber].
- */
-internal class ConnectionCreatedEvent(
-    callbackFunction: ResultCallbackFunction<Unit>
-) : Request<Unit>(callbackFunction)
-
-/**
  * Stop the [CoreSubscriber].
  */
 internal class StopEvent(
