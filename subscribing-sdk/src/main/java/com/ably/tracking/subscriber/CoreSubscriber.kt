@@ -1,6 +1,5 @@
 package com.ably.tracking.subscriber
 
-import com.ably.tracking.ConnectionException
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
@@ -8,19 +7,13 @@ import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ClientTypes
 import com.ably.tracking.common.ConnectionState
 import com.ably.tracking.common.ConnectionStateChange
-import com.ably.tracking.common.PresenceAction
 import com.ably.tracking.common.PresenceData
 import com.ably.tracking.common.createSingleThreadDispatcher
-import com.ably.tracking.subscriber.workerqueue.Worker
 import com.ably.tracking.subscriber.workerqueue.WorkerFactory
 import com.ably.tracking.subscriber.workerqueue.WorkerParams
 import com.ably.tracking.subscriber.workerqueue.WorkerQueue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.ReceiveChannel
-import kotlinx.coroutines.channels.SendChannel
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -30,7 +23,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 internal interface CoreSubscriber {
-    fun request(request: Request<*>)
     fun enqueue(workerParams: WorkerParams)
     val enhancedLocations: SharedFlow<LocationUpdate>
     val rawLocations: SharedFlow<LocationUpdate>
@@ -62,14 +54,13 @@ private val singleThreadDispatcher = createSingleThreadDispatcher()
 
 private class DefaultCoreSubscriber(
     private val ably: Ably,
-    private val initialResolution: Resolution?,
+    initialResolution: Resolution?,
     private val trackableId: String,
 ) :
     CoreSubscriber {
     private val scope = CoroutineScope(singleThreadDispatcher + SupervisorJob())
     private val workerQueue: WorkerQueue
     private val properties = Properties(initialResolution)
-    private val sendEventChannel: SendChannel<Event>
     private val _trackableStates: MutableStateFlow<TrackableState> =
         MutableStateFlow(TrackableState.Offline())
     private val _publisherPresence: MutableStateFlow<Boolean> = MutableStateFlow(false)
@@ -99,48 +90,14 @@ private class DefaultCoreSubscriber(
         get() = _nextLocationUpdateIntervals.asSharedFlow()
 
     init {
-        val channel = Channel<Event>()
-        sendEventChannel = channel
-
         val workerFactory = WorkerFactory(this, ably, trackableId)
         workerQueue = WorkerQueue(properties, scope, workerFactory)
 
-        scope.launch {
-            coroutineScope {
-                sequenceEventsQueue(channel)
-            }
-        }
         ably.subscribeForAblyStateChange { enqueue(WorkerParams.UpdateConnectionState(it)) }
-    }
-
-    override fun request(request: Request<*>) {
-        scope.launch { sendEventChannel.send(request) }
     }
 
     override fun enqueue(workerParams: WorkerParams) {
         workerQueue.enqueue(workerParams)
-    }
-
-    private fun CoroutineScope.sequenceEventsQueue(receiveEventChannel: ReceiveChannel<Event>) {
-        launch {
-            val properties = Properties(initialResolution)
-
-            // processing
-            for (event in receiveEventChannel) {
-                // handle events after the subscriber is stopped
-                if (properties.isStopped) {
-                    if (event is Request<*>) {
-                        // when the event is a request then call its handler
-                        when (event) {
-                            else -> event.callbackFunction(Result.failure(SubscriberStoppedException()))
-                        }
-                        continue
-                    }
-                }
-                when (event) {
-                }
-            }
-        }
     }
 
     override fun updatePublisherPresence(properties: Properties, isPublisherPresent: Boolean) {
