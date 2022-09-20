@@ -48,28 +48,12 @@ internal class StopEvent(
 ) : Request<Unit>(callbackFunction)
 
 /**
- * A new presence message is received.
- * Should be created only from within the [CoreSubscriber].
- */
-internal data class PresenceMessageEvent(
-    val presenceMessage: PresenceMessage
-) : AdhocEvent()
-
-/**
  * Change the requested [Resolution].
  */
 internal class ChangeResolutionEvent(
     val resolution: Resolution?,
     callbackFunction: ResultCallbackFunction<Unit>
 ) : Request<Unit>(callbackFunction)
-
-/**
- * Ably connection state changed.
- * Should be created only from within the [CoreSubscriber].
- */
-internal data class AblyConnectionStateChangeEvent(
-    val connectionStateChange: ConnectionStateChange
-) : AdhocEvent()
 
 /**
  * Trackable Ably channel state changed.

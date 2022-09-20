@@ -179,28 +179,6 @@ private class DefaultCoreSubscriber(
                         subscribeForRawEvents(properties.presenceData)
                         event.callbackFunction(Result.success(Unit))
                     }
-                    is PresenceMessageEvent -> {
-                        when (event.presenceMessage.action) {
-                            PresenceAction.PRESENT_OR_ENTER -> {
-                                if (event.presenceMessage.data.type == ClientTypes.PUBLISHER) {
-                                    updatePublisherPresence(properties, true)
-                                    updateTrackableState(properties)
-                                    updatePublisherResolutionInformation(event.presenceMessage.data)
-                                }
-                            }
-                            PresenceAction.LEAVE_OR_ABSENT -> {
-                                if (event.presenceMessage.data.type == ClientTypes.PUBLISHER) {
-                                    updatePublisherPresence(properties, false)
-                                    updateTrackableState(properties)
-                                }
-                            }
-                            PresenceAction.UPDATE -> {
-                                if (event.presenceMessage.data.type == ClientTypes.PUBLISHER) {
-                                    updatePublisherResolutionInformation(event.presenceMessage.data)
-                                }
-                            }
-                        }
-                    }
                     is ChangeResolutionEvent -> {
                         properties.presenceData =
                             properties.presenceData.copy(resolution = event.resolution)
@@ -217,10 +195,6 @@ private class DefaultCoreSubscriber(
                         } catch (exception: ConnectionException) {
                             event.callbackFunction(Result.failure(exception))
                         }
-                    }
-                    is AblyConnectionStateChangeEvent -> {
-                        properties.lastConnectionStateChange = event.connectionStateChange
-                        updateTrackableState(properties)
                     }
                     is ChannelConnectionStateChangeEvent -> {
                         properties.lastChannelConnectionStateChange = event.connectionStateChange
