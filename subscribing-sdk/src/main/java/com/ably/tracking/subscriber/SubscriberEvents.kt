@@ -13,13 +13,6 @@ internal sealed class Event
 internal sealed class Request<T>(val callbackFunction: ResultCallbackFunction<T>) : Event()
 
 /**
- * Start the [CoreSubscriber].
- */
-internal class StartEvent(
-    callbackFunction: ResultCallbackFunction<Unit>
-) : Request<Unit>(callbackFunction)
-
-/**
  * Stop the [CoreSubscriber].
  */
 internal class StopEvent(

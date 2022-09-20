@@ -5,6 +5,7 @@ import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
 import com.ably.tracking.annotations.Experimental
 import com.ably.tracking.common.Ably
+import com.ably.tracking.subscriber.workerqueue.WorkerParams
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
@@ -46,8 +47,8 @@ internal class DefaultSubscriber(
      */
     suspend fun start() {
         suspendCoroutine<Unit> { continuation ->
-            core.request(
-                StartEvent {
+            core.enqueue(
+                WorkerParams.Start {
                     try {
                         continuation.resume(it.getOrThrow())
                     } catch (exception: Exception) {

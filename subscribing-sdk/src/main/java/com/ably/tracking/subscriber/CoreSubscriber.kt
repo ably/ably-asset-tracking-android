@@ -101,7 +101,7 @@ private class DefaultCoreSubscriber(
         val channel = Channel<Event>()
         sendEventChannel = channel
 
-        val workerFactory = WorkerFactory(this, ably)
+        val workerFactory = WorkerFactory(this, ably, trackableId)
         workerQueue = WorkerQueue(properties, scope, workerFactory)
 
         scope.launch {
@@ -138,26 +138,6 @@ private class DefaultCoreSubscriber(
                     }
                 }
                 when (event) {
-                    is StartEvent -> {
-                        updateTrackableState(properties)
-                        ably.connect(
-                            trackableId,
-                            properties.presenceData,
-                            useRewind = true,
-                            willSubscribe = true
-                        ) {
-                            if (it.isSuccess) {
-                                enqueue(
-                                    WorkerParams.HandleConnectionCreated(
-                                        trackableId,
-                                        event.callbackFunction
-                                    )
-                                )
-                            } else {
-                                event.callbackFunction(it)
-                            }
-                        }
-                    }
                     is ChangeResolutionEvent -> {
                         properties.presenceData =
                             properties.presenceData.copy(resolution = event.resolution)

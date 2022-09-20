@@ -8,13 +8,14 @@ import com.ably.tracking.subscriber.CoreSubscriber
 import com.ably.tracking.subscriber.workerqueue.workers.HandleConnectionCreatedWorker
 import com.ably.tracking.subscriber.workerqueue.workers.HandleConnectionReadyWorker
 import com.ably.tracking.subscriber.workerqueue.workers.HandlePresenceMessageWorker
+import com.ably.tracking.subscriber.workerqueue.workers.StartWorker
 import com.ably.tracking.subscriber.workerqueue.workers.UpdateChannelConnectionStateWorker
 import com.ably.tracking.subscriber.workerqueue.workers.UpdateConnectionStateWorker
 
 /**
  * Factory that creates the [Worker]s. It also serves as a simple DI for workers dependencies.
  */
-internal class WorkerFactory(private val coreSubscriber: CoreSubscriber, private val ably: Ably) {
+internal class WorkerFactory(private val coreSubscriber: CoreSubscriber, private val ably: Ably, private val trackableId: String) {
     /**
      * Creates an appropriate [Worker] from the passed [WorkerParams].
      *
@@ -35,9 +36,15 @@ internal class WorkerFactory(private val coreSubscriber: CoreSubscriber, private
                 params.presenceMessage,
                 coreSubscriber
             )
+            is WorkerParams.Start -> StartWorker(
+                ably,
+                coreSubscriber,
+                trackableId,
+                params.callbackFunction
+            )
             is WorkerParams.HandleConnectionCreated -> HandleConnectionCreatedWorker(
                 ably,
-                params.trackableId,
+                trackableId,
                 params.callbackFunction
             )
             is WorkerParams.HandleConnectionReady -> HandleConnectionReadyWorker(
@@ -61,8 +68,11 @@ internal sealed class WorkerParams {
         val presenceMessage: PresenceMessage
     ) : WorkerParams()
 
+    data class Start(
+        val callbackFunction: ResultCallbackFunction<Unit>
+    ) : WorkerParams()
+
     data class HandleConnectionCreated(
-        val trackableId: String,
         val callbackFunction: ResultCallbackFunction<Unit>
     ) : WorkerParams()
 
