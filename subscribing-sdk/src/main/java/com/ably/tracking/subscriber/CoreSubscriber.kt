@@ -30,7 +30,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 internal interface CoreSubscriber {
-    fun enqueue(event: AdhocEvent)
     fun request(request: Request<*>)
     fun enqueue(workerParams: WorkerParams)
     val enhancedLocations: SharedFlow<LocationUpdate>
@@ -110,10 +109,6 @@ private class DefaultCoreSubscriber(
         ably.subscribeForAblyStateChange { enqueue(WorkerParams.UpdateConnectionState(it)) }
     }
 
-    override fun enqueue(event: AdhocEvent) {
-        scope.launch { sendEventChannel.send(event) }
-    }
-
     override fun request(request: Request<*>) {
         scope.launch { sendEventChannel.send(request) }
     }
@@ -136,9 +131,6 @@ private class DefaultCoreSubscriber(
                             is StopEvent -> event.callbackFunction(Result.success(Unit))
                             else -> event.callbackFunction(Result.failure(SubscriberStoppedException()))
                         }
-                        continue
-                    } else if (event is AdhocEvent) {
-                        // when the event is an adhoc event then just ignore it
                         continue
                     }
                 }
@@ -196,10 +188,6 @@ private class DefaultCoreSubscriber(
                             event.callbackFunction(Result.failure(exception))
                         }
                     }
-                    is ChannelConnectionStateChangeEvent -> {
-                        properties.lastChannelConnectionStateChange = event.connectionStateChange
-                        updateTrackableState(properties)
-                    }
                 }
             }
         }
@@ -232,7 +220,7 @@ private class DefaultCoreSubscriber(
 
     private fun subscribeForChannelState() {
         ably.subscribeForChannelStateChange(trackableId) {
-            enqueue(ChannelConnectionStateChangeEvent(it))
+            enqueue(WorkerParams.UpdateChannelConnectionState(it))
         }
     }
 

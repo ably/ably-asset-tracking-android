@@ -4,6 +4,7 @@ import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.PresenceMessage
 import com.ably.tracking.subscriber.CoreSubscriber
 import com.ably.tracking.subscriber.workerqueue.workers.HandlePresenceMessageWorker
+import com.ably.tracking.subscriber.workerqueue.workers.UpdateChannelConnectionStateWorker
 import com.ably.tracking.subscriber.workerqueue.workers.UpdateConnectionStateWorker
 
 /**
@@ -22,6 +23,10 @@ internal class WorkerFactory(private val coreSubscriber: CoreSubscriber) {
                 params.connectionStateChange,
                 coreSubscriber
             )
+            is WorkerParams.UpdateChannelConnectionState -> UpdateChannelConnectionStateWorker(
+                params.channelConnectionStateChange,
+                coreSubscriber
+            )
             is WorkerParams.HandlePresenceMessage -> HandlePresenceMessageWorker(
                 params.presenceMessage,
                 coreSubscriber
@@ -33,6 +38,10 @@ internal class WorkerFactory(private val coreSubscriber: CoreSubscriber) {
 internal sealed class WorkerParams {
     data class UpdateConnectionState(
         val connectionStateChange: ConnectionStateChange
+    ) : WorkerParams()
+
+    data class UpdateChannelConnectionState(
+        val channelConnectionStateChange: ConnectionStateChange
     ) : WorkerParams()
 
     data class HandlePresenceMessage(

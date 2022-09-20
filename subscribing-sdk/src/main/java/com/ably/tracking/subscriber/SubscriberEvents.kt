@@ -54,11 +54,3 @@ internal class ChangeResolutionEvent(
     val resolution: Resolution?,
     callbackFunction: ResultCallbackFunction<Unit>
 ) : Request<Unit>(callbackFunction)
-
-/**
- * Trackable Ably channel state changed.
- * Should be created only from within the [CoreSubscriber].
- */
-internal data class ChannelConnectionStateChangeEvent(
-    val connectionStateChange: ConnectionStateChange
-) : AdhocEvent()
