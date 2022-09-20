@@ -77,8 +77,8 @@ internal class DefaultSubscriber(
     override suspend fun stop() {
         // send stop request over channel and wait for the result
         suspendCoroutine<Unit> { continuation ->
-            core.request(
-                StopEvent {
+            core.enqueue(
+                WorkerParams.Stop {
                     try {
                         continuation.resume(it.getOrThrow())
                     } catch (exception: Exception) {

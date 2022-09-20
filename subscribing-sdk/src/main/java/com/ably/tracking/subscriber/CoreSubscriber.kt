@@ -44,6 +44,7 @@ internal interface CoreSubscriber {
     fun subscribeForRawEvents(presenceData: PresenceData)
     fun subscribeForEnhancedEvents(presenceData: PresenceData)
     fun subscribeForChannelState()
+    fun notifyAssetIsOffline()
 }
 
 internal fun createCoreSubscriber(
@@ -131,7 +132,6 @@ private class DefaultCoreSubscriber(
                     if (event is Request<*>) {
                         // when the event is a request then call its handler
                         when (event) {
-                            is StopEvent -> event.callbackFunction(Result.success(Unit))
                             else -> event.callbackFunction(Result.failure(SubscriberStoppedException()))
                         }
                         continue
@@ -143,16 +143,6 @@ private class DefaultCoreSubscriber(
                             properties.presenceData.copy(resolution = event.resolution)
                         ably.updatePresenceData(trackableId, properties.presenceData) {
                             event.callbackFunction(it)
-                        }
-                    }
-                    is StopEvent -> {
-                        try {
-                            ably.close(properties.presenceData)
-                            properties.isStopped = true
-                            notifyAssetIsOffline()
-                            event.callbackFunction(Result.success(Unit))
-                        } catch (exception: ConnectionException) {
-                            event.callbackFunction(Result.failure(exception))
                         }
                     }
                 }
@@ -210,7 +200,7 @@ private class DefaultCoreSubscriber(
         }
     }
 
-    private fun notifyAssetIsOffline() {
+    override fun notifyAssetIsOffline() {
         scope.launch { _trackableStates.emit(TrackableState.Offline()) }
     }
 }

@@ -9,13 +9,18 @@ import com.ably.tracking.subscriber.workerqueue.workers.HandleConnectionCreatedW
 import com.ably.tracking.subscriber.workerqueue.workers.HandleConnectionReadyWorker
 import com.ably.tracking.subscriber.workerqueue.workers.HandlePresenceMessageWorker
 import com.ably.tracking.subscriber.workerqueue.workers.StartWorker
+import com.ably.tracking.subscriber.workerqueue.workers.StopWorker
 import com.ably.tracking.subscriber.workerqueue.workers.UpdateChannelConnectionStateWorker
 import com.ably.tracking.subscriber.workerqueue.workers.UpdateConnectionStateWorker
 
 /**
  * Factory that creates the [Worker]s. It also serves as a simple DI for workers dependencies.
  */
-internal class WorkerFactory(private val coreSubscriber: CoreSubscriber, private val ably: Ably, private val trackableId: String) {
+internal class WorkerFactory(
+    private val coreSubscriber: CoreSubscriber,
+    private val ably: Ably,
+    private val trackableId: String
+) {
     /**
      * Creates an appropriate [Worker] from the passed [WorkerParams].
      *
@@ -51,6 +56,7 @@ internal class WorkerFactory(private val coreSubscriber: CoreSubscriber, private
                 coreSubscriber,
                 params.callbackFunction
             )
+            is WorkerParams.Stop -> StopWorker(ably, coreSubscriber, params.callbackFunction)
         }
 }
 
@@ -77,6 +83,10 @@ internal sealed class WorkerParams {
     ) : WorkerParams()
 
     data class HandleConnectionReady(
+        val callbackFunction: ResultCallbackFunction<Unit>
+    ) : WorkerParams()
+
+    data class Stop(
         val callbackFunction: ResultCallbackFunction<Unit>
     ) : WorkerParams()
 
