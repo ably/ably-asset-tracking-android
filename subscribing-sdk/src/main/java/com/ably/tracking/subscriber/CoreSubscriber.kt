@@ -138,13 +138,6 @@ private class DefaultCoreSubscriber(
                     }
                 }
                 when (event) {
-                    is ChangeResolutionEvent -> {
-                        properties.presenceData =
-                            properties.presenceData.copy(resolution = event.resolution)
-                        ably.updatePresenceData(trackableId, properties.presenceData) {
-                            event.callbackFunction(it)
-                        }
-                    }
                 }
             }
         }

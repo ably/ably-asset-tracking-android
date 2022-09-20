@@ -1,10 +1,12 @@
 package com.ably.tracking.subscriber.workerqueue
 
+import com.ably.tracking.Resolution
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.PresenceMessage
 import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.subscriber.CoreSubscriber
+import com.ably.tracking.subscriber.workerqueue.workers.ChangeResolutionWorker
 import com.ably.tracking.subscriber.workerqueue.workers.HandleConnectionCreatedWorker
 import com.ably.tracking.subscriber.workerqueue.workers.HandleConnectionReadyWorker
 import com.ably.tracking.subscriber.workerqueue.workers.HandlePresenceMessageWorker
@@ -29,18 +31,6 @@ internal class WorkerFactory(
      */
     fun createWorker(params: WorkerParams): Worker =
         when (params) {
-            is WorkerParams.UpdateConnectionState -> UpdateConnectionStateWorker(
-                params.connectionStateChange,
-                coreSubscriber
-            )
-            is WorkerParams.UpdateChannelConnectionState -> UpdateChannelConnectionStateWorker(
-                params.channelConnectionStateChange,
-                coreSubscriber
-            )
-            is WorkerParams.HandlePresenceMessage -> HandlePresenceMessageWorker(
-                params.presenceMessage,
-                coreSubscriber
-            )
             is WorkerParams.Start -> StartWorker(
                 ably,
                 coreSubscriber,
@@ -54,6 +44,24 @@ internal class WorkerFactory(
             )
             is WorkerParams.HandleConnectionReady -> HandleConnectionReadyWorker(
                 coreSubscriber,
+                params.callbackFunction
+            )
+            is WorkerParams.UpdateConnectionState -> UpdateConnectionStateWorker(
+                params.connectionStateChange,
+                coreSubscriber
+            )
+            is WorkerParams.UpdateChannelConnectionState -> UpdateChannelConnectionStateWorker(
+                params.channelConnectionStateChange,
+                coreSubscriber
+            )
+            is WorkerParams.HandlePresenceMessage -> HandlePresenceMessageWorker(
+                params.presenceMessage,
+                coreSubscriber
+            )
+            is WorkerParams.ChangeResolution -> ChangeResolutionWorker(
+                ably,
+                trackableId,
+                params.resolution,
                 params.callbackFunction
             )
             is WorkerParams.Stop -> StopWorker(ably, coreSubscriber, params.callbackFunction)
@@ -72,6 +80,11 @@ internal sealed class WorkerParams {
 
     data class HandlePresenceMessage(
         val presenceMessage: PresenceMessage
+    ) : WorkerParams()
+
+    data class ChangeResolution(
+        val resolution: Resolution?,
+        val callbackFunction: ResultCallbackFunction<Unit>
     ) : WorkerParams()
 
     data class Start(
