@@ -41,6 +41,9 @@ internal interface CoreSubscriber {
     fun updateTrackableState(properties: Properties)
     fun updatePublisherPresence(properties: Properties, isPublisherPresent: Boolean)
     fun updatePublisherResolutionInformation(presenceData: PresenceData)
+    fun subscribeForRawEvents(presenceData: PresenceData)
+    fun subscribeForEnhancedEvents(presenceData: PresenceData)
+    fun subscribeForChannelState()
 }
 
 internal fun createCoreSubscriber(
@@ -156,7 +159,7 @@ private class DefaultCoreSubscriber(
                             listener = { enqueue(WorkerParams.HandlePresenceMessage(it)) },
                             callback = { subscribeResult ->
                                 if (subscribeResult.isSuccess) {
-                                    request(ConnectionReadyEvent(event.callbackFunction))
+                                    enqueue(WorkerParams.HandleConnectionReady(event.callbackFunction))
                                 } else {
                                     ably.disconnect(trackableId, properties.presenceData) {
                                         event.callbackFunction(subscribeResult)
@@ -164,12 +167,6 @@ private class DefaultCoreSubscriber(
                                 }
                             }
                         )
-                    }
-                    is ConnectionReadyEvent -> {
-                        subscribeForChannelState()
-                        subscribeForEnhancedEvents(properties.presenceData)
-                        subscribeForRawEvents(properties.presenceData)
-                        event.callbackFunction(Result.success(Unit))
                     }
                     is ChangeResolutionEvent -> {
                         properties.presenceData =
@@ -218,19 +215,19 @@ private class DefaultCoreSubscriber(
         }
     }
 
-    private fun subscribeForChannelState() {
+    override fun subscribeForChannelState() {
         ably.subscribeForChannelStateChange(trackableId) {
             enqueue(WorkerParams.UpdateChannelConnectionState(it))
         }
     }
 
-    private fun subscribeForEnhancedEvents(presenceData: PresenceData) {
+    override fun subscribeForEnhancedEvents(presenceData: PresenceData) {
         ably.subscribeForEnhancedEvents(trackableId, presenceData) {
             scope.launch { _enhancedLocations.emit(it) }
         }
     }
 
-    private fun subscribeForRawEvents(presenceData: PresenceData) {
+    override fun subscribeForRawEvents(presenceData: PresenceData) {
         ably.subscribeForRawEvents(trackableId, presenceData) {
             scope.launch { _rawLocations.emit(it) }
         }

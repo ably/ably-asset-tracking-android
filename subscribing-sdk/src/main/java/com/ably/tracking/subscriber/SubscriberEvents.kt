@@ -28,14 +28,6 @@ internal class ConnectionCreatedEvent(
 ) : Request<Unit>(callbackFunction)
 
 /**
- * Connection for a trackable is ready to be used.
- * Should be created only from within the [CoreSubscriber].
- */
-internal class ConnectionReadyEvent(
-    callbackFunction: ResultCallbackFunction<Unit>
-) : Request<Unit>(callbackFunction)
-
-/**
  * Stop the [CoreSubscriber].
  */
 internal class StopEvent(

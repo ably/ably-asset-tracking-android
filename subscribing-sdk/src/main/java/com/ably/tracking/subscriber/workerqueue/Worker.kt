@@ -1,5 +1,6 @@
 package com.ably.tracking.subscriber.workerqueue
 
+import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.subscriber.Properties
 
 /**
@@ -33,4 +34,12 @@ internal interface Worker {
      * @param exception The exception created by the stopped worker queue.
      */
     fun doWhenStopped(exception: Exception)
+}
+
+internal abstract class CallbackWorker(protected val callbackFunction: ResultCallbackFunction<Unit>) :
+    Worker {
+
+    override fun doWhenStopped(exception: Exception) {
+        callbackFunction(Result.failure(exception))
+    }
 }
