@@ -40,6 +40,8 @@ internal interface CoreSubscriber {
     val resolutions: SharedFlow<Resolution>
     val nextLocationUpdateIntervals: SharedFlow<Long>
     fun updateTrackableState(properties: Properties)
+    fun updatePublisherPresence(properties: Properties, isPublisherPresent: Boolean)
+    fun updatePublisherResolutionInformation(presenceData: PresenceData)
 }
 
 internal fun createCoreSubscriber(
@@ -159,7 +161,7 @@ private class DefaultCoreSubscriber(
                     is ConnectionCreatedEvent -> {
                         ably.subscribeForPresenceMessages(
                             trackableId = trackableId,
-                            listener = { enqueue(PresenceMessageEvent(it)) },
+                            listener = { enqueue(WorkerParams.HandlePresenceMessage(it)) },
                             callback = { subscribeResult ->
                                 if (subscribeResult.isSuccess) {
                                     request(ConnectionReadyEvent(event.callbackFunction))
@@ -229,7 +231,7 @@ private class DefaultCoreSubscriber(
         }
     }
 
-    private fun updatePublisherPresence(properties: Properties, isPublisherPresent: Boolean) {
+    override fun updatePublisherPresence(properties: Properties, isPublisherPresent: Boolean) {
         if (isPublisherPresent != properties.isPublisherOnline) {
             properties.isPublisherOnline = isPublisherPresent
             scope.launch { _publisherPresence.emit(isPublisherPresent) }
@@ -272,7 +274,7 @@ private class DefaultCoreSubscriber(
         }
     }
 
-    private fun updatePublisherResolutionInformation(presenceData: PresenceData) {
+    override fun updatePublisherResolutionInformation(presenceData: PresenceData) {
         presenceData.resolution?.let { publisherResolution ->
             scope.launch { _resolutions.emit(publisherResolution) }
             scope.launch { _nextLocationUpdateIntervals.emit(publisherResolution.desiredInterval) }
