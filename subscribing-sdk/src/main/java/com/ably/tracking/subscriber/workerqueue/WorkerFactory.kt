@@ -7,11 +7,11 @@ import com.ably.tracking.common.PresenceMessage
 import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.subscriber.CoreSubscriber
 import com.ably.tracking.subscriber.workerqueue.workers.ChangeResolutionWorker
-import com.ably.tracking.subscriber.workerqueue.workers.HandleConnectionCreatedWorker
-import com.ably.tracking.subscriber.workerqueue.workers.HandleConnectionReadyWorker
-import com.ably.tracking.subscriber.workerqueue.workers.HandlePresenceMessageWorker
-import com.ably.tracking.subscriber.workerqueue.workers.StartWorker
-import com.ably.tracking.subscriber.workerqueue.workers.StopWorker
+import com.ably.tracking.subscriber.workerqueue.workers.SubscribeForPresenceMessagesWorker
+import com.ably.tracking.subscriber.workerqueue.workers.SubscribeToChannelWorker
+import com.ably.tracking.subscriber.workerqueue.workers.UpdatePublisherPresenceWorker
+import com.ably.tracking.subscriber.workerqueue.workers.StartConnectionWorker
+import com.ably.tracking.subscriber.workerqueue.workers.StopConnectionWorker
 import com.ably.tracking.subscriber.workerqueue.workers.UpdateChannelConnectionStateWorker
 import com.ably.tracking.subscriber.workerqueue.workers.UpdateConnectionStateWorker
 
@@ -31,18 +31,18 @@ internal class WorkerFactory(
      */
     fun createWorker(params: WorkerParams): Worker =
         when (params) {
-            is WorkerParams.Start -> StartWorker(
+            is WorkerParams.StartConnection -> StartConnectionWorker(
                 ably,
                 coreSubscriber,
                 trackableId,
                 params.callbackFunction
             )
-            is WorkerParams.HandleConnectionCreated -> HandleConnectionCreatedWorker(
+            is WorkerParams.SubscribeForPresenceMessages -> SubscribeForPresenceMessagesWorker(
                 ably,
                 trackableId,
                 params.callbackFunction
             )
-            is WorkerParams.HandleConnectionReady -> HandleConnectionReadyWorker(
+            is WorkerParams.SubscribeToChannel -> SubscribeToChannelWorker(
                 coreSubscriber,
                 params.callbackFunction
             )
@@ -54,7 +54,7 @@ internal class WorkerFactory(
                 params.channelConnectionStateChange,
                 coreSubscriber
             )
-            is WorkerParams.HandlePresenceMessage -> HandlePresenceMessageWorker(
+            is WorkerParams.UpdatePublisherPresence -> UpdatePublisherPresenceWorker(
                 params.presenceMessage,
                 coreSubscriber
             )
@@ -64,10 +64,9 @@ internal class WorkerFactory(
                 params.resolution,
                 params.callbackFunction
             )
-            is WorkerParams.Stop -> StopWorker(ably, coreSubscriber, params.callbackFunction)
+            is WorkerParams.StopConnection -> StopConnectionWorker(ably, coreSubscriber, params.callbackFunction)
         }
 }
-
 
 internal sealed class WorkerParams {
     data class UpdateConnectionState(
@@ -78,7 +77,7 @@ internal sealed class WorkerParams {
         val channelConnectionStateChange: ConnectionStateChange
     ) : WorkerParams()
 
-    data class HandlePresenceMessage(
+    data class UpdatePublisherPresence(
         val presenceMessage: PresenceMessage
     ) : WorkerParams()
 
@@ -87,20 +86,19 @@ internal sealed class WorkerParams {
         val callbackFunction: ResultCallbackFunction<Unit>
     ) : WorkerParams()
 
-    data class Start(
+    data class StartConnection(
         val callbackFunction: ResultCallbackFunction<Unit>
     ) : WorkerParams()
 
-    data class HandleConnectionCreated(
+    data class SubscribeForPresenceMessages(
         val callbackFunction: ResultCallbackFunction<Unit>
     ) : WorkerParams()
 
-    data class HandleConnectionReady(
+    data class SubscribeToChannel(
         val callbackFunction: ResultCallbackFunction<Unit>
     ) : WorkerParams()
 
-    data class Stop(
+    data class StopConnection(
         val callbackFunction: ResultCallbackFunction<Unit>
     ) : WorkerParams()
-
 }

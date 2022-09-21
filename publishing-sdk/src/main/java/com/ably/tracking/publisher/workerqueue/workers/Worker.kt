@@ -1,7 +1,6 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
 import com.ably.tracking.publisher.PublisherProperties
-import com.ably.tracking.publisher.workerqueue.WorkerParams
 import com.ably.tracking.publisher.workerqueue.results.SyncAsyncResult
 
 /**

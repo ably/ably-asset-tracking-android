@@ -48,7 +48,7 @@ internal class DefaultSubscriber(
     suspend fun start() {
         suspendCoroutine<Unit> { continuation ->
             core.enqueue(
-                WorkerParams.Start {
+                WorkerParams.StartConnection {
                     try {
                         continuation.resume(it.getOrThrow())
                     } catch (exception: Exception) {
@@ -62,13 +62,15 @@ internal class DefaultSubscriber(
     override suspend fun resolutionPreference(resolution: Resolution?) {
         // send change request over channel and wait for the result
         suspendCoroutine<Unit> { continuation ->
-            core.enqueue(WorkerParams.ChangeResolution(resolution) {
-                try {
-                    continuation.resume(it.getOrThrow())
-                } catch (exception: Exception) {
-                    continuation.resumeWithException(exception)
+            core.enqueue(
+                WorkerParams.ChangeResolution(resolution) {
+                    try {
+                        continuation.resume(it.getOrThrow())
+                    } catch (exception: Exception) {
+                        continuation.resumeWithException(exception)
+                    }
                 }
-            })
+            )
         }
     }
 
@@ -76,7 +78,7 @@ internal class DefaultSubscriber(
         // send stop request over channel and wait for the result
         suspendCoroutine<Unit> { continuation ->
             core.enqueue(
-                WorkerParams.Stop {
+                WorkerParams.StopConnection {
                     try {
                         continuation.resume(it.getOrThrow())
                     } catch (exception: Exception) {

@@ -1,7 +1,6 @@
 package com.ably.tracking.subscriber.workerqueue.workers
 
 import com.ably.tracking.common.ClientTypes
-import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.PresenceAction
 import com.ably.tracking.common.PresenceMessage
 import com.ably.tracking.subscriber.CoreSubscriber
@@ -9,7 +8,7 @@ import com.ably.tracking.subscriber.Properties
 import com.ably.tracking.subscriber.workerqueue.Worker
 import com.ably.tracking.subscriber.workerqueue.WorkerParams
 
-internal class HandlePresenceMessageWorker(
+internal class UpdatePublisherPresenceWorker(
     private val presenceMessage: PresenceMessage,
     private val coreSubscriber: CoreSubscriber
 ) : Worker {

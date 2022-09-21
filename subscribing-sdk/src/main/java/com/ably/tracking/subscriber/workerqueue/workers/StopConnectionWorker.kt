@@ -5,11 +5,10 @@ import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.subscriber.CoreSubscriber
 import com.ably.tracking.subscriber.Properties
-import com.ably.tracking.subscriber.workerqueue.CallbackWorker
 import com.ably.tracking.subscriber.workerqueue.Worker
 import com.ably.tracking.subscriber.workerqueue.WorkerParams
 
-internal class StopWorker(
+internal class StopConnectionWorker(
     private val ably: Ably,
     private val coreSubscriber: CoreSubscriber,
     private val callbackFunction: ResultCallbackFunction<Unit>
