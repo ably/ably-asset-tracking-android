@@ -19,6 +19,7 @@ internal class ChangeResolutionWorker(
         postWork: (WorkerParams) -> Unit
     ) {
         properties.presenceData = properties.presenceData.copy(resolution = resolution)
+        //TODO convert to coroutines using async
         ably.updatePresenceData(trackableId, properties.presenceData) {
             callbackFunction(it)
         }

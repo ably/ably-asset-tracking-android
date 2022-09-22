@@ -61,6 +61,8 @@ internal class DefaultSubscriber(
 
     override suspend fun resolutionPreference(resolution: Resolution?) {
         // send change request over channel and wait for the result
+
+        //TODO move suspendCoroutine lower to suspending enqueue
         suspendCoroutine<Unit> { continuation ->
             core.enqueue(
                 WorkerParams.ChangeResolution(resolution) {

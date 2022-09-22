@@ -1,6 +1,7 @@
 package com.ably.tracking.subscriber.workerqueue.workers
 
 import com.ably.tracking.common.ConnectionStateChange
+import com.ably.tracking.subscriber.Core
 import com.ably.tracking.subscriber.CoreSubscriber
 import com.ably.tracking.subscriber.Properties
 import com.ably.tracking.subscriber.workerqueue.Worker
@@ -8,7 +9,7 @@ import com.ably.tracking.subscriber.workerqueue.WorkerParams
 
 internal class UpdateConnectionStateWorker(
     private val connectionStateChange: ConnectionStateChange,
-    private val coreSubscriber: CoreSubscriber
+    private val core: Core
 ) : Worker {
     override fun doWork(
         properties: Properties,
@@ -16,7 +17,7 @@ internal class UpdateConnectionStateWorker(
         postWork: (WorkerParams) -> Unit
     ) {
         properties.lastConnectionStateChange = connectionStateChange
-        coreSubscriber.updateTrackableState(properties)
+        core.updateTrackableState(properties)
     }
 
     override fun doWhenStopped(exception: Exception) = Unit

@@ -5,6 +5,7 @@ import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.PresenceMessage
 import com.ably.tracking.common.ResultCallbackFunction
+import com.ably.tracking.subscriber.Core
 import com.ably.tracking.subscriber.CoreSubscriber
 import com.ably.tracking.subscriber.workerqueue.workers.ChangeResolutionWorker
 import com.ably.tracking.subscriber.workerqueue.workers.SubscribeForPresenceMessagesWorker
@@ -19,7 +20,7 @@ import com.ably.tracking.subscriber.workerqueue.workers.UpdateConnectionStateWor
  * Factory that creates the [Worker]s. It also serves as a simple DI for workers dependencies.
  */
 internal class WorkerFactory(
-    private val coreSubscriber: CoreSubscriber,
+    private val core: Core,
     private val ably: Ably,
     private val trackableId: String
 ) {
@@ -33,7 +34,7 @@ internal class WorkerFactory(
         when (params) {
             is WorkerParams.StartConnection -> StartConnectionWorker(
                 ably,
-                coreSubscriber,
+                core,
                 trackableId,
                 params.callbackFunction
             )
@@ -43,20 +44,20 @@ internal class WorkerFactory(
                 params.callbackFunction
             )
             is WorkerParams.SubscribeToChannel -> SubscribeToChannelWorker(
-                coreSubscriber,
+                core,
                 params.callbackFunction
             )
             is WorkerParams.UpdateConnectionState -> UpdateConnectionStateWorker(
                 params.connectionStateChange,
-                coreSubscriber
+                core
             )
             is WorkerParams.UpdateChannelConnectionState -> UpdateChannelConnectionStateWorker(
                 params.channelConnectionStateChange,
-                coreSubscriber
+                core
             )
             is WorkerParams.UpdatePublisherPresence -> UpdatePublisherPresenceWorker(
                 params.presenceMessage,
-                coreSubscriber
+                core
             )
             is WorkerParams.ChangeResolution -> ChangeResolutionWorker(
                 ably,
@@ -64,10 +65,11 @@ internal class WorkerFactory(
                 params.resolution,
                 params.callbackFunction
             )
-            is WorkerParams.StopConnection -> StopConnectionWorker(ably, coreSubscriber, params.callbackFunction)
+            is WorkerParams.StopConnection -> StopConnectionWorker(ably, core, params.callbackFunction)
         }
 }
 
+//TODO rename to WorkerSpecification
 internal sealed class WorkerParams {
     data class UpdateConnectionState(
         val connectionStateChange: ConnectionStateChange

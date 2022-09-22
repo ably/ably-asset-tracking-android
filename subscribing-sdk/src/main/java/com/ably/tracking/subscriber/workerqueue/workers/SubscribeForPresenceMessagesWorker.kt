@@ -16,6 +16,7 @@ internal class SubscribeForPresenceMessagesWorker(
         doAsyncWork: (suspend () -> Unit) -> Unit,
         postWork: (WorkerParams) -> Unit
     ) {
+        //TODO convert to coroutines using async
         ably.subscribeForPresenceMessages(
             trackableId = trackableId,
             listener = { postWork(WorkerParams.UpdatePublisherPresence(it)) },
