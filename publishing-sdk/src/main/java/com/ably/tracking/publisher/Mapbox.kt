@@ -247,6 +247,7 @@ internal class DefaultMapbox(
 
         runBlocking(mainDispatcher) {
             mapboxNavigation = MapboxInstanceProvider.createOrRetrieve(mapboxBuilder.build())
+            logHandler?.v("$TAG obtained MapboxNavigation instance")
             setupRouteClearingWhenDestinationIsReached()
         }
     }
