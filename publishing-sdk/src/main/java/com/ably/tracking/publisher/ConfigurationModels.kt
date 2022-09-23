@@ -219,26 +219,34 @@ data class TrackableResolutionRequest(
     val remoteRequests: Set<Resolution>
 )
 
+/**
+ * Represents the destination of a [Trackable].
+ */
 data class Destination(
+    /**
+     * Latitude of the location in degrees.
+     */
     val latitude: Double,
-    val longitude: Double
+    /**
+     * Longitude of the location in degrees.
+     */
+    val longitude: Double,
 )
 
 /**
- * TODO: add description.
- *
+ * Represents an asset that is tracked by the [Publisher].
  */
 data class Trackable(
     /**
-     * TODO: Specifies a tracking identifier for the asset.
+     * The unique identifier of the asset. It is used by the Subscriber SDK to receive location updates for the asset.
      */
     val id: String,
     /**
-     * TODO: Destination of the trackable as a latitude and longitude.
+     * The destination of the asset.
      */
     val destination: Destination? = null,
     /**
-     * TODO: A set of Resolution Constraints.
+     * A set of constraints used to determine the final [Resolution] for the asset.
      */
     val constraints: ResolutionConstraints? = null
 ) {
