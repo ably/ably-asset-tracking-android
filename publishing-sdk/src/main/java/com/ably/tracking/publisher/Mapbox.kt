@@ -158,24 +158,26 @@ private object MapboxInstanceProvider {
      */
 
     @Suppress("VisibleForTests")
-    fun createOrRetrieve(navigationOptions: NavigationOptions): MapboxNavigation {
-        counter.incrementAndGet()
-        return mapboxNavigation ?: MapboxNavigation(navigationOptions).also { mapboxNavigation = it }
-    }
+    fun createOrRetrieve(navigationOptions: NavigationOptions): MapboxNavigation =
+        synchronized(this) {
+            counter.incrementAndGet()
+            mapboxNavigation ?: MapboxNavigation(navigationOptions).also { mapboxNavigation = it }
+        }
 
     /**
      * Call when previously obtained MapboxNavigation instance is no longer used. Will call onDestroy if this was the last reference.
      *
      * @return A [Boolean] that indicates whether MapboxNavigation was destroyed
      */
-    fun destroyIfPossible(): Boolean {
-        val wasLastInstance = counter.decrementAndGet() == 0
-        if (wasLastInstance) {
-            mapboxNavigation?.onDestroy()
-            mapboxNavigation = null
+    fun destroyIfPossible(): Boolean =
+        synchronized(this) {
+            val wasLastInstance = counter.decrementAndGet() == 0
+            if (wasLastInstance) {
+                mapboxNavigation?.onDestroy()
+                mapboxNavigation = null
+            }
+            wasLastInstance
         }
-        return wasLastInstance
-    }
 }
 
 /**
