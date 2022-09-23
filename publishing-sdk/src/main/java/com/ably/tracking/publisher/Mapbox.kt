@@ -142,7 +142,7 @@ internal interface Mapbox {
 /**
  * Singleton object used to hold the created instances of [Mapbox] interface implementations ([DefaultMapbox]).
  * Uses reference counting to check whether we should destroy the [MapboxNavigation] when a [Mapbox] instance is stopped.
- * This object is safe to use across multiple threads as it uses an [AtomicInteger] as the counter and [Volatile] annotation on the instance field.
+ * This object is safe to use across multiple threads as it uses [synchronized], an [AtomicInteger] as the counter, and [Volatile] annotation on the instance field.
  */
 private object MapboxInstanceProvider {
 
@@ -152,7 +152,7 @@ private object MapboxInstanceProvider {
     private val counter = AtomicInteger(0)
 
     /**
-     * Call to get a MapboxNavigation instance is needed. When no instance is already created will create a new one using provided options.
+     * Call to get a MapboxNavigation instance. When no instance is already created will create a new one using provided options.
      *
      * @param navigationOptions options to be used if MapboxNavigation needs to be instantiated.
      */
