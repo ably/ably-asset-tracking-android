@@ -34,7 +34,6 @@ import com.mapbox.navigation.base.trip.model.RouteLegProgress
 import com.mapbox.navigation.base.trip.model.RouteProgress
 import com.mapbox.navigation.base.trip.notification.TripNotification
 import com.mapbox.navigation.core.MapboxNavigation
-import com.mapbox.navigation.core.MapboxNavigationProvider
 import com.mapbox.navigation.core.arrival.ArrivalObserver
 import com.mapbox.navigation.core.history.MapboxHistoryReader
 import com.mapbox.navigation.core.internal.utils.InternalUtils
@@ -141,19 +140,30 @@ internal interface Mapbox {
 }
 
 /**
- * Singleton object used to count the created instances of [Mapbox] interface implementations ([DefaultMapbox]).
- * This is used to check whether we should destroy the [MapboxNavigation] when a [Mapbox] instance is stopped.
- * This object is safe to use across multiple threads as it uses an [AtomicInteger] as the counter.
+ * Singleton object used to hold the created instances of [Mapbox] interface implementations ([DefaultMapbox]).
+ * Uses reference counting to check whether we should destroy the [MapboxNavigation] when a [Mapbox] instance is stopped.
+ * This object is safe to use across multiple threads as it uses an [AtomicInteger] as the counter and [Volatile] annotation on the instance field.
  */
-private object MapboxInstancesCounter {
+private object MapboxInstanceProvider {
+
+    @Volatile
+    private var mapboxNavigation: MapboxNavigation? = null
+
     private val counter = AtomicInteger(0)
-    fun increment() {
+
+    @Suppress("VisibleForTests")
+    fun createOrRetrieve(navigationOptions: NavigationOptions): MapboxNavigation {
         counter.incrementAndGet()
+        return mapboxNavigation ?: MapboxNavigation(navigationOptions).also { mapboxNavigation = it }
     }
 
-    fun decrementAndCheckIfItWasTheLastOne(): Boolean {
-        val instancesAmount = counter.decrementAndGet()
-        return instancesAmount == 0
+    fun destroyIfPossible(): Boolean {
+        val wasLastInstance = counter.decrementAndGet() == 0
+        if (wasLastInstance) {
+            mapboxNavigation?.onDestroy()
+            mapboxNavigation = null
+        }
+        return wasLastInstance
     }
 }
 
@@ -236,14 +246,7 @@ internal class DefaultMapbox(
         }
 
         runBlocking(mainDispatcher) {
-            MapboxInstancesCounter.increment()
-            mapboxNavigation = if (MapboxNavigationProvider.isCreated()) {
-                logHandler?.v("$TAG Retrieve previously created MapboxNavigation instance")
-                MapboxNavigationProvider.retrieve()
-            } else {
-                logHandler?.v("$TAG Create new MapboxNavigation instance")
-                MapboxNavigationProvider.create(mapboxBuilder.build())
-            }
+            mapboxNavigation = MapboxInstanceProvider.createOrRetrieve(mapboxBuilder.build())
             setupRouteClearingWhenDestinationIsReached()
         }
     }
@@ -328,9 +331,9 @@ internal class DefaultMapbox(
                     }
                 }
             }
-            if (MapboxInstancesCounter.decrementAndCheckIfItWasTheLastOne()) {
-                logHandler?.v("$TAG Destroy the MapboxNavigation instance")
-                MapboxNavigationProvider.destroy()
+
+            if (MapboxInstanceProvider.destroyIfPossible()) {
+                logHandler?.v("$TAG Destroyed the MapboxNavigation instance")
             }
         }
     }
