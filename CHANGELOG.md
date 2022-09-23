@@ -1,5 +1,17 @@
 # Change log
 
+## [1.4.0](https://github.com/ably/ably-asset-tracking-android/tree/1.4.0)
+
+[Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.3.0...1.4.0)
+
+**Implemented enhancements:**
+
+- Upgrade Mapbox to 2.8.0 [\#759](https://github.com/ably/ably-asset-tracking-android/issues/759)
+
+**Merged pull requests:**
+
+- Mapbox navigation dependency version updated to 2.8.0-rc.2 [\#761](https://github.com/ably/ably-asset-tracking-android/pull/761) ([davyskiba](https://github.com/davyskiba))
+
 ## [1.3.0](https://github.com/ably/ably-asset-tracking-android/tree/1.3.0)
 
 [Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.2.0...1.3.0)
