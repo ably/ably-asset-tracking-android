@@ -151,12 +151,23 @@ private object MapboxInstanceProvider {
 
     private val counter = AtomicInteger(0)
 
+    /**
+     * Call to get a MapboxNavigation instance is needed. When no instance is already created will create a new one using provided options.
+     *
+     * @param navigationOptions options to be used if MapboxNavigation needs to be instantiated.
+     */
+
     @Suppress("VisibleForTests")
     fun createOrRetrieve(navigationOptions: NavigationOptions): MapboxNavigation {
         counter.incrementAndGet()
         return mapboxNavigation ?: MapboxNavigation(navigationOptions).also { mapboxNavigation = it }
     }
 
+    /**
+     * Call when previously obtained MapboxNavigation instance is no longer used. Will call onDestroy if this was the last reference.
+     *
+     * @return A [Boolean] that indicates whether MapboxNavigation was destroyed
+     */
     fun destroyIfPossible(): Boolean {
         val wasLastInstance = counter.decrementAndGet() == 0
         if (wasLastInstance) {
