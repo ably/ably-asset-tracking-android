@@ -68,7 +68,6 @@ internal class WorkerFactory(
         }
 }
 
-//TODO rename to WorkerSpecification
 internal sealed class WorkerSpecification {
     data class UpdateConnectionState(
         val connectionStateChange: ConnectionStateChange
