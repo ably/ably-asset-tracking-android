@@ -16,19 +16,17 @@ internal class SubscribeForPresenceMessagesWorker(
         doAsyncWork: (suspend () -> Unit) -> Unit,
         postWork: (WorkerSpecification) -> Unit
     ) {
-        //TODO convert to coroutines using async
-        ably.subscribeForPresenceMessages(
-            trackableId = trackableId,
-            listener = { postWork(WorkerSpecification.UpdatePublisherPresence(it)) },
-            callback = { subscribeResult ->
-                if (subscribeResult.isSuccess) {
-                    postWork(WorkerSpecification.SubscribeToChannel(callbackFunction))
-                } else {
-                    ably.disconnect(trackableId, properties.presenceData) {
-                        callbackFunction(subscribeResult)
-                    }
-                }
+        doAsyncWork {
+            //TODO clean try..catch?
+            try {
+                ably.subscribeForPresenceMessages(
+                    trackableId = trackableId,
+                    listener = { postWork(WorkerSpecification.UpdatePublisherPresence(it)) })
+                postWork(WorkerSpecification.SubscribeToChannel(callbackFunction))
+            } catch (exception: Exception) {
+                ably.disconnect(trackableId, properties.presenceData)
+                callbackFunction(Result.failure(exception))
             }
-        )
+        }
     }
 }

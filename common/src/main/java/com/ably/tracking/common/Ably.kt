@@ -79,6 +79,14 @@ interface Ably {
     )
 
     /**
+     * A suspending version of [subscribeForPresenceMessages]
+     * */
+    suspend fun subscribeForPresenceMessages(
+        trackableId: String,
+        listener: (PresenceMessage) -> Unit
+    )
+
+    /**
      * Sends an enhanced location update to the channel.
      * Should be called only when there's an existing channel for the [trackableId].
      * If a channel for the [trackableId] doesn't exist then it just calls [callback] with success.
@@ -605,27 +613,30 @@ constructor(
         listener: (PresenceMessage) -> Unit,
         callback: (Result<Unit>) -> Unit,
     ) {
-        val channel = channels[trackableId]
-        if (channel != null) {
-            // Launching on a separate thread as emitting the current presence messages might block the current thread
-            scope.launch {
-                try {
-                    emitAllCurrentMessagesFromPresence(channel, listener)
-                    channel.presence.subscribe {
-                        val parsedMessage = it.toTracking(gson)
-                        if (parsedMessage != null) {
-                            listener(parsedMessage)
-                        } else {
-                            logHandler?.w("Presence message in unexpected format: $it")
-                        }
-                    }
-                    callback(Result.success(Unit))
-                } catch (exception: AblyException) {
-                    callback(Result.failure(exception.errorInfo.toTrackingException()))
+        scope.launch {
+            try {
+                subscribeForPresenceMessages(trackableId, listener)
+                callback(Result.success(Unit))
+            } catch (exception: Exception) {
+                callback(Result.failure(exception))
+            }
+        }
+    }
+
+    override suspend fun subscribeForPresenceMessages(trackableId: String, listener: (PresenceMessage) -> Unit) {
+        val channel = channels[trackableId] ?: return
+        try {
+            emitAllCurrentMessagesFromPresence(channel, listener)
+            channel.presence.subscribe {
+                val parsedMessage = it.toTracking(gson)
+                if (parsedMessage != null) {
+                    listener(parsedMessage)
+                } else {
+                    logHandler?.w("Presence message in unexpected format: $it")
                 }
             }
-        } else {
-            callback(Result.success(Unit))
+        } catch (exception: AblyException) {
+            throw exception.errorInfo.toTrackingException()
         }
     }
 
