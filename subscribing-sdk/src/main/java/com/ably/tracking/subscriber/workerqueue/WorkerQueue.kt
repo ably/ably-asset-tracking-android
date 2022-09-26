@@ -52,8 +52,8 @@ internal class WorkerQueue(
      *
      * @param worker [Worker] to be executed.
      */
-    fun enqueue(workerParams: WorkerParams) {
-        val worker = workerFactory.createWorker(workerParams)
+    fun enqueue(workerSpecification: WorkerSpecification) {
+        val worker = workerFactory.createWorker(workerSpecification)
         scope.launch { workerChannel.send(worker) }
     }
 

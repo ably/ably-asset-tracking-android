@@ -4,7 +4,7 @@ import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.subscriber.Properties
 import com.ably.tracking.subscriber.workerqueue.CallbackWorker
-import com.ably.tracking.subscriber.workerqueue.WorkerParams
+import com.ably.tracking.subscriber.workerqueue.WorkerSpecification
 
 internal class SubscribeForPresenceMessagesWorker(
     private val ably: Ably,
@@ -14,15 +14,15 @@ internal class SubscribeForPresenceMessagesWorker(
     override fun doWork(
         properties: Properties,
         doAsyncWork: (suspend () -> Unit) -> Unit,
-        postWork: (WorkerParams) -> Unit
+        postWork: (WorkerSpecification) -> Unit
     ) {
         //TODO convert to coroutines using async
         ably.subscribeForPresenceMessages(
             trackableId = trackableId,
-            listener = { postWork(WorkerParams.UpdatePublisherPresence(it)) },
+            listener = { postWork(WorkerSpecification.UpdatePublisherPresence(it)) },
             callback = { subscribeResult ->
                 if (subscribeResult.isSuccess) {
-                    postWork(WorkerParams.SubscribeToChannel(callbackFunction))
+                    postWork(WorkerSpecification.SubscribeToChannel(callbackFunction))
                 } else {
                     ably.disconnect(trackableId, properties.presenceData) {
                         callbackFunction(subscribeResult)

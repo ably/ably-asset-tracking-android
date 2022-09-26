@@ -6,7 +6,7 @@ import com.ably.tracking.common.PresenceMessage
 import com.ably.tracking.subscriber.SubscriberStateManipulator
 import com.ably.tracking.subscriber.Properties
 import com.ably.tracking.subscriber.workerqueue.Worker
-import com.ably.tracking.subscriber.workerqueue.WorkerParams
+import com.ably.tracking.subscriber.workerqueue.WorkerSpecification
 
 internal class UpdatePublisherPresenceWorker(
     private val presenceMessage: PresenceMessage,
@@ -15,7 +15,7 @@ internal class UpdatePublisherPresenceWorker(
     override fun doWork(
         properties: Properties,
         doAsyncWork: (suspend () -> Unit) -> Unit,
-        postWork: (WorkerParams) -> Unit
+        postWork: (WorkerSpecification) -> Unit
     ) {
         when (presenceMessage.action) {
             PresenceAction.PRESENT_OR_ENTER -> {

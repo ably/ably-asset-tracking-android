@@ -6,7 +6,7 @@ import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.subscriber.SubscriberStateManipulator
 import com.ably.tracking.subscriber.Properties
 import com.ably.tracking.subscriber.workerqueue.Worker
-import com.ably.tracking.subscriber.workerqueue.WorkerParams
+import com.ably.tracking.subscriber.workerqueue.WorkerSpecification
 
 internal class StopConnectionWorker(
     private val ably: Ably,
@@ -16,7 +16,7 @@ internal class StopConnectionWorker(
     override fun doWork(
         properties: Properties,
         doAsyncWork: (suspend () -> Unit) -> Unit,
-        postWork: (WorkerParams) -> Unit
+        postWork: (WorkerSpecification) -> Unit
     ) {
         //TODO use runBlocking instead
         doAsyncWork {

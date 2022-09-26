@@ -24,82 +24,82 @@ internal class WorkerFactory(
     private val trackableId: String
 ) {
     /**
-     * Creates an appropriate [Worker] from the passed [WorkerParams].
+     * Creates an appropriate [Worker] from the passed [WorkerSpecification].
      *
      * @param params The parameters that indicate which [Worker] implementation should be created.
      * @return New [Worker] instance.
      */
-    fun createWorker(params: WorkerParams): Worker =
+    fun createWorker(params: WorkerSpecification): Worker =
         when (params) {
-            is WorkerParams.StartConnection -> StartConnectionWorker(
+            is WorkerSpecification.StartConnection -> StartConnectionWorker(
                 ably,
                 subscriberStateManipulator,
                 trackableId,
                 params.callbackFunction
             )
-            is WorkerParams.SubscribeForPresenceMessages -> SubscribeForPresenceMessagesWorker(
+            is WorkerSpecification.SubscribeForPresenceMessages -> SubscribeForPresenceMessagesWorker(
                 ably,
                 trackableId,
                 params.callbackFunction
             )
-            is WorkerParams.SubscribeToChannel -> SubscribeToChannelWorker(
+            is WorkerSpecification.SubscribeToChannel -> SubscribeToChannelWorker(
                 subscriberStateManipulator,
                 params.callbackFunction
             )
-            is WorkerParams.UpdateConnectionState -> UpdateConnectionStateWorker(
+            is WorkerSpecification.UpdateConnectionState -> UpdateConnectionStateWorker(
                 params.connectionStateChange,
                 subscriberStateManipulator
             )
-            is WorkerParams.UpdateChannelConnectionState -> UpdateChannelConnectionStateWorker(
+            is WorkerSpecification.UpdateChannelConnectionState -> UpdateChannelConnectionStateWorker(
                 params.channelConnectionStateChange,
                 subscriberStateManipulator
             )
-            is WorkerParams.UpdatePublisherPresence -> UpdatePublisherPresenceWorker(
+            is WorkerSpecification.UpdatePublisherPresence -> UpdatePublisherPresenceWorker(
                 params.presenceMessage,
                 subscriberStateManipulator
             )
-            is WorkerParams.ChangeResolution -> ChangeResolutionWorker(
+            is WorkerSpecification.ChangeResolution -> ChangeResolutionWorker(
                 ably,
                 trackableId,
                 params.resolution,
                 params.callbackFunction
             )
-            is WorkerParams.StopConnection -> StopConnectionWorker(ably, subscriberStateManipulator, params.callbackFunction)
+            is WorkerSpecification.StopConnection -> StopConnectionWorker(ably, subscriberStateManipulator, params.callbackFunction)
         }
 }
 
 //TODO rename to WorkerSpecification
-internal sealed class WorkerParams {
+internal sealed class WorkerSpecification {
     data class UpdateConnectionState(
         val connectionStateChange: ConnectionStateChange
-    ) : WorkerParams()
+    ) : WorkerSpecification()
 
     data class UpdateChannelConnectionState(
         val channelConnectionStateChange: ConnectionStateChange
-    ) : WorkerParams()
+    ) : WorkerSpecification()
 
     data class UpdatePublisherPresence(
         val presenceMessage: PresenceMessage
-    ) : WorkerParams()
+    ) : WorkerSpecification()
 
     data class ChangeResolution(
         val resolution: Resolution?,
         val callbackFunction: ResultCallbackFunction<Unit>
-    ) : WorkerParams()
+    ) : WorkerSpecification()
 
     data class StartConnection(
         val callbackFunction: ResultCallbackFunction<Unit>
-    ) : WorkerParams()
+    ) : WorkerSpecification()
 
     data class SubscribeForPresenceMessages(
         val callbackFunction: ResultCallbackFunction<Unit>
-    ) : WorkerParams()
+    ) : WorkerSpecification()
 
     data class SubscribeToChannel(
         val callbackFunction: ResultCallbackFunction<Unit>
-    ) : WorkerParams()
+    ) : WorkerSpecification()
 
     data class StopConnection(
         val callbackFunction: ResultCallbackFunction<Unit>
-    ) : WorkerParams()
+    ) : WorkerSpecification()
 }

@@ -10,7 +10,7 @@ import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.PresenceData
 import com.ably.tracking.common.createSingleThreadDispatcher
 import com.ably.tracking.subscriber.workerqueue.WorkerFactory
-import com.ably.tracking.subscriber.workerqueue.WorkerParams
+import com.ably.tracking.subscriber.workerqueue.WorkerSpecification
 import com.ably.tracking.subscriber.workerqueue.WorkerQueue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
@@ -23,7 +23,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 internal interface CoreSubscriber {
-    fun enqueue(workerParams: WorkerParams)
+    fun enqueue(workerSpecification: WorkerSpecification)
     val enhancedLocations: SharedFlow<LocationUpdate>
     val rawLocations: SharedFlow<LocationUpdate>
     val trackableStates: StateFlow<TrackableState>
@@ -96,11 +96,11 @@ private class DefaultCoreSubscriber(
         val workerFactory = WorkerFactory(this, ably, trackableId)
         workerQueue = WorkerQueue(properties, scope, workerFactory)
 
-        ably.subscribeForAblyStateChange { enqueue(WorkerParams.UpdateConnectionState(it)) }
+        ably.subscribeForAblyStateChange { enqueue(WorkerSpecification.UpdateConnectionState(it)) }
     }
 
-    override fun enqueue(workerParams: WorkerParams) {
-        workerQueue.enqueue(workerParams)
+    override fun enqueue(workerSpecification: WorkerSpecification) {
+        workerQueue.enqueue(workerSpecification)
     }
 
     override fun updatePublisherPresence(properties: Properties, isPublisherPresent: Boolean) {
@@ -130,7 +130,7 @@ private class DefaultCoreSubscriber(
 
     override fun subscribeForChannelState() {
         ably.subscribeForChannelStateChange(trackableId) {
-            enqueue(WorkerParams.UpdateChannelConnectionState(it))
+            enqueue(WorkerSpecification.UpdateChannelConnectionState(it))
         }
     }
 

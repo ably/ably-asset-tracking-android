@@ -5,7 +5,7 @@ import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.subscriber.SubscriberStateManipulator
 import com.ably.tracking.subscriber.Properties
 import com.ably.tracking.subscriber.workerqueue.CallbackWorker
-import com.ably.tracking.subscriber.workerqueue.WorkerParams
+import com.ably.tracking.subscriber.workerqueue.WorkerSpecification
 
 internal class StartConnectionWorker(
     private val ably: Ably,
@@ -16,7 +16,7 @@ internal class StartConnectionWorker(
     override fun doWork(
         properties: Properties,
         doAsyncWork: (suspend () -> Unit) -> Unit,
-        postWork: (WorkerParams) -> Unit
+        postWork: (WorkerSpecification) -> Unit
     ) {
         subscriberStateManipulator.updateTrackableState(properties)
         //TODO convert to coroutines using async
@@ -27,7 +27,7 @@ internal class StartConnectionWorker(
             willSubscribe = true
         ) {
             if (it.isSuccess) {
-                postWork(WorkerParams.SubscribeForPresenceMessages(callbackFunction))
+                postWork(WorkerSpecification.SubscribeForPresenceMessages(callbackFunction))
             } else {
                 callbackFunction(it)
             }

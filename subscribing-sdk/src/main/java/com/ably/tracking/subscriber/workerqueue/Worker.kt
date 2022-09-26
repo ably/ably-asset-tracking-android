@@ -23,7 +23,7 @@ internal interface Worker {
     fun doWork(
         properties: Properties,
         doAsyncWork: (suspend () -> Unit) -> Unit,
-        postWork: (WorkerParams) -> Unit
+        postWork: (WorkerSpecification) -> Unit
     )
 
     /**

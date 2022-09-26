@@ -4,7 +4,7 @@ import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.subscriber.SubscriberStateManipulator
 import com.ably.tracking.subscriber.Properties
 import com.ably.tracking.subscriber.workerqueue.Worker
-import com.ably.tracking.subscriber.workerqueue.WorkerParams
+import com.ably.tracking.subscriber.workerqueue.WorkerSpecification
 
 internal class UpdateConnectionStateWorker(
     private val connectionStateChange: ConnectionStateChange,
@@ -13,7 +13,7 @@ internal class UpdateConnectionStateWorker(
     override fun doWork(
         properties: Properties,
         doAsyncWork: (suspend () -> Unit) -> Unit,
-        postWork: (WorkerParams) -> Unit
+        postWork: (WorkerSpecification) -> Unit
     ) {
         properties.lastConnectionStateChange = connectionStateChange
         subscriberStateManipulator.updateTrackableState(properties)

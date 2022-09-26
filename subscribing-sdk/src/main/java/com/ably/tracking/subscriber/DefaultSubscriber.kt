@@ -5,7 +5,7 @@ import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
 import com.ably.tracking.annotations.Experimental
 import com.ably.tracking.common.Ably
-import com.ably.tracking.subscriber.workerqueue.WorkerParams
+import com.ably.tracking.subscriber.workerqueue.WorkerSpecification
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
@@ -48,7 +48,7 @@ internal class DefaultSubscriber(
     suspend fun start() {
         suspendCoroutine<Unit> { continuation ->
             core.enqueue(
-                WorkerParams.StartConnection {
+                WorkerSpecification.StartConnection {
                     try {
                         continuation.resume(it.getOrThrow())
                     } catch (exception: Exception) {
@@ -65,7 +65,7 @@ internal class DefaultSubscriber(
         //TODO move suspendCoroutine lower to suspending enqueue
         suspendCoroutine<Unit> { continuation ->
             core.enqueue(
-                WorkerParams.ChangeResolution(resolution) {
+                WorkerSpecification.ChangeResolution(resolution) {
                     try {
                         continuation.resume(it.getOrThrow())
                     } catch (exception: Exception) {
@@ -80,7 +80,7 @@ internal class DefaultSubscriber(
         // send stop request over channel and wait for the result
         suspendCoroutine<Unit> { continuation ->
             core.enqueue(
-                WorkerParams.StopConnection {
+                WorkerSpecification.StopConnection {
                     try {
                         continuation.resume(it.getOrThrow())
                     } catch (exception: Exception) {
