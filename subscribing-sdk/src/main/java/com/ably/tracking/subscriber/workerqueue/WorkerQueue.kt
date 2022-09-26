@@ -41,21 +41,12 @@ internal class WorkerQueue(
     }
 
     /**
-     * Enqueue worker created from passed params for execution.
+     * Enqueue worker created from passed specification for execution.
      *
-     * @param worker [Worker] to be executed.
+     * @param workerSpecification [WorkerSpecification] specification of worker to be executed.
      */
     fun enqueue(workerSpecification: WorkerSpecification) {
         val worker = workerFactory.createWorker(workerSpecification)
-        scope.launch { workerChannel.send(worker) }
-    }
-
-    /**
-     * Enqueue a worker for execution.
-     *
-     * @param worker [Worker] to be executed.
-     */
-    fun enqueue(worker: Worker) {
         scope.launch { workerChannel.send(worker) }
     }
 }
