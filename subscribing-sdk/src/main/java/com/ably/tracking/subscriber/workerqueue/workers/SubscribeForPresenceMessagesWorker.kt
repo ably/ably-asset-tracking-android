@@ -17,15 +17,15 @@ internal class SubscribeForPresenceMessagesWorker(
         postWork: (WorkerSpecification) -> Unit
     ) {
         doAsyncWork {
-            //TODO clean try..catch?
-            try {
-                ably.subscribeForPresenceMessages(
-                    trackableId = trackableId,
-                    listener = { postWork(WorkerSpecification.UpdatePublisherPresence(it)) })
+            val result = ably.subscribeForPresenceMessages(
+                trackableId = trackableId,
+                listener = { postWork(WorkerSpecification.UpdatePublisherPresence(it)) })
+
+            if (result.isSuccess) {
                 postWork(WorkerSpecification.SubscribeToChannel(callbackFunction))
-            } catch (exception: Exception) {
+            } else {
                 ably.disconnect(trackableId, properties.presenceData)
-                callbackFunction(Result.failure(exception))
+                callbackFunction(result)
             }
         }
     }

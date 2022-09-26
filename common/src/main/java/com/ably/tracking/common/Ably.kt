@@ -84,7 +84,7 @@ interface Ably {
     suspend fun subscribeForPresenceMessages(
         trackableId: String,
         listener: (PresenceMessage) -> Unit
-    )
+    ): Result<Unit>
 
     /**
      * Sends an enhanced location update to the channel.
@@ -169,7 +169,7 @@ interface Ably {
         useRewind: Boolean = false,
         willPublish: Boolean = false,
         willSubscribe: Boolean = false
-    ): Result<Boolean>
+    ): Result<Unit>
 
     /**
      * Updates presence data in the [trackableId] channel's presence.
@@ -185,7 +185,7 @@ interface Ably {
     /**
      * A suspending version of [updatePresenceData]
      * */
-    suspend fun updatePresenceData(trackableId: String, presenceData: PresenceData)
+    suspend fun updatePresenceData(trackableId: String, presenceData: PresenceData): Result<Unit>
 
     /**
      * Removes the [trackableId] channel from the connected channels and leaves the presence of that channel.
@@ -359,12 +359,12 @@ constructor(
         useRewind: Boolean,
         willPublish: Boolean,
         willSubscribe: Boolean
-    ): Result<Boolean> {
+    ): Result<Unit> {
         return suspendCoroutine { continuation ->
             connect(trackableId, presenceData, useRewind, willPublish, willSubscribe) { result ->
                 try {
                     result.getOrThrow()
-                    continuation.resume(Result.success(true))
+                    continuation.resume(Result.success(Unit))
                 } catch (exception: ConnectionException) {
                     continuation.resume(Result.failure(exception))
                 }
@@ -614,18 +614,17 @@ constructor(
         callback: (Result<Unit>) -> Unit,
     ) {
         scope.launch {
-            try {
-                subscribeForPresenceMessages(trackableId, listener)
-                callback(Result.success(Unit))
-            } catch (exception: Exception) {
-                callback(Result.failure(exception))
-            }
+            val result = subscribeForPresenceMessages(trackableId, listener)
+            callback(result)
         }
     }
 
-    override suspend fun subscribeForPresenceMessages(trackableId: String, listener: (PresenceMessage) -> Unit) {
-        val channel = channels[trackableId] ?: return
-        try {
+    override suspend fun subscribeForPresenceMessages(
+        trackableId: String,
+        listener: (PresenceMessage) -> Unit
+    ): Result<Unit> {
+        val channel = channels[trackableId] ?: return Result.success(Unit)
+        return try {
             emitAllCurrentMessagesFromPresence(channel, listener)
             channel.presence.subscribe {
                 val parsedMessage = it.toTracking(gson)
@@ -635,8 +634,10 @@ constructor(
                     logHandler?.w("Presence message in unexpected format: $it")
                 }
             }
+            Result.success(Unit)
         } catch (exception: AblyException) {
-            throw exception.errorInfo.toTrackingException()
+            val trackingException = exception.errorInfo.toTrackingException()
+            Result.failure(trackingException)
         }
     }
 
@@ -661,22 +662,20 @@ constructor(
 
     override fun updatePresenceData(trackableId: String, presenceData: PresenceData, callback: (Result<Unit>) -> Unit) {
         scope.launch {
-            val trackableChannel = channels[trackableId] ?: return@launch
-            try {
-                retryChannelOperationIfConnectionResumeFails(trackableChannel) {
-                    updatePresenceData(it, presenceData)
-                }
-                callback(Result.success(Unit))
-            } catch (exception: ConnectionException) {
-                callback(Result.failure(exception))
-            }
+            val result = updatePresenceData(trackableId, presenceData)
+            callback(result)
         }
     }
 
-    override suspend fun updatePresenceData(trackableId: String, presenceData: PresenceData) {
-        val trackableChannel = channels[trackableId] ?: return
-        retryChannelOperationIfConnectionResumeFails(trackableChannel) {
-            updatePresenceData(it, presenceData)
+    override suspend fun updatePresenceData(trackableId: String, presenceData: PresenceData): Result<Unit> {
+        val trackableChannel = channels[trackableId] ?: return Result.success(Unit)
+        return try {
+            retryChannelOperationIfConnectionResumeFails(trackableChannel) {
+                updatePresenceData(it, presenceData)
+            }
+            Result.success(Unit)
+        } catch (exception: ConnectionException) {
+            Result.failure(exception)
         }
     }
 

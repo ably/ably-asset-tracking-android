@@ -18,19 +18,19 @@ internal class StartConnectionWorker(
         doAsyncWork: (suspend () -> Unit) -> Unit,
         postWork: (WorkerSpecification) -> Unit
     ) {
-        doAsyncWork{
-            //TODO clean try..catch?
-            try {
-                subscriberStateManipulator.updateTrackableState(properties)
-                ably.connect(
-                    trackableId,
-                    properties.presenceData,
-                    useRewind = true,
-                    willSubscribe = true
-                )
+        doAsyncWork {
+            subscriberStateManipulator.updateTrackableState(properties)
+            val result = ably.connect(
+                trackableId,
+                properties.presenceData,
+                useRewind = true,
+                willSubscribe = true
+            )
+
+            if (result.isSuccess) {
                 postWork(WorkerSpecification.SubscribeForPresenceMessages(callbackFunction))
-            } catch (exception: Exception) {
-                callbackFunction(Result.failure(exception))
+            } else {
+                callbackFunction(result)
             }
         }
     }
