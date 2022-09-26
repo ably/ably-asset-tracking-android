@@ -19,7 +19,8 @@ internal class SubscribeForPresenceMessagesWorker(
         doAsyncWork {
             val result = ably.subscribeForPresenceMessages(
                 trackableId = trackableId,
-                listener = { postWork(WorkerSpecification.UpdatePublisherPresence(it)) })
+                listener = { postWork(WorkerSpecification.UpdatePublisherPresence(it)) }
+            )
 
             if (result.isSuccess) {
                 postWork(WorkerSpecification.SubscribeToChannel(callbackFunction))

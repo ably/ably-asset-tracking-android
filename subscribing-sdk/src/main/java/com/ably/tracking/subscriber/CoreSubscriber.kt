@@ -32,7 +32,7 @@ internal interface CoreSubscriber {
     val nextLocationUpdateIntervals: SharedFlow<Long>
 }
 
-internal interface SubscriberStateManipulator{
+internal interface SubscriberStateManipulator {
     fun updateTrackableState(properties: Properties)
     fun updatePublisherPresence(properties: Properties, isPublisherPresent: Boolean)
     fun updatePublisherResolutionInformation(presenceData: PresenceData)
