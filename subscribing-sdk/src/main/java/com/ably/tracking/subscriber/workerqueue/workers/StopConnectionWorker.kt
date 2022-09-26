@@ -7,6 +7,7 @@ import com.ably.tracking.subscriber.SubscriberStateManipulator
 import com.ably.tracking.subscriber.Properties
 import com.ably.tracking.subscriber.workerqueue.Worker
 import com.ably.tracking.subscriber.workerqueue.WorkerSpecification
+import kotlinx.coroutines.runBlocking
 
 internal class StopConnectionWorker(
     private val ably: Ably,
@@ -18,8 +19,8 @@ internal class StopConnectionWorker(
         doAsyncWork: (suspend () -> Unit) -> Unit,
         postWork: (WorkerSpecification) -> Unit
     ) {
-        //TODO use runBlocking instead
-        doAsyncWork {
+        // We're using [runBlocking] on purpose as we want to block the whole publisher when it's stopping.
+        runBlocking {
             try {
                 ably.close(properties.presenceData)
                 properties.isStopped = true
