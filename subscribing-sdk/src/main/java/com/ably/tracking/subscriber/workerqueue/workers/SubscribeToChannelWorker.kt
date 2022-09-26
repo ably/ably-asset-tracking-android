@@ -1,13 +1,13 @@
 package com.ably.tracking.subscriber.workerqueue.workers
 
 import com.ably.tracking.common.ResultCallbackFunction
-import com.ably.tracking.subscriber.Core
+import com.ably.tracking.subscriber.SubscriberStateManipulator
 import com.ably.tracking.subscriber.Properties
 import com.ably.tracking.subscriber.workerqueue.CallbackWorker
 import com.ably.tracking.subscriber.workerqueue.WorkerParams
 
 internal class SubscribeToChannelWorker(
-    private val core: Core,
+    private val subscriberStateManipulator: SubscriberStateManipulator,
     callbackFunction: ResultCallbackFunction<Unit>
 ) : CallbackWorker(callbackFunction) {
     override fun doWork(
@@ -15,9 +15,9 @@ internal class SubscribeToChannelWorker(
         doAsyncWork: (suspend () -> Unit) -> Unit,
         postWork: (WorkerParams) -> Unit
     ) {
-        core.subscribeForChannelState()
-        core.subscribeForEnhancedEvents(properties.presenceData)
-        core.subscribeForRawEvents(properties.presenceData)
+        subscriberStateManipulator.subscribeForChannelState()
+        subscriberStateManipulator.subscribeForEnhancedEvents(properties.presenceData)
+        subscriberStateManipulator.subscribeForRawEvents(properties.presenceData)
         callbackFunction(Result.success(Unit))
     }
 }

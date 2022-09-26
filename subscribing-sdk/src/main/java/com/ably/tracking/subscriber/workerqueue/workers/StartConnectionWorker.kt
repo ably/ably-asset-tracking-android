@@ -2,14 +2,14 @@ package com.ably.tracking.subscriber.workerqueue.workers
 
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ResultCallbackFunction
-import com.ably.tracking.subscriber.Core
+import com.ably.tracking.subscriber.SubscriberStateManipulator
 import com.ably.tracking.subscriber.Properties
 import com.ably.tracking.subscriber.workerqueue.CallbackWorker
 import com.ably.tracking.subscriber.workerqueue.WorkerParams
 
 internal class StartConnectionWorker(
     private val ably: Ably,
-    private val core: Core,
+    private val subscriberStateManipulator: SubscriberStateManipulator,
     private val trackableId: String,
     callbackFunction: ResultCallbackFunction<Unit>
 ) : CallbackWorker(callbackFunction) {
@@ -18,7 +18,7 @@ internal class StartConnectionWorker(
         doAsyncWork: (suspend () -> Unit) -> Unit,
         postWork: (WorkerParams) -> Unit
     ) {
-        core.updateTrackableState(properties)
+        subscriberStateManipulator.updateTrackableState(properties)
         //TODO convert to coroutines using async
         ably.connect(
             trackableId,

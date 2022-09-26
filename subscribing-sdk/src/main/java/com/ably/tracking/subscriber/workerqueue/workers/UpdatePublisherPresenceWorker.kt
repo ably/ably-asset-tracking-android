@@ -3,15 +3,14 @@ package com.ably.tracking.subscriber.workerqueue.workers
 import com.ably.tracking.common.ClientTypes
 import com.ably.tracking.common.PresenceAction
 import com.ably.tracking.common.PresenceMessage
-import com.ably.tracking.subscriber.Core
-import com.ably.tracking.subscriber.CoreSubscriber
+import com.ably.tracking.subscriber.SubscriberStateManipulator
 import com.ably.tracking.subscriber.Properties
 import com.ably.tracking.subscriber.workerqueue.Worker
 import com.ably.tracking.subscriber.workerqueue.WorkerParams
 
 internal class UpdatePublisherPresenceWorker(
     private val presenceMessage: PresenceMessage,
-    private val core: Core
+    private val subscriberStateManipulator: SubscriberStateManipulator
 ) : Worker {
     override fun doWork(
         properties: Properties,
@@ -21,20 +20,20 @@ internal class UpdatePublisherPresenceWorker(
         when (presenceMessage.action) {
             PresenceAction.PRESENT_OR_ENTER -> {
                 if (presenceMessage.data.type == ClientTypes.PUBLISHER) {
-                    core.updatePublisherPresence(properties, true)
-                    core.updateTrackableState(properties)
-                    core.updatePublisherResolutionInformation(presenceMessage.data)
+                    subscriberStateManipulator.updatePublisherPresence(properties, true)
+                    subscriberStateManipulator.updateTrackableState(properties)
+                    subscriberStateManipulator.updatePublisherResolutionInformation(presenceMessage.data)
                 }
             }
             PresenceAction.LEAVE_OR_ABSENT -> {
                 if (presenceMessage.data.type == ClientTypes.PUBLISHER) {
-                    core.updatePublisherPresence(properties, false)
-                    core.updateTrackableState(properties)
+                    subscriberStateManipulator.updatePublisherPresence(properties, false)
+                    subscriberStateManipulator.updateTrackableState(properties)
                 }
             }
             PresenceAction.UPDATE -> {
                 if (presenceMessage.data.type == ClientTypes.PUBLISHER) {
-                    core.updatePublisherResolutionInformation(presenceMessage.data)
+                    subscriberStateManipulator.updatePublisherResolutionInformation(presenceMessage.data)
                 }
             }
         }
