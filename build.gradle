@@ -44,7 +44,7 @@ allprojects {
 
     // version MUST conform to the Semantic Versioning Specification (https://semver.org/) version 2.0.0
     // on incrementing this value, ensure to also increment versionCode in android defaultConfig (also in this file)
-    version = '1.4.0'
+    version = '1.4.0-rc.1'
 
     // Values used to publish the SDK to maven repositories.
     ext {
