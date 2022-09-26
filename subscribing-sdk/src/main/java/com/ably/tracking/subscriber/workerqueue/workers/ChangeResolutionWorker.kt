@@ -18,10 +18,15 @@ internal class ChangeResolutionWorker(
         doAsyncWork: (suspend () -> Unit) -> Unit,
         postWork: (WorkerSpecification) -> Unit
     ) {
-        properties.presenceData = properties.presenceData.copy(resolution = resolution)
-        //TODO convert to coroutines using async
-        ably.updatePresenceData(trackableId, properties.presenceData) {
-            callbackFunction(it)
+        doAsyncWork {
+            //TODO clean try..catch?
+            try {
+                properties.presenceData = properties.presenceData.copy(resolution = resolution)
+                ably.updatePresenceData(trackableId, properties.presenceData)
+                callbackFunction(Result.success(Unit))
+            } catch (exception: Exception) {
+                callbackFunction(Result.failure(exception))
+            }
         }
     }
 }

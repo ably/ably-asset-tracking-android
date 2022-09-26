@@ -175,6 +175,11 @@ interface Ably {
     fun updatePresenceData(trackableId: String, presenceData: PresenceData, callback: (Result<Unit>) -> Unit)
 
     /**
+     * A suspending version of [updatePresenceData]
+     * */
+    suspend fun updatePresenceData(trackableId: String, presenceData: PresenceData)
+
+    /**
      * Removes the [trackableId] channel from the connected channels and leaves the presence of that channel.
      * If a channel for the given [trackableId] doesn't exist then it just calls [callback] with success.
      *
@@ -654,6 +659,13 @@ constructor(
             } catch (exception: ConnectionException) {
                 callback(Result.failure(exception))
             }
+        }
+    }
+
+    override suspend fun updatePresenceData(trackableId: String, presenceData: PresenceData) {
+        val trackableChannel = channels[trackableId] ?: return
+        retryChannelOperationIfConnectionResumeFails(trackableChannel) {
+            updatePresenceData(it, presenceData)
         }
     }
 
