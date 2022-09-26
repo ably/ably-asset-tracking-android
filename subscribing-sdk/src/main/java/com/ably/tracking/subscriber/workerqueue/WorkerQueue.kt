@@ -22,13 +22,6 @@ internal class WorkerQueue(
         scope.launch { executeWorkers() }
     }
 
-    /**
-     * Executes the work in [worker] using [Worker.doWork] method, which returns a
-     * result that contains an optional [SyncAsyncResult.syncWorkResult] and [SyncAsyncResult.asyncWork]. If the
-     * optional sync work result exist, it's immediately handled.
-     * If the optional async work exists, It's executed in a different coroutine in order to not block the queue.
-     * Then, the result of this work is handled in the same way as the sync work result.
-     */
     private suspend fun executeWorkers() {
         for (worker in workerChannel) {
             if (subscriberProperties.isStopped) {
