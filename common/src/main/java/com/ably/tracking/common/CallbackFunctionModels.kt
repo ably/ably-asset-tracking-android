@@ -16,6 +16,10 @@ typealias CallbackFunction<T> = (T) -> Unit
  */
 typealias ResultCallbackFunction<T> = CallbackFunction<Result<T>>
 
+/**
+ * Utility function adapts [Continuation] to fit in [ResultCallbackFunction] signature. Callback result is unpacked and
+ * used to resume the continuation.
+ */
 fun <T> Continuation<T>.wrapInResultCallback(): ResultCallbackFunction<T> =
     { result ->
         try {
