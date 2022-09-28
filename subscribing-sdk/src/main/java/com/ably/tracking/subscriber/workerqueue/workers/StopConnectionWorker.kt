@@ -19,7 +19,7 @@ internal class StopConnectionWorker(
         doAsyncWork: (suspend () -> Unit) -> Unit,
         postWork: (WorkerSpecification) -> Unit
     ) {
-        // We're using [runBlocking] on purpose as we want to block the whole publisher when it's stopping.
+        // We're using [runBlocking] on purpose as we want to block the whole subscriber when it's stopping.
         runBlocking {
             try {
                 ably.close(properties.presenceData)
