@@ -18,11 +18,12 @@ internal class StartConnectionWorker(
         doAsyncWork: (suspend () -> Unit) -> Unit,
         postWork: (WorkerSpecification) -> Unit
     ) {
+        subscriberInteractor.updateTrackableState(properties)
+        val presenceData = properties.presenceData.copy()
         doAsyncWork {
-            subscriberInteractor.updateTrackableState(properties)
             val result = ably.connect(
                 trackableId,
-                properties.presenceData,
+                presenceData,
                 useRewind = true,
                 willSubscribe = true
             )
