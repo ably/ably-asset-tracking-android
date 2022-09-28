@@ -5,7 +5,7 @@ import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.PresenceMessage
 import com.ably.tracking.common.ResultCallbackFunction
-import com.ably.tracking.subscriber.SubscriberStateManipulator
+import com.ably.tracking.subscriber.SubscriberInteractor
 import com.ably.tracking.subscriber.workerqueue.workers.ChangeResolutionWorker
 import com.ably.tracking.subscriber.workerqueue.workers.SubscribeForPresenceMessagesWorker
 import com.ably.tracking.subscriber.workerqueue.workers.SubscribeToChannelWorker
@@ -19,7 +19,7 @@ import com.ably.tracking.subscriber.workerqueue.workers.UpdateConnectionStateWor
  * Factory that creates the [Worker]s. It also serves as a simple DI for workers dependencies.
  */
 internal class WorkerFactory(
-    private val subscriberStateManipulator: SubscriberStateManipulator,
+    private val subscriberInteractor: SubscriberInteractor,
     private val ably: Ably,
     private val trackableId: String
 ) {
@@ -33,7 +33,7 @@ internal class WorkerFactory(
         when (params) {
             is WorkerSpecification.StartConnection -> StartConnectionWorker(
                 ably,
-                subscriberStateManipulator,
+                subscriberInteractor,
                 trackableId,
                 params.callbackFunction
             )
@@ -43,20 +43,20 @@ internal class WorkerFactory(
                 params.callbackFunction
             )
             is WorkerSpecification.SubscribeToChannel -> SubscribeToChannelWorker(
-                subscriberStateManipulator,
+                subscriberInteractor,
                 params.callbackFunction
             )
             is WorkerSpecification.UpdateConnectionState -> UpdateConnectionStateWorker(
                 params.connectionStateChange,
-                subscriberStateManipulator
+                subscriberInteractor
             )
             is WorkerSpecification.UpdateChannelConnectionState -> UpdateChannelConnectionStateWorker(
                 params.channelConnectionStateChange,
-                subscriberStateManipulator
+                subscriberInteractor
             )
             is WorkerSpecification.UpdatePublisherPresence -> UpdatePublisherPresenceWorker(
                 params.presenceMessage,
-                subscriberStateManipulator
+                subscriberInteractor
             )
             is WorkerSpecification.ChangeResolution -> ChangeResolutionWorker(
                 ably,
@@ -64,7 +64,7 @@ internal class WorkerFactory(
                 params.resolution,
                 params.callbackFunction
             )
-            is WorkerSpecification.StopConnection -> StopConnectionWorker(ably, subscriberStateManipulator, params.callbackFunction)
+            is WorkerSpecification.StopConnection -> StopConnectionWorker(ably, subscriberInteractor, params.callbackFunction)
         }
 }
 

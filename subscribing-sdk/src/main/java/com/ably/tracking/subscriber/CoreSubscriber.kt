@@ -32,7 +32,7 @@ internal interface CoreSubscriber {
     val nextLocationUpdateIntervals: SharedFlow<Long>
 }
 
-internal interface SubscriberStateManipulator {
+internal interface SubscriberInteractor {
     fun updateTrackableState(properties: Properties)
     fun updatePublisherPresence(properties: Properties, isPublisherPresent: Boolean)
     fun updatePublisherResolutionInformation(presenceData: PresenceData)
@@ -60,7 +60,7 @@ private class DefaultCoreSubscriber(
     initialResolution: Resolution?,
     private val trackableId: String,
 ) :
-    CoreSubscriber, SubscriberStateManipulator {
+    CoreSubscriber, SubscriberInteractor {
     private val scope = CoroutineScope(singleThreadDispatcher + SupervisorJob())
     private val workerQueue: WorkerQueue
     private val properties = Properties(initialResolution)

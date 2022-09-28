@@ -3,7 +3,7 @@ package com.ably.tracking.subscriber.workerqueue.workers
 import com.ably.tracking.ConnectionException
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ResultCallbackFunction
-import com.ably.tracking.subscriber.SubscriberStateManipulator
+import com.ably.tracking.subscriber.SubscriberInteractor
 import com.ably.tracking.subscriber.Properties
 import com.ably.tracking.subscriber.workerqueue.Worker
 import com.ably.tracking.subscriber.workerqueue.WorkerSpecification
@@ -11,7 +11,7 @@ import kotlinx.coroutines.runBlocking
 
 internal class StopConnectionWorker(
     private val ably: Ably,
-    private val subscriberStateManipulator: SubscriberStateManipulator,
+    private val subscriberInteractor: SubscriberInteractor,
     private val callbackFunction: ResultCallbackFunction<Unit>
 ) : Worker {
     override fun doWork(
@@ -24,7 +24,7 @@ internal class StopConnectionWorker(
             try {
                 ably.close(properties.presenceData)
                 properties.isStopped = true
-                subscriberStateManipulator.notifyAssetIsOffline()
+                subscriberInteractor.notifyAssetIsOffline()
                 callbackFunction(Result.success(Unit))
             } catch (exception: ConnectionException) {
                 callbackFunction(Result.failure(exception))
