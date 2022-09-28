@@ -35,7 +35,7 @@ internal class WorkerQueue(
     private fun execute(worker: Worker) {
         worker.doWork(
             properties = subscriberProperties,
-            doAsyncWork = { block -> scope.launch { block() } },
+            doAsyncWork = { asyncWork -> scope.launch { asyncWork() } },
             postWork = ::enqueue
         )
     }
