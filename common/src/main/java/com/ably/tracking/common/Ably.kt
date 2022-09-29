@@ -308,14 +308,13 @@ constructor(
         }
     }
 
-    override fun connect(
+    override suspend fun connect(
         trackableId: String,
         presenceData: PresenceData,
         useRewind: Boolean,
         willPublish: Boolean,
         willSubscribe: Boolean,
-        callback: (Result<Unit>) -> Unit
-    ) {
+    ): Result<Unit> {
         if (!channels.contains(trackableId)) {
             val channelName = "$CHANNEL_NAME_PREFIX$trackableId"
             val channelOptions = ChannelOptions().apply {
@@ -333,42 +332,34 @@ constructor(
                     ably.channels.get(channelName, channelOptions.apply { params = mapOf("rewind" to "1") })
                 else
                     ably.channels.get(channelName, channelOptions)
-                scope.launch {
-                    try {
-                        if (channel.isDetachedOrFailed()) {
-                            channel.attachSuspending()
-                        }
-                        enterChannelPresence(channel, presenceData)
-                        channels[trackableId] = channel
-                        callback(Result.success(Unit))
-                    } catch (connectionException: ConnectionException) {
-                        callback(Result.failure(connectionException))
-                    }
+
+                if (channel.isDetachedOrFailed()) {
+                    channel.attachSuspending()
                 }
+                enterChannelPresence(channel, presenceData)
+                channels[trackableId] = channel
+                return Result.success(Unit)
             } catch (ablyException: AblyException) {
-                callback(Result.failure(ablyException.errorInfo.toTrackingException()))
+                return Result.failure(ablyException.errorInfo.toTrackingException())
+            } catch (connectionException: ConnectionException) {
+                return Result.failure(connectionException)
             }
         } else {
-            callback(Result.success(Unit))
+            return Result.success(Unit)
         }
     }
 
-    override suspend fun connect(
+    override fun connect(
         trackableId: String,
         presenceData: PresenceData,
         useRewind: Boolean,
         willPublish: Boolean,
-        willSubscribe: Boolean
-    ): Result<Unit> {
-        return suspendCoroutine { continuation ->
-            connect(trackableId, presenceData, useRewind, willPublish, willSubscribe) { result ->
-                try {
-                    result.getOrThrow()
-                    continuation.resume(Result.success(Unit))
-                } catch (exception: ConnectionException) {
-                    continuation.resume(Result.failure(exception))
-                }
-            }
+        willSubscribe: Boolean,
+        callback: (Result<Unit>) -> Unit
+    ) {
+        scope.launch {
+            val result = connect(trackableId, presenceData, useRewind, willPublish, willSubscribe)
+            callback(result)
         }
     }
 
