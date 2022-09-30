@@ -19,7 +19,7 @@ typealias TokenRequestCallback = suspend (TokenParams) -> TokenRequest
 typealias JwtCallback = suspend (TokenParams) -> String
 
 sealed class Authentication(
-    val clientId: String,
+    val clientId: String?,
     val basicApiKey: String?,
     val tokenRequestCallback: TokenRequestCallback?,
     val jwtCallback: JwtCallback?
@@ -35,6 +35,12 @@ sealed class Authentication(
             // This indicates a mistake in the implementation of the Authentication class,
             // therefore not caused by the application (i.e. internal to this library).
             throw IllegalStateException("No authentication methods.")
+        }
+
+        if (basicApiKey != null && clientId == null) {
+            // This indicates a mistake in the implementation of the Authentication class,
+            // therefore not caused by the application (i.e. internal to this library).
+            throw IllegalStateException("Basic authentication requires the client ID")
         }
     }
 
@@ -56,22 +62,36 @@ sealed class Authentication(
             TokenAuthentication(clientId, callback)
 
         /**
+         * @param callback Callback that will be called with [TokenParams] each time a [TokenRequest] needs to be obtained.
+         */
+        @JvmSynthetic
+        fun tokenRequest(callback: TokenRequestCallback): Authentication =
+            TokenAuthentication(null, callback)
+
+        /**
          * @param callback Callback that will be called with [TokenParams] each time a JWT string needs to be obtained.
          * @param clientId ID of the client
          */
         @JvmSynthetic
         fun jwt(clientId: String, callback: JwtCallback): Authentication =
             JwtAuthentication(clientId, callback)
+
+        /**
+         * @param callback Callback that will be called with [TokenParams] each time a JWT string needs to be obtained.
+         */
+        @JvmSynthetic
+        fun jwt(callback: JwtCallback): Authentication =
+            JwtAuthentication(null, callback)
     }
 }
 
 private class BasicAuthentication(clientId: String, apiKey: String) :
     Authentication(clientId, apiKey, null, null)
 
-private class TokenAuthentication(clientId: String, callback: TokenRequestCallback) :
+private class TokenAuthentication(clientId: String?, callback: TokenRequestCallback) :
     Authentication(clientId, null, callback, null)
 
-private class JwtAuthentication(clientId: String, callback: JwtCallback) :
+private class JwtAuthentication(clientId: String?, callback: JwtCallback) :
     Authentication(clientId, null, null, callback)
 
 interface TokenParams {
@@ -89,7 +109,7 @@ interface TokenParams {
     /**
      * Client ID associated with the token.
      */
-    val clientId: String
+    val clientId: String?
 
     /**
      * Timestamp in milliseconds of this request.
