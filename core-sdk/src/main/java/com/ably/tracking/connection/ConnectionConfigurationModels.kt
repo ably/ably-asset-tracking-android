@@ -57,6 +57,10 @@ sealed class Authentication(
          * @param callback Callback that will be called with [TokenParams] each time a [TokenRequest] needs to be obtained.
          * @param clientId ID of the client
          */
+        @Deprecated(
+            message = "You should not need to provide the client ID when you are using a token-based auth",
+            replaceWith = ReplaceWith("Authentication.tokenRequest(callback)"),
+        )
         @JvmSynthetic
         fun tokenRequest(clientId: String, callback: TokenRequestCallback): Authentication =
             TokenAuthentication(clientId, callback)
@@ -72,6 +76,10 @@ sealed class Authentication(
          * @param callback Callback that will be called with [TokenParams] each time a JWT string needs to be obtained.
          * @param clientId ID of the client
          */
+        @Deprecated(
+            message = "You should not need to provide the client ID when you are using a token-based auth",
+            replaceWith = ReplaceWith("Authentication.jwt(callback)"),
+        )
         @JvmSynthetic
         fun jwt(clientId: String, callback: JwtCallback): Authentication =
             JwtAuthentication(clientId, callback)
