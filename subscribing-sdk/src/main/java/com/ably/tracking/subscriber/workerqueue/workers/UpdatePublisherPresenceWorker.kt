@@ -16,7 +16,7 @@ internal class UpdatePublisherPresenceWorker(
         properties: Properties,
         doAsyncWork: (suspend () -> Unit) -> Unit,
         postWork: (WorkerSpecification) -> Unit
-    ) {
+    ): Properties {
         when (presenceMessage.action) {
             PresenceAction.PRESENT_OR_ENTER -> {
                 if (presenceMessage.data.type == ClientTypes.PUBLISHER) {
@@ -37,6 +37,7 @@ internal class UpdatePublisherPresenceWorker(
                 }
             }
         }
+        return properties
     }
 
     override fun doWhenStopped(exception: Exception) = Unit

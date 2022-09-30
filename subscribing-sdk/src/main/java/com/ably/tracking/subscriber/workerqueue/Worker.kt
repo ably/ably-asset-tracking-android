@@ -12,18 +12,17 @@ internal interface Worker {
      * should be executed inside [doAsyncWork] function. If a worker needs to delegate another task to the queue
      * pass it to [postWork] function.
      *
-     * @param properties current state of publisher to be used by this worker.
+     * @param properties copy of current state of publisher to be used by this worker.
      * @param doAsyncWork wrapper function for asynchronous work.
      * @param postWork this function allows worker to add other workers to the queue calling it.
      *
-     * Please use [properties] directly only at synchronous part of code. If you need to pass this
-     * into async work lambda, you should copy necessary properties.
+     * @return updated [Properties] modified by this worker.
      */
     fun doWork(
         properties: Properties,
         doAsyncWork: (suspend () -> Unit) -> Unit,
         postWork: (WorkerSpecification) -> Unit
-    )
+    ): Properties
 
     /**
      * This function is provided in order for implementors to define what should happen when the worker

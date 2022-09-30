@@ -158,13 +158,15 @@ private class DefaultCoreSubscriber(
     }
 }
 
-internal class Properties(initialResolution: Resolution?) {
-    var isStopped: Boolean = false
-    var isPublisherOnline: Boolean = false
-    var trackableState: TrackableState = TrackableState.Offline()
+internal data class Properties private constructor(
+    var presenceData: PresenceData,
+    var isStopped: Boolean = false,
+    var isPublisherOnline: Boolean = false,
+    var trackableState: TrackableState = TrackableState.Offline(),
     var lastConnectionStateChange: ConnectionStateChange =
-        ConnectionStateChange(ConnectionState.OFFLINE, null)
+        ConnectionStateChange(ConnectionState.OFFLINE, null),
     var lastChannelConnectionStateChange: ConnectionStateChange =
         ConnectionStateChange(ConnectionState.OFFLINE, null)
-    var presenceData: PresenceData = PresenceData(ClientTypes.SUBSCRIBER, initialResolution)
+) {
+    constructor(initialResolution: Resolution?) : this(PresenceData(ClientTypes.SUBSCRIBER, initialResolution))
 }

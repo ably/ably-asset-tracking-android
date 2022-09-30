@@ -14,9 +14,10 @@ internal class UpdateChannelConnectionStateWorker(
         properties: Properties,
         doAsyncWork: (suspend () -> Unit) -> Unit,
         postWork: (WorkerSpecification) -> Unit
-    ) {
+    ): Properties {
         properties.lastChannelConnectionStateChange = channelConnectionStateChange
         subscriberInteractor.updateTrackableState(properties)
+        return properties
     }
 
     override fun doWhenStopped(exception: Exception) = Unit

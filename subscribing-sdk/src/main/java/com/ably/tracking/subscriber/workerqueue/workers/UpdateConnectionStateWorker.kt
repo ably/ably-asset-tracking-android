@@ -14,9 +14,10 @@ internal class UpdateConnectionStateWorker(
         properties: Properties,
         doAsyncWork: (suspend () -> Unit) -> Unit,
         postWork: (WorkerSpecification) -> Unit
-    ) {
+    ): Properties {
         properties.lastConnectionStateChange = connectionStateChange
         subscriberInteractor.updateTrackableState(properties)
+        return properties
     }
 
     override fun doWhenStopped(exception: Exception) = Unit

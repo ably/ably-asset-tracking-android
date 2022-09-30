@@ -15,7 +15,7 @@ internal class SubscribeForPresenceMessagesWorker(
         properties: Properties,
         doAsyncWork: (suspend () -> Unit) -> Unit,
         postWork: (WorkerSpecification) -> Unit
-    ) {
+    ): Properties {
         doAsyncWork {
             val result = ably.subscribeForPresenceMessages(
                 trackableId = trackableId,
@@ -29,5 +29,6 @@ internal class SubscribeForPresenceMessagesWorker(
                 callbackFunction(result)
             }
         }
+        return properties
     }
 }

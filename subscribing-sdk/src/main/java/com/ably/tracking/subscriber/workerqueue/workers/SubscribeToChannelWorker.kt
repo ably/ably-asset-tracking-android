@@ -14,10 +14,11 @@ internal class SubscribeToChannelWorker(
         properties: Properties,
         doAsyncWork: (suspend () -> Unit) -> Unit,
         postWork: (WorkerSpecification) -> Unit
-    ) {
+    ): Properties {
         subscriberInteractor.subscribeForChannelState()
         subscriberInteractor.subscribeForEnhancedEvents(properties.presenceData)
         subscriberInteractor.subscribeForRawEvents(properties.presenceData)
         callbackFunction(Result.success(Unit))
+        return properties
     }
 }

@@ -18,7 +18,7 @@ internal class StopConnectionWorker(
         properties: Properties,
         doAsyncWork: (suspend () -> Unit) -> Unit,
         postWork: (WorkerSpecification) -> Unit
-    ) {
+    ): Properties {
         // We're using [runBlocking] on purpose as we want to block the whole subscriber when it's stopping.
         runBlocking {
             try {
@@ -30,6 +30,7 @@ internal class StopConnectionWorker(
                 callbackFunction(Result.failure(exception))
             }
         }
+        return properties
     }
 
     override fun doWhenStopped(exception: Exception) {
