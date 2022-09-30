@@ -63,7 +63,6 @@ private class DefaultCoreSubscriber(
     CoreSubscriber, SubscriberInteractor {
     private val scope = CoroutineScope(singleThreadDispatcher + SupervisorJob())
     private val workerQueue: WorkerQueue
-    private val properties = Properties(initialResolution)
     private val _trackableStates: MutableStateFlow<TrackableState> =
         MutableStateFlow(TrackableState.Offline())
     private val _publisherPresence: MutableStateFlow<Boolean> = MutableStateFlow(false)
@@ -94,6 +93,7 @@ private class DefaultCoreSubscriber(
 
     init {
         val workerFactory = WorkerFactory(this, ably, trackableId)
+        val properties = Properties(initialResolution)
         workerQueue = WorkerQueue(properties, scope, workerFactory)
 
         ably.subscribeForAblyStateChange { enqueue(WorkerSpecification.UpdateConnectionState(it)) }
