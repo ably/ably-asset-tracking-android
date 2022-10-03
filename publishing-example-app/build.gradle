@@ -5,7 +5,7 @@ plugins {
     id 'org.jlleitschuh.gradle.ktlint'
 }
 
-final useCrashlytics = project.file('google-services.json').exists();
+final useCrashlytics = project.file('google-services.json').exists()
 if (useCrashlytics) {
     apply plugin: 'com.google.gms.google-services'
     apply plugin: 'com.google.firebase.crashlytics'
@@ -29,7 +29,7 @@ dependencies {
     implementation 'com.amplifyframework:aws-auth-cognito:1.4.1'
     implementation 'pub.devrel:easypermissions:3.0.0'
     // This version needs to be compatible with the "com.mapbox.navigation:core" dependency version from publishing-sdk.
-    implementation 'com.mapbox.maps:android:10.7.0'
+    implementation 'com.mapbox.maps:android:10.8.0'
 
     if (useCrashlytics) {
         // The BoM for the Firebase platform (it specifies the versions for Firebase dependencies).
