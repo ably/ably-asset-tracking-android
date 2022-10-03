@@ -25,9 +25,11 @@ internal class SubscribeForPresenceMessagesWorker(
             if (result.isSuccess) {
                 postWork(WorkerSpecification.SubscribeToChannel(callbackFunction))
             } else {
-                postWork(WorkerSpecification.Disconnect(trackableId) {
-                    callbackFunction(result)
-                })
+                postWork(
+                    WorkerSpecification.Disconnect(trackableId) {
+                        callbackFunction(result)
+                    }
+                )
             }
         }
         return properties

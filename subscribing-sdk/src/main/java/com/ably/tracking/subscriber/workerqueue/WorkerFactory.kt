@@ -2,7 +2,6 @@ package com.ably.tracking.subscriber.workerqueue
 
 import com.ably.tracking.Resolution
 import com.ably.tracking.common.Ably
-import com.ably.tracking.common.CallbackFunction
 import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.PresenceMessage
 import com.ably.tracking.common.ResultCallbackFunction
@@ -67,7 +66,11 @@ internal class WorkerFactory(
                 params.callbackFunction
             )
             is WorkerSpecification.Disconnect -> DisconnectWorker(ably, params.trackableId, params.callbackFunction)
-            is WorkerSpecification.StopConnection -> StopConnectionWorker(ably, subscriberInteractor, params.callbackFunction)
+            is WorkerSpecification.StopConnection -> StopConnectionWorker(
+                ably,
+                subscriberInteractor,
+                params.callbackFunction
+            )
         }
 }
 
@@ -103,8 +106,8 @@ internal sealed class WorkerSpecification {
 
     data class Disconnect(
         val trackableId: String,
-        val callbackFunction: ()->Unit
-    ):WorkerSpecification()
+        val callbackFunction: () -> Unit
+    ) : WorkerSpecification()
 
     data class StopConnection(
         val callbackFunction: ResultCallbackFunction<Unit>
