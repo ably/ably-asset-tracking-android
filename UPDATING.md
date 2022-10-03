@@ -1,5 +1,24 @@
 # Upgrade / Migration Guide
 
+## Version 1.3.0 to 1.4.0
+
+### Token based auth configuration
+
+The preferred way of using token based auth has changed. Now, the `clientId` is not required when using either `tokenRequest` or `jwt` auth.
+The client ID will be inferred from the token provided to the AAT SDK from the auth token callback.
+
+```kotlin
+Authentication.tokenRequest {
+    // return a token request (AAT will use its client ID)
+}
+
+Authentication.jwt {
+    // return a JWT token (AAT will use its client ID)
+}
+```
+
+The old methods that required a `clientId` have been deprecated and will be removed in a future release.
+
 ## Version 1.1.1 to 1.2.0
 
 ### Update the Ably Asset Tracking dependency

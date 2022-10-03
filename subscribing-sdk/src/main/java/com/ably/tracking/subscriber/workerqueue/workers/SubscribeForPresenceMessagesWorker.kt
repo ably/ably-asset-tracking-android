@@ -15,7 +15,7 @@ internal class SubscribeForPresenceMessagesWorker(
         properties: Properties,
         doAsyncWork: (suspend () -> Unit) -> Unit,
         postWork: (WorkerSpecification) -> Unit
-    ) {
+    ): Properties {
         doAsyncWork {
             val result = ably.subscribeForPresenceMessages(
                 trackableId = trackableId,
@@ -25,9 +25,13 @@ internal class SubscribeForPresenceMessagesWorker(
             if (result.isSuccess) {
                 postWork(WorkerSpecification.SubscribeToChannel(callbackFunction))
             } else {
-                ably.disconnect(trackableId, properties.presenceData)
-                callbackFunction(result)
+                postWork(
+                    WorkerSpecification.Disconnect(trackableId) {
+                        callbackFunction(result)
+                    }
+                )
             }
         }
+        return properties
     }
 }

@@ -3,40 +3,41 @@ package com.ably.tracking.subscriber.workerqueue.workers
 import com.ably.tracking.common.ClientTypes
 import com.ably.tracking.common.PresenceAction
 import com.ably.tracking.common.PresenceMessage
-import com.ably.tracking.subscriber.SubscriberStateManipulator
+import com.ably.tracking.subscriber.SubscriberInteractor
 import com.ably.tracking.subscriber.Properties
 import com.ably.tracking.subscriber.workerqueue.Worker
 import com.ably.tracking.subscriber.workerqueue.WorkerSpecification
 
 internal class UpdatePublisherPresenceWorker(
     private val presenceMessage: PresenceMessage,
-    private val subscriberStateManipulator: SubscriberStateManipulator
+    private val subscriberInteractor: SubscriberInteractor
 ) : Worker {
     override fun doWork(
         properties: Properties,
         doAsyncWork: (suspend () -> Unit) -> Unit,
         postWork: (WorkerSpecification) -> Unit
-    ) {
+    ): Properties {
         when (presenceMessage.action) {
             PresenceAction.PRESENT_OR_ENTER -> {
                 if (presenceMessage.data.type == ClientTypes.PUBLISHER) {
-                    subscriberStateManipulator.updatePublisherPresence(properties, true)
-                    subscriberStateManipulator.updateTrackableState(properties)
-                    subscriberStateManipulator.updatePublisherResolutionInformation(presenceMessage.data)
+                    subscriberInteractor.updatePublisherPresence(properties, true)
+                    subscriberInteractor.updateTrackableState(properties)
+                    subscriberInteractor.updatePublisherResolutionInformation(presenceMessage.data)
                 }
             }
             PresenceAction.LEAVE_OR_ABSENT -> {
                 if (presenceMessage.data.type == ClientTypes.PUBLISHER) {
-                    subscriberStateManipulator.updatePublisherPresence(properties, false)
-                    subscriberStateManipulator.updateTrackableState(properties)
+                    subscriberInteractor.updatePublisherPresence(properties, false)
+                    subscriberInteractor.updateTrackableState(properties)
                 }
             }
             PresenceAction.UPDATE -> {
                 if (presenceMessage.data.type == ClientTypes.PUBLISHER) {
-                    subscriberStateManipulator.updatePublisherResolutionInformation(presenceMessage.data)
+                    subscriberInteractor.updatePublisherResolutionInformation(presenceMessage.data)
                 }
             }
         }
+        return properties
     }
 
     override fun doWhenStopped(exception: Exception) = Unit

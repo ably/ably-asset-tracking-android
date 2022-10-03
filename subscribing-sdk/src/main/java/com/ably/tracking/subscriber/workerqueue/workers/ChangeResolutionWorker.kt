@@ -17,11 +17,14 @@ internal class ChangeResolutionWorker(
         properties: Properties,
         doAsyncWork: (suspend () -> Unit) -> Unit,
         postWork: (WorkerSpecification) -> Unit
-    ) {
+    ): Properties {
+        properties.presenceData = properties.presenceData.copy(resolution = resolution)
+
         doAsyncWork {
-            properties.presenceData = properties.presenceData.copy(resolution = resolution)
             val result = ably.updatePresenceData(trackableId, properties.presenceData)
             callbackFunction(result)
         }
+
+        return properties
     }
 }

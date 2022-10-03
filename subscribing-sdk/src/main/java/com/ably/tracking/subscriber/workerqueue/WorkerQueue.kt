@@ -10,7 +10,7 @@ import kotlinx.coroutines.launch
  * A worker queue is responsible for enqueueing [Worker]s and executing them.
  */
 internal class WorkerQueue(
-    private val subscriberProperties: Properties,
+    private var subscriberProperties: Properties,
     private val scope: CoroutineScope,
     private val workerFactory: WorkerFactory,
     maximumWorkerQueueCapacity: Int = 100,
@@ -33,9 +33,9 @@ internal class WorkerQueue(
     }
 
     private fun execute(worker: Worker) {
-        worker.doWork(
-            properties = subscriberProperties,
-            doAsyncWork = { block -> scope.launch { block() } },
+        subscriberProperties = worker.doWork(
+            properties = subscriberProperties.copy(),
+            doAsyncWork = { asyncWork -> scope.launch { asyncWork() } },
             postWork = ::enqueue
         )
     }
