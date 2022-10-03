@@ -5,9 +5,8 @@ import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
 import com.ably.tracking.annotations.Experimental
 import com.ably.tracking.common.Ably
+import com.ably.tracking.common.wrapInResultCallback
 import com.ably.tracking.subscriber.workerqueue.WorkerSpecification
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -48,30 +47,16 @@ internal class DefaultSubscriber(
     suspend fun start() {
         suspendCoroutine<Unit> { continuation ->
             core.enqueue(
-                WorkerSpecification.StartConnection {
-                    try {
-                        continuation.resume(it.getOrThrow())
-                    } catch (exception: Exception) {
-                        continuation.resumeWithException(exception)
-                    }
-                }
+                WorkerSpecification.StartConnection(continuation.wrapInResultCallback())
             )
         }
     }
 
     override suspend fun resolutionPreference(resolution: Resolution?) {
         // send change request over channel and wait for the result
-
-        // TODO move suspendCoroutine lower to suspending enqueue
         suspendCoroutine<Unit> { continuation ->
             core.enqueue(
-                WorkerSpecification.ChangeResolution(resolution) {
-                    try {
-                        continuation.resume(it.getOrThrow())
-                    } catch (exception: Exception) {
-                        continuation.resumeWithException(exception)
-                    }
-                }
+                WorkerSpecification.ChangeResolution(resolution, continuation.wrapInResultCallback())
             )
         }
     }
@@ -80,13 +65,7 @@ internal class DefaultSubscriber(
         // send stop request over channel and wait for the result
         suspendCoroutine<Unit> { continuation ->
             core.enqueue(
-                WorkerSpecification.StopConnection {
-                    try {
-                        continuation.resume(it.getOrThrow())
-                    } catch (exception: Exception) {
-                        continuation.resumeWithException(exception)
-                    }
-                }
+                WorkerSpecification.StopConnection(continuation.wrapInResultCallback())
             )
         }
     }
