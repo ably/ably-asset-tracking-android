@@ -1,5 +1,13 @@
 # Change log
 
+## [1.4.0-rc.2](https://github.com/ably/ably-asset-tracking-android/tree/1.4.0-rc.2)
+
+[Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.4.0-rc.1...v1.4.0-rc.2)
+
+**Implemented enhancements:**
+
+- Make the client ID an optional parameter if users use a token-based auth [\#766](https://github.com/ably/ably-asset-tracking-android/issues/766)
+
 ## [1.4.0-rc.1](https://github.com/ably/ably-asset-tracking-android/tree/1.4.0-rc.1)
 
 Version 1.4.0 of the Ably Asset Tracking SDKs for Android uses the Mapbox Navigation SDK in version 2.8.0
