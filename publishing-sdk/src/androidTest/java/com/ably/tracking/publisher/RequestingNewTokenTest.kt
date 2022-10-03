@@ -86,7 +86,7 @@ class RequestingNewTokenTest {
         newEnabledTrackableIds: List<String>,
     ): Authentication {
         var requestedForFirstTime = true
-        return Authentication.tokenRequest(CLIENT_ID) { requestParameters ->
+        return Authentication.tokenRequest { requestParameters ->
             // Create different token capabilities when called for the first time and when called next times
             val capabilities = if (requestedForFirstTime) {
                 requestedForFirstTime = false
@@ -100,7 +100,7 @@ class RequestingNewTokenTest {
                 Auth.TokenParams().apply {
                     ttl = requestParameters.ttl
                     capability = capabilities
-                    clientId = requestParameters.clientId
+                    clientId = CLIENT_ID
                     timestamp = requestParameters.timestamp
                 },
                 Auth.AuthOptions(ABLY_API_KEY)
