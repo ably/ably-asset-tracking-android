@@ -15,12 +15,12 @@ internal class DisconnectWorker(
         properties: Properties,
         doAsyncWork: (suspend () -> Unit) -> Unit,
         postWork: (WorkerSpecification) -> Unit
-    ) {
-        val presenceData = properties.presenceData.copy()
+    ): Properties {
         doAsyncWork {
-            ably.disconnect(trackableId, presenceData)
+            ably.disconnect(trackableId, properties.presenceData)
             callbackFunction()
         }
+        return properties
     }
 
     override fun doWhenStopped(exception: Exception) {
