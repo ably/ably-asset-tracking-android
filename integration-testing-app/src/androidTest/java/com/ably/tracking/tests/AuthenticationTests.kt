@@ -47,13 +47,13 @@ class AuthenticationTests {
         Authentication.basic(CLIENT_ID, ABLY_API_KEY)
 
     private fun createTokenAuthenticationConfiguration(ably: AblyRealtime): Authentication =
-        Authentication.tokenRequest(CLIENT_ID) { requestParameters ->
+        Authentication.tokenRequest { requestParameters ->
             // use Ably SDK to create a signed token request (this should normally be done by user auth servers)
             val ablyTokenRequest = ably.auth.createTokenRequest(
                 Auth.TokenParams().apply {
                     ttl = requestParameters.ttl
                     capability = requestParameters.capability
-                    clientId = requestParameters.clientId
+                    clientId = CLIENT_ID
                     timestamp = requestParameters.timestamp
                 },
                 Auth.AuthOptions(ABLY_API_KEY)
@@ -72,7 +72,7 @@ class AuthenticationTests {
         }
 
     private fun createJwtAuthenticationConfiguration(): Authentication =
-        Authentication.jwt(CLIENT_ID) { tokenParams ->
+        Authentication.jwt { tokenParams ->
             // use TokenParams to create a signed JWT (this should normally be done by user auth servers)
             val keyParts = ABLY_API_KEY.split(":")
             val keyName = keyParts[0]
@@ -88,7 +88,7 @@ class AuthenticationTests {
                 .claim("iat", currentTimestampInSeconds)
                 .claim("exp", tokenExpirationTimestampInSeconds)
                 .claim("x-ably-capability", tokenCapability)
-                .claim("x-ably-clientId", tokenParams.clientId)
+                .claim("x-ably-clientId", CLIENT_ID)
                 .signWith(SignatureAlgorithm.HS256, keySecret.toByteArray())
                 .compact()
         }
