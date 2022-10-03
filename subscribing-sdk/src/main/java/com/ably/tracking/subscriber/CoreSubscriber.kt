@@ -32,7 +32,7 @@ internal interface CoreSubscriber {
     val nextLocationUpdateIntervals: SharedFlow<Long>
 }
 
-internal interface SubscriberStateManipulator {
+internal interface SubscriberInteractor {
     fun updateTrackableState(properties: Properties)
     fun updatePublisherPresence(properties: Properties, isPublisherPresent: Boolean)
     fun updatePublisherResolutionInformation(presenceData: PresenceData)
@@ -60,10 +60,9 @@ private class DefaultCoreSubscriber(
     initialResolution: Resolution?,
     private val trackableId: String,
 ) :
-    CoreSubscriber, SubscriberStateManipulator {
+    CoreSubscriber, SubscriberInteractor {
     private val scope = CoroutineScope(singleThreadDispatcher + SupervisorJob())
     private val workerQueue: WorkerQueue
-    private val properties = Properties(initialResolution)
     private val _trackableStates: MutableStateFlow<TrackableState> =
         MutableStateFlow(TrackableState.Offline())
     private val _publisherPresence: MutableStateFlow<Boolean> = MutableStateFlow(false)
@@ -94,6 +93,7 @@ private class DefaultCoreSubscriber(
 
     init {
         val workerFactory = WorkerFactory(this, ably, trackableId)
+        val properties = Properties(initialResolution)
         workerQueue = WorkerQueue(properties, scope, workerFactory)
 
         ably.subscribeForAblyStateChange { enqueue(WorkerSpecification.UpdateConnectionState(it)) }
@@ -158,13 +158,15 @@ private class DefaultCoreSubscriber(
     }
 }
 
-internal class Properties(initialResolution: Resolution?) {
-    var isStopped: Boolean = false
-    var isPublisherOnline: Boolean = false
-    var trackableState: TrackableState = TrackableState.Offline()
+internal data class Properties private constructor(
+    var presenceData: PresenceData,
+    var isStopped: Boolean = false,
+    var isPublisherOnline: Boolean = false,
+    var trackableState: TrackableState = TrackableState.Offline(),
     var lastConnectionStateChange: ConnectionStateChange =
-        ConnectionStateChange(ConnectionState.OFFLINE, null)
+        ConnectionStateChange(ConnectionState.OFFLINE, null),
     var lastChannelConnectionStateChange: ConnectionStateChange =
         ConnectionStateChange(ConnectionState.OFFLINE, null)
-    var presenceData: PresenceData = PresenceData(ClientTypes.SUBSCRIBER, initialResolution)
+) {
+    constructor(initialResolution: Resolution?) : this(PresenceData(ClientTypes.SUBSCRIBER, initialResolution))
 }

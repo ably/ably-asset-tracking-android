@@ -4,27 +4,25 @@ import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.subscriber.Properties
 
 /**
- * A [Worker] interface represents workers which executes synchronous work with an optional synchronous work result
- * and another optional asynchronous work.
+ * A [Worker] interface represents workers which execute work inside [WorkerQueue].
  */
 internal interface Worker {
     /**
-     * This function is provided in order for implementors to implement synchronous work. They may optionally
-     * provide result for the executed synchronous work and an optional asynchronous work in the form of a suspending
-     * function.
+     * This function is provided in order for implementors to implement synchronous work. Any asynchronous tasks
+     * should be executed inside [doAsyncWork] function. If a worker needs to delegate another task to the queue
+     * pass it to [postWork] function.
      *
-     * @param properties current state of publisher to be used by this worker.
+     * @param properties copy of current state of publisher to be used by this worker.
+     * @param doAsyncWork wrapper function for asynchronous work.
+     * @param postWork this function allows worker to add other workers to the queue calling it.
      *
-     * Please use [properties] directly only at synchronous part of code. If you need to pass this
-     * into async work lambda, you should copy necessary properties.
-     *
-     * @return SyncAsyncResult which represents an optional synchronous work result and an optional asynchronous work
+     * @return updated [Properties] modified by this worker.
      */
     fun doWork(
         properties: Properties,
         doAsyncWork: (suspend () -> Unit) -> Unit,
         postWork: (WorkerSpecification) -> Unit
-    )
+    ): Properties
 
     /**
      * This function is provided in order for implementors to define what should happen when the worker
@@ -36,6 +34,9 @@ internal interface Worker {
     fun doWhenStopped(exception: Exception)
 }
 
+/**
+ * An abstract class to avoid duplication of default [doWhenStopped] implementation
+ */
 internal abstract class CallbackWorker(protected val callbackFunction: ResultCallbackFunction<Unit>) :
     Worker {
 
