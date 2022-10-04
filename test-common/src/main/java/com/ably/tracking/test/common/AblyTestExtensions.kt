@@ -4,6 +4,7 @@ import com.ably.tracking.ConnectionException
 import com.ably.tracking.ErrorInformation
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.PresenceData
+import com.ably.tracking.common.PresenceMessage
 import io.mockk.CapturingSlot
 import io.mockk.coEvery
 import io.mockk.every
@@ -56,14 +57,17 @@ fun Ably.mockConnectFailureThenSuccess(trackableId: String, callbackDelayInMilli
     }
 }
 
-fun Ably.mockSubscribeToPresenceSuccess(trackableId: String) {
+fun Ably.mockSubscribeToPresenceSuccess(
+    trackableId: String,
+    listenerSlot: CapturingSlot<(PresenceMessage) -> Unit> = slot()
+) {
     val callbackSlot = slot<(Result<Unit>) -> Unit>()
     every {
-        subscribeForPresenceMessages(trackableId, any(), capture(callbackSlot))
+        subscribeForPresenceMessages(trackableId, capture(listenerSlot), capture(callbackSlot))
     } answers {
         callbackSlot.captured(Result.success(Unit))
     }
-    coEvery { subscribeForPresenceMessages(trackableId, any()) } returns Result.success(Unit)
+    coEvery { subscribeForPresenceMessages(trackableId, capture(listenerSlot)) } returns Result.success(Unit)
 }
 
 fun Ably.mockSubscribeToPresenceError(trackableId: String) {
@@ -83,6 +87,7 @@ fun Ably.mockDisconnect(trackableId: String, result: Result<Unit>) {
     } answers {
         callbackSlot.captured(result)
     }
+    coEvery { disconnect(trackableId, any()) } returns result
 }
 
 fun Ably.mockDisconnectSuccess(trackableId: String) {
@@ -145,6 +150,16 @@ fun Ably.mockSendEnhancedLocationFailureThenSuccess(trackableId: String) {
             callbackSlot.captured(Result.failure(anyConnectionException()))
         }
     }
+}
+
+fun Ably.mockUpdatePresenceDataSuccess(trackableId: String) {
+    val callbackSlot = slot<(Result<Unit>) -> Unit>()
+    every {
+        updatePresenceData(trackableId, any(), capture(callbackSlot))
+    } answers {
+        callbackSlot.captured(Result.success(Unit))
+    }
+    coEvery { updatePresenceData(trackableId, any()) } returns Result.success(Unit)
 }
 
 fun Ably.mockSendRawLocationSuccess(trackableId: String) {
