@@ -5,8 +5,8 @@ import com.ably.tracking.common.Ably
 import com.ably.tracking.test.common.mockCreateConnectionSuccess
 import com.ably.tracking.test.common.mockDisconnectSuccess
 import com.ably.tracking.test.common.mockSubscribeToPresenceError
+import io.mockk.coVerify
 import io.mockk.mockk
-import io.mockk.verify
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import java.util.UUID
@@ -48,8 +48,8 @@ class DefaultSubscriberTest {
         }
 
         // then
-        verify(exactly = 1) {
-            ably.disconnect(trackableId, any(), any())
+        coVerify(exactly = 1) {
+            ably.disconnect(trackableId, any())
         }
     }
 }
