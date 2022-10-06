@@ -7,8 +7,8 @@ import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.subscriber.Properties
 import com.ably.tracking.subscriber.SubscriberInteractor
 import com.ably.tracking.subscriber.workerqueue.WorkerSpecification
-import com.ably.tracking.test.common.mockSuspendingConnectFailure
-import com.ably.tracking.test.common.mockSuspendingConnectSuccess
+import com.ably.tracking.test.common.mockConnectSuccess
+import com.ably.tracking.test.common.mockConnectFailure
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.just
@@ -38,7 +38,7 @@ internal class StartConnectionWorkerTest {
     fun `should call ably connect and post update trackable worker specification on success`() = runBlockingTest {
         // given
         val initialProperties = Properties(Resolution(Accuracy.BALANCED, 100, 100.0))
-        ably.mockSuspendingConnectSuccess(trackableId)
+        ably.mockConnectSuccess(trackableId)
 
         // when
         val updatedProperties =
@@ -62,7 +62,7 @@ internal class StartConnectionWorkerTest {
     fun `should call ably connect and notify callback on failure`() = runBlockingTest {
         // given
         val initialProperties = Properties(Resolution(Accuracy.BALANCED, 100, 100.0))
-        ably.mockSuspendingConnectFailure(trackableId)
+        ably.mockConnectFailure(trackableId)
 
         // when
         val updatedProperties =

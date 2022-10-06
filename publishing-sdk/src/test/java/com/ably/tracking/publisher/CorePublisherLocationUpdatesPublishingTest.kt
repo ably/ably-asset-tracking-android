@@ -6,11 +6,12 @@ import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
 import com.ably.tracking.test.common.createLocation
-import com.ably.tracking.test.common.mockCreateSuspendingConnectionSuccess
+import com.ably.tracking.test.common.mockConnectSuccess
 import com.ably.tracking.test.common.mockSendEnhancedLocationFailure
 import com.ably.tracking.test.common.mockSendEnhancedLocationFailureThenSuccess
 import com.ably.tracking.test.common.mockSendEnhancedLocationSuccess
 import com.ably.tracking.test.common.mockSendRawLocationSuccess
+import com.ably.tracking.test.common.mockSubscribeToPresenceSuccess
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -161,7 +162,8 @@ class CorePublisherLocationUpdatesPublishingTest {
     ) {
         val locationUpdatesObserverSlot = slot<LocationUpdatesObserver>()
         every { mapbox.registerLocationObserver(capture(locationUpdatesObserverSlot)) } just runs
-        ably.mockCreateSuspendingConnectionSuccess(trackable.id)
+        ably.mockConnectSuccess(trackable.id)
+        ably.mockSubscribeToPresenceSuccess(trackable.id)
         runBlocking(Dispatchers.IO) {
             addTrackableToCorePublisher(trackable, corePublisher)
         }

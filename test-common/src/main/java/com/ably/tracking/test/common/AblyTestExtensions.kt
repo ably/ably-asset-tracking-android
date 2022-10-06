@@ -11,11 +11,6 @@ import io.mockk.every
 import io.mockk.slot
 import kotlinx.coroutines.delay
 
-fun Ably.mockCreateSuspendingConnectionSuccess(trackableId: String) {
-    mockSuspendingConnectSuccess(trackableId)
-    mockSubscribeToPresenceSuccess(trackableId)
-}
-
 fun Ably.mockCreateConnectionSuccess(trackableId: String) {
     mockConnectSuccess(trackableId)
     mockSubscribeToPresenceSuccess(trackableId)
@@ -28,15 +23,17 @@ fun Ably.mockConnectSuccess(trackableId: String) {
     } answers {
         callbackSlot.captured(Result.success(Unit))
     }
-}
 
-fun Ably.mockSuspendingConnectSuccess(trackableId: String) {
     coEvery {
         connect(trackableId, any(), any(), any(), any())
     } returns Result.success(Unit)
 }
 
-fun Ably.mockSuspendingConnectFailure(trackableId: String) {
+fun Ably.mockConnectFailure(trackableId: String) {
+    val callbackSlot = slot<(Result<Unit>) -> Unit>()
+    every { connect(trackableId, any(), any(), any(), any(), capture(callbackSlot)) } answers {
+        callbackSlot.captured(Result.failure(anyConnectionException()))
+    }
     coEvery {
         connect(trackableId, any(), any(), any(), any())
     } returns Result.failure(anyConnectionException())
@@ -92,25 +89,6 @@ fun Ably.mockDisconnect(trackableId: String, result: Result<Unit>) {
 
 fun Ably.mockDisconnectSuccess(trackableId: String) {
     mockDisconnect(trackableId, Result.success(Unit))
-}
-
-fun Ably.mockDisconnectSuccessAndCapturePresenceData(trackableId: String): CapturingSlot<PresenceData> {
-    val callbackSlot = slot<(Result<Unit>) -> Unit>()
-    val presenceDataSlot = slot<PresenceData>()
-    every {
-        disconnect(trackableId, capture(presenceDataSlot), capture(callbackSlot))
-    } answers {
-        callbackSlot.captured(Result.success(Unit))
-    }
-    return presenceDataSlot
-}
-
-fun Ably.mockSuspendingDisconnect(trackableId: String, result: Result<Unit>) {
-    coEvery { disconnect(trackableId, any()) } returns result
-}
-
-fun Ably.mockSuspendingDisconnectSuccess(trackableId: String) {
-    mockSuspendingDisconnect(trackableId, Result.success(Unit))
 }
 
 fun Ably.mockSuspendingDisconnectSuccessAndCapturePresenceData(trackableId: String): CapturingSlot<PresenceData> {

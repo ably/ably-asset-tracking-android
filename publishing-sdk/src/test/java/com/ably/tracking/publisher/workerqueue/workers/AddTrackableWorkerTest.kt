@@ -8,8 +8,8 @@ import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.guards.DuplicateTrackableGuard
 import com.ably.tracking.publisher.workerqueue.assertNotNullAndExecute
 import com.ably.tracking.publisher.workerqueue.results.AddTrackableWorkResult
-import com.ably.tracking.test.common.mockSuspendingConnectFailure
-import com.ably.tracking.test.common.mockSuspendingConnectSuccess
+import com.ably.tracking.test.common.mockConnectSuccess
+import com.ably.tracking.test.common.mockConnectFailure
 import io.mockk.clearAllMocks
 import io.mockk.every
 import io.mockk.mockk
@@ -121,7 +121,7 @@ class AddTrackableWorkerTest {
         runBlocking {
             // given
             mockTrackableIsNeitherAddedNorCurrentlyBeingAdded()
-            ably.mockSuspendingConnectSuccess(trackable.id)
+            ably.mockConnectSuccess(trackable.id)
 
             // when
             val result = worker.doWork(publisherProperties)
@@ -141,7 +141,7 @@ class AddTrackableWorkerTest {
         runBlocking {
             // given
             mockTrackableIsNeitherAddedNorCurrentlyBeingAdded()
-            ably.mockSuspendingConnectFailure(trackable.id)
+            ably.mockConnectFailure(trackable.id)
 
             // when
             val result = worker.doWork(publisherProperties)
