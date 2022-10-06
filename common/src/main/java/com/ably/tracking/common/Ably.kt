@@ -687,23 +687,23 @@ constructor(
                 launch { disconnect(trackableId, presenceData) }
             }
         }
-        closeConnection()
+        ably.closeConnection()
     }
 
     /**
      * Closes [AblyRealtime] and waits until it's either closed or failed.
      * @throws ConnectionException if the [AblyRealtime] state changes to [ConnectionState.failed].
      */
-    private suspend fun closeConnection() {
+    private suspend fun AblyRealtime.closeConnection() {
         suspendCancellableCoroutine<Unit> { continuation ->
-            ably.connection.on {
+            connection.on {
                 if (it.current == ConnectionState.closed) {
                     continuation.resume(Unit)
                 } else if (it.current == ConnectionState.failed) {
                     continuation.resumeWithException(it.reason.toTrackingException())
                 }
             }
-            ably.close()
+            close()
         }
     }
 
