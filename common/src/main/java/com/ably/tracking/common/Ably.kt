@@ -38,6 +38,8 @@ import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeout
 
 /**
@@ -226,8 +228,24 @@ constructor(
 ) : Ably {
     private val gson = Gson()
     private val ably: AblyRealtime
+
+    /**
+     * Channels that have successfully completed the [connect] operation.
+     */
     private val channels: MutableMap<String, Channel> = mutableMapOf()
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+
+    /**
+     * Names of channels that have started the [connect] operation and are waiting for its result.
+     * Originally added to enable starting and stopping the [ably] connection in a secure way.
+     */
+    private val connectingChannelNames: MutableSet<String> = mutableSetOf()
+
+    /**
+     * Mutex making sure the [channels] and [connectingChannelNames] are accessed in a synchronized manner.
+     * Originally added to enable starting and stopping the [ably] connection in a secure way.
+     */
+    private val channelsMutex = Mutex()
 
     init {
         try {
@@ -237,6 +255,7 @@ constructor(
                 this.logLevel = Log.VERBOSE
                 this.logHandler = Log.LogHandler { severity, tag, msg, tr -> logMessage(severity, tag, msg, tr) }
                 this.environment = connectionConfiguration.environment
+                this.autoConnect = false
             }
             ably = AblyRealtime(clientOptions)
         } catch (exception: AblyException) {
@@ -328,6 +347,13 @@ constructor(
                 modes = modesList.toTypedArray()
             }
             try {
+                channelsMutex.withLock {
+                    val isCreatingFirstChannel = channels.isEmpty() && connectingChannelNames.isEmpty()
+                    if (isCreatingFirstChannel) {
+                        ably.connectSuspending()
+                    }
+                    connectingChannelNames.add(channelName)
+                }
                 val channel = if (useRewind)
                     ably.channels.get(channelName, channelOptions.apply { params = mapOf("rewind" to "1") })
                 else
@@ -337,15 +363,38 @@ constructor(
                     channel.attachSuspending()
                 }
                 enterChannelPresence(channel, presenceData)
-                channels[trackableId] = channel
+                channelsMutex.withLock {
+                    channels[trackableId] = channel
+                    connectingChannelNames.remove(channelName)
+                }
                 return Result.success(Unit)
             } catch (ablyException: AblyException) {
+                onConnectFailure(channelName)
                 return Result.failure(ablyException.errorInfo.toTrackingException())
             } catch (connectionException: ConnectionException) {
+                onConnectFailure(channelName)
                 return Result.failure(connectionException)
             }
         } else {
             return Result.success(Unit)
+        }
+    }
+
+    private suspend fun onConnectFailure(channelName: String) {
+        channelsMutex.withLock {
+            connectingChannelNames.remove(channelName)
+            try {
+                stopAblyIfNoChannelsArePresent()
+            } catch (stopAblyException: ConnectionException) {
+                logHandler?.w("Failed to stop Ably after the first channel connect had failed", stopAblyException)
+            }
+        }
+    }
+
+    private suspend fun stopAblyIfNoChannelsArePresent() {
+        val hasNoConnectedOrConnectingChannels = connectingChannelNames.isEmpty() && channels.isEmpty()
+        if (hasNoConnectedOrConnectingChannels) {
+            ably.closeConnection()
         }
     }
 
@@ -370,7 +419,14 @@ constructor(
                 retryChannelOperationIfConnectionResumeFails(channelToRemove) {
                     disconnectChannel(it, presenceData)
                 }
-                channels.remove(trackableId)
+                channelsMutex.withLock {
+                    channels.remove(trackableId)
+                    try {
+                        stopAblyIfNoChannelsArePresent()
+                    } catch (stopAblyException: ConnectionException) {
+                        logHandler?.w("Failed to stop Ably after the last channel disconnect had succeeded", stopAblyException)
+                    }
+                }
                 Result.success(Unit)
             } catch (exception: ConnectionException) {
                 Result.failure(exception)
@@ -771,6 +827,10 @@ constructor(
 
     private fun ChannelState.isConnected(): Boolean = this == ChannelState.attached
 
+    private fun ConnectionState.isConnected(): Boolean = this == ConnectionState.connected
+
+    private fun ConnectionState.isFailed(): Boolean = this == ConnectionState.failed
+
     private fun ConnectionException.isConnectionResumeException(): Boolean =
         errorInformation.let { it.message == "Connection resume failed" && it.code == 50000 && it.statusCode == 500 }
 
@@ -825,4 +885,33 @@ constructor(
         state == ChannelState.detached || state == ChannelState.failed
 
     private fun createMalformedMessageErrorInfo(): ErrorInfo = ErrorInfo("Received a malformed message", 100_001, 400)
+
+    /**
+     * A suspending version of the [AblyRealtime.connect] method. It will begin connecting and wait until it's connected.
+     * If the connection enters the "failed" state it will throw a [ConnectionException].
+     * If the operation doesn't complete in [timeoutInMilliseconds] it will throw a [ConnectionException].
+     * If the instance is already connected it will finish immediately.
+     *
+     * @throws ConnectionException if something goes wrong.
+     */
+    private suspend fun AblyRealtime.connectSuspending(timeoutInMilliseconds: Long = 10_000L) {
+        if (connection.state.isConnected()) {
+            return
+        }
+        try {
+            withTimeout(timeoutInMilliseconds) {
+                suspendCancellableCoroutine<Unit> { continuation ->
+                    connection.on { channelStateChange ->
+                        when {
+                            channelStateChange.current.isConnected() -> continuation.resume(Unit)
+                            channelStateChange.current.isFailed() -> continuation.resumeWithException(channelStateChange.reason.toTrackingException())
+                        }
+                    }
+                    connect()
+                }
+            }
+        } catch (exception: TimeoutCancellationException) {
+            throw ConnectionException(ErrorInformation("Timeout was thrown when waiting for Ably to connect"))
+        }
+    }
 }
