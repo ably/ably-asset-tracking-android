@@ -15,4 +15,3 @@ internal fun MutableList<WorkerSpecification>.appendSpecification(): (WorkerSpec
     { asyncWork ->
         add(asyncWork)
     }
-

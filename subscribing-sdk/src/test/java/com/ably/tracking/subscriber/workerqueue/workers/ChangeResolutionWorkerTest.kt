@@ -38,5 +38,4 @@ internal class ChangeResolutionWorkerTest {
         Assert.assertEquals(updatedResolution, updatedProperties.presenceData.resolution)
         verify { callbackFunction.invoke(match { it.isSuccess }) }
     }
-
 }
