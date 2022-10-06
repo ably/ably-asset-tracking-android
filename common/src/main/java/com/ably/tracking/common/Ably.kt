@@ -363,22 +363,20 @@ constructor(
         }
     }
 
-    override fun disconnect(trackableId: String, presenceData: PresenceData, callback: (Result<Unit>) -> Unit) {
-        scope.launch {
-            if (channels.contains(trackableId)) {
-                val channelToRemove = channels[trackableId]!!
-                try {
-                    retryChannelOperationIfConnectionResumeFails(channelToRemove) {
-                        disconnectChannel(it, presenceData)
-                    }
-                    channels.remove(trackableId)
-                    callback(Result.success(Unit))
-                } catch (exception: ConnectionException) {
-                    callback(Result.failure(exception))
+    override suspend fun disconnect(trackableId: String, presenceData: PresenceData): Result<Unit> {
+        return if (channels.contains(trackableId)) {
+            val channelToRemove = channels[trackableId]!!
+            try {
+                retryChannelOperationIfConnectionResumeFails(channelToRemove) {
+                    disconnectChannel(it, presenceData)
                 }
-            } else {
-                callback(Result.success(Unit))
+                channels.remove(trackableId)
+                Result.success(Unit)
+            } catch (exception: ConnectionException) {
+                Result.failure(exception)
             }
+        } else {
+            Result.success(Unit)
         }
     }
 
@@ -435,19 +433,10 @@ constructor(
         }
     }
 
-    /**
-     * A suspend version of the [DefaultAbly.disconnect] method. It waits until disconnection is completed.
-     */
-    override suspend fun disconnect(trackableId: String, presenceData: PresenceData): Result<Unit> {
-        return suspendCancellableCoroutine { continuation ->
-            disconnect(trackableId, presenceData) {
-                try {
-                    it.getOrThrow()
-                    continuation.resume(Result.success(Unit))
-                } catch (exception: ConnectionException) {
-                    continuation.resume(Result.failure(exception))
-                }
-            }
+    override fun disconnect(trackableId: String, presenceData: PresenceData, callback: (Result<Unit>) -> Unit) {
+        scope.launch {
+            val result = disconnect(trackableId, presenceData)
+            callback(result)
         }
     }
 
