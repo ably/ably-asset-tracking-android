@@ -748,14 +748,22 @@ constructor(
 
     /**
      * Closes [AblyRealtime] and waits until it's either closed or failed.
+     * If the connection is already closed it returns immediately.
+     * If the connection is already failed it throws a [ConnectionException].
+     *
      * @throws ConnectionException if the [AblyRealtime] state changes to [ConnectionState.failed].
      */
     private suspend fun AblyRealtime.closeConnection() {
+        if (connection.state.isClosed()) {
+            return
+        } else if (connection.state.isFailed()) {
+            throw connection.reason.toTrackingException()
+        }
         suspendCancellableCoroutine<Unit> { continuation ->
             connection.on {
-                if (it.current == ConnectionState.closed) {
+                if (it.current.isClosed()) {
                     continuation.resume(Unit)
-                } else if (it.current == ConnectionState.failed) {
+                } else if (it.current.isFailed()) {
                     continuation.resumeWithException(it.reason.toTrackingException())
                 }
             }
@@ -828,6 +836,8 @@ constructor(
     private fun ChannelState.isConnected(): Boolean = this == ChannelState.attached
 
     private fun ConnectionState.isConnected(): Boolean = this == ConnectionState.connected
+
+    private fun ConnectionState.isClosed(): Boolean = this == ConnectionState.closed
 
     private fun ConnectionState.isFailed(): Boolean = this == ConnectionState.failed
 
