@@ -127,13 +127,13 @@ you can then add the Ably Asset Tracking dependency that you require in your Gra
 ```groovy
 dependencies {
     // Publishers, developing in Kotlin, will need the Publishing SDK
-    implementation 'com.ably.tracking:publishing-sdk:1.2.0'
+    implementation 'com.ably.tracking:publishing-sdk:1.4.0-rc.2'
 
     // Subscribers, developing in Kotlin, will need the Subscribing SDK
-    implementation 'com.ably.tracking:subscribing-sdk:1.2.0'
+    implementation 'com.ably.tracking:subscribing-sdk:1.4.0-rc.2'
 
     // Subscribers, developing in Kotlin, can optionally use the UI utilities
-    implementation 'com.ably.tracking:ui-sdk:1.2.0'
+    implementation 'com.ably.tracking:ui-sdk:1.4.0-rc.2'
 }
 ```
 
@@ -166,11 +166,32 @@ val defaultResolution = Resolution(Accuracy.BALANCED, desiredInterval = 1000L, m
 
 // Initialise and Start the Publisher
 val publisher = Publisher.publishers() // get the Publisher builder in default state
+    // Required configuration
     .connection(ConnectionConfiguration(Authentication.basic(CLIENT_ID, ABLY_API_KEY))) // provide Ably configuration with credentials
     .map(MapConfiguration(MAPBOX_ACCESS_TOKEN)) // provide Mapbox configuration with credentials
     .androidContext(this) // provide Android runtime context
     .resolutionPolicy(DefaultResolutionPolicyFactory(defaultResolution, this)) // provide either the default resolution policy factory or your custom implementation
+    .backgroundTrackingNotificationProvider(
+      object : PublisherNotificationProvider {
+        override fun getNotification(): Notification {
+            // TODO: create the notification for location updates background service
+        }
+      },
+      NOTIFICATION_ID
+    )
+    // Optional configuration
     .profile(RoutingProfile.DRIVING) // provide mode of transportation for better location enhancements
+    .logHandler(object : LogHandler {
+        override fun logMessage(level: LogLevel, message: String, throwable: Throwable?) {
+          // TODO: log the message to internal or external loggers
+        }
+      })
+    .rawLocations(false) // send raw location updates to subscribers
+    .sendResolution(true) // send calculated trackable network resolution to subscribers
+    .constantLocationEngineResolution(constantLocationEngineResolution) // provide a constant resolution for the GPS engine
+    .vehicleProfile(VehicleProfile.CAR) // provide vehicle type for better location enhancements
+    .locationSource(LocationSourceRaw.create(historyData)) // use an alternative location source for GPS locations
+    // Create and start the publisher
     .start()
 
 // Start tracking an asset
@@ -196,11 +217,19 @@ Here is an example of how Asset Subscribing SDK can be used:
 ```kotlin
 // Initialise and Start the Subscriber
 val subscriber = Subscriber.subscribers() // Get an AssetSubscriber
+    // Required configuration
     .connection(ConnectionConfiguration(Authentication.basic(CLIENT_ID, ABLY_API_KEY))) // provide Ably configuration with credentials
-    .resolution( // request a specific resolution to be considered by the publisher
-        Resolution(Accuracy.MAXIMUM, desiredInterval = 1000L, minimumDisplacement = 1.0)
-    )
     .trackingId(trackingId) // provide the tracking identifier for the asset that needs to be tracked
+    // Optional configuration
+    .resolution( // request a specific resolution to be considered by the publisher
+      Resolution(Accuracy.MAXIMUM, desiredInterval = 1000L, minimumDisplacement = 1.0)
+    )
+    .logHandler(object : LogHandler {
+      override fun logMessage(level: LogLevel, message: String, throwable: Throwable?) {
+        // TODO: log the message to internal or external loggers
+      }
+    })
+    // Create and start the subscriber
     .start() // start listening for updates
 
 // Listen for location updates
@@ -220,6 +249,31 @@ try {
 } catch (exception: Exception) {
     // TODO change request could not be submitted
 }
+```
+
+### Publisher presence
+
+Publisher presence is provided as an experimental API for subscribers which you can use to get information about
+whether the publisher is online or offline. This API is not yet stable and may change in the future.
+
+To use the API you must explicitly opt in to it by adding the following to your `build.gradle` file:
+
+```groovy
+android {
+    kotlinOptions {
+        freeCompilerArgs += "-Xopt-in=kotlin.RequiresOptIn"
+    }
+}
+```
+
+Then you can annotate your element of the desired scope with ``@OptIn(Experimental::class)`` annotation.
+
+An example usage of the API is shown below:
+
+```kotlin
+subscriber.publisherPresence
+    .onEach { isOnline -> print(isOnline) } // provide a function to be called when the asset's presnec is changed
+    .launchIn(scope) // coroutines scope on which the statuses are received
 ```
 
 ### UI utilities
@@ -266,6 +320,8 @@ Please see `DefaultResolutionPolicy` [implementation](publishing-sdk/src/main/ja
 
 Visit the [Ably Asset Tracking](https://ably.com/docs/asset-tracking) documentation for a complete API reference and code examples.
 
+You can also find reference documentation generated from the source code [here](https://sdk.ably.com/builds/ably/ably-asset-tracking-android/main/dokka/index.html).
+
 #### Upgrade / Migration Guide
 
 Please see our [Upgrade / Migration Guide](UPDATING.md) for notes on changes you need to make to your code to update it to use the latest version of these SDKs.
@@ -289,6 +345,40 @@ We also provide support for applications written in Java, however the requiremen
     - [subscribing-sdk-java](subscribing-sdk-java/) for the [subscribing-sdk](subscribing-sdk/)
 - require Java 1.8 or later
 - require a minimum of Android API Level 24 at runtime
+
+## Known Limitations
+
+### Using AAT together with Mapbox Navigation SDK
+
+There are some limitations when you want to use both AAT SDK and Mapbox Navigation SDK in the same project.
+
+Firstly, you have to exclude the notification module from Mapbox Navigation SDK dependency in your `build.gradle` file.
+
+```groovy
+// The Ably Asset Tracking Publisher SDK for Android.
+implementation ('com.ably.tracking:publishing-sdk:1.4.0-rc.2')
+
+// The Mapbox Navigation SDK.
+implementation ('com.mapbox.navigation:android:2.8.0') {
+    exclude group: "com.mapbox.navigation", module: "notification"
+}
+```
+
+Secondly, you have to use AAT's `MapboxNavigation` configuration and make sure that a publisher is started before you try to use the Mapbox Navigation.
+As there can only be one `MapboxNavigation` instance per application, instead of creating a new instance you have to use the `MapboxNavigationProvider` to retrieve the instance created by AAT.
+
+```kotlin
+// Start a publisher before accessing Mapbox Navigation SDK
+val publisher = Publisher.publishers()
+    // add publisher configuration
+    .start()
+
+// Retrieve the instance created by the publisher
+val mapboxNavigation = MapboxNavigationProvider.retrieve()
+```
+
+Because there is only one `MapboxNavigation` instance, both your app and AAT will use the same object. This means that there can be possible conflicts in usage that can lead to unexpected behaviour.
+Therefore, we do not advise using AAT in applications that already use Mapbox Navigation SDK.
 
 ## Contributing
 

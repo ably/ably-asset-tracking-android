@@ -8,9 +8,8 @@ import com.ably.tracking.LocationUpdate
 import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
+import com.ably.tracking.common.wrapInResultCallback
 import com.ably.tracking.logging.LogHandler
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -58,49 +57,25 @@ constructor(
 
     override suspend fun track(trackable: Trackable): StateFlow<TrackableState> {
         return suspendCoroutine { continuation ->
-            core.trackTrackable(trackable) {
-                try {
-                    continuation.resume(it.getOrThrow())
-                } catch (exception: Exception) {
-                    continuation.resumeWithException(exception)
-                }
-            }
+            core.trackTrackable(trackable, continuation.wrapInResultCallback())
         }
     }
 
     override suspend fun add(trackable: Trackable): StateFlow<TrackableState> {
         return suspendCoroutine { continuation ->
-            core.addTrackable(trackable) {
-                try {
-                    continuation.resume(it.getOrThrow())
-                } catch (exception: Exception) {
-                    continuation.resumeWithException(exception)
-                }
-            }
+            core.addTrackable(trackable, continuation.wrapInResultCallback())
         }
     }
 
     override suspend fun remove(trackable: Trackable): Boolean {
         return suspendCoroutine { continuation ->
-            core.removeTrackable(trackable) {
-                try {
-                    continuation.resume(it.getOrThrow())
-                } catch (exception: Exception) {
-                    continuation.resumeWithException(exception)
-                }
-            }
+            core.removeTrackable(trackable, continuation.wrapInResultCallback())
         }
     }
 
     override suspend fun stop(timeoutInMilliseconds: Long) {
         suspendCoroutine<Unit> { continuation ->
-            core.stop(timeoutInMilliseconds) {
-                try {
-                    continuation.resume(it.getOrThrow())
-                } catch (exception: Exception) {
-                    continuation.resumeWithException(exception)
-                }
-            }
+            core.stop(timeoutInMilliseconds, continuation.wrapInResultCallback())
         }
     }
 
