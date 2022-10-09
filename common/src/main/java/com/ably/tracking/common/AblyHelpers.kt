@@ -4,7 +4,7 @@ import com.ably.tracking.ConnectionException
 import com.ably.tracking.ErrorInformation
 import com.ably.tracking.TokenAuthException
 import com.ably.tracking.TokenAuthNonRetriableException
-import com.ably.tracking.NoTokenException
+import com.ably.tracking.CouldNotFetchTokenException
 import com.ably.tracking.common.message.PresenceDataMessage
 import com.ably.tracking.common.message.toTracking
 import com.ably.tracking.connection.Authentication
@@ -210,6 +210,6 @@ private fun TokenAuthException.toAblyException(): AblyException =
     when (this) {
         is TokenAuthNonRetriableException ->
             AblyException.fromErrorInfo(ErrorInfo(message, 403, 100_000))
-        is NoTokenException ->
+        is CouldNotFetchTokenException ->
             AblyException.fromErrorInfo(ErrorInfo(message, 401, 100_000))
     }
