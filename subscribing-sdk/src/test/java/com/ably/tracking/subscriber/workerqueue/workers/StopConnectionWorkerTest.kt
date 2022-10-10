@@ -43,7 +43,7 @@ internal class StopConnectionWorkerTest {
             stopConnectionWorker.doWork(initialProperties, asyncWorks.appendWork(), postedWorks.appendSpecification())
 
         // then
-        Assert.assertEquals(true, updatedProperties.isStopped)
+        Assert.assertTrue(updatedProperties.isStopped)
         verify { callbackFunction.invoke(match { it.isSuccess }) }
         verify { subscriberInteractor.notifyAssetIsOffline() }
     }
