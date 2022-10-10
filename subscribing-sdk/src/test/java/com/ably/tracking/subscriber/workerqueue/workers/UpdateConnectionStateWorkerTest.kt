@@ -23,9 +23,9 @@ internal class UpdateConnectionStateWorkerTest {
     private val subscriberInteractor: SubscriberInteractor = mockk {
         every { updateTrackableState(any()) } just runs
     }
-    private val channelConnectionStateChange = ConnectionStateChange(ConnectionState.ONLINE, null)
+    private val connectionStateChange = ConnectionStateChange(ConnectionState.ONLINE, null)
     private val updateConnectionStateWorker =
-        UpdateConnectionStateWorker(channelConnectionStateChange, subscriberInteractor)
+        UpdateConnectionStateWorker(connectionStateChange, subscriberInteractor)
 
     private val asyncWorks = mutableListOf<suspend () -> Unit>()
     private val postedWorks = mutableListOf<WorkerSpecification>()
@@ -44,7 +44,7 @@ internal class UpdateConnectionStateWorkerTest {
             )
 
         // then
-        Assert.assertEquals(channelConnectionStateChange, updatedProperties.lastConnectionStateChange)
+        Assert.assertEquals(connectionStateChange, updatedProperties.lastConnectionStateChange)
         verify { subscriberInteractor.updateTrackableState(updatedProperties) }
     }
 }

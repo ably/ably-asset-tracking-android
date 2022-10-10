@@ -12,6 +12,6 @@ suspend fun MutableList<suspend () -> Unit>.executeAll() {
 }
 
 internal fun MutableList<WorkerSpecification>.appendSpecification(): (WorkerSpecification) -> Unit =
-    { asyncWork ->
-        add(asyncWork)
+    { workSpecification ->
+        add(workSpecification)
     }
