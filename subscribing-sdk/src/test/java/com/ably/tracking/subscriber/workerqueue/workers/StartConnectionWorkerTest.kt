@@ -80,5 +80,6 @@ internal class StartConnectionWorkerTest {
             )
         }
         verify { callbackFunction.invoke(match { it.isFailure }) }
+        Assert.assertTrue(postedWorks.isEmpty())
     }
 }
