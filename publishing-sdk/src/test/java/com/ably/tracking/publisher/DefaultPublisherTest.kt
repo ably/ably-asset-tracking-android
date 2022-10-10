@@ -4,12 +4,10 @@ import android.annotation.SuppressLint
 import com.ably.tracking.ConnectionException
 import com.ably.tracking.common.Ably
 import com.ably.tracking.test.common.mockConnectFailureThenSuccess
-import com.ably.tracking.test.common.mockCreateSuspendingConnectionSuccess
+import com.ably.tracking.test.common.mockConnectSuccess
 import com.ably.tracking.test.common.mockDisconnectSuccess
 import com.ably.tracking.test.common.mockSubscribeToPresenceError
 import com.ably.tracking.test.common.mockSubscribeToPresenceSuccess
-import com.ably.tracking.test.common.mockSuspendingConnectSuccess
-import com.ably.tracking.test.common.mockSuspendingDisconnectSuccess
 import io.mockk.coVerify
 import io.mockk.mockk
 import io.mockk.verify
@@ -37,7 +35,7 @@ class DefaultPublisherTest {
     fun `should not return an error when adding a trackable with subscribing to presence error`() {
         // given
         val trackableId = UUID.randomUUID().toString()
-        ably.mockSuspendingConnectSuccess(trackableId)
+        ably.mockConnectSuccess(trackableId)
         ably.mockDisconnectSuccess(trackableId)
         ably.mockSubscribeToPresenceError(trackableId)
 
@@ -53,8 +51,8 @@ class DefaultPublisherTest {
     fun `should not disconnect from the channel when adding a trackable with subscribing to presence error`() {
         // given
         val trackableId = UUID.randomUUID().toString()
-        ably.mockSuspendingConnectSuccess(trackableId)
-        ably.mockSuspendingDisconnectSuccess(trackableId)
+        ably.mockConnectSuccess(trackableId)
+        ably.mockDisconnectSuccess(trackableId)
         ably.mockSubscribeToPresenceError(trackableId)
 
         // when
@@ -77,7 +75,8 @@ class DefaultPublisherTest {
         // given
         val trackableId = UUID.randomUUID().toString()
         val trackable = Trackable(trackableId)
-        ably.mockCreateSuspendingConnectionSuccess(trackableId)
+        ably.mockConnectSuccess(trackableId)
+        ably.mockSubscribeToPresenceSuccess(trackableId)
 
         // when
         runBlocking {
@@ -120,7 +119,8 @@ class DefaultPublisherTest {
         // given
         val trackableId = UUID.randomUUID().toString()
         val trackable = Trackable(trackableId)
-        ably.mockCreateSuspendingConnectionSuccess(trackableId)
+        ably.mockConnectSuccess(trackableId)
+        ably.mockSubscribeToPresenceSuccess(trackableId)
 
         // when
         runBlocking {
@@ -181,7 +181,8 @@ class DefaultPublisherTest {
         val trackableId = UUID.randomUUID().toString()
         val trackable = Trackable(trackableId)
         val callsOrder = mutableListOf<Int>()
-        ably.mockCreateSuspendingConnectionSuccess(trackableId)
+        ably.mockConnectSuccess(trackableId)
+        ably.mockSubscribeToPresenceSuccess(trackableId)
 
         // when
         runBlocking {
@@ -207,7 +208,8 @@ class DefaultPublisherTest {
     fun `should clear the route if the new active trackable does not have a destination`() {
         // given
         val trackableWithoutDestination = Trackable(UUID.randomUUID().toString())
-        ably.mockCreateSuspendingConnectionSuccess(trackableWithoutDestination.id)
+        ably.mockConnectSuccess(trackableWithoutDestination.id)
+        ably.mockSubscribeToPresenceSuccess(trackableWithoutDestination.id)
 
         // when
         runBlocking {

@@ -4,16 +4,12 @@ import com.ably.tracking.ConnectionException
 import com.ably.tracking.ErrorInformation
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.PresenceData
+import com.ably.tracking.common.PresenceMessage
 import io.mockk.CapturingSlot
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.slot
 import kotlinx.coroutines.delay
-
-fun Ably.mockCreateSuspendingConnectionSuccess(trackableId: String) {
-    mockSuspendingConnectSuccess(trackableId)
-    mockSubscribeToPresenceSuccess(trackableId)
-}
 
 fun Ably.mockCreateConnectionSuccess(trackableId: String) {
     mockConnectSuccess(trackableId)
@@ -27,15 +23,17 @@ fun Ably.mockConnectSuccess(trackableId: String) {
     } answers {
         callbackSlot.captured(Result.success(Unit))
     }
-}
 
-fun Ably.mockSuspendingConnectSuccess(trackableId: String) {
     coEvery {
         connect(trackableId, any(), any(), any(), any())
     } returns Result.success(Unit)
 }
 
-fun Ably.mockSuspendingConnectFailure(trackableId: String) {
+fun Ably.mockConnectFailure(trackableId: String) {
+    val callbackSlot = slot<(Result<Unit>) -> Unit>()
+    every { connect(trackableId, any(), any(), any(), any(), capture(callbackSlot)) } answers {
+        callbackSlot.captured(Result.failure(anyConnectionException()))
+    }
     coEvery {
         connect(trackableId, any(), any(), any(), any())
     } returns Result.failure(anyConnectionException())
@@ -56,14 +54,17 @@ fun Ably.mockConnectFailureThenSuccess(trackableId: String, callbackDelayInMilli
     }
 }
 
-fun Ably.mockSubscribeToPresenceSuccess(trackableId: String) {
+fun Ably.mockSubscribeToPresenceSuccess(
+    trackableId: String,
+    listenerSlot: CapturingSlot<(PresenceMessage) -> Unit> = slot()
+) {
     val callbackSlot = slot<(Result<Unit>) -> Unit>()
     every {
-        subscribeForPresenceMessages(trackableId, any(), capture(callbackSlot))
+        subscribeForPresenceMessages(trackableId, capture(listenerSlot), capture(callbackSlot))
     } answers {
         callbackSlot.captured(Result.success(Unit))
     }
-    coEvery { subscribeForPresenceMessages(trackableId, any()) } returns Result.success(Unit)
+    coEvery { subscribeForPresenceMessages(trackableId, capture(listenerSlot)) } returns Result.success(Unit)
 }
 
 fun Ably.mockSubscribeToPresenceError(trackableId: String) {
@@ -83,29 +84,11 @@ fun Ably.mockDisconnect(trackableId: String, result: Result<Unit>) {
     } answers {
         callbackSlot.captured(result)
     }
+    coEvery { disconnect(trackableId, any()) } returns result
 }
 
 fun Ably.mockDisconnectSuccess(trackableId: String) {
     mockDisconnect(trackableId, Result.success(Unit))
-}
-
-fun Ably.mockDisconnectSuccessAndCapturePresenceData(trackableId: String): CapturingSlot<PresenceData> {
-    val callbackSlot = slot<(Result<Unit>) -> Unit>()
-    val presenceDataSlot = slot<PresenceData>()
-    every {
-        disconnect(trackableId, capture(presenceDataSlot), capture(callbackSlot))
-    } answers {
-        callbackSlot.captured(Result.success(Unit))
-    }
-    return presenceDataSlot
-}
-
-fun Ably.mockSuspendingDisconnect(trackableId: String, result: Result<Unit>) {
-    coEvery { disconnect(trackableId, any()) } returns result
-}
-
-fun Ably.mockSuspendingDisconnectSuccess(trackableId: String) {
-    mockSuspendingDisconnect(trackableId, Result.success(Unit))
 }
 
 fun Ably.mockSuspendingDisconnectSuccessAndCapturePresenceData(trackableId: String): CapturingSlot<PresenceData> {
@@ -145,6 +128,16 @@ fun Ably.mockSendEnhancedLocationFailureThenSuccess(trackableId: String) {
             callbackSlot.captured(Result.failure(anyConnectionException()))
         }
     }
+}
+
+fun Ably.mockUpdatePresenceDataSuccess(trackableId: String) {
+    val callbackSlot = slot<(Result<Unit>) -> Unit>()
+    every {
+        updatePresenceData(trackableId, any(), capture(callbackSlot))
+    } answers {
+        callbackSlot.captured(Result.success(Unit))
+    }
+    coEvery { updatePresenceData(trackableId, any()) } returns Result.success(Unit)
 }
 
 fun Ably.mockSendRawLocationSuccess(trackableId: String) {

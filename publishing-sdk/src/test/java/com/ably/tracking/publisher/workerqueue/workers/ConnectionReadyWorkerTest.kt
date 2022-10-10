@@ -14,7 +14,7 @@ import com.ably.tracking.publisher.guards.DuplicateTrackableGuard
 import com.ably.tracking.publisher.guards.TrackableRemovalGuard
 import com.ably.tracking.publisher.workerqueue.assertNotNullAndExecute
 import com.ably.tracking.publisher.workerqueue.results.ConnectionReadyWorkResult
-import com.ably.tracking.test.common.mockSuspendingDisconnect
+import com.ably.tracking.test.common.mockDisconnect
 import com.ably.tracking.test.common.mockSuspendingDisconnectSuccessAndCapturePresenceData
 import io.mockk.clearAllMocks
 import io.mockk.coVerify
@@ -255,7 +255,7 @@ class ConnectionReadyWorkerTest {
             // given
             mockTrackableRemovalRequested()
             val disconnectResult = Result.success(Unit)
-            ably.mockSuspendingDisconnect(trackable.id, disconnectResult)
+            ably.mockDisconnect(trackable.id, disconnectResult)
 
             // when
             val asyncResult = worker.doWork(publisherProperties).asyncWork.assertNotNullAndExecute()
