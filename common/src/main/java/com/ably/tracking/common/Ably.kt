@@ -38,8 +38,6 @@ import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeout
 
 /**
@@ -228,24 +226,8 @@ constructor(
 ) : Ably {
     private val gson = Gson()
     private val ably: AblyRealtime
-
-    /**
-     * Channels that have successfully completed the [connect] operation.
-     */
-    private val channels: MutableMap<String, Channel> = mutableMapOf()
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-
-    /**
-     * Names of channels that have started the [connect] operation and are waiting for its result.
-     * Originally added to enable starting and stopping the [ably] connection in a secure way.
-     */
-    private val connectingChannelNames: MutableSet<String> = mutableSetOf()
-
-    /**
-     * Mutex making sure the [channels] and [connectingChannelNames] are accessed in a synchronized manner.
-     * Originally added to enable starting and stopping the [ably] connection in a secure way.
-     */
-    private val channelsMutex = Mutex()
+    private val channelsGuard = AblyChannelsGuard()
 
     init {
         try {
@@ -279,7 +261,7 @@ constructor(
     }
 
     override fun subscribeForChannelStateChange(trackableId: String, listener: (ConnectionStateChange) -> Unit) {
-        channels[trackableId]?.let { channel ->
+        channelsGuard.getChannel(trackableId)?.let { channel ->
             // Emit the current channel state
             channel.state.toTracking().let { currentChannelState ->
                 // Initial state is launched in a fire-and-forget manner to not block this method on the listener() call
@@ -334,7 +316,7 @@ constructor(
         willPublish: Boolean,
         willSubscribe: Boolean,
     ): Result<Unit> {
-        if (!channels.contains(trackableId)) {
+        if (!channelsGuard.isChannelCreated(trackableId)) {
             val channelName = "$CHANNEL_NAME_PREFIX$trackableId"
             val channelOptions = ChannelOptions().apply {
                 val modesList = mutableListOf(ChannelMode.presence, ChannelMode.presence_subscribe)
@@ -347,13 +329,10 @@ constructor(
                 modes = modesList.toTypedArray()
             }
             try {
-                channelsMutex.withLock {
-                    val isCreatingFirstChannel = channels.isEmpty() && connectingChannelNames.isEmpty()
-                    if (isCreatingFirstChannel) {
-                        ably.connectSuspending()
-                    }
-                    connectingChannelNames.add(channelName)
-                }
+                channelsGuard.startConnectingChannel(
+                    trackableId = trackableId,
+                    onConnectingFirstChannel = { ably.connectSuspending() },
+                )
                 val channel = if (useRewind)
                     ably.channels.get(channelName, channelOptions.apply { params = mapOf("rewind" to "1") })
                 else
@@ -363,16 +342,13 @@ constructor(
                     channel.attachSuspending()
                 }
                 enterChannelPresence(channel, presenceData)
-                channelsMutex.withLock {
-                    channels[trackableId] = channel
-                    connectingChannelNames.remove(channelName)
-                }
+                channelsGuard.channelConnected(trackableId, channel)
                 return Result.success(Unit)
             } catch (ablyException: AblyException) {
-                onConnectFailure(channelName)
+                onConnectFailure(trackableId)
                 return Result.failure(ablyException.errorInfo.toTrackingException())
             } catch (connectionException: ConnectionException) {
-                onConnectFailure(channelName)
+                onConnectFailure(trackableId)
                 return Result.failure(connectionException)
             }
         } else {
@@ -380,22 +356,17 @@ constructor(
         }
     }
 
-    private suspend fun onConnectFailure(channelName: String) {
-        channelsMutex.withLock {
-            connectingChannelNames.remove(channelName)
-            try {
-                stopAblyIfNoChannelsArePresent()
-            } catch (stopAblyException: ConnectionException) {
-                logHandler?.w("Failed to stop Ably after the first channel connect had failed", stopAblyException)
+    private suspend fun onConnectFailure(trackableId: String) {
+        channelsGuard.channelConnectFailed(
+            trackableId = trackableId,
+            onNoConnectedChannels = {
+                try {
+                    ably.closeConnection()
+                } catch (stopAblyException: ConnectionException) {
+                    logHandler?.w("Failed to stop Ably after the first channel connect had failed", stopAblyException)
+                }
             }
-        }
-    }
-
-    private suspend fun stopAblyIfNoChannelsArePresent() {
-        val hasNoConnectedOrConnectingChannels = connectingChannelNames.isEmpty() && channels.isEmpty()
-        if (hasNoConnectedOrConnectingChannels) {
-            ably.closeConnection()
-        }
+        )
     }
 
     override fun connect(
@@ -413,20 +384,22 @@ constructor(
     }
 
     override suspend fun disconnect(trackableId: String, presenceData: PresenceData): Result<Unit> {
-        return if (channels.contains(trackableId)) {
-            val channelToRemove = channels[trackableId]!!
+        return if (channelsGuard.isChannelCreated(trackableId)) {
+            val channelToRemove = channelsGuard.getChannel(trackableId)!!
             try {
                 retryChannelOperationIfConnectionResumeFails(channelToRemove) {
                     disconnectChannel(it, presenceData)
                 }
-                channelsMutex.withLock {
-                    channels.remove(trackableId)
-                    try {
-                        stopAblyIfNoChannelsArePresent()
-                    } catch (stopAblyException: ConnectionException) {
-                        logHandler?.w("Failed to stop Ably after the last channel disconnect had succeeded", stopAblyException)
+                channelsGuard.channelDisconnected(
+                    trackableId = trackableId,
+                    onNoConnectedChannels = {
+                        try {
+                            ably.closeConnection()
+                        } catch (stopAblyException: ConnectionException) {
+                            logHandler?.w("Failed to stop Ably after the last channel disconnect had succeeded", stopAblyException)
+                        }
                     }
-                }
+                )
                 Result.success(Unit)
             } catch (exception: ConnectionException) {
                 Result.failure(exception)
@@ -501,7 +474,7 @@ constructor(
         locationUpdate: EnhancedLocationUpdate,
         callback: (Result<Unit>) -> Unit
     ) {
-        val trackableChannel = channels[trackableId]
+        val trackableChannel = channelsGuard.getChannel(trackableId)
         if (trackableChannel != null) {
             val locationUpdateJson = locationUpdate.toMessageJson(gson)
             logHandler?.d("sendEnhancedLocationMessage: publishing: $locationUpdateJson")
@@ -522,7 +495,7 @@ constructor(
         locationUpdate: LocationUpdate,
         callback: (Result<Unit>) -> Unit
     ) {
-        val trackableChannel = channels[trackableId]
+        val trackableChannel = channelsGuard.getChannel(trackableId)
         if (trackableChannel != null) {
             val locationUpdateJson = locationUpdate.toMessageJson(gson)
             logHandler?.d("sendRawLocationMessage: publishing: $locationUpdateJson")
@@ -577,7 +550,7 @@ constructor(
         presenceData: PresenceData,
         listener: (LocationUpdate) -> Unit
     ) {
-        channels[trackableId]?.let { channel ->
+        channelsGuard.getChannel(trackableId)?.let { channel ->
             try {
                 channel.subscribe(EventNames.ENHANCED) { message ->
                     processReceivedLocationUpdateMessage(
@@ -600,7 +573,7 @@ constructor(
         presenceData: PresenceData,
         listener: (LocationUpdate) -> Unit
     ) {
-        channels[trackableId]?.let { channel ->
+        channelsGuard.getChannel(trackableId)?.let { channel ->
             try {
                 channel.subscribe(EventNames.RAW) { message ->
                     processReceivedLocationUpdateMessage(
@@ -634,7 +607,16 @@ constructor(
             logHandler?.e(createMalformedLocationUpdateLogMessage(isRawLocation))
             scope.launch {
                 failChannel(channel, presenceData, createMalformedMessageErrorInfo())
-                channels.remove(trackableId)
+                channelsGuard.channelDisconnected(
+                    trackableId = trackableId,
+                    onNoConnectedChannels = {
+                        try {
+                            ably.closeConnection()
+                        } catch (stopAblyException: ConnectionException) {
+                            logHandler?.w("Failed to stop Ably after the last channel was disconnected due to fatal protocol error", stopAblyException)
+                        }
+                    }
+                )
             }
         }
     }
@@ -659,7 +641,7 @@ constructor(
         trackableId: String,
         listener: (PresenceMessage) -> Unit
     ): Result<Unit> {
-        val channel = channels[trackableId] ?: return Result.success(Unit)
+        val channel = channelsGuard.getChannel(trackableId) ?: return Result.success(Unit)
         return try {
             emitAllCurrentMessagesFromPresence(channel, listener)
             channel.presence.subscribe {
@@ -704,7 +686,7 @@ constructor(
     }
 
     override suspend fun updatePresenceData(trackableId: String, presenceData: PresenceData): Result<Unit> {
-        val trackableChannel = channels[trackableId] ?: return Result.success(Unit)
+        val trackableChannel = channelsGuard.getChannel(trackableId) ?: return Result.success(Unit)
         return try {
             retryChannelOperationIfConnectionResumeFails(trackableChannel) {
                 updatePresenceData(it, presenceData)
@@ -739,7 +721,7 @@ constructor(
     override suspend fun close(presenceData: PresenceData) {
         // launches closing of all channels in parallel but waits for all channels to be closed
         supervisorScope {
-            channels.keys.forEach { trackableId ->
+            channelsGuard.getChannelTrackableIds().forEach { trackableId ->
                 launch { disconnect(trackableId, presenceData) }
             }
         }
