@@ -752,6 +752,12 @@ constructor(
         override val trackableRemovalGuard: TrackableRemovalGuard = DefaultTrackableRemovalGuard()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
         override val areRawLocationsEnabled: Boolean = areRawLocationsEnabled ?: false
+        override var isConnectingToAbly: Boolean = false
+            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
+        override var isStoppingAbly: Boolean = false
+            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
+        override val hasNoTrackablesAddingOrAdded: Boolean
+            get() = trackables.isEmpty() && !duplicateTrackableGuard.isCurrentlyAddingAnyTrackable()
 
         override fun dispose() {
             trackables.clear()

@@ -247,6 +247,7 @@ constructor(
                 this.logLevel = Log.VERBOSE
                 this.logHandler = Log.LogHandler { severity, tag, msg, tr -> logMessage(severity, tag, msg, tr) }
                 this.environment = connectionConfiguration.environment
+                this.autoConnect = false
             }
             ably = AblyRealtime(clientOptions)
         } catch (exception: AblyException) {

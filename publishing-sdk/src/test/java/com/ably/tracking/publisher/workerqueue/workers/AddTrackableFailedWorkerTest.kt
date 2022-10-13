@@ -1,6 +1,7 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
 import com.ably.tracking.TrackableState
+import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.Trackable
@@ -24,10 +25,11 @@ class AddTrackableFailedWorkerTest {
     private val publisherProperties = mockk<PublisherProperties>(relaxed = true)
     private val duplicateTrackableGuard = mockk<DuplicateTrackableGuard>(relaxed = true)
     private val trackableRemovalGuard = mockk<TrackableRemovalGuard>(relaxed = true)
+    private val ably = mockk<Ably>(relaxed = true)
 
     @Before
     fun setUp() {
-        worker = AddTrackableFailedWorker(trackable, resultCallbackFunction, exception)
+        worker = AddTrackableFailedWorker(trackable, resultCallbackFunction, exception, ably)
         every { publisherProperties.duplicateTrackableGuard } returns duplicateTrackableGuard
         every { publisherProperties.trackableRemovalGuard } returns trackableRemovalGuard
     }

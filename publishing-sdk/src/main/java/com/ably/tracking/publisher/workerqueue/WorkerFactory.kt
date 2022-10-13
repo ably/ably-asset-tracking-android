@@ -22,6 +22,7 @@ import com.ably.tracking.publisher.workerqueue.workers.AddTrackableWorker
 import com.ably.tracking.publisher.workerqueue.workers.ChangeLocationEngineResolutionWorker
 import com.ably.tracking.publisher.workerqueue.workers.ChangeRoutingProfileWorker
 import com.ably.tracking.publisher.workerqueue.workers.ChannelConnectionStateChangeWorker
+import com.ably.tracking.publisher.workerqueue.workers.StoppingConnectionFinishedWorker
 import com.ably.tracking.publisher.workerqueue.workers.ConnectionCreatedWorker
 import com.ably.tracking.publisher.workerqueue.workers.ConnectionReadyWorker
 import com.ably.tracking.publisher.workerqueue.workers.DestinationSetWorker
@@ -78,6 +79,7 @@ internal class DefaultWorkerFactory(
                 params.trackable,
                 params.callbackFunction,
                 params.exception,
+                ably,
             )
             is WorkerParams.ConnectionCreated -> ConnectionCreatedWorker(
                 params.trackable,
@@ -112,10 +114,12 @@ internal class DefaultWorkerFactory(
                 params.callbackFunction,
                 corePublisher,
                 params.shouldRecalculateResolutionCallback,
+                ably,
             )
             is WorkerParams.TrackableRemovalRequested -> TrackableRemovalRequestedWorker(
                 params.trackable,
                 params.callbackFunction,
+                ably,
                 params.result,
             )
             is WorkerParams.AblyConnectionStateChange -> AblyConnectionStateChangeWorker(
@@ -204,6 +208,7 @@ internal class DefaultWorkerFactory(
                 corePublisher,
                 params.timeoutInMilliseconds,
             )
+            WorkerParams.StoppingConnectionFinished -> StoppingConnectionFinishedWorker()
         }
     }
 }
@@ -330,4 +335,6 @@ internal sealed class WorkerParams {
         val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>,
         val result: Result<Unit>,
     ) : WorkerParams()
+
+    object StoppingConnectionFinished : WorkerParams()
 }

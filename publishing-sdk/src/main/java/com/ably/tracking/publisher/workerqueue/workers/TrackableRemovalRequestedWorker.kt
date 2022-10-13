@@ -1,16 +1,19 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
 import com.ably.tracking.TrackableState
+import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.RemoveTrackableRequestedException
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.results.SyncAsyncResult
+import com.ably.tracking.publisher.workerqueue.results.TrackableRemovalRequestedWorkResult
 import kotlinx.coroutines.flow.StateFlow
 
 internal class TrackableRemovalRequestedWorker(
     private val trackable: Trackable,
     private val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>,
+    private val ably: Ably,
     private val result: Result<Unit>
 ) : Worker {
     override fun doWork(properties: PublisherProperties): SyncAsyncResult {
@@ -24,6 +27,14 @@ internal class TrackableRemovalRequestedWorker(
             trackable,
             Result.failure(RemoveTrackableRequestedException())
         )
+        val removedTheLastTrackable = properties.hasNoTrackablesAddingOrAdded
+        if (removedTheLastTrackable) {
+            properties.isStoppingAbly = true
+            return SyncAsyncResult(asyncWork = {
+                ably.stopConnection()
+                TrackableRemovalRequestedWorkResult.StopConnectionCompleted
+            })
+        }
         return SyncAsyncResult()
     }
 

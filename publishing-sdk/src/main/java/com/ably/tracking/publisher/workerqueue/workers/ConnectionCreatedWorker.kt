@@ -22,6 +22,10 @@ internal class ConnectionCreatedWorker(
     private val channelStateChangeListener: ((connectionStateChange: ConnectionStateChange) -> Unit),
 ) : Worker {
     override fun doWork(properties: PublisherProperties): SyncAsyncResult {
+        if (properties.isConnectingToAbly) {
+            // If we've made up this far it means the [AddTrackableWorker] succeeded and there's a working Ably connection
+            properties.isConnectingToAbly = false
+        }
         if (properties.trackableRemovalGuard.isMarkedForRemoval(trackable)) {
             // Leave Ably channel.
             val presenceData = properties.presenceData.copy()

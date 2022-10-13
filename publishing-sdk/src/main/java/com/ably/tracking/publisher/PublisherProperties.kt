@@ -44,5 +44,8 @@ internal interface PublisherProperties {
     val enhancedLocationsPublishingState: LocationsPublishingState<EnhancedLocationUpdate>
     val rawLocationsPublishingState: LocationsPublishingState<LocationUpdate>
     val areRawLocationsEnabled: Boolean
+    var isConnectingToAbly: Boolean
+    var isStoppingAbly: Boolean
+    val hasNoTrackablesAddingOrAdded: Boolean
     fun dispose()
 }

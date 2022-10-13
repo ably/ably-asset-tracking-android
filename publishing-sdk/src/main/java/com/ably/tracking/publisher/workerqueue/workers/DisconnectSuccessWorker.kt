@@ -1,9 +1,11 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
+import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.publisher.CorePublisher
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.Trackable
+import com.ably.tracking.publisher.workerqueue.results.DisconnectSuccessWorkResult
 import com.ably.tracking.publisher.workerqueue.results.SyncAsyncResult
 
 internal class DisconnectSuccessWorker(
@@ -11,6 +13,7 @@ internal class DisconnectSuccessWorker(
     private val callbackFunction: ResultCallbackFunction<Unit>,
     private val corePublisher: CorePublisher,
     private val shouldRecalculateResolutionCallback: () -> Unit,
+    private val ably: Ably,
 ) : Worker {
     override fun doWork(properties: PublisherProperties): SyncAsyncResult {
         removeTrackable(properties)
@@ -25,6 +28,15 @@ internal class DisconnectSuccessWorker(
             stopLocationUpdates(properties)
         }
         notifyRemoveOperationFinished()
+
+        val removedTheLastTrackable = properties.hasNoTrackablesAddingOrAdded
+        if (removedTheLastTrackable) {
+            properties.isStoppingAbly = true
+            return SyncAsyncResult(asyncWork = {
+                ably.stopConnection()
+                DisconnectSuccessWorkResult.StopConnectionCompleted
+            })
+        }
 
         return SyncAsyncResult()
     }

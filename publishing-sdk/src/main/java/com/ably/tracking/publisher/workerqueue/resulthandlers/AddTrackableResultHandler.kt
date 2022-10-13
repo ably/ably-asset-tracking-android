@@ -31,6 +31,16 @@ internal class AddTrackableResultHandler(
                         workResult.channelStateChangeListener
                     )
                 )
+
+            is AddTrackableWorkResult.WorkDelayed ->
+                return workerFactory.createWorker(
+                    WorkerParams.AddTrackable(
+                        workResult.trackable,
+                        workResult.callbackFunction,
+                        workResult.presenceUpdateListener,
+                        workResult.channelStateChangeListener,
+                    )
+                )
         }
         return null
     }
