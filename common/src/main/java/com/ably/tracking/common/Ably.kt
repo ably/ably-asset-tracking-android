@@ -210,6 +210,16 @@ interface Ably {
      * @throws ConnectionException if something goes wrong.
      */
     suspend fun close(presenceData: PresenceData)
+
+    /**
+     * Starts the Ably connection. Must be called before any other method.
+     */
+    suspend fun startConnection(): Result<Unit>
+
+    /**
+     * Stops the Ably connection.
+     */
+    suspend fun stopConnection(): Result<Unit>
 }
 
 private const val CHANNEL_NAME_PREFIX = "tracking:"
@@ -707,23 +717,31 @@ constructor(
                 launch { disconnect(trackableId, presenceData) }
             }
         }
-        closeConnection()
+        stopConnection()
     }
 
     /**
      * Closes [AblyRealtime] and waits until it's either closed or failed.
+     * If the connection is already closed it returns immediately.
+     * If the connection is already failed it throws a [ConnectionException].
+     *
      * @throws ConnectionException if the [AblyRealtime] state changes to [ConnectionState.failed].
      */
-    private suspend fun closeConnection() {
+    private suspend fun AblyRealtime.closeSuspending() {
+        if (connection.state.isClosed()) {
+            return
+        } else if (connection.state.isFailed()) {
+            throw connection.reason.toTrackingException()
+        }
         suspendCancellableCoroutine<Unit> { continuation ->
-            ably.connection.on {
-                if (it.current == ConnectionState.closed) {
+            connection.on {
+                if (it.current.isClosed()) {
                     continuation.resume(Unit)
-                } else if (it.current == ConnectionState.failed) {
+                } else if (it.current.isFailed()) {
                     continuation.resumeWithException(it.reason.toTrackingException())
                 }
             }
-            ably.close()
+            close()
         }
     }
 
@@ -791,6 +809,12 @@ constructor(
 
     private fun ChannelState.isConnected(): Boolean = this == ChannelState.attached
 
+    private fun ConnectionState.isConnected(): Boolean = this == ConnectionState.connected
+
+    private fun ConnectionState.isClosed(): Boolean = this == ConnectionState.closed
+
+    private fun ConnectionState.isFailed(): Boolean = this == ConnectionState.failed
+
     private fun ConnectionException.isConnectionResumeException(): Boolean =
         errorInformation.let { it.message == "Connection resume failed" && it.code == 50000 && it.statusCode == 500 }
 
@@ -845,4 +869,54 @@ constructor(
         state == ChannelState.detached || state == ChannelState.failed
 
     private fun createMalformedMessageErrorInfo(): ErrorInfo = ErrorInfo("Received a malformed message", 100_001, 400)
+
+    override suspend fun startConnection(): Result<Unit> {
+        return try {
+            ably.connectSuspending()
+            Result.success(Unit)
+        } catch (connectionException: ConnectionException) {
+            Result.failure(connectionException)
+        }
+    }
+
+    override suspend fun stopConnection(): Result<Unit> {
+        return try {
+            ably.closeSuspending()
+            Result.success(Unit)
+        } catch (connectionException: ConnectionException) {
+            Result.failure(connectionException)
+        }
+    }
+
+    /**
+     * A suspending version of the [AblyRealtime.connect] method. It will begin connecting and wait until it's connected.
+     * If the connection enters the "failed" state it will throw a [ConnectionException].
+     * If the operation doesn't complete in [timeoutInMilliseconds] it will throw a [ConnectionException].
+     * If the instance is already connected it will finish immediately.
+     * If the connection is already failed it throws a [ConnectionException].
+     *
+     * @throws ConnectionException if something goes wrong.
+     */
+    private suspend fun AblyRealtime.connectSuspending(timeoutInMilliseconds: Long = 10_000L) {
+        if (connection.state.isConnected()) {
+            return
+        } else if (connection.state.isFailed()) {
+            throw connection.reason.toTrackingException()
+        }
+        try {
+            withTimeout(timeoutInMilliseconds) {
+                suspendCancellableCoroutine<Unit> { continuation ->
+                    connection.on { channelStateChange ->
+                        when {
+                            channelStateChange.current.isConnected() -> continuation.resume(Unit)
+                            channelStateChange.current.isFailed() -> continuation.resumeWithException(channelStateChange.reason.toTrackingException())
+                        }
+                    }
+                    connect()
+                }
+            }
+        } catch (exception: TimeoutCancellationException) {
+            throw ConnectionException(ErrorInformation("Timeout was thrown when waiting for Ably to connect"))
+        }
+    }
 }
