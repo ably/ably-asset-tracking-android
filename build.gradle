@@ -242,7 +242,7 @@ subprojects {
                 // the Android runtime unless we include this dependency. See:
                 // https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines/-dispatchers/-main.html
                 implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.4.2'
-
+                testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.4.2"
                 testImplementation 'io.mockk:mockk:1.12.2'
             } else {
                 testImplementation 'org.mockito:mockito-core:3.6.28'
