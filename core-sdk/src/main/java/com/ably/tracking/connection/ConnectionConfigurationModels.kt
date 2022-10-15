@@ -1,5 +1,7 @@
 package com.ably.tracking.connection
 
+import com.ably.tracking.TokenAuthException
+
 /**
  * Specifies the configuration for the Ably connection.
  */
@@ -54,6 +56,9 @@ sealed class Authentication(
             BasicAuthentication(clientId, apiKey)
 
         /**
+         * Authentication method that uses the Token Request. The [callback] will be called each time a new token is needed.
+         * If something goes wrong while fetching the token you should throw a [TokenAuthException] in the [callback].
+         *
          * @param callback Callback that will be called with [TokenParams] each time a [TokenRequest] needs to be obtained.
          * @param clientId ID of the client
          */
@@ -66,6 +71,9 @@ sealed class Authentication(
             TokenAuthentication(clientId, callback)
 
         /**
+         * Authentication method that uses the Token Request. The [callback] will be called each time a new token is needed.
+         * If something goes wrong while fetching the token you should throw a [TokenAuthException] in the [callback].
+         *
          * @param callback Callback that will be called with [TokenParams] each time a [TokenRequest] needs to be obtained.
          */
         @JvmSynthetic
@@ -73,6 +81,9 @@ sealed class Authentication(
             TokenAuthentication(null, callback)
 
         /**
+         * Authentication method that uses the JWT. The [callback] will be called each time a new token is needed.
+         * If something goes wrong while fetching the token you should throw a [TokenAuthException] in the [callback].
+         *
          * @param callback Callback that will be called with [TokenParams] each time a JWT string needs to be obtained.
          * @param clientId ID of the client
          */
@@ -85,6 +96,9 @@ sealed class Authentication(
             JwtAuthentication(clientId, callback)
 
         /**
+         * Authentication method that uses the JWT. The [callback] will be called each time a new token is needed.
+         * If something goes wrong while fetching the token you should throw a [TokenAuthException] in the [callback].
+         *
          * @param callback Callback that will be called with [TokenParams] each time a JWT string needs to be obtained.
          */
         @JvmSynthetic
