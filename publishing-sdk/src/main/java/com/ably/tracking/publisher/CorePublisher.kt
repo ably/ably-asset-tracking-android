@@ -683,7 +683,6 @@ constructor(
         areRawLocationsEnabled: Boolean?,
     ) : PublisherProperties {
         private var isDisposed: Boolean = false
-        override var isStopped: Boolean = false
         override var locationEngineResolution: Resolution = locationEngineResolution
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
         override val isLocationEngineResolutionConstant: Boolean = isLocationEngineResolutionConstant
@@ -752,10 +751,13 @@ constructor(
         override val trackableRemovalGuard: TrackableRemovalGuard = DefaultTrackableRemovalGuard()
             get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
         override val areRawLocationsEnabled: Boolean = areRawLocationsEnabled ?: false
-        override var isConnectingToAbly: Boolean = false
-            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        override var isStoppingAbly: Boolean = false
-            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
+        override var state: PublisherState = PublisherState.IDLE
+            set(value) {
+                // Once we stop publisher it should never change its state
+                if (field != PublisherState.STOPPED) {
+                    field = value
+                }
+            }
         override val hasNoTrackablesAddingOrAdded: Boolean
             get() = trackables.isEmpty() && !duplicateTrackableGuard.isCurrentlyAddingAnyTrackable()
 

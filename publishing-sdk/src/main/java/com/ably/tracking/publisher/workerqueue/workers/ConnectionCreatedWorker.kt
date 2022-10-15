@@ -7,6 +7,7 @@ import com.ably.tracking.common.PresenceMessage
 import com.ably.tracking.common.logging.w
 import com.ably.tracking.logging.LogHandler
 import com.ably.tracking.publisher.PublisherProperties
+import com.ably.tracking.publisher.PublisherState
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.results.ConnectionCreatedWorkResult
 import com.ably.tracking.publisher.workerqueue.results.SyncAsyncResult
@@ -22,9 +23,9 @@ internal class ConnectionCreatedWorker(
     private val channelStateChangeListener: ((connectionStateChange: ConnectionStateChange) -> Unit),
 ) : Worker {
     override fun doWork(properties: PublisherProperties): SyncAsyncResult {
-        if (properties.isConnectingToAbly) {
+        if (properties.state == PublisherState.CONNECTING) {
             // If we've made up this far it means the [AddTrackableWorker] succeeded and there's a working Ably connection
-            properties.isConnectingToAbly = false
+            properties.state = PublisherState.CONNECTED
         }
         if (properties.trackableRemovalGuard.isMarkedForRemoval(trackable)) {
             // Leave Ably channel.

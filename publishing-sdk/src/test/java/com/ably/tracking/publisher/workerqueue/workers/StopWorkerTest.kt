@@ -4,6 +4,7 @@ import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.publisher.CorePublisher
 import com.ably.tracking.publisher.PublisherProperties
+import com.ably.tracking.publisher.PublisherState
 import com.ably.tracking.test.common.mockCloseFailure
 import com.ably.tracking.test.common.mockCloseSuccessWithDelay
 import io.mockk.CapturingSlot
@@ -139,7 +140,7 @@ class StopWorkerTest {
 
         // then
         verify(exactly = 1) {
-            publisherProperties setProperty PublisherProperties::isStopped.name value true
+            publisherProperties setProperty PublisherProperties::state.name value PublisherState.STOPPED
         }
     }
 
@@ -153,7 +154,7 @@ class StopWorkerTest {
 
         // then
         verify(exactly = 1) {
-            publisherProperties setProperty PublisherProperties::isStopped.name value true
+            publisherProperties setProperty PublisherProperties::state.name value PublisherState.STOPPED
         }
     }
 
@@ -168,7 +169,7 @@ class StopWorkerTest {
 
         // then
         verify(exactly = 1) {
-            publisherProperties setProperty PublisherProperties::isStopped.name value true
+            publisherProperties setProperty PublisherProperties::state.name value PublisherState.STOPPED
         }
     }
 

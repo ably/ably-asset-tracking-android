@@ -18,7 +18,7 @@ internal class AddTrackableResultHandler(
             is AddTrackableWorkResult.Fail ->
                 return workerFactory.createWorker(
                     WorkerParams.AddTrackableFailed(
-                        workResult.trackable, workResult.callbackFunction, workResult.exception as Exception
+                        workResult.trackable, workResult.callbackFunction, workResult.exception as Exception, workResult.isConnectedToAbly
                     )
                 )
 

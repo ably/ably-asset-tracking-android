@@ -48,6 +48,7 @@ internal sealed class AddTrackableWorkResult : WorkResult() {
     internal data class Fail(
         val trackable: Trackable,
         val exception: Throwable?,
+        val isConnectedToAbly: Boolean,
         val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>
     ) : AddTrackableWorkResult()
 

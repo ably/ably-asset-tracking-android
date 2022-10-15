@@ -24,7 +24,6 @@ internal interface PublisherProperties {
     val requests: MutableMap<String, MutableMap<Subscriber, Resolution>>
     val resolutions: MutableMap<String, Resolution>
     var active: Trackable?
-    var isStopped: Boolean
     var locationEngineResolution: Resolution
     val isLocationEngineResolutionConstant: Boolean
     var isTracking: Boolean
@@ -44,8 +43,7 @@ internal interface PublisherProperties {
     val enhancedLocationsPublishingState: LocationsPublishingState<EnhancedLocationUpdate>
     val rawLocationsPublishingState: LocationsPublishingState<LocationUpdate>
     val areRawLocationsEnabled: Boolean
-    var isConnectingToAbly: Boolean
-    var isStoppingAbly: Boolean
     val hasNoTrackablesAddingOrAdded: Boolean
+    var state: PublisherState
     fun dispose()
 }

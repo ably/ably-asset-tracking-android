@@ -79,6 +79,7 @@ internal class DefaultWorkerFactory(
                 params.trackable,
                 params.callbackFunction,
                 params.exception,
+                params.isConnectedToAbly,
                 ably,
             )
             is WorkerParams.ConnectionCreated -> ConnectionCreatedWorker(
@@ -229,6 +230,7 @@ internal sealed class WorkerParams {
         val trackable: Trackable,
         val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>,
         val exception: Exception,
+        val isConnectedToAbly: Boolean,
     ) : WorkerParams()
 
     object ChangeLocationEngineResolution : WorkerParams()

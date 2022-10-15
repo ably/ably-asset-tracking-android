@@ -4,6 +4,7 @@ import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.publisher.PublisherProperties
+import com.ably.tracking.publisher.PublisherState
 import com.ably.tracking.publisher.RemoveTrackableRequestedException
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.results.SyncAsyncResult
@@ -29,7 +30,7 @@ internal class TrackableRemovalRequestedWorker(
         )
         val removedTheLastTrackable = properties.hasNoTrackablesAddingOrAdded
         if (removedTheLastTrackable) {
-            properties.isStoppingAbly = true
+            properties.state = PublisherState.DISCONNECTING
             return SyncAsyncResult(asyncWork = {
                 ably.stopConnection()
                 TrackableRemovalRequestedWorkResult.StopConnectionCompleted

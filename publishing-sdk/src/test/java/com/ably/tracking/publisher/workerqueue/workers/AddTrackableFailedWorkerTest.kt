@@ -29,7 +29,7 @@ class AddTrackableFailedWorkerTest {
 
     @Before
     fun setUp() {
-        worker = AddTrackableFailedWorker(trackable, resultCallbackFunction, exception, ably)
+        worker = AddTrackableFailedWorker(trackable, resultCallbackFunction, exception, true, ably)
         every { publisherProperties.duplicateTrackableGuard } returns duplicateTrackableGuard
         every { publisherProperties.trackableRemovalGuard } returns trackableRemovalGuard
     }
