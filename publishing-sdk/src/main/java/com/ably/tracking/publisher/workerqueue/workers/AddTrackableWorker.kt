@@ -17,7 +17,8 @@ internal typealias AddTrackableResult = StateFlow<TrackableState>
 internal typealias AddTrackableCallbackFunction = ResultCallbackFunction<AddTrackableResult>
 
 /**
- * How long should we wait before re-queueing the work if Ably connection manipulation is in progress.
+ * How long should we wait before re-queueing the work if starting or stopping Ably connection is in progress.
+ * If after the delay the Ably connection process is still in progress the work will be re-queued again.
  */
 private const val WORK_DELAY_IN_MILLISECONDS = 200L
 
