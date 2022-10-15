@@ -2,6 +2,9 @@ package com.ably.tracking.common
 
 import com.ably.tracking.ConnectionException
 import com.ably.tracking.ErrorInformation
+import com.ably.tracking.TokenAuthException
+import com.ably.tracking.TokenAuthNonRetriableException
+import com.ably.tracking.CouldNotFetchTokenException
 import com.ably.tracking.common.message.PresenceDataMessage
 import com.ably.tracking.common.message.toTracking
 import com.ably.tracking.connection.Authentication
@@ -11,7 +14,9 @@ import com.google.gson.Gson
 import com.google.gson.JsonObject
 import io.ably.lib.realtime.ChannelState
 import io.ably.lib.rest.Auth
+import io.ably.lib.types.AblyException
 import io.ably.lib.types.ClientOptions
+import io.ably.lib.types.ErrorInfo
 import kotlinx.coroutines.runBlocking
 
 /**
@@ -86,7 +91,11 @@ val Authentication.clientOptions: ClientOptions
         this@clientOptions.tokenRequestCallback?.let { tokenRequestCallback ->
             authCallback = Auth.TokenCallback {
                 runBlocking {
-                    tokenRequestCallback(it.toTracking()).toAuth()
+                    try {
+                        tokenRequestCallback(it.toTracking()).toAuth()
+                    } catch (exception: TokenAuthException) {
+                        throw exception.toAblyException()
+                    }
                 }
             }
         }
@@ -94,7 +103,11 @@ val Authentication.clientOptions: ClientOptions
         this@clientOptions.jwtCallback?.let { jwtCallback ->
             authCallback = Auth.TokenCallback {
                 runBlocking {
-                    jwtCallback(it.toTracking())
+                    try {
+                        jwtCallback(it.toTracking())
+                    } catch (exception: TokenAuthException) {
+                        throw exception.toAblyException()
+                    }
                 }
             }
         }
@@ -188,4 +201,15 @@ fun io.ably.lib.types.PresenceMessage.getPresenceData(gson: Gson): PresenceData?
         is String -> gson.fromJsonOrNull(data as? String, PresenceDataMessage::class.java)?.toTracking()
         is JsonObject -> gson.fromJsonOrNull(data.toString(), PresenceDataMessage::class.java)?.toTracking()
         else -> null
+    }
+
+/**
+ * Maps a [TokenAuthException] to a corresponding [AblyException] that can influence Ably SDK auth flow.
+ */
+private fun TokenAuthException.toAblyException(): AblyException =
+    when (this) {
+        is TokenAuthNonRetriableException ->
+            AblyException.fromErrorInfo(ErrorInfo(message, 403, 100_003))
+        is CouldNotFetchTokenException ->
+            AblyException.fromErrorInfo(ErrorInfo(message, 401, 100_002))
     }
