@@ -376,23 +376,16 @@ constructor(
             if (channelToRemove != null) {
                 try {
                     retryChannelOperationIfConnectionResumeFails(channelToRemove) {
-                        disconnectChannel(it, presenceData)
+                        leavePresence(channelToRemove, presenceData)
                     }
-                    callback(Result.success(Unit))
-                } catch (exception: ConnectionException) {
-                    callback(Result.failure(exception))
+                } finally {
+                    channelToRemove.unsubscribe()
+                    channelToRemove.presence.unsubscribe()
+                    ably.channels.release(channelToRemove.name)
                 }
-            } else {
-                callback(Result.success(Unit))
             }
+            callback(Result.success(Unit))
         }
-    }
-
-    private suspend fun disconnectChannel(channel: Channel, presenceData: PresenceData) {
-        leavePresence(channel, presenceData)
-        channel.unsubscribe()
-        channel.presence.unsubscribe()
-        ably.channels.release(channel.name)
     }
 
     private suspend fun failChannel(channel: Channel, presenceData: PresenceData, errorInfo: ErrorInfo) {
