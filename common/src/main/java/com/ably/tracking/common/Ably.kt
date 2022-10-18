@@ -226,7 +226,6 @@ constructor(
 ) : Ably {
     private val gson = Gson()
     private val ably: AblyRealtime
-    private val channels: MutableMap<String, Channel> = mutableMapOf()
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     init {
@@ -260,7 +259,7 @@ constructor(
     }
 
     override fun subscribeForChannelStateChange(trackableId: String, listener: (ConnectionStateChange) -> Unit) {
-        channels[trackableId]?.let { channel ->
+        getChannelIfExists(trackableId)?.let { channel ->
             // Emit the current channel state
             channel.state.toTracking().let { currentChannelState ->
                 // Initial state is launched in a fire-and-forget manner to not block this method on the listener() call
@@ -316,7 +315,7 @@ constructor(
         willSubscribe: Boolean,
         callback: (Result<Unit>) -> Unit
     ) {
-        if (!channels.contains(trackableId)) {
+        if (!ably.channels.containsKey(trackableId)) {
             val channelName = "$CHANNEL_NAME_PREFIX$trackableId"
             val channelOptions = ChannelOptions().apply {
                 val modesList = mutableListOf(ChannelMode.presence, ChannelMode.presence_subscribe)
@@ -339,7 +338,6 @@ constructor(
                             channel.attachSuspending()
                         }
                         enterChannelPresence(channel, presenceData)
-                        channels[trackableId] = channel
                         callback(Result.success(Unit))
                     } catch (connectionException: ConnectionException) {
                         callback(Result.failure(connectionException))
@@ -374,13 +372,12 @@ constructor(
 
     override fun disconnect(trackableId: String, presenceData: PresenceData, callback: (Result<Unit>) -> Unit) {
         scope.launch {
-            if (channels.contains(trackableId)) {
-                val channelToRemove = channels[trackableId]!!
+            val channelToRemove = getChannelIfExists(trackableId)
+            if (channelToRemove != null) {
                 try {
                     retryChannelOperationIfConnectionResumeFails(channelToRemove) {
                         disconnectChannel(it, presenceData)
                     }
-                    channels.remove(trackableId)
                     callback(Result.success(Unit))
                 } catch (exception: ConnectionException) {
                     callback(Result.failure(exception))
@@ -395,7 +392,7 @@ constructor(
         leavePresence(channel, presenceData)
         channel.unsubscribe()
         channel.presence.unsubscribe()
-        detachFromChannel(channel)
+        ably.channels.release(channel.name)
     }
 
     private suspend fun failChannel(channel: Channel, presenceData: PresenceData, errorInfo: ErrorInfo) {
@@ -426,24 +423,6 @@ constructor(
         }
     }
 
-    private suspend fun detachFromChannel(channel: Channel) {
-        suspendCancellableCoroutine<Unit> { continuation ->
-            try {
-                channel.detach(object : CompletionListener {
-                    override fun onSuccess() {
-                        continuation.resume(Unit)
-                    }
-
-                    override fun onError(reason: ErrorInfo) {
-                        continuation.resumeWithException(reason.toTrackingException())
-                    }
-                })
-            } catch (ablyException: AblyException) {
-                continuation.resumeWithException(ablyException.errorInfo.toTrackingException())
-            }
-        }
-    }
-
     /**
      * A suspend version of the [DefaultAbly.disconnect] method. It waits until disconnection is completed.
      */
@@ -465,7 +444,7 @@ constructor(
         locationUpdate: EnhancedLocationUpdate,
         callback: (Result<Unit>) -> Unit
     ) {
-        val trackableChannel = channels[trackableId]
+        val trackableChannel = getChannelIfExists(trackableId)
         if (trackableChannel != null) {
             val locationUpdateJson = locationUpdate.toMessageJson(gson)
             logHandler?.d("sendEnhancedLocationMessage: publishing: $locationUpdateJson")
@@ -486,7 +465,7 @@ constructor(
         locationUpdate: LocationUpdate,
         callback: (Result<Unit>) -> Unit
     ) {
-        val trackableChannel = channels[trackableId]
+        val trackableChannel = getChannelIfExists(trackableId)
         if (trackableChannel != null) {
             val locationUpdateJson = locationUpdate.toMessageJson(gson)
             logHandler?.d("sendRawLocationMessage: publishing: $locationUpdateJson")
@@ -541,12 +520,11 @@ constructor(
         presenceData: PresenceData,
         listener: (LocationUpdate) -> Unit
     ) {
-        channels[trackableId]?.let { channel ->
+        getChannelIfExists(trackableId)?.let { channel ->
             try {
                 channel.subscribe(EventNames.ENHANCED) { message ->
                     processReceivedLocationUpdateMessage(
                         channel,
-                        trackableId,
                         presenceData,
                         message,
                         listener,
@@ -564,12 +542,11 @@ constructor(
         presenceData: PresenceData,
         listener: (LocationUpdate) -> Unit
     ) {
-        channels[trackableId]?.let { channel ->
+        getChannelIfExists(trackableId)?.let { channel ->
             try {
                 channel.subscribe(EventNames.RAW) { message ->
                     processReceivedLocationUpdateMessage(
                         channel,
-                        trackableId,
                         presenceData,
                         message,
                         listener,
@@ -584,7 +561,6 @@ constructor(
 
     private fun processReceivedLocationUpdateMessage(
         channel: Channel,
-        trackableId: String,
         presenceData: PresenceData,
         message: Message,
         listener: (LocationUpdate) -> Unit,
@@ -598,14 +574,13 @@ constructor(
             logHandler?.e(createMalformedLocationUpdateLogMessage(isRawLocation))
             scope.launch {
                 failChannel(channel, presenceData, createMalformedMessageErrorInfo())
-                channels.remove(trackableId)
             }
         }
     }
 
     private fun createMalformedLocationUpdateLogMessage(isRawLocation: Boolean): String {
         val locationType = if (isRawLocation) "raw" else "enhanced"
-        return "Could not deserialize $locationType location update message"
+        return "Could not deserialize $locationType location update message, channel will be closed"
     }
 
     override fun subscribeForPresenceMessages(
@@ -623,7 +598,7 @@ constructor(
         trackableId: String,
         listener: (PresenceMessage) -> Unit
     ): Result<Unit> {
-        val channel = channels[trackableId] ?: return Result.success(Unit)
+        val channel = getChannelIfExists(trackableId) ?: return Result.success(Unit)
         return try {
             emitAllCurrentMessagesFromPresence(channel, listener)
             channel.presence.subscribe {
@@ -668,7 +643,7 @@ constructor(
     }
 
     override suspend fun updatePresenceData(trackableId: String, presenceData: PresenceData): Result<Unit> {
-        val trackableChannel = channels[trackableId] ?: return Result.success(Unit)
+        val trackableChannel = getChannelIfExists(trackableId) ?: return Result.success(Unit)
         return try {
             retryChannelOperationIfConnectionResumeFails(trackableChannel) {
                 updatePresenceData(it, presenceData)
@@ -700,10 +675,17 @@ constructor(
         }
     }
 
+    private fun getChannelIfExists(trackableId: String) =
+        if (ably.channels.containsKey(trackableId)) {
+            ably.channels.get(trackableId)
+        } else {
+            null
+        }
+
     override suspend fun close(presenceData: PresenceData) {
         // launches closing of all channels in parallel but waits for all channels to be closed
         supervisorScope {
-            channels.keys.forEach { trackableId ->
+            ably.channels.keySet().forEach { trackableId ->
                 launch { disconnect(trackableId, presenceData) }
             }
         }
