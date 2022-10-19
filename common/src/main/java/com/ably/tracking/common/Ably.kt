@@ -724,15 +724,14 @@ constructor(
     /**
      * Closes [AblyRealtime] and waits until it's either closed or failed.
      * If the connection is already closed it returns immediately.
-     * If the connection is already failed it throws a [ConnectionException].
+     * If the connection is already failed it returns immediately as closing a failed connection should be a no-op
+     * according to the Ably features spec (https://sdk.ably.com/builds/ably/specification/main/features/#state-conditions-and-operations).
      *
      * @throws ConnectionException if the [AblyRealtime] state changes to [ConnectionState.failed].
      */
     private suspend fun AblyRealtime.closeSuspending() {
-        if (connection.state.isClosed()) {
+        if (connection.state.isClosed() || connection.state.isFailed()) {
             return
-        } else if (connection.state.isFailed()) {
-            throw connection.reason.toTrackingException()
         }
         suspendCancellableCoroutine<Unit> { continuation ->
             connection.on {
