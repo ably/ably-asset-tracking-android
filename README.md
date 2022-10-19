@@ -382,7 +382,7 @@ Therefore, we do not advise using AAT in applications that already use Mapbox Na
 
 ### SLF4J warning logs
 
-AAT has a transitive dependency on the `SLF4J` library and it does not provide any default logger implementation. Because of that you can encounter below warning logs:
+AAT has a transitive dependency on the [SLF4J](https://www.slf4j.org/) library but we do not provide a default logger implementation. Because of that you can encounter below warning logs if you have not explicitly provided an implementation:
 
 ```
 W/System.err: SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
