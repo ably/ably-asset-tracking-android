@@ -754,9 +754,10 @@ constructor(
         override var state: PublisherState = PublisherState.IDLE
             set(value) {
                 // Once we stop publisher it should never change its state
-                if (field != PublisherState.STOPPED) {
-                    field = value
+                if (field == PublisherState.STOPPED) {
+                    throw PublisherStoppedException()
                 }
+                field = value
             }
         override val hasNoTrackablesAddingOrAdded: Boolean
             get() = trackables.isEmpty() && !duplicateTrackableGuard.isCurrentlyAddingAnyTrackable()
