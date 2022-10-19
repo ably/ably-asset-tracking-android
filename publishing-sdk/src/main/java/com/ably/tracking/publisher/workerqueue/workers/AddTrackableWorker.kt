@@ -38,16 +38,16 @@ internal class AddTrackableWorker(
             properties.trackables.contains(trackable) -> {
                 SyncAsyncResult(AddTrackableWorkResult.AlreadyIn(properties.trackableStateFlows[trackable.id]!!, callbackFunction))
             }
+            properties.state == PublisherState.CONNECTING || properties.state == PublisherState.DISCONNECTING -> {
+                SyncAsyncResult(
+                    asyncWork = {
+                        // delay work until Ably connection manipulation ends
+                        delay(WORK_DELAY_IN_MILLISECONDS)
+                        AddTrackableWorkResult.WorkDelayed(trackable, callbackFunction, presenceUpdateListener, channelStateChangeListener)
+                    }
+                )
+            }
             else -> {
-                if (properties.state == PublisherState.CONNECTING || properties.state == PublisherState.DISCONNECTING) {
-                    return SyncAsyncResult(
-                        asyncWork = {
-                            // delay work until Ably connection manipulation ends
-                            delay(WORK_DELAY_IN_MILLISECONDS)
-                            AddTrackableWorkResult.WorkDelayed(trackable, callbackFunction, presenceUpdateListener, channelStateChangeListener)
-                        }
-                    )
-                }
                 val isAddingTheFirstTrackable = properties.hasNoTrackablesAddingOrAdded
                 if (isAddingTheFirstTrackable) {
                     properties.state = PublisherState.CONNECTING
