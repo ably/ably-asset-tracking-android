@@ -1,5 +1,22 @@
 # Change log
 
+## [1.4.0](https://github.com/ably/ably-asset-tracking-android/tree/1.4.0)
+
+[Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.4.0-rc.2...v1.4.0)
+
+**Implemented enhancements:**
+
+- Upgrade Mapbox SDK to 2.8.0 GA version [\#770](https://github.com/ably/ably-asset-tracking-android/issues/770)
+
+**Fixed bugs:**
+
+- Handle properly the error paths for the callback based auth [\#743](https://github.com/ably/ably-asset-tracking-android/issues/743)
+- The publisher should close the Ably connection when it has no trackables [\#170](https://github.com/ably/ably-asset-tracking-android/issues/170)
+
+**Closed issues:**
+
+- Refactor the event queue in the CoreSubscriber [\#660](https://github.com/ably/ably-asset-tracking-android/issues/660)
+
 ## [1.4.0-rc.2](https://github.com/ably/ably-asset-tracking-android/tree/1.4.0-rc.2)
 
 [Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.4.0-rc.1...v1.4.0-rc.2)
