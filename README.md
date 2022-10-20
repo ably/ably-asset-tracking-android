@@ -380,6 +380,17 @@ val mapboxNavigation = MapboxNavigationProvider.retrieve()
 Because there is only one `MapboxNavigation` instance, both your app and AAT will use the same object. This means that there can be possible conflicts in usage that can lead to unexpected behaviour.
 Therefore, we do not advise using AAT in applications that already use Mapbox Navigation SDK.
 
+### SLF4J warning logs
+
+AAT has a transitive dependency on the [SLF4J](https://www.slf4j.org/) library but we do not provide a default logger implementation. Because of that you can encounter below warning logs if you have not explicitly provided an implementation:
+
+```
+W/System.err: SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
+W/System.err: SLF4J: Defaulting to no-operation (NOP) logger implementation
+```
+
+This is normal behaviour if no specific SLF4J logger implementation is provided. If you want to fix those warnings you have to provide a SLF4J logger implementation in your project.
+
 ## Contributing
 
 For guidance on how to contribute to this project, see [CONTRIBUTING.md](CONTRIBUTING.md).
