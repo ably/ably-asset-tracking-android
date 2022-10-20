@@ -20,17 +20,22 @@ internal class StartConnectionWorker(
     ): Properties {
         subscriberInteractor.updateTrackableState(properties)
         doAsyncWork {
-            val result = ably.connect(
-                trackableId,
-                properties.presenceData,
-                useRewind = true,
-                willSubscribe = true
-            )
-
-            if (result.isSuccess) {
-                postWork(WorkerSpecification.SubscribeForPresenceMessages(callbackFunction))
+            val startAblyConnectionResult = ably.startConnection()
+            if (startAblyConnectionResult.isFailure) {
+                callbackFunction(startAblyConnectionResult)
             } else {
-                callbackFunction(result)
+                val result = ably.connect(
+                    trackableId,
+                    properties.presenceData,
+                    useRewind = true,
+                    willSubscribe = true
+                )
+
+                if (result.isSuccess) {
+                    postWork(WorkerSpecification.SubscribeForPresenceMessages(callbackFunction))
+                } else {
+                    callbackFunction(result)
+                }
             }
         }
         return properties

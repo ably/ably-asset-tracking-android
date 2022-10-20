@@ -3,16 +3,25 @@ package com.ably.tracking.publisher.workerqueue.workers
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ConnectionStateChange
+import com.ably.tracking.common.PresenceData
 import com.ably.tracking.common.PresenceMessage
 import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.publisher.PublisherProperties
+import com.ably.tracking.publisher.PublisherState
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.results.AddTrackableWorkResult
 import com.ably.tracking.publisher.workerqueue.results.SyncAsyncResult
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
 
 internal typealias AddTrackableResult = StateFlow<TrackableState>
 internal typealias AddTrackableCallbackFunction = ResultCallbackFunction<AddTrackableResult>
+
+/**
+ * How long should we wait before re-queueing the work if starting or stopping Ably connection is in progress.
+ * If after the delay the Ably connection process is still in progress the work will be re-queued again.
+ */
+private const val WORK_DELAY_IN_MILLISECONDS = 200L
 
 internal class AddTrackableWorker(
     private val trackable: Trackable,
@@ -30,25 +39,48 @@ internal class AddTrackableWorker(
             properties.trackables.contains(trackable) -> {
                 SyncAsyncResult(AddTrackableWorkResult.AlreadyIn(properties.trackableStateFlows[trackable.id]!!, callbackFunction))
             }
+            properties.state == PublisherState.CONNECTING || properties.state == PublisherState.DISCONNECTING -> {
+                SyncAsyncResult(
+                    asyncWork = {
+                        // delay work until Ably connection manipulation ends
+                        delay(WORK_DELAY_IN_MILLISECONDS)
+                        AddTrackableWorkResult.WorkDelayed(trackable, callbackFunction, presenceUpdateListener, channelStateChangeListener)
+                    }
+                )
+            }
             else -> {
+                val isAddingTheFirstTrackable = properties.hasNoTrackablesAddingOrAdded
+                if (isAddingTheFirstTrackable) {
+                    properties.state = PublisherState.CONNECTING
+                }
                 properties.duplicateTrackableGuard.startAddingTrackable(trackable)
                 val presenceData = properties.presenceData.copy()
 
                 SyncAsyncResult(
                     asyncWork = {
-                        val connectResult = ably.connect(
-                            trackableId = trackable.id,
-                            presenceData = presenceData,
-                            willPublish = true,
-                        )
-                        if (connectResult.isSuccess) {
-                            AddTrackableWorkResult.Success(trackable, callbackFunction, presenceUpdateListener, channelStateChangeListener)
-                        } else {
-                            AddTrackableWorkResult.Fail(trackable, connectResult.exceptionOrNull(), callbackFunction)
-                        }
+                        createConnection(isAddingTheFirstTrackable, presenceData)
                     }
                 )
             }
+        }
+    }
+
+    private suspend fun createConnection(isAddingTheFirstTrackable: Boolean, presenceData: PresenceData): AddTrackableWorkResult {
+        if (isAddingTheFirstTrackable) {
+            val startAblyConnectionResult = ably.startConnection()
+            if (startAblyConnectionResult.isFailure) {
+                return AddTrackableWorkResult.Fail(trackable, startAblyConnectionResult.exceptionOrNull(), isConnectedToAbly = false, callbackFunction)
+            }
+        }
+        val connectResult = ably.connect(
+            trackableId = trackable.id,
+            presenceData = presenceData,
+            willPublish = true,
+        )
+        return if (connectResult.isSuccess) {
+            AddTrackableWorkResult.Success(trackable, callbackFunction, presenceUpdateListener, channelStateChangeListener)
+        } else {
+            AddTrackableWorkResult.Fail(trackable, connectResult.exceptionOrNull(), isConnectedToAbly = true, callbackFunction)
         }
     }
 

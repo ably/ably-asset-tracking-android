@@ -22,7 +22,7 @@ class WorkResultHandlersTest {
     private val addTrackableWorkResults = listOf(
         AddTrackableWorkResult.AlreadyIn(MutableStateFlow(TrackableState.Online), {}),
         AddTrackableWorkResult.Success(Trackable(""), {}, {}, {}),
-        AddTrackableWorkResult.Fail(Trackable(""), null, {}),
+        AddTrackableWorkResult.Fail(Trackable(""), null, false, {}),
     )
     private val connectionCreatedWorkResults = listOf(
         ConnectionCreatedWorkResult.RemovalRequested(Trackable(""), {}, Result.success(Unit)),
