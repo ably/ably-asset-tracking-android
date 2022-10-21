@@ -9,9 +9,10 @@ import com.ably.tracking.common.ConnectionState
 import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.PresenceData
 import com.ably.tracking.common.createSingleThreadDispatcher
+import com.ably.tracking.common.workerqueue.Properties
+import com.ably.tracking.common.workerqueue.WorkerQueue
 import com.ably.tracking.subscriber.workerqueue.WorkerFactory
 import com.ably.tracking.subscriber.workerqueue.WorkerSpecification
-import com.ably.tracking.subscriber.workerqueue.WorkerQueue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -33,8 +34,8 @@ internal interface CoreSubscriber {
 }
 
 internal interface SubscriberInteractor {
-    fun updateTrackableState(properties: Properties)
-    fun updatePublisherPresence(properties: Properties, isPublisherPresent: Boolean)
+    fun updateTrackableState(properties: SubscriberProperties)
+    fun updatePublisherPresence(properties: SubscriberProperties, isPublisherPresent: Boolean)
     fun updatePublisherResolutionInformation(presenceData: PresenceData)
     fun subscribeForRawEvents(presenceData: PresenceData)
     fun subscribeForEnhancedEvents(presenceData: PresenceData)
@@ -62,7 +63,7 @@ private class DefaultCoreSubscriber(
 ) :
     CoreSubscriber, SubscriberInteractor {
     private val scope = CoroutineScope(singleThreadDispatcher + SupervisorJob())
-    private val workerQueue: WorkerQueue
+    private val workerQueue: WorkerQueue<SubscriberProperties, WorkerSpecification>
     private val _trackableStates: MutableStateFlow<TrackableState> =
         MutableStateFlow(TrackableState.Offline())
     private val _publisherPresence: MutableStateFlow<Boolean> = MutableStateFlow(false)
@@ -93,8 +94,8 @@ private class DefaultCoreSubscriber(
 
     init {
         val workerFactory = WorkerFactory(this, ably, trackableId)
-        val properties = Properties(initialResolution)
-        workerQueue = WorkerQueue(properties, scope, workerFactory)
+        val properties = SubscriberProperties(initialResolution)
+        workerQueue = WorkerQueue(properties, scope, workerFactory, { copy() }, { SubscriberStoppedException() })
 
         ably.subscribeForAblyStateChange { enqueue(WorkerSpecification.UpdateConnectionState(it)) }
     }
@@ -103,14 +104,14 @@ private class DefaultCoreSubscriber(
         workerQueue.enqueue(workerSpecification)
     }
 
-    override fun updatePublisherPresence(properties: Properties, isPublisherPresent: Boolean) {
+    override fun updatePublisherPresence(properties: SubscriberProperties, isPublisherPresent: Boolean) {
         if (isPublisherPresent != properties.isPublisherOnline) {
             properties.isPublisherOnline = isPublisherPresent
             scope.launch { _publisherPresence.emit(isPublisherPresent) }
         }
     }
 
-    override fun updateTrackableState(properties: Properties) {
+    override fun updateTrackableState(properties: SubscriberProperties) {
         val newTrackableState = when (properties.lastConnectionStateChange.state) {
             ConnectionState.ONLINE -> {
                 when (properties.lastChannelConnectionStateChange.state) {
@@ -158,15 +159,15 @@ private class DefaultCoreSubscriber(
     }
 }
 
-internal data class Properties private constructor(
+internal data class SubscriberProperties private constructor(
     var presenceData: PresenceData,
-    var isStopped: Boolean = false,
+    override var isStopped: Boolean = false,
     var isPublisherOnline: Boolean = false,
     var trackableState: TrackableState = TrackableState.Offline(),
     var lastConnectionStateChange: ConnectionStateChange =
         ConnectionStateChange(ConnectionState.OFFLINE, null),
     var lastChannelConnectionStateChange: ConnectionStateChange =
         ConnectionStateChange(ConnectionState.OFFLINE, null)
-) {
+) : Properties() {
     constructor(initialResolution: Resolution?) : this(PresenceData(ClientTypes.SUBSCRIBER, initialResolution))
 }

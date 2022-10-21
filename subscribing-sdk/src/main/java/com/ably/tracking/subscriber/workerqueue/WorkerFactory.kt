@@ -5,6 +5,9 @@ import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.PresenceMessage
 import com.ably.tracking.common.ResultCallbackFunction
+import com.ably.tracking.common.workerqueue.Worker
+import com.ably.tracking.common.workerqueue.WorkerFactory
+import com.ably.tracking.subscriber.SubscriberProperties
 import com.ably.tracking.subscriber.SubscriberInteractor
 import com.ably.tracking.subscriber.workerqueue.workers.ChangeResolutionWorker
 import com.ably.tracking.subscriber.workerqueue.workers.DisconnectWorker
@@ -23,14 +26,14 @@ internal class WorkerFactory(
     private val subscriberInteractor: SubscriberInteractor,
     private val ably: Ably,
     private val trackableId: String
-) {
+) : WorkerFactory<SubscriberProperties, WorkerSpecification> {
     /**
      * Creates an appropriate [Worker] from the passed [WorkerSpecification].
      *
      * @param params The parameters that indicate which [Worker] implementation should be created.
      * @return New [Worker] instance.
      */
-    fun createWorker(params: WorkerSpecification): Worker =
+    override fun createWorker(params: WorkerSpecification): Worker<SubscriberProperties, WorkerSpecification> =
         when (params) {
             is WorkerSpecification.StartConnection -> StartConnectionWorker(
                 ably,

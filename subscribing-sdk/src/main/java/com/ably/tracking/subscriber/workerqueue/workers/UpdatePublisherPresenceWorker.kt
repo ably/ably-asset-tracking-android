@@ -4,19 +4,19 @@ import com.ably.tracking.common.ClientTypes
 import com.ably.tracking.common.PresenceAction
 import com.ably.tracking.common.PresenceMessage
 import com.ably.tracking.subscriber.SubscriberInteractor
-import com.ably.tracking.subscriber.Properties
-import com.ably.tracking.subscriber.workerqueue.Worker
+import com.ably.tracking.subscriber.SubscriberProperties
+import com.ably.tracking.common.workerqueue.Worker
 import com.ably.tracking.subscriber.workerqueue.WorkerSpecification
 
 internal class UpdatePublisherPresenceWorker(
     private val presenceMessage: PresenceMessage,
     private val subscriberInteractor: SubscriberInteractor
-) : Worker {
+) : Worker<SubscriberProperties, WorkerSpecification> {
     override fun doWork(
-        properties: Properties,
+        properties: SubscriberProperties,
         doAsyncWork: (suspend () -> Unit) -> Unit,
         postWork: (WorkerSpecification) -> Unit
-    ): Properties {
+    ): SubscriberProperties {
         when (presenceMessage.action) {
             PresenceAction.PRESENT_OR_ENTER -> {
                 if (presenceMessage.data.type == ClientTypes.PUBLISHER) {

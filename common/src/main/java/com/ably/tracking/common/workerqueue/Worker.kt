@@ -1,12 +1,14 @@
-package com.ably.tracking.subscriber.workerqueue
+package com.ably.tracking.common.workerqueue
 
 import com.ably.tracking.common.ResultCallbackFunction
-import com.ably.tracking.subscriber.Properties
 
 /**
  * A [Worker] interface represents workers which execute work inside [WorkerQueue].
+ * Params:
+ * P - the type of properties used by this worker as both input and output
+ * S - the type of specification used to post another worker back to the queue
  */
-internal interface Worker {
+interface Worker<P : Properties, S> {
     /**
      * This function is provided in order for implementors to implement synchronous work. Any asynchronous tasks
      * should be executed inside [doAsyncWork] function. If a worker needs to delegate another task to the queue
@@ -19,10 +21,10 @@ internal interface Worker {
      * @return updated [Properties] modified by this worker.
      */
     fun doWork(
-        properties: Properties,
+        properties: P,
         doAsyncWork: (suspend () -> Unit) -> Unit,
-        postWork: (WorkerSpecification) -> Unit
-    ): Properties
+        postWork: (S) -> Unit
+    ): P
 
     /**
      * This function is provided in order for implementors to define what should happen when the worker
@@ -37,8 +39,8 @@ internal interface Worker {
 /**
  * An abstract class to avoid duplication of default [doWhenStopped] implementation
  */
-internal abstract class CallbackWorker(protected val callbackFunction: ResultCallbackFunction<Unit>) :
-    Worker {
+abstract class CallbackWorker<P : Properties, S>(protected val callbackFunction: ResultCallbackFunction<Unit>) :
+    Worker<P, S> {
 
     override fun doWhenStopped(exception: Exception) {
         callbackFunction(Result.failure(exception))

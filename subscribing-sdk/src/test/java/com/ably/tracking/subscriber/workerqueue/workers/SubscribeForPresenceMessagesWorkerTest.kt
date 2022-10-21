@@ -8,7 +8,7 @@ import com.ably.tracking.common.PresenceAction
 import com.ably.tracking.common.PresenceData
 import com.ably.tracking.common.PresenceMessage
 import com.ably.tracking.common.ResultCallbackFunction
-import com.ably.tracking.subscriber.Properties
+import com.ably.tracking.subscriber.SubscriberProperties
 import com.ably.tracking.subscriber.workerqueue.WorkerSpecification
 import com.ably.tracking.test.common.mockSubscribeToPresenceError
 import com.ably.tracking.test.common.mockSubscribeToPresenceSuccess
@@ -35,7 +35,7 @@ internal class SubscribeForPresenceMessagesWorkerTest {
     @Test
     fun `should post update presence work when presence listener is called`() = runBlockingTest {
         // given
-        val initialProperties = Properties(Resolution(Accuracy.BALANCED, 100, 100.0))
+        val initialProperties = SubscriberProperties(Resolution(Accuracy.BALANCED, 100, 100.0))
         val presenceListenerSlot: CapturingSlot<(PresenceMessage) -> Unit> = slot()
         val presenceMessage = createPresenceMessage()
         ably.mockSubscribeToPresenceSuccess(trackableId, presenceListenerSlot)
@@ -62,7 +62,7 @@ internal class SubscribeForPresenceMessagesWorkerTest {
     @Test
     fun `should post subscribe to channel work when subscribe to presence returns success`() = runBlockingTest {
         // given
-        val initialProperties = Properties(Resolution(Accuracy.BALANCED, 100, 100.0))
+        val initialProperties = SubscriberProperties(Resolution(Accuracy.BALANCED, 100, 100.0))
         ably.mockSubscribeToPresenceSuccess(trackableId)
 
         // when
@@ -80,7 +80,7 @@ internal class SubscribeForPresenceMessagesWorkerTest {
     @Test
     fun `should post disconnect work when subscribe to presence returns failure`() = runBlockingTest {
         // given
-        val initialProperties = Properties(Resolution(Accuracy.BALANCED, 100, 100.0))
+        val initialProperties = SubscriberProperties(Resolution(Accuracy.BALANCED, 100, 100.0))
         ably.mockSubscribeToPresenceError(trackableId)
 
         // when
