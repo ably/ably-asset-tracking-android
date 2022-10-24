@@ -127,13 +127,13 @@ you can then add the Ably Asset Tracking dependency that you require in your Gra
 ```groovy
 dependencies {
     // Publishers, developing in Kotlin, will need the Publishing SDK
-    implementation 'com.ably.tracking:publishing-sdk:1.4.0-rc.2'
+    implementation 'com.ably.tracking:publishing-sdk:1.4.0'
 
     // Subscribers, developing in Kotlin, will need the Subscribing SDK
-    implementation 'com.ably.tracking:subscribing-sdk:1.4.0-rc.2'
+    implementation 'com.ably.tracking:subscribing-sdk:1.4.0'
 
     // Subscribers, developing in Kotlin, can optionally use the UI utilities
-    implementation 'com.ably.tracking:ui-sdk:1.4.0-rc.2'
+    implementation 'com.ably.tracking:ui-sdk:1.4.0'
 }
 ```
 
@@ -356,7 +356,7 @@ Firstly, you have to exclude the notification module from Mapbox Navigation SDK 
 
 ```groovy
 // The Ably Asset Tracking Publisher SDK for Android.
-implementation ('com.ably.tracking:publishing-sdk:1.4.0-rc.2')
+implementation ('com.ably.tracking:publishing-sdk:1.4.0')
 
 // The Mapbox Navigation SDK.
 implementation ('com.mapbox.navigation:android:2.8.0') {
@@ -379,6 +379,17 @@ val mapboxNavigation = MapboxNavigationProvider.retrieve()
 
 Because there is only one `MapboxNavigation` instance, both your app and AAT will use the same object. This means that there can be possible conflicts in usage that can lead to unexpected behaviour.
 Therefore, we do not advise using AAT in applications that already use Mapbox Navigation SDK.
+
+### SLF4J warning logs
+
+AAT has a transitive dependency on the [SLF4J](https://www.slf4j.org/) library but we do not provide a default logger implementation. Because of that you can encounter below warning logs if you have not explicitly provided an implementation:
+
+```
+W/System.err: SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
+W/System.err: SLF4J: Defaulting to no-operation (NOP) logger implementation
+```
+
+This is normal behaviour if no specific SLF4J logger implementation is provided. If you want to fix those warnings you have to provide a SLF4J logger implementation in your project.
 
 ## Contributing
 

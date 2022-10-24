@@ -11,6 +11,7 @@ internal interface DuplicateTrackableGuard {
     fun startAddingTrackable(trackable: Trackable)
     fun finishAddingTrackable(trackable: Trackable, result: Result<AddTrackableResult>)
     fun isCurrentlyAddingTrackable(trackable: Trackable): Boolean
+    fun isCurrentlyAddingAnyTrackable(): Boolean
     fun saveDuplicateAddHandler(trackable: Trackable, callbackFunction: AddTrackableCallbackFunction)
     fun clear(trackable: Trackable)
     fun clearAll()
@@ -61,6 +62,15 @@ internal class DefaultDuplicateTrackableGuard : DuplicateTrackableGuard {
      */
     override fun isCurrentlyAddingTrackable(trackable: Trackable): Boolean {
         return trackablesCurrentlyBeingAdded.contains(trackable)
+    }
+
+    /**
+     * Checks if the adding process for any trackable is already ongoing.
+     *
+     * @return True if any trackable is currently being added, false otherwise.
+     */
+    override fun isCurrentlyAddingAnyTrackable(): Boolean {
+        return trackablesCurrentlyBeingAdded.isNotEmpty()
     }
 
     /**

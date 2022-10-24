@@ -1,6 +1,7 @@
 package com.ably.tracking.publisher.workerqueue
 
 import com.ably.tracking.publisher.DefaultCorePublisher
+import com.ably.tracking.publisher.PublisherState
 import com.ably.tracking.publisher.PublisherStoppedException
 import com.ably.tracking.publisher.workerqueue.resulthandlers.getWorkResultHandler
 import com.ably.tracking.publisher.workerqueue.results.SyncAsyncResult
@@ -27,7 +28,7 @@ internal class DefaultWorkerQueue(
 
     private suspend fun executeWorkers() {
         for (worker in workerChannel) {
-            if (publisherProperties.isStopped) {
+            if (publisherProperties.state == PublisherState.STOPPED) {
                 worker.doWhenStopped(PublisherStoppedException())
             } else {
                 execute(worker)

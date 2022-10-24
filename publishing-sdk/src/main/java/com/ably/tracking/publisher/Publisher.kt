@@ -101,7 +101,7 @@ interface Publisher {
         @JvmSynthetic get
 
     /**
-     * The shared flow emitting trip location history when it becomes available.
+     * The shared flow emitting trip location history when the publisher is stopped.
      */
     val locationHistory: SharedFlow<LocationHistoryData>
         @JvmSynthetic get
@@ -232,6 +232,7 @@ interface Publisher {
         /**
          * EXPERIMENTAL API
          * **OPTIONAL** Specifies a callback that will be called with the filepath of raw history data from the Navigation SDK component.
+         * The callback will be called when the publisher is stopped.
          * This will be probably removed in the future. Do not use this in the production environment.
          *
          * @param callback The callback that will be called with the raw history data filepath.

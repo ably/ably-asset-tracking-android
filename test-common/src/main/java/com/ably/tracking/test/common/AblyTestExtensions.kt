@@ -16,6 +16,14 @@ fun Ably.mockCreateConnectionSuccess(trackableId: String) {
     mockSubscribeToPresenceSuccess(trackableId)
 }
 
+fun Ably.mockStartConnectionSuccess() {
+    coEvery { startConnection() } returns Result.success(Unit)
+}
+
+fun Ably.mockStartConnectionFailure() {
+    coEvery { startConnection() } returns Result.failure(anyConnectionException())
+}
+
 fun Ably.mockConnectSuccess(trackableId: String) {
     val callbackSlot = slot<(Result<Unit>) -> Unit>()
     every {

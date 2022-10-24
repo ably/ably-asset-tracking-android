@@ -1,6 +1,7 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
 import com.ably.tracking.TrackableState
+import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.RemoveTrackableRequestedException
@@ -27,6 +28,7 @@ class TrackableRemovalRequestedWorkerTest {
     private val publisherProperties = mockk<PublisherProperties>(relaxed = true)
     private val trackableRemovalGuard = TrackableRemovalGuardSpy()
     private val duplicateTrackableGuard = DuplicateTrackableGuardSpy()
+    private val ably = mockk<Ably>(relaxed = true)
 
     @Before
     fun setUp() {
@@ -110,7 +112,7 @@ class TrackableRemovalRequestedWorkerTest {
     }
 
     private fun prepareWorkerWithResult(result: Result<Unit>) {
-        worker = TrackableRemovalRequestedWorker(trackable, resultCallbackFunction, result)
+        worker = TrackableRemovalRequestedWorker(trackable, resultCallbackFunction, ably, result)
     }
 
     private fun captureResultCallbackFunctionResult(): CapturingSlot<Result<StateFlow<TrackableState>>> {
@@ -136,6 +138,8 @@ private class DuplicateTrackableGuardSpy : DuplicateTrackableGuard {
     }
 
     override fun isCurrentlyAddingTrackable(trackable: Trackable): Boolean = false
+
+    override fun isCurrentlyAddingAnyTrackable(): Boolean = false
 
     override fun saveDuplicateAddHandler(trackable: Trackable, callbackFunction: AddTrackableCallbackFunction) = Unit
 

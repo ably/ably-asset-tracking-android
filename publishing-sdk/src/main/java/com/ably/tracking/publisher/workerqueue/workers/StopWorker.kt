@@ -5,6 +5,7 @@ import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.publisher.CorePublisher
 import com.ably.tracking.publisher.PublisherProperties
+import com.ably.tracking.publisher.PublisherState
 import com.ably.tracking.publisher.workerqueue.results.SyncAsyncResult
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.runBlocking
@@ -36,7 +37,7 @@ internal class StopWorker(
             }
         }
         // We should mark the publisher as stopped no matter if the whole stopping process completed successfully.
-        properties.isStopped = true
+        properties.state = PublisherState.STOPPED
         return SyncAsyncResult()
     }
 
