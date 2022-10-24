@@ -6,10 +6,15 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.withSettings;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import com.ably.tracking.Accuracy;
 import com.ably.tracking.Resolution;
 import com.ably.tracking.connection.Authentication;
 import com.ably.tracking.connection.ConnectionConfiguration;
+import com.ably.tracking.connection.TokenRequest;
+import com.ably.tracking.java.AuthenticationFacade;
 import com.ably.tracking.subscriber.Subscriber;
 import com.ably.tracking.subscriber.java.SubscriberFacade;
 
@@ -40,6 +45,10 @@ public class UsageExamples {
     public void subscriberBuilderUsageExample() {
         Subscriber.Builder nativeBuilder = Subscriber.subscribers()
             .connection(new ConnectionConfiguration(Authentication.basic("CLIENT_ID", "API_KEY"), null))
+            // or
+            // .connection(new ConnectionConfiguration(createTokenRequestAuthentication(), null))
+            // or
+            // .connection(new ConnectionConfiguration(createJwtAuthentication(), null))
             .trackingId("TRACKING_ID")
             .resolution(new Resolution(Accuracy.BALANCED, 1000L, 1.0));
         SubscriberFacade.Builder wrappedSubscriberBuilder = SubscriberFacade.Builder.wrap(nativeBuilder);
@@ -77,5 +86,59 @@ public class UsageExamples {
         } catch (InterruptedException e) {
             // handle interruption exception
         }
+    }
+
+    private Authentication createTokenRequestAuthentication() {
+        return AuthenticationFacade.tokenRequest(tokenParams -> CompletableFuture.supplyAsync(() -> {
+            // get the token from you auth servers
+            return new TokenRequest() {
+                @NonNull
+                @Override
+                public String getMac() {
+                    return null;
+                }
+
+                @NonNull
+                @Override
+                public String getNonce() {
+                    return null;
+                }
+
+                @NonNull
+                @Override
+                public String getKeyName() {
+                    return null;
+                }
+
+                @Override
+                public long getTimestamp() {
+                    return 0;
+                }
+
+                @Nullable
+                @Override
+                public String getClientId() {
+                    return null;
+                }
+
+                @Nullable
+                @Override
+                public String getCapability() {
+                    return null;
+                }
+
+                @Override
+                public long getTtl() {
+                    return 0;
+                }
+            };
+        }));
+    }
+
+    private Authentication createJwtAuthentication() {
+        return AuthenticationFacade.jwt(tokenParams -> CompletableFuture.supplyAsync(() -> {
+            // get the token from you auth servers
+            return "created-jwt";
+        }));
     }
 }
