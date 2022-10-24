@@ -44,7 +44,7 @@ public class UsageExamples {
     @Test
     public void subscriberBuilderUsageExample() {
         Subscriber.Builder nativeBuilder = Subscriber.subscribers()
-            .connection(new ConnectionConfiguration(Authentication.basic("CLIENT_ID", "API_KEY"), null))
+            .connection(new ConnectionConfiguration(AuthenticationFacade.basic("CLIENT_ID", "API_KEY"), null))
             // or
             // .connection(new ConnectionConfiguration(createTokenRequestAuthentication(), null))
             // or

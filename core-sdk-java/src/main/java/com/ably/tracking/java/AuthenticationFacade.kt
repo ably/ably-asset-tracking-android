@@ -28,6 +28,14 @@ interface JwtFunction {
 class AuthenticationFacade {
     companion object {
         /**
+         * @param apiKey Ably key string as obtained from the dashboard.
+         * @param clientId ID of the client
+         */
+        @JvmStatic
+        fun basic(clientId: String, apiKey: String): Authentication =
+            Authentication.basic(clientId, apiKey)
+
+        /**
          * Authentication method that uses the Token Request. The [callback] will be called each time a new token is needed.
          * If something goes wrong while fetching the token you should throw a [TokenAuthException] in the [callback].
          *
