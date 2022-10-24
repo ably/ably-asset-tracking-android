@@ -8,9 +8,11 @@ import static org.mockito.Mockito.withSettings;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.OptIn;
 
 import com.ably.tracking.Accuracy;
 import com.ably.tracking.Resolution;
+import com.ably.tracking.annotations.Experimental;
 import com.ably.tracking.connection.Authentication;
 import com.ably.tracking.connection.ConnectionConfiguration;
 import com.ably.tracking.connection.TokenRequest;
@@ -68,6 +70,7 @@ public class UsageExamples {
     }
 
     @Test
+    @OptIn(markerClass = Experimental.class)
     public void subscriberFacadeUsageExample() {
         subscriberFacade.addListener(assetState -> {
             // handle assetState
@@ -75,6 +78,18 @@ public class UsageExamples {
 
         subscriberFacade.addLocationListener(locationUpdate -> {
             // handle locationUpdate
+        });
+
+        subscriberFacade.addPublisherPresenceListener(isPublisherPresent -> {
+            // handle isPublisherPresent
+        });
+
+        subscriberFacade.addResolutionListener(resolution -> {
+            // handle resolution
+        });
+
+        subscriberFacade.addNextLocationUpdateIntervalListener(nextLocationUpdateInterval -> {
+            // handle nextLocationUpdateInterval
         });
 
         try {
