@@ -100,7 +100,8 @@ private class DefaultCoreSubscriber(
             scope = scope,
             workerFactory = workerFactory,
             copyProperties = { copy() },
-            getStoppedException = { SubscriberStoppedException() })
+            getStoppedException = { SubscriberStoppedException() }
+        )
 
         ably.subscribeForAblyStateChange { enqueue(WorkerSpecification.UpdateConnectionState(it)) }
     }
