@@ -397,7 +397,7 @@ constructor(
     }
 
     private suspend fun failChannel(channel: Channel, presenceData: PresenceData, errorInfo: ErrorInfo) {
-        //Once a channel enters failed state we can reattach it again, so we're not removing the reference
+        // Once a channel enters failed state we can reattach it again, so we're not removing the reference
         channel.setConnectionFailed(errorInfo)
         leavePresence(channel, presenceData)
         channel.unsubscribe()
