@@ -95,7 +95,12 @@ private class DefaultCoreSubscriber(
     init {
         val workerFactory = WorkerFactory(this, ably, trackableId)
         val properties = SubscriberProperties(initialResolution)
-        workerQueue = WorkerQueue(properties, scope, workerFactory, { copy() }, { SubscriberStoppedException() })
+        workerQueue = WorkerQueue(
+            properties = properties,
+            scope = scope,
+            workerFactory = workerFactory,
+            copyProperties = { copy() },
+            getStoppedException = { SubscriberStoppedException() })
 
         ably.subscribeForAblyStateChange { enqueue(WorkerSpecification.UpdateConnectionState(it)) }
     }

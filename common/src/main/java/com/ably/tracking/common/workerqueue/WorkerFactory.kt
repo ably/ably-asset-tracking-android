@@ -1,7 +1,7 @@
 package com.ably.tracking.common.workerqueue
 
 /**
- * A worker factory is responsible for instantiating [Worker]s from passed specification.
+ * A worker factory is responsible for instantiating [Worker] from passed specification.
  * Params:
  * P - the type of properties used by created workers
  * S - the type of specification used to create workers
