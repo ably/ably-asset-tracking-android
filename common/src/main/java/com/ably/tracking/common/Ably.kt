@@ -340,6 +340,7 @@ constructor(
                         enterChannelPresence(channel, presenceData)
                         callback(Result.success(Unit))
                     } catch (connectionException: ConnectionException) {
+                        ably.channels.release(channelName)
                         callback(Result.failure(connectionException))
                     }
                 }
