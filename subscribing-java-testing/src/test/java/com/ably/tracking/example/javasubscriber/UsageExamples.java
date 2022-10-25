@@ -19,12 +19,17 @@ import com.ably.tracking.connection.TokenRequest;
 import com.ably.tracking.java.AuthenticationFacade;
 import com.ably.tracking.subscriber.Subscriber;
 import com.ably.tracking.subscriber.java.SubscriberFacade;
+import com.ably.tracking.ui.animation.CoreLocationAnimator;
+import com.ably.tracking.ui.animation.LocationAnimator;
+import com.ably.tracking.ui.java.animation.CoreLocationAnimatorFacade;
+import com.ably.tracking.ui.java.animation.LocationAnimatorFacade;
 
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class UsageExamples {
     SubscriberFacade subscriberFacade;
@@ -101,6 +106,30 @@ public class UsageExamples {
         } catch (InterruptedException e) {
             // handle interruption exception
         }
+    }
+
+    @Test
+    public void locationAnimatorFacadeUsageExample() {
+        LocationAnimator locationAnimator = new CoreLocationAnimator();
+        LocationAnimatorFacade locationAnimatorFacade = new CoreLocationAnimatorFacade(locationAnimator);
+
+        AtomicLong locationUpdateInterval = new AtomicLong(0L);
+        subscriberFacade.addNextLocationUpdateIntervalListener(locationUpdateIntervalInMilliseconds -> {
+            locationUpdateInterval.set(locationUpdateIntervalInMilliseconds);
+        });
+        subscriberFacade.addLocationListener(locationUpdate -> {
+            locationAnimatorFacade.animateLocationUpdate(locationUpdate, locationUpdateInterval.get());
+        });
+
+        locationAnimatorFacade.addPositionListener(position -> {
+            // handle new map marker position
+        });
+
+        locationAnimatorFacade.addCameraPositionListener(position -> {
+            // handle new camera position
+        });
+
+        locationAnimatorFacade.stop();
     }
 
     private Authentication createTokenRequestAuthentication() {
