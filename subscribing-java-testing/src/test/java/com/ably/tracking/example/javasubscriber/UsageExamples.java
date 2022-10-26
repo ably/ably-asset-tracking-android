@@ -6,14 +6,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.withSettings;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
 import com.ably.tracking.Accuracy;
 import com.ably.tracking.Resolution;
 import com.ably.tracking.connection.Authentication;
 import com.ably.tracking.connection.ConnectionConfiguration;
-import com.ably.tracking.connection.TokenRequest;
 import com.ably.tracking.java.AuthenticationFacade;
 import com.ably.tracking.subscriber.Subscriber;
 import com.ably.tracking.subscriber.java.SubscriberFacade;
@@ -91,47 +87,7 @@ public class UsageExamples {
     private Authentication createTokenRequestAuthentication() {
         return AuthenticationFacade.tokenRequest(tokenParams -> CompletableFuture.supplyAsync(() -> {
             // get the token from you auth servers
-            return new TokenRequest() {
-                @NonNull
-                @Override
-                public String getMac() {
-                    return null;
-                }
-
-                @NonNull
-                @Override
-                public String getNonce() {
-                    return null;
-                }
-
-                @NonNull
-                @Override
-                public String getKeyName() {
-                    return null;
-                }
-
-                @Override
-                public long getTimestamp() {
-                    return 0;
-                }
-
-                @Nullable
-                @Override
-                public String getClientId() {
-                    return null;
-                }
-
-                @Nullable
-                @Override
-                public String getCapability() {
-                    return null;
-                }
-
-                @Override
-                public long getTtl() {
-                    return 0;
-                }
-            };
+            return new EmptyTokenRequest();
         }));
     }
 
