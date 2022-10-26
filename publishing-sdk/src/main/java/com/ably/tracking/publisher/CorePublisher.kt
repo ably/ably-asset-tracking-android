@@ -137,7 +137,7 @@ constructor(
     private val logHandler: LogHandler?,
     areRawLocationsEnabled: Boolean?,
     private val sendResolutionEnabled: Boolean,
-    private val constantLocationEngineResolution: Resolution?,
+    constantLocationEngineResolution: Resolution?,
 ) : CorePublisher, TimeProvider {
     private val TAG = createLoggingTag(this)
     private val scope = CoroutineScope(singleThreadDispatcher + SupervisorJob())
