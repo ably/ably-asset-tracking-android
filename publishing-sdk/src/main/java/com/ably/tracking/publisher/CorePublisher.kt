@@ -9,7 +9,6 @@ import com.ably.tracking.LocationUpdateType
 import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
-import com.ably.tracking.common.ClientTypes
 import com.ably.tracking.common.ConnectionState
 import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.PresenceData
@@ -20,10 +19,6 @@ import com.ably.tracking.common.logging.createLoggingTag
 import com.ably.tracking.common.logging.v
 import com.ably.tracking.common.logging.w
 import com.ably.tracking.logging.LogHandler
-import com.ably.tracking.publisher.guards.DefaultDuplicateTrackableGuard
-import com.ably.tracking.publisher.guards.DuplicateTrackableGuard
-import com.ably.tracking.publisher.guards.TrackableRemovalGuard
-import com.ably.tracking.publisher.guards.DefaultTrackableRemovalGuard
 import com.ably.tracking.publisher.workerqueue.DefaultWorkerFactory
 import com.ably.tracking.publisher.workerqueue.DefaultWorkerQueue
 import com.ably.tracking.publisher.workerqueue.WorkerFactory
@@ -33,7 +28,6 @@ import com.ably.tracking.publisher.workerqueue.workers.Worker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -171,11 +165,13 @@ constructor(
             hooks,
             methods
         )
-        val properties = Properties(
-            routingProfile,
-            policy.resolve(emptySet()),
-            constantLocationEngineResolution != null,
-            areRawLocationsEnabled,
+        val properties = PublisherProperties(
+            routingProfile = routingProfile,
+            locationEngineResolution = policy.resolve(emptySet()),
+            isLocationEngineResolutionConstant = constantLocationEngineResolution != null,
+            areRawLocationsEnabled = areRawLocationsEnabled,
+            onActiveTrackableUpdated = { active = it },
+            onRoutingProfileUpdated = { routingProfile = it }
         )
         workerFactory = DefaultWorkerFactory(ably, hooks, this, policy, mapbox, this, logHandler)
         workerQueue = DefaultWorkerQueue(properties, scope, workerFactory)
@@ -673,118 +669,6 @@ constructor(
 
         fun onProximityReached() {
             threshold?.let { proximityHandler?.onProximityReached(it) }
-        }
-    }
-
-    internal inner class Properties(
-        routingProfile: RoutingProfile,
-        locationEngineResolution: Resolution,
-        isLocationEngineResolutionConstant: Boolean,
-        areRawLocationsEnabled: Boolean?,
-    ) : PublisherProperties {
-        private var isDisposed: Boolean = false
-        override var locationEngineResolution: Resolution = locationEngineResolution
-            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        override val isLocationEngineResolutionConstant: Boolean = isLocationEngineResolutionConstant
-            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        override var isTracking: Boolean = false
-            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        override val trackables: MutableSet<Trackable> = mutableSetOf()
-            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        override val trackableStates: MutableMap<String, TrackableState> = mutableMapOf()
-            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        override val trackableSubscribedToPresenceFlags: MutableMap<String, Boolean> = mutableMapOf()
-            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        override val trackableStateFlows: MutableMap<String, MutableStateFlow<TrackableState>> = mutableMapOf()
-            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        override val lastChannelConnectionStateChanges: MutableMap<String, ConnectionStateChange> = mutableMapOf()
-            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        override var lastConnectionStateChange: ConnectionStateChange = ConnectionStateChange(
-            ConnectionState.OFFLINE, null
-        )
-            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        override val resolutions: MutableMap<String, Resolution> = mutableMapOf()
-            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        override val lastSentEnhancedLocations: MutableMap<String, Location> = mutableMapOf()
-            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        override val lastSentRawLocations: MutableMap<String, Location> = mutableMapOf()
-            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        override val skippedEnhancedLocations: SkippedLocations = SkippedLocations()
-            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        override val skippedRawLocations: SkippedLocations = SkippedLocations()
-            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        override var estimatedArrivalTimeInMilliseconds: Long? = null
-            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        override var lastPublisherLocation: Location? = null
-            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        override var currentDestination: Destination? = null
-            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        override val subscribers: MutableMap<String, MutableSet<Subscriber>> = mutableMapOf()
-            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        override val requests: MutableMap<String, MutableMap<Subscriber, Resolution>> = mutableMapOf()
-            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        override var presenceData: PresenceData =
-            PresenceData(ClientTypes.PUBLISHER, rawLocations = areRawLocationsEnabled)
-            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        override var active: Trackable? = null
-            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-            set(value) {
-                this@DefaultCorePublisher.active = value
-                field = value
-            }
-        override var routingProfile: RoutingProfile = routingProfile
-            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-            set(value) {
-                this@DefaultCorePublisher.routingProfile = value
-                field = value
-            }
-        override val rawLocationChangedCommands: MutableList<(PublisherProperties) -> Unit> = mutableListOf()
-            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        override val enhancedLocationsPublishingState: LocationsPublishingState<EnhancedLocationUpdate> =
-            LocationsPublishingState()
-            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        override val rawLocationsPublishingState: LocationsPublishingState<LocationUpdate> =
-            LocationsPublishingState()
-            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        override val duplicateTrackableGuard: DuplicateTrackableGuard = DefaultDuplicateTrackableGuard()
-            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        override val trackableRemovalGuard: TrackableRemovalGuard = DefaultTrackableRemovalGuard()
-            get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-        override val areRawLocationsEnabled: Boolean = areRawLocationsEnabled ?: false
-        override var state: PublisherState = PublisherState.IDLE
-            set(value) {
-                // Once we stop publisher it should never change its state
-                if (field == PublisherState.STOPPED) {
-                    throw PublisherStoppedException()
-                }
-                field = value
-            }
-        override val hasNoTrackablesAddingOrAdded: Boolean
-            get() = trackables.isEmpty() && !duplicateTrackableGuard.isCurrentlyAddingAnyTrackable()
-
-        override fun dispose() {
-            trackables.clear()
-            trackableStates.clear()
-            trackableStateFlows.clear()
-            trackableSubscribedToPresenceFlags.clear()
-            lastChannelConnectionStateChanges.clear()
-            resolutions.clear()
-            lastSentEnhancedLocations.clear()
-            lastSentRawLocations.clear()
-            skippedEnhancedLocations.clearAll()
-            skippedRawLocations.clearAll()
-            estimatedArrivalTimeInMilliseconds = null
-            active = null
-            lastPublisherLocation = null
-            currentDestination = null
-            subscribers.clear()
-            requests.clear()
-            rawLocationChangedCommands.clear()
-            enhancedLocationsPublishingState.clearAll()
-            rawLocationsPublishingState.clearAll()
-            duplicateTrackableGuard.clearAll()
-            trackableRemovalGuard.clearAll()
-            isDisposed = true
         }
     }
 }

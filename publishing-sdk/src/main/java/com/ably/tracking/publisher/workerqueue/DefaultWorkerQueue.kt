@@ -1,6 +1,6 @@
 package com.ably.tracking.publisher.workerqueue
 
-import com.ably.tracking.publisher.DefaultCorePublisher
+import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.PublisherState
 import com.ably.tracking.publisher.PublisherStoppedException
 import com.ably.tracking.publisher.workerqueue.resulthandlers.getWorkResultHandler
@@ -15,7 +15,7 @@ import kotlinx.coroutines.launch
  * The default implementation of [WorkerQueue] that [execute]s [enqueue]d workers.
  */
 internal class DefaultWorkerQueue(
-    private val publisherProperties: DefaultCorePublisher.Properties,
+    private val publisherProperties: PublisherProperties,
     private val scope: CoroutineScope,
     private val workerFactory: WorkerFactory,
     maximumWorkerQueueCapacity: Int = 100,
