@@ -9,6 +9,7 @@ import com.ably.tracking.common.ClientTypes
 import com.ably.tracking.common.ConnectionState
 import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.PresenceData
+import com.ably.tracking.common.workerqueue.Properties
 import com.ably.tracking.publisher.guards.DefaultDuplicateTrackableGuard
 import com.ably.tracking.publisher.guards.DefaultTrackableRemovalGuard
 import com.ably.tracking.publisher.guards.DuplicateTrackableGuard
@@ -22,7 +23,7 @@ internal class PublisherProperties(
     areRawLocationsEnabled: Boolean?,
     private val onActiveTrackableUpdated: (Trackable?) -> Unit,
     private val onRoutingProfileUpdated: (RoutingProfile) -> Unit
-) {
+) : Properties() {
     private var isDisposed: Boolean = false
     var locationEngineResolution: Resolution = locationEngineResolution
         get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
@@ -102,6 +103,13 @@ internal class PublisherProperties(
         }
     val hasNoTrackablesAddingOrAdded: Boolean
         get() = trackables.isEmpty() && !duplicateTrackableGuard.isCurrentlyAddingAnyTrackable()
+
+    override val isStopped: Boolean
+        get() = state == PublisherState.STOPPED
+
+    fun copy(): PublisherProperties {
+        throw NotImplementedError()
+    }
 
     fun dispose() {
         trackables.clear()

@@ -18,10 +18,13 @@ import com.ably.tracking.common.createSingleThreadDispatcher
 import com.ably.tracking.common.logging.createLoggingTag
 import com.ably.tracking.common.logging.v
 import com.ably.tracking.common.logging.w
+import com.ably.tracking.common.workerqueue.WorkerQueue as UpdatedWorkerQueue
 import com.ably.tracking.logging.LogHandler
 import com.ably.tracking.publisher.workerqueue.DefaultWorkerFactory
 import com.ably.tracking.publisher.workerqueue.DefaultWorkerQueue
 import com.ably.tracking.publisher.workerqueue.WorkerFactory
+import com.ably.tracking.publisher.updatedworkerqueue.WorkerFactory as UpdatedWorkerFactory
+import com.ably.tracking.publisher.updatedworkerqueue.WorkerParams as UpdatedWorkerParams
 import com.ably.tracking.publisher.workerqueue.WorkerParams
 import com.ably.tracking.publisher.workerqueue.WorkerQueue
 import com.ably.tracking.publisher.workerqueue.workers.Worker
@@ -142,6 +145,9 @@ constructor(
     private val TAG = createLoggingTag(this)
     private val scope = CoroutineScope(singleThreadDispatcher + SupervisorJob())
     private val workerQueue: WorkerQueue
+    private val workerFactory: WorkerFactory
+    private val updatedWorkerQueue: UpdatedWorkerQueue<PublisherProperties, UpdatedWorkerParams>
+    private val updatedWorkerFactory: UpdatedWorkerFactory
     private val _locations = MutableSharedFlow<LocationUpdate>(replay = 1)
     private val _trackables = MutableSharedFlow<Set<Trackable>>(replay = 1)
     private val _locationHistory = MutableSharedFlow<LocationHistoryData>()
@@ -158,7 +164,6 @@ constructor(
 
     override var active: Trackable? = null
     override var trackableStateFlows: Map<String, StateFlow<TrackableState>> = emptyMap()
-    private val workerFactory: WorkerFactory
 
     init {
         policy = resolutionPolicyFactory.createResolutionPolicy(
@@ -175,6 +180,14 @@ constructor(
         )
         workerFactory = DefaultWorkerFactory(ably, hooks, this, policy, mapbox, this, logHandler)
         workerQueue = DefaultWorkerQueue(properties, scope, workerFactory)
+        updatedWorkerFactory = UpdatedWorkerFactory(ably, hooks, this, policy, mapbox, this, logHandler)
+        updatedWorkerQueue =
+            UpdatedWorkerQueue(
+                properties = properties,
+                scope = scope,
+                workerFactory = updatedWorkerFactory,
+                copyProperties = { copy() },
+                getStoppedException = { PublisherStoppedException() })
         ably.subscribeForAblyStateChange { enqueue(workerFactory.createWorker(WorkerParams.AblyConnectionStateChange(it))) }
         mapbox.setLocationHistoryListener { historyData -> scope.launch { _locationHistory.emit(historyData) } }
     }
