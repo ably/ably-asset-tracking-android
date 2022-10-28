@@ -9,7 +9,7 @@ import com.ably.tracking.common.ConnectionState
 import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.PresenceData
 import com.ably.tracking.common.createSingleThreadDispatcher
-import com.ably.tracking.common.workerqueue.Properties
+import com.ably.tracking.common.workerqueue.QueueProperties
 import com.ably.tracking.common.workerqueue.WorkerQueue
 import com.ably.tracking.subscriber.workerqueue.WorkerFactory
 import com.ably.tracking.subscriber.workerqueue.WorkerSpecification
@@ -174,6 +174,6 @@ internal data class SubscriberProperties private constructor(
         ConnectionStateChange(ConnectionState.OFFLINE, null),
     var lastChannelConnectionStateChange: ConnectionStateChange =
         ConnectionStateChange(ConnectionState.OFFLINE, null)
-) : Properties {
+) : QueueProperties {
     constructor(initialResolution: Resolution?) : this(PresenceData(ClientTypes.SUBSCRIBER, initialResolution))
 }

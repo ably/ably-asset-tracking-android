@@ -7,19 +7,19 @@ import kotlinx.coroutines.launch
 /**
  * A worker queue is responsible for enqueueing [Worker]s and executing them.
  * Params:
- * P - the type of properties used by this worker as both input and output
- * S - the type of specification used to post worker back to the queue
+ * Properties - the type of properties used by this worker as both input and output
+ * WorkerSpecification - the type of specification used to post worker back to the queue
  */
-class WorkerQueue<P : Properties, S>(
-    private var properties: P,
+class WorkerQueue<Properties : QueueProperties, WorkerSpecification>(
+    private var properties: Properties,
     private val scope: CoroutineScope,
-    private val workerFactory: WorkerFactory<P, S>,
-    private val copyProperties: P.() -> P,
+    private val workerFactory: WorkerFactory<Properties, WorkerSpecification>,
+    private val copyProperties: Properties.() -> Properties,
     private val getStoppedException: () -> Exception,
     maximumWorkerQueueCapacity: Int = 100,
 ) {
 
-    private val workerChannel = Channel<Worker<P, S>>(capacity = maximumWorkerQueueCapacity)
+    private val workerChannel = Channel<Worker<Properties, WorkerSpecification>>(capacity = maximumWorkerQueueCapacity)
 
     init {
         scope.launch { executeWorkers() }
@@ -35,7 +35,7 @@ class WorkerQueue<P : Properties, S>(
         }
     }
 
-    private fun execute(worker: Worker<P, S>) {
+    private fun execute(worker: Worker<Properties, WorkerSpecification>) {
         properties = worker.doWork(
             properties = properties.copyProperties(),
             doAsyncWork = { asyncWork -> scope.launch { asyncWork() } },
@@ -46,9 +46,9 @@ class WorkerQueue<P : Properties, S>(
     /**
      * Enqueue worker created from passed specification for execution.
      *
-     * @param workerSpecification [S] specification of worker to be executed.
+     * @param workerSpecification [WorkerSpecification] specification of worker to be executed.
      */
-    fun enqueue(workerSpecification: S) {
+    fun enqueue(workerSpecification: WorkerSpecification) {
         val worker = workerFactory.createWorker(workerSpecification)
         scope.launch { workerChannel.send(worker) }
     }
