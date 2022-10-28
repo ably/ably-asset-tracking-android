@@ -174,6 +174,6 @@ internal data class SubscriberProperties private constructor(
         ConnectionStateChange(ConnectionState.OFFLINE, null),
     var lastChannelConnectionStateChange: ConnectionStateChange =
         ConnectionStateChange(ConnectionState.OFFLINE, null)
-) : Properties() {
+) : Properties {
     constructor(initialResolution: Resolution?) : this(PresenceData(ClientTypes.SUBSCRIBER, initialResolution))
 }
