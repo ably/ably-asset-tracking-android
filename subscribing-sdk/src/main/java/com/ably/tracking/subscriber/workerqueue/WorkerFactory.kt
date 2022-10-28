@@ -30,49 +30,49 @@ internal class WorkerFactory(
     /**
      * Creates an appropriate [Worker] from the passed [WorkerSpecification].
      *
-     * @param params The parameters that indicate which [Worker] implementation should be created.
+     * @param workerSpecification The parameters that indicate which [Worker] implementation should be created.
      * @return New [Worker] instance.
      */
-    override fun createWorker(params: WorkerSpecification): Worker<SubscriberProperties, WorkerSpecification> =
-        when (params) {
+    override fun createWorker(workerSpecification: WorkerSpecification): Worker<SubscriberProperties, WorkerSpecification> =
+        when (workerSpecification) {
             is WorkerSpecification.StartConnection -> StartConnectionWorker(
                 ably,
                 subscriberInteractor,
                 trackableId,
-                params.callbackFunction
+                workerSpecification.callbackFunction
             )
             is WorkerSpecification.SubscribeForPresenceMessages -> SubscribeForPresenceMessagesWorker(
                 ably,
                 trackableId,
-                params.callbackFunction
+                workerSpecification.callbackFunction
             )
             is WorkerSpecification.SubscribeToChannel -> SubscribeToChannelWorker(
                 subscriberInteractor,
-                params.callbackFunction
+                workerSpecification.callbackFunction
             )
             is WorkerSpecification.UpdateConnectionState -> UpdateConnectionStateWorker(
-                params.connectionStateChange,
+                workerSpecification.connectionStateChange,
                 subscriberInteractor
             )
             is WorkerSpecification.UpdateChannelConnectionState -> UpdateChannelConnectionStateWorker(
-                params.channelConnectionStateChange,
+                workerSpecification.channelConnectionStateChange,
                 subscriberInteractor
             )
             is WorkerSpecification.UpdatePublisherPresence -> UpdatePublisherPresenceWorker(
-                params.presenceMessage,
+                workerSpecification.presenceMessage,
                 subscriberInteractor
             )
             is WorkerSpecification.ChangeResolution -> ChangeResolutionWorker(
                 ably,
                 trackableId,
-                params.resolution,
-                params.callbackFunction
+                workerSpecification.resolution,
+                workerSpecification.callbackFunction
             )
-            is WorkerSpecification.Disconnect -> DisconnectWorker(ably, params.trackableId, params.callbackFunction)
+            is WorkerSpecification.Disconnect -> DisconnectWorker(ably, workerSpecification.trackableId, workerSpecification.callbackFunction)
             is WorkerSpecification.StopConnection -> StopConnectionWorker(
                 ably,
                 subscriberInteractor,
-                params.callbackFunction
+                workerSpecification.callbackFunction
             )
         }
 }

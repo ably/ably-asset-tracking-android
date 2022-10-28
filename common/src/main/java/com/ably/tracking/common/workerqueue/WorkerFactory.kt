@@ -11,8 +11,8 @@ interface WorkerFactory<Properties : QueueProperties, WorkerSpecification> {
     /**
      * Creates an appropriate [Worker] from the passed specification [WorkerSpecification].
      *
-     * @param params The parameters that indicate which [Worker] implementation should be created.
+     * @param workerSpecification The parameters that indicate which [Worker] implementation should be created.
      * @return New [Worker] instance.
      */
-    fun createWorker(params: WorkerSpecification): Worker<Properties, WorkerSpecification>
+    fun createWorker(workerSpecification: WorkerSpecification): Worker<Properties, WorkerSpecification>
 }
