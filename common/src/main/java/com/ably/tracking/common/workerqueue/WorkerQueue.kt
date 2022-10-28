@@ -9,6 +9,8 @@ import kotlinx.coroutines.launch
  * Params:
  * Properties - the type of properties used by this worker as both input and output
  * WorkerSpecification - the type of specification used to post worker back to the queue
+ *
+ * copyProperties - lambda used to copy properties, introducing generic copy method to [Properties] interface caused too much typing complexity.
  */
 class WorkerQueue<Properties : QueueProperties, WorkerSpecification>(
     private var properties: Properties,
