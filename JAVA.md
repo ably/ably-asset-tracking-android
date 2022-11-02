@@ -50,7 +50,7 @@ Then you should use the `PublisherFacade` instance to perform all operations.
 Below we only describe changes in the Java API.
 For the full publisher SDK usage guide please see the [Kotlin guide](README.md#publishing-sdk).
 
-Async operations are returning a `CompletableFuture` that will complete once the operation finishes.
+Async operations return a `CompletableFuture` that will complete once the operation finishes.
 
 ```java
 publisherFacade.trackAsync(trackable, trackableState -> {
@@ -102,7 +102,7 @@ Then you should use the `SubscriberFacade` instance to perform all operations.
 Below we only describe changes in the Java API.
 For the full subscriber SDK usage guide please see the [Kotlin guide](README.md#subscribing-sdk).
 
-Async operations are returning a `CompletableFuture` that will complete once the operation finishes.
+Async operations return a `CompletableFuture` that will complete once the operation finishes.
 
 ```java
 subscriberFacade.stopAsync()
