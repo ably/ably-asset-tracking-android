@@ -86,14 +86,14 @@ public class UsageExamples {
 
     private Authentication createTokenRequestAuthentication() {
         return AuthenticationFacade.tokenRequest(tokenParams -> CompletableFuture.supplyAsync(() -> {
-            // get the token from you auth servers
+            // get the token from your auth servers
             return new EmptyTokenRequest();
         }));
     }
 
     private Authentication createJwtAuthentication() {
         return AuthenticationFacade.jwt(tokenParams -> CompletableFuture.supplyAsync(() -> {
-            // get the token from you auth servers
+            // get the token from your auth servers
             return "DUMMY PLACEHOLDER: RETURN JWT FROM AUTH SERVER HERE";
         }));
     }
