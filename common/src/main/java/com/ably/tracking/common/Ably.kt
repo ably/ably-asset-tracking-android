@@ -327,7 +327,7 @@ constructor(
         callback: (Result<Unit>) -> Unit
     ) {
         if (!ably.channels.containsKey(trackableId)) {
-            val channelName = "$CHANNEL_NAME_PREFIX$trackableId"
+            val channelName = trackableId.toChannelName()
             val channelOptions = ChannelOptions().apply {
                 val modesList = mutableListOf(ChannelMode.presence, ChannelMode.presence_subscribe)
                 if (willPublish) {
@@ -688,12 +688,14 @@ constructor(
         }
     }
 
-    private fun getChannelIfExists(trackableId: String) =
-        if (ably.channels.containsKey(trackableId)) {
-            ably.channels.get(trackableId)
+    private fun getChannelIfExists(trackableId: String): Channel? {
+        val channelName = trackableId.toChannelName()
+        return if (ably.channels.containsKey(channelName)) {
+            ably.channels.get(channelName)
         } else {
             null
         }
+    }
 
     override suspend fun close(presenceData: PresenceData) {
         // launches closing of all channels in parallel but waits for all channels to be closed
@@ -903,4 +905,6 @@ constructor(
             throw ConnectionException(ErrorInformation("Timeout was thrown when waiting for Ably to connect"))
         }
     }
+
+    private fun String.toChannelName() = "$CHANNEL_NAME_PREFIX$this"
 }
