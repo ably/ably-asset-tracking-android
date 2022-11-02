@@ -328,21 +328,9 @@ constructor(
     ) {
         if (!ably.channels.containsKey(trackableId)) {
             val channelName = trackableId.toChannelName()
-            val channelOptions = ChannelOptions().apply {
-                val modesList = mutableListOf(ChannelMode.presence, ChannelMode.presence_subscribe)
-                if (willPublish) {
-                    modesList.add(ChannelMode.publish)
-                }
-                if (willSubscribe) {
-                    modesList.add(ChannelMode.subscribe)
-                }
-                modes = modesList.toTypedArray()
-            }
+            val channelOptions = createChannelOptions(willPublish, willSubscribe, useRewind)
             try {
-                val channel = if (useRewind)
-                    ably.channels.get(channelName, channelOptions.apply { params = mapOf("rewind" to "1") })
-                else
-                    ably.channels.get(channelName, channelOptions)
+                val channel = ably.channels.get(channelName, channelOptions)
                 scope.launch {
                     try {
                         if (channel.isDetachedOrFailed()) {
@@ -362,6 +350,22 @@ constructor(
             callback(Result.success(Unit))
         }
     }
+
+    private fun createChannelOptions(willPublish: Boolean, willSubscribe: Boolean, useRewind: Boolean) =
+        ChannelOptions().apply {
+            val modesList = mutableListOf(ChannelMode.presence, ChannelMode.presence_subscribe)
+            if (willPublish) {
+                modesList.add(ChannelMode.publish)
+            }
+            if (willSubscribe) {
+                modesList.add(ChannelMode.subscribe)
+            }
+            modes = modesList.toTypedArray()
+
+            if (useRewind) {
+                params = mapOf("rewind" to "1")
+            }
+        }
 
     override suspend fun connect(
         trackableId: String,
