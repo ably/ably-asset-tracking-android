@@ -5,6 +5,10 @@ import androidx.annotation.Nullable;
 
 import com.ably.tracking.connection.TokenRequest;
 
+/**
+ * This is an empty implementation of the interface that uses dummy values.
+ * It is created to show how this interface can be implemented.
+ */
 public class EmptyTokenRequest implements TokenRequest {
     @NonNull
     @Override

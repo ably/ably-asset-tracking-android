@@ -94,7 +94,7 @@ public class UsageExamples {
     private Authentication createJwtAuthentication() {
         return AuthenticationFacade.jwt(tokenParams -> CompletableFuture.supplyAsync(() -> {
             // get the token from you auth servers
-            return "created-jwt";
+            return "DUMMY PLACEHOLDER: RETURN JWT FROM AUTH SERVER HERE";
         }));
     }
 }
