@@ -48,7 +48,7 @@ Then you should use the `PublisherFacade` instance to perform all operations.
 ### Using Publisher Facade
 
 Below we only describe changes in the Java API.
-For the full publisher SDK usage guide please see the [Kotlin guide](README.md#Publishing SDK).
+For the full publisher SDK usage guide please see the [Kotlin guide](README.md#publishing-sdk).
 
 Async operations are returning a `CompletableFuture` that will complete once the operation finishes.
 
@@ -100,7 +100,7 @@ Then you should use the `SubscriberFacade` instance to perform all operations.
 ### Use Subscriber Facade
 
 Below we only describe changes in the Java API.
-For the full subscriber SDK usage guide please see the [Kotlin guide](README.md#Subscribing SDK).
+For the full subscriber SDK usage guide please see the [Kotlin guide](README.md#subscribing-sdk).
 
 Async operations are returning a `CompletableFuture` that will complete once the operation finishes.
 
@@ -140,7 +140,7 @@ Then you should use the `LocationAnimatorFacade` instance to perform all operati
 ### Using Location Animator Facade
 
 Below we only describe changes in the Java API.
-For the full location animator usage guide please see the [Kotlin guide](README.md#Location Animator).
+For the full location animator usage guide please see the [Kotlin guide](README.md#location-animator).
 
 Flows of data were converted to a listener-based approach and in order to receive the data you should add a listener to the `LocationAnimatorFacade`.
 
