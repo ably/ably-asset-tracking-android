@@ -412,8 +412,8 @@ constructor(
     }
 
     private suspend fun failChannel(channel: Channel, presenceData: PresenceData, errorInfo: ErrorInfo) {
-        channel.setConnectionFailed(errorInfo)
         leavePresence(channel, presenceData)
+        channel.setConnectionFailed(errorInfo)
         channel.unsubscribe()
         channel.presence.unsubscribe()
         ably.channels.release(channel.name)
