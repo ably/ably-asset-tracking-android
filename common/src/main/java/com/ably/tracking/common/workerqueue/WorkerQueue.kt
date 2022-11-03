@@ -7,21 +7,21 @@ import kotlinx.coroutines.launch
 /**
  * A worker queue is responsible for enqueueing [Worker]s and executing them.
  * Params:
- * Properties - the type of properties used by this worker as both input and output
- * WorkerSpecification - the type of specification used to post worker back to the queue
+ * PropertiesType - the type of properties used by workers as both input and output
+ * WorkerSpecificationType - the type of specification used to post worker back to the queue
  *
  * copyProperties - lambda used to copy properties, introducing generic copy method to [Properties] interface caused too much typing complexity.
  */
-class WorkerQueue<Properties : QueueProperties, WorkerSpecification>(
-    private var properties: Properties,
+class WorkerQueue<PropertiesType : Properties, WorkerSpecificationType>(
+    private var properties: PropertiesType,
     private val scope: CoroutineScope,
-    private val workerFactory: WorkerFactory<Properties, WorkerSpecification>,
-    private val copyProperties: Properties.() -> Properties,
+    private val workerFactory: WorkerFactory<PropertiesType, WorkerSpecificationType>,
+    private val copyProperties: PropertiesType.() -> PropertiesType,
     private val getStoppedException: () -> Exception,
     maximumWorkerQueueCapacity: Int = 100,
 ) {
 
-    private val workerChannel = Channel<Worker<Properties, WorkerSpecification>>(capacity = maximumWorkerQueueCapacity)
+    private val workerChannel = Channel<Worker<PropertiesType, WorkerSpecificationType>>(capacity = maximumWorkerQueueCapacity)
 
     init {
         scope.launch { executeWorkers() }
@@ -37,7 +37,7 @@ class WorkerQueue<Properties : QueueProperties, WorkerSpecification>(
         }
     }
 
-    private fun execute(worker: Worker<Properties, WorkerSpecification>) {
+    private fun execute(worker: Worker<PropertiesType, WorkerSpecificationType>) {
         properties = worker.doWork(
             properties = properties.copyProperties(),
             doAsyncWork = { asyncWork -> scope.launch { asyncWork() } },
@@ -48,9 +48,9 @@ class WorkerQueue<Properties : QueueProperties, WorkerSpecification>(
     /**
      * Enqueue worker created from passed specification for execution.
      *
-     * @param workerSpecification [WorkerSpecification] specification of worker to be executed.
+     * @param workerSpecification [WorkerSpecificationType] specification of worker to be executed.
      */
-    fun enqueue(workerSpecification: WorkerSpecification) {
+    fun enqueue(workerSpecification: WorkerSpecificationType) {
         val worker = workerFactory.createWorker(workerSpecification)
         scope.launch { workerChannel.send(worker) }
     }

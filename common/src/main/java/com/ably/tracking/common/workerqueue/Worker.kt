@@ -5,10 +5,10 @@ import com.ably.tracking.common.ResultCallbackFunction
 /**
  * A [Worker] interface represents workers which execute work inside [WorkerQueue].
  * Params:
- * Properties - the type of properties used by this worker as both input and output
- * WorkerSpecification - the type of specification used to post another worker back to the queue
+ * PropertiesType - the type of properties used by this worker as both input and output
+ * WorkerSpecificationType - the type of specification used to post another worker back to the queue
  */
-interface Worker<Properties : QueueProperties, WorkerSpecification> {
+interface Worker<PropertiesType : Properties, WorkerSpecificationType> {
     /**
      * This function is provided in order for implementors to implement synchronous work. Any asynchronous tasks
      * should be executed inside [doAsyncWork] function. If a worker needs to delegate another task to the queue
@@ -21,10 +21,10 @@ interface Worker<Properties : QueueProperties, WorkerSpecification> {
      * @return updated [Properties] modified by this worker.
      */
     fun doWork(
-        properties: Properties,
+        properties: PropertiesType,
         doAsyncWork: (suspend () -> Unit) -> Unit,
-        postWork: (WorkerSpecification) -> Unit
-    ): Properties
+        postWork: (WorkerSpecificationType) -> Unit
+    ): PropertiesType
 
     /**
      * This function is provided in order for implementors to define what should happen when the worker
@@ -39,7 +39,7 @@ interface Worker<Properties : QueueProperties, WorkerSpecification> {
 /**
  * An abstract class to avoid duplication of default [doWhenStopped] implementation
  */
-abstract class CallbackWorker<Properties : QueueProperties, WorkerSpecification>(protected val callbackFunction: ResultCallbackFunction<Unit>) :
+abstract class CallbackWorker<Properties : com.ably.tracking.common.workerqueue.Properties, WorkerSpecification>(protected val callbackFunction: ResultCallbackFunction<Unit>) :
     Worker<Properties, WorkerSpecification> {
 
     override fun doWhenStopped(exception: Exception) {
