@@ -80,11 +80,25 @@ interface Ably {
 
     /**
      * A suspending version of [subscribeForPresenceMessages]
+     *
+     * @param emitCurrentMessages If set to true it emits messages for each client that's currently in the presence.
      * */
     suspend fun subscribeForPresenceMessages(
         trackableId: String,
-        listener: (PresenceMessage) -> Unit
+        listener: (PresenceMessage) -> Unit,
+        emitCurrentMessages: Boolean = true,
     ): Result<Unit>
+
+    /**
+     * Returns current messages from the trackable channel's presence.
+     * Should be called only when there's an existing channel for the [trackableId].
+     * If a channel for the [trackableId] doesn't exist then nothing happens.
+     *
+     * @param trackableId The ID of the trackable channel.
+     *
+     * @return Result containing the current presence messages from the channel's presence. If something goes wrong it will contain a [ConnectionException].
+     * */
+    suspend fun getCurrentPresence(trackableId: String): Result<List<PresenceMessage>>
 
     /**
      * Sends an enhanced location update to the channel.
@@ -632,11 +646,14 @@ constructor(
 
     override suspend fun subscribeForPresenceMessages(
         trackableId: String,
-        listener: (PresenceMessage) -> Unit
+        listener: (PresenceMessage) -> Unit,
+        emitCurrentMessages: Boolean,
     ): Result<Unit> {
         val channel = channels[trackableId] ?: return Result.success(Unit)
         return try {
-            emitAllCurrentMessagesFromPresence(channel, listener)
+            if (emitCurrentMessages) {
+                emitAllCurrentMessagesFromPresence(channel, listener)
+            }
             channel.presence.subscribe {
                 val parsedMessage = it.toTracking(gson)
                 if (parsedMessage != null) {
@@ -652,20 +669,33 @@ constructor(
         }
     }
 
+    private fun emitAllCurrentMessagesFromPresence(channel: Channel, listener: (PresenceMessage) -> Unit) {
+        getAllCurrentMessagesFromPresence(channel).forEach { presenceMessage ->
+            // Each message is launched in a fire-and-forget manner to not block this method on the listener() call
+            scope.launch { listener(presenceMessage) }
+        }
+    }
+
+    override suspend fun getCurrentPresence(trackableId: String): Result<List<PresenceMessage>> {
+        val channel = channels[trackableId] ?: return Result.success(emptyList())
+        return suspendCancellableCoroutine { continuation ->
+            try {
+                val currentPresenceMessages = getAllCurrentMessagesFromPresence(channel)
+                continuation.resume(Result.success(currentPresenceMessages))
+            } catch (ablyException: AblyException) {
+                continuation.resume(Result.failure(ablyException.errorInfo.toTrackingException()))
+            }
+        }
+    }
+
     /**
      * Warning: This method might block the current thread due to the presence.get(true) call.
      */
-    private fun emitAllCurrentMessagesFromPresence(channel: Channel, listener: (PresenceMessage) -> Unit) {
-        channel.presence.get(true).let { messages ->
-            messages.forEach { presenceMessage ->
-                // Each message is launched in a fire-and-forget manner to not block this method on the listener() call
-                scope.launch {
-                    val parsedMessage = presenceMessage.toTracking(gson)
-                    if (parsedMessage != null) {
-                        listener(parsedMessage)
-                    } else {
-                        logHandler?.w("Presence message in unexpected format: $presenceMessage")
-                    }
+    private fun getAllCurrentMessagesFromPresence(channel: Channel): List<PresenceMessage> {
+        return channel.presence.get(true).mapNotNull { presenceMessage ->
+            presenceMessage.toTracking(gson).also {
+                if (it == null) {
+                    logHandler?.w("Presence message in unexpected format: $presenceMessage")
                 }
             }
         }
