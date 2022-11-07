@@ -92,7 +92,7 @@ interface Ably {
     /**
      * Returns current messages from the trackable channel's presence.
      * Should be called only when there's an existing channel for the [trackableId].
-     * If a channel for the [trackableId] doesn't exist then nothing happens.
+     * If a channel for the [trackableId] doesn't exist then this method returns a Result with an empty list.
      *
      * @param trackableId The ID of the trackable channel.
      *
