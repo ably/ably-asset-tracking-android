@@ -19,12 +19,13 @@ internal class SubscribeForPresenceMessagesWorker(
     ): Properties {
         doAsyncWork {
             val currentPresenceMessagesResult = ably.getCurrentPresence(trackableId)
-            val initialPresenceMessages: List<PresenceMessage> = try {
-                currentPresenceMessagesResult.getOrThrow()
-            } catch (error: Throwable) {
-                postDisconnectWork(postWork, Result.failure(error))
-                return@doAsyncWork
-            }
+            val initialPresenceMessages: List<PresenceMessage> =
+                try {
+                    currentPresenceMessagesResult.getOrThrow()
+                } catch (error: Throwable) {
+                    postDisconnectWork(postWork, Result.failure(error))
+                    return@doAsyncWork
+                }
 
             val subscribeForPresenceMessagesResult = ably.subscribeForPresenceMessages(
                 trackableId = trackableId,
