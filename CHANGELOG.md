@@ -1,5 +1,14 @@
 # Change log
 
+## [1.4.1](https://github.com/ably/ably-asset-tracking-android/tree/v1.4.1)
+
+[Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.4.0...v1.4.1)
+
+**Improved Subscriber behaviour:**
+
+- Wait for the presence data sync before returning a subscriber instance [\#792](https://github.com/ably/ably-asset-tracking-android/issues/792),
+  implemented in [\#794](https://github.com/ably/ably-asset-tracking-android/pull/794) ([KacperKluka](https://github.com/KacperKluka))
+
 ## [1.4.0](https://github.com/ably/ably-asset-tracking-android/tree/v1.4.0)
 
 [Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.4.0-rc.2...v1.4.0)
