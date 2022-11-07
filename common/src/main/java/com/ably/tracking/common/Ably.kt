@@ -691,15 +691,14 @@ constructor(
     /**
      * Warning: This method might block the current thread due to the presence.get(true) call.
      */
-    private fun getAllCurrentMessagesFromPresence(channel: Channel): List<PresenceMessage> {
-        return channel.presence.get(true).mapNotNull { presenceMessage ->
+    private fun getAllCurrentMessagesFromPresence(channel: Channel): List<PresenceMessage> =
+        channel.presence.get(true).mapNotNull { presenceMessage ->
             presenceMessage.toTracking(gson).also {
                 if (it == null) {
                     logHandler?.w("Presence message in unexpected format: $presenceMessage")
                 }
             }
         }
-    }
 
     override fun updatePresenceData(trackableId: String, presenceData: PresenceData, callback: (Result<Unit>) -> Unit) {
         scope.launch {
