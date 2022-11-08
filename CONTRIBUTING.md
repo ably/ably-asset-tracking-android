@@ -90,7 +90,7 @@ The release process must include the following steps:
 10. Run the publish workflows:
     - These are manually triggered, where you supply the version number so the script publishes only up to that tag
     - They must be run from the `main` branch
-    - First workflow: [Maven Central](https://github.com/ably/ably-asset-tracking-android/blob/main/.github/workflows/publish-maven-central.yml)
+    - First workflow: [Maven Central](https://github.com/ably/ably-asset-tracking-android/actions/workflows/publish-maven-central.yml)
     - Second workflow: [GitHub Packages](https://github.com/ably/ably-asset-tracking-android/actions/workflows/publish-github-packages.yml)
 
 We tend to use [github_changelog_generator](https://github.com/skywinder/Github-Changelog-Generator) to collate the information required for a change log update.
