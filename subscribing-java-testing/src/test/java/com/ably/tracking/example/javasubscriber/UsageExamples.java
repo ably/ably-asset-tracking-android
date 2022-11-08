@@ -122,11 +122,11 @@ public class UsageExamples {
         });
 
         locationAnimatorFacade.addPositionListener(position -> {
-            // handle new map marker position
+            // update map marker position
         });
 
         locationAnimatorFacade.addCameraPositionListener(position -> {
-            // handle new camera position
+            // update camera position
         });
 
         locationAnimatorFacade.stop();
