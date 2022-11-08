@@ -92,6 +92,8 @@ The release process must include the following steps:
     - They must be run from the `main` branch
     - First workflow: [Maven Central](https://github.com/ably/ably-asset-tracking-android/actions/workflows/publish-maven-central.yml)
     - Second workflow: [GitHub Packages](https://github.com/ably/ably-asset-tracking-android/actions/workflows/publish-github-packages.yml)
+11. Create the release on GitHub including populating the release notes
+12. Create the entry on the [Ably Changelog](https://changelog.ably.com/) (via [headwayapp](https://headwayapp.co/))
 
 We tend to use [github_changelog_generator](https://github.com/skywinder/Github-Changelog-Generator) to collate the information required for a change log update.
 Your mileage may vary, but it seems the most reliable method to invoke the generator is something like:
