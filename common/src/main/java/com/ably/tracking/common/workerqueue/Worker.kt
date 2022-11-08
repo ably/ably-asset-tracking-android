@@ -39,8 +39,8 @@ interface Worker<PropertiesType : Properties, WorkerSpecificationType> {
 /**
  * An abstract class to avoid duplication of default [doWhenStopped] implementation
  */
-abstract class CallbackWorker<Properties : com.ably.tracking.common.workerqueue.Properties, WorkerSpecification>(protected val callbackFunction: ResultCallbackFunction<Unit>) :
-    Worker<Properties, WorkerSpecification> {
+abstract class CallbackWorker<PropertiesType : Properties, WorkerSpecification>(protected val callbackFunction: ResultCallbackFunction<Unit>) :
+    Worker<PropertiesType, WorkerSpecification> {
 
     override fun doWhenStopped(exception: Exception) {
         callbackFunction(Result.failure(exception))
