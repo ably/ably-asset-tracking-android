@@ -658,7 +658,7 @@ constructor(
     }
 
     override suspend fun getCurrentPresence(trackableId: String): Result<List<PresenceMessage>> {
-        val channel = channels[trackableId] ?: return Result.success(emptyList())
+        val channel = getChannelIfExists(trackableId) ?: return Result.success(emptyList())
         return suspendCancellableCoroutine { continuation ->
             try {
                 val currentPresenceMessages = getAllCurrentMessagesFromPresence(channel)
