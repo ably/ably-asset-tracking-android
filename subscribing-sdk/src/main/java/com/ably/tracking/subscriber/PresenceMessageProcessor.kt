@@ -6,7 +6,7 @@ import com.ably.tracking.common.PresenceMessage
 
 internal fun processPresenceMessage(
     presenceMessage: PresenceMessage,
-    properties: Properties,
+    properties: SubscriberProperties,
     subscriberInteractor: SubscriberInteractor,
 ) {
     when (presenceMessage.action) {
