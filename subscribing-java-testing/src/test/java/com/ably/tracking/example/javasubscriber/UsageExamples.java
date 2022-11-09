@@ -6,10 +6,14 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.withSettings;
 
+import androidx.annotation.OptIn;
+
 import com.ably.tracking.Accuracy;
 import com.ably.tracking.Resolution;
+import com.ably.tracking.annotations.Experimental;
 import com.ably.tracking.connection.Authentication;
 import com.ably.tracking.connection.ConnectionConfiguration;
+import com.ably.tracking.java.AuthenticationFacade;
 import com.ably.tracking.subscriber.Subscriber;
 import com.ably.tracking.subscriber.java.SubscriberFacade;
 
@@ -39,7 +43,11 @@ public class UsageExamples {
     @Test
     public void subscriberBuilderUsageExample() {
         Subscriber.Builder nativeBuilder = Subscriber.subscribers()
-            .connection(new ConnectionConfiguration(Authentication.basic("CLIENT_ID", "API_KEY"), null))
+            .connection(new ConnectionConfiguration(AuthenticationFacade.basic("CLIENT_ID", "API_KEY"), null))
+            // or
+            // .connection(new ConnectionConfiguration(createTokenRequestAuthentication(), null))
+            // or
+            // .connection(new ConnectionConfiguration(createJwtAuthentication(), null))
             .trackingId("TRACKING_ID")
             .resolution(new Resolution(Accuracy.BALANCED, 1000L, 1.0));
         SubscriberFacade.Builder wrappedSubscriberBuilder = SubscriberFacade.Builder.wrap(nativeBuilder);
@@ -59,6 +67,7 @@ public class UsageExamples {
     }
 
     @Test
+    @OptIn(markerClass = Experimental.class)
     public void subscriberFacadeUsageExample() {
         subscriberFacade.addListener(assetState -> {
             // handle assetState
@@ -66,6 +75,18 @@ public class UsageExamples {
 
         subscriberFacade.addLocationListener(locationUpdate -> {
             // handle locationUpdate
+        });
+
+        subscriberFacade.addPublisherPresenceListener(isPublisherPresent -> {
+            // handle isPublisherPresent
+        });
+
+        subscriberFacade.addResolutionListener(resolution -> {
+            // handle resolution
+        });
+
+        subscriberFacade.addNextLocationUpdateIntervalListener(nextLocationUpdateInterval -> {
+            // handle nextLocationUpdateInterval
         });
 
         try {
@@ -77,5 +98,19 @@ public class UsageExamples {
         } catch (InterruptedException e) {
             // handle interruption exception
         }
+    }
+
+    private Authentication createTokenRequestAuthentication() {
+        return AuthenticationFacade.tokenRequest(tokenParams -> CompletableFuture.supplyAsync(() -> {
+            // get the token from your auth servers
+            return new EmptyTokenRequest();
+        }));
+    }
+
+    private Authentication createJwtAuthentication() {
+        return AuthenticationFacade.jwt(tokenParams -> CompletableFuture.supplyAsync(() -> {
+            // get the token from your auth servers
+            return "DUMMY PLACEHOLDER: RETURN JWT FROM AUTH SERVER HERE";
+        }));
     }
 }

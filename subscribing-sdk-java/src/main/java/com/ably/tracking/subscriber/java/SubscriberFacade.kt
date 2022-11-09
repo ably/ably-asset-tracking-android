@@ -1,7 +1,11 @@
 package com.ably.tracking.subscriber.java
 
 import com.ably.tracking.Resolution
+import com.ably.tracking.annotations.Experimental
+import com.ably.tracking.java.LocationUpdateIntervalListener
 import com.ably.tracking.java.LocationUpdateListener
+import com.ably.tracking.java.PublisherPresenceListener
+import com.ably.tracking.java.ResolutionListener
 import com.ably.tracking.java.TrackableStateListener
 import com.ably.tracking.subscriber.Subscriber
 import java.util.concurrent.CompletableFuture
@@ -49,6 +53,29 @@ interface SubscriberFacade : Subscriber {
      * @param listener the listening function to be notified.
      */
     fun addListener(listener: TrackableStateListener)
+
+    /**
+     * Adds a handler to be notified when the the presence of the publisher changes.
+     * The publisher is present when the value is "true". If the value is "false" the publisher is not present.
+     *
+     * @param listener the listening function to be notified.
+     */
+    @Experimental
+    fun addPublisherPresenceListener(listener: PublisherPresenceListener)
+
+    /**
+     * Adds a handler to be notified when the publisher's resolution changes.
+     *
+     * @param listener the listening function to be notified.
+     */
+    fun addResolutionListener(listener: ResolutionListener)
+
+    /**
+     * Adds a handler to be notified when the the estimated next location update intervals in milliseconds changes.
+     *
+     * @param listener the listening function to be notified.
+     */
+    fun addNextLocationUpdateIntervalListener(listener: LocationUpdateIntervalListener)
 
     /**
      * Stops this subscriber from listening to published locations. Once a subscriber has been stopped, it cannot be
