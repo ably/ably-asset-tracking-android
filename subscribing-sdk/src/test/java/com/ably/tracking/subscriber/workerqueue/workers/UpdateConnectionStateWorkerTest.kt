@@ -4,7 +4,7 @@ import com.ably.tracking.Accuracy
 import com.ably.tracking.Resolution
 import com.ably.tracking.common.ConnectionState
 import com.ably.tracking.common.ConnectionStateChange
-import com.ably.tracking.subscriber.Properties
+import com.ably.tracking.subscriber.SubscriberProperties
 import com.ably.tracking.subscriber.SubscriberInteractor
 import com.ably.tracking.subscriber.workerqueue.WorkerSpecification
 import io.mockk.every
@@ -33,7 +33,7 @@ internal class UpdateConnectionStateWorkerTest {
     @Test
     fun `should call updateTrackableState and update properties`() = runBlockingTest {
         // given
-        val initialProperties = Properties(Resolution(Accuracy.BALANCED, 100, 100.0))
+        val initialProperties = SubscriberProperties(Resolution(Accuracy.BALANCED, 100, 100.0))
 
         // when
         val updatedProperties =

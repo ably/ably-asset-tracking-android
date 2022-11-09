@@ -4,7 +4,7 @@ import com.ably.tracking.Accuracy
 import com.ably.tracking.Resolution
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ResultCallbackFunction
-import com.ably.tracking.subscriber.Properties
+import com.ably.tracking.subscriber.SubscriberProperties
 import com.ably.tracking.subscriber.SubscriberInteractor
 import com.ably.tracking.subscriber.workerqueue.WorkerSpecification
 import com.ably.tracking.test.common.mockConnectSuccess
@@ -39,7 +39,7 @@ internal class StartConnectionWorkerTest {
     @Test
     fun `should call ably connect and post update trackable worker specification on success`() = runBlockingTest {
         // given
-        val initialProperties = Properties(Resolution(Accuracy.BALANCED, 100, 100.0))
+        val initialProperties = SubscriberProperties(Resolution(Accuracy.BALANCED, 100, 100.0))
         ably.mockStartConnectionSuccess()
         ably.mockConnectSuccess(trackableId)
 
@@ -65,7 +65,7 @@ internal class StartConnectionWorkerTest {
     @Test
     fun `should call ably connect and notify callback on failure`() = runBlockingTest {
         // given
-        val initialProperties = Properties(Resolution(Accuracy.BALANCED, 100, 100.0))
+        val initialProperties = SubscriberProperties(Resolution(Accuracy.BALANCED, 100, 100.0))
         ably.mockStartConnectionSuccess()
         ably.mockConnectFailure(trackableId)
 
@@ -92,7 +92,7 @@ internal class StartConnectionWorkerTest {
     @Test
     fun `should notify callback about failure when starting Ably connection fails`() = runBlockingTest {
         // given
-        val initialProperties = Properties(Resolution(Accuracy.BALANCED, 100, 100.0))
+        val initialProperties = SubscriberProperties(Resolution(Accuracy.BALANCED, 100, 100.0))
         ably.mockStartConnectionFailure()
         ably.mockConnectSuccess(trackableId)
 
