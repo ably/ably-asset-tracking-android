@@ -19,8 +19,10 @@ import com.google.gson.Gson
 import io.ably.lib.realtime.AblyRealtime
 import io.ably.lib.realtime.Channel
 import io.ably.lib.realtime.ChannelState
+import io.ably.lib.realtime.ChannelStateListener
 import io.ably.lib.realtime.CompletionListener
 import io.ably.lib.realtime.ConnectionState
+import io.ably.lib.realtime.ConnectionStateListener
 import io.ably.lib.rest.Auth
 import io.ably.lib.types.AblyException
 import io.ably.lib.types.ChannelMode
@@ -763,15 +765,17 @@ constructor(
             return
         }
         suspendCancellableCoroutine<Unit> { continuation ->
-            connection.on {
-                if (continuation.isActive) {
-                    if (it.current.isClosed()) {
+            connection.on(object : ConnectionStateListener {
+                override fun onConnectionStateChanged(connectionStateChange: ConnectionStateListener.ConnectionStateChange) {
+                    if (connectionStateChange.current.isClosed()) {
+                        connection.off(this)
                         continuation.resume(Unit)
-                    } else if (it.current.isFailed()) {
-                        continuation.resumeWithException(it.reason.toTrackingException())
+                    } else if (connectionStateChange.current.isFailed()) {
+                        connection.off(this)
+                        continuation.resumeWithException(connectionStateChange.reason.toTrackingException())
                     }
                 }
-            }
+            })
             close()
         }
     }
@@ -826,11 +830,14 @@ constructor(
         try {
             withTimeout(timeoutInMilliseconds) {
                 suspendCancellableCoroutine<Unit> { continuation ->
-                    channel.on { channelStateChange ->
-                        if (channelStateChange.current.isConnected() && continuation.isActive) {
-                            continuation.resume(Unit)
+                    channel.on(object : ChannelStateListener {
+                        override fun onChannelStateChanged(channelStateChange: ChannelStateListener.ChannelStateChange) {
+                            if (channelStateChange.current.isConnected()) {
+                                channel.off(this)
+                                continuation.resume(Unit)
+                            }
                         }
-                    }
+                    })
                 }
             }
         } catch (exception: TimeoutCancellationException) {
@@ -937,14 +944,20 @@ constructor(
         try {
             withTimeout(timeoutInMilliseconds) {
                 suspendCancellableCoroutine<Unit> { continuation ->
-                    connection.on { channelStateChange ->
-                        if (continuation.isActive) {
+                    connection.on(object : ConnectionStateListener {
+                        override fun onConnectionStateChanged(connectionStateChange: ConnectionStateListener.ConnectionStateChange) {
                             when {
-                                channelStateChange.current.isConnected() -> continuation.resume(Unit)
-                                channelStateChange.current.isFailed() -> continuation.resumeWithException(channelStateChange.reason.toTrackingException())
+                                connectionStateChange.current.isConnected() -> {
+                                    connection.off(this)
+                                    continuation.resume(Unit)
+                                }
+                                connectionStateChange.current.isFailed() -> {
+                                    connection.off(this)
+                                    continuation.resumeWithException(connectionStateChange.reason.toTrackingException())
+                                }
                             }
                         }
-                    }
+                    })
                     connect()
                 }
             }
