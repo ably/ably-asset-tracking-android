@@ -3,7 +3,7 @@ package com.ably.tracking.subscriber.workerqueue.workers
 import com.ably.tracking.Accuracy
 import com.ably.tracking.Resolution
 import com.ably.tracking.common.Ably
-import com.ably.tracking.subscriber.Properties
+import com.ably.tracking.subscriber.SubscriberProperties
 import com.ably.tracking.test.common.mockDisconnectSuccess
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -26,7 +26,7 @@ internal class DisconnectWorkerTest {
     @Test
     fun `should call ably disconnect and notify callback`() = runBlockingTest {
         // given
-        val initialProperties = Properties(Resolution(Accuracy.BALANCED, 100, 100.0))
+        val initialProperties = SubscriberProperties(Resolution(Accuracy.BALANCED, 100, 100.0))
         ably.mockDisconnectSuccess(trackableId)
 
         // when

@@ -4,6 +4,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.TrackableState
+import com.ably.tracking.annotations.Experimental
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.subscriber.Subscriber
 import com.ably.tracking.test.android.common.BooleanExpectation
@@ -238,5 +239,52 @@ class PublisherAndSubscriberTests {
 
         // then
         subscriberFailedExpectation.assertFulfilled()
+    }
+
+    @OptIn(Experimental::class)
+    @Test
+    fun shouldNotEmitPublisherPresenceFalseIfPublisherIsPresentFromTheStart() {
+        // given
+        val subscriberEmittedPublisherPresentExpectation = UnitExpectation("subscriber emitted publisher present")
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val trackableId = UUID.randomUUID().toString()
+        val scope = CoroutineScope(Dispatchers.Default)
+        val publisherPresentValues = mutableListOf<Boolean>()
+
+        // when
+        // create publisher and start tracking
+        val publisher = createAndStartPublisher(context, sendResolution = true)
+        runBlocking {
+            publisher.track(Trackable(trackableId))
+        }
+
+        // create subscriber and listen for publisher presence
+        var subscriber: Subscriber
+        runBlocking {
+            subscriber = createAndStartSubscriber(trackableId)
+        }
+        subscriber.publisherPresence
+            .onEach { isPublisherPresent ->
+                publisherPresentValues.add(isPublisherPresent)
+                if (isPublisherPresent) {
+                    subscriberEmittedPublisherPresentExpectation.fulfill()
+                }
+            }
+            .launchIn(scope)
+
+        // await for publisher present event
+        subscriberEmittedPublisherPresentExpectation.await()
+
+        // cleanup
+        runBlocking {
+            coroutineScope {
+                launch { publisher.stop() }
+                launch { subscriber.stop() }
+            }
+        }
+
+        // then
+        subscriberEmittedPublisherPresentExpectation.assertFulfilled()
+        Assert.assertTrue("first publisherPresence value should be true", publisherPresentValues.first())
     }
 }

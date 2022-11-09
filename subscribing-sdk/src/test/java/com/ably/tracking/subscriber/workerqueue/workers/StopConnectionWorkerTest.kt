@@ -4,7 +4,7 @@ import com.ably.tracking.Accuracy
 import com.ably.tracking.Resolution
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ResultCallbackFunction
-import com.ably.tracking.subscriber.Properties
+import com.ably.tracking.subscriber.SubscriberProperties
 import com.ably.tracking.subscriber.SubscriberInteractor
 import com.ably.tracking.subscriber.workerqueue.WorkerSpecification
 import com.ably.tracking.test.common.mockCloseFailure
@@ -35,7 +35,7 @@ internal class StopConnectionWorkerTest {
     @Test
     fun `should call ably close and notify callback with success`() = runBlockingTest {
         // given
-        val initialProperties = Properties(Resolution(Accuracy.BALANCED, 100, 100.0))
+        val initialProperties = SubscriberProperties(Resolution(Accuracy.BALANCED, 100, 100.0))
         ably.mockCloseSuccessWithDelay(10)
 
         // when
@@ -51,7 +51,7 @@ internal class StopConnectionWorkerTest {
     @Test
     fun `should call ably close and notify callback with failure when it fails`() = runBlockingTest {
         // given
-        val initialProperties = Properties(Resolution(Accuracy.BALANCED, 100, 100.0))
+        val initialProperties = SubscriberProperties(Resolution(Accuracy.BALANCED, 100, 100.0))
         ably.mockCloseFailure()
 
         // when
