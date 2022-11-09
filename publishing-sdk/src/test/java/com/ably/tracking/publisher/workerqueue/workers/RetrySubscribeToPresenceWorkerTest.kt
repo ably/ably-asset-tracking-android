@@ -62,7 +62,7 @@ internal class RetrySubscribeToPresenceWorkerTest {
 
         // then
         verify(exactly = 0) {
-            ably.subscribeForPresenceMessages(trackable.id, any(), any())
+            ably.subscribeForPresenceMessages(trackable.id, any(), any<(Result<Unit>) -> Unit>())
         }
     }
 
@@ -91,7 +91,7 @@ internal class RetrySubscribeToPresenceWorkerTest {
 
             // then
             verify(exactly = 0) {
-                ably.subscribeForPresenceMessages(trackable.id, any(), any())
+                ably.subscribeForPresenceMessages(trackable.id, any(), any<(Result<Unit>) -> Unit>())
             }
         }
     }
