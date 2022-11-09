@@ -764,10 +764,12 @@ constructor(
         }
         suspendCancellableCoroutine<Unit> { continuation ->
             connection.on {
-                if (it.current.isClosed()) {
-                    continuation.resume(Unit)
-                } else if (it.current.isFailed()) {
-                    continuation.resumeWithException(it.reason.toTrackingException())
+                if (continuation.isActive) {
+                    if (it.current.isClosed()) {
+                        continuation.resume(Unit)
+                    } else if (it.current.isFailed()) {
+                        continuation.resumeWithException(it.reason.toTrackingException())
+                    }
                 }
             }
             close()
@@ -825,7 +827,7 @@ constructor(
             withTimeout(timeoutInMilliseconds) {
                 suspendCancellableCoroutine<Unit> { continuation ->
                     channel.on { channelStateChange ->
-                        if (channelStateChange.current.isConnected()) {
+                        if (channelStateChange.current.isConnected() && continuation.isActive) {
                             continuation.resume(Unit)
                         }
                     }
@@ -936,9 +938,11 @@ constructor(
             withTimeout(timeoutInMilliseconds) {
                 suspendCancellableCoroutine<Unit> { continuation ->
                     connection.on { channelStateChange ->
-                        when {
-                            channelStateChange.current.isConnected() -> continuation.resume(Unit)
-                            channelStateChange.current.isFailed() -> continuation.resumeWithException(channelStateChange.reason.toTrackingException())
+                        if (continuation.isActive) {
+                            when {
+                                channelStateChange.current.isConnected() -> continuation.resume(Unit)
+                                channelStateChange.current.isFailed() -> continuation.resumeWithException(channelStateChange.reason.toTrackingException())
+                            }
                         }
                     }
                     connect()
