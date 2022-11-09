@@ -17,6 +17,7 @@ import com.ably.tracking.ConnectionException;
 import com.ably.tracking.Resolution;
 import com.ably.tracking.connection.Authentication;
 import com.ably.tracking.connection.ConnectionConfiguration;
+import com.ably.tracking.java.AuthenticationFacade;
 import com.ably.tracking.publisher.DefaultProximity;
 import com.ably.tracking.publisher.DefaultResolutionConstraints;
 import com.ably.tracking.publisher.DefaultResolutionSet;
@@ -65,7 +66,7 @@ public class PublisherInterfaceUsageExamples {
         try {
             publisherBuilder
                 .androidContext(context)
-                .connection(new ConnectionConfiguration(Authentication.basic("CLIENT_ID", "ABLY_API_KEY"), null))
+                .connection(new ConnectionConfiguration(AuthenticationFacade.basic("CLIENT_ID", "ABLY_API_KEY"), null))
                 .map(new MapConfiguration("MAPBOX_API_KEY"))
                 .resolutionPolicy(resolutionPolicyFactory)
                 .locationSource(LocationSourceRaw.createRaw(new LocationHistoryData(new ArrayList<>()), null))
