@@ -72,7 +72,7 @@ fun Ably.mockSubscribeToPresenceSuccess(
     } answers {
         callbackSlot.captured(Result.success(Unit))
     }
-    coEvery { subscribeForPresenceMessages(trackableId, capture(listenerSlot)) } returns Result.success(Unit)
+    coEvery { subscribeForPresenceMessages(trackableId, capture(listenerSlot), any<Boolean>()) } returns Result.success(Unit)
 }
 
 fun Ably.mockSubscribeToPresenceError(trackableId: String) {
@@ -82,7 +82,18 @@ fun Ably.mockSubscribeToPresenceError(trackableId: String) {
     } answers {
         callbackSlot.captured(Result.failure(anyConnectionException()))
     }
-    coEvery { subscribeForPresenceMessages(trackableId, any()) } returns Result.failure(anyConnectionException())
+    coEvery { subscribeForPresenceMessages(trackableId, any(), any<Boolean>()) } returns Result.failure(anyConnectionException())
+}
+
+fun Ably.mockGetCurrentPresenceSuccess(
+    trackableId: String,
+    currentPresenceMessage: List<PresenceMessage> = emptyList(),
+) {
+    coEvery { getCurrentPresence(trackableId) } returns Result.success(currentPresenceMessage)
+}
+
+fun Ably.mockGetCurrentPresenceError(trackableId: String) {
+    coEvery { getCurrentPresence(trackableId) } returns Result.failure(anyConnectionException())
 }
 
 fun Ably.mockDisconnect(trackableId: String, result: Result<Unit>) {
