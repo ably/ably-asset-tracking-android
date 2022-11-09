@@ -4,6 +4,7 @@ import com.ably.tracking.ConnectionException
 import com.ably.tracking.common.Ably
 import com.ably.tracking.test.common.mockCreateConnectionSuccess
 import com.ably.tracking.test.common.mockDisconnectSuccess
+import com.ably.tracking.test.common.mockGetCurrentPresenceSuccess
 import com.ably.tracking.test.common.mockSubscribeToPresenceError
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -21,6 +22,7 @@ class DefaultSubscriberTest {
         // given
         ably.mockCreateConnectionSuccess(trackableId)
         ably.mockDisconnectSuccess(trackableId)
+        ably.mockGetCurrentPresenceSuccess(trackableId)
         ably.mockSubscribeToPresenceError(trackableId)
 
         // when
@@ -36,6 +38,7 @@ class DefaultSubscriberTest {
         // given
         ably.mockCreateConnectionSuccess(trackableId)
         ably.mockDisconnectSuccess(trackableId)
+        ably.mockGetCurrentPresenceSuccess(trackableId)
         ably.mockSubscribeToPresenceError(trackableId)
 
         // when
