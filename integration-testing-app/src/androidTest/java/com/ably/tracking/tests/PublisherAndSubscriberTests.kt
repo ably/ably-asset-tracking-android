@@ -10,6 +10,7 @@ import com.ably.tracking.subscriber.Subscriber
 import com.ably.tracking.test.android.common.BooleanExpectation
 import com.ably.tracking.test.android.common.UnitExpectation
 import com.ably.tracking.test.android.common.testLogD
+import com.google.common.truth.Truth.assertThat
 import io.ably.lib.realtime.AblyRealtime
 import java.util.UUID
 import kotlinx.coroutines.CoroutineScope
@@ -234,9 +235,8 @@ class PublisherAndSubscriberTests {
 
         // then
         subscriberFailedExpectation.assertFulfilled()
-        if (subscriber.trackableStates.value !is TrackableState.Failed) {
-            Assert.fail("trackable state should be failed but is ${subscriber.trackableStates.value} instead")
-        }
+        assertThat(subscriber.trackableStates.value)
+            .isInstanceOf(TrackableState.Failed::class.java)
 
         // cleanup
         //moved to the end of the test because currently the subscriber on stop is transitioning the trackable to Offline state, reported here https://github.com/ably/ably-asset-tracking-android/issues/802
