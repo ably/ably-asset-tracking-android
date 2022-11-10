@@ -4,7 +4,7 @@ import com.ably.tracking.Accuracy
 import com.ably.tracking.Resolution
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ResultCallbackFunction
-import com.ably.tracking.subscriber.Properties
+import com.ably.tracking.subscriber.SubscriberProperties
 import com.ably.tracking.test.common.mockUpdatePresenceDataSuccess
 import io.mockk.mockk
 import io.mockk.verify
@@ -27,7 +27,7 @@ internal class ChangeResolutionWorkerTest {
     @Test
     fun `should return Properties with updated resolution and notify callback`() = runBlockingTest {
         // given
-        val initialProperties = Properties(Resolution(Accuracy.BALANCED, 100, 100.0))
+        val initialProperties = SubscriberProperties(Resolution(Accuracy.BALANCED, 100, 100.0))
         ably.mockUpdatePresenceDataSuccess(trackableId)
 
         // when

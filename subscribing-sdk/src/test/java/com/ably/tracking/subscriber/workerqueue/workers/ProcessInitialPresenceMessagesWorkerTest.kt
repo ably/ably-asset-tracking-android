@@ -7,8 +7,8 @@ import com.ably.tracking.common.PresenceAction
 import com.ably.tracking.common.PresenceData
 import com.ably.tracking.common.PresenceMessage
 import com.ably.tracking.common.ResultCallbackFunction
-import com.ably.tracking.subscriber.Properties
 import com.ably.tracking.subscriber.SubscriberInteractor
+import com.ably.tracking.subscriber.SubscriberProperties
 import com.ably.tracking.subscriber.processPresenceMessage
 import com.ably.tracking.subscriber.workerqueue.WorkerSpecification
 import io.mockk.every
@@ -86,5 +86,5 @@ internal class ProcessInitialPresenceMessagesWorkerTest {
         clientId = ""
     )
 
-    private fun anyProperties() = Properties(Resolution(Accuracy.BALANCED, 100, 100.0))
+    private fun anyProperties() = SubscriberProperties(Resolution(Accuracy.BALANCED, 100, 100.0))
 }
