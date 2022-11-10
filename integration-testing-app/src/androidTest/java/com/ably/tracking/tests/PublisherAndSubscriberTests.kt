@@ -239,7 +239,7 @@ class PublisherAndSubscriberTests {
             .isInstanceOf(TrackableState.Failed::class.java)
 
         // cleanup
-        //moved to the end of the test because currently the subscriber on stop is transitioning the trackable to Offline state, reported here https://github.com/ably/ably-asset-tracking-android/issues/802
+        // moved to the end of the test because currently the subscriber on stop is transitioning the trackable to Offline state, reported here https://github.com/ably/ably-asset-tracking-android/issues/802
         runBlocking {
             subscriber.stop()
         }
