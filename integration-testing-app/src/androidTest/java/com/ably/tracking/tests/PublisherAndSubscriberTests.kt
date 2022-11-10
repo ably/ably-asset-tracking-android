@@ -239,7 +239,11 @@ class PublisherAndSubscriberTests {
 
         // then
         subscriberFailedExpectation.assertFulfilled()
-        Assert.assertTrue("trackable state should be failed", subscriber.trackableStates.value is TrackableState.Failed)
+
+        val trackableState = subscriber.trackableStates.value
+        if (trackableState !is TrackableState.Failed) {
+            Assert.fail("trackable state should be failed but is $trackableState instead")
+        }
     }
 
     @OptIn(Experimental::class)
