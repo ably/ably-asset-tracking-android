@@ -232,6 +232,8 @@ class PublisherAndSubscriberTests {
         // await
         subscriberFailedExpectation.await()
 
+        val trackableState = subscriber.trackableStates.value
+
         // cleanup
         runBlocking {
             subscriber.stop()
@@ -240,7 +242,6 @@ class PublisherAndSubscriberTests {
         // then
         subscriberFailedExpectation.assertFulfilled()
 
-        val trackableState = subscriber.trackableStates.value
         if (trackableState !is TrackableState.Failed) {
             Assert.fail("trackable state should be failed but is $trackableState instead")
         }
