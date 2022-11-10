@@ -232,18 +232,16 @@ class PublisherAndSubscriberTests {
         // await
         subscriberFailedExpectation.await()
 
-        val trackableState = subscriber.trackableStates.value
-
-        // cleanup
-        runBlocking {
-            subscriber.stop()
-        }
-
         // then
         subscriberFailedExpectation.assertFulfilled()
+        if (subscriber.trackableStates.value !is TrackableState.Failed) {
+            Assert.fail("trackable state should be failed but is ${subscriber.trackableStates.value} instead")
+        }
 
-        if (trackableState !is TrackableState.Failed) {
-            Assert.fail("trackable state should be failed but is $trackableState instead")
+        // cleanup
+        //moved to the end of the test because currently the subscriber on stop is transitioning the trackable to Offline state, reported here https://github.com/ably/ably-asset-tracking-android/issues/802
+        runBlocking {
+            subscriber.stop()
         }
     }
 
