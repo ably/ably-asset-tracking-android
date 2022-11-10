@@ -3,7 +3,7 @@ package com.ably.tracking.subscriber.workerqueue.workers
 import com.ably.tracking.Accuracy
 import com.ably.tracking.Resolution
 import com.ably.tracking.common.ResultCallbackFunction
-import com.ably.tracking.subscriber.Properties
+import com.ably.tracking.subscriber.SubscriberProperties
 import com.ably.tracking.subscriber.SubscriberInteractor
 import com.ably.tracking.subscriber.workerqueue.WorkerSpecification
 import io.mockk.every
@@ -33,7 +33,7 @@ internal class SubscribeToChannelWorkerTest {
     @Test
     fun `should notify callback after calling subscriberInteractor`() = runBlockingTest {
         // given
-        val initialProperties = Properties(Resolution(Accuracy.BALANCED, 100, 100.0))
+        val initialProperties = SubscriberProperties(Resolution(Accuracy.BALANCED, 100, 100.0))
 
         // when
         subscribeToChannelWorker.doWork(

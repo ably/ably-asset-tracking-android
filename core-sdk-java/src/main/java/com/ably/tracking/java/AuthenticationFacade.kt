@@ -7,7 +7,7 @@ import com.ably.tracking.connection.TokenRequest
 import kotlinx.coroutines.future.await
 import java.util.concurrent.CompletableFuture
 
-interface TokenRequestFunction {
+interface TokenRequestCreator {
     /**
      * This method will be called with [TokenParams] each time a [TokenRequest] needs to be obtained.
      * If something goes wrong while fetching the token you should throw a [TokenAuthException] from the method or the resulting [CompletableFuture].
@@ -16,7 +16,7 @@ interface TokenRequestFunction {
     fun onCreateNewToken(tokenParams: TokenParams): CompletableFuture<TokenRequest>
 }
 
-interface JwtFunction {
+interface JwtCreator {
     /**
      * This method will be called with [TokenParams] each time a JWT string needs to be obtained.
      * If something goes wrong while fetching the token you should throw a [TokenAuthException] from the method or the resulting [CompletableFuture].
@@ -42,7 +42,7 @@ class AuthenticationFacade {
          * @param callback Callback that will be called with [TokenParams] each time a [TokenRequest] needs to be obtained.
          */
         @JvmStatic
-        fun tokenRequest(callback: TokenRequestFunction): Authentication =
+        fun tokenRequest(callback: TokenRequestCreator): Authentication =
             Authentication.tokenRequest {
                 callback.onCreateNewToken(it).await()
             }
@@ -54,7 +54,7 @@ class AuthenticationFacade {
          * @param callback Callback that will be called with [TokenParams] each time a JWT string needs to be obtained.
          */
         @JvmStatic
-        fun jwt(callback: JwtFunction): Authentication =
+        fun jwt(callback: JwtCreator): Authentication =
             Authentication.jwt {
                 callback.onCreateNewToken(it).await()
             }
