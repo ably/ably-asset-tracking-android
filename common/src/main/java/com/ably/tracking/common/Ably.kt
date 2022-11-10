@@ -430,6 +430,7 @@ constructor(
         channel.unsubscribe()
         channel.presence.unsubscribe()
         channel.setConnectionFailed(errorInfo)
+        channel.off()
         ably.channels.release(channel.name)
     }
 

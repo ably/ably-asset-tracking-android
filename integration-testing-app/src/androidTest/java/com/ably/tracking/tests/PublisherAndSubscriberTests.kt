@@ -239,6 +239,7 @@ class PublisherAndSubscriberTests {
 
         // then
         subscriberFailedExpectation.assertFulfilled()
+        Assert.assertTrue("trackable state should be failed", subscriber.trackableStates.value is TrackableState.Failed)
     }
 
     @OptIn(Experimental::class)
