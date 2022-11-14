@@ -342,7 +342,7 @@ constructor(
         willSubscribe: Boolean,
         callback: (Result<Unit>) -> Unit
     ) {
-        if (!ably.channels.containsKey(trackableId)) {
+        if (getChannelIfExists(trackableId) != null) {
             val channelName = trackableId.toChannelName()
             val channelOptions = createChannelOptions(willPublish, willSubscribe, useRewind)
             try {
