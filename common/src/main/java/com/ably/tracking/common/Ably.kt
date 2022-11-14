@@ -422,7 +422,7 @@ constructor(
         try {
             disconnectChannel(channelToRemove, presenceData)
         } catch (exception: Exception) {
-            //no-op
+            // no-op
         }
 
     private suspend fun disconnectChannel(channelToRemove: Channel, presenceData: PresenceData) {

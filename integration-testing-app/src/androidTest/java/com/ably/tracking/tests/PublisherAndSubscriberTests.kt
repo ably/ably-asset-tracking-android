@@ -245,7 +245,6 @@ class PublisherAndSubscriberTests {
         subscriberFailedExpectation.assertFulfilled()
         assertThat(finalTrackableState)
             .isInstanceOf(TrackableState.Failed::class.java)
-
     }
 
     @OptIn(Experimental::class)
