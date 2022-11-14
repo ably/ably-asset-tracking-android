@@ -19,8 +19,10 @@ import com.google.gson.Gson
 import io.ably.lib.realtime.AblyRealtime
 import io.ably.lib.realtime.Channel
 import io.ably.lib.realtime.ChannelState
+import io.ably.lib.realtime.ChannelStateListener
 import io.ably.lib.realtime.CompletionListener
 import io.ably.lib.realtime.ConnectionState
+import io.ably.lib.realtime.ConnectionStateListener
 import io.ably.lib.rest.Auth
 import io.ably.lib.types.AblyException
 import io.ably.lib.types.ChannelMode
@@ -80,11 +82,25 @@ interface Ably {
 
     /**
      * A suspending version of [subscribeForPresenceMessages]
+     *
+     * @param emitCurrentMessages If set to true it emits messages for each client that's currently in the presence.
      * */
     suspend fun subscribeForPresenceMessages(
         trackableId: String,
-        listener: (PresenceMessage) -> Unit
+        listener: (PresenceMessage) -> Unit,
+        emitCurrentMessages: Boolean = true,
     ): Result<Unit>
+
+    /**
+     * Returns current messages from the trackable channel's presence.
+     * Should be called only when there's an existing channel for the [trackableId].
+     * If a channel for the [trackableId] doesn't exist then this method returns a Result with an empty list.
+     *
+     * @param trackableId The ID of the trackable channel.
+     *
+     * @return Result containing the current presence messages from the channel's presence. If something goes wrong it will contain a [ConnectionException].
+     * */
+    suspend fun getCurrentPresence(trackableId: String): Result<List<PresenceMessage>>
 
     /**
      * Sends an enhanced location update to the channel.
@@ -632,11 +648,14 @@ constructor(
 
     override suspend fun subscribeForPresenceMessages(
         trackableId: String,
-        listener: (PresenceMessage) -> Unit
+        listener: (PresenceMessage) -> Unit,
+        emitCurrentMessages: Boolean,
     ): Result<Unit> {
         val channel = channels[trackableId] ?: return Result.success(Unit)
         return try {
-            emitAllCurrentMessagesFromPresence(channel, listener)
+            if (emitCurrentMessages) {
+                emitAllCurrentMessagesFromPresence(channel, listener)
+            }
             channel.presence.subscribe {
                 val parsedMessage = it.toTracking(gson)
                 if (parsedMessage != null) {
@@ -652,24 +671,36 @@ constructor(
         }
     }
 
-    /**
-     * Warning: This method might block the current thread due to the presence.get(true) call.
-     */
     private fun emitAllCurrentMessagesFromPresence(channel: Channel, listener: (PresenceMessage) -> Unit) {
-        channel.presence.get(true).let { messages ->
-            messages.forEach { presenceMessage ->
-                // Each message is launched in a fire-and-forget manner to not block this method on the listener() call
-                scope.launch {
-                    val parsedMessage = presenceMessage.toTracking(gson)
-                    if (parsedMessage != null) {
-                        listener(parsedMessage)
-                    } else {
-                        logHandler?.w("Presence message in unexpected format: $presenceMessage")
-                    }
-                }
+        getAllCurrentMessagesFromPresence(channel).forEach { presenceMessage ->
+            // Each message is launched in a fire-and-forget manner to not block this method on the listener() call
+            scope.launch { listener(presenceMessage) }
+        }
+    }
+
+    override suspend fun getCurrentPresence(trackableId: String): Result<List<PresenceMessage>> {
+        val channel = channels[trackableId] ?: return Result.success(emptyList())
+        return suspendCancellableCoroutine { continuation ->
+            try {
+                val currentPresenceMessages = getAllCurrentMessagesFromPresence(channel)
+                continuation.resume(Result.success(currentPresenceMessages))
+            } catch (ablyException: AblyException) {
+                continuation.resume(Result.failure(ablyException.errorInfo.toTrackingException()))
             }
         }
     }
+
+    /**
+     * Warning: This method might block the current thread due to the presence.get(true) call.
+     */
+    private fun getAllCurrentMessagesFromPresence(channel: Channel): List<PresenceMessage> =
+        channel.presence.get(true).mapNotNull { presenceMessage ->
+            presenceMessage.toTracking(gson).also {
+                if (it == null) {
+                    logHandler?.w("Presence message in unexpected format: $presenceMessage")
+                }
+            }
+        }
 
     override fun updatePresenceData(trackableId: String, presenceData: PresenceData, callback: (Result<Unit>) -> Unit) {
         scope.launch {
@@ -734,13 +765,17 @@ constructor(
             return
         }
         suspendCancellableCoroutine<Unit> { continuation ->
-            connection.on {
-                if (it.current.isClosed()) {
-                    continuation.resume(Unit)
-                } else if (it.current.isFailed()) {
-                    continuation.resumeWithException(it.reason.toTrackingException())
+            connection.on(object : ConnectionStateListener {
+                override fun onConnectionStateChanged(connectionStateChange: ConnectionStateListener.ConnectionStateChange) {
+                    if (connectionStateChange.current.isClosed()) {
+                        connection.off(this)
+                        continuation.resume(Unit)
+                    } else if (connectionStateChange.current.isFailed()) {
+                        connection.off(this)
+                        continuation.resumeWithException(connectionStateChange.reason.toTrackingException())
+                    }
                 }
-            }
+            })
             close()
         }
     }
@@ -795,11 +830,14 @@ constructor(
         try {
             withTimeout(timeoutInMilliseconds) {
                 suspendCancellableCoroutine<Unit> { continuation ->
-                    channel.on { channelStateChange ->
-                        if (channelStateChange.current.isConnected()) {
-                            continuation.resume(Unit)
+                    channel.on(object : ChannelStateListener {
+                        override fun onChannelStateChanged(channelStateChange: ChannelStateListener.ChannelStateChange) {
+                            if (channelStateChange.current.isConnected()) {
+                                channel.off(this)
+                                continuation.resume(Unit)
+                            }
                         }
-                    }
+                    })
                 }
             }
         } catch (exception: TimeoutCancellationException) {
@@ -906,12 +944,20 @@ constructor(
         try {
             withTimeout(timeoutInMilliseconds) {
                 suspendCancellableCoroutine<Unit> { continuation ->
-                    connection.on { channelStateChange ->
-                        when {
-                            channelStateChange.current.isConnected() -> continuation.resume(Unit)
-                            channelStateChange.current.isFailed() -> continuation.resumeWithException(channelStateChange.reason.toTrackingException())
+                    connection.on(object : ConnectionStateListener {
+                        override fun onConnectionStateChanged(connectionStateChange: ConnectionStateListener.ConnectionStateChange) {
+                            when {
+                                connectionStateChange.current.isConnected() -> {
+                                    connection.off(this)
+                                    continuation.resume(Unit)
+                                }
+                                connectionStateChange.current.isFailed() -> {
+                                    connection.off(this)
+                                    continuation.resumeWithException(connectionStateChange.reason.toTrackingException())
+                                }
+                            }
                         }
-                    }
+                    })
                     connect()
                 }
             }

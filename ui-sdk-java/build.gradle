@@ -1,0 +1,18 @@
+plugins {
+    id 'com.android.library'
+    id 'kotlin-android'
+    id 'org.jlleitschuh.gradle.ktlint'
+    id 'org.jetbrains.dokka'
+}
+
+ext {
+    PUBLISH_POM_DESCRIPTION = "Ably Asset Tracking UI extensions module for Java."
+}
+
+dependencies {
+    api project(':ui-sdk')
+    api project(':core-sdk-java')
+}
+
+apply from: '../jacoco.gradle'
+apply from: '../publish.gradle'
