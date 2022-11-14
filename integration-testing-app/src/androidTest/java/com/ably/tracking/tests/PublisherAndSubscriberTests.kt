@@ -233,16 +233,19 @@ class PublisherAndSubscriberTests {
         // await
         subscriberFailedExpectation.await()
 
-        // then
-        subscriberFailedExpectation.assertFulfilled()
-        assertThat(subscriber.trackableStates.value)
-            .isInstanceOf(TrackableState.Failed::class.java)
+        // captured before cleanup because currently the subscriber on stop is transitioning the trackable to Offline state, reported here https://github.com/ably/ably-asset-tracking-android/issues/802
+        val finalTrackableState = subscriber.trackableStates.value
 
         // cleanup
-        // moved to the end of the test because currently the subscriber on stop is transitioning the trackable to Offline state, reported here https://github.com/ably/ably-asset-tracking-android/issues/802
         runBlocking {
             subscriber.stop()
         }
+
+        // then
+        subscriberFailedExpectation.assertFulfilled()
+        assertThat(finalTrackableState)
+            .isInstanceOf(TrackableState.Failed::class.java)
+
     }
 
     @OptIn(Experimental::class)
