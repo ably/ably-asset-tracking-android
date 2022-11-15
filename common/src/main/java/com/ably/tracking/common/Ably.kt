@@ -418,7 +418,7 @@ constructor(
         }
     }
 
-    private suspend fun safeDisconnectChannel(channelToRemove: Channel, presenceData: PresenceData) =
+    private suspend fun tryDisconnectChannel(channelToRemove: Channel, presenceData: PresenceData) =
         try {
             disconnectChannel(channelToRemove, presenceData)
         } catch (exception: Exception) {
@@ -745,7 +745,7 @@ constructor(
         supervisorScope {
             ably.channels.entrySet().forEach {
                 launch {
-                    safeDisconnectChannel(it.value, presenceData)
+                    tryDisconnectChannel(it.value, presenceData)
                 }
             }
         }
