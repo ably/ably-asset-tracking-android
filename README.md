@@ -53,6 +53,8 @@ GOOGLE_MAPS_API_KEY=create_api_key_with_geolocation_maps_sdk
 
 Please see our [Upgrade / Migration Guide](UPDATING.md) for notes on changes you need to make to your code to update the Ably Asset Tracking SDKs.
 
+If you're not writing your application in Kotlin then please see our [Java API Guide](JAVA.md) for notes on using the Ably Asset Tracking SDKs from Java code.
+
 ### Maven / Gradle Dependencies
 
 Kotlin users will want to add either `publishing-sdk` or `subscribing-sdk`, according to the needs of their project.
@@ -125,13 +127,13 @@ you can then add the Ably Asset Tracking dependency that you require in your Gra
 ```groovy
 dependencies {
     // Publishers, developing in Kotlin, will need the Publishing SDK
-    implementation 'com.ably.tracking:publishing-sdk:1.4.0-rc.2'
+    implementation 'com.ably.tracking:publishing-sdk:1.4.1'
 
     // Subscribers, developing in Kotlin, will need the Subscribing SDK
-    implementation 'com.ably.tracking:subscribing-sdk:1.4.0-rc.2'
+    implementation 'com.ably.tracking:subscribing-sdk:1.4.1'
 
     // Subscribers, developing in Kotlin, can optionally use the UI utilities
-    implementation 'com.ably.tracking:ui-sdk:1.4.0-rc.2'
+    implementation 'com.ably.tracking:ui-sdk:1.4.1'
 }
 ```
 
@@ -354,7 +356,7 @@ Firstly, you have to exclude the notification module from Mapbox Navigation SDK 
 
 ```groovy
 // The Ably Asset Tracking Publisher SDK for Android.
-implementation ('com.ably.tracking:publishing-sdk:1.4.0-rc.2')
+implementation ('com.ably.tracking:publishing-sdk:1.4.1')
 
 // The Mapbox Navigation SDK.
 implementation ('com.mapbox.navigation:android:2.8.0') {

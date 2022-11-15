@@ -12,12 +12,14 @@ interface LocationAnimator {
      * The position of the map marker should be changed each time a new value arrives in this flow.
      */
     val positionsFlow: Flow<Position>
+        @JvmSynthetic get
 
     /**
      * The flow of subsequent camera positions that helps to follow the animation progress from [positionsFlow].
      * The position of the camera can be changed each time a new value arrives in this flow.
      */
     val cameraPositionsFlow: Flow<Position>
+        @JvmSynthetic get
 
     /**
      * Queues the location update for the animation.

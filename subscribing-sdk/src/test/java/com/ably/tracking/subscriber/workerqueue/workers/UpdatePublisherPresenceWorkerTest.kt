@@ -6,7 +6,7 @@ import com.ably.tracking.common.ClientTypes
 import com.ably.tracking.common.PresenceAction
 import com.ably.tracking.common.PresenceData
 import com.ably.tracking.common.PresenceMessage
-import com.ably.tracking.subscriber.Properties
+import com.ably.tracking.subscriber.SubscriberProperties
 import com.ably.tracking.subscriber.SubscriberInteractor
 import com.ably.tracking.subscriber.workerqueue.WorkerSpecification
 import io.mockk.every
@@ -33,7 +33,7 @@ internal class UpdatePublisherPresenceWorkerTest {
     @Test
     fun `should call subscriber interactor for PRESENT_OR_ENTER presence message`() = runBlockingTest {
         // given
-        val initialProperties = Properties(Resolution(Accuracy.BALANCED, 100, 100.0))
+        val initialProperties = SubscriberProperties(Resolution(Accuracy.BALANCED, 100, 100.0))
         val presenceMessage = createPresenceMessage(PresenceAction.PRESENT_OR_ENTER)
         val worker = UpdatePublisherPresenceWorker(presenceMessage, subscriberInteractor)
 
@@ -55,7 +55,7 @@ internal class UpdatePublisherPresenceWorkerTest {
     @Test
     fun `should call subscriber interactor for LEAVE_OR_ABSENT presence message`() = runBlockingTest {
         // given
-        val initialProperties = Properties(Resolution(Accuracy.BALANCED, 100, 100.0))
+        val initialProperties = SubscriberProperties(Resolution(Accuracy.BALANCED, 100, 100.0))
         val presenceMessage = createPresenceMessage(PresenceAction.LEAVE_OR_ABSENT)
         val worker = UpdatePublisherPresenceWorker(presenceMessage, subscriberInteractor)
 
@@ -76,7 +76,7 @@ internal class UpdatePublisherPresenceWorkerTest {
     @Test
     fun `should call subscriber interactor for UPDATE presence message`() = runBlockingTest {
         // given
-        val initialProperties = Properties(Resolution(Accuracy.BALANCED, 100, 100.0))
+        val initialProperties = SubscriberProperties(Resolution(Accuracy.BALANCED, 100, 100.0))
         val presenceMessage = createPresenceMessage(PresenceAction.UPDATE)
         val worker = UpdatePublisherPresenceWorker(presenceMessage, subscriberInteractor)
 

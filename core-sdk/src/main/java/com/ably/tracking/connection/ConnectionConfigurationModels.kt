@@ -51,7 +51,7 @@ sealed class Authentication(
          * @param apiKey Ably key string as obtained from the dashboard.
          * @param clientId ID of the client
          */
-        @JvmStatic
+        @JvmSynthetic
         fun basic(clientId: String, apiKey: String): Authentication =
             BasicAuthentication(clientId, apiKey)
 

@@ -3,6 +3,7 @@ package com.ably.tracking.publisher.workerqueue.workers
 import com.ably.tracking.Accuracy
 import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
+import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ConnectionState
 import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.ResultCallbackFunction
@@ -28,6 +29,7 @@ class DisconnectSuccessWorkerTest {
     private val corePublisher = mockk<CorePublisher>(relaxed = true)
     private val recalculateResolutionCallbackFunction = mockk<() -> Unit>(relaxed = true)
     private val publisherProperties = mockk<PublisherProperties>(relaxed = true)
+    private val ably = mockk<Ably>(relaxed = true)
 
     @Before
     fun setUp() {
@@ -36,6 +38,7 @@ class DisconnectSuccessWorkerTest {
             resultCallbackFunction,
             corePublisher,
             recalculateResolutionCallbackFunction,
+            ably,
         )
     }
 

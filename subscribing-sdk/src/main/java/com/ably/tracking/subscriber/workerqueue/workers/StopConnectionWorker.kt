@@ -4,8 +4,8 @@ import com.ably.tracking.ConnectionException
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.subscriber.SubscriberInteractor
-import com.ably.tracking.subscriber.Properties
-import com.ably.tracking.subscriber.workerqueue.Worker
+import com.ably.tracking.subscriber.SubscriberProperties
+import com.ably.tracking.common.workerqueue.Worker
 import com.ably.tracking.subscriber.workerqueue.WorkerSpecification
 import kotlinx.coroutines.runBlocking
 
@@ -13,12 +13,12 @@ internal class StopConnectionWorker(
     private val ably: Ably,
     private val subscriberInteractor: SubscriberInteractor,
     private val callbackFunction: ResultCallbackFunction<Unit>
-) : Worker {
+) : Worker<SubscriberProperties, WorkerSpecification> {
     override fun doWork(
-        properties: Properties,
+        properties: SubscriberProperties,
         doAsyncWork: (suspend () -> Unit) -> Unit,
         postWork: (WorkerSpecification) -> Unit
-    ): Properties {
+    ): SubscriberProperties {
         // We're using [runBlocking] on purpose as we want to block the whole subscriber when it's stopping.
         runBlocking {
             try {

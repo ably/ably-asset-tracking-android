@@ -20,4 +20,5 @@ include ':android-test-common',
         ':subscribing-sdk-java',
         ':subscribing-example-app',
         ':subscribing-java-testing',
-        ':ui-sdk'
+        ':ui-sdk',
+        ':ui-sdk-java'

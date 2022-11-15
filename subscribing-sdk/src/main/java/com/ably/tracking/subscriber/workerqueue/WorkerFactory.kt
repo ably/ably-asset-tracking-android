@@ -5,9 +5,13 @@ import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.PresenceMessage
 import com.ably.tracking.common.ResultCallbackFunction
+import com.ably.tracking.common.workerqueue.Worker
+import com.ably.tracking.common.workerqueue.WorkerFactory
+import com.ably.tracking.subscriber.SubscriberProperties
 import com.ably.tracking.subscriber.SubscriberInteractor
 import com.ably.tracking.subscriber.workerqueue.workers.ChangeResolutionWorker
 import com.ably.tracking.subscriber.workerqueue.workers.DisconnectWorker
+import com.ably.tracking.subscriber.workerqueue.workers.ProcessInitialPresenceMessagesWorker
 import com.ably.tracking.subscriber.workerqueue.workers.StartConnectionWorker
 import com.ably.tracking.subscriber.workerqueue.workers.StopConnectionWorker
 import com.ably.tracking.subscriber.workerqueue.workers.SubscribeForPresenceMessagesWorker
@@ -23,53 +27,58 @@ internal class WorkerFactory(
     private val subscriberInteractor: SubscriberInteractor,
     private val ably: Ably,
     private val trackableId: String
-) {
+) : WorkerFactory<SubscriberProperties, WorkerSpecification> {
     /**
      * Creates an appropriate [Worker] from the passed [WorkerSpecification].
      *
-     * @param params The parameters that indicate which [Worker] implementation should be created.
+     * @param workerSpecification The parameters that indicate which [Worker] implementation should be created.
      * @return New [Worker] instance.
      */
-    fun createWorker(params: WorkerSpecification): Worker =
-        when (params) {
+    override fun createWorker(workerSpecification: WorkerSpecification): Worker<SubscriberProperties, WorkerSpecification> =
+        when (workerSpecification) {
             is WorkerSpecification.StartConnection -> StartConnectionWorker(
                 ably,
                 subscriberInteractor,
                 trackableId,
-                params.callbackFunction
+                workerSpecification.callbackFunction
             )
             is WorkerSpecification.SubscribeForPresenceMessages -> SubscribeForPresenceMessagesWorker(
                 ably,
                 trackableId,
-                params.callbackFunction
+                workerSpecification.callbackFunction
             )
             is WorkerSpecification.SubscribeToChannel -> SubscribeToChannelWorker(
                 subscriberInteractor,
-                params.callbackFunction
+                workerSpecification.callbackFunction
             )
             is WorkerSpecification.UpdateConnectionState -> UpdateConnectionStateWorker(
-                params.connectionStateChange,
+                workerSpecification.connectionStateChange,
                 subscriberInteractor
             )
             is WorkerSpecification.UpdateChannelConnectionState -> UpdateChannelConnectionStateWorker(
-                params.channelConnectionStateChange,
+                workerSpecification.channelConnectionStateChange,
                 subscriberInteractor
             )
             is WorkerSpecification.UpdatePublisherPresence -> UpdatePublisherPresenceWorker(
-                params.presenceMessage,
+                workerSpecification.presenceMessage,
                 subscriberInteractor
             )
             is WorkerSpecification.ChangeResolution -> ChangeResolutionWorker(
                 ably,
                 trackableId,
-                params.resolution,
-                params.callbackFunction
+                workerSpecification.resolution,
+                workerSpecification.callbackFunction
             )
-            is WorkerSpecification.Disconnect -> DisconnectWorker(ably, params.trackableId, params.callbackFunction)
+            is WorkerSpecification.Disconnect -> DisconnectWorker(ably, workerSpecification.trackableId, workerSpecification.callbackFunction)
             is WorkerSpecification.StopConnection -> StopConnectionWorker(
                 ably,
                 subscriberInteractor,
-                params.callbackFunction
+                workerSpecification.callbackFunction
+            )
+            is WorkerSpecification.ProcessInitialPresenceMessages -> ProcessInitialPresenceMessagesWorker(
+                workerSpecification.presenceMessages,
+                subscriberInteractor,
+                workerSpecification.callbackFunction,
             )
         }
 }
@@ -111,5 +120,10 @@ internal sealed class WorkerSpecification {
 
     data class StopConnection(
         val callbackFunction: ResultCallbackFunction<Unit>
+    ) : WorkerSpecification()
+
+    data class ProcessInitialPresenceMessages(
+        val presenceMessages: List<PresenceMessage>,
+        val callbackFunction: ResultCallbackFunction<Unit>,
     ) : WorkerSpecification()
 }

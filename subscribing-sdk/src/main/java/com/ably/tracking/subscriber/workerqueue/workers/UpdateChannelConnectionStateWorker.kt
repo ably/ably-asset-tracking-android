@@ -2,19 +2,19 @@ package com.ably.tracking.subscriber.workerqueue.workers
 
 import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.subscriber.SubscriberInteractor
-import com.ably.tracking.subscriber.Properties
-import com.ably.tracking.subscriber.workerqueue.Worker
+import com.ably.tracking.subscriber.SubscriberProperties
+import com.ably.tracking.common.workerqueue.Worker
 import com.ably.tracking.subscriber.workerqueue.WorkerSpecification
 
 internal class UpdateChannelConnectionStateWorker(
     private val channelConnectionStateChange: ConnectionStateChange,
     private val subscriberInteractor: SubscriberInteractor
-) : Worker {
+) : Worker<SubscriberProperties, WorkerSpecification> {
     override fun doWork(
-        properties: Properties,
+        properties: SubscriberProperties,
         doAsyncWork: (suspend () -> Unit) -> Unit,
         postWork: (WorkerSpecification) -> Unit
-    ): Properties {
+    ): SubscriberProperties {
         properties.lastChannelConnectionStateChange = channelConnectionStateChange
         subscriberInteractor.updateTrackableState(properties)
         return properties

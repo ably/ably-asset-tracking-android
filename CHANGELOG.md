@@ -1,6 +1,32 @@
 # Change log
 
-## [1.4.0-rc.2](https://github.com/ably/ably-asset-tracking-android/tree/1.4.0-rc.2)
+## [1.4.1](https://github.com/ably/ably-asset-tracking-android/tree/v1.4.1)
+
+[Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.4.0...v1.4.1)
+
+**Improved Subscriber behaviour:**
+
+- Wait for the presence data sync before returning a subscriber instance [\#792](https://github.com/ably/ably-asset-tracking-android/issues/792),
+  implemented in [\#794](https://github.com/ably/ably-asset-tracking-android/pull/794) ([KacperKluka](https://github.com/KacperKluka))
+
+## [1.4.0](https://github.com/ably/ably-asset-tracking-android/tree/v1.4.0)
+
+[Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.4.0-rc.2...v1.4.0)
+
+**Implemented enhancements:**
+
+- Upgrade Mapbox SDK to 2.8.0 GA version [\#770](https://github.com/ably/ably-asset-tracking-android/issues/770)
+
+**Fixed bugs:**
+
+- Handle properly the error paths for the callback based auth [\#743](https://github.com/ably/ably-asset-tracking-android/issues/743)
+- The publisher should close the Ably connection when it has no trackables [\#170](https://github.com/ably/ably-asset-tracking-android/issues/170)
+
+**Closed issues:**
+
+- Refactor the event queue in the CoreSubscriber [\#660](https://github.com/ably/ably-asset-tracking-android/issues/660)
+
+## [1.4.0-rc.2](https://github.com/ably/ably-asset-tracking-android/tree/v1.4.0-rc.2)
 
 [Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.4.0-rc.1...v1.4.0-rc.2)
 
@@ -8,7 +34,7 @@
 
 - Make the client ID an optional parameter if users use a token-based auth [\#766](https://github.com/ably/ably-asset-tracking-android/issues/766)
 
-## [1.4.0-rc.1](https://github.com/ably/ably-asset-tracking-android/tree/1.4.0-rc.1)
+## [1.4.0-rc.1](https://github.com/ably/ably-asset-tracking-android/tree/v1.4.0-rc.1)
 
 Version 1.4.0 of the Ably Asset Tracking SDKs for Android uses the Mapbox Navigation SDK in version 2.8.0
 which enables users to use it together with the newest Mapbox Map SDK in version 10.8.0.
@@ -23,7 +49,7 @@ which enables users to use it together with the newest Mapbox Map SDK in version
 
 - Mapbox navigation dependency version updated to 2.8.0-rc.2 [\#761](https://github.com/ably/ably-asset-tracking-android/pull/761) ([davyskiba](https://github.com/davyskiba))
 
-## [1.3.0](https://github.com/ably/ably-asset-tracking-android/tree/1.3.0)
+## [1.3.0](https://github.com/ably/ably-asset-tracking-android/tree/v1.3.0)
 
 [Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.2.0...1.3.0)
 

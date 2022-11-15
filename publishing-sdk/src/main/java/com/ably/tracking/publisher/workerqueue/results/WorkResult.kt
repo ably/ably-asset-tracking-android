@@ -48,7 +48,15 @@ internal sealed class AddTrackableWorkResult : WorkResult() {
     internal data class Fail(
         val trackable: Trackable,
         val exception: Throwable?,
+        val isConnectedToAbly: Boolean,
         val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>
+    ) : AddTrackableWorkResult()
+
+    internal data class WorkDelayed(
+        val trackable: Trackable,
+        val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>,
+        val presenceUpdateListener: ((presenceMessage: PresenceMessage) -> Unit),
+        val channelStateChangeListener: ((connectionStateChange: ConnectionStateChange) -> Unit),
     ) : AddTrackableWorkResult()
 }
 
@@ -118,4 +126,16 @@ internal sealed class RemoveTrackableWorkResult : WorkResult() {
     internal data class NotPresent(
         val callbackFunction: ResultCallbackFunction<Boolean>
     ) : RemoveTrackableWorkResult()
+}
+
+internal sealed class TrackableRemovalRequestedWorkResult : WorkResult() {
+    internal object StopConnectionCompleted : TrackableRemovalRequestedWorkResult()
+}
+
+internal sealed class AddTrackableFailedWorkResult : WorkResult() {
+    internal object StopConnectionCompleted : AddTrackableFailedWorkResult()
+}
+
+internal sealed class DisconnectSuccessWorkResult : WorkResult() {
+    internal object StopConnectionCompleted : DisconnectSuccessWorkResult()
 }

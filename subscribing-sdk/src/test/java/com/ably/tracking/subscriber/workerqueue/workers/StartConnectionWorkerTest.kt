@@ -4,11 +4,13 @@ import com.ably.tracking.Accuracy
 import com.ably.tracking.Resolution
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ResultCallbackFunction
-import com.ably.tracking.subscriber.Properties
+import com.ably.tracking.subscriber.SubscriberProperties
 import com.ably.tracking.subscriber.SubscriberInteractor
 import com.ably.tracking.subscriber.workerqueue.WorkerSpecification
 import com.ably.tracking.test.common.mockConnectSuccess
 import com.ably.tracking.test.common.mockConnectFailure
+import com.ably.tracking.test.common.mockStartConnectionFailure
+import com.ably.tracking.test.common.mockStartConnectionSuccess
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.just
@@ -37,7 +39,8 @@ internal class StartConnectionWorkerTest {
     @Test
     fun `should call ably connect and post update trackable worker specification on success`() = runBlockingTest {
         // given
-        val initialProperties = Properties(Resolution(Accuracy.BALANCED, 100, 100.0))
+        val initialProperties = SubscriberProperties(Resolution(Accuracy.BALANCED, 100, 100.0))
+        ably.mockStartConnectionSuccess()
         ably.mockConnectSuccess(trackableId)
 
         // when
@@ -49,6 +52,7 @@ internal class StartConnectionWorkerTest {
         Assert.assertEquals(initialProperties, updatedProperties)
         verify { subscriberInteractor.updateTrackableState(initialProperties) }
         coVerify {
+            ably.startConnection()
             ably.connect(
                 trackableId, initialProperties.presenceData,
                 useRewind = true,
@@ -61,7 +65,8 @@ internal class StartConnectionWorkerTest {
     @Test
     fun `should call ably connect and notify callback on failure`() = runBlockingTest {
         // given
-        val initialProperties = Properties(Resolution(Accuracy.BALANCED, 100, 100.0))
+        val initialProperties = SubscriberProperties(Resolution(Accuracy.BALANCED, 100, 100.0))
+        ably.mockStartConnectionSuccess()
         ably.mockConnectFailure(trackableId)
 
         // when
@@ -73,6 +78,34 @@ internal class StartConnectionWorkerTest {
         Assert.assertEquals(initialProperties, updatedProperties)
         verify { subscriberInteractor.updateTrackableState(initialProperties) }
         coVerify {
+            ably.startConnection()
+            ably.connect(
+                trackableId, initialProperties.presenceData,
+                useRewind = true,
+                willSubscribe = true
+            )
+        }
+        verify { callbackFunction.invoke(match { it.isFailure }) }
+        Assert.assertTrue(postedWorks.isEmpty())
+    }
+
+    @Test
+    fun `should notify callback about failure when starting Ably connection fails`() = runBlockingTest {
+        // given
+        val initialProperties = SubscriberProperties(Resolution(Accuracy.BALANCED, 100, 100.0))
+        ably.mockStartConnectionFailure()
+        ably.mockConnectSuccess(trackableId)
+
+        // when
+        val updatedProperties =
+            startConnectionWorker.doWork(initialProperties, asyncWorks.appendWork(), postedWorks.appendSpecification())
+        asyncWorks.executeAll()
+
+        // then
+        Assert.assertEquals(initialProperties, updatedProperties)
+        verify { subscriberInteractor.updateTrackableState(initialProperties) }
+        coVerify { ably.startConnection() }
+        coVerify(exactly = 0) {
             ably.connect(
                 trackableId, initialProperties.presenceData,
                 useRewind = true,
