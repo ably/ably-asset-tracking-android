@@ -10,6 +10,7 @@ import com.ably.tracking.subscriber.Subscriber
 import com.ably.tracking.test.android.common.BooleanExpectation
 import com.ably.tracking.test.android.common.UnitExpectation
 import com.ably.tracking.test.android.common.testLogD
+import com.google.common.truth.Truth.assertThat
 import io.ably.lib.realtime.AblyRealtime
 import java.util.UUID
 import kotlinx.coroutines.CoroutineScope
@@ -232,6 +233,9 @@ class PublisherAndSubscriberTests {
         // await
         subscriberFailedExpectation.await()
 
+        // captured before cleanup because currently the subscriber on stop is transitioning the trackable to Offline state, reported here https://github.com/ably/ably-asset-tracking-android/issues/802
+        val finalTrackableState = subscriber.trackableStates.value
+
         // cleanup
         runBlocking {
             subscriber.stop()
@@ -239,6 +243,8 @@ class PublisherAndSubscriberTests {
 
         // then
         subscriberFailedExpectation.assertFulfilled()
+        assertThat(finalTrackableState)
+            .isInstanceOf(TrackableState.Failed::class.java)
     }
 
     @OptIn(Experimental::class)
