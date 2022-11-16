@@ -29,6 +29,7 @@ import io.ably.lib.types.ChannelMode
 import io.ably.lib.types.ChannelOptions
 import io.ably.lib.types.ErrorInfo
 import io.ably.lib.types.Message
+import io.ably.lib.types.Param
 import io.ably.lib.util.Log
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -263,6 +264,14 @@ constructor(
                 this.logHandler = Log.LogHandler { severity, tag, msg, tr -> logMessage(severity, tag, msg, tr) }
                 this.environment = connectionConfiguration.environment
                 this.autoConnect = false
+                if (connectionConfiguration.remainPresentForMilliseconds != null) {
+                    this.transportParams = arrayOf(
+                        Param(
+                            "remainPresentFor",
+                            connectionConfiguration.remainPresentForMilliseconds.toString()
+                        )
+                    )
+                }
             }
             ably = AblyRealtime(clientOptions)
         } catch (exception: AblyException) {

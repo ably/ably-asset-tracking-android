@@ -15,6 +15,11 @@ data class ConnectionConfiguration(
      * Allows a non-default Ably environment to be used such as 'sandbox'.
      */
     val environment: String? = null,
+    /**
+     * Specifies for how long should the SDK remain present in a channel when the connection is gone.
+     * The minimum value can be 1 second (1000 milliseconds). If not set the default value will be used.
+     */
+    val remainPresentForMilliseconds: Long? = null,
 )
 
 typealias TokenRequestCallback = suspend (TokenParams) -> TokenRequest
