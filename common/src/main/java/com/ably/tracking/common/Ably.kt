@@ -453,8 +453,11 @@ constructor(
                             continuation.resume(Unit)
                         }
 
-                        override fun onError(reason: ErrorInfo) {
-                            continuation.resumeWithException(reason.toTrackingException())
+                        override fun onError(reason: ErrorInfo?) {
+                            continuation.resumeWithException(
+                                reason?.toTrackingException()
+                                    ?: ConnectionException(ErrorInformation("Unknown error when leaving presence ${channel.name}"))
+                            )
                         }
                     }
                 )
@@ -545,8 +548,11 @@ constructor(
                             continuation.resume(Unit)
                         }
 
-                        override fun onError(reason: ErrorInfo) {
-                            continuation.resumeWithException(reason.toTrackingException())
+                        override fun onError(reason: ErrorInfo?) {
+                            continuation.resumeWithException(
+                                reason?.toTrackingException()
+                                    ?: ConnectionException(ErrorInformation("Unknown error when sending message ${channel.name}"))
+                            )
                         }
                     }
                 )
@@ -720,8 +726,11 @@ constructor(
                             continuation.resume(Unit)
                         }
 
-                        override fun onError(reason: ErrorInfo) {
-                            continuation.resumeWithException(reason.toTrackingException())
+                        override fun onError(reason: ErrorInfo?) {
+                            continuation.resumeWithException(
+                                reason?.toTrackingException()
+                                    ?: ConnectionException(ErrorInformation("Unknown error when updating presence ${channel.name}"))
+                            )
                         }
                     }
                 )
@@ -870,8 +879,11 @@ constructor(
                             continuation.resume(Unit)
                         }
 
-                        override fun onError(reason: ErrorInfo) {
-                            continuation.resumeWithException(reason.toTrackingException())
+                        override fun onError(reason: ErrorInfo?) {
+                            continuation.resumeWithException(
+                                reason?.toTrackingException()
+                                    ?: ConnectionException(ErrorInformation("Unknown error when entering presence $name"))
+                            )
                         }
                     }
                 )
@@ -893,8 +905,11 @@ constructor(
                         continuation.resume(Unit)
                     }
 
-                    override fun onError(reason: ErrorInfo) {
-                        continuation.resumeWithException(reason.toTrackingException())
+                    override fun onError(reason: ErrorInfo?) {
+                        continuation.resumeWithException(
+                            reason?.toTrackingException()
+                                ?: ConnectionException(ErrorInformation("Unknown error when attaching channel $name"))
+                        )
                     }
                 })
             } catch (ablyException: AblyException) {
