@@ -5,6 +5,7 @@ import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
 import com.ably.tracking.annotations.Experimental
 import com.ably.tracking.common.Ably
+import com.ably.tracking.common.logging.createLoggingTag
 import com.ably.tracking.common.logging.v
 import com.ably.tracking.common.logging.w
 import com.ably.tracking.common.wrapInResultCallback
@@ -21,6 +22,7 @@ internal class DefaultSubscriber(
     private val logHandler: LogHandler?,
 ) : Subscriber {
     private val core: CoreSubscriber
+    private val TAG = createLoggingTag(this)
 
     override val locations: SharedFlow<LocationUpdate>
         get() = core.enhancedLocations
@@ -43,20 +45,20 @@ internal class DefaultSubscriber(
 
     init {
         core = createCoreSubscriber(ably, resolution, trackableId)
-        logHandler?.v("Created a subscriber instance")
+        logHandler?.v("$TAG Created a subscriber instance")
     }
 
     /**
      * This method must be run before running any other method from [DefaultSubscriber].
      */
     suspend fun start() {
-        logHandler?.v("Subscriber start operation started")
+        logHandler?.v("$TAG Subscriber start operation started")
         suspendCoroutine<Unit> { continuation ->
             core.enqueue(
                 WorkerSpecification.StartConnection(
                     continuation.wrapInResultCallback(
-                        onSuccess = { logHandler?.v("Subscriber start operation succeeded") },
-                        onError = { logHandler?.w("Subscriber start operation failed", it) },
+                        onSuccess = { logHandler?.v("$TAG Subscriber start operation succeeded") },
+                        onError = { logHandler?.w("$TAG Subscriber start operation failed", it) },
                     )
                 )
             )
@@ -64,15 +66,15 @@ internal class DefaultSubscriber(
     }
 
     override suspend fun resolutionPreference(resolution: Resolution?) {
-        logHandler?.v("Subscriber resolutionPreference operation started")
+        logHandler?.v("$TAG Subscriber resolutionPreference operation started")
         // send change request over channel and wait for the result
         suspendCoroutine<Unit> { continuation ->
             core.enqueue(
                 WorkerSpecification.ChangeResolution(
                     resolution,
                     continuation.wrapInResultCallback(
-                        onSuccess = { logHandler?.v("Subscriber resolutionPreference operation succeeded") },
-                        onError = { logHandler?.w("Subscriber resolutionPreference operation failed", it) },
+                        onSuccess = { logHandler?.v("$TAG Subscriber resolutionPreference operation succeeded") },
+                        onError = { logHandler?.w("$TAG Subscriber resolutionPreference operation failed", it) },
                     ),
                 )
             )
@@ -80,14 +82,14 @@ internal class DefaultSubscriber(
     }
 
     override suspend fun stop() {
-        logHandler?.v("Subscriber stop operation started")
+        logHandler?.v("$TAG Subscriber stop operation started")
         // send stop request over channel and wait for the result
         suspendCoroutine<Unit> { continuation ->
             core.enqueue(
                 WorkerSpecification.StopConnection(
                     continuation.wrapInResultCallback(
-                        onSuccess = { logHandler?.v("Subscriber stop operation succeeded") },
-                        onError = { logHandler?.w("Subscriber stop operation failed", it) },
+                        onSuccess = { logHandler?.v("$TAG Subscriber stop operation succeeded") },
+                        onError = { logHandler?.w("$TAG Subscriber stop operation failed", it) },
                     )
                 )
             )
