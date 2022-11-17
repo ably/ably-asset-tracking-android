@@ -266,7 +266,9 @@ constructor(
             }
             ably = AblyRealtime(clientOptions)
         } catch (exception: AblyException) {
-            throw exception.errorInfo.toTrackingException()
+            throw exception.errorInfo.toTrackingException().also {
+                logHandler?.w("Failed to create an Ably instance", it)
+            }
         }
     }
 
@@ -309,11 +311,13 @@ constructor(
                 val renewAuthResult = renewAuthSuspending()
 
                 renewAuthResult.errorInfo?.let {
+                    logHandler?.w("Failed to renew auth while entering the presence of channel ${channel.name}", it.toTrackingException())
                     throw it.toTrackingException()
                 }
                 channel.attachSuspending()
                 channel.enterPresenceSuspending(presenceData)
             } else {
+                logHandler?.w("Failed to enter the presence of channel ${channel.name}", connectionException)
                 throw connectionException
             }
         }
@@ -328,6 +332,7 @@ constructor(
                     continuation.resume(RenewAuthResult(success, tokenDetails, errorInfo))
                 }
             } catch (e: Exception) {
+                logHandler?.w("Failed to renew Ably auth", e)
                 e.printStackTrace()
                 continuation.resumeWithException(e)
             }
@@ -355,12 +360,15 @@ constructor(
                         enterChannelPresence(channel, presenceData)
                         callback(Result.success(Unit))
                     } catch (connectionException: ConnectionException) {
+                        logHandler?.w("Failed to connect for channel ${channel.name}", connectionException)
                         ably.channels.release(channelName)
                         callback(Result.failure(connectionException))
                     }
                 }
             } catch (ablyException: AblyException) {
-                callback(Result.failure(ablyException.errorInfo.toTrackingException()))
+                val trackingException = ablyException.errorInfo.toTrackingException()
+                logHandler?.w("Failed to connect for trackable $trackableId", trackingException)
+                callback(Result.failure(trackingException))
             }
         } else {
             callback(Result.success(Unit))
@@ -396,6 +404,7 @@ constructor(
                     result.getOrThrow()
                     continuation.resume(Result.success(Unit))
                 } catch (exception: ConnectionException) {
+                    logHandler?.w("Failed to connect for trackable $trackableId", exception)
                     continuation.resume(Result.failure(exception))
                 }
             }
@@ -410,6 +419,7 @@ constructor(
                     disconnectChannel(channelToRemove, presenceData)
                     callback(Result.success(Unit))
                 } catch (exception: ConnectionException) {
+                    logHandler?.w("Failed to disconnect for trackable $trackableId", exception)
                     callback(Result.failure(exception))
                 }
             } else {
@@ -454,15 +464,17 @@ constructor(
                         }
 
                         override fun onError(reason: ErrorInfo?) {
-                            continuation.resumeWithException(
-                                reason?.toTrackingException()
-                                    ?: ConnectionException(ErrorInformation("Unknown error when leaving presence ${channel.name}"))
-                            )
+                            val trackingException = reason?.toTrackingException()
+                                ?: ConnectionException(ErrorInformation("Unknown error when leaving presence ${channel.name}"))
+                            logHandler?.w("Failed to leave presence for channel ${channel.name}", trackingException)
+                            continuation.resumeWithException(trackingException)
                         }
                     }
                 )
             } catch (ablyException: AblyException) {
-                continuation.resumeWithException(ablyException.errorInfo.toTrackingException())
+                val trackingException = ablyException.errorInfo.toTrackingException()
+                logHandler?.w("Failed to leave presence for channel ${channel.name}", trackingException)
+                continuation.resumeWithException(trackingException)
             }
         }
     }
@@ -477,6 +489,7 @@ constructor(
                     it.getOrThrow()
                     continuation.resume(Result.success(Unit))
                 } catch (exception: ConnectionException) {
+                    logHandler?.w("Failed to disconnect for trackable $trackableId", exception)
                     continuation.resume(Result.failure(exception))
                 }
             }
@@ -533,6 +546,7 @@ constructor(
                 }
                 callback(Result.success(Unit))
             } catch (exception: ConnectionException) {
+                logHandler?.w("Failed to send message for channel ${channel.name}", exception)
                 callback(Result.failure(exception))
             }
         }
@@ -549,15 +563,17 @@ constructor(
                         }
 
                         override fun onError(reason: ErrorInfo?) {
-                            continuation.resumeWithException(
-                                reason?.toTrackingException()
-                                    ?: ConnectionException(ErrorInformation("Unknown error when sending message ${channel.name}"))
-                            )
+                            val trackingException = reason?.toTrackingException()
+                                ?: ConnectionException(ErrorInformation("Unknown error when sending message ${channel.name}"))
+                            logHandler?.w("Failed to suspend send message for channel ${channel.name}", trackingException)
+                            continuation.resumeWithException(trackingException)
                         }
                     }
                 )
             } catch (exception: AblyException) {
-                continuation.resumeWithException(exception.errorInfo.toTrackingException())
+                val trackingException = exception.errorInfo.toTrackingException()
+                logHandler?.w("Failed to suspend send message for channel ${channel.name}", trackingException)
+                continuation.resumeWithException(trackingException)
             }
         }
     }
@@ -579,7 +595,9 @@ constructor(
                     )
                 }
             } catch (exception: AblyException) {
-                throw exception.errorInfo.toTrackingException()
+                throw exception.errorInfo.toTrackingException().also {
+                    logHandler?.w("Failed to subscriber for enhanced events for channel ${channel.name}", it)
+                }
             }
         }
     }
@@ -601,7 +619,9 @@ constructor(
                     )
                 }
             } catch (exception: AblyException) {
-                throw exception.errorInfo.toTrackingException()
+                throw exception.errorInfo.toTrackingException().also {
+                    logHandler?.w("Failed to subscriber for raw events for channel ${channel.name}", it)
+                }
             }
         }
     }
@@ -662,6 +682,7 @@ constructor(
             Result.success(Unit)
         } catch (exception: AblyException) {
             val trackingException = exception.errorInfo.toTrackingException()
+            logHandler?.w("Failed to subscriber for presence messages for trackable $trackableId", trackingException)
             Result.failure(trackingException)
         }
     }
@@ -680,7 +701,9 @@ constructor(
                 val currentPresenceMessages = getAllCurrentMessagesFromPresence(channel)
                 continuation.resume(Result.success(currentPresenceMessages))
             } catch (ablyException: AblyException) {
-                continuation.resume(Result.failure(ablyException.errorInfo.toTrackingException()))
+                val trackingException = ablyException.errorInfo.toTrackingException()
+                logHandler?.w("Failed to get current presence messages for trackable $trackableId", trackingException)
+                continuation.resume(Result.failure(trackingException))
             }
         }
     }
@@ -712,6 +735,7 @@ constructor(
             }
             Result.success(Unit)
         } catch (exception: ConnectionException) {
+            logHandler?.w("Failed to update presence data for trackable $trackableId", exception)
             Result.failure(exception)
         }
     }
@@ -727,15 +751,17 @@ constructor(
                         }
 
                         override fun onError(reason: ErrorInfo?) {
-                            continuation.resumeWithException(
-                                reason?.toTrackingException()
-                                    ?: ConnectionException(ErrorInformation("Unknown error when updating presence ${channel.name}"))
-                            )
+                            val trackingException = reason?.toTrackingException()
+                                ?: ConnectionException(ErrorInformation("Unknown error when updating presence ${channel.name}"))
+                            logHandler?.w("Failed to suspend update presence data for channel ${channel.name}", trackingException)
+                            continuation.resumeWithException(trackingException)
                         }
                     }
                 )
             } catch (exception: AblyException) {
-                continuation.resumeWithException(exception.errorInfo.toTrackingException())
+                val trackingException = exception.errorInfo.toTrackingException()
+                logHandler?.w("Failed to suspend update presence data for channel ${channel.name}", trackingException)
+                continuation.resumeWithException(trackingException)
             }
         }
     }
@@ -850,7 +876,9 @@ constructor(
                 }
             }
         } catch (exception: TimeoutCancellationException) {
-            throw ConnectionException(ErrorInformation("Timeout was thrown when waiting for channel to attach"))
+            throw ConnectionException(ErrorInformation("Timeout was thrown when waiting for channel to attach")).also {
+                logHandler?.w("Timeout while waiting for channel reconnection ${channel.name}", it)
+            }
         }
     }
 
@@ -880,15 +908,17 @@ constructor(
                         }
 
                         override fun onError(reason: ErrorInfo?) {
-                            continuation.resumeWithException(
-                                reason?.toTrackingException()
-                                    ?: ConnectionException(ErrorInformation("Unknown error when entering presence $name"))
-                            )
+                            val trackingException = reason?.toTrackingException()
+                                ?: ConnectionException(ErrorInformation("Unknown error when entering presence $name"))
+                            logHandler?.w("Failed to suspend enter presence for channel $name", trackingException)
+                            continuation.resumeWithException(trackingException)
                         }
                     }
                 )
             } catch (ablyException: AblyException) {
-                continuation.resumeWithException(ablyException.errorInfo.toTrackingException())
+                val trackingException = ablyException.errorInfo.toTrackingException()
+                logHandler?.w("Failed to suspend enter presence for channel $name", trackingException)
+                continuation.resumeWithException(trackingException)
             }
         }
     }
@@ -906,14 +936,16 @@ constructor(
                     }
 
                     override fun onError(reason: ErrorInfo?) {
-                        continuation.resumeWithException(
-                            reason?.toTrackingException()
-                                ?: ConnectionException(ErrorInformation("Unknown error when attaching channel $name"))
-                        )
+                        val trackingException = reason?.toTrackingException()
+                            ?: ConnectionException(ErrorInformation("Unknown error when attaching channel $name"))
+                        logHandler?.w("Failed to suspend attach to channel $name", trackingException)
+                        continuation.resumeWithException(trackingException)
                     }
                 })
             } catch (ablyException: AblyException) {
-                continuation.resumeWithException(ablyException.errorInfo.toTrackingException())
+                val trackingException = ablyException.errorInfo.toTrackingException()
+                logHandler?.w("Failed to suspend attach to channel $name", trackingException)
+                continuation.resumeWithException(trackingException)
             }
         }
     }
@@ -928,6 +960,7 @@ constructor(
             ably.connectSuspending()
             Result.success(Unit)
         } catch (connectionException: ConnectionException) {
+            logHandler?.w("Failed to start Ably connection", connectionException)
             Result.failure(connectionException)
         }
     }
@@ -937,6 +970,7 @@ constructor(
             ably.closeSuspending()
             Result.success(Unit)
         } catch (connectionException: ConnectionException) {
+            logHandler?.w("Failed to stop Ably connection", connectionException)
             Result.failure(connectionException)
         }
     }
@@ -977,7 +1011,9 @@ constructor(
                 }
             }
         } catch (exception: TimeoutCancellationException) {
-            throw ConnectionException(ErrorInformation("Timeout was thrown when waiting for Ably to connect"))
+            throw ConnectionException(ErrorInformation("Timeout was thrown when waiting for Ably to connect")).also {
+                logHandler?.w("Timeout while waiting for Ably to connect", it)
+            }
         }
     }
 
