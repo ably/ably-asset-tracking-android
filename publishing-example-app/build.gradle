@@ -30,6 +30,8 @@ dependencies {
     implementation 'pub.devrel:easypermissions:3.0.0'
     // This version needs to be compatible with the "com.mapbox.navigation:core" dependency version from publishing-sdk.
     implementation 'com.mapbox.maps:android:10.8.0'
+    //for memory leak detection
+    debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.10'
 
     if (useCrashlytics) {
         // The BoM for the Firebase platform (it specifies the versions for Firebase dependencies).
