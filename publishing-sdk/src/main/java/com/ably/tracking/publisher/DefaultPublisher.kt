@@ -8,6 +8,8 @@ import com.ably.tracking.LocationUpdate
 import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
+import com.ably.tracking.common.logging.v
+import com.ably.tracking.common.logging.w
 import com.ably.tracking.common.wrapInResultCallback
 import com.ably.tracking.logging.LogHandler
 import kotlin.coroutines.suspendCoroutine
@@ -22,7 +24,7 @@ constructor(
     mapbox: Mapbox,
     resolutionPolicyFactory: ResolutionPolicy.Factory,
     routingProfile: RoutingProfile,
-    logHandler: LogHandler?,
+    private val logHandler: LogHandler?,
     areRawLocationsEnabled: Boolean?,
     sendResolutionEnabled: Boolean,
     constantLocationEngineResolution: Resolution?,
@@ -53,29 +55,58 @@ constructor(
             sendResolutionEnabled,
             constantLocationEngineResolution,
         )
+        logHandler?.v("Created a publisher instance")
     }
 
     override suspend fun track(trackable: Trackable): StateFlow<TrackableState> {
+        logHandler?.v("Publisher track operation started")
         return suspendCoroutine { continuation ->
-            core.trackTrackable(trackable, continuation.wrapInResultCallback())
+            core.trackTrackable(
+                trackable,
+                continuation.wrapInResultCallback(
+                    onSuccess = { logHandler?.v("Publisher track operation succeeded") },
+                    onError = { logHandler?.w("Publisher track operation failed", it) },
+                ),
+            )
         }
     }
 
     override suspend fun add(trackable: Trackable): StateFlow<TrackableState> {
+        logHandler?.v("Publisher add operation started")
         return suspendCoroutine { continuation ->
-            core.addTrackable(trackable, continuation.wrapInResultCallback())
+            core.addTrackable(
+                trackable,
+                continuation.wrapInResultCallback(
+                    onSuccess = { logHandler?.v("Publisher add operation succeeded") },
+                    onError = { logHandler?.w("Publisher add operation failed", it) },
+                ),
+            )
         }
     }
 
     override suspend fun remove(trackable: Trackable): Boolean {
+        logHandler?.v("Publisher remove operation started")
         return suspendCoroutine { continuation ->
-            core.removeTrackable(trackable, continuation.wrapInResultCallback())
+            core.removeTrackable(
+                trackable,
+                continuation.wrapInResultCallback(
+                    onSuccess = { logHandler?.v("Publisher remove operation succeeded") },
+                    onError = { logHandler?.w("Publisher remove operation failed", it) },
+                ),
+            )
         }
     }
 
     override suspend fun stop(timeoutInMilliseconds: Long) {
+        logHandler?.v("Publisher stop operation started")
         suspendCoroutine<Unit> { continuation ->
-            core.stop(timeoutInMilliseconds, continuation.wrapInResultCallback())
+            core.stop(
+                timeoutInMilliseconds,
+                continuation.wrapInResultCallback(
+                    onSuccess = { logHandler?.v("Publisher stop operation succeeded") },
+                    onError = { logHandler?.w("Publisher stop operation failed", it) },
+                ),
+            )
         }
     }
 
