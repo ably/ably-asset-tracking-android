@@ -4,6 +4,7 @@ import com.ably.tracking.ConnectionException
 import com.ably.tracking.EnhancedLocationUpdate
 import com.ably.tracking.ErrorInformation
 import com.ably.tracking.LocationUpdate
+import com.ably.tracking.common.logging.createLoggingTag
 import com.ably.tracking.common.logging.d
 import com.ably.tracking.common.logging.e
 import com.ably.tracking.common.logging.i
@@ -253,6 +254,7 @@ constructor(
     private val gson = Gson()
     private val ably: AblyRealtime
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private val TAG = createLoggingTag(this)
 
     init {
         try {
@@ -266,7 +268,9 @@ constructor(
             }
             ably = AblyRealtime(clientOptions)
         } catch (exception: AblyException) {
-            throw exception.errorInfo.toTrackingException()
+            throw exception.errorInfo.toTrackingException().also {
+                logHandler?.w("$TAG Failed to create an Ably instance", it)
+            }
         }
     }
 
@@ -309,11 +313,13 @@ constructor(
                 val renewAuthResult = renewAuthSuspending()
 
                 renewAuthResult.errorInfo?.let {
+                    logHandler?.w("$TAG Failed to renew auth while entering the presence of channel ${channel.name}", it.toTrackingException())
                     throw it.toTrackingException()
                 }
                 channel.attachSuspending()
                 channel.enterPresenceSuspending(presenceData)
             } else {
+                logHandler?.w("$TAG Failed to enter the presence of channel ${channel.name}", connectionException)
                 throw connectionException
             }
         }
@@ -328,6 +334,7 @@ constructor(
                     continuation.resume(RenewAuthResult(success, tokenDetails, errorInfo))
                 }
             } catch (e: Exception) {
+                logHandler?.w("$TAG Failed to renew Ably auth", e)
                 e.printStackTrace()
                 continuation.resumeWithException(e)
             }
@@ -355,12 +362,15 @@ constructor(
                         enterChannelPresence(channel, presenceData)
                         callback(Result.success(Unit))
                     } catch (connectionException: ConnectionException) {
+                        logHandler?.w("$TAG Failed to connect for channel ${channel.name}", connectionException)
                         ably.channels.release(channelName)
                         callback(Result.failure(connectionException))
                     }
                 }
             } catch (ablyException: AblyException) {
-                callback(Result.failure(ablyException.errorInfo.toTrackingException()))
+                val trackingException = ablyException.errorInfo.toTrackingException()
+                logHandler?.w("$TAG Failed to connect for trackable $trackableId", trackingException)
+                callback(Result.failure(trackingException))
             }
         } else {
             callback(Result.success(Unit))
@@ -396,6 +406,7 @@ constructor(
                     result.getOrThrow()
                     continuation.resume(Result.success(Unit))
                 } catch (exception: ConnectionException) {
+                    logHandler?.w("$TAG Failed to connect for trackable $trackableId", exception)
                     continuation.resume(Result.failure(exception))
                 }
             }
@@ -410,6 +421,7 @@ constructor(
                     disconnectChannel(channelToRemove, presenceData)
                     callback(Result.success(Unit))
                 } catch (exception: ConnectionException) {
+                    logHandler?.w("$TAG Failed to disconnect for trackable $trackableId", exception)
                     callback(Result.failure(exception))
                 }
             } else {
@@ -453,13 +465,18 @@ constructor(
                             continuation.resume(Unit)
                         }
 
-                        override fun onError(reason: ErrorInfo) {
-                            continuation.resumeWithException(reason.toTrackingException())
+                        override fun onError(reason: ErrorInfo?) {
+                            val trackingException = reason?.toTrackingException()
+                                ?: ConnectionException(ErrorInformation("Unknown error when leaving presence ${channel.name}"))
+                            logHandler?.w("$TAG Failed to leave presence for channel ${channel.name}", trackingException)
+                            continuation.resumeWithException(trackingException)
                         }
                     }
                 )
             } catch (ablyException: AblyException) {
-                continuation.resumeWithException(ablyException.errorInfo.toTrackingException())
+                val trackingException = ablyException.errorInfo.toTrackingException()
+                logHandler?.w("$TAG Failed to leave presence for channel ${channel.name}", trackingException)
+                continuation.resumeWithException(trackingException)
             }
         }
     }
@@ -474,6 +491,7 @@ constructor(
                     it.getOrThrow()
                     continuation.resume(Result.success(Unit))
                 } catch (exception: ConnectionException) {
+                    logHandler?.w("$TAG Failed to disconnect for trackable $trackableId", exception)
                     continuation.resume(Result.failure(exception))
                 }
             }
@@ -488,7 +506,7 @@ constructor(
         val trackableChannel = getChannelIfExists(trackableId)
         if (trackableChannel != null) {
             val locationUpdateJson = locationUpdate.toMessageJson(gson)
-            logHandler?.d("sendEnhancedLocationMessage: publishing: $locationUpdateJson")
+            logHandler?.d("$TAG sendEnhancedLocationMessage: publishing: $locationUpdateJson")
             sendMessage(
                 trackableChannel,
                 Message(EventNames.ENHANCED, locationUpdateJson).apply {
@@ -509,7 +527,7 @@ constructor(
         val trackableChannel = getChannelIfExists(trackableId)
         if (trackableChannel != null) {
             val locationUpdateJson = locationUpdate.toMessageJson(gson)
-            logHandler?.d("sendRawLocationMessage: publishing: $locationUpdateJson")
+            logHandler?.d("$TAG sendRawLocationMessage: publishing: $locationUpdateJson")
             sendMessage(
                 trackableChannel,
                 Message(EventNames.RAW, locationUpdateJson).apply {
@@ -530,6 +548,7 @@ constructor(
                 }
                 callback(Result.success(Unit))
             } catch (exception: ConnectionException) {
+                logHandler?.w("$TAG Failed to send message for channel ${channel.name}", exception)
                 callback(Result.failure(exception))
             }
         }
@@ -545,13 +564,18 @@ constructor(
                             continuation.resume(Unit)
                         }
 
-                        override fun onError(reason: ErrorInfo) {
-                            continuation.resumeWithException(reason.toTrackingException())
+                        override fun onError(reason: ErrorInfo?) {
+                            val trackingException = reason?.toTrackingException()
+                                ?: ConnectionException(ErrorInformation("Unknown error when sending message ${channel.name}"))
+                            logHandler?.w("$TAG Failed to suspend send message for channel ${channel.name}", trackingException)
+                            continuation.resumeWithException(trackingException)
                         }
                     }
                 )
             } catch (exception: AblyException) {
-                continuation.resumeWithException(exception.errorInfo.toTrackingException())
+                val trackingException = exception.errorInfo.toTrackingException()
+                logHandler?.w("$TAG Failed to suspend send message for channel ${channel.name}", trackingException)
+                continuation.resumeWithException(trackingException)
             }
         }
     }
@@ -573,7 +597,9 @@ constructor(
                     )
                 }
             } catch (exception: AblyException) {
-                throw exception.errorInfo.toTrackingException()
+                throw exception.errorInfo.toTrackingException().also {
+                    logHandler?.w("$TAG Failed to subscriber for enhanced events for channel ${channel.name}", it)
+                }
             }
         }
     }
@@ -595,7 +621,9 @@ constructor(
                     )
                 }
             } catch (exception: AblyException) {
-                throw exception.errorInfo.toTrackingException()
+                throw exception.errorInfo.toTrackingException().also {
+                    logHandler?.w("$TAG Failed to subscriber for raw events for channel ${channel.name}", it)
+                }
             }
         }
     }
@@ -621,7 +649,7 @@ constructor(
 
     private fun createMalformedLocationUpdateLogMessage(isRawLocation: Boolean): String {
         val locationType = if (isRawLocation) "raw" else "enhanced"
-        return "Could not deserialize $locationType location update message, channel will be closed"
+        return "$TAG Could not deserialize $locationType location update message, channel will be closed"
     }
 
     override fun subscribeForPresenceMessages(
@@ -650,12 +678,13 @@ constructor(
                 if (parsedMessage != null) {
                     listener(parsedMessage)
                 } else {
-                    logHandler?.w("Presence message in unexpected format: $it")
+                    logHandler?.w("$TAG Presence message in unexpected format: $it")
                 }
             }
             Result.success(Unit)
         } catch (exception: AblyException) {
             val trackingException = exception.errorInfo.toTrackingException()
+            logHandler?.w("$TAG Failed to subscriber for presence messages for trackable $trackableId", trackingException)
             Result.failure(trackingException)
         }
     }
@@ -674,7 +703,9 @@ constructor(
                 val currentPresenceMessages = getAllCurrentMessagesFromPresence(channel)
                 continuation.resume(Result.success(currentPresenceMessages))
             } catch (ablyException: AblyException) {
-                continuation.resume(Result.failure(ablyException.errorInfo.toTrackingException()))
+                val trackingException = ablyException.errorInfo.toTrackingException()
+                logHandler?.w("$TAG Failed to get current presence messages for trackable $trackableId", trackingException)
+                continuation.resume(Result.failure(trackingException))
             }
         }
     }
@@ -686,7 +717,7 @@ constructor(
         channel.presence.get(true).mapNotNull { presenceMessage ->
             presenceMessage.toTracking(gson).also {
                 if (it == null) {
-                    logHandler?.w("Presence message in unexpected format: $presenceMessage")
+                    logHandler?.w("$TAG Presence message in unexpected format: $presenceMessage")
                 }
             }
         }
@@ -706,6 +737,7 @@ constructor(
             }
             Result.success(Unit)
         } catch (exception: ConnectionException) {
+            logHandler?.w("$TAG Failed to update presence data for trackable $trackableId", exception)
             Result.failure(exception)
         }
     }
@@ -720,13 +752,18 @@ constructor(
                             continuation.resume(Unit)
                         }
 
-                        override fun onError(reason: ErrorInfo) {
-                            continuation.resumeWithException(reason.toTrackingException())
+                        override fun onError(reason: ErrorInfo?) {
+                            val trackingException = reason?.toTrackingException()
+                                ?: ConnectionException(ErrorInformation("Unknown error when updating presence ${channel.name}"))
+                            logHandler?.w("$TAG Failed to suspend update presence data for channel ${channel.name}", trackingException)
+                            continuation.resumeWithException(trackingException)
                         }
                     }
                 )
             } catch (exception: AblyException) {
-                continuation.resumeWithException(exception.errorInfo.toTrackingException())
+                val trackingException = exception.errorInfo.toTrackingException()
+                logHandler?.w("$TAG Failed to suspend update presence data for channel ${channel.name}", trackingException)
+                continuation.resumeWithException(trackingException)
             }
         }
     }
@@ -792,14 +829,14 @@ constructor(
     ) {
         try {
             if (channel.state == ChannelState.suspended) {
-                logHandler?.w("Trying to perform an operation on a suspended channel ${channel.name}, waiting for the channel to be reconnected")
+                logHandler?.w("$TAG Trying to perform an operation on a suspended channel ${channel.name}, waiting for the channel to be reconnected")
                 waitForChannelReconnection(channel)
             }
             operation(channel)
         } catch (exception: ConnectionException) {
             if (exception.isConnectionResumeException()) {
                 logHandler?.w(
-                    "Connection resume failed for channel ${channel.name}, waiting for the channel to be reconnected",
+                    "$TAG Connection resume failed for channel ${channel.name}, waiting for the channel to be reconnected",
                     exception
                 )
                 try {
@@ -807,7 +844,7 @@ constructor(
                     operation(channel)
                 } catch (secondException: ConnectionException) {
                     logHandler?.w(
-                        "Retrying the operation on channel ${channel.name} has failed for the second time",
+                        "$TAG Retrying the operation on channel ${channel.name} has failed for the second time",
                         secondException
                     )
                     throw secondException
@@ -841,7 +878,9 @@ constructor(
                 }
             }
         } catch (exception: TimeoutCancellationException) {
-            throw ConnectionException(ErrorInformation("Timeout was thrown when waiting for channel to attach"))
+            throw ConnectionException(ErrorInformation("Timeout was thrown when waiting for channel to attach")).also {
+                logHandler?.w("$TAG Timeout while waiting for channel reconnection ${channel.name}", it)
+            }
         }
     }
 
@@ -870,13 +909,18 @@ constructor(
                             continuation.resume(Unit)
                         }
 
-                        override fun onError(reason: ErrorInfo) {
-                            continuation.resumeWithException(reason.toTrackingException())
+                        override fun onError(reason: ErrorInfo?) {
+                            val trackingException = reason?.toTrackingException()
+                                ?: ConnectionException(ErrorInformation("Unknown error when entering presence $name"))
+                            logHandler?.w("$TAG Failed to suspend enter presence for channel $name", trackingException)
+                            continuation.resumeWithException(trackingException)
                         }
                     }
                 )
             } catch (ablyException: AblyException) {
-                continuation.resumeWithException(ablyException.errorInfo.toTrackingException())
+                val trackingException = ablyException.errorInfo.toTrackingException()
+                logHandler?.w("$TAG Failed to suspend enter presence for channel $name", trackingException)
+                continuation.resumeWithException(trackingException)
             }
         }
     }
@@ -893,12 +937,17 @@ constructor(
                         continuation.resume(Unit)
                     }
 
-                    override fun onError(reason: ErrorInfo) {
-                        continuation.resumeWithException(reason.toTrackingException())
+                    override fun onError(reason: ErrorInfo?) {
+                        val trackingException = reason?.toTrackingException()
+                            ?: ConnectionException(ErrorInformation("Unknown error when attaching channel $name"))
+                        logHandler?.w("$TAG Failed to suspend attach to channel $name", trackingException)
+                        continuation.resumeWithException(trackingException)
                     }
                 })
             } catch (ablyException: AblyException) {
-                continuation.resumeWithException(ablyException.errorInfo.toTrackingException())
+                val trackingException = ablyException.errorInfo.toTrackingException()
+                logHandler?.w("$TAG Failed to suspend attach to channel $name", trackingException)
+                continuation.resumeWithException(trackingException)
             }
         }
     }
@@ -913,6 +962,7 @@ constructor(
             ably.connectSuspending()
             Result.success(Unit)
         } catch (connectionException: ConnectionException) {
+            logHandler?.w("$TAG Failed to start Ably connection", connectionException)
             Result.failure(connectionException)
         }
     }
@@ -922,6 +972,7 @@ constructor(
             ably.closeSuspending()
             Result.success(Unit)
         } catch (connectionException: ConnectionException) {
+            logHandler?.w("$TAG Failed to stop Ably connection", connectionException)
             Result.failure(connectionException)
         }
     }
@@ -962,7 +1013,9 @@ constructor(
                 }
             }
         } catch (exception: TimeoutCancellationException) {
-            throw ConnectionException(ErrorInformation("Timeout was thrown when waiting for Ably to connect"))
+            throw ConnectionException(ErrorInformation("Timeout was thrown when waiting for Ably to connect")).also {
+                logHandler?.w("$TAG Timeout while waiting for Ably to connect", it)
+            }
         }
     }
 

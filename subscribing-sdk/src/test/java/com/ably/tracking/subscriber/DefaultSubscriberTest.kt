@@ -15,7 +15,7 @@ import java.util.UUID
 class DefaultSubscriberTest {
     private val ably = mockk<Ably>(relaxed = true)
     private val trackableId = UUID.randomUUID().toString()
-    private val subscriber = DefaultSubscriber(ably, null, trackableId)
+    private val subscriber = DefaultSubscriber(ably, null, trackableId, null)
 
     @Test(expected = ConnectionException::class)
     fun `should return an error when starting the subscriber with subscribing to presence error`() {

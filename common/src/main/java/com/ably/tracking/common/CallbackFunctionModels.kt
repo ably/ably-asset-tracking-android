@@ -20,11 +20,17 @@ typealias ResultCallbackFunction<T> = CallbackFunction<Result<T>>
  * Utility function adapts [Continuation] to fit in [ResultCallbackFunction] signature. Callback result is unpacked and
  * used to resume the continuation.
  */
-fun <T> Continuation<T>.wrapInResultCallback(): ResultCallbackFunction<T> =
+fun <T> Continuation<T>.wrapInResultCallback(
+    onSuccess: () -> Unit = {},
+    onError: (Exception) -> Unit = {},
+): ResultCallbackFunction<T> =
     { result ->
         try {
-            resume(result.getOrThrow())
+            val resultValue = result.getOrThrow()
+            onSuccess()
+            resume(resultValue)
         } catch (exception: Exception) {
+            onError(exception)
             resumeWithException(exception)
         }
     }
