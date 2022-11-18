@@ -29,11 +29,11 @@ internal data class SubscriberBuilder(
         this.copy(logHandler = logHandler)
 
     override suspend fun start(): Subscriber {
-        logHandler?.v("$TAG Creating a subscriber instance")
         if (isMissingRequiredFields()) {
             logHandler?.v("$TAG Creating a subscriber instance failed due to missing required fields")
             throw BuilderConfigurationIncompleteException()
         }
+        logHandler?.v("$TAG Creating a subscriber instance")
         // All below fields are required and above code checks if they are nulls, so using !! should be safe from NPE
         return DefaultSubscriber(
             DefaultAbly(connectionConfiguration!!, logHandler),

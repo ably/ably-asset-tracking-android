@@ -74,11 +74,11 @@ internal data class PublisherBuilder(
 
     @RequiresPermission(anyOf = [ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION])
     override fun start(): Publisher {
-        logHandler?.v("$TAG Creating a publisher instance")
         if (isMissingRequiredFields()) {
             logHandler?.v("$TAG Creating a publisher instance failed due to missing required fields")
             throw BuilderConfigurationIncompleteException()
         }
+        logHandler?.v("$TAG Creating a publisher instance")
         // All below fields are required and above code checks if they are nulls, so using !! should be safe from NPE
         return DefaultPublisher(
             DefaultAbly(connectionConfiguration!!, logHandler),
