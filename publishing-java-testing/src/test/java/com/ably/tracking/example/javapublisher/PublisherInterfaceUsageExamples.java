@@ -66,7 +66,7 @@ public class PublisherInterfaceUsageExamples {
         try {
             publisherBuilder
                 .androidContext(context)
-                .connection(new ConnectionConfiguration(AuthenticationFacade.basic("CLIENT_ID", "ABLY_API_KEY"), null))
+                .connection(new ConnectionConfiguration(AuthenticationFacade.basic("CLIENT_ID", "ABLY_API_KEY"), null, null))
                 .map(new MapConfiguration("MAPBOX_API_KEY"))
                 .resolutionPolicy(resolutionPolicyFactory)
                 .locationSource(LocationSourceRaw.createRaw(new LocationHistoryData(new ArrayList<>()), null))
