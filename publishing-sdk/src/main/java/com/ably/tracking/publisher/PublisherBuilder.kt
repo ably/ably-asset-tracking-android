@@ -7,6 +7,8 @@ import androidx.annotation.RequiresPermission
 import com.ably.tracking.BuilderConfigurationIncompleteException
 import com.ably.tracking.Resolution
 import com.ably.tracking.common.DefaultAbly
+import com.ably.tracking.common.logging.createLoggingTag
+import com.ably.tracking.common.logging.v
 import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.logging.LogHandler
 
@@ -26,6 +28,7 @@ internal data class PublisherBuilder(
     val constantLocationEngineResolution: Resolution? = null,
     val vehicleProfile: VehicleProfile = VehicleProfile.CAR,
 ) : Publisher.Builder {
+    private val TAG = createLoggingTag(this)
 
     override fun connection(configuration: ConnectionConfiguration): Publisher.Builder =
         this.copy(connectionConfiguration = configuration)
@@ -72,8 +75,10 @@ internal data class PublisherBuilder(
     @RequiresPermission(anyOf = [ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION])
     override fun start(): Publisher {
         if (isMissingRequiredFields()) {
+            logHandler?.v("$TAG Creating a publisher instance failed due to missing required fields")
             throw BuilderConfigurationIncompleteException()
         }
+        logHandler?.v("$TAG Creating a publisher instance")
         // All below fields are required and above code checks if they are nulls, so using !! should be safe from NPE
         return DefaultPublisher(
             DefaultAbly(connectionConfiguration!!, logHandler),

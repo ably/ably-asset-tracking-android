@@ -48,11 +48,11 @@ public class UsageExamples {
     @Test
     public void subscriberBuilderUsageExample() {
         Subscriber.Builder nativeBuilder = Subscriber.subscribers()
-            .connection(new ConnectionConfiguration(AuthenticationFacade.basic("CLIENT_ID", "API_KEY"), null))
+            .connection(new ConnectionConfiguration(AuthenticationFacade.basic("CLIENT_ID", "API_KEY"), null, null))
             // or
-            // .connection(new ConnectionConfiguration(createTokenRequestAuthentication(), null))
+            // .connection(new ConnectionConfiguration(createTokenRequestAuthentication(), null, null))
             // or
-            // .connection(new ConnectionConfiguration(createJwtAuthentication(), null))
+            // .connection(new ConnectionConfiguration(createJwtAuthentication(), null, null))
             .trackingId("TRACKING_ID")
             .resolution(new Resolution(Accuracy.BALANCED, 1000L, 1.0));
         SubscriberFacade.Builder wrappedSubscriberBuilder = SubscriberFacade.Builder.wrap(nativeBuilder);
