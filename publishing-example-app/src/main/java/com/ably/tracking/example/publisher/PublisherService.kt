@@ -5,6 +5,7 @@ import android.app.Notification
 import android.app.Service
 import android.content.Intent
 import android.os.IBinder
+import android.util.Log
 import androidx.annotation.RequiresPermission
 import androidx.core.app.NotificationCompat
 import com.ably.tracking.Resolution
@@ -70,6 +71,7 @@ class PublisherService : Service() {
     override fun onDestroy() {
         // We want to be sure that after the service is stopped the publisher is stopped too.
         // Otherwise we could end up with multiple active publishers.
+        Log.d("onDestroy", "onDestroy: ")
         scope.launch { publisher?.stop() }
         super.onDestroy()
     }
