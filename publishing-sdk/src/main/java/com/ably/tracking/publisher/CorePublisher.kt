@@ -472,7 +472,11 @@ constructor(
         }
         if (newTrackableState != properties.trackableStates[trackableId]) {
             properties.trackableStates[trackableId] = newTrackableState
-            scope.launch { properties.trackableStateFlows[trackableId]?.emit(newTrackableState) }
+            scope.launch {
+                if (properties.state != PublisherState.STOPPED){
+                    properties.trackableStateFlows[trackableId]?.emit(newTrackableState)
+                }
+            }
         }
     }
 
