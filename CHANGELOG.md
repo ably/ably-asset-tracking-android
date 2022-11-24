@@ -11,10 +11,10 @@
 **Fixed bugs:**
 
 - Fix crash when publisher tries to modify its internal state after being stopped [\#808](https://github.com/ably/ably-asset-tracking-android/issues/808)
+- Fix not re-entering presence after connection is recovered via "Upgrade ably-java to 1.2.20" [\#822](https://github.com/ably/ably-asset-tracking-android/pull/822) ([KacperKluka](https://github.com/KacperKluka))
 
 **Merged pull requests:**
 
-- Upgrade ably-java to 1.2.20 [\#822](https://github.com/ably/ably-asset-tracking-android/pull/822) ([KacperKluka](https://github.com/KacperKluka))
 - Check publisher state before emitting state on flow [\#820](https://github.com/ably/ably-asset-tracking-android/pull/820) ([ikbalkaya](https://github.com/ikbalkaya))
 - Allow to specify the remainPresentFor Ably transport parameter [\#806](https://github.com/ably/ably-asset-tracking-android/pull/806) ([KacperKluka](https://github.com/KacperKluka))
 
