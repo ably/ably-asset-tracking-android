@@ -1,10 +1,10 @@
 package com.ably.tracking.example.subscriber
 
-import androidx.multidex.MultiDexApplication
+import android.app.Application
 import timber.log.Timber
 import timber.log.Timber.DebugTree
 
-class SubscribingExampleApplication : MultiDexApplication() {
+class SubscribingExampleApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         Timber.plant(DebugTree())
