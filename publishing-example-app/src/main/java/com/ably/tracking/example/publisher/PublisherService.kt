@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import java.lang.ref.WeakReference
 
 // The public token for the Mapbox SDK. For more details see the README.
 private const val MAPBOX_ACCESS_TOKEN = BuildConfig.MAPBOX_ACCESS_TOKEN
@@ -41,7 +42,7 @@ class PublisherService : Service() {
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     private val NOTIFICATION_ID = 5235
     private lateinit var notification: Notification
-    private val binder = Binder()
+    private val binder = Binder(WeakReference(this))
     var publisher: Publisher? = null
     private lateinit var appPreferences: AppPreferences
 
@@ -62,8 +63,8 @@ class PublisherService : Service() {
         return START_NOT_STICKY
     }
 
-    inner class Binder : android.os.Binder() {
-        fun getService(): PublisherService = this@PublisherService
+    inner class Binder(private val weakService : WeakReference<PublisherService>) : android.os.Binder() {
+        fun getService(): PublisherService? = weakService.get()
     }
 
     override fun onBind(intent: Intent?): IBinder = binder

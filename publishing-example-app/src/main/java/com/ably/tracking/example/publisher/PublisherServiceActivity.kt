@@ -14,7 +14,7 @@ abstract class PublisherServiceActivity : AppCompatActivity() {
     protected var publisherService: PublisherService? = null
     private val publisherServiceConnection = object : ServiceConnection {
         override fun onServiceConnected(className: ComponentName, serviceBinder: IBinder) {
-            (serviceBinder as PublisherService.Binder).getService().let { service ->
+            (serviceBinder as PublisherService.Binder).getService()?.let { service ->
                 publisherService = service
                 onPublisherServiceConnected(service)
             }
