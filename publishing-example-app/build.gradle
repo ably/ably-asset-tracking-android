@@ -30,6 +30,7 @@ dependencies {
     implementation 'pub.devrel:easypermissions:3.0.0'
     // This version needs to be compatible with the "com.mapbox.navigation:core" dependency version from publishing-sdk.
     implementation 'com.mapbox.maps:android:10.8.0'
+    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.5.1'
     //for memory leak detection
     debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.10'
 
