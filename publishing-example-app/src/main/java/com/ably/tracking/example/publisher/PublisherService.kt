@@ -63,7 +63,7 @@ class PublisherService : Service() {
         return START_NOT_STICKY
     }
 
-    inner class Binder(private val weakService : WeakReference<PublisherService>) : android.os.Binder() {
+    inner class Binder(private val weakService: WeakReference<PublisherService>) : android.os.Binder() {
         fun getService(): PublisherService? = weakService.get()
     }
 
