@@ -3,6 +3,7 @@ package com.ably.tracking.publisher
 import android.content.Context
 import com.ably.tracking.Accuracy
 import com.ably.tracking.Resolution
+import java.lang.ref.WeakReference
 import kotlin.math.min
 
 class DefaultResolutionPolicyFactory(
@@ -13,7 +14,12 @@ class DefaultResolutionPolicyFactory(
         hooks: ResolutionPolicy.Hooks,
         methods: ResolutionPolicy.Methods
     ): ResolutionPolicy {
-        return DefaultResolutionPolicy(hooks, methods, defaultResolution, DefaultBatteryDataProvider(context))
+        return DefaultResolutionPolicy(
+            hooks, methods, defaultResolution,
+            DefaultBatteryDataProvider(
+                WeakReference(context)
+            )
+        )
     }
 }
 

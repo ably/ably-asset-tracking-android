@@ -4,10 +4,11 @@ import android.content.Context
 import io.mockk.mockk
 import org.junit.Assert
 import org.junit.Test
+import java.lang.ref.WeakReference
 
 internal class DefaultBatteryDataProviderTest {
     val contextMock = mockk<Context>()
-    val batteryDataProvider = DefaultBatteryDataProvider(contextMock)
+    val batteryDataProvider = DefaultBatteryDataProvider(WeakReference(contextMock))
 
     @Test
     fun `should calculate battery percentage from level and scale`() {
