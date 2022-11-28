@@ -11,12 +11,11 @@ import com.ably.tracking.common.logging.createLoggingTag
 import com.ably.tracking.common.logging.v
 import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.logging.LogHandler
-import java.lang.ref.WeakReference
 
 internal data class PublisherBuilder(
     val connectionConfiguration: ConnectionConfiguration? = null,
     val mapConfiguration: MapConfiguration? = null,
-    val androidContext: WeakReference<Context>? = null,
+    val androidContext: Context? = null,
     val routingProfile: RoutingProfile = RoutingProfile.DRIVING,
     val resolutionPolicyFactory: ResolutionPolicy.Factory? = null,
     val logHandler: LogHandler? = null,
@@ -38,7 +37,7 @@ internal data class PublisherBuilder(
         this.copy(mapConfiguration = configuration)
 
     override fun androidContext(context: Context): Publisher.Builder =
-        this.copy(androidContext = WeakReference(context))
+        this.copy(androidContext = context)
 
     override fun profile(profile: RoutingProfile): Publisher.Builder =
         this.copy(routingProfile = profile)
@@ -84,7 +83,7 @@ internal data class PublisherBuilder(
         return DefaultPublisher(
             DefaultAbly(connectionConfiguration!!, logHandler),
             DefaultMapbox(
-                androidContext!!.get()!!,
+                androidContext!!,
                 mapConfiguration!!,
                 connectionConfiguration,
                 locationSource,

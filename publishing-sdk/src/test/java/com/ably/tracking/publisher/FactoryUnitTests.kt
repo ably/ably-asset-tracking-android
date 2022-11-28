@@ -77,7 +77,7 @@ class FactoryUnitTests {
     }
 
     @Test
-    fun `setting android context updates builder field with weak reference of it`() {
+    fun `setting android context updates builder field`() {
         // given
         val mockedContext = mockk<Context>()
 
@@ -86,7 +86,7 @@ class FactoryUnitTests {
             Publisher.publishers().androidContext(mockedContext) as PublisherBuilder
 
         // then
-        Assert.assertEquals(mockedContext, builder.androidContext?.get())
+        Assert.assertEquals(mockedContext, builder.androidContext)
     }
 
     @Test
