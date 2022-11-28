@@ -48,6 +48,16 @@ class AuthenticationFacade {
             }
 
         /**
+         * Authentication method that uses the Token Request.
+         * This is a convenience method that accepts a static token value that will be used each time the SDK needs to authenticate.
+         *
+         * @param staticTokenRequest The already created [TokenRequest] that will be used each time the SDK needs to authenticate.
+         */
+        @JvmStatic
+        fun tokenRequest(staticTokenRequest: TokenRequest): Authentication =
+            Authentication.tokenRequest(staticTokenRequest)
+
+        /**
          * Authentication method that uses the JWT. The [callback] will be called each time a new token is needed.
          * If something goes wrong while fetching the token you should throw a [TokenAuthException] in the [callback].
          *
@@ -58,5 +68,15 @@ class AuthenticationFacade {
             Authentication.jwt {
                 callback.onCreateNewToken(it).await()
             }
+
+        /**
+         * Authentication method that uses the JWT.
+         * This is a convenience method that accepts a static token value that will be used each time the SDK needs to authenticate.
+         *
+         * @param staticJwt The already created JWT that will be used each time the SDK needs to authenticate.
+         */
+        @JvmSynthetic
+        fun jwt(staticJwt: String): Authentication =
+            Authentication.jwt(staticJwt)
     }
 }
