@@ -88,40 +88,36 @@ val Authentication.clientOptions: ClientOptions
     get() = ClientOptions().apply {
         clientId = this@clientOptions.clientId
 
-        this@clientOptions.tokenRequestConfiguration?.let { tokenRequestConfiguration ->
-            tokenRequestConfiguration.callback?.let { tokenRequestCallback ->
-                authCallback = Auth.TokenCallback {
-                    runBlocking {
-                        try {
-                            tokenRequestCallback(it.toTracking()).toAuth()
-                        } catch (exception: TokenAuthException) {
-                            throw exception.toAblyException()
-                        }
+        this@clientOptions.tokenRequestConfiguration?.callback?.let { tokenRequestCallback ->
+            authCallback = Auth.TokenCallback {
+                runBlocking {
+                    try {
+                        tokenRequestCallback(it.toTracking()).toAuth()
+                    } catch (exception: TokenAuthException) {
+                        throw exception.toAblyException()
                     }
                 }
-            }
-
-            tokenRequestConfiguration.staticTokenRequest?.let { staticTokenRequest ->
-                authCallback = Auth.TokenCallback { staticTokenRequest.toAuth() }
             }
         }
 
-        this@clientOptions.jwtConfiguration?.let { jwtConfiguration ->
-            jwtConfiguration.callback?.let { jwtCallback ->
-                authCallback = Auth.TokenCallback {
-                    runBlocking {
-                        try {
-                            jwtCallback(it.toTracking())
-                        } catch (exception: TokenAuthException) {
-                            throw exception.toAblyException()
-                        }
+        this@clientOptions.tokenRequestConfiguration?.staticTokenRequest?.let { staticTokenRequest ->
+            authCallback = Auth.TokenCallback { staticTokenRequest.toAuth() }
+        }
+
+        this@clientOptions.jwtConfiguration?.callback?.let { jwtCallback ->
+            authCallback = Auth.TokenCallback {
+                runBlocking {
+                    try {
+                        jwtCallback(it.toTracking())
+                    } catch (exception: TokenAuthException) {
+                        throw exception.toAblyException()
                     }
                 }
             }
+        }
 
-            jwtConfiguration.staticJwt?.let { staticJwt ->
-                authCallback = Auth.TokenCallback { staticJwt }
-            }
+        this@clientOptions.jwtConfiguration?.staticJwt?.let { staticJwt ->
+            authCallback = Auth.TokenCallback { staticJwt }
         }
 
         this@clientOptions.basicApiKey?.let { basicApiKey ->
