@@ -7,6 +7,7 @@ import com.ably.tracking.publisher.DefaultResolutionConstraints;
 import com.ably.tracking.publisher.DefaultResolutionSet;
 import com.ably.tracking.publisher.Proximity;
 import com.ably.tracking.publisher.ResolutionPolicy;
+import com.ably.tracking.publisher.ResolutionPolicyProximityHandler;
 import com.ably.tracking.publisher.Trackable;
 import com.ably.tracking.publisher.TrackableResolutionRequest;
 
@@ -116,7 +117,7 @@ public class Snippets {
         final List<String> log = new ArrayList<>();
 
         // Implement the ProximityHandler interface.
-        final ResolutionPolicy.Methods.ProximityHandler handler = new ResolutionPolicy.Methods.ProximityHandler() {
+        final ResolutionPolicyProximityHandler handler = new ResolutionPolicyProximityHandler() {
             @Override
             public void onProximityReached(@NotNull Proximity threshold) {
                 log.add("reached");
