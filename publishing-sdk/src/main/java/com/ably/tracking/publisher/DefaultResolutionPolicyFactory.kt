@@ -8,18 +8,18 @@ import kotlin.math.min
 class DefaultResolutionPolicyFactory(
     private val defaultResolution: Resolution,
     private val context: Context
-) : ResolutionPolicy.Factory {
+) : ResolutionPolicyFactory {
     override fun createResolutionPolicy(
-        hooks: ResolutionPolicy.Hooks,
-        methods: ResolutionPolicy.Methods
+        hooks: ResolutionPolicyHooks,
+        methods: ResolutionPolicyMethods
     ): ResolutionPolicy {
         return DefaultResolutionPolicy(hooks, methods, defaultResolution, DefaultBatteryDataProvider(context))
     }
 }
 
 internal class DefaultResolutionPolicy(
-    hooks: ResolutionPolicy.Hooks,
-    private val methods: ResolutionPolicy.Methods,
+    hooks: ResolutionPolicyHooks,
+    private val methods: ResolutionPolicyMethods,
     private val defaultResolution: Resolution,
     private val batteryDataProvider: BatteryDataProvider
 ) : ResolutionPolicy {
@@ -99,7 +99,7 @@ internal class DefaultResolutionPolicy(
 
     private fun higher(a: Accuracy, b: Accuracy): Accuracy = if (a.level > b.level) a else b
 
-    private inner class SubscriberSetListener : ResolutionPolicy.Hooks.SubscriberSetListener {
+    private inner class SubscriberSetListener : HooksSubscriberSetListener {
         private val subscriberSet = mutableSetOf<Subscriber>()
         override fun onSubscriberAdded(subscriber: Subscriber) {
             subscriberSet.add(subscriber)
@@ -113,7 +113,7 @@ internal class DefaultResolutionPolicy(
     }
 
     private inner class DefaultTrackableSetListener :
-        ResolutionPolicy.Hooks.TrackableSetListener {
+        HooksTrackableSetListener {
         private val trackableSet = mutableSetOf<Trackable>()
         private var activeTrackable: Trackable? = null
         override fun onTrackableAdded(trackable: Trackable) {
@@ -140,7 +140,7 @@ internal class DefaultResolutionPolicy(
     }
 
     private inner class ProximityHandler :
-        ResolutionPolicy.Methods.ProximityHandler {
+        ResolutionPolicyProximityHandler {
         override fun onProximityReached(threshold: Proximity) {
             proximityThresholdReached = true
             methods.refresh()

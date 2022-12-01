@@ -176,7 +176,7 @@ interface Publisher {
          * method will be called exactly once when [start] is called.
          * @return A new instance of the builder with this property changed.
          */
-        fun resolutionPolicy(factory: ResolutionPolicy.Factory): Builder
+        fun resolutionPolicy(factory: ResolutionPolicyFactory): Builder
 
         /**
          * **OPTIONAL** Sets the location source to be used instead of the GPS.

@@ -27,8 +27,8 @@ class CorePublisherPresenceDataTest {
     private val ably = mockk<Ably>(relaxed = true)
     private val mapbox = mockk<Mapbox>(relaxed = true)
     private val resolutionPolicy = mockk<ResolutionPolicy>(relaxed = true)
-    private val resolutionPolicyFactory = object : ResolutionPolicy.Factory {
-        override fun createResolutionPolicy(hooks: ResolutionPolicy.Hooks, methods: ResolutionPolicy.Methods) =
+    private val resolutionPolicyFactory = object : ResolutionPolicyFactory {
+        override fun createResolutionPolicy(hooks: ResolutionPolicyHooks, methods: ResolutionPolicyMethods) =
             resolutionPolicy
     }
 

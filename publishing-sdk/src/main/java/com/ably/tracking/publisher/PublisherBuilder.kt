@@ -17,7 +17,7 @@ internal data class PublisherBuilder(
     val mapConfiguration: MapConfiguration? = null,
     val androidContext: Context? = null,
     val routingProfile: RoutingProfile = RoutingProfile.DRIVING,
-    val resolutionPolicyFactory: ResolutionPolicy.Factory? = null,
+    val resolutionPolicyFactory: ResolutionPolicyFactory? = null,
     val logHandler: LogHandler? = null,
     val notificationProvider: PublisherNotificationProvider? = null,
     val notificationId: Int? = null,
@@ -42,7 +42,7 @@ internal data class PublisherBuilder(
     override fun profile(profile: RoutingProfile): Publisher.Builder =
         this.copy(routingProfile = profile)
 
-    override fun resolutionPolicy(factory: ResolutionPolicy.Factory): Publisher.Builder =
+    override fun resolutionPolicy(factory: ResolutionPolicyFactory): Publisher.Builder =
         this.copy(resolutionPolicyFactory = factory)
 
     override fun locationSource(locationSource: LocationSource?): Publisher.Builder =

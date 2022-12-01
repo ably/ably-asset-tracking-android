@@ -109,7 +109,7 @@ internal interface CorePublisher {
 internal fun createCorePublisher(
     ably: Ably,
     mapbox: Mapbox,
-    resolutionPolicyFactory: ResolutionPolicy.Factory,
+    resolutionPolicyFactory: ResolutionPolicyFactory,
     routingProfile: RoutingProfile,
     logHandler: LogHandler?,
     areRawLocationsEnabled: Boolean?,
@@ -138,7 +138,7 @@ internal class DefaultCorePublisher
 constructor(
     private val ably: Ably,
     private val mapbox: Mapbox,
-    resolutionPolicyFactory: ResolutionPolicy.Factory,
+    resolutionPolicyFactory: ResolutionPolicyFactory,
     override var routingProfile: RoutingProfile,
     private val logHandler: LogHandler?,
     areRawLocationsEnabled: Boolean?,
@@ -643,21 +643,21 @@ constructor(
 
     override fun getCurrentTimeInMilliseconds(): Long = System.currentTimeMillis()
 
-    internal inner class Hooks : ResolutionPolicy.Hooks {
-        var trackables: ResolutionPolicy.Hooks.TrackableSetListener? = null
-        var subscribers: ResolutionPolicy.Hooks.SubscriberSetListener? = null
+    internal inner class Hooks : ResolutionPolicyHooks {
+        var trackables: HooksTrackableSetListener? = null
+        var subscribers: HooksSubscriberSetListener? = null
 
-        override fun trackables(listener: ResolutionPolicy.Hooks.TrackableSetListener) {
+        override fun trackables(listener: HooksTrackableSetListener) {
             trackables = listener
         }
 
-        override fun subscribers(listener: ResolutionPolicy.Hooks.SubscriberSetListener) {
+        override fun subscribers(listener: HooksSubscriberSetListener) {
             subscribers = listener
         }
     }
 
-    private inner class Methods : ResolutionPolicy.Methods {
-        var proximityHandler: ResolutionPolicy.Methods.ProximityHandler? = null
+    private inner class Methods : ResolutionPolicyMethods {
+        var proximityHandler: ResolutionPolicyProximityHandler? = null
         var threshold: Proximity? = null
         override fun refresh() {
             enqueue(workerFactory.createWorker(WorkerParams.RefreshResolutionPolicy))
@@ -665,7 +665,7 @@ constructor(
 
         override fun setProximityThreshold(
             threshold: Proximity,
-            handler: ResolutionPolicy.Methods.ProximityHandler
+            handler: ResolutionPolicyProximityHandler
         ) {
             this.proximityHandler = handler
             this.threshold = threshold

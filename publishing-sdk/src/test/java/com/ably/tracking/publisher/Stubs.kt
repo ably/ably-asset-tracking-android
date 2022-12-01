@@ -1,23 +1,23 @@
 package com.ably.tracking.publisher
 
-class HooksStub : ResolutionPolicy.Hooks {
-    var trackableSetListener: ResolutionPolicy.Hooks.TrackableSetListener? = null
-    var subscriberSetListener: ResolutionPolicy.Hooks.SubscriberSetListener? = null
-    override fun trackables(listener: ResolutionPolicy.Hooks.TrackableSetListener) {
+class HooksStub : ResolutionPolicyHooks {
+    var trackableSetListener: HooksTrackableSetListener? = null
+    var subscriberSetListener: HooksSubscriberSetListener? = null
+    override fun trackables(listener: HooksTrackableSetListener) {
         trackableSetListener = listener
     }
 
-    override fun subscribers(listener: ResolutionPolicy.Hooks.SubscriberSetListener) {
+    override fun subscribers(listener: HooksSubscriberSetListener) {
         subscriberSetListener = listener
     }
 }
 
-class MethodsStub : ResolutionPolicy.Methods {
+class MethodsStub : ResolutionPolicyMethods {
     private var threshold: Proximity? = null
-    private var proximityHandler: ResolutionPolicy.Methods.ProximityHandler? = null
+    private var proximityHandler: ResolutionPolicyProximityHandler? = null
     override fun refresh() = Unit
 
-    override fun setProximityThreshold(threshold: Proximity, handler: ResolutionPolicy.Methods.ProximityHandler) {
+    override fun setProximityThreshold(threshold: Proximity, handler: ResolutionPolicyProximityHandler) {
         this.threshold = threshold
         proximityHandler = handler
     }

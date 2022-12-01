@@ -23,7 +23,7 @@ internal class DefaultPublisher
 constructor(
     ably: Ably,
     mapbox: Mapbox,
-    resolutionPolicyFactory: ResolutionPolicy.Factory,
+    resolutionPolicyFactory: ResolutionPolicyFactory,
     routingProfile: RoutingProfile,
     private val logHandler: LogHandler?,
     areRawLocationsEnabled: Boolean?,

@@ -15,7 +15,6 @@ import com.ably.tracking.Accuracy;
 import com.ably.tracking.BuilderConfigurationIncompleteException;
 import com.ably.tracking.ConnectionException;
 import com.ably.tracking.Resolution;
-import com.ably.tracking.connection.Authentication;
 import com.ably.tracking.connection.ConnectionConfiguration;
 import com.ably.tracking.java.AuthenticationFacade;
 import com.ably.tracking.publisher.DefaultProximity;
@@ -27,7 +26,7 @@ import com.ably.tracking.publisher.LocationSourceAbly;
 import com.ably.tracking.publisher.LocationSourceRaw;
 import com.ably.tracking.publisher.MapConfiguration;
 import com.ably.tracking.publisher.Publisher;
-import com.ably.tracking.publisher.ResolutionPolicy;
+import com.ably.tracking.publisher.ResolutionPolicyFactory;
 import com.ably.tracking.publisher.RoutingProfile;
 import com.ably.tracking.publisher.Trackable;
 import com.ably.tracking.publisher.java.PublisherFacade;
@@ -44,7 +43,7 @@ public class PublisherInterfaceUsageExamples {
     Context context;
     Publisher nativePublisher;
     Publisher.Builder publisherBuilder;
-    ResolutionPolicy.Factory resolutionPolicyFactory;
+    ResolutionPolicyFactory resolutionPolicyFactory;
     PublisherFacade publisher;
 
     @Before
@@ -52,7 +51,7 @@ public class PublisherInterfaceUsageExamples {
         context = mock(Context.class);
         nativePublisher = mock(Publisher.class);
         publisherBuilder = mock(Publisher.Builder.class, withSettings().defaultAnswer(RETURNS_SELF));
-        resolutionPolicyFactory = mock(ResolutionPolicy.Factory.class);
+        resolutionPolicyFactory = mock(ResolutionPolicyFactory.class);
         when(publisherBuilder.start()).thenReturn(nativePublisher);
         publisher = mock(PublisherFacade.class);
         when(publisher.addAsync(any(), any())).thenReturn(CompletableFuture.completedFuture(null));
