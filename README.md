@@ -10,8 +10,6 @@ _[Ably](https://ably.com) is the platform that powers synchronized digital exper
 
 Ably Asset Tracking SDKs provide an easy way to track multiple assets with realtime location updates powered by [Ably](https://ably.com/) realtime network and Mapbox [Navigation SDK](https://docs.mapbox.com/android/navigation/overview/) with location enhancement.
 
-**Status:** this is a beta version of the SDKs. That means that it contains a subset of the final SDK functionality, and the APIs are subject to change. The latest release of the SDKs is available in the [Releases section](https://github.com/ably/ably-asset-tracking-android/releases) of this repository.
-
 Ably Asset Tracking is:
 
 - **easy to integrate** - comprising two complementary SDKs with easy to use APIs, available for multiple platforms:
@@ -129,13 +127,13 @@ you can then add the Ably Asset Tracking dependency that you require in your Gra
 ```groovy
 dependencies {
     // Publishers, developing in Kotlin, will need the Publishing SDK
-    implementation 'com.ably.tracking:publishing-sdk:1.4.1'
+    implementation 'com.ably.tracking:publishing-sdk:1.5.1'
 
     // Subscribers, developing in Kotlin, will need the Subscribing SDK
-    implementation 'com.ably.tracking:subscribing-sdk:1.4.1'
+    implementation 'com.ably.tracking:subscribing-sdk:1.5.1'
 
     // Subscribers, developing in Kotlin, can optionally use the UI utilities
-    implementation 'com.ably.tracking:ui-sdk:1.4.1'
+    implementation 'com.ably.tracking:ui-sdk:1.5.1'
 }
 ```
 
@@ -358,7 +356,7 @@ Firstly, you have to exclude the notification module from Mapbox Navigation SDK 
 
 ```groovy
 // The Ably Asset Tracking Publisher SDK for Android.
-implementation ('com.ably.tracking:publishing-sdk:1.4.1')
+implementation ('com.ably.tracking:publishing-sdk:1.5.1')
 
 // The Mapbox Navigation SDK.
 implementation ('com.mapbox.navigation:android:2.8.0') {

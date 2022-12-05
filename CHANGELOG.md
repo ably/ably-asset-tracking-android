@@ -1,5 +1,42 @@
 # Change log
 
+## [1.5.1](https://github.com/ably/ably-asset-tracking-android/tree/v1.5.1)
+
+[Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.5.0...v1.5.1)
+
+**Implemented enhancements:**
+
+- Provide a fix/option for intermittent connection issue on publisher [\#803](https://github.com/ably/ably-asset-tracking-android/issues/803)
+
+**Fixed bugs:**
+
+- Fix crash when publisher tries to modify its internal state after being stopped [\#808](https://github.com/ably/ably-asset-tracking-android/issues/808)
+- Fix not re-entering presence after connection is recovered via "Upgrade ably-java to 1.2.20" [\#822](https://github.com/ably/ably-asset-tracking-android/pull/822) ([KacperKluka](https://github.com/KacperKluka))
+
+**Merged pull requests:**
+
+- Check publisher state before emitting state on flow [\#820](https://github.com/ably/ably-asset-tracking-android/pull/820) ([ikbalkaya](https://github.com/ikbalkaya))
+- Allow to specify the remainPresentFor Ably transport parameter [\#806](https://github.com/ably/ably-asset-tracking-android/pull/806) ([KacperKluka](https://github.com/KacperKluka))
+
+## [1.5.0](https://github.com/ably/ably-asset-tracking-android/tree/v1.5.0)
+
+[Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.4.1...v1.5.0)
+
+**Implemented enhancements:**
+
+- Missing interface for tokenRequest Authentication instance creation in the Java facade [\#297](https://github.com/ably/ably-asset-tracking-android/issues/297), in [\#787](https://github.com/ably/ably-asset-tracking-android/pull/787) ([KacperKluka](https://github.com/KacperKluka))
+- Add LocationAnimator for the Java API [\#790](https://github.com/ably/ably-asset-tracking-android/issues/790), in [\#791](https://github.com/ably/ably-asset-tracking-android/pull/791) ([KacperKluka](https://github.com/KacperKluka))
+- Add missing methods to the Subscriber Java API [\#788](https://github.com/ably/ably-asset-tracking-android/issues/788), in [\#789](https://github.com/ably/ably-asset-tracking-android/pull/789) ([KacperKluka](https://github.com/KacperKluka))
+- Update documentation regarding the Java verision of the AAT [\#707](https://github.com/ably/ably-asset-tracking-android/issues/707), in [\#793](https://github.com/ably/ably-asset-tracking-android/pull/793) ([KacperKluka](https://github.com/KacperKluka))
+- Add logs connected to the lifecycle of publisher and subscriber SDKs [\#804](https://github.com/ably/ably-asset-tracking-android/issues/804), in [\#813](https://github.com/ably/ably-asset-tracking-android/pull/813) ([KacperKluka](https://github.com/KacperKluka))
+- Add token-based auth configuration that do not require to specify client ID [\#768](https://github.com/ably/ably-asset-tracking-android/pull/768) ([KacperKluka](https://github.com/KacperKluka))
+
+**Fixed bugs:**
+
+- Fix NPE related to ably-java usage [\#805](https://github.com/ably/ably-asset-tracking-android/issues/805), in [\#807](https://github.com/ably/ably-asset-tracking-android/pull/807) ([KacperKluka](https://github.com/KacperKluka))
+- Publisher failing with `IllegalStateException`: Already resumed, but proposed with update `kotlin.Unit` [\#799](https://github.com/ably/ably-asset-tracking-android/issues/799), in [\#800](https://github.com/ably/ably-asset-tracking-android/pull/800) ([KacperKluka](https://github.com/KacperKluka))
+- Refactor the Ably wrapper to be more secure and error-proof [\#440](https://github.com/ably/ably-asset-tracking-android/issues/440), in [\#782](https://github.com/ably/ably-asset-tracking-android/pull/782) ([davyskiba](https://github.com/davyskiba))
+
 ## [1.4.1](https://github.com/ably/ably-asset-tracking-android/tree/v1.4.1)
 
 [Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.4.0...v1.4.1)
