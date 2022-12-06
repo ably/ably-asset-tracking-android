@@ -20,7 +20,6 @@ import com.ably.tracking.publisher.workerqueue.workers.AblyConnectionStateChange
 import com.ably.tracking.publisher.workerqueue.workers.AddTrackableFailedWorker
 import com.ably.tracking.publisher.workerqueue.workers.AddTrackableWorker
 import com.ably.tracking.publisher.workerqueue.workers.ChangeRoutingProfileWorker
-import com.ably.tracking.publisher.workerqueue.workers.StoppingConnectionFinishedWorker
 import com.ably.tracking.publisher.workerqueue.workers.ConnectionCreatedWorker
 import com.ably.tracking.publisher.workerqueue.workers.ConnectionReadyWorker
 import com.ably.tracking.publisher.workerqueue.workers.DestinationSetWorker
@@ -29,7 +28,6 @@ import com.ably.tracking.publisher.workerqueue.workers.EnhancedLocationChangedWo
 import com.ably.tracking.publisher.workerqueue.workers.PresenceMessageWorker
 import com.ably.tracking.publisher.workerqueue.workers.RawLocationChangedWorker
 import com.ably.tracking.publisher.workerqueue.workers.RefreshResolutionPolicyWorker
-import com.ably.tracking.publisher.workerqueue.workers.RemoveTrackableWorker
 import com.ably.tracking.publisher.workerqueue.workers.RetrySubscribeToPresenceSuccessWorker
 import com.ably.tracking.publisher.workerqueue.workers.RetrySubscribeToPresenceWorker
 import com.ably.tracking.publisher.workerqueue.workers.SendEnhancedLocationFailureWorker
@@ -38,6 +36,7 @@ import com.ably.tracking.publisher.workerqueue.workers.SendRawLocationFailureWor
 import com.ably.tracking.publisher.workerqueue.workers.SendRawLocationSuccessWorker
 import com.ably.tracking.publisher.workerqueue.workers.SetActiveTrackableWorker
 import com.ably.tracking.publisher.workerqueue.workers.StopWorker
+import com.ably.tracking.publisher.workerqueue.workers.StoppingConnectionFinishedWorker
 import com.ably.tracking.publisher.workerqueue.workers.TrackableRemovalRequestedWorker
 import com.ably.tracking.publisher.workerqueue.workers.Worker
 import kotlinx.coroutines.flow.StateFlow
@@ -154,11 +153,6 @@ internal class DefaultWorkerFactory(
             )
             WorkerParams.RefreshResolutionPolicy -> RefreshResolutionPolicyWorker(
                 corePublisher,
-            )
-            is WorkerParams.RemoveTrackable -> RemoveTrackableWorker(
-                params.trackable,
-                params.callbackFunction,
-                ably,
             )
             is WorkerParams.SendEnhancedLocationFailure -> SendEnhancedLocationFailureWorker(
                 params.locationUpdate,
@@ -278,11 +272,6 @@ internal sealed class WorkerParams {
     ) : WorkerParams()
 
     object RefreshResolutionPolicy : WorkerParams()
-
-    data class RemoveTrackable(
-        val trackable: Trackable,
-        val callbackFunction: ResultCallbackFunction<Boolean>,
-    ) : WorkerParams()
 
     data class SendEnhancedLocationFailure(
         val locationUpdate: EnhancedLocationUpdate,

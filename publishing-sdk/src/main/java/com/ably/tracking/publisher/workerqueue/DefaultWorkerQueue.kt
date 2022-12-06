@@ -62,7 +62,7 @@ internal class DefaultWorkerQueue(
     }
 
     private fun handleWorkResult(workResult: WorkResult) {
-        val resultHandler = getWorkResultHandler(workResult, workerFactory, this)
+        val resultHandler = getWorkResultHandler(workResult, workerFactory)
         val nextWorker = resultHandler.handle(workResult)
         nextWorker?.let { enqueue(it) }
     }

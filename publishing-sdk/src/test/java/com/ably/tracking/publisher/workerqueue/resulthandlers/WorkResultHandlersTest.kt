@@ -53,7 +53,7 @@ class WorkResultHandlersTest {
             val workResult = it
 
             // when
-            val handler = getWorkResultHandler(workResult, workerFactory, workerQueue)
+            val handler = getWorkResultHandler(workResult, workerFactory)
 
             // then
             Assert.assertTrue(
@@ -70,7 +70,7 @@ class WorkResultHandlersTest {
             val workResult = it
 
             // when
-            val handler = getWorkResultHandler(workResult, workerFactory, workerQueue)
+            val handler = getWorkResultHandler(workResult, workerFactory)
 
             // then
             Assert.assertTrue(
@@ -87,29 +87,12 @@ class WorkResultHandlersTest {
             val workResult = it
 
             // when
-            val handler = getWorkResultHandler(workResult, workerFactory, workerQueue)
+            val handler = getWorkResultHandler(workResult, workerFactory)
 
             // then
             Assert.assertTrue(
                 "Work result ${it::class.simpleName} should return ConnectionReadyResultHandler",
                 handler is ConnectionReadyResultHandler
-            )
-        }
-    }
-
-    @Test
-    fun `should return RemoveTrackableResultHandler for each RemoveTrackableWorkResult`() {
-        removeTrackableWorkResults.forEach {
-            // given
-            val workResult = it
-
-            // when
-            val handler = getWorkResultHandler(workResult, workerFactory, workerQueue)
-
-            // then
-            Assert.assertTrue(
-                "Work result ${it::class.simpleName} should return RemoveTrackableResultHandler",
-                handler is RemoveTrackableResultHandler
             )
         }
     }
@@ -121,7 +104,7 @@ class WorkResultHandlersTest {
             val workResult = it
 
             // when
-            val handler = getWorkResultHandler(workResult, workerFactory, workerQueue)
+            val handler = getWorkResultHandler(workResult, workerFactory)
 
             // then
             Assert.assertTrue(

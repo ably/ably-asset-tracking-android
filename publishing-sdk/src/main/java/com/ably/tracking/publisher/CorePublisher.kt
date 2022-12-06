@@ -18,13 +18,11 @@ import com.ably.tracking.common.createSingleThreadDispatcher
 import com.ably.tracking.common.logging.createLoggingTag
 import com.ably.tracking.common.logging.v
 import com.ably.tracking.common.logging.w
-import com.ably.tracking.common.workerqueue.WorkerQueue as UpdatedWorkerQueue
 import com.ably.tracking.logging.LogHandler
+import com.ably.tracking.publisher.updatedworkerqueue.WorkerSpecification
 import com.ably.tracking.publisher.workerqueue.DefaultWorkerFactory
 import com.ably.tracking.publisher.workerqueue.DefaultWorkerQueue
 import com.ably.tracking.publisher.workerqueue.WorkerFactory
-import com.ably.tracking.publisher.updatedworkerqueue.WorkerFactory as UpdatedWorkerFactory
-import com.ably.tracking.publisher.updatedworkerqueue.WorkerSpecification
 import com.ably.tracking.publisher.workerqueue.WorkerParams
 import com.ably.tracking.publisher.workerqueue.WorkerQueue
 import com.ably.tracking.publisher.workerqueue.workers.Worker
@@ -35,6 +33,8 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
+import com.ably.tracking.common.workerqueue.WorkerQueue as UpdatedWorkerQueue
+import com.ably.tracking.publisher.updatedworkerqueue.WorkerFactory as UpdatedWorkerFactory
 
 internal interface CorePublisher {
     fun trackTrackable(trackable: Trackable, callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>)
@@ -264,7 +264,7 @@ constructor(
     }
 
     override fun removeTrackable(trackable: Trackable, callbackFunction: ResultCallbackFunction<Boolean>) {
-        enqueue(workerFactory.createWorker(WorkerParams.RemoveTrackable(trackable, callbackFunction)))
+        enqueue(WorkerSpecification.RemoveTrackable(trackable, callbackFunction))
     }
 
     override fun changeRoutingProfile(routingProfile: RoutingProfile) {
