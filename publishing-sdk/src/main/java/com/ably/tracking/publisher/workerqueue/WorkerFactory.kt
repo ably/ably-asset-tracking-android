@@ -125,7 +125,6 @@ internal class DefaultWorkerFactory(
                 corePublisher,
                 logHandler,
             )
-            is WorkerParams.ChangeLocationEngineResolution -> throw NotImplementedError()
             is WorkerParams.ChangeRoutingProfile -> ChangeRoutingProfileWorker(
                 params.routingProfile,
                 corePublisher,
@@ -215,8 +214,6 @@ internal sealed class WorkerParams {
         val exception: Exception,
         val isConnectedToAbly: Boolean,
     ) : WorkerParams()
-
-    object ChangeLocationEngineResolution : WorkerParams()
 
     data class ChangeRoutingProfile(
         val routingProfile: RoutingProfile,
