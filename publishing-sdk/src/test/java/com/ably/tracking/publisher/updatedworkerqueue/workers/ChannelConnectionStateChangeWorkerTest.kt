@@ -30,7 +30,7 @@ class ChannelConnectionStateChangeWorkerTest {
     private val postedWorks = mutableListOf<WorkerSpecification>()
 
     @Test
-    fun `should return only async work when adding a trackable that is not added and not being added`() {
+    fun `should update channel connection state and notify publisher`() {
         // given
         val initialProperties = mockPublisherProperties()
 
