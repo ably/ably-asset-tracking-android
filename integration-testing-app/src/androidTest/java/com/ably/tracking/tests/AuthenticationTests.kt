@@ -3,6 +3,7 @@ package com.ably.tracking.tests
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ably.tracking.connection.Authentication
+import com.ably.tracking.connection.TokenParams
 import com.ably.tracking.connection.TokenRequest
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.subscriber.Subscriber
@@ -30,17 +31,27 @@ class AuthenticationTests {
 
     @Test
     fun basicAuthenticationShouldCreateWorkingConnectionBetweenPublisherAndSubscriber() {
-        testConnectionBetweenPublisherAndSubscriber(createBasicAuthenticationConfiguration())
+        testConnectionBetweenPublisherAndSubscriber { createBasicAuthenticationConfiguration() }
     }
 
     @Test
     fun tokenAuthenticationShouldCreateWorkingConnectionBetweenPublisherAndSubscriber() {
-        testConnectionBetweenPublisherAndSubscriber(createTokenAuthenticationConfiguration(ably))
+        testConnectionBetweenPublisherAndSubscriber { createTokenAuthenticationConfiguration(ably) }
+    }
+
+    @Test
+    fun staticTokenAuthenticationShouldCreateWorkingConnectionBetweenPublisherAndSubscriber() {
+        testConnectionBetweenPublisherAndSubscriber { createStaticTokenAuthenticationConfiguration(ably) }
     }
 
     @Test
     fun jwtAuthenticationShouldCreateWorkingConnectionBetweenPublisherAndSubscriber() {
-        testConnectionBetweenPublisherAndSubscriber(createJwtAuthenticationConfiguration())
+        testConnectionBetweenPublisherAndSubscriber { createJwtAuthenticationConfiguration() }
+    }
+
+    @Test
+    fun staticJwtAuthenticationShouldCreateWorkingConnectionBetweenPublisherAndSubscriber() {
+        testConnectionBetweenPublisherAndSubscriber { createStaticJwtAuthenticationConfiguration() }
     }
 
     private fun createBasicAuthenticationConfiguration(): Authentication =
@@ -49,51 +60,68 @@ class AuthenticationTests {
     private fun createTokenAuthenticationConfiguration(ably: AblyRealtime): Authentication =
         Authentication.tokenRequest { requestParameters ->
             // use Ably SDK to create a signed token request (this should normally be done by user auth servers)
-            val ablyTokenRequest = ably.auth.createTokenRequest(
-                Auth.TokenParams().apply {
-                    ttl = requestParameters.ttl
-                    capability = requestParameters.capability
-                    clientId = CLIENT_ID
-                    timestamp = requestParameters.timestamp
-                },
-                Auth.AuthOptions(ABLY_API_KEY)
-            )
-
-            // map the Ably token request to the Asset Tracking token request
-            object : TokenRequest {
-                override val keyName: String = ablyTokenRequest.keyName
-                override val nonce: String = ablyTokenRequest.nonce
-                override val mac: String = ablyTokenRequest.mac
-                override val ttl: Long = ablyTokenRequest.ttl
-                override val capability: String? = ablyTokenRequest.capability
-                override val clientId: String = ablyTokenRequest.clientId
-                override val timestamp: Long = ablyTokenRequest.timestamp
-            }
+            createTokenRequest(ably, requestParameters)
         }
+
+    private fun createStaticTokenAuthenticationConfiguration(ably: AblyRealtime): Authentication =
+        Authentication.tokenRequest(createTokenRequest(ably))
+
+    private fun createTokenRequest(ably: AblyRealtime, requestParameters: TokenParams? = null): TokenRequest {
+        val ablyTokenRequest = ably.auth.createTokenRequest(
+            Auth.TokenParams().apply {
+                ttl = requestParameters?.ttl ?: 3600L
+                capability = requestParameters?.capability ?: "{\"*\":[\"*\"]}"
+                clientId = CLIENT_ID
+                timestamp = requestParameters?.timestamp ?: Date().time
+            },
+            Auth.AuthOptions(ABLY_API_KEY)
+        )
+
+        // map the Ably token request to the Asset Tracking token request
+        return object : TokenRequest {
+            override val keyName: String = ablyTokenRequest.keyName
+            override val nonce: String = ablyTokenRequest.nonce
+            override val mac: String = ablyTokenRequest.mac
+            override val ttl: Long = ablyTokenRequest.ttl
+            override val capability: String? = ablyTokenRequest.capability
+            override val clientId: String = ablyTokenRequest.clientId
+            override val timestamp: Long = ablyTokenRequest.timestamp
+        }
+    }
 
     private fun createJwtAuthenticationConfiguration(): Authentication =
         Authentication.jwt { tokenParams ->
             // use TokenParams to create a signed JWT (this should normally be done by user auth servers)
-            val keyParts = ABLY_API_KEY.split(":")
-            val keyName = keyParts[0]
-            val keySecret = keyParts[1]
-            val tokenValidityInSeconds = if (tokenParams.ttl > 0L) tokenParams.ttl else 3600L
-            val currentTimestampInSeconds = (Date().time / 1000L)
-            val tokenExpirationTimestampInSeconds = currentTimestampInSeconds + tokenValidityInSeconds
-            val tokenCapability =
-                if (!tokenParams.capability.isNullOrEmpty()) tokenParams.capability else "{\"*\":[\"*\"]}"
-            Jwts.builder()
-                .setHeaderParam("typ", "JWT")
-                .setHeaderParam("kid", keyName)
-                .claim("iat", currentTimestampInSeconds)
-                .claim("exp", tokenExpirationTimestampInSeconds)
-                .claim("x-ably-capability", tokenCapability)
-                .claim("x-ably-clientId", CLIENT_ID)
-                .signWith(SignatureAlgorithm.HS256, keySecret.toByteArray())
-                .compact()
+            createJwt(tokenParams)
         }
 
-    private fun testConnectionBetweenPublisherAndSubscriber(authentication: Authentication) {
+    private fun createStaticJwtAuthenticationConfiguration(): Authentication =
+        Authentication.jwt(createJwt())
+
+    private fun createJwt(tokenParams: TokenParams? = null): String {
+        val keyParts = ABLY_API_KEY.split(":")
+        val keyName = keyParts[0]
+        val keySecret = keyParts[1]
+        val tokenValidityInSeconds = if (tokenParams != null && tokenParams.ttl > 0L) tokenParams.ttl else 3600L
+        val currentTimestampInSeconds = (Date().time / 1000L)
+        val tokenExpirationTimestampInSeconds = currentTimestampInSeconds + tokenValidityInSeconds
+        val tokenCapability =
+            if (tokenParams != null && !tokenParams.capability.isNullOrEmpty())
+                tokenParams.capability
+            else
+                "{\"*\":[\"*\"]}"
+        return Jwts.builder()
+            .setHeaderParam("typ", "JWT")
+            .setHeaderParam("kid", keyName)
+            .claim("iat", currentTimestampInSeconds)
+            .claim("exp", tokenExpirationTimestampInSeconds)
+            .claim("x-ably-capability", tokenCapability)
+            .claim("x-ably-clientId", CLIENT_ID)
+            .signWith(SignatureAlgorithm.HS256, keySecret.toByteArray())
+            .compact()
+    }
+
+    private fun testConnectionBetweenPublisherAndSubscriber(createAuthentication: () -> Authentication) {
         // given
         var hasNotReceivedLocationUpdate = true
         val subscriberReceivedLocationUpdateExpectation = UnitExpectation("subscriber received a location update")
@@ -105,10 +133,10 @@ class AuthenticationTests {
         // create subscriber and publisher
         var subscriber: Subscriber
         runBlocking {
-            subscriber = createAndStartSubscriber(trackableId, authentication = authentication)
+            subscriber = createAndStartSubscriber(trackableId, authentication = createAuthentication())
         }
 
-        val publisher = createAndStartPublisher(context, authentication = authentication)
+        val publisher = createAndStartPublisher(context, authentication = createAuthentication())
 
         // listen for location updates
         subscriber.locations
