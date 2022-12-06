@@ -28,7 +28,7 @@ private constructor(
     trackableRemovalGuard: TrackableRemovalGuard,
     private val onActiveTrackableUpdated: (Trackable?) -> Unit,
     private val onRoutingProfileUpdated: (RoutingProfile) -> Unit
-) : Properties() {
+) : Properties {
 
     constructor(
         routingProfile: RoutingProfile,

@@ -24,7 +24,7 @@ import com.ably.tracking.publisher.workerqueue.DefaultWorkerFactory
 import com.ably.tracking.publisher.workerqueue.DefaultWorkerQueue
 import com.ably.tracking.publisher.workerqueue.WorkerFactory
 import com.ably.tracking.publisher.updatedworkerqueue.WorkerFactory as UpdatedWorkerFactory
-import com.ably.tracking.publisher.updatedworkerqueue.WorkerParams as UpdatedWorkerParams
+import com.ably.tracking.publisher.updatedworkerqueue.WorkerSpecification
 import com.ably.tracking.publisher.workerqueue.WorkerParams
 import com.ably.tracking.publisher.workerqueue.WorkerQueue
 import com.ably.tracking.publisher.workerqueue.workers.Worker
@@ -146,7 +146,7 @@ constructor(
     private val scope = CoroutineScope(singleThreadDispatcher + SupervisorJob())
     private val workerQueue: WorkerQueue
     private val workerFactory: WorkerFactory
-    private val updatedWorkerQueue: UpdatedWorkerQueue<PublisherProperties, UpdatedWorkerParams>
+    private val updatedWorkerQueue: UpdatedWorkerQueue<PublisherProperties, WorkerSpecification>
     private val updatedWorkerFactory: UpdatedWorkerFactory
     private val _locations = MutableSharedFlow<LocationUpdate>(replay = 1)
     private val _trackables = MutableSharedFlow<Set<Trackable>>(replay = 1)
@@ -220,6 +220,10 @@ constructor(
         workerQueue.enqueue(worker)
     }
 
+    private fun enqueue(workerSpecification: WorkerSpecification) {
+        updatedWorkerQueue.enqueue(workerSpecification)
+    }
+
     override fun trackTrackable(
         trackable: Trackable,
         callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>
@@ -252,7 +256,7 @@ constructor(
                         enqueue(workerFactory.createWorker(WorkerParams.PresenceMessage(trackable, it)))
                     },
                     channelStateChangeListener = {
-                        enqueue(workerFactory.createWorker(WorkerParams.ChannelConnectionStateChange(trackable.id, it)))
+                        enqueue(WorkerSpecification.ChannelConnectionStateChange(trackable.id, it))
                     },
                 )
             )

@@ -21,7 +21,6 @@ import com.ably.tracking.publisher.workerqueue.workers.AddTrackableFailedWorker
 import com.ably.tracking.publisher.workerqueue.workers.AddTrackableWorker
 import com.ably.tracking.publisher.workerqueue.workers.ChangeLocationEngineResolutionWorker
 import com.ably.tracking.publisher.workerqueue.workers.ChangeRoutingProfileWorker
-import com.ably.tracking.publisher.workerqueue.workers.ChannelConnectionStateChangeWorker
 import com.ably.tracking.publisher.workerqueue.workers.StoppingConnectionFinishedWorker
 import com.ably.tracking.publisher.workerqueue.workers.ConnectionCreatedWorker
 import com.ably.tracking.publisher.workerqueue.workers.ConnectionReadyWorker
@@ -136,12 +135,6 @@ internal class DefaultWorkerFactory(
                 params.routingProfile,
                 corePublisher,
             )
-            is WorkerParams.ChannelConnectionStateChange -> ChannelConnectionStateChangeWorker(
-                params.connectionStateChange,
-                params.trackableId,
-                corePublisher,
-                logHandler,
-            )
             is WorkerParams.DestinationSet -> DestinationSetWorker(
                 params.routeDurationInMilliseconds,
                 timeProvider,
@@ -237,11 +230,6 @@ internal sealed class WorkerParams {
 
     data class ChangeRoutingProfile(
         val routingProfile: RoutingProfile,
-    ) : WorkerParams()
-
-    data class ChannelConnectionStateChange(
-        val trackableId: String,
-        val connectionStateChange: ConnectionStateChange,
     ) : WorkerParams()
 
     data class ConnectionCreated(

@@ -19,31 +19,6 @@ import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.ResolutionPolicy
 import com.ably.tracking.publisher.RoutingProfile
 import com.ably.tracking.publisher.Trackable
-import com.ably.tracking.publisher.workerqueue.workers.AblyConnectionStateChangeWorker
-import com.ably.tracking.publisher.workerqueue.workers.AddTrackableFailedWorker
-import com.ably.tracking.publisher.workerqueue.workers.AddTrackableWorker
-import com.ably.tracking.publisher.workerqueue.workers.ChangeLocationEngineResolutionWorker
-import com.ably.tracking.publisher.workerqueue.workers.ChangeRoutingProfileWorker
-import com.ably.tracking.publisher.workerqueue.workers.ChannelConnectionStateChangeWorker
-import com.ably.tracking.publisher.workerqueue.workers.StoppingConnectionFinishedWorker
-import com.ably.tracking.publisher.workerqueue.workers.ConnectionCreatedWorker
-import com.ably.tracking.publisher.workerqueue.workers.ConnectionReadyWorker
-import com.ably.tracking.publisher.workerqueue.workers.DestinationSetWorker
-import com.ably.tracking.publisher.workerqueue.workers.DisconnectSuccessWorker
-import com.ably.tracking.publisher.workerqueue.workers.EnhancedLocationChangedWorker
-import com.ably.tracking.publisher.workerqueue.workers.PresenceMessageWorker
-import com.ably.tracking.publisher.workerqueue.workers.RawLocationChangedWorker
-import com.ably.tracking.publisher.workerqueue.workers.RefreshResolutionPolicyWorker
-import com.ably.tracking.publisher.workerqueue.workers.RemoveTrackableWorker
-import com.ably.tracking.publisher.workerqueue.workers.RetrySubscribeToPresenceSuccessWorker
-import com.ably.tracking.publisher.workerqueue.workers.RetrySubscribeToPresenceWorker
-import com.ably.tracking.publisher.workerqueue.workers.SendEnhancedLocationFailureWorker
-import com.ably.tracking.publisher.workerqueue.workers.SendEnhancedLocationSuccessWorker
-import com.ably.tracking.publisher.workerqueue.workers.SendRawLocationFailureWorker
-import com.ably.tracking.publisher.workerqueue.workers.SendRawLocationSuccessWorker
-import com.ably.tracking.publisher.workerqueue.workers.SetActiveTrackableWorker
-import com.ably.tracking.publisher.workerqueue.workers.StopWorker
-import com.ably.tracking.publisher.workerqueue.workers.TrackableRemovalRequestedWorker
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -58,14 +33,14 @@ internal class WorkerFactory(
     private val timeProvider: TimeProvider,
     private val logHandler: LogHandler?,
 ) :
-    WorkerFactory<PublisherProperties, WorkerParams> {
+    WorkerFactory<PublisherProperties, WorkerSpecification> {
     /**
-     * Creates an appropriate [Worker] from the passed [WorkerParams].
+     * Creates an appropriate [Worker] from the passed [WorkerSpecification].
      *
-     * @param params The parameters that indicate which [Worker] implementation should be created.
+     * @param workerSpecification The parameters that indicate which [Worker] implementation should be created.
      * @return New [Worker] instance.
      */
-    override fun createWorker(params: WorkerParams): Worker<PublisherProperties, WorkerParams> = when (params) {
+    override fun createWorker(workerSpecification: WorkerSpecification): Worker<PublisherProperties, WorkerSpecification> = when (workerSpecification) {
 //            is WorkerParams.AddTrackable -> AddTrackableWorker(
 //                params.trackable,
 //                params.callbackFunction,
@@ -134,12 +109,12 @@ internal class WorkerFactory(
 //                params.routingProfile,
 //                corePublisher,
 //            )
-//            is WorkerParams.ChannelConnectionStateChange -> ChannelConnectionStateChangeWorker(
-//                params.connectionStateChange,
-//                params.trackableId,
-//                corePublisher,
-//                logHandler,
-//            )
+            is WorkerSpecification.ChannelConnectionStateChange -> com.ably.tracking.publisher.updatedworkerqueue.workers.ChannelConnectionStateChangeWorker(
+                workerSpecification.trackableId,
+                workerSpecification.connectionStateChange,
+                corePublisher,
+                logHandler,
+            )
 //            is WorkerParams.DestinationSet -> DestinationSetWorker(
 //                params.routeDurationInMilliseconds,
 //                timeProvider,
@@ -212,42 +187,42 @@ internal class WorkerFactory(
     }
 }
 
-internal sealed class WorkerParams {
+internal sealed class WorkerSpecification {
     data class AblyConnectionStateChange(
         val connectionStateChange: ConnectionStateChange,
-    ) : WorkerParams()
+    ) : WorkerSpecification()
 
     data class AddTrackable(
         val trackable: Trackable,
         val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>,
         val presenceUpdateListener: ((presenceMessage: com.ably.tracking.common.PresenceMessage) -> Unit),
         val channelStateChangeListener: ((connectionStateChange: ConnectionStateChange) -> Unit),
-    ) : WorkerParams()
+    ) : WorkerSpecification()
 
     data class AddTrackableFailed(
         val trackable: Trackable,
         val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>,
         val exception: Exception,
         val isConnectedToAbly: Boolean,
-    ) : WorkerParams()
+    ) : WorkerSpecification()
 
-    object ChangeLocationEngineResolution : WorkerParams()
+    object ChangeLocationEngineResolution : WorkerSpecification()
 
     data class ChangeRoutingProfile(
         val routingProfile: RoutingProfile,
-    ) : WorkerParams()
+    ) : WorkerSpecification()
 
     data class ChannelConnectionStateChange(
         val trackableId: String,
         val connectionStateChange: ConnectionStateChange,
-    ) : WorkerParams()
+    ) : WorkerSpecification()
 
     data class ConnectionCreated(
         val trackable: Trackable,
         val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>,
         val presenceUpdateListener: ((presenceMessage: com.ably.tracking.common.PresenceMessage) -> Unit),
         val channelStateChangeListener: ((connectionStateChange: ConnectionStateChange) -> Unit),
-    ) : WorkerParams()
+    ) : WorkerSpecification()
 
     data class ConnectionReady(
         val trackable: Trackable,
@@ -255,86 +230,86 @@ internal sealed class WorkerParams {
         val channelStateChangeListener: ((connectionStateChange: ConnectionStateChange) -> Unit),
         val presenceUpdateListener: ((presenceMessage: com.ably.tracking.common.PresenceMessage) -> Unit),
         val isSubscribedToPresence: Boolean,
-    ) : WorkerParams()
+    ) : WorkerSpecification()
 
     data class RetrySubscribeToPresence(
         val trackable: Trackable,
         val presenceUpdateListener: ((presenceMessage: com.ably.tracking.common.PresenceMessage) -> Unit),
-    ) : WorkerParams()
+    ) : WorkerSpecification()
 
     data class RetrySubscribeToPresenceSuccess(
         val trackable: Trackable,
-    ) : WorkerParams()
+    ) : WorkerSpecification()
 
     data class DestinationSet(
         val routeDurationInMilliseconds: Long,
-    ) : WorkerParams()
+    ) : WorkerSpecification()
 
     data class DisconnectSuccess(
         val trackable: Trackable,
         val callbackFunction: ResultCallbackFunction<Unit>,
         val shouldRecalculateResolutionCallback: () -> Unit,
-    ) : WorkerParams()
+    ) : WorkerSpecification()
 
     data class EnhancedLocationChanged(
         val location: Location,
         val intermediateLocations: List<Location>,
         val type: LocationUpdateType,
-    ) : WorkerParams()
+    ) : WorkerSpecification()
 
     data class PresenceMessage(
         val trackable: Trackable,
         val presenceMessage: com.ably.tracking.common.PresenceMessage,
-    ) : WorkerParams()
+    ) : WorkerSpecification()
 
     data class RawLocationChanged(
         val location: Location,
-    ) : WorkerParams()
+    ) : WorkerSpecification()
 
-    object RefreshResolutionPolicy : WorkerParams()
+    object RefreshResolutionPolicy : WorkerSpecification()
 
     data class RemoveTrackable(
         val trackable: Trackable,
         val callbackFunction: ResultCallbackFunction<Boolean>,
-    ) : WorkerParams()
+    ) : WorkerSpecification()
 
     data class SendEnhancedLocationFailure(
         val locationUpdate: EnhancedLocationUpdate,
         val trackableId: String,
         val exception: Throwable?,
-    ) : WorkerParams()
+    ) : WorkerSpecification()
 
     data class SendEnhancedLocationSuccess(
         val location: Location,
         val trackableId: String,
-    ) : WorkerParams()
+    ) : WorkerSpecification()
 
     data class SendRawLocationFailure(
         val locationUpdate: LocationUpdate,
         val trackableId: String,
         val exception: Throwable?,
-    ) : WorkerParams()
+    ) : WorkerSpecification()
 
     data class SendRawLocationSuccess(
         val location: Location,
         val trackableId: String,
-    ) : WorkerParams()
+    ) : WorkerSpecification()
 
     data class SetActiveTrackable(
         val trackable: Trackable,
         val callbackFunction: ResultCallbackFunction<Unit>,
-    ) : WorkerParams()
+    ) : WorkerSpecification()
 
     data class Stop(
         val callbackFunction: ResultCallbackFunction<Unit>,
         val timeoutInMilliseconds: Long,
-    ) : WorkerParams()
+    ) : WorkerSpecification()
 
     data class TrackableRemovalRequested(
         val trackable: Trackable,
         val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>,
         val result: Result<Unit>,
-    ) : WorkerParams()
+    ) : WorkerSpecification()
 
-    object StoppingConnectionFinished : WorkerParams()
+    object StoppingConnectionFinished : WorkerSpecification()
 }
