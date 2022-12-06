@@ -86,7 +86,7 @@ sealed class Authentication(
             TokenAuthentication(null, TokenRequestConfiguration(callback, null))
 
         /**
-         * Authentication method that uses the Token Request.
+         * Authentication method that uses a static Token Request.
          * This is a convenience method that accepts a static token value that will be used each time the SDK needs to authenticate.
          *
          * @param staticTokenRequest The already created [TokenRequest] that will be used each time the SDK needs to authenticate.
@@ -121,7 +121,7 @@ sealed class Authentication(
             JwtAuthentication(null, JwtConfiguration(callback, null))
 
         /**
-         * Authentication method that uses the JWT.
+         * Authentication method that uses a static JWT (JSON Web Token).
          * This is a convenience method that accepts a static token value that will be used each time the SDK needs to authenticate.
          *
          * @param staticJwt The already created JWT that will be used each time the SDK needs to authenticate.
