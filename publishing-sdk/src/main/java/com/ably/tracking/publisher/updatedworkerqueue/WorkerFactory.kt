@@ -19,6 +19,7 @@ import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.ResolutionPolicy
 import com.ably.tracking.publisher.RoutingProfile
 import com.ably.tracking.publisher.Trackable
+import com.ably.tracking.publisher.updatedworkerqueue.workers.ChangeLocationEngineResolutionWorker
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -40,7 +41,8 @@ internal class WorkerFactory(
      * @param workerSpecification The parameters that indicate which [Worker] implementation should be created.
      * @return New [Worker] instance.
      */
-    override fun createWorker(workerSpecification: WorkerSpecification): Worker<PublisherProperties, WorkerSpecification> = when (workerSpecification) {
+    override fun createWorker(workerSpecification: WorkerSpecification): Worker<PublisherProperties, WorkerSpecification> =
+        when (workerSpecification) {
 //            is WorkerParams.AddTrackable -> AddTrackableWorker(
 //                params.trackable,
 //                params.callbackFunction,
@@ -101,10 +103,10 @@ internal class WorkerFactory(
 //                corePublisher,
 //                logHandler,
 //            )
-//            WorkerParams.ChangeLocationEngineResolution -> ChangeLocationEngineResolutionWorker(
-//                resolutionPolicy,
-//                mapbox,
-//            )
+            is WorkerSpecification.ChangeLocationEngineResolution -> ChangeLocationEngineResolutionWorker(
+                resolutionPolicy,
+                mapbox,
+            )
 //            is WorkerParams.ChangeRoutingProfile -> ChangeRoutingProfileWorker(
 //                params.routingProfile,
 //                corePublisher,
@@ -183,8 +185,8 @@ internal class WorkerFactory(
 //                params.timeoutInMilliseconds,
 //            )
 //            WorkerParams.StoppingConnectionFinished -> StoppingConnectionFinishedWorker()
-        else -> throw NotImplementedError()
-    }
+            else -> throw NotImplementedError()
+        }
 }
 
 internal sealed class WorkerSpecification {

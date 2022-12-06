@@ -24,6 +24,7 @@ internal class RemoveTrackableResultHandler(
                             }
                         },
                         shouldRecalculateResolutionCallback = {
+                            //TODO remove WorkerParams.ChangeLocationEngineResolution
                             workerQueue.enqueue(workerFactory.createWorker(WorkerParams.ChangeLocationEngineResolution))
                         }
                     )

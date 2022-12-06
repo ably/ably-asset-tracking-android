@@ -19,7 +19,6 @@ import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.workers.AblyConnectionStateChangeWorker
 import com.ably.tracking.publisher.workerqueue.workers.AddTrackableFailedWorker
 import com.ably.tracking.publisher.workerqueue.workers.AddTrackableWorker
-import com.ably.tracking.publisher.workerqueue.workers.ChangeLocationEngineResolutionWorker
 import com.ably.tracking.publisher.workerqueue.workers.ChangeRoutingProfileWorker
 import com.ably.tracking.publisher.workerqueue.workers.StoppingConnectionFinishedWorker
 import com.ably.tracking.publisher.workerqueue.workers.ConnectionCreatedWorker
@@ -127,10 +126,7 @@ internal class DefaultWorkerFactory(
                 corePublisher,
                 logHandler,
             )
-            WorkerParams.ChangeLocationEngineResolution -> ChangeLocationEngineResolutionWorker(
-                resolutionPolicy,
-                mapbox,
-            )
+            is WorkerParams.ChangeLocationEngineResolution -> throw NotImplementedError()
             is WorkerParams.ChangeRoutingProfile -> ChangeRoutingProfileWorker(
                 params.routingProfile,
                 corePublisher,

@@ -3,7 +3,6 @@ package com.ably.tracking.publisher.updatedworkerqueue.workers
 import com.ably.tracking.common.ConnectionState
 import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.publisher.CorePublisher
-import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.updatedworkerqueue.WorkerSpecification
 import com.google.common.truth.Truth.assertThat
 import io.mockk.every
@@ -32,7 +31,7 @@ class ChannelConnectionStateChangeWorkerTest {
     @Test
     fun `should update channel connection state and notify publisher`() {
         // given
-        val initialProperties = mockPublisherProperties()
+        val initialProperties = createPublisherProperties()
 
         // when
         val updatedProperties = worker.doWork(
@@ -53,12 +52,4 @@ class ChannelConnectionStateChangeWorkerTest {
             publisher.updateTrackableState(updatedProperties, trackableId)
         }
     }
-
-    internal fun mockPublisherProperties(): PublisherProperties {
-        val lastChannelConnectionStateChangesMap: MutableMap<String, ConnectionStateChange> = mutableMapOf()
-        return mockk {
-            every { lastChannelConnectionStateChanges } returns lastChannelConnectionStateChangesMap
-        }
-    }
-
 }

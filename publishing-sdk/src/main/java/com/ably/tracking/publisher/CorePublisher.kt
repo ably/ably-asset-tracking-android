@@ -574,7 +574,7 @@ constructor(
         policy.resolve(TrackableResolutionRequest(trackable, resolutionRequests)).let { resolution ->
             if (properties.resolutions[trackable.id] != resolution) {
                 properties.resolutions[trackable.id] = resolution
-                enqueue(workerFactory.createWorker(WorkerParams.ChangeLocationEngineResolution))
+                enqueue(WorkerSpecification.ChangeLocationEngineResolution)
                 if (sendResolutionEnabled) {
                     // For now we ignore the result of this operation but perhaps we should retry it if it fails
                     ably.updatePresenceData(trackable.id, properties.presenceData.copy(resolution = resolution)) {}
