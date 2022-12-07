@@ -36,3 +36,10 @@ internal fun createPublisherProperties(
     onActiveTrackableUpdated,
     onRoutingProfileUpdated
 )
+
+internal fun PublisherProperties.insertResolutions(resolutionSet: Set<Resolution>): PublisherProperties {
+    resolutionSet
+        .mapIndexed { index, resolution -> index.toString() to resolution }
+        .forEach { resolutions[it.first] = it.second }
+    return this
+}

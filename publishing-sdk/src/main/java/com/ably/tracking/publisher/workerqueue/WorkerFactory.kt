@@ -16,7 +16,6 @@ import com.ably.tracking.publisher.Mapbox
 import com.ably.tracking.publisher.ResolutionPolicy
 import com.ably.tracking.publisher.RoutingProfile
 import com.ably.tracking.publisher.Trackable
-import com.ably.tracking.publisher.workerqueue.workers.AblyConnectionStateChangeWorker
 import com.ably.tracking.publisher.workerqueue.workers.AddTrackableFailedWorker
 import com.ably.tracking.publisher.workerqueue.workers.AddTrackableWorker
 import com.ably.tracking.publisher.workerqueue.workers.ChangeRoutingProfileWorker
@@ -120,11 +119,6 @@ internal class DefaultWorkerFactory(
                 ably,
                 params.result,
             )
-            is WorkerParams.AblyConnectionStateChange -> AblyConnectionStateChangeWorker(
-                params.connectionStateChange,
-                corePublisher,
-                logHandler,
-            )
             is WorkerParams.ChangeRoutingProfile -> ChangeRoutingProfileWorker(
                 params.routingProfile,
                 corePublisher,
@@ -197,10 +191,6 @@ internal class DefaultWorkerFactory(
 }
 
 internal sealed class WorkerParams {
-    data class AblyConnectionStateChange(
-        val connectionStateChange: ConnectionStateChange,
-    ) : WorkerParams()
-
     data class AddTrackable(
         val trackable: Trackable,
         val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>,

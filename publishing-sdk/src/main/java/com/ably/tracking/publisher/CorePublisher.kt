@@ -188,7 +188,7 @@ constructor(
                 workerFactory = updatedWorkerFactory,
                 copyProperties = { copy() },
                 getStoppedException = { PublisherStoppedException() })
-        ably.subscribeForAblyStateChange { enqueue(workerFactory.createWorker(WorkerParams.AblyConnectionStateChange(it))) }
+        ably.subscribeForAblyStateChange { enqueue(WorkerSpecification.AblyConnectionStateChange(it)) }
         mapbox.setLocationHistoryListener { historyData -> scope.launch { _locationHistory.emit(historyData) } }
     }
 

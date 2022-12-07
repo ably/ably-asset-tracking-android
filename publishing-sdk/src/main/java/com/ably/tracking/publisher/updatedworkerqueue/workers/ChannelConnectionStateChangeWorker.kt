@@ -16,7 +16,6 @@ internal class ChannelConnectionStateChangeWorker(
     private val logHandler: LogHandler?
 ) : Worker<PublisherProperties, WorkerSpecification> {
 
-
     private val TAG = createLoggingTag(this)
 
     override fun doWork(
