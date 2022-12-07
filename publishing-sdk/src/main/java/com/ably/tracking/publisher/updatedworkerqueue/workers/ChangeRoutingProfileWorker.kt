@@ -1,18 +1,24 @@
-package com.ably.tracking.publisher.workerqueue.workers
+package com.ably.tracking.publisher.updatedworkerqueue.workers
 
+import com.ably.tracking.common.workerqueue.Worker
 import com.ably.tracking.publisher.CorePublisher
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.RoutingProfile
-import com.ably.tracking.publisher.workerqueue.results.SyncAsyncResult
+import com.ably.tracking.publisher.updatedworkerqueue.WorkerSpecification
 
 internal class ChangeRoutingProfileWorker(
     private val routingProfile: RoutingProfile,
     private val corePublisher: CorePublisher,
-) : Worker {
-    override fun doWork(properties: PublisherProperties): SyncAsyncResult {
+) : Worker<PublisherProperties, WorkerSpecification> {
+
+    override fun doWork(
+        properties: PublisherProperties,
+        doAsyncWork: (suspend () -> Unit) -> Unit,
+        postWork: (WorkerSpecification) -> Unit
+    ): PublisherProperties {
         properties.routingProfile = routingProfile
         properties.currentDestination?.let { corePublisher.setDestination(it, properties) }
-        return SyncAsyncResult()
+        return properties
     }
 
     override fun doWhenStopped(exception: Exception) = Unit

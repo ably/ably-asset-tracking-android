@@ -14,10 +14,10 @@ import io.mockk.verify
 import org.junit.Test
 
 class AblyConnectionStateChangeWorkerTest {
-    private val trackableId = "123123"
     private val connectionStateChange = ConnectionStateChange(ConnectionState.ONLINE, null)
     private val publisher: CorePublisher = mockk {
-        every { updateTrackableState(any(), trackableId) } just runs
+        every { updateTrackableState(any(), any()) } just runs
+
     }
     private val worker = AblyConnectionStateChangeWorker(
         connectionStateChange = connectionStateChange,
@@ -36,7 +36,6 @@ class AblyConnectionStateChangeWorkerTest {
         trackables.forEach {
             initialProperties.trackables.add(it)
         }
-        every { publisher.updateTrackableState(any(), any()) } just runs
 
         // when
         val updatedProperties = worker.doWork(

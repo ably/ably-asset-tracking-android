@@ -268,7 +268,7 @@ constructor(
     }
 
     override fun changeRoutingProfile(routingProfile: RoutingProfile) {
-        enqueue(workerFactory.createWorker(WorkerParams.ChangeRoutingProfile(routingProfile)))
+        enqueue(WorkerSpecification.ChangeRoutingProfile(routingProfile))
     }
 
     override fun stop(timeoutInMilliseconds: Long, callbackFunction: ResultCallbackFunction<Unit>) {
