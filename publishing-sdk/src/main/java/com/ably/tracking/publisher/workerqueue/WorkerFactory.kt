@@ -298,5 +298,6 @@ internal sealed class WorkerParams {
         val result: Result<Unit>,
     ) : WorkerParams()
 
+    //TODO remove
     object StoppingConnectionFinished : WorkerParams()
 }

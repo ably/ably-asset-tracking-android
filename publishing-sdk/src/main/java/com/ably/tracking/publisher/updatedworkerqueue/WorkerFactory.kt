@@ -21,6 +21,7 @@ import com.ably.tracking.publisher.RoutingProfile
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.updatedworkerqueue.workers.AblyConnectionStateChangeWorker
 import com.ably.tracking.publisher.updatedworkerqueue.workers.ChangeLocationEngineResolutionWorker
+import com.ably.tracking.publisher.updatedworkerqueue.workers.StoppingConnectionFinishedWorker
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -185,7 +186,7 @@ internal class WorkerFactory(
 //                corePublisher,
 //                params.timeoutInMilliseconds,
 //            )
-//            WorkerParams.StoppingConnectionFinished -> StoppingConnectionFinishedWorker()
+            WorkerSpecification.StoppingConnectionFinished -> StoppingConnectionFinishedWorker()
             else -> throw NotImplementedError()
         }
 }
