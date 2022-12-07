@@ -196,7 +196,7 @@ constructor(
         mapbox.registerLocationObserver(object : LocationUpdatesObserver {
             override fun onRawLocationChanged(rawLocation: Location) {
                 logHandler?.v("$TAG Raw location received: $rawLocation")
-                enqueue(workerFactory.createWorker(WorkerParams.RawLocationChanged(rawLocation)))
+                enqueue(WorkerSpecification.RawLocationChanged(rawLocation))
             }
 
             override fun onEnhancedLocationChanged(enhancedLocation: Location, intermediateLocations: List<Location>) {

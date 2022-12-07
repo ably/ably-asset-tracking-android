@@ -21,6 +21,7 @@ import com.ably.tracking.publisher.RoutingProfile
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.updatedworkerqueue.workers.AblyConnectionStateChangeWorker
 import com.ably.tracking.publisher.updatedworkerqueue.workers.ChangeLocationEngineResolutionWorker
+import com.ably.tracking.publisher.updatedworkerqueue.workers.RawLocationChangedWorker
 import com.ably.tracking.publisher.updatedworkerqueue.workers.StoppingConnectionFinishedWorker
 import kotlinx.coroutines.flow.StateFlow
 
@@ -135,11 +136,11 @@ internal class WorkerFactory(
 //                params.presenceMessage,
 //                corePublisher,
 //            )
-//            is WorkerParams.RawLocationChanged -> RawLocationChangedWorker(
-//                params.location,
-//                corePublisher,
-//                logHandler,
-//            )
+            is WorkerSpecification.RawLocationChanged -> RawLocationChangedWorker(
+                workerSpecification.location,
+                corePublisher,
+                logHandler,
+            )
 //            WorkerParams.RefreshResolutionPolicy -> RefreshResolutionPolicyWorker(
 //                corePublisher,
 //            )
