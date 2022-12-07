@@ -192,14 +192,12 @@ constructor(
 
             override fun onEnhancedLocationChanged(enhancedLocation: Location, intermediateLocations: List<Location>) {
                 logHandler?.v("$TAG Enhanced location received: $enhancedLocation")
-                val locationUpdateType =
-                    if (intermediateLocations.isEmpty()) LocationUpdateType.ACTUAL else LocationUpdateType.PREDICTED
                 enqueue(
                     workerFactory.createWorker(
                         WorkerParams.EnhancedLocationChanged(
                             enhancedLocation,
                             intermediateLocations,
-                            locationUpdateType
+                            LocationUpdateType.ACTUAL, // the predictions are disabled in Mapbox so all locations will be actual
                         )
                     )
                 )
