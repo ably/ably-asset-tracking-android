@@ -46,6 +46,8 @@ class AblyConnectionStateChangeWorkerTest {
 
         // then
         assertThat(updatedProperties.lastConnectionStateChange).isEqualTo(connectionStateChange)
+        assertThat(asyncWorks).isEmpty()
+        assertThat(postedWorks).isEmpty()
 
         verify(exactly = 1) {
             trackables.forEach {

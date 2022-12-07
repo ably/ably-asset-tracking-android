@@ -51,10 +51,8 @@ class ChangeLocationEngineResolutionWorkerTest {
         // then
         assertThat(updatedProperties.locationEngineResolution)
             .isEqualTo(newlyCalculatedResolution)
-        assertThat(asyncWorks)
-            .isEmpty()
-        assertThat(postedWorks)
-            .isEmpty()
+        assertThat(asyncWorks).isEmpty()
+        assertThat(postedWorks).isEmpty()
 
         verify {
             mapbox.changeResolution(newlyCalculatedResolution)
@@ -78,6 +76,8 @@ class ChangeLocationEngineResolutionWorkerTest {
         )
 
         // then
+        assertThat(asyncWorks).isEmpty()
+        assertThat(postedWorks).isEmpty()
         assertThat(updatedProperties.locationEngineResolution).isEqualTo(initialResolution)
         verify(exactly = 0) {
             mapbox.changeResolution(any())

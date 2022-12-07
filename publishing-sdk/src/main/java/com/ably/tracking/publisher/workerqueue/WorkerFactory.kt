@@ -19,7 +19,6 @@ import com.ably.tracking.publisher.workerqueue.workers.AddTrackableFailedWorker
 import com.ably.tracking.publisher.workerqueue.workers.AddTrackableWorker
 import com.ably.tracking.publisher.workerqueue.workers.ConnectionCreatedWorker
 import com.ably.tracking.publisher.workerqueue.workers.ConnectionReadyWorker
-import com.ably.tracking.publisher.workerqueue.workers.DestinationSetWorker
 import com.ably.tracking.publisher.workerqueue.workers.DisconnectSuccessWorker
 import com.ably.tracking.publisher.workerqueue.workers.EnhancedLocationChangedWorker
 import com.ably.tracking.publisher.workerqueue.workers.PresenceMessageWorker
@@ -116,10 +115,6 @@ internal class DefaultWorkerFactory(
                 params.callbackFunction,
                 ably,
                 params.result,
-            )
-            is WorkerParams.DestinationSet -> DestinationSetWorker(
-                params.routeDurationInMilliseconds,
-                timeProvider,
             )
             is WorkerParams.EnhancedLocationChanged -> EnhancedLocationChangedWorker(
                 params.location,
@@ -221,10 +216,6 @@ internal sealed class WorkerParams {
 
     data class RetrySubscribeToPresenceSuccess(
         val trackable: Trackable,
-    ) : WorkerParams()
-
-    data class DestinationSet(
-        val routeDurationInMilliseconds: Long,
     ) : WorkerParams()
 
     data class DisconnectSuccess(

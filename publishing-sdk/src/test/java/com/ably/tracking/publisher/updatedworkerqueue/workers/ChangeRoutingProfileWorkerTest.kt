@@ -39,6 +39,8 @@ class ChangeRoutingProfileWorkerTest {
         )
 
         // then
+        assertThat(asyncWorks).isEmpty()
+        assertThat(postedWorks).isEmpty()
         assertThat(updatedProperties.routingProfile)
             .isEqualTo(routingProfile)
     }
@@ -58,6 +60,8 @@ class ChangeRoutingProfileWorkerTest {
         )
 
         // then
+        assertThat(asyncWorks).isEmpty()
+        assertThat(postedWorks).isEmpty()
         verify(exactly = 1) {
             publisher.setDestination(currentDestination, updatedProperties)
         }
@@ -77,6 +81,8 @@ class ChangeRoutingProfileWorkerTest {
         )
 
         // then
+        assertThat(asyncWorks).isEmpty()
+        assertThat(postedWorks).isEmpty()
         verify(exactly = 0) {
             publisher.setDestination(any(), any())
         }

@@ -590,7 +590,7 @@ constructor(
                 properties.currentDestination = destination
                 mapbox.setRoute(currentLocation, destination, properties.routingProfile) {
                     try {
-                        enqueue(workerFactory.createWorker(WorkerParams.DestinationSet(it.getOrThrow())))
+                        enqueue(WorkerSpecification.DestinationSet(it.getOrThrow()))
                     } catch (exception: MapException) {
                         logHandler?.w("Setting trackable destination failed", exception)
                     }

@@ -43,10 +43,8 @@ class ChannelConnectionStateChangeWorkerTest {
         // then
         assertThat(updatedProperties.lastChannelConnectionStateChanges[trackableId])
             .isEqualTo(connectionStateChange)
-        assertThat(asyncWorks)
-            .isEmpty()
-        assertThat(postedWorks)
-            .isEmpty()
+        assertThat(asyncWorks).isEmpty()
+        assertThat(postedWorks).isEmpty()
 
         verify {
             publisher.updateTrackableState(updatedProperties, trackableId)
