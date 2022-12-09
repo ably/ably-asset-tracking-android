@@ -42,6 +42,9 @@ The facade API extends the original API and only replaces the things that are Ko
 
 In order to hide certain methods and fields from the Java API we use the `@JvmSynthetic` annotation.
 
+The Java API facades should be tested in the `publishing-java-testing` and `subscribing-java-testing` modules to make sure that they work correctly
+and provide the same features as the Kotlin API.
+
 ## Synchronous `Worker` event queue
 
 As described in the [specification](https://github.com/ably/ably-asset-tracking-common/blob/main/specification/README.md#multithreading:-handling-asynchronous-events-safely)
