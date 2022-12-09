@@ -230,13 +230,9 @@ constructor(
     ) {
         addTrackable(trackable) { addTrackableResult ->
             if (addTrackableResult.isSuccess) {
-                enqueue(
-                    workerFactory.createWorker(
-                        WorkerParams.SetActiveTrackable(trackable) {
-                            callbackFunction(addTrackableResult)
-                        }
-                    )
-                )
+                enqueue(WorkerSpecification.SetActiveTrackable(trackable){
+                    callbackFunction(addTrackableResult)
+                })
             } else {
                 callbackFunction(addTrackableResult)
             }

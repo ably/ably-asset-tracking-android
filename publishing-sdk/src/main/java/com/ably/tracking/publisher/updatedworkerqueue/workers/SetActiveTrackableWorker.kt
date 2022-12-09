@@ -1,10 +1,12 @@
-package com.ably.tracking.publisher.workerqueue.workers
+package com.ably.tracking.publisher.updatedworkerqueue.workers
 
 import com.ably.tracking.common.ResultCallbackFunction
+import com.ably.tracking.common.workerqueue.Worker
 import com.ably.tracking.publisher.CorePublisher
 import com.ably.tracking.publisher.DefaultCorePublisher
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.Trackable
+import com.ably.tracking.publisher.updatedworkerqueue.WorkerSpecification
 import com.ably.tracking.publisher.workerqueue.results.SyncAsyncResult
 
 internal class SetActiveTrackableWorker(
@@ -12,8 +14,13 @@ internal class SetActiveTrackableWorker(
     private val callbackFunction: ResultCallbackFunction<Unit>,
     private val publisher: CorePublisher,
     private val hooks: DefaultCorePublisher.Hooks
-) : Worker {
-    override fun doWork(properties: PublisherProperties): SyncAsyncResult {
+) : Worker<PublisherProperties, WorkerSpecification> {
+
+    override fun doWork(
+        properties: PublisherProperties,
+        doAsyncWork: (suspend () -> Unit) -> Unit,
+        postWork: (WorkerSpecification) -> Unit
+    ): PublisherProperties {
         if (properties.active != trackable) {
             properties.active = trackable
 
@@ -28,7 +35,7 @@ internal class SetActiveTrackableWorker(
             }
         }
         callbackFunction(Result.success(Unit))
-        return SyncAsyncResult()
+        return properties
     }
 
     override fun doWhenStopped(exception: Exception) {

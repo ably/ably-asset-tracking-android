@@ -22,6 +22,7 @@ import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.updatedworkerqueue.workers.AblyConnectionStateChangeWorker
 import com.ably.tracking.publisher.updatedworkerqueue.workers.ChangeLocationEngineResolutionWorker
 import com.ably.tracking.publisher.updatedworkerqueue.workers.RawLocationChangedWorker
+import com.ably.tracking.publisher.updatedworkerqueue.workers.SetActiveTrackableWorker
 import com.ably.tracking.publisher.updatedworkerqueue.workers.StoppingConnectionFinishedWorker
 import kotlinx.coroutines.flow.StateFlow
 
@@ -175,12 +176,12 @@ internal class WorkerFactory(
 //                corePublisher,
 //                logHandler,
 //            )
-//            is WorkerParams.SetActiveTrackable -> SetActiveTrackableWorker(
-//                params.trackable,
-//                params.callbackFunction,
-//                corePublisher,
-//                hooks,
-//            )
+            is WorkerSpecification.SetActiveTrackable -> SetActiveTrackableWorker(
+                workerSpecification.trackable,
+                workerSpecification.callbackFunction,
+                corePublisher,
+                hooks,
+            )
 //            is WorkerParams.Stop -> StopWorker(
 //                params.callbackFunction,
 //                ably,

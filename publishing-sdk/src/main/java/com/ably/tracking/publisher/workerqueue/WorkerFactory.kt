@@ -29,7 +29,6 @@ import com.ably.tracking.publisher.workerqueue.workers.SendEnhancedLocationFailu
 import com.ably.tracking.publisher.workerqueue.workers.SendEnhancedLocationSuccessWorker
 import com.ably.tracking.publisher.workerqueue.workers.SendRawLocationFailureWorker
 import com.ably.tracking.publisher.workerqueue.workers.SendRawLocationSuccessWorker
-import com.ably.tracking.publisher.workerqueue.workers.SetActiveTrackableWorker
 import com.ably.tracking.publisher.workerqueue.workers.StopWorker
 import com.ably.tracking.publisher.workerqueue.workers.StoppingConnectionFinishedWorker
 import com.ably.tracking.publisher.workerqueue.workers.TrackableRemovalRequestedWorker
@@ -156,12 +155,6 @@ internal class DefaultWorkerFactory(
                 corePublisher,
                 logHandler,
             )
-            is WorkerParams.SetActiveTrackable -> SetActiveTrackableWorker(
-                params.trackable,
-                params.callbackFunction,
-                corePublisher,
-                hooks,
-            )
             is WorkerParams.Stop -> StopWorker(
                 params.callbackFunction,
                 ably,
@@ -251,11 +244,6 @@ internal sealed class WorkerParams {
     data class SendRawLocationSuccess(
         val location: Location,
         val trackableId: String,
-    ) : WorkerParams()
-
-    data class SetActiveTrackable(
-        val trackable: Trackable,
-        val callbackFunction: ResultCallbackFunction<Unit>,
     ) : WorkerParams()
 
     data class Stop(
