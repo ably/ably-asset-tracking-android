@@ -14,7 +14,7 @@ These are the same Gradle tasks that we [run in CI](.github/workflows).
 The recommended IDE for working on this project is [Android Studio](https://developer.android.com/studio).
 From the dialog presented by `File` > `Open...` / `Open an Existing Project`, select the repository root folder and Studio's built-in support for Gradle projects will do the rest.
 
-Before contributing to this repository please read the [architecture decisions notes](/ArchitecturalNotes.md).
+Before contributing to this repository please read the [architectural notes](ArchitecturalNotes.md).
 
 ### MapBox SDK dependency
 

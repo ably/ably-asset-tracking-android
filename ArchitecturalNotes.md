@@ -4,31 +4,32 @@
 
 ### Shared configuration
 
-The projects uses multiple gradle modules. Instead of repeating the same configuration in each of the modules we use
+The projects uses multiple Gradle modules. Instead of repeating the same configuration in each of the modules we use
 the root [build.gradle](/build.gradle) file and `subprojects` block for all the shared configuration. The module-specific build.gradle files
 should only contain additional configuration required for the given module.
 
 ### Modules
 
-The project consists of multiple modules, each of them having different purpose.
+The project consists of multiple modules, each of them having a different purpose.
+Modules with `sdk` in their name are part of the public API of the SDK.
 Modules ending with `-java` suffix are part of the [Java API facade](#java-api-facade).
 
-- `android-test-common` contains shared code for the Android integration tests.
+- [`android-test-common`](android-test-common/) contains shared code for the Android integration tests.
 - `common` contains shared code used by both Publisher and Subscriber which should not be visible in the public API.
 - `core-sdk` contains shared code used by both Publisher and Subscriber which is visible in the public API.
-- `core-sdk-java` contains shared public API code used by both Publisher and Subscriber Java API facades.
+- `core-sdk-java` contains shared public API code used by both Publisher and Subscriber API facades for Java users, not required by users accessing the SDK from Kotlin.
 - `integration-testing-app` contains integration tests that aim to test both Publisher and Subscriber just like users would use them.
 - `publishing-example-app` contains an example app for the Publisher SDK used to showcase all its features.
 - `publishing-java-testing` contains integration tests that exercise and showcase the Publisher Java API.
-- `publishing-sdk` contains the Publisher SDK code.
-- `publishing-sdk-java` contains the Publisher Java API facade code.
+- `publishing-sdk` contains the Publisher SDK code, including its primary public API.
+- `publishing-sdk-java` contains the Publisher SDK's API facade for Java users, not required by users accessing the SDK from Kotlin.
 - `subscribing-example-app` contains an example app for the Subscriber SDK used to showcase all its features.
 - `subscribing-java-testing` contains integration tests that exercise and showcase the Subscriber Java API.
-- `subscribing-sdk` contains the Subscriber SDK code.
-- `subscribing-sdk-java` contains the Subscriber Java API facade code.
+- `subscribing-sdk` contains the Subscriber SDK code, including its primary public API.
+- `subscribing-sdk-java` contains the Subscriber SDK's API facade for Java users, not required by users accessing the SDK from Kotlin.
 - `test-common` contains shared code for the unit tests.
-- `ui-sdk` contains UI enhancements for the AAT SDKs.
-- `ui-sdk-java` contains the Java API facade for UI enhancements.
+- `ui-sdk` contains Android User Interface enhancements for the AAT SDKs, an optional public API.
+- `ui-sdk-java` contains the Android User Interface enhancements' API facade for Java users, not required by users accessing the SDK from Kotlin.
 
 Not all modules are being published as artifacts in the maven repositories. Only modules that include the [publish.gradle](/publish.gradle)
 will be published and available for AAT users.
@@ -41,12 +42,12 @@ The facade API extends the original API and only replaces the things that are Ko
 
 In order to hide certain methods and fields from the Java API we use the `@JvmSynthetic` annotation.
 
-## Worker queue
+## Synchronous `Worker` event queue
 
 As described in the [specification](https://github.com/ably/ably-asset-tracking-common/blob/main/specification/README.md#securing-sdk-from-asynchronous-access)
 we have taken the synchronous event queue approach to secure the SDK from asynchronous access.
 
-### General information
+### Event queue became `Worker` queue
 
 After a few iterations we've refactored the event queue to a worker queue. This allowed us to spread the logic across multiple `Worker` classes instead of keeping it all in the `CorePublisher`.
 Additionally, we can now easily unit test the workers to make sure they work correctly. The initial worker queue approach used additional `WorkerResult`s and `ResultHandler`s
@@ -54,7 +55,7 @@ which were used to handle optional worker's work result and either queue more wo
 the whole logic in the `Worker` classes which made it easier to comprehend what's happening. Additionally, the newest version makes sure you don't modify the `properties` from
 any asynchronous work thread.
 
-### When and how to use the queue
+### When and how to use the `Worker` queue
 
 When you want to perform some work that involves accessing or modifying the shared SDK state (called from now on `properties`) you need to use the worker queue. That's because we
 synchronize access to the `properties` by only using them from the safe synchronous queue thread.
