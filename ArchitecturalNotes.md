@@ -68,7 +68,7 @@ Therefore, you need to create both a class that implements the `Worker` interfac
 all the input data required by the `Worker`.
 
 The `Worker` should put its logic into the `doWork()` method to perform both synchronous work where they can use the `properties` and asynchronous work using `doAsyncWork {}` block.
-The async work is performed on another thread from which you should not access or alter the `properties`. After the asynchronous work is done you should use the `postWork()` method
+The async work is performed in another coroutine context from which you should not access or alter the `properties`. After the asynchronous work is done you should use the `postWork()` method
 to queue other workers or call the user callback if it's provided.
 
 The `Worker` also has the `doWhenStopped()` method which will be called when the worker is processed after the SDK was stopped. In most cases from this method you should either
