@@ -78,3 +78,4 @@ do nothing or call the provided user callback with an appropriate error.
 
 In order to be able to change location engine resolution after its creation we had to create our custom implementations.
 When Mapbox will support this feature we should switch to using their location engines and stop maintaining our versions.
+Here's the corresponding issue https://github.com/ably/ably-asset-tracking-android/issues/836.
