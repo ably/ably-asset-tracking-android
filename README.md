@@ -261,7 +261,7 @@ To use the API you must explicitly opt in to it by adding the following to your 
 ```groovy
 android {
     kotlinOptions {
-        freeCompilerArgs += "-Xopt-in=kotlin.RequiresOptIn"
+        freeCompilerArgs += "-opt-in=kotlin.RequiresOptIn"
     }
 }
 ```
