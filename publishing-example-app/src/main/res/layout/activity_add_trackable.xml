@@ -205,7 +205,7 @@
         android:background="@drawable/rounded_rectangle"
         android:backgroundTint="@color/button_active"
         android:paddingVertical="@dimen/medium_margin"
-        android:text="Set Destination"
+        android:text="@string/set_destination_button_text"
         android:textColor="@color/mid_grey"
         app:layout_constraintTop_toBottomOf="@id/longitudeValueTextView" />
     </androidx.constraintlayout.widget.ConstraintLayout>
