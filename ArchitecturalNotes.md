@@ -44,7 +44,7 @@ In order to hide certain methods and fields from the Java API we use the `@JvmSy
 
 ## Synchronous `Worker` event queue
 
-As described in the [specification](https://github.com/ably/ably-asset-tracking-common/blob/main/specification/README.md#securing-sdk-from-asynchronous-access)
+As described in the [specification](https://github.com/ably/ably-asset-tracking-common/blob/main/specification/README.md#multithreading:-handling-asynchronous-events-safely)
 we have taken the synchronous event queue approach to secure the SDK from asynchronous access.
 
 ### Event queue became `Worker` queue
