@@ -418,11 +418,7 @@ constructor(
         properties.rawLocationsPublishingState.markMessageAsPending(trackableId)
         ably.sendRawLocation(trackableId, locationUpdate) {
             if (it.isSuccess) {
-                enqueue(
-                    workerFactory.createWorker(
-                        WorkerParams.SendRawLocationSuccess(locationUpdate.location, trackableId)
-                    )
-                )
+                enqueue(WorkerSpecification.SendRawLocationSuccess(locationUpdate.location, trackableId))
             } else {
                 enqueue(
                     workerFactory.createWorker(
