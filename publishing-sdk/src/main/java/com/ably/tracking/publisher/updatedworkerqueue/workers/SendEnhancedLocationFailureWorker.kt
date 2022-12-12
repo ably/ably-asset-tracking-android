@@ -1,11 +1,13 @@
-package com.ably.tracking.publisher.workerqueue.workers
+package com.ably.tracking.publisher.updatedworkerqueue.workers
 
 import com.ably.tracking.EnhancedLocationUpdate
 import com.ably.tracking.common.logging.createLoggingTag
 import com.ably.tracking.common.logging.w
+import com.ably.tracking.common.workerqueue.Worker
 import com.ably.tracking.logging.LogHandler
 import com.ably.tracking.publisher.CorePublisher
 import com.ably.tracking.publisher.PublisherProperties
+import com.ably.tracking.publisher.updatedworkerqueue.WorkerSpecification
 import com.ably.tracking.publisher.workerqueue.results.SyncAsyncResult
 
 internal class SendEnhancedLocationFailureWorker(
@@ -14,15 +16,20 @@ internal class SendEnhancedLocationFailureWorker(
     private val exception: Throwable?,
     private val corePublisher: CorePublisher,
     private val logHandler: LogHandler?,
-) : Worker {
+) : Worker<PublisherProperties, WorkerSpecification> {
     private val TAG = createLoggingTag(this)
 
-    override fun doWork(properties: PublisherProperties): SyncAsyncResult {
+    override fun doWork(
+        properties: PublisherProperties,
+        doAsyncWork: (suspend () -> Unit) -> Unit,
+        postWork: (WorkerSpecification) -> Unit
+    ): PublisherProperties {
         logHandler?.w(
             "$TAG Trackable $trackableId failed to send enhanced location ${locationUpdate.location}",
             exception
         )
-        if (properties.enhancedLocationsPublishingState.shouldRetryPublishing(trackableId)) {
+        val shouldRetryPublishing = properties.enhancedLocationsPublishingState.shouldRetryPublishing(trackableId)
+        if (shouldRetryPublishing) {
             corePublisher.retrySendingEnhancedLocation(properties, trackableId, locationUpdate)
         } else {
             properties.enhancedLocationsPublishingState.unmarkMessageAsPending(trackableId)
@@ -33,7 +40,7 @@ internal class SendEnhancedLocationFailureWorker(
             )
             corePublisher.processNextWaitingEnhancedLocationUpdate(properties, trackableId)
         }
-        return SyncAsyncResult()
+        return properties
     }
 
     override fun doWhenStopped(exception: Exception) = Unit

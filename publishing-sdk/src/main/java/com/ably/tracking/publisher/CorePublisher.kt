@@ -230,7 +230,7 @@ constructor(
     ) {
         addTrackable(trackable) { addTrackableResult ->
             if (addTrackableResult.isSuccess) {
-                enqueue(WorkerSpecification.SetActiveTrackable(trackable){
+                enqueue(WorkerSpecification.SetActiveTrackable(trackable) {
                     callbackFunction(addTrackableResult)
                 })
             } else {
@@ -342,12 +342,10 @@ constructor(
                 )
             } else {
                 enqueue(
-                    workerFactory.createWorker(
-                        WorkerParams.SendEnhancedLocationFailure(
-                            locationUpdate,
-                            trackableId,
-                            it.exceptionOrNull()
-                        )
+                    WorkerSpecification.SendEnhancedLocationFailure(
+                        locationUpdate,
+                        trackableId,
+                        it.exceptionOrNull()
                     )
                 )
             }

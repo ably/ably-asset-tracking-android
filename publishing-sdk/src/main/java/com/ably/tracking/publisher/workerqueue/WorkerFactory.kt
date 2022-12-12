@@ -24,7 +24,6 @@ import com.ably.tracking.publisher.workerqueue.workers.PresenceMessageWorker
 import com.ably.tracking.publisher.workerqueue.workers.RefreshResolutionPolicyWorker
 import com.ably.tracking.publisher.workerqueue.workers.RetrySubscribeToPresenceSuccessWorker
 import com.ably.tracking.publisher.workerqueue.workers.RetrySubscribeToPresenceWorker
-import com.ably.tracking.publisher.workerqueue.workers.SendEnhancedLocationFailureWorker
 import com.ably.tracking.publisher.workerqueue.workers.SendEnhancedLocationSuccessWorker
 import com.ably.tracking.publisher.workerqueue.workers.StopWorker
 import com.ably.tracking.publisher.workerqueue.workers.StoppingConnectionFinishedWorker
@@ -126,13 +125,6 @@ internal class DefaultWorkerFactory(
             WorkerParams.RefreshResolutionPolicy -> RefreshResolutionPolicyWorker(
                 corePublisher,
             )
-            is WorkerParams.SendEnhancedLocationFailure -> SendEnhancedLocationFailureWorker(
-                params.locationUpdate,
-                params.trackableId,
-                params.exception,
-                corePublisher,
-                logHandler,
-            )
             is WorkerParams.SendEnhancedLocationSuccess -> SendEnhancedLocationSuccessWorker(
                 params.location,
                 params.trackableId,
@@ -207,12 +199,6 @@ internal sealed class WorkerParams {
     ) : WorkerParams()
 
     object RefreshResolutionPolicy : WorkerParams()
-
-    data class SendEnhancedLocationFailure(
-        val locationUpdate: EnhancedLocationUpdate,
-        val trackableId: String,
-        val exception: Throwable?,
-    ) : WorkerParams()
 
     data class SendEnhancedLocationSuccess(
         val location: Location,
