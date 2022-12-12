@@ -2,7 +2,6 @@ package com.ably.tracking.publisher.workerqueue
 
 import com.ably.tracking.EnhancedLocationUpdate
 import com.ably.tracking.Location
-import com.ably.tracking.LocationUpdate
 import com.ably.tracking.LocationUpdateType
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
@@ -27,7 +26,6 @@ import com.ably.tracking.publisher.workerqueue.workers.RetrySubscribeToPresenceS
 import com.ably.tracking.publisher.workerqueue.workers.RetrySubscribeToPresenceWorker
 import com.ably.tracking.publisher.workerqueue.workers.SendEnhancedLocationFailureWorker
 import com.ably.tracking.publisher.workerqueue.workers.SendEnhancedLocationSuccessWorker
-import com.ably.tracking.publisher.workerqueue.workers.SendRawLocationFailureWorker
 import com.ably.tracking.publisher.workerqueue.workers.StopWorker
 import com.ably.tracking.publisher.workerqueue.workers.StoppingConnectionFinishedWorker
 import com.ably.tracking.publisher.workerqueue.workers.TrackableRemovalRequestedWorker
@@ -141,13 +139,6 @@ internal class DefaultWorkerFactory(
                 corePublisher,
                 logHandler,
             )
-            is WorkerParams.SendRawLocationFailure -> SendRawLocationFailureWorker(
-                params.locationUpdate,
-                params.trackableId,
-                params.exception,
-                corePublisher,
-                logHandler,
-            )
             is WorkerParams.Stop -> StopWorker(
                 params.callbackFunction,
                 ably,
@@ -226,12 +217,6 @@ internal sealed class WorkerParams {
     data class SendEnhancedLocationSuccess(
         val location: Location,
         val trackableId: String,
-    ) : WorkerParams()
-
-    data class SendRawLocationFailure(
-        val locationUpdate: LocationUpdate,
-        val trackableId: String,
-        val exception: Throwable?,
     ) : WorkerParams()
 
     data class Stop(

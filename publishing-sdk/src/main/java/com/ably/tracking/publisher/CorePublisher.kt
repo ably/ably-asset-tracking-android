@@ -420,11 +420,7 @@ constructor(
             if (it.isSuccess) {
                 enqueue(WorkerSpecification.SendRawLocationSuccess(locationUpdate.location, trackableId))
             } else {
-                enqueue(
-                    workerFactory.createWorker(
-                        WorkerParams.SendRawLocationFailure(locationUpdate, trackableId, it.exceptionOrNull())
-                    )
-                )
+                enqueue(WorkerSpecification.SendRawLocationFailure(locationUpdate, trackableId, it.exceptionOrNull()))
             }
         }
     }
