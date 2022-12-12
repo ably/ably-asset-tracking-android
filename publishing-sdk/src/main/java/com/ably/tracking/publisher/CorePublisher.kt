@@ -266,7 +266,7 @@ constructor(
     }
 
     override fun stop(timeoutInMilliseconds: Long, callbackFunction: ResultCallbackFunction<Unit>) {
-        enqueue(workerFactory.createWorker(WorkerParams.Stop(callbackFunction, timeoutInMilliseconds)))
+        enqueue(WorkerSpecification.Stop(callbackFunction, timeoutInMilliseconds))
     }
 
     override fun retrySendingEnhancedLocation(

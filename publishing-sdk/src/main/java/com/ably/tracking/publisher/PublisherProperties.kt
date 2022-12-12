@@ -50,7 +50,8 @@ private constructor(
         onRoutingProfileUpdated
     )
 
-    private var isDisposed: Boolean = false
+    var isDisposed: Boolean = false
+        private set
     var locationEngineResolution: Resolution = locationEngineResolution
         get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
     val isLocationEngineResolutionConstant: Boolean = isLocationEngineResolutionConstant

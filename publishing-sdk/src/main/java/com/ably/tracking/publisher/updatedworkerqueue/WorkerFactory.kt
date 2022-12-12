@@ -28,6 +28,7 @@ import com.ably.tracking.publisher.updatedworkerqueue.workers.SendEnhancedLocati
 import com.ably.tracking.publisher.updatedworkerqueue.workers.SendRawLocationFailureWorker
 import com.ably.tracking.publisher.updatedworkerqueue.workers.SendRawLocationSuccessWorker
 import com.ably.tracking.publisher.updatedworkerqueue.workers.SetActiveTrackableWorker
+import com.ably.tracking.publisher.updatedworkerqueue.workers.StopWorker
 import com.ably.tracking.publisher.updatedworkerqueue.workers.StoppingConnectionFinishedWorker
 import kotlinx.coroutines.flow.StateFlow
 
@@ -187,12 +188,12 @@ internal class WorkerFactory(
                 corePublisher,
                 hooks,
             )
-//            is WorkerParams.Stop -> StopWorker(
-//                params.callbackFunction,
-//                ably,
-//                corePublisher,
-//                params.timeoutInMilliseconds,
-//            )
+            is WorkerSpecification.Stop -> StopWorker(
+                workerSpecification.callbackFunction,
+                ably,
+                corePublisher,
+                workerSpecification.timeoutInMilliseconds,
+            )
             WorkerSpecification.StoppingConnectionFinished -> StoppingConnectionFinishedWorker()
             else -> throw NotImplementedError()
         }
