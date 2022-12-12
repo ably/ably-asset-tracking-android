@@ -249,7 +249,7 @@ constructor(
                     trackable = trackable,
                     callbackFunction = callbackFunction,
                     presenceUpdateListener = {
-                        enqueue(workerFactory.createWorker(WorkerParams.PresenceMessage(trackable, it)))
+                        enqueue(WorkerSpecification.PresenceMessage(trackable, it))
                     },
                     channelStateChangeListener = {
                         enqueue(WorkerSpecification.ChannelConnectionStateChange(trackable.id, it))

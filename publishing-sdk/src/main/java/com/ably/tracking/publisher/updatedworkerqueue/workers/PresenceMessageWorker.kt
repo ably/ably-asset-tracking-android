@@ -1,20 +1,26 @@
-package com.ably.tracking.publisher.workerqueue.workers
+package com.ably.tracking.publisher.updatedworkerqueue.workers
 
 import com.ably.tracking.common.ClientTypes
 import com.ably.tracking.common.PresenceAction
 import com.ably.tracking.common.PresenceMessage
+import com.ably.tracking.common.workerqueue.Worker
 import com.ably.tracking.publisher.CorePublisher
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.Trackable
+import com.ably.tracking.publisher.updatedworkerqueue.WorkerSpecification
 import com.ably.tracking.publisher.workerqueue.results.SyncAsyncResult
 
 internal class PresenceMessageWorker(
     private val trackable: Trackable,
     private val presenceMessage: PresenceMessage,
     private val corePublisher: CorePublisher
-) :
-    Worker {
-    override fun doWork(properties: PublisherProperties): SyncAsyncResult {
+) : Worker<PublisherProperties, WorkerSpecification> {
+
+    override fun doWork(
+        properties: PublisherProperties,
+        doAsyncWork: (suspend () -> Unit) -> Unit,
+        postWork: (WorkerSpecification) -> Unit
+    ): PublisherProperties {
         when (presenceMessage.action) {
             PresenceAction.PRESENT_OR_ENTER -> {
                 if (presenceMessage.data.type == ClientTypes.SUBSCRIBER) {
@@ -42,7 +48,7 @@ internal class PresenceMessageWorker(
                 }
             }
         }
-        return SyncAsyncResult()
+        return properties
     }
 
     override fun doWhenStopped(exception: Exception) = Unit
