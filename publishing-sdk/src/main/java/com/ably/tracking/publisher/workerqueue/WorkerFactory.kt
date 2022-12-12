@@ -18,7 +18,6 @@ import com.ably.tracking.publisher.workerqueue.workers.AddTrackableWorker
 import com.ably.tracking.publisher.workerqueue.workers.ConnectionCreatedWorker
 import com.ably.tracking.publisher.workerqueue.workers.ConnectionReadyWorker
 import com.ably.tracking.publisher.workerqueue.workers.DisconnectSuccessWorker
-import com.ably.tracking.publisher.workerqueue.workers.EnhancedLocationChangedWorker
 import com.ably.tracking.publisher.workerqueue.workers.RefreshResolutionPolicyWorker
 import com.ably.tracking.publisher.workerqueue.workers.RetrySubscribeToPresenceSuccessWorker
 import com.ably.tracking.publisher.workerqueue.workers.RetrySubscribeToPresenceWorker
@@ -107,13 +106,6 @@ internal class DefaultWorkerFactory(
                 ably,
                 params.result,
             )
-            is WorkerParams.EnhancedLocationChanged -> EnhancedLocationChangedWorker(
-                params.location,
-                params.intermediateLocations,
-                params.type,
-                corePublisher,
-                logHandler,
-            )
             WorkerParams.RefreshResolutionPolicy -> RefreshResolutionPolicyWorker(
                 corePublisher,
             )
@@ -171,12 +163,6 @@ internal sealed class WorkerParams {
         val trackable: Trackable,
         val callbackFunction: ResultCallbackFunction<Unit>,
         val shouldRecalculateResolutionCallback: () -> Unit,
-    ) : WorkerParams()
-
-    data class EnhancedLocationChanged(
-        val location: Location,
-        val intermediateLocations: List<Location>,
-        val type: LocationUpdateType,
     ) : WorkerParams()
 
     object RefreshResolutionPolicy : WorkerParams()

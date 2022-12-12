@@ -204,12 +204,10 @@ constructor(
                 val locationUpdateType =
                     if (intermediateLocations.isEmpty()) LocationUpdateType.ACTUAL else LocationUpdateType.PREDICTED
                 enqueue(
-                    workerFactory.createWorker(
-                        WorkerParams.EnhancedLocationChanged(
-                            enhancedLocation,
-                            intermediateLocations,
-                            locationUpdateType
-                        )
+                    WorkerSpecification.EnhancedLocationChanged(
+                        enhancedLocation,
+                        intermediateLocations,
+                        locationUpdateType
                     )
                 )
             }
@@ -333,10 +331,10 @@ constructor(
         ably.sendEnhancedLocation(trackableId, locationUpdate) {
             if (it.isSuccess) {
                 enqueue(
-                        WorkerSpecification.SendEnhancedLocationSuccess(
-                            locationUpdate.location,
-                            trackableId
-                        )
+                    WorkerSpecification.SendEnhancedLocationSuccess(
+                        locationUpdate.location,
+                        trackableId
+                    )
                 )
             } else {
                 enqueue(
