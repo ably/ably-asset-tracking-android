@@ -655,7 +655,7 @@ constructor(
         var proximityHandler: ResolutionPolicy.Methods.ProximityHandler? = null
         var threshold: Proximity? = null
         override fun refresh() {
-            enqueue(workerFactory.createWorker(WorkerParams.RefreshResolutionPolicy))
+            enqueue(WorkerSpecification.RefreshResolutionPolicy)
         }
 
         override fun setProximityThreshold(

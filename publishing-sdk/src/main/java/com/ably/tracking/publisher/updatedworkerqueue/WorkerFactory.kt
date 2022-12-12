@@ -22,6 +22,7 @@ import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.updatedworkerqueue.workers.AblyConnectionStateChangeWorker
 import com.ably.tracking.publisher.updatedworkerqueue.workers.ChangeLocationEngineResolutionWorker
 import com.ably.tracking.publisher.updatedworkerqueue.workers.RawLocationChangedWorker
+import com.ably.tracking.publisher.updatedworkerqueue.workers.RefreshResolutionPolicyWorker
 import com.ably.tracking.publisher.updatedworkerqueue.workers.SendEnhancedLocationFailureWorker
 import com.ably.tracking.publisher.updatedworkerqueue.workers.SendEnhancedLocationSuccessWorker
 import com.ably.tracking.publisher.updatedworkerqueue.workers.SendRawLocationFailureWorker
@@ -146,9 +147,9 @@ internal class WorkerFactory(
                 corePublisher,
                 logHandler,
             )
-//            WorkerParams.RefreshResolutionPolicy -> RefreshResolutionPolicyWorker(
-//                corePublisher,
-//            )
+            WorkerSpecification.RefreshResolutionPolicy -> RefreshResolutionPolicyWorker(
+                corePublisher,
+            )
 //            is WorkerParams.RemoveTrackable -> RemoveTrackableWorker(
 //                params.trackable,
 //                params.callbackFunction,

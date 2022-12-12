@@ -1,7 +1,5 @@
 package com.ably.tracking.publisher.workerqueue
 
-import com.ably.tracking.Location
-import com.ably.tracking.LocationUpdateType
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ConnectionStateChange
@@ -18,7 +16,6 @@ import com.ably.tracking.publisher.workerqueue.workers.AddTrackableWorker
 import com.ably.tracking.publisher.workerqueue.workers.ConnectionCreatedWorker
 import com.ably.tracking.publisher.workerqueue.workers.ConnectionReadyWorker
 import com.ably.tracking.publisher.workerqueue.workers.DisconnectSuccessWorker
-import com.ably.tracking.publisher.workerqueue.workers.RefreshResolutionPolicyWorker
 import com.ably.tracking.publisher.workerqueue.workers.RetrySubscribeToPresenceSuccessWorker
 import com.ably.tracking.publisher.workerqueue.workers.RetrySubscribeToPresenceWorker
 import com.ably.tracking.publisher.workerqueue.workers.StopWorker
@@ -106,9 +103,6 @@ internal class DefaultWorkerFactory(
                 ably,
                 params.result,
             )
-            WorkerParams.RefreshResolutionPolicy -> RefreshResolutionPolicyWorker(
-                corePublisher,
-            )
             is WorkerParams.Stop -> StopWorker(
                 params.callbackFunction,
                 ably,
@@ -164,8 +158,6 @@ internal sealed class WorkerParams {
         val callbackFunction: ResultCallbackFunction<Unit>,
         val shouldRecalculateResolutionCallback: () -> Unit,
     ) : WorkerParams()
-
-    object RefreshResolutionPolicy : WorkerParams()
 
     data class Stop(
         val callbackFunction: ResultCallbackFunction<Unit>,

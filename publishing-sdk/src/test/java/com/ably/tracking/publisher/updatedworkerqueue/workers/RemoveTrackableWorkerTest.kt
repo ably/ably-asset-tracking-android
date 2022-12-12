@@ -25,9 +25,7 @@ class RemoveTrackableWorkerTest {
     private val ably: Ably = mockk()
     private val callbackFunction: ResultCallbackFunction<Boolean> = mockk(relaxed = true)
 
-    private val worker = RemoveTrackableWorker(
-        trackable, ably, callbackFunction
-    )
+    private val worker = RemoveTrackableWorker(trackable, ably, callbackFunction)
 
     private val asyncWorks = mutableListOf<suspend () -> Unit>()
     private val postedWorks = mutableListOf<WorkerSpecification>()
