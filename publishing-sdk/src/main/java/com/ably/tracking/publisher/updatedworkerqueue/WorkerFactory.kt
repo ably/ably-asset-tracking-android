@@ -23,6 +23,7 @@ import com.ably.tracking.publisher.updatedworkerqueue.workers.AblyConnectionStat
 import com.ably.tracking.publisher.updatedworkerqueue.workers.ChangeLocationEngineResolutionWorker
 import com.ably.tracking.publisher.updatedworkerqueue.workers.RawLocationChangedWorker
 import com.ably.tracking.publisher.updatedworkerqueue.workers.SendEnhancedLocationFailureWorker
+import com.ably.tracking.publisher.updatedworkerqueue.workers.SendEnhancedLocationSuccessWorker
 import com.ably.tracking.publisher.updatedworkerqueue.workers.SendRawLocationFailureWorker
 import com.ably.tracking.publisher.updatedworkerqueue.workers.SendRawLocationSuccessWorker
 import com.ably.tracking.publisher.updatedworkerqueue.workers.SetActiveTrackableWorker
@@ -160,12 +161,12 @@ internal class WorkerFactory(
                 corePublisher,
                 logHandler,
             )
-//            is WorkerParams.SendEnhancedLocationSuccess -> SendEnhancedLocationSuccessWorker(
-//                params.location,
-//                params.trackableId,
-//                corePublisher,
-//                logHandler,
-//            )
+            is WorkerSpecification.SendEnhancedLocationSuccess -> SendEnhancedLocationSuccessWorker(
+                workerSpecification.location,
+                workerSpecification.trackableId,
+                corePublisher,
+                logHandler,
+            )
             is WorkerSpecification.SendRawLocationFailure -> SendRawLocationFailureWorker(
                 workerSpecification.locationUpdate,
                 workerSpecification.trackableId,

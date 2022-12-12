@@ -23,9 +23,7 @@ class SendEnhancedLocationFailureWorkerTest {
         every { saveEnhancedLocationForFurtherSending(any(), any(), any()) } just runs
         every { retrySendingEnhancedLocation(any(), any(), any()) } just runs
         every { processNextWaitingEnhancedLocationUpdate(any(), any()) } just runs
-
     }
-
     private val worker = SendEnhancedLocationFailureWorker(locationUpdate, trackableId, null, publisher, null)
 
     private val asyncWorks = mutableListOf<suspend () -> Unit>()

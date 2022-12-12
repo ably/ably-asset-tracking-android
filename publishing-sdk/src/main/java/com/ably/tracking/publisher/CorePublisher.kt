@@ -333,12 +333,10 @@ constructor(
         ably.sendEnhancedLocation(trackableId, locationUpdate) {
             if (it.isSuccess) {
                 enqueue(
-                    workerFactory.createWorker(
-                        WorkerParams.SendEnhancedLocationSuccess(
+                        WorkerSpecification.SendEnhancedLocationSuccess(
                             locationUpdate.location,
                             trackableId
                         )
-                    )
                 )
             } else {
                 enqueue(
