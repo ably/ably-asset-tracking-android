@@ -88,7 +88,7 @@ val Authentication.clientOptions: ClientOptions
     get() = ClientOptions().apply {
         clientId = this@clientOptions.clientId
 
-        this@clientOptions.tokenRequestCallback?.let { tokenRequestCallback ->
+        this@clientOptions.tokenRequestConfiguration?.callback?.let { tokenRequestCallback ->
             authCallback = Auth.TokenCallback {
                 runBlocking {
                     try {
@@ -100,7 +100,11 @@ val Authentication.clientOptions: ClientOptions
             }
         }
 
-        this@clientOptions.jwtCallback?.let { jwtCallback ->
+        this@clientOptions.tokenRequestConfiguration?.staticTokenRequest?.let { staticTokenRequest ->
+            authCallback = Auth.TokenCallback { staticTokenRequest.toAuth() }
+        }
+
+        this@clientOptions.jwtConfiguration?.callback?.let { jwtCallback ->
             authCallback = Auth.TokenCallback {
                 runBlocking {
                     try {
@@ -110,6 +114,10 @@ val Authentication.clientOptions: ClientOptions
                     }
                 }
             }
+        }
+
+        this@clientOptions.jwtConfiguration?.staticJwt?.let { staticJwt ->
+            authCallback = Auth.TokenCallback { staticJwt }
         }
 
         this@clientOptions.basicApiKey?.let { basicApiKey ->

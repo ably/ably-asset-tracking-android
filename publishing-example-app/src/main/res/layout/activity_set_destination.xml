@@ -18,7 +18,7 @@
     android:backgroundTint="@color/button_inactive"
     android:enabled="false"
     android:paddingVertical="@dimen/medium_margin"
-    android:text="Accept"
+    android:text="@string/accept_destination_button_text"
     android:textColor="@color/mid_grey"
     app:layout_constraintBottom_toBottomOf="parent" />
 
