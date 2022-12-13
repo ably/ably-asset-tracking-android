@@ -3,7 +3,6 @@
 ## Development
 
 This repository is structured as a Gradle [Multi-Project Build](https://docs.gradle.org/current/userguide/multi_project_builds.html).
-
 To run checks, tests and assemble all SDK and app projects from the command line use:
 
 - macOS: `./gradlew check assemble`
@@ -11,10 +10,17 @@ To run checks, tests and assemble all SDK and app projects from the command line
 
 These are the same Gradle tasks that we [run in CI](.github/workflows).
 
-The recommended IDE for working on this project is [Android Studio](https://developer.android.com/studio).
+Before contributing to this repository please read the [architectural notes](ArchitecturalNotes.md).
+
+### Recommended IDE
+
+We developed and continue to maintain this SDK using [Android Studio](https://developer.android.com/studio), so this is the IDE (Integrated Development Environment) we recommend you use.
 From the dialog presented by `File` > `Open...` / `Open an Existing Project`, select the repository root folder and Studio's built-in support for Gradle projects will do the rest.
 
-Before contributing to this repository please read the [architectural notes](ArchitecturalNotes.md).
+Android Studio is the official IDE for Android app development and is based on top of [IntelliJ IDEA](https://www.jetbrains.com/idea/).
+This means that, more often than not, sources of help you will find in relation to IDE questions or problems you face will be from JetBrains and related to IntelliJ directly. Most of the time these sources of help are also relevant to Android Studio, but your mileage may vary.
+
+Because of IntelliJ's [approach to Project Security](https://www.jetbrains.com/help/idea/project-security.html) you will need to explicitly trust the project when you open it. Previewing in safe mode will not give you the full IDE experience.
 
 ### MapBox SDK dependency
 

@@ -1,5 +1,6 @@
 package com.ably.tracking.example.publisher
 
+import android.annotation.SuppressLint
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -11,8 +12,13 @@ typealias OnTrackableItemClickedCallback = (Trackable) -> Unit
 
 class TrackablesAdapter : RecyclerView.Adapter<TrackableViewHolder>() {
     var trackables: List<Trackable> = emptyList()
+        @SuppressLint("NotifyDataSetChanged")
         set(value) {
             field = value
+
+            // If we don't suppress the lint rule then we get this at compile time for this line:
+            //   Error: It will always be more efficient to use more specific change events if you can. Rely on notifyDataSetChanged as a last resort. [NotifyDataSetChanged]
+            // For our use case, this performance cost is unlikely to be a problem. We can always revisit in future if it becomes one.
             notifyDataSetChanged()
         }
 
