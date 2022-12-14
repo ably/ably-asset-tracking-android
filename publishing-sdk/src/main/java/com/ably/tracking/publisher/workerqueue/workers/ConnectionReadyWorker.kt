@@ -8,6 +8,7 @@ import com.ably.tracking.publisher.CorePublisher
 import com.ably.tracking.publisher.DefaultCorePublisher
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.Trackable
+import com.ably.tracking.publisher.updatedworkerqueue.workers.AddTrackableCallbackFunction
 import com.ably.tracking.publisher.workerqueue.results.ConnectionReadyWorkResult
 import com.ably.tracking.publisher.workerqueue.results.SyncAsyncResult
 import com.ably.tracking.publisher.workerqueue.results.WorkResult

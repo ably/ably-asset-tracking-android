@@ -1,8 +1,8 @@
 package com.ably.tracking.publisher.guards
 
 import com.ably.tracking.publisher.Trackable
-import com.ably.tracking.publisher.workerqueue.workers.AddTrackableCallbackFunction
-import com.ably.tracking.publisher.workerqueue.workers.AddTrackableResult
+import com.ably.tracking.publisher.updatedworkerqueue.workers.AddTrackableCallbackFunction
+import com.ably.tracking.publisher.updatedworkerqueue.workers.AddTrackableResult
 
 /**
  * Interface for [DefaultDuplicateTrackableGuard] is created to make it possible to create test fakes.

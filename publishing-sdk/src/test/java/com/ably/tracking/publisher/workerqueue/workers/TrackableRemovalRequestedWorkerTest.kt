@@ -8,6 +8,8 @@ import com.ably.tracking.publisher.RemoveTrackableRequestedException
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.guards.DuplicateTrackableGuard
 import com.ably.tracking.publisher.guards.TrackableRemovalGuard
+import com.ably.tracking.publisher.updatedworkerqueue.workers.AddTrackableCallbackFunction
+import com.ably.tracking.publisher.updatedworkerqueue.workers.AddTrackableResult
 import io.mockk.CapturingSlot
 import io.mockk.clearAllMocks
 import io.mockk.every
