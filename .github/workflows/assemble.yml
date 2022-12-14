@@ -11,7 +11,7 @@ jobs:
       - uses: actions/checkout@v3
 
       # Gradle 7 requires Java 11 to run
-      - uses: actions/setup-java@v2
+      - uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: '11'
