@@ -16,4 +16,8 @@ ext {
     PUBLISH_POM_DESCRIPTION = "Ably Asset Tracking shared code that is visible in the Java API."
 }
 
+android {
+    namespace 'com.ably.tracking.java'
+}
+
 apply from: '../publish.gradle'

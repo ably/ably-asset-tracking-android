@@ -19,6 +19,7 @@ android {
         // Required to initialize Mapbox and use MapView in the layout XML files.
         resValue "string", "mapbox_access_token", findProperty('MAPBOX_ACCESS_TOKEN') ?: ""
     }
+    namespace 'com.ably.tracking.example.publisher'
 }
 
 dependencies {
