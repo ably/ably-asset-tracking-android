@@ -15,7 +15,7 @@ jobs:
           - api: 21
             excludeModules: true
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       # Gradle 7 requires Java 11 to run
       - uses: actions/setup-java@v2
