@@ -391,6 +391,14 @@ W/System.err: SLF4J: Defaulting to no-operation (NOP) logger implementation
 
 This is normal behaviour if no specific SLF4J logger implementation is provided. If you want to fix those warnings you have to provide a SLF4J logger implementation in your project.
 
+### Using multiple publishers at the same time
+
+While it's possible to create multiple publishers and use them at the same time it is not advised. The reason is that the underlying location service is created when the publisher is created and it is destroyed when the publisher is stopped.
+Therefore, if you create a publisher after another publisher was created but not stopped, the new publisher's location engine configuration won't be applied, since the location service is already created and running.
+Additionally, since all publishers use the same location service instance, when one of them stops location updates (by removing its last trackable) they will stop for all of them.
+
+All the above issues won't occur when you create a new publisher after stopping the previous one, which is the recommended way of using the SDK.
+
 ## Contributing
 
 For guidance on how to contribute to this project, see [CONTRIBUTING.md](CONTRIBUTING.md).
