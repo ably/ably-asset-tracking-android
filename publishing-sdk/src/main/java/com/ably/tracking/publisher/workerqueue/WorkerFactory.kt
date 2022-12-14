@@ -12,7 +12,6 @@ import com.ably.tracking.publisher.Mapbox
 import com.ably.tracking.publisher.ResolutionPolicy
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.workers.AddTrackableFailedWorker
-import com.ably.tracking.publisher.workerqueue.workers.AddTrackableWorker
 import com.ably.tracking.publisher.workerqueue.workers.ConnectionCreatedWorker
 import com.ably.tracking.publisher.workerqueue.workers.ConnectionReadyWorker
 import com.ably.tracking.publisher.workerqueue.workers.DisconnectSuccessWorker
@@ -47,13 +46,6 @@ internal class DefaultWorkerFactory(
 ) : WorkerFactory {
     override fun createWorker(params: WorkerParams): Worker {
         return when (params) {
-            is WorkerParams.AddTrackable -> AddTrackableWorker(
-                params.trackable,
-                params.callbackFunction,
-                params.presenceUpdateListener,
-                params.channelStateChangeListener,
-                ably,
-            )
             is WorkerParams.AddTrackableFailed -> AddTrackableFailedWorker(
                 params.trackable,
                 params.callbackFunction,
@@ -108,12 +100,6 @@ internal class DefaultWorkerFactory(
 }
 
 internal sealed class WorkerParams {
-    data class AddTrackable(
-        val trackable: Trackable,
-        val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>,
-        val presenceUpdateListener: ((presenceMessage: com.ably.tracking.common.PresenceMessage) -> Unit),
-        val channelStateChangeListener: ((connectionStateChange: ConnectionStateChange) -> Unit),
-    ) : WorkerParams()
 
     data class AddTrackableFailed(
         val trackable: Trackable,

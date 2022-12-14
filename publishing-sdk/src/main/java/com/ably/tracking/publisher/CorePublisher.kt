@@ -23,7 +23,6 @@ import com.ably.tracking.publisher.updatedworkerqueue.WorkerSpecification
 import com.ably.tracking.publisher.workerqueue.DefaultWorkerFactory
 import com.ably.tracking.publisher.workerqueue.DefaultWorkerQueue
 import com.ably.tracking.publisher.workerqueue.WorkerFactory
-import com.ably.tracking.publisher.workerqueue.WorkerParams
 import com.ably.tracking.publisher.workerqueue.WorkerQueue
 import com.ably.tracking.publisher.workerqueue.workers.Worker
 import kotlinx.coroutines.CoroutineScope
@@ -240,17 +239,15 @@ constructor(
         callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>
     ) {
         enqueue(
-            workerFactory.createWorker(
-                WorkerParams.AddTrackable(
-                    trackable = trackable,
-                    callbackFunction = callbackFunction,
-                    presenceUpdateListener = {
-                        enqueue(WorkerSpecification.PresenceMessage(trackable, it))
-                    },
-                    channelStateChangeListener = {
-                        enqueue(WorkerSpecification.ChannelConnectionStateChange(trackable.id, it))
-                    },
-                )
+            WorkerSpecification.AddTrackable(
+                trackable = trackable,
+                callbackFunction = callbackFunction,
+                presenceUpdateListener = {
+                    enqueue(WorkerSpecification.PresenceMessage(trackable, it))
+                },
+                channelStateChangeListener = {
+                    enqueue(WorkerSpecification.ChannelConnectionStateChange(trackable.id, it))
+                }
             )
         )
     }

@@ -5,7 +5,6 @@ import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.PresenceMessage
 import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.publisher.Trackable
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 internal typealias AsyncWork = (suspend () -> WorkResult)
@@ -31,34 +30,6 @@ internal data class SyncAsyncResult(
     val syncWorkResult: WorkResult? = null,
     val asyncWork: AsyncWork? = null
 ) : WorkResult()
-
-internal sealed class AddTrackableWorkResult : WorkResult() {
-    internal data class AlreadyIn(
-        val trackableStateFlow: MutableStateFlow<TrackableState>,
-        val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>
-    ) : AddTrackableWorkResult()
-
-    internal data class Success(
-        val trackable: Trackable,
-        val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>,
-        val presenceUpdateListener: ((presenceMessage: PresenceMessage) -> Unit),
-        val channelStateChangeListener: ((connectionStateChange: ConnectionStateChange) -> Unit),
-    ) : AddTrackableWorkResult()
-
-    internal data class Fail(
-        val trackable: Trackable,
-        val exception: Throwable?,
-        val isConnectedToAbly: Boolean,
-        val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>
-    ) : AddTrackableWorkResult()
-
-    internal data class WorkDelayed(
-        val trackable: Trackable,
-        val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>,
-        val presenceUpdateListener: ((presenceMessage: PresenceMessage) -> Unit),
-        val channelStateChangeListener: ((connectionStateChange: ConnectionStateChange) -> Unit),
-    ) : AddTrackableWorkResult()
-}
 
 internal sealed class ConnectionCreatedWorkResult : WorkResult() {
     internal data class RemovalRequested(
@@ -110,22 +81,6 @@ internal sealed class RetrySubscribeToPresenceWorkResult : WorkResult() {
         val trackable: Trackable,
         val presenceUpdateListener: (presenceMessage: PresenceMessage) -> Unit,
     ) : RetrySubscribeToPresenceWorkResult()
-}
-
-internal sealed class RemoveTrackableWorkResult : WorkResult() {
-    internal data class Success(
-        val callbackFunction: ResultCallbackFunction<Boolean>,
-        val trackable: Trackable,
-    ) : RemoveTrackableWorkResult()
-
-    internal data class Fail(
-        val callbackFunction: ResultCallbackFunction<Boolean>,
-        val exception: Throwable,
-    ) : RemoveTrackableWorkResult()
-
-    internal data class NotPresent(
-        val callbackFunction: ResultCallbackFunction<Boolean>
-    ) : RemoveTrackableWorkResult()
 }
 
 internal sealed class TrackableRemovalRequestedWorkResult : WorkResult() {
