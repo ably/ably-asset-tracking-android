@@ -10,6 +10,8 @@ To run checks, tests and assemble all SDK and app projects from the command line
 
 These are the same Gradle tasks that we [run in CI](.github/workflows).
 
+Before contributing to this repository please read the [architectural notes](ArchitecturalNotes.md).
+
 ### Recommended IDE
 
 We developed and continue to maintain this SDK using [Android Studio](https://developer.android.com/studio), so this is the IDE (Integrated Development Environment) we recommend you use.
