@@ -44,56 +44,56 @@ jobs:
       - run: find . -name "index.html"
         if: always()
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         name: Build Reports for integration-testing-app
         if: always()
         with:
           name: api-level-${{ matrix.api-level }}-integration-testing-app-build-reports
           path: integration-testing-app/build/reports
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         name: Build Reports for core-sdk-java
         if: always()
         with:
           name: api-level-${{ matrix.api-level }}-core-sdk-java-build-reports
           path: core-sdk-java/build/reports
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         name: Build Reports for common
         if: always()
         with:
           name: api-level-${{ matrix.api-level }}-common-build-reports
           path: common/build/reports
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         name: Build Reports for android-test-common
         if: always()
         with:
           name: api-level-${{ matrix.api-level }}-android-test-common-build-reports
           path: android-test-common/build/reports
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         name: Build Reports for core-sdk
         if: always()
         with:
           name: api-level-${{ matrix.api-level }}-core-sdk-build-reports
           path: core-sdk/build/reports
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         name: Build Reports for publishing-sdk
         if: always()
         with:
           name: api-level-${{ matrix.api-level }}-publishing-sdk-build-reports
           path: publishing-sdk/build/reports
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         name: Build Reports for subscribing-example-app
         if: always()
         with:
           name: api-level-${{ matrix.api-level }}-subscribing-example-app-build-reports
           path: subscribing-example-app/build/reports
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         name: Build Reports for publishing-example-app
         if: always()
         with:
