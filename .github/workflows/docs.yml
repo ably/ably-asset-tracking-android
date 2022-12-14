@@ -27,7 +27,9 @@ jobs:
           ORG_GRADLE_PROJECT_MAPBOX_DOWNLOADS_TOKEN: ${{ secrets.MAPBOX_DOWNLOADS_TOKEN }}
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        # at some point AWS will release a `v2` of this action. See:
+        # https://github.com/aws-actions/configure-aws-credentials/issues/489#issuecomment-1278145876
+        uses: aws-actions/configure-aws-credentials@v1-node16
         with:
           aws-region: eu-west-2
           role-to-assume: arn:aws:iam::${{ secrets.ABLY_AWS_ACCOUNT_ID_SDK}}:role/ably-sdk-builds-ably-asset-tracking-android
