@@ -71,7 +71,7 @@ jobs:
           name: publishing-example-app-debug
           path: publishing-example-app/build/outputs/apk/debug/publishing-example-app-debug.apk
           if-no-files-found: error
- 
+
       - uses: actions/upload-artifact@v2
         with:
           name: publishing-example-app-release-unsigned
