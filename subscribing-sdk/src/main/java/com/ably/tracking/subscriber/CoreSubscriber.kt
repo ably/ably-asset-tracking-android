@@ -147,8 +147,8 @@ internal data class SubscriberProperties private constructor(
 
     override var isStopped: Boolean = false,
 
-    private var isPublisherOnline: Boolean = false, // TODO what if there are multiple publishers?
-    private var lastEmittedIsPublisherOnline: Boolean? = null,
+    private var presentPublisherMemberKeys: MutableSet<String> = HashSet(),
+    private var lastEmittedIsAPublisherPresent: Boolean? = null,
     private var lastEmittedTrackableState: TrackableState = TrackableState.Offline(),
     private var lastConnectionStateChange: ConnectionStateChange =
         ConnectionStateChange(ConnectionState.OFFLINE, null),
@@ -179,10 +179,10 @@ internal data class SubscriberProperties private constructor(
 
         if (presenceMessage.action == PresenceAction.LEAVE_OR_ABSENT) {
             // LEAVE or ABSENT
-            isPublisherOnline = false
+            presentPublisherMemberKeys.remove(presenceMessage.memberKey)
         } else {
             // PRESENT, ENTER or UDPATE
-            isPublisherOnline = true
+            presentPublisherMemberKeys.add(presenceMessage.memberKey)
             presenceMessage.data.resolution?.let { publisherResolution ->
                 pendingPublisherResolutions.add(publisherResolution)
             }
@@ -190,10 +190,12 @@ internal data class SubscriberProperties private constructor(
     }
 
     fun emitEventsIfRequired() {
+        val isAPublisherPresent = (presentPublisherMemberKeys.size > 0)
+
         val trackableState = when (lastConnectionStateChange.state) {
             ConnectionState.ONLINE -> {
                 when (lastChannelConnectionStateChange.state) {
-                    ConnectionState.ONLINE -> if (isPublisherOnline) TrackableState.Online else TrackableState.Offline()
+                    ConnectionState.ONLINE -> if (isAPublisherPresent) TrackableState.Online else TrackableState.Offline()
                     ConnectionState.OFFLINE -> TrackableState.Offline()
                     ConnectionState.FAILED -> TrackableState.Failed(lastChannelConnectionStateChange.errorInformation!!) // are we sure error information will always be present?
                 }
@@ -207,9 +209,9 @@ internal data class SubscriberProperties private constructor(
             stateFlows.scope.launch { stateFlows.trackableStateFlow.emit(trackableState) }
         }
 
-        if (null == lastEmittedIsPublisherOnline || lastEmittedIsPublisherOnline!! != isPublisherOnline) {
-            lastEmittedIsPublisherOnline = isPublisherOnline
-            stateFlows.scope.launch { stateFlows.publisherPresenceStateFlow.emit(isPublisherOnline) }
+        if (null == lastEmittedIsAPublisherPresent || lastEmittedIsAPublisherPresent!! != isAPublisherPresent) {
+            lastEmittedIsAPublisherPresent = isAPublisherPresent
+            stateFlows.scope.launch { stateFlows.publisherPresenceStateFlow.emit(isAPublisherPresent) }
         }
 
         val publisherResolutions = pendingPublisherResolutions.drain()
