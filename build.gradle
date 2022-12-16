@@ -1,6 +1,7 @@
 buildscript {
     ext.kotlin_version = '1.6.21'
-    ext.copyright_message = 'Copyright 2020-2021 Ably Real-time Ltd (ably.com)'
+    ext.copyright_message = (new File('COPYRIGHT')).readLines().get(0)
+
     // The version of Ably's client library for Java that we're using.
     // Source code: https://github.com/ably/ably-java
     // Maven coordinates: groupId 'io.ably', artifactId ':'ably-android'.
