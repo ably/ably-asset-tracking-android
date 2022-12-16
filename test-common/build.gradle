@@ -16,3 +16,7 @@ dependencies {
 configurations.all {
     resolutionStrategy.force 'org.objenesis:objenesis:2.6'
 }
+
+android {
+    namespace 'com.ably.tracking.test.common'
+}

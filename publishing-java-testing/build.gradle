@@ -6,6 +6,7 @@ android {
     defaultConfig {
         applicationId 'com.ably.tracking.example.javapublisher'
     }
+    namespace 'com.ably.tracking.example.javapublisher'
 }
 
 dependencies {

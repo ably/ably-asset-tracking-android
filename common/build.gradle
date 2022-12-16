@@ -18,6 +18,7 @@ android {
     defaultConfig {
         consumerProguardFiles 'consumer-rules.pro'
     }
+    namespace 'com.ably.tracking.common'
 }
 
 ext {
