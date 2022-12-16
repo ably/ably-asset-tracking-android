@@ -11,10 +11,10 @@ jobs:
       deployments: write
       id-token: write
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       # Gradle 7 requires Java 11 to run
-      - uses: actions/setup-java@v2
+      - uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: '11'
@@ -27,13 +27,15 @@ jobs:
           ORG_GRADLE_PROJECT_MAPBOX_DOWNLOADS_TOKEN: ${{ secrets.MAPBOX_DOWNLOADS_TOKEN }}
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        # at some point AWS will release a `v2` of this action. See:
+        # https://github.com/aws-actions/configure-aws-credentials/issues/489#issuecomment-1278145876
+        uses: aws-actions/configure-aws-credentials@v1-node16
         with:
           aws-region: eu-west-2
           role-to-assume: arn:aws:iam::${{ secrets.ABLY_AWS_ACCOUNT_ID_SDK}}:role/ably-sdk-builds-ably-asset-tracking-android
           role-session-name: "${{ github.run_id }}-${{ github.run_number }}"
 
-      - uses: ably/sdk-upload-action@v1
+      - uses: ably/sdk-upload-action@v2
         with:
           sourcePath: build/dokka/htmlMultiModule
           githubToken: ${{ secrets.GITHUB_TOKEN }}

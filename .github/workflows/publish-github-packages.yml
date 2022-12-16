@@ -17,12 +17,12 @@ jobs:
 
     steps:
 
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         ref: v${{ github.event.inputs.version }}
 
     # Gradle 7 requires Java 11 to run
-    - uses: actions/setup-java@v2
+    - uses: actions/setup-java@v3
       with:
         distribution: 'zulu'
         java-version: '11'
