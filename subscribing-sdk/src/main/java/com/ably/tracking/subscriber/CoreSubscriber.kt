@@ -148,7 +148,7 @@ internal data class SubscriberProperties private constructor(
     override var isStopped: Boolean = false,
 
     private var presentPublisherMemberKeys: MutableSet<String> = HashSet(),
-    private var lastEmittedIsAPublisherPresent: Boolean? = null,
+    private var lastEmittedIsPublisherVisible: Boolean? = null,
     private var lastEmittedTrackableState: TrackableState = TrackableState.Offline(),
     private var lastConnectionStateChange: ConnectionStateChange =
         ConnectionStateChange(ConnectionState.OFFLINE, null),
@@ -209,9 +209,14 @@ internal data class SubscriberProperties private constructor(
             stateFlows.scope.launch { stateFlows.trackableStateFlow.emit(trackableState) }
         }
 
-        if (null == lastEmittedIsAPublisherPresent || lastEmittedIsAPublisherPresent!! != isAPublisherPresent) {
-            lastEmittedIsAPublisherPresent = isAPublisherPresent
-            stateFlows.scope.launch { stateFlows.publisherPresenceStateFlow.emit(isAPublisherPresent) }
+        // It is possible for presentPublisherMemberKeys to not be empty, even when we have no connectivity from our side,
+        // because we've had presence entry events without subsequent leave events.
+        // Therefore, from the perspective of a user consuming events from publisherPresenceStateFlow, what matters
+        // is what we're computing for isPublisherVisible (not the simple isAPublisherPresent).
+        val isPublisherVisible = (isAPublisherPresent && lastConnectionStateChange.state == ConnectionState.ONLINE)
+        if (null == lastEmittedIsPublisherVisible || lastEmittedIsPublisherVisible!! != isPublisherVisible) {
+            lastEmittedIsPublisherVisible = isPublisherVisible
+            stateFlows.scope.launch { stateFlows.publisherPresenceStateFlow.emit(isPublisherVisible) }
         }
 
         val publisherResolutions = pendingPublisherResolutions.drain()
