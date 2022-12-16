@@ -7,7 +7,9 @@ import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ClientTypes
 import com.ably.tracking.common.ConnectionState
 import com.ably.tracking.common.ConnectionStateChange
+import com.ably.tracking.common.PresenceAction
 import com.ably.tracking.common.PresenceData
+import com.ably.tracking.common.PresenceMessage
 import com.ably.tracking.common.createSingleThreadDispatcher
 import com.ably.tracking.common.workerqueue.Properties
 import com.ably.tracking.common.workerqueue.WorkerQueue
@@ -34,9 +36,6 @@ internal interface CoreSubscriber {
 }
 
 internal interface SubscriberInteractor {
-    fun updateTrackableState(properties: SubscriberProperties)
-    fun updatePublisherPresence(properties: SubscriberProperties, isPublisherPresent: Boolean)
-    fun updatePublisherResolutionInformation(presenceData: PresenceData)
     fun subscribeForRawEvents(presenceData: PresenceData)
     fun subscribeForEnhancedEvents(presenceData: PresenceData)
     fun subscribeForChannelState()
@@ -62,42 +61,36 @@ private class DefaultCoreSubscriber(
     private val trackableId: String,
 ) :
     CoreSubscriber, SubscriberInteractor {
-    private val scope = CoroutineScope(singleThreadDispatcher + SupervisorJob())
     private val workerQueue: WorkerQueue<SubscriberProperties, WorkerSpecification>
-    private val _trackableStates: MutableStateFlow<TrackableState> =
-        MutableStateFlow(TrackableState.Offline())
-    private val _publisherPresence: MutableStateFlow<Boolean> = MutableStateFlow(false)
-    private val _enhancedLocations: MutableSharedFlow<LocationUpdate> =
-        MutableSharedFlow(replay = 1)
-    private val _rawLocations: MutableSharedFlow<LocationUpdate> = MutableSharedFlow(replay = 1)
-    private val _resolutions: MutableSharedFlow<Resolution> = MutableSharedFlow(replay = 1)
-    private val _nextLocationUpdateIntervals: MutableSharedFlow<Long> =
-        MutableSharedFlow(replay = 1)
+
+    private val eventFlows: SubscriberProperties.EventFlows
+    private val properties: SubscriberProperties
 
     override val enhancedLocations: SharedFlow<LocationUpdate>
-        get() = _enhancedLocations.asSharedFlow()
+        get() = eventFlows.enhancedLocations.asSharedFlow()
 
     override val rawLocations: SharedFlow<LocationUpdate>
-        get() = _rawLocations.asSharedFlow()
+        get() = eventFlows.rawLocations.asSharedFlow()
 
     override val trackableStates: StateFlow<TrackableState>
-        get() = _trackableStates.asStateFlow()
+        get() = eventFlows.trackableStateFlow.asStateFlow()
 
     override val publisherPresence: StateFlow<Boolean>
-        get() = _publisherPresence
+        get() = eventFlows.publisherPresenceStateFlow
 
     override val resolutions: SharedFlow<Resolution>
-        get() = _resolutions.asSharedFlow()
+        get() = eventFlows.resolutions.asSharedFlow()
 
     override val nextLocationUpdateIntervals: SharedFlow<Long>
-        get() = _nextLocationUpdateIntervals.asSharedFlow()
+        get() = eventFlows.nextLocationUpdateIntervals.asSharedFlow()
 
     init {
         val workerFactory = WorkerFactory(this, ably, trackableId)
-        val properties = SubscriberProperties(initialResolution)
+        eventFlows = SubscriberProperties.EventFlows()
+        properties = SubscriberProperties(initialResolution, eventFlows)
         workerQueue = WorkerQueue(
             properties = properties,
-            scope = scope,
+            scope = eventFlows.scope,
             workerFactory = workerFactory,
             copyProperties = { copy() },
             getStoppedException = { SubscriberStoppedException() }
@@ -110,31 +103,6 @@ private class DefaultCoreSubscriber(
         workerQueue.enqueue(workerSpecification)
     }
 
-    override fun updatePublisherPresence(properties: SubscriberProperties, isPublisherPresent: Boolean) {
-        if (isPublisherPresent != properties.isPublisherOnline) {
-            properties.isPublisherOnline = isPublisherPresent
-            scope.launch { _publisherPresence.emit(isPublisherPresent) }
-        }
-    }
-
-    override fun updateTrackableState(properties: SubscriberProperties) {
-        val newTrackableState = when (properties.lastConnectionStateChange.state) {
-            ConnectionState.ONLINE -> {
-                when (properties.lastChannelConnectionStateChange.state) {
-                    ConnectionState.ONLINE -> if (properties.isPublisherOnline) TrackableState.Online else TrackableState.Offline()
-                    ConnectionState.OFFLINE -> TrackableState.Offline()
-                    ConnectionState.FAILED -> TrackableState.Failed(properties.lastChannelConnectionStateChange.errorInformation!!) // are we sure error information will always be present?
-                }
-            }
-            ConnectionState.OFFLINE -> TrackableState.Offline()
-            ConnectionState.FAILED -> TrackableState.Failed(properties.lastConnectionStateChange.errorInformation!!) // are we sure error information will always be present?
-        }
-        if (newTrackableState != properties.trackableState) {
-            properties.trackableState = newTrackableState
-            scope.launch { _trackableStates.emit(newTrackableState) }
-        }
-    }
-
     override fun subscribeForChannelState() {
         ably.subscribeForChannelStateChange(trackableId) {
             enqueue(WorkerSpecification.UpdateChannelConnectionState(it))
@@ -143,37 +111,125 @@ private class DefaultCoreSubscriber(
 
     override fun subscribeForEnhancedEvents(presenceData: PresenceData) {
         ably.subscribeForEnhancedEvents(trackableId, presenceData) {
-            scope.launch { _enhancedLocations.emit(it) }
+            eventFlows.scope.launch { eventFlows.enhancedLocations.emit(it) }
         }
     }
 
     override fun subscribeForRawEvents(presenceData: PresenceData) {
         ably.subscribeForRawEvents(trackableId, presenceData) {
-            scope.launch { _rawLocations.emit(it) }
-        }
-    }
-
-    override fun updatePublisherResolutionInformation(presenceData: PresenceData) {
-        presenceData.resolution?.let { publisherResolution ->
-            scope.launch { _resolutions.emit(publisherResolution) }
-            scope.launch { _nextLocationUpdateIntervals.emit(publisherResolution.desiredInterval) }
+            eventFlows.scope.launch { eventFlows.rawLocations.emit(it) }
         }
     }
 
     override fun notifyAssetIsOffline() {
-        scope.launch { _trackableStates.emit(TrackableState.Offline()) }
+        // TODO what is this method achieving, why is it not in normal flow?
+        eventFlows.scope.launch { eventFlows.trackableStateFlow.emit(TrackableState.Offline()) }
+    }
+}
+
+private class PendingResolutions {
+    private var resolutions: MutableList<Resolution> = ArrayList()
+
+    fun add(resolution: Resolution) {
+        resolutions.add(resolution)
+    }
+
+    fun drain(): Array<Resolution> {
+        val array = resolutions.toTypedArray()
+        resolutions.clear()
+        return array
     }
 }
 
 internal data class SubscriberProperties private constructor(
     var presenceData: PresenceData,
+    private val stateFlows: EventFlows,
+
     override var isStopped: Boolean = false,
-    var isPublisherOnline: Boolean = false,
-    var trackableState: TrackableState = TrackableState.Offline(),
-    var lastConnectionStateChange: ConnectionStateChange =
+
+    private var isPublisherOnline: Boolean = false, // TODO what if there are multiple publishers?
+    private var lastEmittedIsPublisherOnline: Boolean? = null,
+    private var lastEmittedTrackableState: TrackableState = TrackableState.Offline(),
+    private var lastConnectionStateChange: ConnectionStateChange =
         ConnectionStateChange(ConnectionState.OFFLINE, null),
-    var lastChannelConnectionStateChange: ConnectionStateChange =
-        ConnectionStateChange(ConnectionState.OFFLINE, null)
+    private var lastChannelConnectionStateChange: ConnectionStateChange =
+        ConnectionStateChange(ConnectionState.OFFLINE, null),
+    private var pendingPublisherResolutions: PendingResolutions = PendingResolutions(),
 ) : Properties {
-    constructor(initialResolution: Resolution?) : this(PresenceData(ClientTypes.SUBSCRIBER, initialResolution))
+    internal constructor(
+        initialResolution: Resolution?,
+        stateFlows: EventFlows,
+    ) : this(PresenceData(ClientTypes.SUBSCRIBER, initialResolution), stateFlows)
+
+    fun updateForConnectionStateChangeAndThenEmitEventsIfRequired(stateChange: ConnectionStateChange) {
+        lastConnectionStateChange = stateChange
+        emitEventsIfRequired()
+    }
+
+    fun updateForChannelConnectionStateChangeAndThenEmitEventsIfRequired(stateChange: ConnectionStateChange) {
+        lastChannelConnectionStateChange = stateChange
+        emitEventsIfRequired()
+    }
+
+    fun updateForPresenceMessage(presenceMessage: PresenceMessage) {
+        if (presenceMessage.data.type != ClientTypes.PUBLISHER) {
+            // We are only interested in presence updates from publishers.
+            return
+        }
+
+        if (presenceMessage.action == PresenceAction.LEAVE_OR_ABSENT) {
+            // LEAVE or ABSENT
+            isPublisherOnline = false
+        } else {
+            // PRESENT, ENTER or UDPATE
+            isPublisherOnline = true
+            presenceMessage.data.resolution?.let { publisherResolution ->
+                pendingPublisherResolutions.add(publisherResolution)
+            }
+        }
+    }
+
+    fun emitEventsIfRequired() {
+        val trackableState = when (lastConnectionStateChange.state) {
+            ConnectionState.ONLINE -> {
+                when (lastChannelConnectionStateChange.state) {
+                    ConnectionState.ONLINE -> if (isPublisherOnline) TrackableState.Online else TrackableState.Offline()
+                    ConnectionState.OFFLINE -> TrackableState.Offline()
+                    ConnectionState.FAILED -> TrackableState.Failed(lastChannelConnectionStateChange.errorInformation!!) // are we sure error information will always be present?
+                }
+            }
+            ConnectionState.OFFLINE -> TrackableState.Offline()
+            ConnectionState.FAILED -> TrackableState.Failed(lastConnectionStateChange.errorInformation!!) // are we sure error information will always be present?
+        }
+
+        if (trackableState != lastEmittedTrackableState) {
+            lastEmittedTrackableState = trackableState
+            stateFlows.scope.launch { stateFlows.trackableStateFlow.emit(trackableState) }
+        }
+
+        if (null == lastEmittedIsPublisherOnline || lastEmittedIsPublisherOnline!! != isPublisherOnline) {
+            lastEmittedIsPublisherOnline = isPublisherOnline
+            stateFlows.scope.launch { stateFlows.publisherPresenceStateFlow.emit(isPublisherOnline) }
+        }
+
+        val publisherResolutions = pendingPublisherResolutions.drain()
+        if (publisherResolutions.size > 0) {
+            stateFlows.scope.launch {
+                for (publisherResolution in publisherResolutions) {
+                    stateFlows.resolutions.emit(publisherResolution)
+                    stateFlows.nextLocationUpdateIntervals.emit(publisherResolution.desiredInterval)
+                }
+            }
+        }
+    }
+
+    internal data class EventFlows constructor(
+        val scope: CoroutineScope = CoroutineScope(singleThreadDispatcher + SupervisorJob()),
+        val enhancedLocations: MutableSharedFlow<LocationUpdate> = MutableSharedFlow(replay = 1),
+        val rawLocations: MutableSharedFlow<LocationUpdate> = MutableSharedFlow(replay = 1),
+        val trackableStateFlow: MutableStateFlow<TrackableState> = MutableStateFlow(TrackableState.Offline()),
+        val publisherPresenceStateFlow: MutableStateFlow<Boolean> = MutableStateFlow(false),
+        val resolutions: MutableSharedFlow<Resolution> = MutableSharedFlow(replay = 1),
+        val nextLocationUpdateIntervals: MutableSharedFlow<Long> = MutableSharedFlow(replay = 1),
+    )
 }

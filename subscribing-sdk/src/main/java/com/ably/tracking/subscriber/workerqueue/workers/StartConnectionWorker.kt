@@ -18,7 +18,7 @@ internal class StartConnectionWorker(
         doAsyncWork: (suspend () -> Unit) -> Unit,
         postWork: (WorkerSpecification) -> Unit
     ): SubscriberProperties {
-        subscriberInteractor.updateTrackableState(properties)
+        properties.emitEventsIfRequired()
         doAsyncWork {
             val startAblyConnectionResult = ably.startConnection()
             if (startAblyConnectionResult.isFailure) {
