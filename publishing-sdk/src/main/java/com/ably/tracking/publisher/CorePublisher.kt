@@ -171,13 +171,13 @@ constructor(
             onRoutingProfileUpdated = { routingProfile = it }
         )
         updatedWorkerFactory = UpdatedWorkerFactory(ably, hooks, this, policy, mapbox, this, logHandler)
-        updatedWorkerQueue =
-            UpdatedWorkerQueue(
-                properties = properties,
-                scope = scope,
-                workerFactory = updatedWorkerFactory,
-                copyProperties = { copy() },
-                getStoppedException = { PublisherStoppedException() })
+        updatedWorkerQueue = UpdatedWorkerQueue(
+            properties = properties,
+            scope = scope,
+            workerFactory = updatedWorkerFactory,
+            copyProperties = { copy() },
+            getStoppedException = { PublisherStoppedException() }
+        )
         ably.subscribeForAblyStateChange { enqueue(WorkerSpecification.AblyConnectionStateChange(it)) }
         mapbox.setLocationHistoryListener { historyData -> scope.launch { _locationHistory.emit(historyData) } }
     }
@@ -212,9 +212,11 @@ constructor(
     ) {
         addTrackable(trackable) { addTrackableResult ->
             if (addTrackableResult.isSuccess) {
-                enqueue(WorkerSpecification.SetActiveTrackable(trackable) {
-                    callbackFunction(addTrackableResult)
-                })
+                enqueue(
+                    WorkerSpecification.SetActiveTrackable(trackable) {
+                        callbackFunction(addTrackableResult)
+                    }
+                )
             } else {
                 callbackFunction(addTrackableResult)
             }

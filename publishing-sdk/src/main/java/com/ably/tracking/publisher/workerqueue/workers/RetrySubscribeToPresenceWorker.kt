@@ -24,27 +24,23 @@ internal class RetrySubscribeToPresenceWorker(
         postWork: (WorkerSpecification) -> Unit
     ): PublisherProperties {
         if (!properties.trackables.contains(trackable)) {
-            //TrackableRemoved
             return properties
         }
 
         doAsyncWork {
             val waitForChannelToBeConnectedResult = waitForChannelToBeConnected(trackable)
             if (waitForChannelToBeConnectedResult.isFailure) {
-                //ChannelFailed
                 return@doAsyncWork
             }
 
             val subscribeToPresenceResult = subscribeToPresenceMessages()
             if (subscribeToPresenceResult.isSuccess) {
-                //Success
                 postWork(WorkerSpecification.RetrySubscribeToPresenceSuccess(trackable))
             } else {
                 logHandler?.w(
                     "Failed to resubscribe to presence for trackable ${trackable.id}",
                     subscribeToPresenceResult.exceptionOrNull()
                 )
-                //Failure
                 postWork(WorkerSpecification.RetrySubscribeToPresence(trackable, presenceUpdateListener))
             }
         }

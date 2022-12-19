@@ -18,7 +18,6 @@ internal class SendRawLocationFailureWorker(
 ) : Worker<PublisherProperties, WorkerSpecification> {
     private val TAG = createLoggingTag(this)
 
-
     override fun doWork(
         properties: PublisherProperties,
         doAsyncWork: (suspend () -> Unit) -> Unit,

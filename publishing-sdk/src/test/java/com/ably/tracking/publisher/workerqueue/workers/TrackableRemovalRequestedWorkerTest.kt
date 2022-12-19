@@ -78,9 +78,11 @@ class TrackableRemovalRequestedWorkerTest {
         assertThat(postedWorks).isEmpty()
 
         verify(exactly = 1) {
-            addTrackableCallbackFunction.invoke(match {
-                it.exceptionOrNull() is RemoveTrackableRequestedException
-            })
+            addTrackableCallbackFunction.invoke(
+                match {
+                    it.exceptionOrNull() is RemoveTrackableRequestedException
+                }
+            )
         }
     }
 
@@ -103,9 +105,11 @@ class TrackableRemovalRequestedWorkerTest {
         assertThat(postedWorks).isEmpty()
 
         verify(exactly = 1) {
-            removeTrackableCallbackFunction.invoke(match {
-                it.getOrNull() == true
-            })
+            removeTrackableCallbackFunction.invoke(
+                match {
+                    it.getOrNull() == true
+                }
+            )
         }
     }
 
@@ -130,9 +134,11 @@ class TrackableRemovalRequestedWorkerTest {
         assertThat(postedWorks).isEmpty()
 
         verify(exactly = 1) {
-            removeTrackableCallbackFunction.invoke(match {
-                it.exceptionOrNull() != null
-            })
+            removeTrackableCallbackFunction.invoke(
+                match {
+                    it.exceptionOrNull() != null
+                }
+            )
         }
     }
 

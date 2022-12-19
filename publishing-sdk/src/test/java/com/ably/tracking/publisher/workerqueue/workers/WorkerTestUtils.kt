@@ -50,4 +50,3 @@ internal fun <T : Any> LocationsPublishingState<T>.maxOutRetryCount(trackableId:
         incrementRetryCount(trackableId)
     }
 }
-
