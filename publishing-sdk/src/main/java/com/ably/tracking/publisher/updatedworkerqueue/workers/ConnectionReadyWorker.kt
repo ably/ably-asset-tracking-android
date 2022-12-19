@@ -1,17 +1,14 @@
-package com.ably.tracking.publisher.workerqueue.workers
+package com.ably.tracking.publisher.updatedworkerqueue.workers
 
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ConnectionStateChange
-import com.ably.tracking.common.PresenceData
+import com.ably.tracking.common.workerqueue.Worker
 import com.ably.tracking.publisher.CorePublisher
 import com.ably.tracking.publisher.DefaultCorePublisher
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.Trackable
-import com.ably.tracking.publisher.updatedworkerqueue.workers.AddTrackableCallbackFunction
-import com.ably.tracking.publisher.workerqueue.results.ConnectionReadyWorkResult
-import com.ably.tracking.publisher.workerqueue.results.SyncAsyncResult
-import com.ably.tracking.publisher.workerqueue.results.WorkResult
+import com.ably.tracking.publisher.updatedworkerqueue.WorkerSpecification
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
@@ -24,11 +21,18 @@ internal class ConnectionReadyWorker(
     private val channelStateChangeListener: ((connectionStateChange: ConnectionStateChange) -> Unit),
     private val isSubscribedToPresence: Boolean,
     private val presenceUpdateListener: ((presenceMessage: com.ably.tracking.common.PresenceMessage) -> Unit),
-) : Worker {
-    override fun doWork(properties: PublisherProperties): SyncAsyncResult {
+) : Worker<PublisherProperties, WorkerSpecification> {
+
+    override fun doWork(
+        properties: PublisherProperties,
+        doAsyncWork: (suspend () -> Unit) -> Unit,
+        postWork: (WorkerSpecification) -> Unit
+    ): PublisherProperties {
         if (properties.trackableRemovalGuard.isMarkedForRemoval(trackable)) {
-            val presenceData = properties.presenceData.copy()
-            return SyncAsyncResult(asyncWork = { onTrackableRemovalRequested(presenceData) })
+            doAsyncWork {
+                onTrackableRemovalRequested(properties, postWork)
+            }
+            return properties
         }
 
         subscribeForChannelStateChanges()
@@ -39,19 +43,23 @@ internal class ConnectionReadyWorker(
         updateTrackableState(properties, trackableState, trackableStateFlow, isSubscribedToPresence)
         notifyAddOperationFinished(properties, trackableStateFlow)
 
-        return SyncAsyncResult(
-            if (isSubscribedToPresence) ConnectionReadyWorkResult.OptimalConnectionReady
-            else ConnectionReadyWorkResult.NonOptimalConnectionReady(trackable, presenceUpdateListener)
-        )
+        if (!isSubscribedToPresence) {
+            postWork(WorkerSpecification.RetrySubscribeToPresence(trackable, presenceUpdateListener))
+        }
+
+        return properties
     }
 
     override fun doWhenStopped(exception: Exception) {
         callbackFunction(Result.failure(exception))
     }
 
-    private suspend fun onTrackableRemovalRequested(presenceData: PresenceData): WorkResult {
-        val result = ably.disconnect(trackable.id, presenceData)
-        return ConnectionReadyWorkResult.RemovalRequested(trackable, callbackFunction, result)
+    private suspend fun onTrackableRemovalRequested(
+        properties: PublisherProperties,
+        postWork: (WorkerSpecification) -> Unit
+    ) {
+        val result = ably.disconnect(trackable.id, properties.presenceData)
+        postWork(WorkerSpecification.TrackableRemovalRequested(trackable, callbackFunction, result))
     }
 
     private fun subscribeForChannelStateChanges() {

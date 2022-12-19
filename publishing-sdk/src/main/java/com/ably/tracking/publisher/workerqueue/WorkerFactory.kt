@@ -12,7 +12,6 @@ import com.ably.tracking.publisher.Mapbox
 import com.ably.tracking.publisher.ResolutionPolicy
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.workers.ConnectionCreatedWorker
-import com.ably.tracking.publisher.workerqueue.workers.ConnectionReadyWorker
 import com.ably.tracking.publisher.workerqueue.workers.Worker
 import kotlinx.coroutines.flow.StateFlow
 
@@ -48,16 +47,6 @@ internal class DefaultWorkerFactory(
                 params.presenceUpdateListener,
                 params.channelStateChangeListener,
             )
-            is WorkerParams.ConnectionReady -> ConnectionReadyWorker(
-                params.trackable,
-                params.callbackFunction,
-                ably,
-                hooks,
-                corePublisher,
-                params.channelStateChangeListener,
-                params.isSubscribedToPresence,
-                params.presenceUpdateListener,
-            )
             else -> throw NotImplementedError()
         }
     }
@@ -72,23 +61,13 @@ internal sealed class WorkerParams {
         val channelStateChangeListener: ((connectionStateChange: ConnectionStateChange) -> Unit),
     ) : WorkerParams()
 
+    //TODO remove
     data class ConnectionReady(
         val trackable: Trackable,
         val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>,
         val channelStateChangeListener: ((connectionStateChange: ConnectionStateChange) -> Unit),
         val presenceUpdateListener: ((presenceMessage: com.ably.tracking.common.PresenceMessage) -> Unit),
         val isSubscribedToPresence: Boolean,
-    ) : WorkerParams()
-
-    //TODO remove
-    data class RetrySubscribeToPresence(
-        val trackable: Trackable,
-        val presenceUpdateListener: ((presenceMessage: com.ably.tracking.common.PresenceMessage) -> Unit),
-    ) : WorkerParams()
-
-    //TODO remove
-    data class RetrySubscribeToPresenceSuccess(
-        val trackable: Trackable,
     ) : WorkerParams()
 
     //TODO remove
