@@ -123,6 +123,7 @@ private class DefaultCoreSubscriber(
 
     override fun notifyAssetIsOffline() {
         // TODO what is this method achieving, why is it not in normal flow?
+        // Perhaps related to: https://github.com/ably/ably-asset-tracking-android/issues/802
         eventFlows.emit(TrackableState.Offline())
     }
 }
