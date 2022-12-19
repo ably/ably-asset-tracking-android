@@ -2,6 +2,7 @@ package com.ably.tracking.publisher.updatedworkerqueue.workers
 
 import com.ably.tracking.Accuracy
 import com.ably.tracking.Resolution
+import com.ably.tracking.publisher.LocationsPublishingState
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.RoutingProfile
 import com.ably.tracking.publisher.Trackable
@@ -43,3 +44,10 @@ internal fun PublisherProperties.insertResolutions(resolutionSet: Set<Resolution
         .forEach { resolutions[it.first] = it.second }
     return this
 }
+
+internal fun <T : Any> LocationsPublishingState<T>.maxOutRetryCount(trackableId: String) {
+    while (shouldRetryPublishing(trackableId)) {
+        incrementRetryCount(trackableId)
+    }
+}
+

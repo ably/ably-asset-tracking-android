@@ -1,13 +1,13 @@
-package com.ably.tracking.publisher.workerqueue.workers
+package com.ably.tracking.publisher.updatedworkerqueue.workers
 
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ResultCallbackFunction
+import com.ably.tracking.common.workerqueue.Worker
 import com.ably.tracking.publisher.CorePublisher
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.PublisherState
 import com.ably.tracking.publisher.Trackable
-import com.ably.tracking.publisher.workerqueue.results.DisconnectSuccessWorkResult
-import com.ably.tracking.publisher.workerqueue.results.SyncAsyncResult
+import com.ably.tracking.publisher.updatedworkerqueue.WorkerSpecification
 
 internal class DisconnectSuccessWorker(
     private val trackable: Trackable,
@@ -15,8 +15,12 @@ internal class DisconnectSuccessWorker(
     private val corePublisher: CorePublisher,
     private val shouldRecalculateResolutionCallback: () -> Unit,
     private val ably: Ably,
-) : Worker {
-    override fun doWork(properties: PublisherProperties): SyncAsyncResult {
+) : Worker<PublisherProperties, WorkerSpecification> {
+    override fun doWork(
+        properties: PublisherProperties,
+        doAsyncWork: (suspend () -> Unit) -> Unit,
+        postWork: (WorkerSpecification) -> Unit
+    ): PublisherProperties {
         removeTrackable(properties)
         removeTrackableState(properties)
         updateResolutions(properties)
@@ -33,13 +37,13 @@ internal class DisconnectSuccessWorker(
         val removedTheLastTrackable = properties.hasNoTrackablesAddingOrAdded
         if (removedTheLastTrackable) {
             properties.state = PublisherState.DISCONNECTING
-            return SyncAsyncResult(asyncWork = {
+            doAsyncWork {
                 ably.stopConnection()
-                DisconnectSuccessWorkResult.StopConnectionCompleted
-            })
+                postWork(WorkerSpecification.StoppingConnectionFinished)
+            }
         }
 
-        return SyncAsyncResult()
+        return properties
     }
 
     override fun doWhenStopped(exception: Exception) {

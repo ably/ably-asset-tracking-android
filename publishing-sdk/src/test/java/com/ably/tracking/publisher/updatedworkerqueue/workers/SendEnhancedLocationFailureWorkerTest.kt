@@ -3,10 +3,8 @@ package com.ably.tracking.publisher.updatedworkerqueue.workers
 import com.ably.tracking.EnhancedLocationUpdate
 import com.ably.tracking.LocationUpdateType
 import com.ably.tracking.publisher.CorePublisher
-import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.updatedworkerqueue.WorkerSpecification
 import com.ably.tracking.test.common.anyLocation
-import com.google.common.truth.Truth
 import com.google.common.truth.Truth.assertThat
 import io.mockk.every
 import io.mockk.just
@@ -56,7 +54,7 @@ class SendEnhancedLocationFailureWorkerTest {
     fun `should not send the location again if should not retry publishing`() {
         // given
         val initialProperties = createPublisherProperties()
-        initialProperties.maxOutRetryCount(trackableId)
+        initialProperties.enhancedLocationsPublishingState.maxOutRetryCount(trackableId)
 
         // when
         val updatedProperties = worker.doWork(
@@ -78,7 +76,7 @@ class SendEnhancedLocationFailureWorkerTest {
     fun `should unmark message pending state if should not retry publishing`() {
         // given
         val initialProperties = createPublisherProperties()
-        initialProperties.maxOutRetryCount(trackableId)
+        initialProperties.enhancedLocationsPublishingState.maxOutRetryCount(trackableId)
 
         // when
         val updatedProperties = worker.doWork(
@@ -122,7 +120,7 @@ class SendEnhancedLocationFailureWorkerTest {
     fun `should save location for further sending if should not retry publishing`() {
         // given
         val initialProperties = createPublisherProperties()
-        initialProperties.maxOutRetryCount(trackableId)
+        initialProperties.enhancedLocationsPublishingState.maxOutRetryCount(trackableId)
 
         // when
         val updatedProperties = worker.doWork(
@@ -169,7 +167,7 @@ class SendEnhancedLocationFailureWorkerTest {
     fun `should process next waiting location if should not retry publishing`() {
         // given
         val initialProperties = createPublisherProperties()
-        initialProperties.maxOutRetryCount(trackableId)
+        initialProperties.enhancedLocationsPublishingState.maxOutRetryCount(trackableId)
 
         // when
         val updatedProperties = worker.doWork(
@@ -201,12 +199,6 @@ class SendEnhancedLocationFailureWorkerTest {
         // then
         verify(exactly = 0) {
             publisher.processNextWaitingEnhancedLocationUpdate(updatedProperties, trackableId)
-        }
-    }
-
-    private fun PublisherProperties.maxOutRetryCount(trackableId: String) {
-        while (enhancedLocationsPublishingState.shouldRetryPublishing(trackableId)) {
-            enhancedLocationsPublishingState.incrementRetryCount(trackableId)
         }
     }
 }

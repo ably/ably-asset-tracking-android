@@ -2,7 +2,6 @@ package com.ably.tracking.publisher.updatedworkerqueue.workers
 
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.publisher.CorePublisher
-import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.updatedworkerqueue.WorkerSpecification
 import com.ably.tracking.test.common.anyLocation
 import com.google.common.truth.Truth.assertThat
@@ -56,7 +55,7 @@ class SendRawLocationFailureWorkerTest {
     fun `should not send the location again if should not retry publishing`() {
         // given
         val initialProperties = createPublisherProperties()
-        initialProperties.maxOutRetryCount(trackableId)
+        initialProperties.rawLocationsPublishingState.maxOutRetryCount(trackableId)
 
         // when
         val updatedProperties = worker.doWork(
@@ -78,7 +77,7 @@ class SendRawLocationFailureWorkerTest {
     fun `should unmark message pending state if should not retry publishing`() {
         // given
         val initialProperties = createPublisherProperties()
-        initialProperties.maxOutRetryCount(trackableId)
+        initialProperties.rawLocationsPublishingState.maxOutRetryCount(trackableId)
 
         // when
         val updatedProperties = worker.doWork(
@@ -123,7 +122,7 @@ class SendRawLocationFailureWorkerTest {
     fun `should save location for further sending if should not retry publishing`() {
         // given
         val initialProperties = createPublisherProperties()
-        initialProperties.maxOutRetryCount(trackableId)
+        initialProperties.rawLocationsPublishingState.maxOutRetryCount(trackableId)
 
         // when
         val updatedProperties = worker.doWork(
@@ -176,7 +175,7 @@ class SendRawLocationFailureWorkerTest {
     fun `should process next waiting location if should not retry publishing`() {
         // given
         val initialProperties = createPublisherProperties()
-        initialProperties.maxOutRetryCount(trackableId)
+        initialProperties.rawLocationsPublishingState.maxOutRetryCount(trackableId)
 
         // when
         val updatedProperties = worker.doWork(
@@ -214,12 +213,6 @@ class SendRawLocationFailureWorkerTest {
 
         verify(exactly = 0) {
             publisher.processNextWaitingRawLocationUpdate(updatedProperties, trackableId)
-        }
-    }
-
-    private fun PublisherProperties.maxOutRetryCount(trackableId: String) {
-        while (rawLocationsPublishingState.shouldRetryPublishing(trackableId)) {
-            rawLocationsPublishingState.incrementRetryCount(trackableId)
         }
     }
 }

@@ -21,6 +21,7 @@ import com.ably.tracking.publisher.RoutingProfile
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.updatedworkerqueue.workers.AblyConnectionStateChangeWorker
 import com.ably.tracking.publisher.updatedworkerqueue.workers.ChangeLocationEngineResolutionWorker
+import com.ably.tracking.publisher.updatedworkerqueue.workers.DisconnectSuccessWorker
 import com.ably.tracking.publisher.updatedworkerqueue.workers.RawLocationChangedWorker
 import com.ably.tracking.publisher.updatedworkerqueue.workers.RefreshResolutionPolicyWorker
 import com.ably.tracking.publisher.updatedworkerqueue.workers.SendEnhancedLocationFailureWorker
@@ -95,13 +96,13 @@ internal class WorkerFactory(
 //                params.trackable,
 //                corePublisher,
 //            )
-//            is WorkerParams.DisconnectSuccess -> DisconnectSuccessWorker(
-//                params.trackable,
-//                params.callbackFunction,
-//                corePublisher,
-//                params.shouldRecalculateResolutionCallback,
-//                ably,
-//            )
+            is WorkerSpecification.DisconnectSuccess -> DisconnectSuccessWorker(
+                workerSpecification.trackable,
+                workerSpecification.callbackFunction,
+                corePublisher,
+                workerSpecification.shouldRecalculateResolutionCallback,
+                ably,
+            )
 //            is WorkerParams.TrackableRemovalRequested -> TrackableRemovalRequestedWorker(
 //                params.trackable,
 //                params.callbackFunction,

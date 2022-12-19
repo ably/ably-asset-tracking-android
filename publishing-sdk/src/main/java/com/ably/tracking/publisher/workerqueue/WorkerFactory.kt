@@ -13,7 +13,6 @@ import com.ably.tracking.publisher.ResolutionPolicy
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.workers.ConnectionCreatedWorker
 import com.ably.tracking.publisher.workerqueue.workers.ConnectionReadyWorker
-import com.ably.tracking.publisher.workerqueue.workers.DisconnectSuccessWorker
 import com.ably.tracking.publisher.workerqueue.workers.RetrySubscribeToPresenceSuccessWorker
 import com.ably.tracking.publisher.workerqueue.workers.RetrySubscribeToPresenceWorker
 import com.ably.tracking.publisher.workerqueue.workers.StoppingConnectionFinishedWorker
@@ -73,13 +72,6 @@ internal class DefaultWorkerFactory(
                 params.trackable,
                 corePublisher,
             )
-            is WorkerParams.DisconnectSuccess -> DisconnectSuccessWorker(
-                params.trackable,
-                params.callbackFunction,
-                corePublisher,
-                params.shouldRecalculateResolutionCallback,
-                ably,
-            )
             is WorkerParams.TrackableRemovalRequested -> TrackableRemovalRequestedWorker(
                 params.trackable,
                 params.callbackFunction,
@@ -115,12 +107,6 @@ internal sealed class WorkerParams {
 
     data class RetrySubscribeToPresenceSuccess(
         val trackable: Trackable,
-    ) : WorkerParams()
-
-    data class DisconnectSuccess(
-        val trackable: Trackable,
-        val callbackFunction: ResultCallbackFunction<Unit>,
-        val shouldRecalculateResolutionCallback: () -> Unit,
     ) : WorkerParams()
 
     data class TrackableRemovalRequested(
