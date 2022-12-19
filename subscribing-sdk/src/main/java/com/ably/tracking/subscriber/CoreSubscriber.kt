@@ -264,7 +264,7 @@ internal data class SubscriberProperties private constructor(
     }
 
     private class PendingResolutions {
-        private var resolutions: MutableList<Resolution> = ArrayList()
+        private val resolutions: MutableList<Resolution> = ArrayList()
 
         fun add(resolution: Resolution) {
             resolutions.add(resolution)
