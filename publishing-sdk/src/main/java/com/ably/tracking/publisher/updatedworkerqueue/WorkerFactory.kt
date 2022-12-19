@@ -25,6 +25,7 @@ import com.ably.tracking.publisher.updatedworkerqueue.workers.DisconnectSuccessW
 import com.ably.tracking.publisher.updatedworkerqueue.workers.RawLocationChangedWorker
 import com.ably.tracking.publisher.updatedworkerqueue.workers.RefreshResolutionPolicyWorker
 import com.ably.tracking.publisher.updatedworkerqueue.workers.RetrySubscribeToPresenceSuccessWorker
+import com.ably.tracking.publisher.updatedworkerqueue.workers.RetrySubscribeToPresenceWorker
 import com.ably.tracking.publisher.updatedworkerqueue.workers.SendEnhancedLocationFailureWorker
 import com.ably.tracking.publisher.updatedworkerqueue.workers.SendEnhancedLocationSuccessWorker
 import com.ably.tracking.publisher.updatedworkerqueue.workers.SendRawLocationFailureWorker
@@ -88,12 +89,12 @@ internal class WorkerFactory(
 //                params.isSubscribedToPresence,
 //                params.presenceUpdateListener,
 //            )
-//            is WorkerParams.RetrySubscribeToPresence -> RetrySubscribeToPresenceWorker(
-//                params.trackable,
-//                ably,
-//                logHandler,
-//                params.presenceUpdateListener,
-//            )
+            is WorkerSpecification.RetrySubscribeToPresence -> RetrySubscribeToPresenceWorker(
+                workerSpecification.trackable,
+                ably,
+                logHandler,
+                workerSpecification.presenceUpdateListener,
+            )
             is WorkerSpecification.RetrySubscribeToPresenceSuccess -> RetrySubscribeToPresenceSuccessWorker(
                 workerSpecification.trackable,
                 corePublisher,

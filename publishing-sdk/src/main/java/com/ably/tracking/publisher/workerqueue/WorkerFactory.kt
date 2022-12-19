@@ -13,7 +13,6 @@ import com.ably.tracking.publisher.ResolutionPolicy
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.workers.ConnectionCreatedWorker
 import com.ably.tracking.publisher.workerqueue.workers.ConnectionReadyWorker
-import com.ably.tracking.publisher.workerqueue.workers.RetrySubscribeToPresenceWorker
 import com.ably.tracking.publisher.workerqueue.workers.Worker
 import kotlinx.coroutines.flow.StateFlow
 
@@ -59,12 +58,6 @@ internal class DefaultWorkerFactory(
                 params.isSubscribedToPresence,
                 params.presenceUpdateListener,
             )
-            is WorkerParams.RetrySubscribeToPresence -> RetrySubscribeToPresenceWorker(
-                params.trackable,
-                ably,
-                logHandler,
-                params.presenceUpdateListener,
-            )
             else -> throw NotImplementedError()
         }
     }
@@ -87,6 +80,7 @@ internal sealed class WorkerParams {
         val isSubscribedToPresence: Boolean,
     ) : WorkerParams()
 
+    //TODO remove
     data class RetrySubscribeToPresence(
         val trackable: Trackable,
         val presenceUpdateListener: ((presenceMessage: com.ably.tracking.common.PresenceMessage) -> Unit),
