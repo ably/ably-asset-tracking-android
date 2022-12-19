@@ -19,7 +19,7 @@ import com.ably.tracking.common.logging.createLoggingTag
 import com.ably.tracking.common.logging.v
 import com.ably.tracking.common.logging.w
 import com.ably.tracking.logging.LogHandler
-import com.ably.tracking.publisher.updatedworkerqueue.WorkerSpecification
+import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -28,7 +28,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import com.ably.tracking.common.workerqueue.WorkerQueue as UpdatedWorkerQueue
-import com.ably.tracking.publisher.updatedworkerqueue.WorkerFactory as UpdatedWorkerFactory
+import com.ably.tracking.publisher.workerqueue.WorkerFactory as UpdatedWorkerFactory
 
 internal interface CorePublisher {
     fun trackTrackable(trackable: Trackable, callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>)

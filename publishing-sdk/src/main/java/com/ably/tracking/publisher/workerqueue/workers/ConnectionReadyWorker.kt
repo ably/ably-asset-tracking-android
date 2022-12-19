@@ -1,0 +1,104 @@
+package com.ably.tracking.publisher.workerqueue.workers
+
+import com.ably.tracking.TrackableState
+import com.ably.tracking.common.Ably
+import com.ably.tracking.common.ConnectionStateChange
+import com.ably.tracking.common.workerqueue.Worker
+import com.ably.tracking.publisher.CorePublisher
+import com.ably.tracking.publisher.DefaultCorePublisher
+import com.ably.tracking.publisher.PublisherProperties
+import com.ably.tracking.publisher.Trackable
+import com.ably.tracking.publisher.workerqueue.WorkerSpecification
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+
+internal class ConnectionReadyWorker(
+    private val trackable: Trackable,
+    private val callbackFunction: AddTrackableCallbackFunction,
+    private val ably: Ably,
+    private val hooks: DefaultCorePublisher.Hooks,
+    private val corePublisher: CorePublisher,
+    private val channelStateChangeListener: ((connectionStateChange: ConnectionStateChange) -> Unit),
+    private val isSubscribedToPresence: Boolean,
+    private val presenceUpdateListener: ((presenceMessage: com.ably.tracking.common.PresenceMessage) -> Unit),
+) : Worker<PublisherProperties, WorkerSpecification> {
+
+    override fun doWork(
+        properties: PublisherProperties,
+        doAsyncWork: (suspend () -> Unit) -> Unit,
+        postWork: (WorkerSpecification) -> Unit
+    ): PublisherProperties {
+        if (properties.trackableRemovalGuard.isMarkedForRemoval(trackable)) {
+            doAsyncWork {
+                onTrackableRemovalRequested(properties, postWork)
+            }
+            return properties
+        }
+
+        subscribeForChannelStateChanges()
+        startLocationUpdates(properties)
+        addTrackableToPublisher(properties)
+        val trackableState = properties.trackableStates[trackable.id] ?: TrackableState.Offline()
+        val trackableStateFlow = properties.trackableStateFlows[trackable.id] ?: MutableStateFlow(trackableState)
+        updateTrackableState(properties, trackableState, trackableStateFlow, isSubscribedToPresence)
+        notifyAddOperationFinished(properties, trackableStateFlow)
+
+        if (!isSubscribedToPresence) {
+            postWork(WorkerSpecification.RetrySubscribeToPresence(trackable, presenceUpdateListener))
+        }
+
+        return properties
+    }
+
+    override fun doWhenStopped(exception: Exception) {
+        callbackFunction(Result.failure(exception))
+    }
+
+    private suspend fun onTrackableRemovalRequested(
+        properties: PublisherProperties,
+        postWork: (WorkerSpecification) -> Unit
+    ) {
+        val result = ably.disconnect(trackable.id, properties.presenceData)
+        postWork(WorkerSpecification.TrackableRemovalRequested(trackable, callbackFunction, result))
+    }
+
+    private fun subscribeForChannelStateChanges() {
+        ably.subscribeForChannelStateChange(trackable.id) {
+            channelStateChangeListener(it)
+        }
+    }
+
+    private fun startLocationUpdates(properties: PublisherProperties) {
+        if (!properties.isTracking) {
+            corePublisher.startLocationUpdates(properties)
+        }
+    }
+
+    private fun addTrackableToPublisher(properties: PublisherProperties) {
+        properties.trackables.add(trackable)
+        corePublisher.updateTrackables(properties)
+        corePublisher.resolveResolution(trackable, properties)
+        hooks.trackables?.onTrackableAdded(trackable)
+    }
+
+    private fun updateTrackableState(
+        properties: PublisherProperties,
+        trackableState: TrackableState,
+        trackableStateFlow: MutableStateFlow<TrackableState>,
+        isSubscribedToPresence: Boolean,
+    ) {
+        properties.trackableStateFlows[trackable.id] = trackableStateFlow
+        corePublisher.updateTrackableStateFlows(properties)
+        properties.trackableStates[trackable.id] = trackableState
+        properties.trackableSubscribedToPresenceFlags[trackable.id] = isSubscribedToPresence
+    }
+
+    private fun notifyAddOperationFinished(
+        properties: PublisherProperties,
+        trackableStateFlow: MutableStateFlow<TrackableState>
+    ) {
+        val successResult = Result.success(trackableStateFlow.asStateFlow())
+        callbackFunction(successResult)
+        properties.duplicateTrackableGuard.finishAddingTrackable(trackable, successResult)
+    }
+}
