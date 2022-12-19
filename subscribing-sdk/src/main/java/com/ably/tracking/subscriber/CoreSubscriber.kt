@@ -64,7 +64,6 @@ private class DefaultCoreSubscriber(
     private val workerQueue: WorkerQueue<SubscriberProperties, WorkerSpecification>
 
     private val eventFlows: SubscriberProperties.EventFlows
-    private val properties: SubscriberProperties
 
     override val enhancedLocations: SharedFlow<LocationUpdate>
         get() = eventFlows.enhancedLocations
@@ -88,7 +87,7 @@ private class DefaultCoreSubscriber(
         val workerFactory = WorkerFactory(this, ably, trackableId)
         val scope = CoroutineScope(singleThreadDispatcher + SupervisorJob())
         eventFlows = SubscriberProperties.EventFlows(scope)
-        properties = SubscriberProperties(initialResolution, eventFlows)
+        val properties = SubscriberProperties(initialResolution, eventFlows)
         workerQueue = WorkerQueue(
             properties = properties,
             scope = scope,
