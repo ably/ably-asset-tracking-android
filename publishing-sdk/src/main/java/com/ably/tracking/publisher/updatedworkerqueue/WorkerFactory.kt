@@ -21,6 +21,7 @@ import com.ably.tracking.publisher.RoutingProfile
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.updatedworkerqueue.workers.AblyConnectionStateChangeWorker
 import com.ably.tracking.publisher.updatedworkerqueue.workers.ChangeLocationEngineResolutionWorker
+import com.ably.tracking.publisher.updatedworkerqueue.workers.ConnectionReadyWorker
 import com.ably.tracking.publisher.updatedworkerqueue.workers.DisconnectSuccessWorker
 import com.ably.tracking.publisher.updatedworkerqueue.workers.RawLocationChangedWorker
 import com.ably.tracking.publisher.updatedworkerqueue.workers.RefreshResolutionPolicyWorker
@@ -79,16 +80,16 @@ internal class WorkerFactory(
 //                params.presenceUpdateListener,
 //                params.channelStateChangeListener,
 //            )
-//            is WorkerParams.ConnectionReady -> ConnectionReadyWorker(
-//                params.trackable,
-//                params.callbackFunction,
-//                ably,
-//                hooks,
-//                corePublisher,
-//                params.channelStateChangeListener,
-//                params.isSubscribedToPresence,
-//                params.presenceUpdateListener,
-//            )
+            is WorkerSpecification.ConnectionReady -> ConnectionReadyWorker(
+                workerSpecification.trackable,
+                workerSpecification.callbackFunction,
+                ably,
+                hooks,
+                corePublisher,
+                workerSpecification.channelStateChangeListener,
+                workerSpecification.isSubscribedToPresence,
+                workerSpecification.presenceUpdateListener,
+            )
             is WorkerSpecification.RetrySubscribeToPresence -> RetrySubscribeToPresenceWorker(
                 workerSpecification.trackable,
                 ably,

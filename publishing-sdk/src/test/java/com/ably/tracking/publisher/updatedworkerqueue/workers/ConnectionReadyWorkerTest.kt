@@ -11,8 +11,12 @@ import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.updatedworkerqueue.WorkerSpecification
 import com.ably.tracking.test.common.mockDisconnect
 import com.google.common.truth.Truth.assertThat
+import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.runs
 import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.StateFlow
@@ -22,10 +26,19 @@ import org.junit.Test
 @ExperimentalCoroutinesApi
 class ConnectionReadyWorkerTest {
     private val trackable = Trackable("test-trackable")
-    private val resultCallbackFunction = mockk<ResultCallbackFunction<StateFlow<TrackableState>>>(relaxed = true)
-    private val ably = mockk<Ably>(relaxed = true)
-    private val hooks = mockk<DefaultCorePublisher.Hooks>(relaxed = true)
-    private val corePublisher = mockk<CorePublisher>(relaxed = true)
+    private val resultCallbackFunction: ResultCallbackFunction<StateFlow<TrackableState>> = mockk(relaxed = true)
+    private val ably: Ably = mockk {
+        every { subscribeForChannelStateChange(trackable.id, any()) } just runs
+    }
+    private val hooks: DefaultCorePublisher.Hooks = mockk {
+        every { trackables } returns null
+    }
+    private val corePublisher = mockk<CorePublisher> {
+        every { startLocationUpdates(any()) } just runs
+        every { updateTrackables(any()) } just runs
+        every { updateTrackableStateFlows(any()) } just runs
+        every { resolveResolution(any(), any()) } just runs
+    }
     private val connectionStateChangeListener: (ConnectionStateChange) -> Unit = {}
     private val presenceUpdateListener: (PresenceMessage) -> Unit = {}
 
@@ -352,6 +365,8 @@ class ConnectionReadyWorkerTest {
         val initialProperties = createPublisherProperties()
         initialProperties.trackableRemovalGuard.markForRemoval(trackable) {}
 
+        coEvery { ably.disconnect(trackable.id, any()) } returns Result.success(Unit)
+
         // when
         worker.doWork(
             initialProperties,
@@ -374,8 +389,10 @@ class ConnectionReadyWorkerTest {
         initialProperties.trackableRemovalGuard.markForRemoval(trackable) {}
         initialProperties.duplicateTrackableGuard.startAddingTrackable(trackable)
 
+        coEvery { ably.disconnect(trackable.id, any()) } returns Result.success(Unit)
+
         // when
-       val updatedProperties= worker.doWork(
+        val updatedProperties = worker.doWork(
             initialProperties,
             asyncWorks.appendWork(),
             postedWorks.appendSpecification()
