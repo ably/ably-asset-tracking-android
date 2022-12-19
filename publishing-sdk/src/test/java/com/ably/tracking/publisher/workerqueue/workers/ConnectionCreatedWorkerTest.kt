@@ -88,7 +88,7 @@ class ConnectionCreatedWorkerTest {
     fun `should post TrackableRemovalRequested work when trackable removal was requested`() = runBlockingTest {
         // given
         val initialProperties = createPublisherProperties()
-        initialProperties.trackableRemovalGuard.markForRemoval(trackable){}
+        initialProperties.trackableRemovalGuard.markForRemoval(trackable) {}
 
         val disconnectResult = Result.success(Unit)
         ably.mockDisconnect(trackable.id, disconnectResult)
