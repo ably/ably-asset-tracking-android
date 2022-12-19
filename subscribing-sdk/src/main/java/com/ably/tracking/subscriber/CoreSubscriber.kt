@@ -127,20 +127,6 @@ private class DefaultCoreSubscriber(
     }
 }
 
-private class PendingResolutions {
-    private var resolutions: MutableList<Resolution> = ArrayList()
-
-    fun add(resolution: Resolution) {
-        resolutions.add(resolution)
-    }
-
-    fun drain(): Array<Resolution> {
-        val array = resolutions.toTypedArray()
-        resolutions.clear()
-        return array
-    }
-}
-
 internal data class SubscriberProperties private constructor(
     var presenceData: PresenceData,
     private val stateFlows: EventFlows,
@@ -239,4 +225,18 @@ internal data class SubscriberProperties private constructor(
         val resolutions: MutableSharedFlow<Resolution> = MutableSharedFlow(replay = 1),
         val nextLocationUpdateIntervals: MutableSharedFlow<Long> = MutableSharedFlow(replay = 1),
     )
+
+    private class PendingResolutions {
+        private var resolutions: MutableList<Resolution> = ArrayList()
+
+        fun add(resolution: Resolution) {
+            resolutions.add(resolution)
+        }
+
+        fun drain(): Array<Resolution> {
+            val array = resolutions.toTypedArray()
+            resolutions.clear()
+            return array
+        }
+    }
 }
