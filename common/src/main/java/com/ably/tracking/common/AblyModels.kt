@@ -2,6 +2,9 @@ package com.ably.tracking.common
 
 import com.ably.tracking.Resolution
 
+/**
+ * Encapsulates the properties of an Ably presence message which are needed by asset tracking SDKs.
+ */
 data class PresenceMessage(
     val action: PresenceAction,
     val data: PresenceData,
