@@ -176,7 +176,7 @@ internal data class SubscriberProperties private constructor(
     }
 
     fun emitEventsIfRequired() {
-        val isAPublisherPresent = (presentPublisherMemberKeys.size > 0)
+        val isAPublisherPresent = (presentPublisherMemberKeys.isNotEmpty())
 
         val trackableState = when (lastConnectionStateChange.state) {
             ConnectionState.ONLINE -> {
@@ -206,7 +206,7 @@ internal data class SubscriberProperties private constructor(
         }
 
         val publisherResolutions = pendingPublisherResolutions.drain()
-        if (publisherResolutions.size > 0) {
+        if (publisherResolutions.isNotEmpty()) {
             stateFlows.scope.launch {
                 for (publisherResolution in publisherResolutions) {
                     stateFlows.resolutions.emit(publisherResolution)
