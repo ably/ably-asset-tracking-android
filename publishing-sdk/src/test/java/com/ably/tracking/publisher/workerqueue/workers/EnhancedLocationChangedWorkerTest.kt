@@ -32,7 +32,6 @@ class EnhancedLocationChangedWorkerTest {
     private val asyncWorks = mutableListOf<suspend () -> Unit>()
     private val postedWorks = mutableListOf<WorkerSpecification>()
 
-
     @Test
     fun `should process all enhanced location updates`() {
         // given

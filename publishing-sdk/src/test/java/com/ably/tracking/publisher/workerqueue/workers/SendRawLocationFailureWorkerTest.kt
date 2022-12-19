@@ -31,7 +31,7 @@ class SendRawLocationFailureWorkerTest {
     fun `should send the location again if should retry publishing`() {
         // given
         val initialProperties = createPublisherProperties()
-        //set all the retry counters to 0
+        // set all the retry counters to 0
         initialProperties.rawLocationsPublishingState.clearAll()
 
         // when
@@ -44,7 +44,6 @@ class SendRawLocationFailureWorkerTest {
         // then
         assertThat(asyncWorks).isEmpty()
         assertThat(postedWorks).isEmpty()
-
 
         verify(exactly = 1) {
             publisher.retrySendingRawLocation(updatedProperties, trackableId, locationUpdate)
@@ -98,10 +97,9 @@ class SendRawLocationFailureWorkerTest {
     fun `should not unmark message pending state if should retry publishing`() {
         // given
         val initialProperties = createPublisherProperties()
-        //set all the retry counters to 0
+        // set all the retry counters to 0
         initialProperties.rawLocationsPublishingState.clearAll()
         initialProperties.rawLocationsPublishingState.markMessageAsPending(trackableId)
-
 
         // when
         val updatedProperties = worker.doWork(
@@ -148,7 +146,7 @@ class SendRawLocationFailureWorkerTest {
     fun `should not save location for further sending if should retry publishing`() {
         // given
         val initialProperties = createPublisherProperties()
-        //set all the retry counters to 0
+        // set all the retry counters to 0
         initialProperties.rawLocationsPublishingState.clearAll()
 
         // when
@@ -197,7 +195,7 @@ class SendRawLocationFailureWorkerTest {
     fun `should not process next waiting location if should retry publishing`() {
         // given
         val initialProperties = createPublisherProperties()
-        //set all the retry counters to 0
+        // set all the retry counters to 0
         initialProperties.rawLocationsPublishingState.clearAll()
 
         // when

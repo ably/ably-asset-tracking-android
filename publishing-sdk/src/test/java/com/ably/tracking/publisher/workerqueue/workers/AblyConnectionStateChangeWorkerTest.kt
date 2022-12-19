@@ -17,7 +17,6 @@ class AblyConnectionStateChangeWorkerTest {
     private val connectionStateChange = ConnectionStateChange(ConnectionState.ONLINE, null)
     private val publisher: CorePublisher = mockk {
         every { updateTrackableState(any(), any()) } just runs
-
     }
     private val worker = AblyConnectionStateChangeWorker(
         connectionStateChange = connectionStateChange,

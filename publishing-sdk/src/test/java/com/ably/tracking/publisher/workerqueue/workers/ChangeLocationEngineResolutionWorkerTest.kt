@@ -15,7 +15,7 @@ import org.junit.Test
 
 class ChangeLocationEngineResolutionWorkerTest {
     private val resolutionPolicy = mockk<ResolutionPolicy>()
-    private val mapbox = mockk<Mapbox>{
+    private val mapbox = mockk<Mapbox> {
         every { changeResolution(any()) } just runs
     }
 

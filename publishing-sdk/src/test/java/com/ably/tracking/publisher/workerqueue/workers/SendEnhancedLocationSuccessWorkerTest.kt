@@ -14,8 +14,8 @@ import org.junit.Test
 class SendEnhancedLocationSuccessWorkerTest {
     private val trackableId = "test-trackable"
     private val publisher: CorePublisher = mockk {
-        every { updateTrackableState(any(),trackableId) } just runs
-        every { processNextWaitingEnhancedLocationUpdate(any(),any()) } just runs
+        every { updateTrackableState(any(), trackableId) } just runs
+        every { processNextWaitingEnhancedLocationUpdate(any(), any()) } just runs
     }
     private val location = anyLocation()
     private val worker = SendEnhancedLocationSuccessWorker(location, trackableId, publisher, null)

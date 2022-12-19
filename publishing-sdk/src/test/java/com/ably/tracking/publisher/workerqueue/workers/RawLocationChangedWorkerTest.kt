@@ -26,7 +26,6 @@ class RawLocationChangedWorkerTest {
     private val asyncWorks = mutableListOf<suspend () -> Unit>()
     private val postedWorks = mutableListOf<WorkerSpecification>()
 
-
     @Test
     fun `should set the last publisher known location`() = runBlockingTest {
         // given

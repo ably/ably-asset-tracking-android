@@ -46,7 +46,7 @@ class ConnectionCreatedWorkerTest {
 
             asyncWorks.executeAll()
 
-            //then
+            // then
             assertThat(asyncWorks).hasSize(1)
             assertThat(postedWorks).hasSize(1)
 
@@ -73,7 +73,7 @@ class ConnectionCreatedWorkerTest {
 
             asyncWorks.executeAll()
 
-            //then
+            // then
             assertThat(asyncWorks).hasSize(1)
             assertThat(postedWorks).hasSize(1)
 
@@ -85,7 +85,7 @@ class ConnectionCreatedWorkerTest {
         }
 
     @Test
-    fun `should post TrackableRemovalRequested work when trackable removal was requested`() = runBlockingTest{
+    fun `should post TrackableRemovalRequested work when trackable removal was requested`() = runBlockingTest {
         // given
         val initialProperties = createPublisherProperties()
         initialProperties.trackableRemovalGuard.markForRemoval(trackable){}
@@ -111,12 +111,11 @@ class ConnectionCreatedWorkerTest {
         assertThat(postedWork.result).isEqualTo(disconnectResult)
     }
 
-
     @Test
-    fun `should disconnect from Ably when trackable removal was requested`() = runBlockingTest{
+    fun `should disconnect from Ably when trackable removal was requested`() = runBlockingTest {
         // given
         val initialProperties = createPublisherProperties()
-        initialProperties.trackableRemovalGuard.markForRemoval(trackable){}
+        initialProperties.trackableRemovalGuard.markForRemoval(trackable) {}
 
         val disconnectResult = Result.success(Unit)
         ably.mockDisconnect(trackable.id, disconnectResult)

@@ -41,8 +41,8 @@ internal class RetrySubscribeToPresenceWorkerTest {
         )
 
         // then
-       assertThat(asyncWorks).isEmpty()
-       assertThat(postedWorks).isEmpty()
+        assertThat(asyncWorks).isEmpty()
+        assertThat(postedWorks).isEmpty()
     }
 
     @Test

@@ -43,7 +43,6 @@ class DisconnectSuccessWorkerTest {
         every { stopLocationUpdates(any()) } just runs
         every { removeCurrentDestination(any()) } just runs
         every { notifyResolutionPolicyThatActiveTrackableHasChanged(any()) } just runs
-
     }
     private val ably: Ably = mockk {
         coEvery { stopConnection() } returns Result.success(Unit)
@@ -666,7 +665,6 @@ class DisconnectSuccessWorkerTest {
             corePublisher.stopLocationUpdates(updatedProperties)
         }
     }
-
 
     @Test
     fun `should stop ably and post StoppingConnectionFinished work if the removed trackable was the last one`() =

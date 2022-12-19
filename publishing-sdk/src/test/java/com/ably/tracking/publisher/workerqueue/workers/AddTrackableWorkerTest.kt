@@ -94,9 +94,11 @@ class AddTrackableWorkerTest {
         assertThat(postedWorks).isEmpty()
 
         verify(exactly = 1) {
-            resultCallbackFunction(match {
-                it.getOrNull() == updatedProperties.trackableStateFlows[trackable.id]
-            })
+            resultCallbackFunction(
+                match {
+                    it.getOrNull() == updatedProperties.trackableStateFlows[trackable.id]
+                }
+            )
         }
     }
 
@@ -125,7 +127,6 @@ class AddTrackableWorkerTest {
             assertThat(postedWorkerSpecification.callbackFunction).isEqualTo(resultCallbackFunction)
         }
     }
-
 
     @Test
     fun `should fail to add a trackable when connection failed`() {

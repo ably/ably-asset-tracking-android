@@ -35,7 +35,6 @@ class StopWorkerTest {
     private val asyncWorks = mutableListOf<suspend () -> Unit>()
     private val postedWorks = mutableListOf<WorkerSpecification>()
 
-
     @Test
     fun `should stop location updates if is currently tracking trackables`() {
         // given

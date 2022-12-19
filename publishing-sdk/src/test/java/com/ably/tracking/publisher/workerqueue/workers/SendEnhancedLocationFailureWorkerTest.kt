@@ -31,7 +31,7 @@ class SendEnhancedLocationFailureWorkerTest {
     fun `should send the location again if should retry publishing`() {
         // given
         val initialProperties = createPublisherProperties()
-        //set all the retry counters to 0
+        // set all the retry counters to 0
         initialProperties.enhancedLocationsPublishingState.clearAll()
 
         // when
@@ -97,7 +97,7 @@ class SendEnhancedLocationFailureWorkerTest {
     fun `should not unmark message pending state if should retry publishing`() {
         // given
         val initialProperties = createPublisherProperties()
-        //set all the retry counters to 0
+        // set all the retry counters to 0
         initialProperties.enhancedLocationsPublishingState.clearAll()
         initialProperties.enhancedLocationsPublishingState.markMessageAsPending(trackableId)
 
@@ -143,7 +143,7 @@ class SendEnhancedLocationFailureWorkerTest {
     fun `should not save location for further sending if should retry publishing`() {
         // given
         val initialProperties = createPublisherProperties()
-        //set all the retry counters to 0
+        // set all the retry counters to 0
         initialProperties.enhancedLocationsPublishingState.clearAll()
 
         // when
@@ -186,7 +186,7 @@ class SendEnhancedLocationFailureWorkerTest {
     fun `should not process next waiting location if should retry publishing`() {
         // given
         val initialProperties = createPublisherProperties()
-        //set all the retry counters to 0
+        // set all the retry counters to 0
         initialProperties.enhancedLocationsPublishingState.clearAll()
 
         // when
