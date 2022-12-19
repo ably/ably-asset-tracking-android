@@ -9,7 +9,6 @@ import com.ably.tracking.logging.LogHandler
 import com.ably.tracking.publisher.CorePublisher
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.updatedworkerqueue.WorkerSpecification
-import com.ably.tracking.publisher.workerqueue.results.SyncAsyncResult
 
 internal class RawLocationChangedWorker(
     private val location: Location,

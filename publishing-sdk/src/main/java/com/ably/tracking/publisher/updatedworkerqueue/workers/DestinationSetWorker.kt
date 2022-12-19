@@ -4,7 +4,6 @@ import com.ably.tracking.common.TimeProvider
 import com.ably.tracking.common.workerqueue.Worker
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.updatedworkerqueue.WorkerSpecification
-import com.ably.tracking.publisher.workerqueue.results.SyncAsyncResult
 
 internal class DestinationSetWorker(
     private val routeDurationInMilliseconds: Long,

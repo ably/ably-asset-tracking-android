@@ -20,11 +20,6 @@ import com.ably.tracking.common.logging.v
 import com.ably.tracking.common.logging.w
 import com.ably.tracking.logging.LogHandler
 import com.ably.tracking.publisher.updatedworkerqueue.WorkerSpecification
-import com.ably.tracking.publisher.workerqueue.DefaultWorkerFactory
-import com.ably.tracking.publisher.workerqueue.DefaultWorkerQueue
-import com.ably.tracking.publisher.workerqueue.WorkerFactory
-import com.ably.tracking.publisher.workerqueue.WorkerQueue
-import com.ably.tracking.publisher.workerqueue.workers.Worker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -143,8 +138,6 @@ constructor(
 ) : CorePublisher, TimeProvider {
     private val TAG = createLoggingTag(this)
     private val scope = CoroutineScope(singleThreadDispatcher + SupervisorJob())
-    private val workerQueue: WorkerQueue
-    private val workerFactory: WorkerFactory
     private val updatedWorkerQueue: UpdatedWorkerQueue<PublisherProperties, WorkerSpecification>
     private val updatedWorkerFactory: UpdatedWorkerFactory
     private val _locations = MutableSharedFlow<LocationUpdate>(replay = 1)
@@ -177,8 +170,6 @@ constructor(
             onActiveTrackableUpdated = { active = it },
             onRoutingProfileUpdated = { routingProfile = it }
         )
-        workerFactory = DefaultWorkerFactory(ably, hooks, this, policy, mapbox, this, logHandler)
-        workerQueue = DefaultWorkerQueue(properties, scope, workerFactory)
         updatedWorkerFactory = UpdatedWorkerFactory(ably, hooks, this, policy, mapbox, this, logHandler)
         updatedWorkerQueue =
             UpdatedWorkerQueue(
@@ -209,10 +200,6 @@ constructor(
                 )
             }
         })
-    }
-
-    private fun enqueue(worker: Worker) {
-        workerQueue.enqueue(worker)
     }
 
     private fun enqueue(workerSpecification: WorkerSpecification) {

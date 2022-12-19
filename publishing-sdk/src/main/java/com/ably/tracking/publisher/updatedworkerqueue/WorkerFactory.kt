@@ -20,11 +20,18 @@ import com.ably.tracking.publisher.ResolutionPolicy
 import com.ably.tracking.publisher.RoutingProfile
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.updatedworkerqueue.workers.AblyConnectionStateChangeWorker
+import com.ably.tracking.publisher.updatedworkerqueue.workers.AddTrackableFailedWorker
+import com.ably.tracking.publisher.updatedworkerqueue.workers.AddTrackableWorker
 import com.ably.tracking.publisher.updatedworkerqueue.workers.ChangeLocationEngineResolutionWorker
+import com.ably.tracking.publisher.updatedworkerqueue.workers.ConnectionCreatedWorker
 import com.ably.tracking.publisher.updatedworkerqueue.workers.ConnectionReadyWorker
+import com.ably.tracking.publisher.updatedworkerqueue.workers.DestinationSetWorker
 import com.ably.tracking.publisher.updatedworkerqueue.workers.DisconnectSuccessWorker
+import com.ably.tracking.publisher.updatedworkerqueue.workers.EnhancedLocationChangedWorker
+import com.ably.tracking.publisher.updatedworkerqueue.workers.PresenceMessageWorker
 import com.ably.tracking.publisher.updatedworkerqueue.workers.RawLocationChangedWorker
 import com.ably.tracking.publisher.updatedworkerqueue.workers.RefreshResolutionPolicyWorker
+import com.ably.tracking.publisher.updatedworkerqueue.workers.RemoveTrackableWorker
 import com.ably.tracking.publisher.updatedworkerqueue.workers.RetrySubscribeToPresenceSuccessWorker
 import com.ably.tracking.publisher.updatedworkerqueue.workers.RetrySubscribeToPresenceWorker
 import com.ably.tracking.publisher.updatedworkerqueue.workers.SendEnhancedLocationFailureWorker
@@ -58,28 +65,28 @@ internal class WorkerFactory(
      */
     override fun createWorker(workerSpecification: WorkerSpecification): Worker<PublisherProperties, WorkerSpecification> =
         when (workerSpecification) {
-//            is WorkerParams.AddTrackable -> AddTrackableWorker(
-//                params.trackable,
-//                params.callbackFunction,
-//                params.presenceUpdateListener,
-//                params.channelStateChangeListener,
-//                ably,
-//            )
-//            is WorkerParams.AddTrackableFailed -> AddTrackableFailedWorker(
-//                params.trackable,
-//                params.callbackFunction,
-//                params.exception,
-//                params.isConnectedToAbly,
-//                ably,
-//            )
-//            is WorkerParams.ConnectionCreated -> ConnectionCreatedWorker(
-//                params.trackable,
-//                params.callbackFunction,
-//                ably,
-//                logHandler,
-//                params.presenceUpdateListener,
-//                params.channelStateChangeListener,
-//            )
+            is WorkerSpecification.AddTrackable -> AddTrackableWorker(
+                workerSpecification.trackable,
+                workerSpecification.callbackFunction,
+                workerSpecification.presenceUpdateListener,
+                workerSpecification.channelStateChangeListener,
+                ably,
+            )
+            is WorkerSpecification.AddTrackableFailed -> AddTrackableFailedWorker(
+                workerSpecification.trackable,
+                workerSpecification.callbackFunction,
+                workerSpecification.exception,
+                workerSpecification.isConnectedToAbly,
+                ably,
+            )
+            is WorkerSpecification.ConnectionCreated -> ConnectionCreatedWorker(
+                workerSpecification.trackable,
+                workerSpecification.callbackFunction,
+                ably,
+                logHandler,
+                workerSpecification.presenceUpdateListener,
+                workerSpecification.channelStateChangeListener,
+            )
             is WorkerSpecification.ConnectionReady -> ConnectionReadyWorker(
                 workerSpecification.trackable,
                 workerSpecification.callbackFunction,
@@ -122,7 +129,7 @@ internal class WorkerFactory(
                 resolutionPolicy,
                 mapbox,
             )
-//            is WorkerParams.ChangeRoutingProfile -> ChangeRoutingProfileWorker(
+//            is WorkerSpecification.ChangeRoutingProfile -> ChangeRoutingProfileWorker(
 //                params.routingProfile,
 //                corePublisher,
 //            )
@@ -132,22 +139,22 @@ internal class WorkerFactory(
                 corePublisher,
                 logHandler,
             )
-//            is WorkerParams.DestinationSet -> DestinationSetWorker(
-//                params.routeDurationInMilliseconds,
-//                timeProvider,
-//            )
-//            is WorkerParams.EnhancedLocationChanged -> EnhancedLocationChangedWorker(
-//                params.location,
-//                params.intermediateLocations,
-//                params.type,
-//                corePublisher,
-//                logHandler,
-//            )
-//            is WorkerParams.PresenceMessage -> PresenceMessageWorker(
-//                params.trackable,
-//                params.presenceMessage,
-//                corePublisher,
-//            )
+            is WorkerSpecification.DestinationSet -> DestinationSetWorker(
+                workerSpecification.routeDurationInMilliseconds,
+                timeProvider,
+            )
+            is WorkerSpecification.EnhancedLocationChanged -> EnhancedLocationChangedWorker(
+                workerSpecification.location,
+                workerSpecification.intermediateLocations,
+                workerSpecification.type,
+                corePublisher,
+                logHandler,
+            )
+            is WorkerSpecification.PresenceMessage -> PresenceMessageWorker(
+                workerSpecification.trackable,
+                workerSpecification.presenceMessage,
+                corePublisher,
+            )
             is WorkerSpecification.RawLocationChanged -> RawLocationChangedWorker(
                 workerSpecification.location,
                 corePublisher,
@@ -156,11 +163,11 @@ internal class WorkerFactory(
             WorkerSpecification.RefreshResolutionPolicy -> RefreshResolutionPolicyWorker(
                 corePublisher,
             )
-//            is WorkerParams.RemoveTrackable -> RemoveTrackableWorker(
-//                params.trackable,
-//                params.callbackFunction,
-//                ably,
-//            )
+            is WorkerSpecification.RemoveTrackable -> RemoveTrackableWorker(
+                workerSpecification.trackable,
+                ably,
+                workerSpecification.callbackFunction,
+            )
             is WorkerSpecification.SendEnhancedLocationFailure -> SendEnhancedLocationFailureWorker(
                 workerSpecification.locationUpdate,
                 workerSpecification.trackableId,

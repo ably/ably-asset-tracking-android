@@ -1,19 +1,12 @@
 package com.ably.tracking.publisher.updatedworkerqueue.workers
 
 import com.ably.tracking.common.Ably
-import com.ably.tracking.common.ConnectionState
-import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.ResultCallbackFunction
-import com.ably.tracking.publisher.CorePublisher
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.updatedworkerqueue.WorkerSpecification
-import com.ably.tracking.publisher.workerqueue.results.SyncAsyncResult
 import com.google.common.truth.Truth.assertThat
 import io.mockk.coEvery
-import io.mockk.every
-import io.mockk.just
 import io.mockk.mockk
-import io.mockk.runs
 import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runBlockingTest

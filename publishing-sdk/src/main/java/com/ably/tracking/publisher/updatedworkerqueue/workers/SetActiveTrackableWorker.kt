@@ -7,7 +7,6 @@ import com.ably.tracking.publisher.DefaultCorePublisher
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.updatedworkerqueue.WorkerSpecification
-import com.ably.tracking.publisher.workerqueue.results.SyncAsyncResult
 
 internal class SetActiveTrackableWorker(
     private val trackable: Trackable,
