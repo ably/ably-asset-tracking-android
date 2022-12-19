@@ -31,6 +31,7 @@ import com.ably.tracking.publisher.updatedworkerqueue.workers.SendRawLocationSuc
 import com.ably.tracking.publisher.updatedworkerqueue.workers.SetActiveTrackableWorker
 import com.ably.tracking.publisher.updatedworkerqueue.workers.StopWorker
 import com.ably.tracking.publisher.updatedworkerqueue.workers.StoppingConnectionFinishedWorker
+import com.ably.tracking.publisher.updatedworkerqueue.workers.TrackableRemovalRequestedWorker
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -103,12 +104,12 @@ internal class WorkerFactory(
                 workerSpecification.shouldRecalculateResolutionCallback,
                 ably,
             )
-//            is WorkerParams.TrackableRemovalRequested -> TrackableRemovalRequestedWorker(
-//                params.trackable,
-//                params.callbackFunction,
-//                ably,
-//                params.result,
-//            )
+            is WorkerSpecification.TrackableRemovalRequested -> TrackableRemovalRequestedWorker(
+                workerSpecification.trackable,
+                workerSpecification.callbackFunction,
+                ably,
+                workerSpecification.result,
+            )
             is WorkerSpecification.AblyConnectionStateChange -> AblyConnectionStateChangeWorker(
                 workerSpecification.connectionStateChange,
                 corePublisher,

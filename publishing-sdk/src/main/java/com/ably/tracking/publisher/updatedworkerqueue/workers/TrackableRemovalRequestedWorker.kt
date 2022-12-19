@@ -1,14 +1,14 @@
-package com.ably.tracking.publisher.workerqueue.workers
+package com.ably.tracking.publisher.updatedworkerqueue.workers
 
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ResultCallbackFunction
+import com.ably.tracking.common.workerqueue.Worker
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.PublisherState
 import com.ably.tracking.publisher.RemoveTrackableRequestedException
 import com.ably.tracking.publisher.Trackable
-import com.ably.tracking.publisher.workerqueue.results.SyncAsyncResult
-import com.ably.tracking.publisher.workerqueue.results.TrackableRemovalRequestedWorkResult
+import com.ably.tracking.publisher.updatedworkerqueue.WorkerSpecification
 import kotlinx.coroutines.flow.StateFlow
 
 internal class TrackableRemovalRequestedWorker(
@@ -16,8 +16,12 @@ internal class TrackableRemovalRequestedWorker(
     private val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>,
     private val ably: Ably,
     private val result: Result<Unit>
-) : Worker {
-    override fun doWork(properties: PublisherProperties): SyncAsyncResult {
+) : Worker<PublisherProperties, WorkerSpecification> {
+    override fun doWork(
+        properties: PublisherProperties,
+        doAsyncWork: (suspend () -> Unit) -> Unit,
+        postWork: (WorkerSpecification) -> Unit
+    ): PublisherProperties {
         if (result.isSuccess) {
             properties.trackableRemovalGuard.removeMarked(trackable, Result.success(true))
         } else {
@@ -31,12 +35,12 @@ internal class TrackableRemovalRequestedWorker(
         val removedTheLastTrackable = properties.hasNoTrackablesAddingOrAdded
         if (removedTheLastTrackable) {
             properties.state = PublisherState.DISCONNECTING
-            return SyncAsyncResult(asyncWork = {
+            doAsyncWork {
                 ably.stopConnection()
-                TrackableRemovalRequestedWorkResult.StopConnectionCompleted
-            })
+                postWork(WorkerSpecification.StoppingConnectionFinished)
+            }
         }
-        return SyncAsyncResult()
+        return properties
     }
 
     override fun doWhenStopped(exception: Exception) {

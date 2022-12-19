@@ -15,8 +15,6 @@ import com.ably.tracking.publisher.workerqueue.workers.ConnectionCreatedWorker
 import com.ably.tracking.publisher.workerqueue.workers.ConnectionReadyWorker
 import com.ably.tracking.publisher.workerqueue.workers.RetrySubscribeToPresenceSuccessWorker
 import com.ably.tracking.publisher.workerqueue.workers.RetrySubscribeToPresenceWorker
-import com.ably.tracking.publisher.workerqueue.workers.StoppingConnectionFinishedWorker
-import com.ably.tracking.publisher.workerqueue.workers.TrackableRemovalRequestedWorker
 import com.ably.tracking.publisher.workerqueue.workers.Worker
 import kotlinx.coroutines.flow.StateFlow
 
@@ -72,13 +70,7 @@ internal class DefaultWorkerFactory(
                 params.trackable,
                 corePublisher,
             )
-            is WorkerParams.TrackableRemovalRequested -> TrackableRemovalRequestedWorker(
-                params.trackable,
-                params.callbackFunction,
-                ably,
-                params.result,
-            )
-            WorkerParams.StoppingConnectionFinished -> StoppingConnectionFinishedWorker()
+            else -> throw NotImplementedError()
         }
     }
 }
@@ -109,12 +101,10 @@ internal sealed class WorkerParams {
         val trackable: Trackable,
     ) : WorkerParams()
 
+    //TODO remove
     data class TrackableRemovalRequested(
         val trackable: Trackable,
         val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>,
         val result: Result<Unit>,
     ) : WorkerParams()
-
-    //TODO remove
-    object StoppingConnectionFinished : WorkerParams()
 }
