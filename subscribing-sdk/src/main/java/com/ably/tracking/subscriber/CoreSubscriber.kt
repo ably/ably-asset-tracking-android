@@ -67,30 +67,31 @@ private class DefaultCoreSubscriber(
     private val properties: SubscriberProperties
 
     override val enhancedLocations: SharedFlow<LocationUpdate>
-        get() = eventFlows.enhancedLocations.asSharedFlow()
+        get() = eventFlows.enhancedLocations
 
     override val rawLocations: SharedFlow<LocationUpdate>
-        get() = eventFlows.rawLocations.asSharedFlow()
+        get() = eventFlows.rawLocations
 
     override val trackableStates: StateFlow<TrackableState>
-        get() = eventFlows.trackableStateFlow.asStateFlow()
+        get() = eventFlows.trackableStates
 
     override val publisherPresence: StateFlow<Boolean>
-        get() = eventFlows.publisherPresenceStateFlow
+        get() = eventFlows.publisherPresence
 
     override val resolutions: SharedFlow<Resolution>
-        get() = eventFlows.resolutions.asSharedFlow()
+        get() = eventFlows.resolutions
 
     override val nextLocationUpdateIntervals: SharedFlow<Long>
-        get() = eventFlows.nextLocationUpdateIntervals.asSharedFlow()
+        get() = eventFlows.nextLocationUpdateIntervals
 
     init {
         val workerFactory = WorkerFactory(this, ably, trackableId)
-        eventFlows = SubscriberProperties.EventFlows()
+        val scope = CoroutineScope(singleThreadDispatcher + SupervisorJob())
+        eventFlows = SubscriberProperties.EventFlows(scope)
         properties = SubscriberProperties(initialResolution, eventFlows)
         workerQueue = WorkerQueue(
             properties = properties,
-            scope = eventFlows.scope,
+            scope = scope,
             workerFactory = workerFactory,
             copyProperties = { copy() },
             getStoppedException = { SubscriberStoppedException() }
@@ -111,25 +112,25 @@ private class DefaultCoreSubscriber(
 
     override fun subscribeForEnhancedEvents(presenceData: PresenceData) {
         ably.subscribeForEnhancedEvents(trackableId, presenceData) {
-            eventFlows.scope.launch { eventFlows.enhancedLocations.emit(it) }
+            eventFlows.emitEnhanced(it)
         }
     }
 
     override fun subscribeForRawEvents(presenceData: PresenceData) {
         ably.subscribeForRawEvents(trackableId, presenceData) {
-            eventFlows.scope.launch { eventFlows.rawLocations.emit(it) }
+            eventFlows.emitRaw(it)
         }
     }
 
     override fun notifyAssetIsOffline() {
         // TODO what is this method achieving, why is it not in normal flow?
-        eventFlows.scope.launch { eventFlows.trackableStateFlow.emit(TrackableState.Offline()) }
+        eventFlows.emit(TrackableState.Offline())
     }
 }
 
 internal data class SubscriberProperties private constructor(
     var presenceData: PresenceData,
-    private val stateFlows: EventFlows,
+    private val eventFlows: EventFlows,
 
     override var isStopped: Boolean = false,
 
@@ -192,7 +193,7 @@ internal data class SubscriberProperties private constructor(
 
         if (trackableState != lastEmittedTrackableState) {
             lastEmittedTrackableState = trackableState
-            stateFlows.scope.launch { stateFlows.trackableStateFlow.emit(trackableState) }
+            eventFlows.emit(trackableState)
         }
 
         // It is possible for presentPublisherMemberKeys to not be empty, even when we have no connectivity from our side,
@@ -202,29 +203,65 @@ internal data class SubscriberProperties private constructor(
         val isPublisherVisible = (isAPublisherPresent && lastConnectionStateChange.state == ConnectionState.ONLINE)
         if (null == lastEmittedIsPublisherVisible || lastEmittedIsPublisherVisible!! != isPublisherVisible) {
             lastEmittedIsPublisherVisible = isPublisherVisible
-            stateFlows.scope.launch { stateFlows.publisherPresenceStateFlow.emit(isPublisherVisible) }
+            eventFlows.emitPublisherPresence(isPublisherVisible)
         }
 
-        val publisherResolutions = pendingPublisherResolutions.drain()
-        if (publisherResolutions.isNotEmpty()) {
-            stateFlows.scope.launch {
-                for (publisherResolution in publisherResolutions) {
-                    stateFlows.resolutions.emit(publisherResolution)
-                    stateFlows.nextLocationUpdateIntervals.emit(publisherResolution.desiredInterval)
+        eventFlows.emit(pendingPublisherResolutions.drain())
+    }
+
+    internal class EventFlows(private val scope: CoroutineScope) {
+        private val _enhancedLocations: MutableSharedFlow<LocationUpdate> = MutableSharedFlow(replay = 1)
+        private val _rawLocations: MutableSharedFlow<LocationUpdate> = MutableSharedFlow(replay = 1)
+        private val _trackableStates: MutableStateFlow<TrackableState> = MutableStateFlow(TrackableState.Offline())
+        private val _publisherPresence: MutableStateFlow<Boolean> = MutableStateFlow(false)
+        private val _resolutions: MutableSharedFlow<Resolution> = MutableSharedFlow(replay = 1)
+        private val _nextLocationUpdateIntervals: MutableSharedFlow<Long> = MutableSharedFlow(replay = 1)
+
+        fun emitEnhanced(locationUpdate: LocationUpdate) {
+            scope.launch { _enhancedLocations.emit(locationUpdate) }
+        }
+
+        fun emitRaw(locationUpdate: LocationUpdate) {
+            scope.launch { _rawLocations.emit(locationUpdate) }
+        }
+
+        fun emitPublisherPresence(isPublisherPresent: Boolean) {
+            scope.launch { _publisherPresence.emit(isPublisherPresent) }
+        }
+
+        fun emit(trackableState: TrackableState) {
+            scope.launch { _trackableStates.emit(trackableState) }
+        }
+
+        fun emit(resolutions: Array<Resolution>) {
+            if (resolutions.isNotEmpty()) {
+                scope.launch {
+                    for (resolution in resolutions) {
+                        _resolutions.emit(resolution)
+                        _nextLocationUpdateIntervals.emit(resolution.desiredInterval)
+                    }
                 }
             }
         }
-    }
 
-    internal data class EventFlows constructor(
-        val scope: CoroutineScope = CoroutineScope(singleThreadDispatcher + SupervisorJob()),
-        val enhancedLocations: MutableSharedFlow<LocationUpdate> = MutableSharedFlow(replay = 1),
-        val rawLocations: MutableSharedFlow<LocationUpdate> = MutableSharedFlow(replay = 1),
-        val trackableStateFlow: MutableStateFlow<TrackableState> = MutableStateFlow(TrackableState.Offline()),
-        val publisherPresenceStateFlow: MutableStateFlow<Boolean> = MutableStateFlow(false),
-        val resolutions: MutableSharedFlow<Resolution> = MutableSharedFlow(replay = 1),
-        val nextLocationUpdateIntervals: MutableSharedFlow<Long> = MutableSharedFlow(replay = 1),
-    )
+        val enhancedLocations: SharedFlow<LocationUpdate>
+            get() = _enhancedLocations.asSharedFlow()
+
+        val rawLocations: SharedFlow<LocationUpdate>
+            get() = _rawLocations.asSharedFlow()
+
+        val trackableStates: StateFlow<TrackableState>
+            get() = _trackableStates.asStateFlow()
+
+        val publisherPresence: StateFlow<Boolean>
+            get() = _publisherPresence
+
+        val resolutions: SharedFlow<Resolution>
+            get() = _resolutions.asSharedFlow()
+
+        val nextLocationUpdateIntervals: SharedFlow<Long>
+            get() = _nextLocationUpdateIntervals.asSharedFlow()
+    }
 
     private class PendingResolutions {
         private var resolutions: MutableList<Resolution> = ArrayList()
