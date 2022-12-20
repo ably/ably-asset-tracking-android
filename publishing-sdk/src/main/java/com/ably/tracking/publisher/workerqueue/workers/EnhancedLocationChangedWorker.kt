@@ -7,7 +7,7 @@ import com.ably.tracking.common.logging.createLoggingTag
 import com.ably.tracking.common.logging.v
 import com.ably.tracking.common.workerqueue.Worker
 import com.ably.tracking.logging.LogHandler
-import com.ably.tracking.publisher.CorePublisher
+import com.ably.tracking.publisher.PublisherInteractor
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 
@@ -15,7 +15,7 @@ internal class EnhancedLocationChangedWorker(
     private val location: Location,
     private val intermediateLocations: List<Location>,
     private val type: LocationUpdateType,
-    private val corePublisher: CorePublisher,
+    private val publisherInteractor: PublisherInteractor,
     private val logHandler: LogHandler?,
 ) : Worker<PublisherProperties, WorkerSpecification> {
     private val TAG = createLoggingTag(this)
@@ -28,10 +28,10 @@ internal class EnhancedLocationChangedWorker(
         logHandler?.v("$TAG Enhanced location changed event received $location")
         val enhancedLocationUpdate = EnhancedLocationUpdate(location, emptyList(), intermediateLocations, type)
         properties.trackables.forEach {
-            corePublisher.processEnhancedLocationUpdate(enhancedLocationUpdate, properties, it.id)
+            publisherInteractor.processEnhancedLocationUpdate(enhancedLocationUpdate, properties, it.id)
         }
-        corePublisher.updateLocations(EnhancedLocationUpdate(location, emptyList(), intermediateLocations, type))
-        corePublisher.checkThreshold(location, properties.active, properties.estimatedArrivalTimeInMilliseconds)
+        publisherInteractor.updateLocations(EnhancedLocationUpdate(location, emptyList(), intermediateLocations, type))
+        publisherInteractor.checkThreshold(location, properties.active, properties.estimatedArrivalTimeInMilliseconds)
         return properties
     }
 

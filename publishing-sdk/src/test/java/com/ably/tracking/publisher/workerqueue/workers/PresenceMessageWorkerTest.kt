@@ -4,7 +4,7 @@ import com.ably.tracking.common.ClientTypes
 import com.ably.tracking.common.PresenceAction
 import com.ably.tracking.common.PresenceData
 import com.ably.tracking.common.PresenceMessage
-import com.ably.tracking.publisher.CorePublisher
+import com.ably.tracking.publisher.PublisherInteractor
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 import com.google.common.truth.Truth
@@ -17,7 +17,7 @@ import org.junit.Test
 
 class PresenceMessageWorkerTest {
     private val trackable = Trackable("test-trackable")
-    private val publisher: CorePublisher = mockk {
+    private val publisherInteractor: PublisherInteractor = mockk {
         every { updateSubscriber(any(), any(), any(), any()) } just runs
         every { addSubscriber(any(), any(), any(), any()) } just runs
         every { removeSubscriber(any(), any(), any()) } just runs
@@ -46,7 +46,7 @@ class PresenceMessageWorkerTest {
         Truth.assertThat(postedWorks).isEmpty()
 
         verify(exactly = 1) {
-            publisher.addSubscriber(any(), trackable, any(), any())
+            publisherInteractor.addSubscriber(any(), trackable, any(), any())
         }
     }
 
@@ -68,7 +68,7 @@ class PresenceMessageWorkerTest {
         Truth.assertThat(postedWorks).isEmpty()
 
         verify(exactly = 0) {
-            publisher.addSubscriber(any(), trackable, any(), any())
+            publisherInteractor.addSubscriber(any(), trackable, any(), any())
         }
     }
 
@@ -90,7 +90,7 @@ class PresenceMessageWorkerTest {
         Truth.assertThat(postedWorks).isEmpty()
 
         verify(exactly = 1) {
-            publisher.removeSubscriber(any(), trackable, any())
+            publisherInteractor.removeSubscriber(any(), trackable, any())
         }
     }
 
@@ -112,7 +112,7 @@ class PresenceMessageWorkerTest {
         Truth.assertThat(postedWorks).isEmpty()
 
         verify(exactly = 0) {
-            publisher.removeSubscriber(any(), trackable, any())
+            publisherInteractor.removeSubscriber(any(), trackable, any())
         }
     }
 
@@ -134,7 +134,7 @@ class PresenceMessageWorkerTest {
         Truth.assertThat(postedWorks).isEmpty()
 
         verify(exactly = 1) {
-            publisher.updateSubscriber(any(), trackable, any(), any())
+            publisherInteractor.updateSubscriber(any(), trackable, any(), any())
         }
     }
 
@@ -156,7 +156,7 @@ class PresenceMessageWorkerTest {
         Truth.assertThat(postedWorks).isEmpty()
 
         verify(exactly = 0) {
-            publisher.updateSubscriber(any(), trackable, any(), any())
+            publisherInteractor.updateSubscriber(any(), trackable, any(), any())
         }
     }
 
@@ -168,6 +168,6 @@ class PresenceMessageWorkerTest {
                 PresenceData(if (isSubscriber) ClientTypes.SUBSCRIBER else ClientTypes.PUBLISHER),
                 "test-client-id"
             ),
-            publisher
+            publisherInteractor
         )
 }

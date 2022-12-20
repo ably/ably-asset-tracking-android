@@ -12,9 +12,9 @@ import com.ably.tracking.common.TimeProvider
 import com.ably.tracking.common.workerqueue.Worker
 import com.ably.tracking.common.workerqueue.WorkerFactory
 import com.ably.tracking.logging.LogHandler
-import com.ably.tracking.publisher.CorePublisher
 import com.ably.tracking.publisher.DefaultCorePublisher
 import com.ably.tracking.publisher.Mapbox
+import com.ably.tracking.publisher.PublisherInteractor
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.ResolutionPolicy
 import com.ably.tracking.publisher.RoutingProfile
@@ -52,7 +52,7 @@ import kotlinx.coroutines.flow.StateFlow
 internal class WorkerFactory(
     private val ably: Ably,
     private val hooks: DefaultCorePublisher.Hooks,
-    private val corePublisher: CorePublisher,
+    private val publisherInteractor: PublisherInteractor,
     private val resolutionPolicy: ResolutionPolicy,
     private val mapbox: Mapbox,
     private val timeProvider: TimeProvider,
@@ -94,7 +94,7 @@ internal class WorkerFactory(
                 workerSpecification.callbackFunction,
                 ably,
                 hooks,
-                corePublisher,
+                publisherInteractor,
                 workerSpecification.channelStateChangeListener,
                 workerSpecification.isSubscribedToPresence,
                 workerSpecification.presenceUpdateListener,
@@ -107,12 +107,12 @@ internal class WorkerFactory(
             )
             is WorkerSpecification.RetrySubscribeToPresenceSuccess -> RetrySubscribeToPresenceSuccessWorker(
                 workerSpecification.trackable,
-                corePublisher,
+                publisherInteractor,
             )
             is WorkerSpecification.DisconnectSuccess -> DisconnectSuccessWorker(
                 workerSpecification.trackable,
                 workerSpecification.callbackFunction,
-                corePublisher,
+                publisherInteractor,
                 workerSpecification.shouldRecalculateResolutionCallback,
                 ably,
             )
@@ -124,7 +124,7 @@ internal class WorkerFactory(
             )
             is WorkerSpecification.AblyConnectionStateChange -> AblyConnectionStateChangeWorker(
                 workerSpecification.connectionStateChange,
-                corePublisher,
+                publisherInteractor,
                 logHandler,
             )
             is WorkerSpecification.ChangeLocationEngineResolution -> ChangeLocationEngineResolutionWorker(
@@ -133,12 +133,12 @@ internal class WorkerFactory(
             )
             is WorkerSpecification.ChangeRoutingProfile -> ChangeRoutingProfileWorker(
                 workerSpecification.routingProfile,
-                corePublisher,
+                publisherInteractor,
             )
             is WorkerSpecification.ChannelConnectionStateChange -> ChannelConnectionStateChangeWorker(
                 workerSpecification.trackableId,
                 workerSpecification.connectionStateChange,
-                corePublisher,
+                publisherInteractor,
                 logHandler,
             )
             is WorkerSpecification.DestinationSet -> DestinationSetWorker(
@@ -149,21 +149,21 @@ internal class WorkerFactory(
                 workerSpecification.location,
                 workerSpecification.intermediateLocations,
                 workerSpecification.type,
-                corePublisher,
+                publisherInteractor,
                 logHandler,
             )
             is WorkerSpecification.PresenceMessage -> PresenceMessageWorker(
                 workerSpecification.trackable,
                 workerSpecification.presenceMessage,
-                corePublisher,
+                publisherInteractor,
             )
             is WorkerSpecification.RawLocationChanged -> RawLocationChangedWorker(
                 workerSpecification.location,
-                corePublisher,
+                publisherInteractor,
                 logHandler,
             )
             WorkerSpecification.RefreshResolutionPolicy -> RefreshResolutionPolicyWorker(
-                corePublisher,
+                publisherInteractor,
             )
             is WorkerSpecification.RemoveTrackable -> RemoveTrackableWorker(
                 workerSpecification.trackable,
@@ -174,38 +174,38 @@ internal class WorkerFactory(
                 workerSpecification.locationUpdate,
                 workerSpecification.trackableId,
                 workerSpecification.exception,
-                corePublisher,
+                publisherInteractor,
                 logHandler,
             )
             is WorkerSpecification.SendEnhancedLocationSuccess -> SendEnhancedLocationSuccessWorker(
                 workerSpecification.location,
                 workerSpecification.trackableId,
-                corePublisher,
+                publisherInteractor,
                 logHandler,
             )
             is WorkerSpecification.SendRawLocationFailure -> SendRawLocationFailureWorker(
                 workerSpecification.locationUpdate,
                 workerSpecification.trackableId,
                 workerSpecification.exception,
-                corePublisher,
+                publisherInteractor,
                 logHandler,
             )
             is WorkerSpecification.SendRawLocationSuccess -> SendRawLocationSuccessWorker(
                 workerSpecification.location,
                 workerSpecification.trackableId,
-                corePublisher,
+                publisherInteractor,
                 logHandler,
             )
             is WorkerSpecification.SetActiveTrackable -> SetActiveTrackableWorker(
                 workerSpecification.trackable,
                 workerSpecification.callbackFunction,
-                corePublisher,
+                publisherInteractor,
                 hooks,
             )
             is WorkerSpecification.Stop -> StopWorker(
                 workerSpecification.callbackFunction,
                 ably,
-                corePublisher,
+                publisherInteractor,
                 workerSpecification.timeoutInMilliseconds,
             )
             WorkerSpecification.StoppingConnectionFinished -> StoppingConnectionFinishedWorker()

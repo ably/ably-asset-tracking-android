@@ -5,14 +5,14 @@ import com.ably.tracking.common.logging.createLoggingTag
 import com.ably.tracking.common.logging.v
 import com.ably.tracking.common.workerqueue.Worker
 import com.ably.tracking.logging.LogHandler
-import com.ably.tracking.publisher.CorePublisher
+import com.ably.tracking.publisher.PublisherInteractor
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 
 internal class ChannelConnectionStateChangeWorker(
     private val trackableId: String,
     private val connectionStateChange: ConnectionStateChange,
-    private val publisher: CorePublisher,
+    private val publisherInteractor: PublisherInteractor,
     private val logHandler: LogHandler?
 ) : Worker<PublisherProperties, WorkerSpecification> {
 
@@ -25,7 +25,7 @@ internal class ChannelConnectionStateChangeWorker(
     ): PublisherProperties {
         logHandler?.v("$TAG Trackable $trackableId connection state changed ${connectionStateChange.state}")
         properties.lastChannelConnectionStateChanges[trackableId] = connectionStateChange
-        publisher.updateTrackableState(properties, trackableId)
+        publisherInteractor.updateTrackableState(properties, trackableId)
         return properties
     }
 

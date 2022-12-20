@@ -3,7 +3,7 @@ package com.ably.tracking.publisher.workerqueue.workers
 import com.ably.tracking.EnhancedLocationUpdate
 import com.ably.tracking.Location
 import com.ably.tracking.LocationUpdateType
-import com.ably.tracking.publisher.CorePublisher
+import com.ably.tracking.publisher.PublisherInteractor
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 import com.ably.tracking.test.common.anyLocation
@@ -21,13 +21,13 @@ class EnhancedLocationChangedWorkerTest {
     private val location: Location = anyLocation()
     private val intermediateLocations = listOf(anyLocation(), anyLocation())
     private val type = LocationUpdateType.ACTUAL
-    private val publisher: CorePublisher = mockk {
+    private val publisherInteractor: PublisherInteractor = mockk {
         every { processEnhancedLocationUpdate(any(), any(), any()) } just runs
         every { updateLocations(any()) } just runs
         every { checkThreshold(any(), any(), any()) } just runs
     }
 
-    private val worker = EnhancedLocationChangedWorker(location, intermediateLocations, type, publisher, null)
+    private val worker = EnhancedLocationChangedWorker(location, intermediateLocations, type, publisherInteractor, null)
 
     private val asyncWorks = mutableListOf<suspend () -> Unit>()
     private val postedWorks = mutableListOf<WorkerSpecification>()
@@ -53,8 +53,8 @@ class EnhancedLocationChangedWorkerTest {
         assertThat(postedWorks).isEmpty()
 
         verify(exactly = 1) {
-            publisher.processEnhancedLocationUpdate(any(), initialProperties, firstTrackable.id)
-            publisher.processEnhancedLocationUpdate(any(), initialProperties, secondTrackable.id)
+            publisherInteractor.processEnhancedLocationUpdate(any(), initialProperties, firstTrackable.id)
+            publisherInteractor.processEnhancedLocationUpdate(any(), initialProperties, secondTrackable.id)
         }
     }
 
@@ -93,7 +93,7 @@ class EnhancedLocationChangedWorkerTest {
 
         // then
         verify(exactly = 1) {
-            publisher.checkThreshold(
+            publisherInteractor.checkThreshold(
                 location,
                 initialProperties.active,
                 initialProperties.estimatedArrivalTimeInMilliseconds
@@ -103,7 +103,7 @@ class EnhancedLocationChangedWorkerTest {
 
     private fun mockUpdateLocationsAndCaptureLocationUpdate(): CapturingSlot<EnhancedLocationUpdate> {
         val locationUpdateSlot = slot<EnhancedLocationUpdate>()
-        every { publisher.updateLocations(capture(locationUpdateSlot)) } just runs
+        every { publisherInteractor.updateLocations(capture(locationUpdateSlot)) } just runs
         return locationUpdateSlot
     }
 }

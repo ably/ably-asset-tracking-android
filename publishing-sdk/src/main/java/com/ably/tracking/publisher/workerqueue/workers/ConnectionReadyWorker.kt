@@ -4,8 +4,8 @@ import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.workerqueue.Worker
-import com.ably.tracking.publisher.CorePublisher
 import com.ably.tracking.publisher.DefaultCorePublisher
+import com.ably.tracking.publisher.PublisherInteractor
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.WorkerSpecification
@@ -17,7 +17,7 @@ internal class ConnectionReadyWorker(
     private val callbackFunction: AddTrackableCallbackFunction,
     private val ably: Ably,
     private val hooks: DefaultCorePublisher.Hooks,
-    private val corePublisher: CorePublisher,
+    private val publisherInteractor: PublisherInteractor,
     private val channelStateChangeListener: ((connectionStateChange: ConnectionStateChange) -> Unit),
     private val isSubscribedToPresence: Boolean,
     private val presenceUpdateListener: ((presenceMessage: com.ably.tracking.common.PresenceMessage) -> Unit),
@@ -70,14 +70,14 @@ internal class ConnectionReadyWorker(
 
     private fun startLocationUpdates(properties: PublisherProperties) {
         if (!properties.isTracking) {
-            corePublisher.startLocationUpdates(properties)
+            publisherInteractor.startLocationUpdates(properties)
         }
     }
 
     private fun addTrackableToPublisher(properties: PublisherProperties) {
         properties.trackables.add(trackable)
-        corePublisher.updateTrackables(properties)
-        corePublisher.resolveResolution(trackable, properties)
+        publisherInteractor.updateTrackables(properties)
+        publisherInteractor.resolveResolution(trackable, properties)
         hooks.trackables?.onTrackableAdded(trackable)
     }
 
@@ -88,7 +88,7 @@ internal class ConnectionReadyWorker(
         isSubscribedToPresence: Boolean,
     ) {
         properties.trackableStateFlows[trackable.id] = trackableStateFlow
-        corePublisher.updateTrackableStateFlows(properties)
+        publisherInteractor.updateTrackableStateFlows(properties)
         properties.trackableStates[trackable.id] = trackableState
         properties.trackableSubscribedToPresenceFlags[trackable.id] = isSubscribedToPresence
     }

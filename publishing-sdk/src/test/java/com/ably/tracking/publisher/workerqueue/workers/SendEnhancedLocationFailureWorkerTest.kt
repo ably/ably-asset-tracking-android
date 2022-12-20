@@ -2,7 +2,7 @@ package com.ably.tracking.publisher.workerqueue.workers
 
 import com.ably.tracking.EnhancedLocationUpdate
 import com.ably.tracking.LocationUpdateType
-import com.ably.tracking.publisher.CorePublisher
+import com.ably.tracking.publisher.PublisherInteractor
 import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 import com.ably.tracking.test.common.anyLocation
 import com.google.common.truth.Truth.assertThat
@@ -17,12 +17,12 @@ class SendEnhancedLocationFailureWorkerTest {
     private val locationUpdate =
         EnhancedLocationUpdate(anyLocation(), emptyList(), emptyList(), LocationUpdateType.ACTUAL)
     private val trackableId = "test-trackable"
-    private val publisher: CorePublisher = mockk {
+    private val publisherInteractor: PublisherInteractor = mockk {
         every { saveEnhancedLocationForFurtherSending(any(), any(), any()) } just runs
         every { retrySendingEnhancedLocation(any(), any(), any()) } just runs
         every { processNextWaitingEnhancedLocationUpdate(any(), any()) } just runs
     }
-    private val worker = SendEnhancedLocationFailureWorker(locationUpdate, trackableId, null, publisher, null)
+    private val worker = SendEnhancedLocationFailureWorker(locationUpdate, trackableId, null, publisherInteractor, null)
 
     private val asyncWorks = mutableListOf<suspend () -> Unit>()
     private val postedWorks = mutableListOf<WorkerSpecification>()
@@ -46,7 +46,7 @@ class SendEnhancedLocationFailureWorkerTest {
         assertThat(postedWorks).isEmpty()
 
         verify(exactly = 1) {
-            publisher.retrySendingEnhancedLocation(initialProperties, trackableId, locationUpdate)
+            publisherInteractor.retrySendingEnhancedLocation(initialProperties, trackableId, locationUpdate)
         }
     }
 
@@ -68,7 +68,7 @@ class SendEnhancedLocationFailureWorkerTest {
         assertThat(postedWorks).isEmpty()
 
         verify(exactly = 0) {
-            publisher.retrySendingEnhancedLocation(updatedProperties, trackableId, locationUpdate)
+            publisherInteractor.retrySendingEnhancedLocation(updatedProperties, trackableId, locationUpdate)
         }
     }
 
@@ -131,7 +131,7 @@ class SendEnhancedLocationFailureWorkerTest {
 
         // then
         verify(exactly = 1) {
-            publisher.saveEnhancedLocationForFurtherSending(
+            publisherInteractor.saveEnhancedLocationForFurtherSending(
                 updatedProperties,
                 trackableId,
                 locationUpdate.location
@@ -155,7 +155,7 @@ class SendEnhancedLocationFailureWorkerTest {
 
         // then
         verify(exactly = 0) {
-            publisher.saveEnhancedLocationForFurtherSending(
+            publisherInteractor.saveEnhancedLocationForFurtherSending(
                 updatedProperties,
                 trackableId,
                 locationUpdate.location
@@ -178,7 +178,7 @@ class SendEnhancedLocationFailureWorkerTest {
 
         // then
         verify(exactly = 1) {
-            publisher.processNextWaitingEnhancedLocationUpdate(updatedProperties, trackableId)
+            publisherInteractor.processNextWaitingEnhancedLocationUpdate(updatedProperties, trackableId)
         }
     }
 
@@ -198,7 +198,7 @@ class SendEnhancedLocationFailureWorkerTest {
 
         // then
         verify(exactly = 0) {
-            publisher.processNextWaitingEnhancedLocationUpdate(updatedProperties, trackableId)
+            publisherInteractor.processNextWaitingEnhancedLocationUpdate(updatedProperties, trackableId)
         }
     }
 }

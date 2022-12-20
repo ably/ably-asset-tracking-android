@@ -3,7 +3,7 @@ package com.ably.tracking.publisher.workerqueue.workers
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.common.workerqueue.Worker
-import com.ably.tracking.publisher.CorePublisher
+import com.ably.tracking.publisher.PublisherInteractor
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.PublisherState
 import com.ably.tracking.publisher.Trackable
@@ -12,7 +12,7 @@ import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 internal class DisconnectSuccessWorker(
     private val trackable: Trackable,
     private val callbackFunction: ResultCallbackFunction<Unit>,
-    private val corePublisher: CorePublisher,
+    private val publisherInteractor: PublisherInteractor,
     private val shouldRecalculateResolutionCallback: () -> Unit,
     private val ably: Ably,
 ) : Worker<PublisherProperties, WorkerSpecification> {
@@ -52,26 +52,26 @@ internal class DisconnectSuccessWorker(
 
     private fun removeTrackable(properties: PublisherProperties) {
         properties.trackables.remove(trackable)
-        corePublisher.updateTrackables(properties)
+        publisherInteractor.updateTrackables(properties)
         properties.duplicateTrackableGuard.clear(trackable)
     }
 
     private fun removeTrackableState(properties: PublisherProperties) {
         properties.trackableStateFlows.remove(trackable.id) // there is no way to stop the StateFlow so we just remove it
-        corePublisher.updateTrackableStateFlows(properties)
+        publisherInteractor.updateTrackableStateFlows(properties)
         properties.trackableStates.remove(trackable.id)
         properties.lastChannelConnectionStateChanges.remove(trackable.id)
         properties.trackableSubscribedToPresenceFlags.remove(trackable.id)
     }
 
     private fun updateResolutions(properties: PublisherProperties) {
-        corePublisher.notifyResolutionPolicyThatTrackableWasRemoved(trackable)
+        publisherInteractor.notifyResolutionPolicyThatTrackableWasRemoved(trackable)
         properties.resolutions.remove(trackable.id)
             ?.let { shouldRecalculateResolutionCallback() }
     }
 
     private fun clearSubscribersData(properties: PublisherProperties) {
-        corePublisher.removeAllSubscribers(trackable, properties)
+        publisherInteractor.removeAllSubscribers(trackable, properties)
         properties.requests.remove(trackable.id)
     }
 
@@ -88,9 +88,9 @@ internal class DisconnectSuccessWorker(
         properties.active == trackable
 
     private fun clearActiveTrackableState(properties: PublisherProperties) {
-        corePublisher.removeCurrentDestination(properties)
+        publisherInteractor.removeCurrentDestination(properties)
         properties.active = null
-        corePublisher.notifyResolutionPolicyThatActiveTrackableHasChanged(null)
+        publisherInteractor.notifyResolutionPolicyThatActiveTrackableHasChanged(null)
     }
 
     private fun isRemovedTrackableTheLastOne(properties: PublisherProperties): Boolean =
@@ -98,7 +98,7 @@ internal class DisconnectSuccessWorker(
 
     private fun stopLocationUpdates(properties: PublisherProperties) {
         if (properties.isTracking) {
-            corePublisher.stopLocationUpdates(properties)
+            publisherInteractor.stopLocationUpdates(properties)
         }
     }
 

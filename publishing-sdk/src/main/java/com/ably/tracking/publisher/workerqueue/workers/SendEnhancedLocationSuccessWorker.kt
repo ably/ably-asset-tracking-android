@@ -5,14 +5,14 @@ import com.ably.tracking.common.logging.createLoggingTag
 import com.ably.tracking.common.logging.v
 import com.ably.tracking.common.workerqueue.Worker
 import com.ably.tracking.logging.LogHandler
-import com.ably.tracking.publisher.CorePublisher
+import com.ably.tracking.publisher.PublisherInteractor
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 
 internal class SendEnhancedLocationSuccessWorker(
     private val location: Location,
     private val trackableId: String,
-    private val corePublisher: CorePublisher,
+    private val publisherInteractor: PublisherInteractor,
     private val logHandler: LogHandler?,
 ) : Worker<PublisherProperties, WorkerSpecification> {
     private val TAG = createLoggingTag(this)
@@ -26,8 +26,8 @@ internal class SendEnhancedLocationSuccessWorker(
         properties.enhancedLocationsPublishingState.unmarkMessageAsPending(trackableId)
         properties.lastSentEnhancedLocations[trackableId] = location
         properties.skippedEnhancedLocations.clear(trackableId)
-        corePublisher.updateTrackableState(properties, trackableId)
-        corePublisher.processNextWaitingEnhancedLocationUpdate(properties, trackableId)
+        publisherInteractor.updateTrackableState(properties, trackableId)
+        publisherInteractor.processNextWaitingEnhancedLocationUpdate(properties, trackableId)
         return properties
     }
 

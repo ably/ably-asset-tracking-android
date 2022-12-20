@@ -5,8 +5,8 @@ import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.PresenceMessage
 import com.ably.tracking.common.ResultCallbackFunction
-import com.ably.tracking.publisher.CorePublisher
 import com.ably.tracking.publisher.DefaultCorePublisher
+import com.ably.tracking.publisher.PublisherInteractor
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 import com.ably.tracking.test.common.mockDisconnect
@@ -33,7 +33,7 @@ class ConnectionReadyWorkerTest {
     private val hooks: DefaultCorePublisher.Hooks = mockk {
         every { trackables } returns null
     }
-    private val corePublisher = mockk<CorePublisher> {
+    private val publisherInteractor = mockk<PublisherInteractor> {
         every { startLocationUpdates(any()) } just runs
         every { updateTrackables(any()) } just runs
         every { updateTrackableStateFlows(any()) } just runs
@@ -126,7 +126,7 @@ class ConnectionReadyWorkerTest {
         assertThat(postedWorks).isEmpty()
 
         verify(exactly = 1) {
-            corePublisher.startLocationUpdates(any())
+            publisherInteractor.startLocationUpdates(any())
         }
     }
 
@@ -148,7 +148,7 @@ class ConnectionReadyWorkerTest {
         assertThat(postedWorks).isEmpty()
 
         verify(exactly = 0) {
-            corePublisher.startLocationUpdates(any())
+            publisherInteractor.startLocationUpdates(any())
         }
     }
 
@@ -188,7 +188,7 @@ class ConnectionReadyWorkerTest {
         assertThat(postedWorks).isEmpty()
 
         verify(exactly = 1) {
-            corePublisher.updateTrackables(any())
+            publisherInteractor.updateTrackables(any())
         }
     }
 
@@ -209,7 +209,7 @@ class ConnectionReadyWorkerTest {
         assertThat(postedWorks).isEmpty()
 
         verify(exactly = 1) {
-            corePublisher.resolveResolution(trackable, any())
+            publisherInteractor.resolveResolution(trackable, any())
         }
     }
 
@@ -249,7 +249,7 @@ class ConnectionReadyWorkerTest {
         assertThat(postedWorks).isEmpty()
 
         verify(exactly = 1) {
-            corePublisher.updateTrackableStateFlows(any())
+            publisherInteractor.updateTrackableStateFlows(any())
         }
     }
 
@@ -408,10 +408,10 @@ class ConnectionReadyWorkerTest {
 
         verify(exactly = 0) {
             ably.subscribeForChannelStateChange(trackable.id, any())
-            corePublisher.startLocationUpdates(any())
-            corePublisher.updateTrackables(any())
-            corePublisher.resolveResolution(trackable, any())
-            corePublisher.updateTrackableStateFlows(any())
+            publisherInteractor.startLocationUpdates(any())
+            publisherInteractor.updateTrackables(any())
+            publisherInteractor.resolveResolution(trackable, any())
+            publisherInteractor.updateTrackableStateFlows(any())
             resultCallbackFunction.invoke(any())
         }
     }
@@ -422,7 +422,7 @@ class ConnectionReadyWorkerTest {
             resultCallbackFunction,
             ably,
             hooks,
-            corePublisher,
+            publisherInteractor,
             connectionStateChangeListener,
             isSubscribedToPresence,
             presenceUpdateListener,

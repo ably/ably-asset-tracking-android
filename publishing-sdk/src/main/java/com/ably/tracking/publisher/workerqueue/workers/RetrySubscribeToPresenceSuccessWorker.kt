@@ -1,14 +1,14 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
 import com.ably.tracking.common.workerqueue.Worker
-import com.ably.tracking.publisher.CorePublisher
+import com.ably.tracking.publisher.PublisherInteractor
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 
 internal class RetrySubscribeToPresenceSuccessWorker(
     private val trackable: Trackable,
-    private val publisher: CorePublisher,
+    private val publisherInteractor: PublisherInteractor,
 ) : Worker<PublisherProperties, WorkerSpecification> {
 
     override fun doWork(
@@ -20,7 +20,7 @@ internal class RetrySubscribeToPresenceSuccessWorker(
             return properties
         }
         properties.trackableSubscribedToPresenceFlags[trackable.id] = true
-        publisher.updateTrackableState(properties, trackable.id)
+        publisherInteractor.updateTrackableState(properties, trackable.id)
         return properties
     }
 

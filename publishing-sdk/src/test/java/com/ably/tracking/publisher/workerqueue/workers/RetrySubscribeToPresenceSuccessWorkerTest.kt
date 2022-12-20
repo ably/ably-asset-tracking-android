@@ -1,6 +1,6 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
-import com.ably.tracking.publisher.CorePublisher
+import com.ably.tracking.publisher.PublisherInteractor
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 import com.google.common.truth.Truth.assertThat
@@ -10,8 +10,8 @@ import org.junit.Test
 
 internal class RetrySubscribeToPresenceSuccessWorkerTest {
     private val trackable = Trackable("test-trackable")
-    private val corePublisher = mockk<CorePublisher>(relaxed = true)
-    private val worker = RetrySubscribeToPresenceSuccessWorker(trackable, corePublisher)
+    private val publisherInteractor = mockk<PublisherInteractor>(relaxed = true)
+    private val worker = RetrySubscribeToPresenceSuccessWorker(trackable, publisherInteractor)
 
     private val asyncWorks = mutableListOf<suspend () -> Unit>()
     private val postedWorks = mutableListOf<WorkerSpecification>()
@@ -34,7 +34,7 @@ internal class RetrySubscribeToPresenceSuccessWorkerTest {
 
         assertThat(updatedProperties.trackableSubscribedToPresenceFlags[trackable.id]).isNull()
         verify(exactly = 0) {
-            corePublisher.updateTrackableState(any(), trackable.id)
+            publisherInteractor.updateTrackableState(any(), trackable.id)
         }
     }
 
@@ -57,7 +57,7 @@ internal class RetrySubscribeToPresenceSuccessWorkerTest {
 
         assertThat(updatedProperties.trackableSubscribedToPresenceFlags[trackable.id]).isTrue()
         verify(exactly = 1) {
-            corePublisher.updateTrackableState(any(), trackable.id)
+            publisherInteractor.updateTrackableState(any(), trackable.id)
         }
     }
 }

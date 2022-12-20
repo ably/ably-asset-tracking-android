@@ -1,7 +1,7 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
 import com.ably.tracking.Location
-import com.ably.tracking.publisher.CorePublisher
+import com.ably.tracking.publisher.PublisherInteractor
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.WorkerSpecification
@@ -18,10 +18,10 @@ import org.junit.Test
 
 @ExperimentalCoroutinesApi
 class RawLocationChangedWorkerTest {
-    private val publisher: CorePublisher = mockk()
+    private val publisherInteractor: PublisherInteractor = mockk()
     private val location: Location = createLocation()
 
-    private val worker = RawLocationChangedWorker(location, publisher, null)
+    private val worker = RawLocationChangedWorker(location, publisherInteractor, null)
 
     private val asyncWorks = mutableListOf<suspend () -> Unit>()
     private val postedWorks = mutableListOf<WorkerSpecification>()
@@ -54,7 +54,7 @@ class RawLocationChangedWorkerTest {
         val secondTrackable = Trackable("second-trackable")
         initialProperties.trackables.add(secondTrackable)
 
-        every { publisher.processRawLocationUpdate(any(), any(), any()) } just runs
+        every { publisherInteractor.processRawLocationUpdate(any(), any(), any()) } just runs
 
         // when
         val updatedProperties = worker.doWork(
@@ -67,8 +67,8 @@ class RawLocationChangedWorkerTest {
         assertThat(asyncWorks).isEmpty()
         assertThat(postedWorks).isEmpty()
         verify(exactly = 1) {
-            publisher.processRawLocationUpdate(any(), updatedProperties, firstTrackable.id)
-            publisher.processRawLocationUpdate(any(), updatedProperties, secondTrackable.id)
+            publisherInteractor.processRawLocationUpdate(any(), updatedProperties, firstTrackable.id)
+            publisherInteractor.processRawLocationUpdate(any(), updatedProperties, secondTrackable.id)
         }
     }
 
@@ -94,7 +94,7 @@ class RawLocationChangedWorkerTest {
         assertThat(postedWorks).isEmpty()
 
         verify(exactly = 0) {
-            publisher.processRawLocationUpdate(any(), any(), any())
+            publisherInteractor.processRawLocationUpdate(any(), any(), any())
         }
     }
 

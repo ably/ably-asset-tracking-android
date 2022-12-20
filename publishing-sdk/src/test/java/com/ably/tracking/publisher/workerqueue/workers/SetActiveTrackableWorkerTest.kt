@@ -1,9 +1,9 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
 import com.ably.tracking.common.ResultCallbackFunction
-import com.ably.tracking.publisher.CorePublisher
 import com.ably.tracking.publisher.DefaultCorePublisher
 import com.ably.tracking.publisher.Destination
+import com.ably.tracking.publisher.PublisherInteractor
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.WorkerSpecification
@@ -17,7 +17,7 @@ import io.mockk.verify
 import org.junit.Test
 
 class SetActiveTrackableWorkerTest {
-    private val publisher: CorePublisher = mockk {
+    private val publisherInteractor: PublisherInteractor = mockk {
         every { setDestination(any(), any()) } just runs
         every { removeCurrentDestination(any()) } just runs
     }
@@ -120,7 +120,7 @@ class SetActiveTrackableWorkerTest {
         assertThat(postedWorks).isEmpty()
 
         verify(exactly = 1) {
-            publisher.setDestination(newTrackableDestination, any())
+            publisherInteractor.setDestination(newTrackableDestination, any())
         }
     }
 
@@ -143,11 +143,11 @@ class SetActiveTrackableWorkerTest {
         assertThat(postedWorks).isEmpty()
 
         verify(exactly = 1) {
-            publisher.removeCurrentDestination(any())
+            publisherInteractor.removeCurrentDestination(any())
         }
     }
 
     private fun prepareWorkerWithNewTrackable(trackable: Trackable) {
-        worker = SetActiveTrackableWorker(trackable, resultCallbackFunction, publisher, hooks)
+        worker = SetActiveTrackableWorker(trackable, resultCallbackFunction, publisherInteractor, hooks)
     }
 }

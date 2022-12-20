@@ -1,7 +1,7 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
-import com.ably.tracking.publisher.CorePublisher
 import com.ably.tracking.publisher.Destination
+import com.ably.tracking.publisher.PublisherInteractor
 import com.ably.tracking.publisher.RoutingProfile
 import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 import com.google.common.truth.Truth.assertThat
@@ -13,13 +13,13 @@ import io.mockk.verify
 import org.junit.Test
 
 class ChangeRoutingProfileWorkerTest {
-    private val publisher: CorePublisher = mockk {
+    private val publisherInteractor: PublisherInteractor = mockk {
         every { setDestination(any(), any()) } just runs
     }
     private val routingProfile = RoutingProfile.WALKING
     private val worker = ChangeRoutingProfileWorker(
         routingProfile = routingProfile,
-        corePublisher = publisher
+        publisherInteractor = publisherInteractor
     )
 
     private val asyncWorks = mutableListOf<suspend () -> Unit>()
@@ -62,7 +62,7 @@ class ChangeRoutingProfileWorkerTest {
         assertThat(asyncWorks).isEmpty()
         assertThat(postedWorks).isEmpty()
         verify(exactly = 1) {
-            publisher.setDestination(currentDestination, updatedProperties)
+            publisherInteractor.setDestination(currentDestination, updatedProperties)
         }
     }
 
@@ -83,7 +83,7 @@ class ChangeRoutingProfileWorkerTest {
         assertThat(asyncWorks).isEmpty()
         assertThat(postedWorks).isEmpty()
         verify(exactly = 0) {
-            publisher.setDestination(any(), any())
+            publisherInteractor.setDestination(any(), any())
         }
     }
 }

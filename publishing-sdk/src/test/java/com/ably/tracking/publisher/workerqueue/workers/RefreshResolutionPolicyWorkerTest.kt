@@ -1,6 +1,6 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
-import com.ably.tracking.publisher.CorePublisher
+import com.ably.tracking.publisher.PublisherInteractor
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 import com.google.common.truth.Truth
@@ -12,11 +12,11 @@ import io.mockk.verify
 import org.junit.Test
 
 class RefreshResolutionPolicyWorkerTest {
-    private val publisher: CorePublisher = mockk {
+    private val publisherInteractor: PublisherInteractor = mockk {
         every { resolveResolution(any(), any()) } just runs
     }
 
-    private val worker = RefreshResolutionPolicyWorker(publisher)
+    private val worker = RefreshResolutionPolicyWorker(publisherInteractor)
 
     private val asyncWorks = mutableListOf<suspend () -> Unit>()
     private val postedWorks = mutableListOf<WorkerSpecification>()
@@ -44,9 +44,9 @@ class RefreshResolutionPolicyWorkerTest {
         Truth.assertThat(postedWorks).isEmpty()
 
         verify(exactly = 1) {
-            publisher.resolveResolution(firstTrackable, initialProperties)
-            publisher.resolveResolution(secondTrackable, initialProperties)
-            publisher.resolveResolution(thirdTrackable, initialProperties)
+            publisherInteractor.resolveResolution(firstTrackable, initialProperties)
+            publisherInteractor.resolveResolution(secondTrackable, initialProperties)
+            publisherInteractor.resolveResolution(thirdTrackable, initialProperties)
         }
     }
 }

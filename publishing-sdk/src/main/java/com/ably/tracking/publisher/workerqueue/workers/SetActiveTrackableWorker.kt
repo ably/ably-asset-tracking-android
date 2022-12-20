@@ -2,8 +2,8 @@ package com.ably.tracking.publisher.workerqueue.workers
 
 import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.common.workerqueue.Worker
-import com.ably.tracking.publisher.CorePublisher
 import com.ably.tracking.publisher.DefaultCorePublisher
+import com.ably.tracking.publisher.PublisherInteractor
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.WorkerSpecification
@@ -11,7 +11,7 @@ import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 internal class SetActiveTrackableWorker(
     private val trackable: Trackable,
     private val callbackFunction: ResultCallbackFunction<Unit>,
-    private val publisher: CorePublisher,
+    private val publisherInteractor: PublisherInteractor,
     private val hooks: DefaultCorePublisher.Hooks
 ) : Worker<PublisherProperties, WorkerSpecification> {
 
@@ -27,9 +27,9 @@ internal class SetActiveTrackableWorker(
             hooks.trackables?.onActiveTrackableChanged(trackable)
             trackable.destination.let {
                 if (it != null) {
-                    publisher.setDestination(it, properties)
+                    publisherInteractor.setDestination(it, properties)
                 } else {
-                    publisher.removeCurrentDestination(properties)
+                    publisherInteractor.removeCurrentDestination(properties)
                 }
             }
         }

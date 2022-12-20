@@ -5,7 +5,7 @@ import com.ably.tracking.common.logging.createLoggingTag
 import com.ably.tracking.common.logging.w
 import com.ably.tracking.common.workerqueue.Worker
 import com.ably.tracking.logging.LogHandler
-import com.ably.tracking.publisher.CorePublisher
+import com.ably.tracking.publisher.PublisherInteractor
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 
@@ -13,7 +13,7 @@ internal class SendRawLocationFailureWorker(
     private val locationUpdate: LocationUpdate,
     private val trackableId: String,
     private val exception: Throwable?,
-    private val corePublisher: CorePublisher,
+    private val publisherInteractor: PublisherInteractor,
     private val logHandler: LogHandler?,
 ) : Worker<PublisherProperties, WorkerSpecification> {
     private val TAG = createLoggingTag(this)
@@ -25,15 +25,15 @@ internal class SendRawLocationFailureWorker(
     ): PublisherProperties {
         logHandler?.w("$TAG Trackable $trackableId failed to send raw location ${locationUpdate.location}", exception)
         if (properties.rawLocationsPublishingState.shouldRetryPublishing(trackableId)) {
-            corePublisher.retrySendingRawLocation(properties, trackableId, locationUpdate)
+            publisherInteractor.retrySendingRawLocation(properties, trackableId, locationUpdate)
         } else {
             properties.rawLocationsPublishingState.unmarkMessageAsPending(trackableId)
-            corePublisher.saveRawLocationForFurtherSending(
+            publisherInteractor.saveRawLocationForFurtherSending(
                 properties,
                 trackableId,
                 locationUpdate.location
             )
-            corePublisher.processNextWaitingRawLocationUpdate(properties, trackableId)
+            publisherInteractor.processNextWaitingRawLocationUpdate(properties, trackableId)
         }
         return properties
     }

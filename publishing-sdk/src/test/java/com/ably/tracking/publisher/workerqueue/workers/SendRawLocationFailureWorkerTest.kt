@@ -1,7 +1,7 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
 import com.ably.tracking.LocationUpdate
-import com.ably.tracking.publisher.CorePublisher
+import com.ably.tracking.publisher.PublisherInteractor
 import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 import com.ably.tracking.test.common.anyLocation
 import com.google.common.truth.Truth.assertThat
@@ -16,13 +16,13 @@ class SendRawLocationFailureWorkerTest {
 
     private val trackableId = "test-trackable"
     private val locationUpdate = LocationUpdate(anyLocation(), emptyList())
-    private val publisher: CorePublisher = mockk {
+    private val publisherInteractor: PublisherInteractor = mockk {
         every { saveRawLocationForFurtherSending(any(), any(), any()) } just runs
         every { processNextWaitingRawLocationUpdate(any(), any()) } just runs
         every { retrySendingRawLocation(any(), any(), any()) } just runs
     }
 
-    private val worker = SendRawLocationFailureWorker(locationUpdate, trackableId, null, publisher, null)
+    private val worker = SendRawLocationFailureWorker(locationUpdate, trackableId, null, publisherInteractor, null)
 
     private val asyncWorks = mutableListOf<suspend () -> Unit>()
     private val postedWorks = mutableListOf<WorkerSpecification>()
@@ -46,7 +46,7 @@ class SendRawLocationFailureWorkerTest {
         assertThat(postedWorks).isEmpty()
 
         verify(exactly = 1) {
-            publisher.retrySendingRawLocation(updatedProperties, trackableId, locationUpdate)
+            publisherInteractor.retrySendingRawLocation(updatedProperties, trackableId, locationUpdate)
         }
     }
 
@@ -68,7 +68,7 @@ class SendRawLocationFailureWorkerTest {
         assertThat(postedWorks).isEmpty()
 
         verify(exactly = 0) {
-            publisher.retrySendingRawLocation(updatedProperties, trackableId, locationUpdate)
+            publisherInteractor.retrySendingRawLocation(updatedProperties, trackableId, locationUpdate)
         }
     }
 
@@ -134,7 +134,7 @@ class SendRawLocationFailureWorkerTest {
         assertThat(postedWorks).isEmpty()
 
         verify(exactly = 1) {
-            publisher.saveRawLocationForFurtherSending(
+            publisherInteractor.saveRawLocationForFurtherSending(
                 updatedProperties,
                 trackableId,
                 locationUpdate.location
@@ -161,7 +161,7 @@ class SendRawLocationFailureWorkerTest {
         assertThat(postedWorks).isEmpty()
 
         verify(exactly = 0) {
-            publisher.saveRawLocationForFurtherSending(
+            publisherInteractor.saveRawLocationForFurtherSending(
                 updatedProperties,
                 trackableId,
                 locationUpdate.location
@@ -187,7 +187,7 @@ class SendRawLocationFailureWorkerTest {
         assertThat(postedWorks).isEmpty()
 
         verify(exactly = 1) {
-            publisher.processNextWaitingRawLocationUpdate(updatedProperties, trackableId)
+            publisherInteractor.processNextWaitingRawLocationUpdate(updatedProperties, trackableId)
         }
     }
 
@@ -210,7 +210,7 @@ class SendRawLocationFailureWorkerTest {
         assertThat(postedWorks).isEmpty()
 
         verify(exactly = 0) {
-            publisher.processNextWaitingRawLocationUpdate(updatedProperties, trackableId)
+            publisherInteractor.processNextWaitingRawLocationUpdate(updatedProperties, trackableId)
         }
     }
 }

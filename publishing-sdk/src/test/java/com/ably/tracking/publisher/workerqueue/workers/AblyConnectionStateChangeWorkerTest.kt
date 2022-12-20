@@ -2,7 +2,7 @@ package com.ably.tracking.publisher.workerqueue.workers
 
 import com.ably.tracking.common.ConnectionState
 import com.ably.tracking.common.ConnectionStateChange
-import com.ably.tracking.publisher.CorePublisher
+import com.ably.tracking.publisher.PublisherInteractor
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 import com.google.common.truth.Truth.assertThat
@@ -15,12 +15,12 @@ import org.junit.Test
 
 class AblyConnectionStateChangeWorkerTest {
     private val connectionStateChange = ConnectionStateChange(ConnectionState.ONLINE, null)
-    private val publisher: CorePublisher = mockk {
+    private val publisherInteractor: PublisherInteractor = mockk {
         every { updateTrackableState(any(), any()) } just runs
     }
     private val worker = AblyConnectionStateChangeWorker(
         connectionStateChange = connectionStateChange,
-        publisher = publisher,
+        publisherInteractor = publisherInteractor,
         logHandler = null
     )
 
@@ -50,7 +50,7 @@ class AblyConnectionStateChangeWorkerTest {
 
         verify(exactly = 1) {
             trackables.forEach {
-                publisher.updateTrackableState(updatedProperties, it.id)
+                publisherInteractor.updateTrackableState(updatedProperties, it.id)
             }
         }
     }

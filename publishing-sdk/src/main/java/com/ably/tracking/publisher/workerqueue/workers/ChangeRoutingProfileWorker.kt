@@ -1,14 +1,14 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
 import com.ably.tracking.common.workerqueue.Worker
-import com.ably.tracking.publisher.CorePublisher
+import com.ably.tracking.publisher.PublisherInteractor
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.RoutingProfile
 import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 
 internal class ChangeRoutingProfileWorker(
     private val routingProfile: RoutingProfile,
-    private val corePublisher: CorePublisher,
+    private val publisherInteractor: PublisherInteractor,
 ) : Worker<PublisherProperties, WorkerSpecification> {
 
     override fun doWork(
@@ -17,7 +17,7 @@ internal class ChangeRoutingProfileWorker(
         postWork: (WorkerSpecification) -> Unit
     ): PublisherProperties {
         properties.routingProfile = routingProfile
-        properties.currentDestination?.let { corePublisher.setDestination(it, properties) }
+        properties.currentDestination?.let { publisherInteractor.setDestination(it, properties) }
         return properties
     }
 

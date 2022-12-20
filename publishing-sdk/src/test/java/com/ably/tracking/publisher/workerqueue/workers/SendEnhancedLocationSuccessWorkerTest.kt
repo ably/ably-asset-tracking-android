@@ -1,6 +1,6 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
-import com.ably.tracking.publisher.CorePublisher
+import com.ably.tracking.publisher.PublisherInteractor
 import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 import com.ably.tracking.test.common.anyLocation
 import com.google.common.truth.Truth.assertThat
@@ -13,12 +13,12 @@ import org.junit.Test
 
 class SendEnhancedLocationSuccessWorkerTest {
     private val trackableId = "test-trackable"
-    private val publisher: CorePublisher = mockk {
+    private val publisherInteractor: PublisherInteractor = mockk {
         every { updateTrackableState(any(), trackableId) } just runs
         every { processNextWaitingEnhancedLocationUpdate(any(), any()) } just runs
     }
     private val location = anyLocation()
-    private val worker = SendEnhancedLocationSuccessWorker(location, trackableId, publisher, null)
+    private val worker = SendEnhancedLocationSuccessWorker(location, trackableId, publisherInteractor, null)
 
     private val asyncWorks = mutableListOf<suspend () -> Unit>()
     private val postedWorks = mutableListOf<WorkerSpecification>()
@@ -101,7 +101,7 @@ class SendEnhancedLocationSuccessWorkerTest {
         assertThat(postedWorks).isEmpty()
 
         verify(exactly = 1) {
-            publisher.updateTrackableState(updatedProperties, trackableId)
+            publisherInteractor.updateTrackableState(updatedProperties, trackableId)
         }
     }
 
@@ -122,7 +122,7 @@ class SendEnhancedLocationSuccessWorkerTest {
         assertThat(postedWorks).isEmpty()
 
         verify(exactly = 1) {
-            publisher.processNextWaitingEnhancedLocationUpdate(updatedProperties, trackableId)
+            publisherInteractor.processNextWaitingEnhancedLocationUpdate(updatedProperties, trackableId)
         }
     }
 }

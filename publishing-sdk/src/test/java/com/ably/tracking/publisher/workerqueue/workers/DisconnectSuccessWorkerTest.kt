@@ -10,7 +10,7 @@ import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ConnectionState
 import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.ResultCallbackFunction
-import com.ably.tracking.publisher.CorePublisher
+import com.ably.tracking.publisher.PublisherInteractor
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.WorkerSpecification
@@ -35,7 +35,7 @@ class DisconnectSuccessWorkerTest {
     private val otherTrackable = Trackable("other-trackable")
     private val resultCallbackFunction: ResultCallbackFunction<Unit> = mockk(relaxed = true)
     private val recalculateResolutionCallbackFunction = mockk<() -> Unit>(relaxed = true)
-    private val corePublisher = mockk<CorePublisher> {
+    private val publisherInteractor = mockk<PublisherInteractor> {
         every { updateTrackables(any()) } just runs
         every { updateTrackableStateFlows(any()) } just runs
         every { notifyResolutionPolicyThatTrackableWasRemoved(any()) } just runs
@@ -51,7 +51,7 @@ class DisconnectSuccessWorkerTest {
     private val worker = DisconnectSuccessWorker(
         trackable,
         resultCallbackFunction,
-        corePublisher,
+        publisherInteractor,
         recalculateResolutionCallbackFunction,
         ably
     )
@@ -272,7 +272,7 @@ class DisconnectSuccessWorkerTest {
         assertThat(asyncWorks).isEmpty()
         assertThat(postedWorks).isEmpty()
         verify(exactly = 1) {
-            corePublisher.updateTrackables(updatedProperties)
+            publisherInteractor.updateTrackables(updatedProperties)
         }
     }
 
@@ -293,7 +293,7 @@ class DisconnectSuccessWorkerTest {
         assertThat(postedWorks).isEmpty()
 
         verify(exactly = 1) {
-            corePublisher.updateTrackableStateFlows(updatedProperties)
+            publisherInteractor.updateTrackableStateFlows(updatedProperties)
         }
     }
 
@@ -314,7 +314,7 @@ class DisconnectSuccessWorkerTest {
         assertThat(postedWorks).isEmpty()
 
         verify(exactly = 1) {
-            corePublisher.notifyResolutionPolicyThatTrackableWasRemoved(trackable)
+            publisherInteractor.notifyResolutionPolicyThatTrackableWasRemoved(trackable)
         }
     }
 
@@ -335,7 +335,7 @@ class DisconnectSuccessWorkerTest {
         assertThat(postedWorks).isEmpty()
 
         verify(exactly = 1) {
-            corePublisher.removeAllSubscribers(trackable, updatedProperties)
+            publisherInteractor.removeAllSubscribers(trackable, updatedProperties)
         }
     }
 
@@ -510,7 +510,7 @@ class DisconnectSuccessWorkerTest {
         assertThat(postedWorks).isEmpty()
 
         verify(exactly = 1) {
-            corePublisher.removeCurrentDestination(updatedProperties)
+            publisherInteractor.removeCurrentDestination(updatedProperties)
         }
     }
 
@@ -532,7 +532,7 @@ class DisconnectSuccessWorkerTest {
         assertThat(postedWorks).isEmpty()
 
         verify(exactly = 1) {
-            corePublisher.notifyResolutionPolicyThatActiveTrackableHasChanged(null)
+            publisherInteractor.notifyResolutionPolicyThatActiveTrackableHasChanged(null)
         }
     }
 
@@ -574,7 +574,7 @@ class DisconnectSuccessWorkerTest {
         assertThat(postedWorks).isEmpty()
 
         verify(exactly = 0) {
-            corePublisher.removeCurrentDestination(updatedProperties)
+            publisherInteractor.removeCurrentDestination(updatedProperties)
         }
     }
 
@@ -596,7 +596,7 @@ class DisconnectSuccessWorkerTest {
         assertThat(postedWorks).isEmpty()
 
         verify(exactly = 0) {
-            corePublisher.notifyResolutionPolicyThatActiveTrackableHasChanged(null)
+            publisherInteractor.notifyResolutionPolicyThatActiveTrackableHasChanged(null)
         }
     }
 
@@ -618,7 +618,7 @@ class DisconnectSuccessWorkerTest {
         assertThat(postedWorks).isEmpty()
 
         verify(exactly = 1) {
-            corePublisher.stopLocationUpdates(updatedProperties)
+            publisherInteractor.stopLocationUpdates(updatedProperties)
         }
     }
 
@@ -640,7 +640,7 @@ class DisconnectSuccessWorkerTest {
         assertThat(postedWorks).isEmpty()
 
         verify(exactly = 0) {
-            corePublisher.stopLocationUpdates(updatedProperties)
+            publisherInteractor.stopLocationUpdates(updatedProperties)
         }
     }
 
@@ -662,7 +662,7 @@ class DisconnectSuccessWorkerTest {
         assertThat(postedWorks).isEmpty()
 
         verify(exactly = 0) {
-            corePublisher.stopLocationUpdates(updatedProperties)
+            publisherInteractor.stopLocationUpdates(updatedProperties)
         }
     }
 

@@ -1,6 +1,6 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
-import com.ably.tracking.publisher.CorePublisher
+import com.ably.tracking.publisher.PublisherInteractor
 import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 import com.ably.tracking.test.common.anyLocation
 import com.google.common.truth.Truth.assertThat
@@ -16,11 +16,11 @@ class SendRawLocationSuccessWorkerTest {
 
     private val trackableId = "test-trackable"
 
-    private val publisher: CorePublisher = mockk {
+    private val publisherInteractor: PublisherInteractor = mockk {
         every { processNextWaitingRawLocationUpdate(any(), any()) } just runs
     }
 
-    private val worker = SendRawLocationSuccessWorker(location, trackableId, publisher, null)
+    private val worker = SendRawLocationSuccessWorker(location, trackableId, publisherInteractor, null)
 
     private val asyncWorks = mutableListOf<suspend () -> Unit>()
     private val postedWorks = mutableListOf<WorkerSpecification>()
@@ -105,7 +105,7 @@ class SendRawLocationSuccessWorkerTest {
         assertThat(postedWorks).isEmpty()
 
         verify(exactly = 1) {
-            publisher.processNextWaitingRawLocationUpdate(updatedProperties, trackableId)
+            publisherInteractor.processNextWaitingRawLocationUpdate(updatedProperties, trackableId)
         }
     }
 }

@@ -96,6 +96,45 @@ internal interface CorePublisher {
     fun resolveResolution(trackable: Trackable, properties: PublisherProperties)
 }
 
+internal interface PublisherInteractor{
+    fun startLocationUpdates(properties: PublisherProperties)
+    fun updateTrackables(properties: PublisherProperties)
+    fun resolveResolution(trackable: Trackable, properties: PublisherProperties)
+    fun updateTrackableStateFlows(properties: PublisherProperties)
+    fun updateTrackableState(properties: PublisherProperties, trackableId: String)
+    fun notifyResolutionPolicyThatTrackableWasRemoved(trackable: Trackable)
+    fun removeCurrentDestination(properties: PublisherProperties)
+    fun notifyResolutionPolicyThatActiveTrackableHasChanged(trackable: Trackable?)
+    fun stopLocationUpdates(properties: PublisherProperties)
+    fun removeAllSubscribers(trackable: Trackable, properties: PublisherProperties)
+    fun setDestination(destination: Destination, properties: PublisherProperties)
+    fun processEnhancedLocationUpdate(
+        enhancedLocationUpdate: EnhancedLocationUpdate,
+        properties: PublisherProperties,
+        trackableId: String
+    )
+
+    fun updateLocations(locationUpdate: LocationUpdate)
+    fun checkThreshold(currentLocation: Location, activeTrackable: Trackable?, estimatedArrivalTimeInMilliseconds: Long?)
+    fun addSubscriber(id: String, trackable: Trackable, data: PresenceData, properties: PublisherProperties)
+    fun removeSubscriber(id: String, trackable: Trackable, properties: PublisherProperties)
+    fun updateSubscriber(id: String, trackable: Trackable, data: PresenceData, properties: PublisherProperties)
+    fun processRawLocationUpdate(rawLocationUpdate: LocationUpdate, properties: PublisherProperties, trackableId: String)
+    fun retrySendingEnhancedLocation(
+        properties: PublisherProperties,
+        trackableId: String,
+        locationUpdate: EnhancedLocationUpdate
+    )
+
+    fun saveEnhancedLocationForFurtherSending(properties: PublisherProperties, trackableId: String, location: Location)
+    fun processNextWaitingEnhancedLocationUpdate(properties: PublisherProperties, trackableId: String)
+    fun retrySendingRawLocation(properties: PublisherProperties, trackableId: String, locationUpdate: LocationUpdate)
+    fun saveRawLocationForFurtherSending(properties: PublisherProperties, trackableId: String, location: Location)
+    fun processNextWaitingRawLocationUpdate(properties: PublisherProperties, trackableId: String)
+    fun closeMapbox()
+
+}
+
 @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
 internal fun createCorePublisher(
     ably: Ably,
@@ -135,7 +174,7 @@ constructor(
     areRawLocationsEnabled: Boolean?,
     private val sendResolutionEnabled: Boolean,
     constantLocationEngineResolution: Resolution?,
-) : CorePublisher, TimeProvider {
+) : CorePublisher, PublisherInteractor, TimeProvider {
     private val TAG = createLoggingTag(this)
     private val scope = CoroutineScope(singleThreadDispatcher + SupervisorJob())
     private val updatedWorkerQueue: UpdatedWorkerQueue<PublisherProperties, WorkerSpecification>
