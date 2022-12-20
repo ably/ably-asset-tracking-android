@@ -148,14 +148,14 @@ internal data class SubscriberProperties private constructor(
         eventFlows: EventFlows,
     ) : this(PresenceData(ClientTypes.SUBSCRIBER, initialResolution), eventFlows)
 
-    fun updateForConnectionStateChangeAndThenEmitEventsIfRequired(stateChange: ConnectionStateChange) {
+    fun updateForConnectionStateChangeAndThenEmitStateEventsIfRequired(stateChange: ConnectionStateChange) {
         lastConnectionStateChange = stateChange
-        emitEventsIfRequired()
+        emitStateEventsIfRequired()
     }
 
-    fun updateForChannelConnectionStateChangeAndThenEmitEventsIfRequired(stateChange: ConnectionStateChange) {
+    fun updateForChannelConnectionStateChangeAndThenEmitStateEventsIfRequired(stateChange: ConnectionStateChange) {
         lastChannelConnectionStateChange = stateChange
-        emitEventsIfRequired()
+        emitStateEventsIfRequired()
     }
 
     fun updateForPresenceMessage(presenceMessage: PresenceMessage) {
@@ -176,7 +176,7 @@ internal data class SubscriberProperties private constructor(
         }
     }
 
-    fun emitEventsIfRequired() {
+    fun emitStateEventsIfRequired() {
         val isAPublisherPresent = (presentPublisherMemberKeys.isNotEmpty())
 
         val trackableState = when (lastConnectionStateChange.state) {

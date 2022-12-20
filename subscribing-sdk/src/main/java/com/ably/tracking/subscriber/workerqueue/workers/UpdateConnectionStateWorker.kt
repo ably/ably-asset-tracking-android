@@ -13,7 +13,7 @@ internal class UpdateConnectionStateWorker(
         doAsyncWork: (suspend () -> Unit) -> Unit,
         postWork: (WorkerSpecification) -> Unit
     ): SubscriberProperties {
-        properties.updateForConnectionStateChangeAndThenEmitEventsIfRequired(connectionStateChange)
+        properties.updateForConnectionStateChangeAndThenEmitStateEventsIfRequired(connectionStateChange)
         return properties
     }
 

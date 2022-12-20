@@ -18,7 +18,7 @@ internal class ProcessInitialPresenceMessagesWorker(
         presenceMessages.forEach { presenceMessage ->
             properties.updateForPresenceMessage(presenceMessage)
         }
-        properties.emitEventsIfRequired()
+        properties.emitStateEventsIfRequired()
         postWork(WorkerSpecification.SubscribeToChannel(callbackFunction))
         return properties
     }

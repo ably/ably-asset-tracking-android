@@ -13,7 +13,7 @@ internal class UpdateChannelConnectionStateWorker(
         doAsyncWork: (suspend () -> Unit) -> Unit,
         postWork: (WorkerSpecification) -> Unit
     ): SubscriberProperties {
-        properties.updateForChannelConnectionStateChangeAndThenEmitEventsIfRequired(channelConnectionStateChange)
+        properties.updateForChannelConnectionStateChangeAndThenEmitStateEventsIfRequired(channelConnectionStateChange)
         return properties
     }
 

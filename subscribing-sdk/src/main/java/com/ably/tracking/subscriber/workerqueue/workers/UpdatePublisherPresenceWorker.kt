@@ -14,7 +14,7 @@ internal class UpdatePublisherPresenceWorker(
         postWork: (WorkerSpecification) -> Unit
     ): SubscriberProperties {
         properties.updateForPresenceMessage(presenceMessage)
-        properties.emitEventsIfRequired()
+        properties.emitStateEventsIfRequired()
         return properties
     }
 
