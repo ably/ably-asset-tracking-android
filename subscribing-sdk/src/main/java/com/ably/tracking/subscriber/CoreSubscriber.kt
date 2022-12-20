@@ -135,7 +135,7 @@ internal data class SubscriberProperties private constructor(
     override var isStopped: Boolean = false,
 
     private var presentPublisherMemberKeys: MutableSet<String> = HashSet(),
-    private var lastEmittedIsPublisherVisible: Boolean? = null,
+    private var lastEmittedValueOfIsPublisherVisible: Boolean? = null,
     private var lastEmittedTrackableState: TrackableState = TrackableState.Offline(),
     private var lastConnectionStateChange: ConnectionStateChange =
         ConnectionStateChange(ConnectionState.OFFLINE, null),
@@ -201,8 +201,8 @@ internal data class SubscriberProperties private constructor(
         // Therefore, from the perspective of a user consuming events from publisherPresenceStateFlow, what matters
         // is what we're computing for isPublisherVisible (not the simple isAPublisherPresent).
         val isPublisherVisible = (isAPublisherPresent && lastConnectionStateChange.state == ConnectionState.ONLINE)
-        if (null == lastEmittedIsPublisherVisible || lastEmittedIsPublisherVisible!! != isPublisherVisible) {
-            lastEmittedIsPublisherVisible = isPublisherVisible
+        if (null == lastEmittedValueOfIsPublisherVisible || lastEmittedValueOfIsPublisherVisible!! != isPublisherVisible) {
+            lastEmittedValueOfIsPublisherVisible = isPublisherVisible
             eventFlows.emitPublisherPresence(isPublisherVisible)
         }
 
