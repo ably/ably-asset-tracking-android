@@ -203,7 +203,7 @@ internal data class SubscriberProperties private constructor(
         // Therefore, from the perspective of a user consuming events from publisherPresenceStateFlow, what matters
         // is what we're computing for isPublisherVisible (not the simple isAPublisherPresent).
         val isPublisherVisible = (isAPublisherPresent && lastConnectionStateChange.state == ConnectionState.ONLINE)
-        if (null == lastEmittedValueOfIsPublisherVisible || lastEmittedValueOfIsPublisherVisible!! != isPublisherVisible) {
+        if (lastEmittedValueOfIsPublisherVisible != isPublisherVisible) {
             lastEmittedValueOfIsPublisherVisible = isPublisherVisible
             eventFlows.emitPublisherPresence(isPublisherVisible)
         }
