@@ -42,61 +42,9 @@ internal interface CorePublisher {
     val active: Trackable?
     val routingProfile: RoutingProfile
     val trackableStateFlows: Map<String, StateFlow<TrackableState>>
-
-    fun addSubscriber(id: String, trackable: Trackable, data: PresenceData, properties: PublisherProperties)
-    fun updateSubscriber(
-        id: String,
-        trackable: Trackable,
-        data: PresenceData,
-        properties: PublisherProperties
-    )
-
-    fun removeSubscriber(id: String, trackable: Trackable, properties: PublisherProperties)
-    fun removeAllSubscribers(trackable: Trackable, properties: PublisherProperties)
-    fun setDestination(destination: Destination, properties: PublisherProperties)
-    fun removeCurrentDestination(properties: PublisherProperties)
-    fun startLocationUpdates(properties: PublisherProperties)
-    fun stopLocationUpdates(properties: PublisherProperties)
-    fun closeMapbox()
-    fun processNextWaitingEnhancedLocationUpdate(properties: PublisherProperties, trackableId: String)
-    fun saveEnhancedLocationForFurtherSending(properties: PublisherProperties, trackableId: String, location: Location)
-    fun retrySendingEnhancedLocation(
-        properties: PublisherProperties,
-        trackableId: String,
-        locationUpdate: EnhancedLocationUpdate
-    )
-
-    fun updateLocations(locationUpdate: LocationUpdate)
-    fun processNextWaitingRawLocationUpdate(properties: PublisherProperties, trackableId: String)
-    fun retrySendingRawLocation(properties: PublisherProperties, trackableId: String, locationUpdate: LocationUpdate)
-    fun saveRawLocationForFurtherSending(properties: PublisherProperties, trackableId: String, location: Location)
-    fun processRawLocationUpdate(
-        rawLocationUpdate: LocationUpdate,
-        properties: PublisherProperties,
-        trackableId: String
-    )
-
-    fun processEnhancedLocationUpdate(
-        enhancedLocationUpdate: EnhancedLocationUpdate,
-        properties: PublisherProperties,
-        trackableId: String
-    )
-
-    fun checkThreshold(
-        currentLocation: Location,
-        activeTrackable: Trackable?,
-        estimatedArrivalTimeInMilliseconds: Long?
-    )
-
-    fun updateTrackables(properties: PublisherProperties)
-    fun updateTrackableStateFlows(properties: PublisherProperties)
-    fun updateTrackableState(properties: PublisherProperties, trackableId: String)
-    fun notifyResolutionPolicyThatTrackableWasRemoved(trackable: Trackable)
-    fun notifyResolutionPolicyThatActiveTrackableHasChanged(trackable: Trackable?)
-    fun resolveResolution(trackable: Trackable, properties: PublisherProperties)
 }
 
-internal interface PublisherInteractor{
+internal interface PublisherInteractor {
     fun startLocationUpdates(properties: PublisherProperties)
     fun updateTrackables(properties: PublisherProperties)
     fun resolveResolution(trackable: Trackable, properties: PublisherProperties)
@@ -132,7 +80,6 @@ internal interface PublisherInteractor{
     fun saveRawLocationForFurtherSending(properties: PublisherProperties, trackableId: String, location: Location)
     fun processNextWaitingRawLocationUpdate(properties: PublisherProperties, trackableId: String)
     fun closeMapbox()
-
 }
 
 @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
