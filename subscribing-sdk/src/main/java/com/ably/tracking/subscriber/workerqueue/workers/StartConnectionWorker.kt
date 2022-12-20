@@ -9,7 +9,6 @@ import com.ably.tracking.subscriber.workerqueue.WorkerSpecification
 
 internal class StartConnectionWorker(
     private val ably: Ably,
-    private val subscriberInteractor: SubscriberInteractor,
     private val trackableId: String,
     callbackFunction: ResultCallbackFunction<Unit>
 ) : CallbackWorker<SubscriberProperties, WorkerSpecification>(callbackFunction) {

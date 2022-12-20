@@ -38,7 +38,6 @@ internal class WorkerFactory(
         when (workerSpecification) {
             is WorkerSpecification.StartConnection -> StartConnectionWorker(
                 ably,
-                subscriberInteractor,
                 trackableId,
                 workerSpecification.callbackFunction
             )
