@@ -13,8 +13,7 @@ internal class UpdatePublisherPresenceWorker(
         doAsyncWork: (suspend () -> Unit) -> Unit,
         postWork: (WorkerSpecification) -> Unit
     ): SubscriberProperties {
-        properties.updateForPresenceMessage(presenceMessage)
-        properties.emitStateEventsIfRequired()
+        properties.updateForPresenceMessagesAndThenEmitStateEventsIfRequired(listOf(presenceMessage))
         return properties
     }
 

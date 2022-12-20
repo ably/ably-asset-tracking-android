@@ -158,22 +158,24 @@ internal data class SubscriberProperties private constructor(
         emitStateEventsIfRequired()
     }
 
-    fun updateForPresenceMessage(presenceMessage: PresenceMessage) {
-        if (presenceMessage.data.type != ClientTypes.PUBLISHER) {
+    fun updateForPresenceMessagesAndThenEmitStateEventsIfRequired(presenceMessages: List<PresenceMessage>) {
+        for (presenceMessage in presenceMessages) {
             // We are only interested in presence updates from publishers.
-            return
-        }
+            if (presenceMessage.data.type == ClientTypes.PUBLISHER) {
 
-        if (presenceMessage.action == PresenceAction.LEAVE_OR_ABSENT) {
-            // LEAVE or ABSENT
-            presentPublisherMemberKeys.remove(presenceMessage.memberKey)
-        } else {
-            // PRESENT, ENTER or UDPATE
-            presentPublisherMemberKeys.add(presenceMessage.memberKey)
-            presenceMessage.data.resolution?.let { publisherResolution ->
-                pendingPublisherResolutions.add(publisherResolution)
+                if (presenceMessage.action == PresenceAction.LEAVE_OR_ABSENT) {
+                    // LEAVE or ABSENT
+                    presentPublisherMemberKeys.remove(presenceMessage.memberKey)
+                } else {
+                    // PRESENT, ENTER or UDPATE
+                    presentPublisherMemberKeys.add(presenceMessage.memberKey)
+                    presenceMessage.data.resolution?.let { publisherResolution ->
+                        pendingPublisherResolutions.add(publisherResolution)
+                    }
+                }
             }
         }
+        emitStateEventsIfRequired()
     }
 
     fun emitStateEventsIfRequired() {

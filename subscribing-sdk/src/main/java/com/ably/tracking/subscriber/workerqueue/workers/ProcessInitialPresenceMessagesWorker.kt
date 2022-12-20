@@ -15,10 +15,7 @@ internal class ProcessInitialPresenceMessagesWorker(
         doAsyncWork: (suspend () -> Unit) -> Unit,
         postWork: (WorkerSpecification) -> Unit
     ): SubscriberProperties {
-        presenceMessages.forEach { presenceMessage ->
-            properties.updateForPresenceMessage(presenceMessage)
-        }
-        properties.emitStateEventsIfRequired()
+        properties.updateForPresenceMessagesAndThenEmitStateEventsIfRequired(presenceMessages)
         postWork(WorkerSpecification.SubscribeToChannel(callbackFunction))
         return properties
     }
