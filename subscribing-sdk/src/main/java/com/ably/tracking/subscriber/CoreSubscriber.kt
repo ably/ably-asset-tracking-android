@@ -145,8 +145,8 @@ internal data class SubscriberProperties private constructor(
 ) : Properties {
     internal constructor(
         initialResolution: Resolution?,
-        stateFlows: EventFlows,
-    ) : this(PresenceData(ClientTypes.SUBSCRIBER, initialResolution), stateFlows)
+        eventFlows: EventFlows,
+    ) : this(PresenceData(ClientTypes.SUBSCRIBER, initialResolution), eventFlows)
 
     fun updateForConnectionStateChangeAndThenEmitEventsIfRequired(stateChange: ConnectionStateChange) {
         lastConnectionStateChange = stateChange
