@@ -16,3 +16,7 @@ dependencies {
 
 apply from: '../jacoco.gradle'
 apply from: '../publish.gradle'
+
+android {
+    namespace 'com.ably.tracking.ui.java'
+}

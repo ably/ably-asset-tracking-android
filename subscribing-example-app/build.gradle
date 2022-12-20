@@ -11,6 +11,7 @@ android {
         resValue 'string', 'google_maps_api_key', "${findProperty('GOOGLE_MAPS_API_KEY') ?: ""}"
         proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
     }
+    namespace 'com.ably.tracking.example.subscriber'
 }
 
 dependencies {

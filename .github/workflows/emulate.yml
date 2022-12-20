@@ -15,10 +15,10 @@ jobs:
           - api: 21
             excludeModules: true
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       # Gradle 7 requires Java 11 to run
-      - uses: actions/setup-java@v2
+      - uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: '11'
@@ -44,37 +44,44 @@ jobs:
       - run: find . -name "index.html"
         if: always()
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         name: Build Reports for integration-testing-app
         if: always()
         with:
           name: api-level-${{ matrix.api-level }}-integration-testing-app-build-reports
           path: integration-testing-app/build/reports
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         name: Build Reports for core-sdk-java
         if: always()
         with:
           name: api-level-${{ matrix.api-level }}-core-sdk-java-build-reports
           path: core-sdk-java/build/reports
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         name: Build Reports for common
         if: always()
         with:
           name: api-level-${{ matrix.api-level }}-common-build-reports
           path: common/build/reports
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         name: Build Reports for android-test-common
         if: always()
         with:
           name: api-level-${{ matrix.api-level }}-android-test-common-build-reports
           path: android-test-common/build/reports
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         name: Build Reports for core-sdk
         if: always()
         with:
           name: api-level-${{ matrix.api-level }}-core-sdk-build-reports
           path: core-sdk/build/reports
+
+      - uses: actions/upload-artifact@v3
+        name: Build Reports for publishing-sdk
+        if: always()
+        with:
+          name: api-level-${{ matrix.api-level }}-publishing-sdk-build-reports
+          path: publishing-sdk/build/reports

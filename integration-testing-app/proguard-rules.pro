@@ -23,10 +23,12 @@
 # To suppress Gradle build warning, we conservatively keep those classes and then supress the warnings
 -keep class com.google.auto.value.** { *; }
 -dontwarn com.google.auto.value.AutoValue
+-dontwarn com.google.auto.value.AutoValue$Builder
 
 -keep class com.google.firebase.installations.** { *; }
 -dontwarn com.google.firebase.installations.FirebaseInstallations
 -dontwarn com.google.firebase.installations.InstallationTokenResult
+-dontwarn com.google.firebase.messaging.FirebaseMessaging
 
 -keep class java.beans.** { *; }
 -dontwarn java.beans.ConstructorProperties

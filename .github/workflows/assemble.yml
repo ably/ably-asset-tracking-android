@@ -8,10 +8,10 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       # Gradle 7 requires Java 11 to run
-      - uses: actions/setup-java@v2
+      - uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: '11'
@@ -30,49 +30,49 @@ jobs:
           ORG_GRADLE_PROJECT_ABLY_API_KEY: ${{ secrets.ABLY_API_KEY }}
           ORG_GRADLE_PROJECT_GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: publishing-sdk-debug
           path: publishing-sdk/build/outputs/aar/publishing-sdk-debug.aar
           if-no-files-found: error
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: publishing-sdk-release
           path: publishing-sdk/build/outputs/aar/publishing-sdk-release.aar
           if-no-files-found: error
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: subscribing-sdk-debug
           path: subscribing-sdk/build/outputs/aar/subscribing-sdk-debug.aar
           if-no-files-found: error
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: subscribing-sdk-release
           path: subscribing-sdk/build/outputs/aar/subscribing-sdk-release.aar
           if-no-files-found: error
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: subscribing-example-app-debug
           path: subscribing-example-app/build/outputs/apk/debug/subscribing-example-app-debug.apk
           if-no-files-found: error
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: subscribing-example-app-release-unsigned
           path: subscribing-example-app/build/outputs/apk/release/subscribing-example-app-release-unsigned.apk
           if-no-files-found: error
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: publishing-example-app-debug
           path: publishing-example-app/build/outputs/apk/debug/publishing-example-app-debug.apk
           if-no-files-found: error
- 
-      - uses: actions/upload-artifact@v2
+
+      - uses: actions/upload-artifact@v3
         with:
           name: publishing-example-app-release-unsigned
           path: publishing-example-app/build/outputs/apk/release/publishing-example-app-release-unsigned.apk
