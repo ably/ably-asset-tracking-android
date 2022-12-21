@@ -84,7 +84,8 @@ internal class SubscribeForPresenceMessagesWorkerTest {
                 WorkerSpecification.ProcessInitialPresenceMessages(
                     initialPresenceMessages,
                     callbackFunction
-                ), postedWorks[0]
+                ),
+                postedWorks[0],
             )
         }
 
