@@ -1,11 +1,11 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
 import com.ably.tracking.common.Ably
+import com.ably.tracking.common.workerqueue.Worker
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.PublisherState
 import com.ably.tracking.publisher.Trackable
-import com.ably.tracking.publisher.workerqueue.results.AddTrackableFailedWorkResult
-import com.ably.tracking.publisher.workerqueue.results.SyncAsyncResult
+import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 
 internal class AddTrackableFailedWorker(
     private val trackable: Trackable,
@@ -13,8 +13,13 @@ internal class AddTrackableFailedWorker(
     val exception: Exception,
     private val isConnectedToAbly: Boolean,
     private val ably: Ably,
-) : Worker {
-    override fun doWork(properties: PublisherProperties): SyncAsyncResult {
+) : Worker<PublisherProperties, WorkerSpecification> {
+
+    override fun doWork(
+        properties: PublisherProperties,
+        doAsyncWork: (suspend () -> Unit) -> Unit,
+        postWork: (WorkerSpecification) -> Unit
+    ): PublisherProperties {
         if (properties.state == PublisherState.CONNECTING) {
             properties.state = if (isConnectedToAbly) PublisherState.CONNECTED else PublisherState.IDLE
         }
@@ -26,13 +31,13 @@ internal class AddTrackableFailedWorker(
 
         if (properties.hasNoTrackablesAddingOrAdded) {
             properties.state = PublisherState.DISCONNECTING
-            return SyncAsyncResult(asyncWork = {
+            doAsyncWork {
                 ably.stopConnection()
-                AddTrackableFailedWorkResult.StopConnectionCompleted
-            })
+                postWork(WorkerSpecification.StoppingConnectionFinished)
+            }
         }
 
-        return SyncAsyncResult()
+        return properties
     }
 
     override fun doWhenStopped(exception: Exception) {

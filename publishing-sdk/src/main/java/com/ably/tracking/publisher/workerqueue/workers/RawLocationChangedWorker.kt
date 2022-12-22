@@ -4,25 +4,30 @@ import com.ably.tracking.Location
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.common.logging.createLoggingTag
 import com.ably.tracking.common.logging.v
+import com.ably.tracking.common.workerqueue.Worker
 import com.ably.tracking.logging.LogHandler
-import com.ably.tracking.publisher.CorePublisher
+import com.ably.tracking.publisher.PublisherInteractor
 import com.ably.tracking.publisher.PublisherProperties
-import com.ably.tracking.publisher.workerqueue.results.SyncAsyncResult
+import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 
 internal class RawLocationChangedWorker(
     private val location: Location,
-    private val corePublisher: CorePublisher,
+    private val publisherInteractor: PublisherInteractor,
     private val logHandler: LogHandler?,
-) : Worker {
+) : Worker<PublisherProperties, WorkerSpecification> {
     private val TAG = createLoggingTag(this)
 
-    override fun doWork(properties: PublisherProperties): SyncAsyncResult {
+    override fun doWork(
+        properties: PublisherProperties,
+        doAsyncWork: (suspend () -> Unit) -> Unit,
+        postWork: (WorkerSpecification) -> Unit
+    ): PublisherProperties {
         logHandler?.v("$TAG Raw location changed event received $location")
         properties.lastPublisherLocation = location
         if (properties.areRawLocationsEnabled) {
             val locationUpdate = LocationUpdate(location, emptyList())
             properties.trackables.forEach {
-                corePublisher.processRawLocationUpdate(locationUpdate, properties, it.id)
+                publisherInteractor.processRawLocationUpdate(locationUpdate, properties, it.id)
             }
         }
         properties.rawLocationChangedCommands.apply {
@@ -31,7 +36,7 @@ internal class RawLocationChangedWorker(
                 clear()
             }
         }
-        return SyncAsyncResult()
+        return properties
     }
 
     override fun doWhenStopped(exception: Exception) = Unit

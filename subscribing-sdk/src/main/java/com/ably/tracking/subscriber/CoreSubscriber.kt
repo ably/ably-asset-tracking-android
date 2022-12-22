@@ -25,6 +25,9 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
+/**
+ * This interface exposes methods for [DefaultSubscriber].
+ */
 internal interface CoreSubscriber {
     fun enqueue(workerSpecification: WorkerSpecification)
     val enhancedLocations: SharedFlow<LocationUpdate>
@@ -35,6 +38,9 @@ internal interface CoreSubscriber {
     val nextLocationUpdateIntervals: SharedFlow<Long>
 }
 
+/**
+ * This interface exposes methods for workers created by [WorkerFactory].
+ */
 internal interface SubscriberInteractor {
     fun subscribeForRawEvents(presenceData: PresenceData)
     fun subscribeForEnhancedEvents(presenceData: PresenceData)

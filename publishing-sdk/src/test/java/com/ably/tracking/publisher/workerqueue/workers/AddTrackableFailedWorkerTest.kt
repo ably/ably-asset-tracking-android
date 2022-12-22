@@ -3,62 +3,48 @@ package com.ably.tracking.publisher.workerqueue.workers
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ResultCallbackFunction
-import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.Trackable
-import com.ably.tracking.publisher.guards.DuplicateTrackableGuard
-import com.ably.tracking.publisher.guards.TrackableRemovalGuard
-import io.mockk.clearAllMocks
-import io.mockk.every
+import com.ably.tracking.publisher.workerqueue.WorkerSpecification
+import com.google.common.truth.Truth.assertThat
+import io.mockk.coEvery
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.StateFlow
-import org.junit.After
-import org.junit.Assert
-import org.junit.Before
+import kotlinx.coroutines.test.runBlockingTest
 import org.junit.Test
 
+@ExperimentalCoroutinesApi
 class AddTrackableFailedWorkerTest {
-    private lateinit var worker: AddTrackableFailedWorker
     private val trackable = Trackable("test-trackable")
     private val resultCallbackFunction = mockk<ResultCallbackFunction<StateFlow<TrackableState>>>(relaxed = true)
     private val exception = Exception("test-exception")
-    private val publisherProperties = mockk<PublisherProperties>(relaxed = true)
-    private val duplicateTrackableGuard = mockk<DuplicateTrackableGuard>(relaxed = true)
-    private val trackableRemovalGuard = mockk<TrackableRemovalGuard>(relaxed = true)
-    private val ably = mockk<Ably>(relaxed = true)
-
-    @Before
-    fun setUp() {
-        worker = AddTrackableFailedWorker(trackable, resultCallbackFunction, exception, true, ably)
-        every { publisherProperties.duplicateTrackableGuard } returns duplicateTrackableGuard
-        every { publisherProperties.trackableRemovalGuard } returns trackableRemovalGuard
+    private val ably: Ably = mockk {
+        coEvery { stopConnection() } returns Result.success(Unit)
     }
 
-    @After
-    fun cleanUp() {
-        clearAllMocks()
-    }
+    private val worker = AddTrackableFailedWorker(trackable, resultCallbackFunction, exception, true, ably)
 
-    @Test
-    fun `should return an empty result`() {
-        // given
-
-        // when
-        val result = worker.doWork(publisherProperties)
-
-        // then
-        Assert.assertNull(result.syncWorkResult)
-        Assert.assertNull(result.asyncWork)
-    }
+    private val asyncWorks = mutableListOf<suspend () -> Unit>()
+    private val postedWorks = mutableListOf<WorkerSpecification>()
 
     @Test
     fun `should call the adding trackable callback with a failure result`() {
         // given
+        val initialProperties = createPublisherProperties()
+        initialProperties.trackables.add(Trackable("tracked-trackable"))
 
         // when
-        worker.doWork(publisherProperties)
+        worker.doWork(
+            initialProperties,
+            asyncWorks.appendWork(),
+            postedWorks.appendSpecification()
+        )
 
         // then
+        assertThat(asyncWorks).isEmpty()
+        assertThat(postedWorks).isEmpty()
+
         verify(exactly = 1) {
             resultCallbackFunction.invoke(Result.failure(exception))
         }
@@ -67,26 +53,66 @@ class AddTrackableFailedWorkerTest {
     @Test
     fun `should finish adding the trackable with a failure`() {
         // given
+        val initialProperties = createPublisherProperties()
+        initialProperties.duplicateTrackableGuard.startAddingTrackable(trackable)
+        initialProperties.trackables.add(Trackable("tracked-trackable"))
 
         // when
-        worker.doWork(publisherProperties)
+        val updatedProperties = worker.doWork(
+            initialProperties,
+            asyncWorks.appendWork(),
+            postedWorks.appendSpecification()
+        )
 
         // then
-        verify(exactly = 1) {
-            duplicateTrackableGuard.finishAddingTrackable(trackable, Result.failure(exception))
-        }
+        assertThat(asyncWorks).isEmpty()
+        assertThat(postedWorks).isEmpty()
+
+        assertThat(updatedProperties.duplicateTrackableGuard.isCurrentlyAddingTrackable(trackable))
+            .isFalse()
     }
 
     @Test
     fun `should finish removing the trackable with a success`() {
         // given
+        val initialProperties = createPublisherProperties()
+        initialProperties.duplicateTrackableGuard.startAddingTrackable(trackable)
+        initialProperties.trackables.add(Trackable("tracked-trackable"))
 
         // when
-        worker.doWork(publisherProperties)
+        val updatedProperties = worker.doWork(
+            initialProperties,
+            asyncWorks.appendWork(),
+            postedWorks.appendSpecification()
+        )
 
         // then
-        verify(exactly = 1) {
-            trackableRemovalGuard.removeMarked(trackable, Result.success(true))
-        }
+        assertThat(asyncWorks).isEmpty()
+        assertThat(postedWorks).isEmpty()
+
+        assertThat(updatedProperties.trackableRemovalGuard.isMarkedForRemoval(trackable))
+            .isFalse()
+    }
+
+    @Test
+    fun `should post StoppingConnectionFinished work after performing async work`() = runBlockingTest {
+        // given
+        val initialProperties = createPublisherProperties()
+        initialProperties.trackables.clear()
+
+        // when
+        worker.doWork(
+            initialProperties,
+            asyncWorks.appendWork(),
+            postedWorks.appendSpecification()
+        )
+
+        // then
+        assertThat(asyncWorks).isNotEmpty()
+        asyncWorks.executeAll()
+        assertThat(postedWorks).isNotEmpty()
+
+        val postedWorker = postedWorks.first()
+        assertThat(postedWorker).isInstanceOf(WorkerSpecification.StoppingConnectionFinished::class.java)
     }
 }
