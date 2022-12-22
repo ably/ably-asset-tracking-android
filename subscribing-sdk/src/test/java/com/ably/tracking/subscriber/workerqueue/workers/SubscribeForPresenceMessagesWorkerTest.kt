@@ -37,7 +37,7 @@ internal class SubscribeForPresenceMessagesWorkerTest {
     @Test
     fun `should post update presence work when presence listener is called`() = runBlockingTest {
         // given
-        val initialProperties = SubscriberProperties(Resolution(Accuracy.BALANCED, 100, 100.0))
+        val initialProperties = SubscriberProperties(Resolution(Accuracy.BALANCED, 100, 100.0), mockk())
         val presenceListenerSlot: CapturingSlot<(PresenceMessage) -> Unit> = slot()
         val presenceMessage = createPresenceMessage()
         ably.mockGetCurrentPresenceSuccess(trackableId)
@@ -57,35 +57,42 @@ internal class SubscribeForPresenceMessagesWorkerTest {
     }
 
     private fun createPresenceMessage() = PresenceMessage(
-        PresenceAction.PRESENT_OR_ENTER,
-        PresenceData(ClientTypes.PUBLISHER, null, null),
-        clientId = ""
+        action = PresenceAction.PRESENT_OR_ENTER,
+        data = PresenceData(ClientTypes.PUBLISHER, null, null),
+        memberKey = "",
     )
 
     @Test
-    fun `should post process initial presence messages work when both get current presence and subscribe to presence return success`() = runBlockingTest {
-        // given
-        val initialProperties = SubscriberProperties(Resolution(Accuracy.BALANCED, 100, 100.0))
-        val initialPresenceMessages = listOf(anyPresenceMessage())
-        ably.mockGetCurrentPresenceSuccess(trackableId, initialPresenceMessages)
-        ably.mockSubscribeToPresenceSuccess(trackableId)
+    fun `should post process initial presence messages work when both get current presence and subscribe to presence return success`() =
+        runBlockingTest {
+            // given
+            val initialProperties = SubscriberProperties(Resolution(Accuracy.BALANCED, 100, 100.0), mockk())
+            val initialPresenceMessages = listOf(anyPresenceMessage())
+            ably.mockGetCurrentPresenceSuccess(trackableId, initialPresenceMessages)
+            ably.mockSubscribeToPresenceSuccess(trackableId)
 
-        // when
-        subscribeForPresenceMessagesWorker.doWork(
-            initialProperties,
-            asyncWorks.appendWork(),
-            postedWorks.appendSpecification()
-        )
-        asyncWorks.executeAll()
+            // when
+            subscribeForPresenceMessagesWorker.doWork(
+                initialProperties,
+                asyncWorks.appendWork(),
+                postedWorks.appendSpecification()
+            )
+            asyncWorks.executeAll()
 
-        // then
-        Assert.assertEquals(WorkerSpecification.ProcessInitialPresenceMessages(initialPresenceMessages, callbackFunction), postedWorks[0])
-    }
+            // then
+            Assert.assertEquals(
+                WorkerSpecification.ProcessInitialPresenceMessages(
+                    initialPresenceMessages,
+                    callbackFunction
+                ),
+                postedWorks[0],
+            )
+        }
 
     @Test
     fun `should post disconnect work when subscribe to presence returns failure`() = runBlockingTest {
         // given
-        val initialProperties = SubscriberProperties(Resolution(Accuracy.BALANCED, 100, 100.0))
+        val initialProperties = SubscriberProperties(Resolution(Accuracy.BALANCED, 100, 100.0), mockk())
         ably.mockGetCurrentPresenceSuccess(trackableId)
         ably.mockSubscribeToPresenceError(trackableId)
 
@@ -104,7 +111,7 @@ internal class SubscribeForPresenceMessagesWorkerTest {
     @Test
     fun `should post disconnect work when get current presence returns failure`() = runBlockingTest {
         // given
-        val initialProperties = SubscriberProperties(Resolution(Accuracy.BALANCED, 100, 100.0))
+        val initialProperties = SubscriberProperties(Resolution(Accuracy.BALANCED, 100, 100.0), mockk())
         ably.mockGetCurrentPresenceError(trackableId)
         ably.mockSubscribeToPresenceSuccess(trackableId)
 

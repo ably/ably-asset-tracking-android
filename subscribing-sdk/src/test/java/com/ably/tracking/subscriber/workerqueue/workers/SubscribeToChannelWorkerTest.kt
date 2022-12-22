@@ -33,7 +33,7 @@ internal class SubscribeToChannelWorkerTest {
     @Test
     fun `should notify callback after calling subscriberInteractor`() = runBlockingTest {
         // given
-        val initialProperties = SubscriberProperties(Resolution(Accuracy.BALANCED, 100, 100.0))
+        val initialProperties = SubscriberProperties(Resolution(Accuracy.BALANCED, 100, 100.0), mockk())
 
         // when
         subscribeToChannelWorker.doWork(

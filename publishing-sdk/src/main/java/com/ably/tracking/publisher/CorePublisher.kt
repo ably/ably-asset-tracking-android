@@ -52,16 +52,17 @@ internal interface CorePublisher {
     val routingProfile: RoutingProfile
     val trackableStateFlows: Map<String, StateFlow<TrackableState>>
 
-    fun addSubscriber(id: String, trackable: Trackable, data: PresenceData, properties: PublisherProperties)
+    fun addSubscriber(memberKey: String, trackable: Trackable, data: PresenceData, properties: PublisherProperties)
     fun updateSubscriber(
-        id: String,
+        memberKey: String,
         trackable: Trackable,
         data: PresenceData,
         properties: PublisherProperties
     )
 
-    fun removeSubscriber(id: String, trackable: Trackable, properties: PublisherProperties)
+    fun removeSubscriber(memberKey: String, trackable: Trackable, properties: PublisherProperties)
     fun removeAllSubscribers(trackable: Trackable, properties: PublisherProperties)
+
     fun setDestination(destination: Destination, properties: PublisherProperties)
     fun removeCurrentDestination(properties: PublisherProperties)
     fun startLocationUpdates(properties: PublisherProperties)
@@ -492,8 +493,13 @@ constructor(
         }
     }
 
-    override fun addSubscriber(id: String, trackable: Trackable, data: PresenceData, properties: PublisherProperties) {
-        val subscriber = Subscriber(id, trackable)
+    override fun addSubscriber(
+        memberKey: String,
+        trackable: Trackable,
+        data: PresenceData,
+        properties: PublisherProperties
+    ) {
+        val subscriber = Subscriber(memberKey, trackable)
         if (properties.subscribers[trackable.id] == null) {
             properties.subscribers[trackable.id] = mutableSetOf()
         }
@@ -504,13 +510,13 @@ constructor(
     }
 
     override fun updateSubscriber(
-        id: String,
+        memberKey: String,
         trackable: Trackable,
         data: PresenceData,
         properties: PublisherProperties
     ) {
         properties.subscribers[trackable.id]?.let { subscribers ->
-            subscribers.find { it.id == id }?.let { subscriber ->
+            subscribers.find { it.memberKey == memberKey }?.let { subscriber ->
                 data.resolution.let { resolution ->
                     saveOrRemoveResolutionRequest(resolution, trackable, subscriber, properties)
                     resolveResolution(trackable, properties)
@@ -519,9 +525,9 @@ constructor(
         }
     }
 
-    override fun removeSubscriber(id: String, trackable: Trackable, properties: PublisherProperties) {
+    override fun removeSubscriber(memberKey: String, trackable: Trackable, properties: PublisherProperties) {
         properties.subscribers[trackable.id]?.let { subscribers ->
-            subscribers.find { it.id == id }?.let { subscriber ->
+            subscribers.find { it.memberKey == memberKey }?.let { subscriber ->
                 subscribers.remove(subscriber)
                 properties.requests[trackable.id]?.remove(subscriber)
                 hooks.subscribers?.onSubscriberRemoved(subscriber)

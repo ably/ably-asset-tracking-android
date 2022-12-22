@@ -260,7 +260,7 @@ data class Trackable(
     override fun hashCode(): Int = id.hashCode()
 }
 
-data class Subscriber(val id: String, val trackable: Trackable)
+data class Subscriber(val memberKey: String, val trackable: Trackable)
 
 sealed class Proximity
 

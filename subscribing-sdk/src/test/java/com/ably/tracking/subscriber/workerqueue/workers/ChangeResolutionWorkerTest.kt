@@ -27,7 +27,7 @@ internal class ChangeResolutionWorkerTest {
     @Test
     fun `should return Properties with updated resolution and notify callback`() = runBlockingTest {
         // given
-        val initialProperties = SubscriberProperties(Resolution(Accuracy.BALANCED, 100, 100.0))
+        val initialProperties = SubscriberProperties(Resolution(Accuracy.BALANCED, 100, 100.0), mockk())
         ably.mockUpdatePresenceDataSuccess(trackableId)
 
         // when
