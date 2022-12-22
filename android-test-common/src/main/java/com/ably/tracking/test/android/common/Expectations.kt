@@ -1,6 +1,5 @@
 package com.ably.tracking.test.android.common
 
-import android.util.Log
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
 
@@ -35,16 +34,9 @@ open class Expectation<T>(
             throw AssertionError("Already awaiting expectation '$description'.")
         }
         waiting = true
-        val start = System.currentTimeMillis()
         testLogD("semaphore '$description' acquire...")
         val acquired = semaphore.tryAcquire(1, timeoutInSeconds, TimeUnit.SECONDS)
         testLogD("semaphore '$description' ${if (acquired) "acquired" else "failed to acquire"}")
-        val end = System.currentTimeMillis()
-        val waitDuration = end - start
-        val message = "waited for $waitDuration ms"
-        val messageTag = "FLAKYTESTS"
-        Log.e(messageTag, message)
-        println("$messageTag $message")
         waiting = false
     }
 
