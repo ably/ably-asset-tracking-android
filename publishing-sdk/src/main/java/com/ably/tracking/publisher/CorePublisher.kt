@@ -27,8 +27,8 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
-import com.ably.tracking.common.workerqueue.WorkerQueue as UpdatedWorkerQueue
-import com.ably.tracking.publisher.workerqueue.WorkerFactory as UpdatedWorkerFactory
+import com.ably.tracking.common.workerqueue.WorkerQueue
+import com.ably.tracking.publisher.workerqueue.WorkerFactory
 
 internal interface CorePublisher {
     fun trackTrackable(trackable: Trackable, callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>)
@@ -134,8 +134,8 @@ constructor(
 ) : CorePublisher, PublisherInteractor, TimeProvider {
     private val TAG = createLoggingTag(this)
     private val scope = CoroutineScope(singleThreadDispatcher + SupervisorJob())
-    private val updatedWorkerQueue: UpdatedWorkerQueue<PublisherProperties, WorkerSpecification>
-    private val updatedWorkerFactory: UpdatedWorkerFactory
+    private val workerQueue: WorkerQueue<PublisherProperties, WorkerSpecification>
+    private val workerFactory: WorkerFactory
     private val _locations = MutableSharedFlow<LocationUpdate>(replay = 1)
     private val _trackables = MutableSharedFlow<Set<Trackable>>(replay = 1)
     private val _locationHistory = MutableSharedFlow<LocationHistoryData>()
@@ -166,11 +166,11 @@ constructor(
             onActiveTrackableUpdated = { active = it },
             onRoutingProfileUpdated = { routingProfile = it }
         )
-        updatedWorkerFactory = UpdatedWorkerFactory(ably, hooks, this, policy, mapbox, this, logHandler)
-        updatedWorkerQueue = UpdatedWorkerQueue(
+        workerFactory = WorkerFactory(ably, hooks, this, policy, mapbox, this, logHandler)
+        workerQueue = WorkerQueue(
             properties = properties,
             scope = scope,
-            workerFactory = updatedWorkerFactory,
+            workerFactory = workerFactory,
             copyProperties = { copy() },
             getStoppedException = { PublisherStoppedException() }
         )
@@ -199,7 +199,7 @@ constructor(
     }
 
     private fun enqueue(workerSpecification: WorkerSpecification) {
-        updatedWorkerQueue.enqueue(workerSpecification)
+        workerQueue.enqueue(workerSpecification)
     }
 
     override fun trackTrackable(
