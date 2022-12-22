@@ -63,11 +63,21 @@ internal interface PublisherInteractor {
     )
 
     fun updateLocations(locationUpdate: LocationUpdate)
-    fun checkThreshold(currentLocation: Location, activeTrackable: Trackable?, estimatedArrivalTimeInMilliseconds: Long?)
+    fun checkThreshold(
+        currentLocation: Location,
+        activeTrackable: Trackable?,
+        estimatedArrivalTimeInMilliseconds: Long?
+    )
+
     fun addSubscriber(memberKey: String, trackable: Trackable, data: PresenceData, properties: PublisherProperties)
     fun removeSubscriber(memberKey: String, trackable: Trackable, properties: PublisherProperties)
     fun updateSubscriber(memberKey: String, trackable: Trackable, data: PresenceData, properties: PublisherProperties)
-    fun processRawLocationUpdate(rawLocationUpdate: LocationUpdate, properties: PublisherProperties, trackableId: String)
+    fun processRawLocationUpdate(
+        rawLocationUpdate: LocationUpdate,
+        properties: PublisherProperties,
+        trackableId: String
+    )
+
     fun retrySendingEnhancedLocation(
         properties: PublisherProperties,
         trackableId: String,
