@@ -24,7 +24,7 @@ internal class PresenceMessageWorker(
             PresenceAction.PRESENT_OR_ENTER -> {
                 if (presenceMessage.data.type == ClientTypes.SUBSCRIBER) {
                     publisherInteractor.addSubscriber(
-                        presenceMessage.clientId,
+                        presenceMessage.memberKey,
                         trackable,
                         presenceMessage.data,
                         properties
@@ -33,13 +33,13 @@ internal class PresenceMessageWorker(
             }
             PresenceAction.LEAVE_OR_ABSENT -> {
                 if (presenceMessage.data.type == ClientTypes.SUBSCRIBER) {
-                    publisherInteractor.removeSubscriber(presenceMessage.clientId, trackable, properties)
+                    publisherInteractor.removeSubscriber(presenceMessage.memberKey, trackable, properties)
                 }
             }
             PresenceAction.UPDATE -> {
                 if (presenceMessage.data.type == ClientTypes.SUBSCRIBER) {
                     publisherInteractor.updateSubscriber(
-                        presenceMessage.clientId,
+                        presenceMessage.memberKey,
                         trackable,
                         presenceMessage.data,
                         properties

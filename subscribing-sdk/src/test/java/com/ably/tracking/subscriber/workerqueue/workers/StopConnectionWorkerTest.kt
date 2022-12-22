@@ -35,7 +35,7 @@ internal class StopConnectionWorkerTest {
     @Test
     fun `should call ably close and notify callback with success`() = runBlockingTest {
         // given
-        val initialProperties = SubscriberProperties(Resolution(Accuracy.BALANCED, 100, 100.0))
+        val initialProperties = SubscriberProperties(Resolution(Accuracy.BALANCED, 100, 100.0), mockk())
         ably.mockCloseSuccessWithDelay(10)
 
         // when
@@ -51,7 +51,7 @@ internal class StopConnectionWorkerTest {
     @Test
     fun `should call ably close and notify callback with failure when it fails`() = runBlockingTest {
         // given
-        val initialProperties = SubscriberProperties(Resolution(Accuracy.BALANCED, 100, 100.0))
+        val initialProperties = SubscriberProperties(Resolution(Accuracy.BALANCED, 100, 100.0), mockk())
         ably.mockCloseFailure()
 
         // when

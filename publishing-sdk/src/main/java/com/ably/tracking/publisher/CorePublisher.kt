@@ -64,9 +64,9 @@ internal interface PublisherInteractor {
 
     fun updateLocations(locationUpdate: LocationUpdate)
     fun checkThreshold(currentLocation: Location, activeTrackable: Trackable?, estimatedArrivalTimeInMilliseconds: Long?)
-    fun addSubscriber(id: String, trackable: Trackable, data: PresenceData, properties: PublisherProperties)
-    fun removeSubscriber(id: String, trackable: Trackable, properties: PublisherProperties)
-    fun updateSubscriber(id: String, trackable: Trackable, data: PresenceData, properties: PublisherProperties)
+    fun addSubscriber(memberKey: String, trackable: Trackable, data: PresenceData, properties: PublisherProperties)
+    fun removeSubscriber(memberKey: String, trackable: Trackable, properties: PublisherProperties)
+    fun updateSubscriber(memberKey: String, trackable: Trackable, data: PresenceData, properties: PublisherProperties)
     fun processRawLocationUpdate(rawLocationUpdate: LocationUpdate, properties: PublisherProperties, trackableId: String)
     fun retrySendingEnhancedLocation(
         properties: PublisherProperties,
@@ -459,8 +459,13 @@ constructor(
         }
     }
 
-    override fun addSubscriber(id: String, trackable: Trackable, data: PresenceData, properties: PublisherProperties) {
-        val subscriber = Subscriber(id, trackable)
+    override fun addSubscriber(
+        memberKey: String,
+        trackable: Trackable,
+        data: PresenceData,
+        properties: PublisherProperties
+    ) {
+        val subscriber = Subscriber(memberKey, trackable)
         if (properties.subscribers[trackable.id] == null) {
             properties.subscribers[trackable.id] = mutableSetOf()
         }
@@ -471,13 +476,13 @@ constructor(
     }
 
     override fun updateSubscriber(
-        id: String,
+        memberKey: String,
         trackable: Trackable,
         data: PresenceData,
         properties: PublisherProperties
     ) {
         properties.subscribers[trackable.id]?.let { subscribers ->
-            subscribers.find { it.id == id }?.let { subscriber ->
+            subscribers.find { it.memberKey == memberKey }?.let { subscriber ->
                 data.resolution.let { resolution ->
                     saveOrRemoveResolutionRequest(resolution, trackable, subscriber, properties)
                     resolveResolution(trackable, properties)
@@ -486,9 +491,9 @@ constructor(
         }
     }
 
-    override fun removeSubscriber(id: String, trackable: Trackable, properties: PublisherProperties) {
+    override fun removeSubscriber(memberKey: String, trackable: Trackable, properties: PublisherProperties) {
         properties.subscribers[trackable.id]?.let { subscribers ->
-            subscribers.find { it.id == id }?.let { subscriber ->
+            subscribers.find { it.memberKey == memberKey }?.let { subscriber ->
                 subscribers.remove(subscriber)
                 properties.requests[trackable.id]?.remove(subscriber)
                 hooks.subscribers?.onSubscriberRemoved(subscriber)
