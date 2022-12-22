@@ -30,6 +30,9 @@ import kotlinx.coroutines.launch
 import com.ably.tracking.common.workerqueue.WorkerQueue
 import com.ably.tracking.publisher.workerqueue.WorkerFactory
 
+/**
+ * This interface exposes methods for [DefaultPublisher].
+ */
 internal interface CorePublisher {
     fun trackTrackable(trackable: Trackable, callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>)
     fun addTrackable(trackable: Trackable, callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>)
@@ -44,6 +47,9 @@ internal interface CorePublisher {
     val trackableStateFlows: Map<String, StateFlow<TrackableState>>
 }
 
+/**
+ * This interface exposes methods for workers created by [WorkerFactory].
+ */
 internal interface PublisherInteractor {
     fun startLocationUpdates(properties: PublisherProperties)
     fun updateTrackables(properties: PublisherProperties)
