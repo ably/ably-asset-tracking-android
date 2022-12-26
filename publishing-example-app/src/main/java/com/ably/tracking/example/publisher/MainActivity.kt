@@ -94,12 +94,14 @@ class MainActivity : PublisherServiceActivity() {
         if (isSwitchingOn) {
             startAndBindPublisherService()
         } else {
-            if (trackablesAdapter.trackables.isEmpty()) {
+            // Temporarily removing check, to allow me to investigate result of calling stop() on publisher whilst it still has a trackable.
+
+//            if (trackablesAdapter.trackables.isEmpty()) {
                 stopPublisherService()
-            } else {
-                showCannotStopServiceDialog()
-                indicatePublisherServiceIsOn()
-            }
+//            } else {
+//                showCannotStopServiceDialog()
+//                indicatePublisherServiceIsOn()
+//            }
         }
     }
 

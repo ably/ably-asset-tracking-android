@@ -70,7 +70,11 @@ class PublisherService : Service() {
     override fun onDestroy() {
         // We want to be sure that after the service is stopped the publisher is stopped too.
         // Otherwise we could end up with multiple active publishers.
-        scope.launch { publisher?.stop() }
+        scope.launch {
+            publisher?.stop()
+            Timber.i("PublisherService","Stopped the publisher successfully")
+        }
+
         super.onDestroy()
     }
 
