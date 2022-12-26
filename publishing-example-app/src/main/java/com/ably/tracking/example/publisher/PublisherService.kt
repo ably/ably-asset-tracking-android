@@ -12,19 +12,12 @@ import com.ably.tracking.connection.Authentication
 import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.logging.LogHandler
 import com.ably.tracking.logging.LogLevel
-import com.ably.tracking.publisher.DefaultResolutionPolicyFactory
-import com.ably.tracking.publisher.LocationHistoryData
-import com.ably.tracking.publisher.LocationSource
-import com.ably.tracking.publisher.MapConfiguration
-import com.ably.tracking.publisher.Publisher
-import com.ably.tracking.publisher.PublisherNotificationProvider
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
+import com.ably.tracking.publisher.*
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.launch
 import timber.log.Timber
+import java.util.UUID
 
 // The public token for the Mapbox SDK. For more details see the README.
 private const val MAPBOX_ACCESS_TOKEN = BuildConfig.MAPBOX_ACCESS_TOKEN
@@ -86,11 +79,30 @@ class PublisherService : Service() {
      */
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
     fun startPublisher(locationSource: LocationSource? = null) {
-        if (!isPublisherStarted) {
-            publisher = createPublisher(locationSource).apply {
-                locationHistory
-                    .onEach { uploadLocationHistoryData(it) }
-                    .launchIn(scope)
+        println("Inside startPublisher")
+
+        scope.launch {
+            println("Inside scope")
+
+            var iteration = 0
+            while (true) {
+                publisher = createPublisher(locationSource).apply {
+                    locationHistory
+                        .onEach { uploadLocationHistoryData(it) }
+                        .launchIn(scope)
+                }
+
+                println("(Iteration $iteration): Created publisher")
+
+                val trackableId = UUID.randomUUID().toString()
+                val trackable = Trackable(trackableId)
+                publisher?.add(trackable)
+                println("(Iteration $iteration): Added trackable $trackableId")
+
+                publisher?.stop()
+                println("(Iteration $iteration): Stopped the publisher successfully")
+
+                iteration += 1
             }
         }
     }
@@ -134,13 +146,8 @@ class PublisherService : Service() {
             appPreferences.getResolutionMinimumDisplacement().toDouble()
         )
 
-    private fun uploadLocationHistoryData(historyData: LocationHistoryData) {
-        if (appPreferences.getLocationSource() == LocationSourceType.PHONE) {
-            S3Helper.uploadHistoryData(
-                this,
-                historyData
-            ) { showShortToast(R.string.error_s3_not_initialized_history_data_upload_failed) }
-        }
+    @Suppress("UNUSED_PARAMETER")
+    private fun uploadLocationHistoryData(_historyData: LocationHistoryData) {
     }
 
     private fun createConstantLocationEngineResolution(): Resolution? =

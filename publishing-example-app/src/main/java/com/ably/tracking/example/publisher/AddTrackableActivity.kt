@@ -103,12 +103,6 @@ class AddTrackableActivity : PublisherServiceActivity() {
 
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
     private fun addTrackableClicked() {
-        getTrackableId().let { trackableId ->
-            if (!PermissionsHelper.hasFineOrCoarseLocationPermissionGranted(this)) {
-                PermissionsHelper.requestLocationPermission(this)
-                return
-            }
-            if (trackableId.isNotEmpty()) {
                 showLoading()
                 if (isPublisherServiceStarted()) {
                     publisherService?.let { publisherService ->
@@ -116,18 +110,12 @@ class AddTrackableActivity : PublisherServiceActivity() {
                             if (!publisherService.isPublisherStarted) {
                                 startPublisher(publisherService)
                             }
-                            publisherService.publisher!!.track(createTrackable(trackableId))
-                            showTrackableDetailsScreen(trackableId)
                             finish()
                         }
                     }
                 } else {
                     onAddTrackableFailed(R.string.error_publisher_service_not_started)
                 }
-            } else {
-                showLongToast(R.string.error_no_trackable_id)
-            }
-        }
     }
 
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
