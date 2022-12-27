@@ -356,7 +356,14 @@ internal class DefaultMapbox(
         object : LocationObserver {
             override fun onNewRawLocation(rawLocation: android.location.Location) {
                 logHandler?.v("$TAG Raw location received from Mapbox: $rawLocation")
-                locationUpdatesObserver.onRawLocationChanged(rawLocation.toAssetTracking())
+                val atLocation: Location
+                try {
+                    atLocation = rawLocation.toAssetTracking().sanitize()
+                } catch (e: java.lang.IllegalArgumentException) {
+                    logHandler?.v("$TAG Swallowing invalid raw location from Mapbox: $e")
+                    return
+                }
+                locationUpdatesObserver.onRawLocationChanged(atLocation)
             }
 
             override fun onNewLocationMatcherResult(locationMatcherResult: LocationMatcherResult) {

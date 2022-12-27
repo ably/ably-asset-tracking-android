@@ -117,6 +117,34 @@ data class Location(
      */
     val time: Long
 ) {
+    init {
+        require(latitude.isFinite()) {
+            "latitude must be finite, got '$latitude'"
+        }
+        require(longitude.isFinite()) {
+            "longitude must be finite, got '$longitude'"
+        }
+        require(altitude.isFinite()) {
+            "altitude must be finite, got '$altitude'"
+        }
+    }
+
+    /**
+     * Utility function that returns a new, sanitized Location with no non-finite members.
+     * A sanitized location contains no NaNs and so can be safely serialised into JSON without throwing an exception.
+     */
+    fun sanitize(): Location {
+        return Location(
+            latitude,
+            longitude,
+            altitude,
+            if (accuracy.isFinite()) accuracy else 0.0f,
+            if (bearing.isFinite()) bearing else 0.0f,
+            if (speed.isFinite()) speed else 0.0f,
+            time,
+        )
+    }
+
     /**
      * Convenience function that maps the [Location] object to Android's [android.location.Location] object.
      */
