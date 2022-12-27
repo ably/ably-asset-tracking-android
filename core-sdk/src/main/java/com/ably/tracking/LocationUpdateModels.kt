@@ -117,21 +117,9 @@ data class Location(
      */
     val time: Long
 ) {
-    init {
-        require(latitude.isFinite()) {
-            "latitude must be finite, got '$latitude'"
-        }
-        require(longitude.isFinite()) {
-            "longitude must be finite, got '$longitude'"
-        }
-        require(altitude.isFinite()) {
-            "altitude must be finite, got '$altitude'"
-        }
-    }
-
     /**
-     * Utility function that returns a new, sanitized Location with no non-finite members.
-     * A sanitized location contains no NaNs and so can be safely serialised into JSON without throwing an exception.
+     * Utility function that coerces non-finite values to sensible defaults
+     * where possible.
      */
     fun sanitize(): Location {
         return Location(
@@ -143,6 +131,39 @@ data class Location(
             if (speed.isFinite()) speed else 0.0f,
             time,
         )
+    }
+
+    /**
+     * Utility function that returns a successful result with the Location if and only if it is valid.
+     * If it is invalid, the result is failed with a list of validation errors.
+     */
+    fun validate(): Result<Location> {
+        val locationValidationErrors: MutableList<String> = mutableListOf()
+        if (!latitude.isFinite()) {
+            locationValidationErrors.add("latitude must be finite, got '$latitude'")
+        }
+        if (!longitude.isFinite()) {
+            locationValidationErrors.add("longitude must be finite, got '$longitude'")
+        }
+        if (!altitude.isFinite()) {
+            locationValidationErrors.add("altitude must be finite, got '$altitude'")
+        }
+        if (!accuracy.isFinite()) {
+            locationValidationErrors.add("accuracy must be finite, got '$accuracy'")
+        }
+        if (!bearing.isFinite()) {
+            locationValidationErrors.add("bearing must be finite, got '$bearing'")
+        }
+        if (!speed.isFinite()) {
+            locationValidationErrors.add("speed must be finite, got '$speed'")
+        }
+        if (time == 0L) {
+            locationValidationErrors.add("time must be non-zero")
+        }
+        if (locationValidationErrors.isNotEmpty()) {
+            return Result.failure(LocationValidationException(locationValidationErrors))
+        }
+        return Result.success(this)
     }
 
     /**
