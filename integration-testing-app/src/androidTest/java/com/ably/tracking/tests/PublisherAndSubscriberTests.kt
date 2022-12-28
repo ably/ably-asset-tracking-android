@@ -38,22 +38,28 @@ class PublisherAndSubscriberTests {
 
         testLogD("creating proxy")
         val prxy = AblyProxy(13579, "realtime.ably.io", 443)
-        runInterruptible {
-            launch {
-                while (true) {
-                    testLogD("proxy trying to accept")
-                    var conn = prxy.accept()
+        val prxyThread = Thread {
+            while (true) {
+                testLogD("proxy trying to accept")
+                try {
+                    val conn = prxy.accept()
                     testLogD("proxy starting to run")
-                    launch { conn.run() }
+                    conn.run()
+                } catch (e : Exception) {
+                    testLogD("proxy shutting down" + e.message)
+                    break
                 }
             }
         }
+        prxyThread.start()
+
         testLogD("creating subscriber")
         // when
         var subscriber: Subscriber
         runBlocking {
-            subscriber = createAndStartSubscriber(trackableId)
+            subscriber = createAndStartSubscriber(trackableId, )
         }
+        testLogD("subscriber created")
 
         subscriber.locations
             .onEach { receivedLocations.add(it) }
@@ -305,3 +311,4 @@ class PublisherAndSubscriberTests {
         Assert.assertTrue("first publisherPresence value should be true", publisherPresentValues.first())
     }
 }
+

@@ -1,24 +1,32 @@
 package com.ably.tracking.test.common
 
+import android.R.attr.host
+import android.R.attr.port
 import android.util.Log
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import java.net.ServerSocket
 import java.net.Socket
 import java.net.SocketException
+import javax.net.SocketFactory
+import javax.net.ssl.SSLSocket
+import javax.net.ssl.SSLSocketFactory
+
 
 class AblyProxy
-constructor(
+constructor (
     listenPort: Int,
     private val targetAddress: String,
     private val targetPort: Int,
 ){
     private val server: ServerSocket = ServerSocket(listenPort)
+    private  val sslsocketfactory = SSLSocketFactory.getDefault()
 
     fun accept() : AblyConnection {
         val clientSock = server.accept()
         Log.d("PROXY", "accepted connection")
-        val serverSock = Socket(targetAddress, targetPort)
+
+        val serverSock = sslsocketfactory.createSocket(targetAddress, targetPort)
         return AblyConnection(serverSock, clientSock)
     }
 
@@ -33,9 +41,9 @@ constructor(
     private val client: Socket,
 ) {
 
-    suspend fun run() = coroutineScope{
-        launch { proxy(server, client) } // TODO snoop on packets
-        launch { proxy(client, server) }
+    fun run() {
+        Thread { proxy(server, client) }.start() // TODO snoop on packets
+        Thread { proxy(client, server) }.start()
     }
 
     fun stop() {

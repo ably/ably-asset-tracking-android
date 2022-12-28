@@ -19,6 +19,9 @@ import com.ably.tracking.subscriber.Subscriber
 import com.ably.tracking.test.android.common.NOTIFICATION_CHANNEL_ID
 import com.ably.tracking.test.android.common.createNotificationChannel
 import com.google.gson.Gson
+import com.ably.tracking.logging.LogHandler
+import com.ably.tracking.logging.LogLevel
+import com.ably.tracking.test.android.common.testLogD
 
 private const val MAPBOX_ACCESS_TOKEN = BuildConfig.MAPBOX_ACCESS_TOKEN
 const val CLIENT_ID = "IntegrationTestsClient"
@@ -69,10 +72,16 @@ suspend fun createAndStartSubscriber(
         .connection(ConnectionConfiguration(authentication))
         .resolution(resolution)
         .trackingId(trackingId)
-        .logHandler()
+        .logHandler(TestLogHandler())
         .start()
 
 private fun getLocationData(context: Context): LocationHistoryData {
     val historyString = context.assets.open("location_history_small.txt").use { String(it.readBytes()) }
     return Gson().fromJson(historyString, LocationHistoryData::class.java)
+}
+
+class TestLogHandler : LogHandler {
+    override fun logMessage(level: LogLevel, message: String, throwable: Throwable?) {
+        testLogD(message)
+    }
 }
