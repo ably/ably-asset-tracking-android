@@ -264,6 +264,9 @@ class DefaultAbly : Ably {
                 this.logHandler = Log.LogHandler { severity, tag, msg, tr -> logMessage(severity, tag, msg, tr) }
                 this.environment = connectionConfiguration.environment
                 this.autoConnect = false
+                //this.tls = false
+                this.realtimeHost = "localhost"
+                this.port = 13579
                 if (connectionConfiguration.remainPresentForMilliseconds != null) {
                     this.transportParams = arrayOf(
                         Param(

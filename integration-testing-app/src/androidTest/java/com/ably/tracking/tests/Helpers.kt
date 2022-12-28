@@ -69,6 +69,7 @@ suspend fun createAndStartSubscriber(
         .connection(ConnectionConfiguration(authentication))
         .resolution(resolution)
         .trackingId(trackingId)
+        .logHandler()
         .start()
 
 private fun getLocationData(context: Context): LocationHistoryData {

@@ -1,5 +1,6 @@
 package com.ably.tracking.test.common
 
+import android.util.Log
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import java.net.ServerSocket
@@ -16,6 +17,7 @@ constructor(
 
     fun accept() : AblyConnection {
         val clientSock = server.accept()
+        Log.d("PROXY", "accepted connection")
         val serverSock = Socket(targetAddress, targetPort)
         return AblyConnection(serverSock, clientSock)
     }
@@ -45,7 +47,7 @@ constructor(
             client.close()
         } catch (ignored: Exception) {}
     }
-    
+
     private fun proxy(dstSock: Socket , srcSock: Socket) {
         try {
             val dst = dstSock.getOutputStream()

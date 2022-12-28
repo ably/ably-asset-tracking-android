@@ -10,16 +10,13 @@ import com.ably.tracking.subscriber.Subscriber
 import com.ably.tracking.test.android.common.BooleanExpectation
 import com.ably.tracking.test.android.common.UnitExpectation
 import com.ably.tracking.test.android.common.testLogD
+import com.ably.tracking.test.common.AblyProxy
 import com.google.common.truth.Truth.assertThat
 import io.ably.lib.realtime.AblyRealtime
+import kotlinx.coroutines.*
 import java.util.UUID
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -27,7 +24,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class PublisherAndSubscriberTests {
     @Test
-    fun createAndStartPublisherAndSubscriberAndWaitUntilDataEnds() {
+    fun createAndStartPublisherAndSubscriberAndWaitUntilDataEnds() = runBlocking {
         // given
         val dataEndedExpectation = UnitExpectation("data ended")
         val publisherStoppedExpectation = UnitExpectation("publisher stopped")
@@ -39,6 +36,19 @@ class PublisherAndSubscriberTests {
         val trackExpectation = BooleanExpectation("track response")
         val scope = CoroutineScope(Dispatchers.Default)
 
+        testLogD("creating proxy")
+        val prxy = AblyProxy(13579, "realtime.ably.io", 443)
+        runInterruptible {
+            launch {
+                while (true) {
+                    testLogD("proxy trying to accept")
+                    var conn = prxy.accept()
+                    testLogD("proxy starting to run")
+                    launch { conn.run() }
+                }
+            }
+        }
+        testLogD("creating subscriber")
         // when
         var subscriber: Subscriber
         runBlocking {
@@ -105,6 +115,7 @@ class PublisherAndSubscriberTests {
                 receivedLocation
             )
         }
+        prxy.close()
     }
 
     @Test
