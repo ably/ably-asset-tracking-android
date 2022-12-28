@@ -10,10 +10,13 @@ import com.ably.tracking.Resolution
 import com.ably.tracking.common.DefaultAbly
 import com.ably.tracking.connection.Authentication
 import com.ably.tracking.connection.ConnectionConfiguration
+import com.ably.tracking.logging.LogHandler
+import com.ably.tracking.logging.LogLevel
 import com.ably.tracking.test.android.common.*
 import com.google.gson.Gson
 import io.ably.lib.realtime.AblyRealtime
 import io.ably.lib.types.ClientOptions
+import io.ably.lib.util.Log
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -93,6 +96,21 @@ class NetworkConnectivityTests {
         stopExpectation.assertSuccess()
     }
 
+    private val aatDebugLogger = object : LogHandler {
+        override fun logMessage(level: LogLevel, message: String, throwable: Throwable?) {
+            if (throwable != null) {
+                testLogD("$message $throwable")
+            } else {
+                testLogD(message)
+            }
+        }
+    }
+
+    private val ablyJavaDebugLogger = Log.LogHandler {
+            _, _, msg, tr -> aatDebugLogger.logMessage(LogLevel.DEBUG, msg!!, tr)
+    }
+
+
     private fun realtimeClient() : AblyRealtime {
         val clientOptions = ClientOptions().apply {
             this.clientId = CLIENT_ID
@@ -100,6 +118,7 @@ class NetworkConnectivityTests {
             this.idempotentRestPublishing = true
             this.autoConnect = false
             this.key = ABLY_API_KEY
+            this.logHandler = ablyJavaDebugLogger
         }
         return AblyRealtime(clientOptions)
     }
@@ -134,7 +153,7 @@ class NetworkConnectivityTests {
             ),
             DefaultResolutionPolicyFactory(resolution, context),
             RoutingProfile.CYCLING,
-            logHandler = null,
+            aatDebugLogger,
             areRawLocationsEnabled = true,
             sendResolutionEnabled = true,
             resolution
