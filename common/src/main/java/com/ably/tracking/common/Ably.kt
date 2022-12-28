@@ -244,20 +244,18 @@ private const val CHANNEL_NAME_PREFIX = "tracking:"
 private const val AGENT_HEADER_NAME = "ably-asset-tracking-android"
 private const val AUTH_TOKEN_CAPABILITY_ERROR_CODE = 40160
 
-class DefaultAbly
-/**
- * @throws ConnectionException if something goes wrong during Ably SDK initialization.
- */
-constructor(
-    connectionConfiguration: ConnectionConfiguration,
-    private val logHandler: LogHandler?,
-) : Ably {
+class DefaultAbly : Ably {
     private val gson = Gson()
     private val ably: AblyRealtime
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private val logHandler: LogHandler?
     private val TAG = createLoggingTag(this)
 
-    init {
+    /**
+     * @throws ConnectionException if something goes wrong during Ably SDK initialization.
+     */
+    constructor(connectionConfiguration: ConnectionConfiguration, logHandler: LogHandler?) {
+        this.logHandler = logHandler
         try {
             val clientOptions = connectionConfiguration.authentication.clientOptions.apply {
                 this.agents = mapOf(AGENT_HEADER_NAME to BuildConfig.VERSION_NAME)
@@ -281,6 +279,11 @@ constructor(
                 logHandler?.w("$TAG Failed to create an Ably instance", it)
             }
         }
+    }
+
+    constructor(ablyRealtime: AblyRealtime, logHandler: LogHandler?) {
+        this.logHandler = logHandler
+        ably = ablyRealtime
     }
 
     private fun logMessage(severity: Int, tag: String?, message: String?, throwable: Throwable?) {
