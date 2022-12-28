@@ -37,7 +37,7 @@ class PublisherAndSubscriberTests {
         val scope = CoroutineScope(Dispatchers.Default)
 
         testLogD("creating proxy")
-        val prxy = AblyProxy(13579, "realtime.ably.io", 443)
+        val prxy = AblyProxy(13579, "realtime.ably.io", 443) { s: String -> testLogD(s) }
         val prxyThread = Thread {
             while (true) {
                 testLogD("proxy trying to accept")
