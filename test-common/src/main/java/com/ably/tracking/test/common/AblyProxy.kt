@@ -111,15 +111,26 @@ constructor(
                     dataOff += 4
                     payloadLen = bigEndianConversion(buff.copyOfRange(2, 10), logHandler)
                 }
-                var mask = buff[1].and(0x01).toInt() == 1
+                var mask = buff[1].toInt().and(0x01) == 1
                 if (mask) {
                     dataOff +=4
                 }
-                logHandler("PROXY-MSG: payload length: " + payloadLen + " data offset: " + dataOff + " buff len: " + bytesRead)
-
-                val unpacker = MessagePack.newDefaultUnpacker(buff.copyOfRange(dataOff, dataOff+payloadLen.toInt()))
-                if (unpacker.hasNext()) {
-                    logHandler("PROXY-MSG: " + unpacker.unpackValue())
+                val op = buff[0].toUInt().and(0x0Fu)
+                if (op<3u) {
+                    logHandler("PROXY-MSG: payload length: " + payloadLen + " data offset: " + dataOff + " buff len: " + bytesRead)
+                    val unpacker = MessagePack.newDefaultUnpacker(
+                        buff.copyOfRange(
+                            dataOff,
+                            dataOff + payloadLen.toInt()
+                        )
+                    )
+                    if (unpacker.hasNext()) {
+                        try {
+                            logHandler("PROXY-MSG: " + unpacker.unpackValue())
+                        } catch (e: Exception) {
+                            logHandler("PROXY-MSG: unpacking msg " + e.message)
+                        }
+                    }
                 }
                 dst.write(buff, 0, bytesRead)
             }
