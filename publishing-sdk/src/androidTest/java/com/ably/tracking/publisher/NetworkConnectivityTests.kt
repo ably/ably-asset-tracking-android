@@ -27,6 +27,11 @@ private const val ABLY_API_KEY = BuildConfig.ABLY_API_KEY
 
 private const val AGENT_HEADER_NAME = "ably-asset-tracking-android-publisher-tests"
 
+private const val PROXY_HOST = "localhost"
+private const val PROXY_PORT = 13579
+private const val REALTIME_HOST = "realtime.ably.io"
+private const val REALTIME_PORT = 443
+
 
 @RunWith(AndroidJUnit4::class)
 class NetworkConnectivityTests {
@@ -45,6 +50,10 @@ class NetworkConnectivityTests {
         val locationData = getLocationData(context)
         createNotificationChannel(context)
 
+        // proxy
+        val prxy = AblyProxy(PROXY_PORT, REALTIME_HOST, REALTIME_PORT) { s: String -> testLogD(s) }
+        prxy.start()
+
         // when
         testLogD("WHEN")
         val publisher = createPublisher(
@@ -54,7 +63,7 @@ class NetworkConnectivityTests {
                 testLogD("data ended")
                 dataEndedExpectation.fulfill()
             },
-            realtime = realtimeClient()
+            realtime = AblyRealtime(clientOptions())
         )
 
 
@@ -111,16 +120,16 @@ class NetworkConnectivityTests {
     }
 
 
-    private fun realtimeClient() : AblyRealtime {
-        val clientOptions = ClientOptions().apply {
-            this.clientId = CLIENT_ID
-            this.agents = mapOf(AGENT_HEADER_NAME to com.ably.tracking.common.BuildConfig.VERSION_NAME)
-            this.idempotentRestPublishing = true
-            this.autoConnect = false
-            this.key = ABLY_API_KEY
-            this.logHandler = ablyJavaDebugLogger
-        }
-        return AblyRealtime(clientOptions)
+    private fun clientOptions() = ClientOptions().apply {
+        this.clientId = CLIENT_ID
+        this.agents = mapOf(AGENT_HEADER_NAME to com.ably.tracking.common.BuildConfig.VERSION_NAME)
+        this.idempotentRestPublishing = true
+        this.autoConnect = false
+        this.key = ABLY_API_KEY
+        this.logHandler = ablyJavaDebugLogger
+        this.realtimeHost = PROXY_HOST
+        this.port = PROXY_PORT
+        this.tls = false
     }
 
     private fun createPublisher(
