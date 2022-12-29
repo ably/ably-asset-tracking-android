@@ -8,7 +8,11 @@ dependencies {
     implementation project(':core-sdk')
     implementation project(':common')
     implementation 'io.mockk:mockk:1.10.2'
-    implementation "io.ably:ably-android:$ably_core_version"
+    implementation files('../libs/ably-android-1.2.21-debug.aar')
+    implementation 'org.msgpack:msgpack-core:0.8.11'
+    implementation 'org.java-websocket:Java-WebSocket:1.5.3'
+    implementation 'com.google.code.gson:gson:2.9.0'
+    implementation 'com.davidehrmann.vcdiff:vcdiff-core:0.1.1'
 }
 
 // The mockk library depends on the objenesis library in version 3. This forces using minSdkLevel to 26 or above.
