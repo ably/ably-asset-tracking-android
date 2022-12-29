@@ -6,6 +6,7 @@ import java.net.ServerSocket
 import java.net.Socket
 import java.net.SocketException
 import javax.net.ssl.SSLSocketFactory
+import kotlin.experimental.and
 
 
 class AblyProxy
@@ -67,9 +68,11 @@ constructor(
                 return
             }
 
+            // TODO check the message ends with CLRF CLRF or save off the start of the ws payload
+
             // HTTP is plaintext so we can just read it
             val msg = String(buff, 0, bytesRead)
-            logHandler("PROXY-MSG: " + buff.copyOfRange(0, bytesRead +1).asList())
+            logHandler("PROXY-MSG: " + String(buff.copyOfRange(0, bytesRead)))
             if (rewriteHost) {
                 val newMsg = msg.replace("localhost:13579", targetHost)
                 val newBuff = newMsg.toByteArray()
@@ -80,8 +83,41 @@ constructor(
 
 
             while (-1 != src.read(buff).also { bytesRead = it }) {
-                logHandler("PROXY-MSG: " + buff.copyOfRange(0, bytesRead +1).asList())
-                val unpacker = MessagePack.newDefaultUnpacker(buff.copyOfRange(0, bytesRead +1))
+                // get the length of the websocket frame in bytes:
+                //      0                   1                   2                   3
+                //      0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+                //     +-+-+-+-+-------+-+-------------+-------------------------------+
+                //     |F|R|R|R| opcode|M| Payload len |    Extended payload length    |
+                //     |I|S|S|S|  (4)  |A|     (7)     |             (16/64)           |
+                //     |N|V|V|V|       |S|             |   (if payload len==126/127)   |
+                //     | |1|2|3|       |K|             |                               |
+                //     +-+-+-+-+-------+-+-------------+ - - - - - - - - - - - - - - - +
+                //     |     Extended payload length continued, if payload len == 127  |
+                //     + - - - - - - - - - - - - - - - +-------------------------------+
+                //     |                               |Masking-key, if MASK set to 1  |
+                //     +-------------------------------+-------------------------------+
+                //     | Masking-key (continued)       |          Payload Data         |
+                //     +-------------------------------- - - - - - - - - - - - - - - - +
+                //     :                     Payload Data continued ...                :
+                //     + - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
+                //     |                     Payload Data continued ...                |
+                //     +---------------------------------------------------------------+
+                var dataOff = 2
+                var payloadLen = buff[1].and(0x7F).toUInt()
+                if (payloadLen == 126U) {
+                    dataOff += 2
+                    payloadLen = bigEndianConversion(buff.copyOfRange(2, 4), logHandler)
+                } else if (payloadLen == 127U) {
+                    dataOff += 4
+                    payloadLen = bigEndianConversion(buff.copyOfRange(2, 10), logHandler)
+                }
+                var mask = buff[1].and(0x01).toInt() == 1
+                if (mask) {
+                    dataOff +=4
+                }
+                logHandler("PROXY-MSG: payload length: " + payloadLen + " data offset: " + dataOff + " buff len: " + bytesRead)
+
+                val unpacker = MessagePack.newDefaultUnpacker(buff.copyOfRange(dataOff, dataOff+payloadLen.toInt()))
                 if (unpacker.hasNext()) {
                     logHandler("PROXY-MSG: " + unpacker.unpackValue())
                 }
@@ -97,4 +133,15 @@ constructor(
         }
     }
 
+}
+
+fun bigEndianConversion(bytes: ByteArray, logHandler: (String)->Unit): UInt {
+    var result = 0U
+    val size = bytes.size
+    for (i in bytes.indices) {
+        // Kotlin does stupid things when converting from byte to uint and fills the preceding bits with 1s so remove them
+        logHandler("PROXY-DECODE: byte: "+ i + " val: " + bytes[i].toUInt().and(0xFFu))
+        result = result or (bytes[i].toUInt().and(0xFFu) shl (8 * (size - i -1)))
+    }
+    return result
 }
