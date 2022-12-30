@@ -6,7 +6,10 @@ import io.mockk.verifyOrder
 import io.ably.lib.realtime.ChannelState
 import io.ably.lib.realtime.ConnectionState
 import io.ably.lib.types.ErrorInfo
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
+import org.junit.Assert
 import org.junit.Test
 
 class DefaultAblyTests {
@@ -154,5 +157,51 @@ class DefaultAblyTests {
         }
 
         // ...and (implicitly from the When), the call to `close` (on the object under test) succeeds.
+    }
+
+    @Test
+    fun `close - behaviour when wrapped in a withTimeout block, when the timeout elapses during the presence leave operation`() {
+        // Given...
+        // ...that the Realtime instance has 1 channel...
+        val testEnvironment = DefaultAblyTestEnvironment.create(numberOfTrackables = 1)
+        val configuredChannel = testEnvironment.configuredChannels[0]
+
+        configuredChannel.mockName()
+        // ...which is in the ATTACHED state...
+        configuredChannel.mockState(ChannelState.attached)
+
+        // ...and which, when asked to leave presence, never finishes doing so...
+        configuredChannel.mockNonCompletingPresenceLeave()
+
+        testEnvironment.mockChannelsEntrySet()
+
+        // When...
+        var caughtTimeoutCancellationException = false
+        runBlocking {
+            try {
+                // ... we call `close` on the object under test within a withTimeout block, whose timeMillis is chosen arbitrarily but hopefully large enough so that internally, the call to `close` gets as far as telling the channel to leave presence...
+                withTimeout(1000) {
+                    testEnvironment.objectUnderTest.close(PresenceData("" /* arbitrary value */))
+                }
+            } catch (_: TimeoutCancellationException) {
+                caughtTimeoutCancellationException = true
+            }
+        }
+
+        // Then...
+        verifyOrder {
+            // ...the channel is told to leave presence...
+            configuredChannel.presenceMock.leave(any(), any())
+        }
+
+        // ...and the withTimeout call raises a TimeoutCancellationException.
+        Assert.assertTrue(caughtTimeoutCancellationException)
+
+        /* A note on why this test exists:
+         *
+         * 1. We have removed the ability for users to directly specify a timeout for the Publisher.stop() operation via a parameter on the `stop` method call, and our UPGRADING.md guide recommends that users instead wrap the call to `stop` in a `withTimeout` block. I wanted to check that this works...
+         *
+         * 2. ...specifically, I was a little unsure about whether it would work because I had seen, under certain circumstances which I now don’t remember, TimeoutCancellationException errors being caught by a `catch (e: Exception)` block in the internals of DefaultAbly (in an area related to discarding exceptions thrown by the presence leave operation), and not reaching the caller of withTimeout, which I remember finding surprising. I am being vague — and probably misguided and paranoid — here because I don't have much of an understanding of exactly how timeouts (and more generally, cancellation) work in Kotlin coroutines. But I wanted to be sure that the TimeoutCancellationException would indeed find its way to the caller of withTimeout.
+         */
     }
 }

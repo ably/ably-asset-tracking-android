@@ -144,6 +144,13 @@ class DefaultAblyTestEnvironment private constructor(
         fun mockFailedPresenceLeave(errorInfo: ErrorInfo) {
             mockPresenceLeaveResult { it.onError(errorInfo) }
         }
+
+        /**
+         * Mocks [presenceMock]’s [AblySdkRealtime.Presence.leave] method to never call any methods on its received completion listener.
+         */
+        fun mockNonCompletingPresenceLeave() {
+            mockPresenceLeaveResult { }
+        }
     }
 
     /**

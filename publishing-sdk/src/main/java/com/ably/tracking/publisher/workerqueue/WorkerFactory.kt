@@ -206,7 +206,6 @@ internal class WorkerFactory(
                 workerSpecification.callbackFunction,
                 ably,
                 publisherInteractor,
-                workerSpecification.timeoutInMilliseconds,
             )
             WorkerSpecification.StoppingConnectionFinished -> StoppingConnectionFinishedWorker()
         }
@@ -327,7 +326,6 @@ internal sealed class WorkerSpecification {
 
     data class Stop(
         val callbackFunction: ResultCallbackFunction<Unit>,
-        val timeoutInMilliseconds: Long,
     ) : WorkerSpecification()
 
     data class TrackableRemovalRequested(

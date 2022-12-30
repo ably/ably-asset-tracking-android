@@ -187,7 +187,7 @@ class CorePublisherLocationUpdatesPublishingTest {
 
     private suspend fun stopCorePublisher(corePublisher: CorePublisher = this.corePublisher) {
         suspendCoroutine<Unit> { continuation ->
-            corePublisher.stop(30_000L) {
+            corePublisher.stop() {
                 try {
                     continuation.resume(it.getOrThrow())
                 } catch (exception: Exception) {
