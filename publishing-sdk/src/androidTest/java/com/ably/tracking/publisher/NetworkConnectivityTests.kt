@@ -51,8 +51,8 @@ class NetworkConnectivityTests {
         createNotificationChannel(context)
 
         // proxy
-        val prxy = AblyProxy(PROXY_PORT, REALTIME_HOST, REALTIME_PORT) { s: String -> testLogD(s) }
-        prxy.start()
+        val proxy = AblyProxy(PROXY_PORT, REALTIME_HOST, REALTIME_PORT) { s: String -> testLogD(s) }
+        proxy.start()
 
         // when
         testLogD("WHEN")
@@ -65,7 +65,6 @@ class NetworkConnectivityTests {
             },
             realtime = AblyRealtime(clientOptions())
         )
-
 
         runBlocking {
             try {

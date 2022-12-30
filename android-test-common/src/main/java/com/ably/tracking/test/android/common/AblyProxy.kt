@@ -1,12 +1,12 @@
 package com.ably.tracking.test.android.common
 
-import org.msgpack.core.MessageFormat
 import org.msgpack.core.MessagePack
 import java.net.ServerSocket
 import java.net.Socket
 import java.net.SocketException
 import javax.net.ssl.SSLSocketFactory
 import kotlin.experimental.and
+import kotlin.experimental.or
 
 
 class AblyProxy
@@ -19,12 +19,14 @@ constructor (
     private val server: ServerSocket = ServerSocket(listenPort)
     private  val sslsocketfactory = SSLSocketFactory.getDefault()
 
+    var connectionsBroken = false
+
     fun accept() : AblyConnection {
         val clientSock = server.accept()
         logHandler( "PROXY accepted connection")
 
         val serverSock = sslsocketfactory.createSocket(targetAddress, targetPort)
-        return AblyConnection(serverSock, clientSock, targetAddress, logHandler)
+        return AblyConnection(serverSock, clientSock, targetAddress, logHandler, this)
     }
 
     fun close() {
@@ -52,6 +54,7 @@ constructor(
     private val client: Socket,
     private val targetHost: String,
     private val logHandler: (String)->Unit,
+    private val parentProxy: AblyProxy
 ) {
 
     fun run() {
@@ -125,13 +128,24 @@ constructor(
                     dataOff += 4
                     payloadLen = bigEndianConversion(buff.copyOfRange(2, 10), logHandler)
                 }
-                var mask = buff[1].toInt().and(0x01) == 1
-                if (mask) {
-                    dataOff +=4
-                }
+
                 val op = buff[0].toUInt().and(0x0Fu)
                 if (op<3u) {
                     logHandler("PROXY-MSG: payload length: " + payloadLen + " data offset: " + dataOff + " buff len: " + bytesRead)
+
+                    val isMasked = buff[1].toInt().and(0x01) == 1
+                    if (isMasked) {
+                        dataOff+=4
+                    }
+
+                    var data = buff.copyOfRange(dataOff, dataOff + payloadLen.toInt())
+                    if (isMasked) {
+                        val mask = buff.copyOfRange(dataOff-4, dataOff)
+                        for (i in data.indices) {
+                            data[i] = data[i].or(mask[i%4])
+                        }
+                    }
+
                     val unpacker = MessagePack.newDefaultUnpacker(
                         buff.copyOfRange(
                             dataOff,
@@ -146,7 +160,10 @@ constructor(
                         }
                     }
                 }
-                dst.write(buff, 0, bytesRead)
+
+                if (!parentProxy.connectionsBroken) {
+                    dst.write(buff, 0, bytesRead)
+                }
             }
         } catch (ignored: SocketException) {
         } catch (e: Exception ) {
