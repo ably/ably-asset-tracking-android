@@ -162,7 +162,9 @@ constructor(
                     )
                     if (unpacker.hasNext()) {
                         try {
-                            logHandler("PROXY-MSG: " + unpacker.unpackValue())
+                            // TODO: This often crashes with MsgPack trying to allocate crazy amounts of memory
+                            // Disabled for now as we're not using the protocol yet
+                            // logHandler("PROXY-MSG: " + unpacker.unpackValue())
                         } catch (e: Exception) {
                             logHandler("PROXY-MSG: unpacking msg " + e.message)
                         }

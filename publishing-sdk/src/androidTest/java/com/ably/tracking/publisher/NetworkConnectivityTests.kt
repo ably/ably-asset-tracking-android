@@ -32,6 +32,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.runBlocking
 import org.junit.After
+import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -67,17 +68,20 @@ object Logging {
     }
 }
 
+private val DEFAULT_CLIENT_OPTS = ClientOptions().apply {
+    this.clientId = "IntegTests_NoProxy"
+    this.key = ABLY_API_KEY
+    this.logHandler = Logging.ablyJavaDebugLogger
+}
+
+
 /**
  * Helper class to publish basic location updates through a known Ably channel name
  */
 class LocationHelper(
     trackableId: String
 ) {
-    private val opts = ClientOptions().apply {
-        this.clientId = "IntegTests_LocationHelper"
-        this.key = ABLY_API_KEY
-        this.logHandler = Logging.ablyJavaDebugLogger
-    }
+    private val opts = DEFAULT_CLIENT_OPTS
     private val ably = AblyRealtime(opts)
 
     val channelName = "locations:$trackableId"
@@ -204,7 +208,12 @@ class NetworkConnectivityTests {
     @Test
     fun publishesTrackableStateThroughStableProxy() {
         testLogD("#### NetworkConnectivityTests.publishesTrackableStateThroughStableProxy ####")
+        // (1) in setUp()
+
+        // (2, 3, 4)
         trackNewTrackable(trackableId!!, publisher!!, locationHelper!!)
+
+        // (5) in tearDown()
     }
 
     /**
@@ -227,8 +236,47 @@ class NetworkConnectivityTests {
     @Test
     fun resumesPublishingAfterInterruptedConnectivity() {
         testLogD("#### NetworkConnectivityTests.publishesTrackableStateThroughStableProxy ####")
+        // (1) in setUp
 
+        // (2, 3, 4)
         trackNewTrackable(trackableId!!, publisher!!, locationHelper!!)
+
+        // (5, 6, 7)
+        val offlineReceiver = TrackableStateReceiver(
+            label = "trackable offline when interrupted",
+            expectedStates = setOf(TrackableState.Offline::class),
+            failureStates = setOf(TrackableState.Failed::class)
+        )
+
+        publisher
+            ?.getTrackableState(trackableId!!)
+            ?.onEach(offlineReceiver::receive)
+            ?.launchIn(scope!!)
+
+        proxy?.close()
+        locationHelper?.sendUpdate(12.0, 13.0)
+        offlineReceiver.outcome.await(30L)
+        offlineReceiver.outcome.assertSuccess()
+
+        // (8, 9, 10)
+        val reconnectedReceiver = TrackableStateReceiver(
+            label = "trackable reconnected",
+            expectedStates = setOf(TrackableState.Online::class),
+            failureStates = setOf(TrackableState.Failed::class)
+        )
+
+        publisher
+            ?.getTrackableState(trackableId!!)
+            ?.onEach(reconnectedReceiver::receive)
+            ?.launchIn(scope!!)
+
+        proxy?.start()
+        locationHelper?.sendUpdate(14.0, 15.0)
+
+        reconnectedReceiver.outcome.await(30L)
+        reconnectedReceiver.outcome.assertSuccess()
+
+        // (11) in tearDown
     }
 
     /**
@@ -241,7 +289,7 @@ class NetworkConnectivityTests {
         locationHelper: LocationHelper
     ) {
         val connectedReceiver = TrackableStateReceiver(
-            "trackable online",
+            label = "trackable online",
             expectedStates = setOf(TrackableState.Online::class),
             failureStates = setOf(TrackableState.Failed::class)
         )
@@ -335,7 +383,7 @@ class NetworkConnectivityTests {
                 context,
                 MapConfiguration(MAPBOX_ACCESS_TOKEN),
                 ConnectionConfiguration(Authentication.basic(CLIENT_ID, ABLY_API_KEY)),
-                LocationSourceAbly.create(locationChannelName),
+                LocationSourceAbly.create(locationChannelName, DEFAULT_CLIENT_OPTS),
                 logHandler = Logging.aatDebugLogger,
                 object : PublisherNotificationProvider {
                     override fun getNotification(): Notification =

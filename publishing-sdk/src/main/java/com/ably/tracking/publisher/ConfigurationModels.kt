@@ -2,6 +2,7 @@ package com.ably.tracking.publisher
 
 import android.app.Notification
 import com.ably.tracking.Resolution
+import io.ably.lib.types.ClientOptions
 
 data class MapConfiguration(val apiKey: String)
 
@@ -409,13 +410,17 @@ enum class RoutingProfile {
 }
 
 sealed class LocationSource
-class LocationSourceAbly private constructor(val simulationChannelName: String) : LocationSource() {
+class LocationSourceAbly private constructor(
+    val simulationChannelName: String,
+    val overrideClientOptions: ClientOptions?
+    ) : LocationSource() {
     companion object {
         @JvmStatic
-        fun create(simulationChannelName: String) = LocationSourceAbly(simulationChannelName)
+        fun create(simulationChannelName: String, clientOptsOverride: ClientOptions? = null) =
+            LocationSourceAbly(simulationChannelName, clientOptsOverride)
     }
 
-    private constructor() : this("")
+    private constructor() : this("", null)
 }
 
 class LocationSourceRaw private constructor(

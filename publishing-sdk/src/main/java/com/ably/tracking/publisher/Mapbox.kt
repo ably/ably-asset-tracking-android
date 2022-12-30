@@ -472,7 +472,7 @@ internal class DefaultMapbox(
     ) {
         mapboxBuilder.locationEngine(
             AblySimulationLocationEngine(
-                connectionConfiguration.authentication.clientOptions,
+                locationSource.overrideClientOptions ?: connectionConfiguration.authentication.clientOptions,
                 locationSource.simulationChannelName,
                 logHandler
             )
