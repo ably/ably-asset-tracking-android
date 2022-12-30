@@ -33,11 +33,12 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.Date
+import kotlin.reflect.KClass
+import kotlin.reflect.KType
 
 private const val MAPBOX_ACCESS_TOKEN = BuildConfig.MAPBOX_ACCESS_TOKEN
 private const val CLIENT_ID = "IntegrationTestsClient"
 private const val ABLY_API_KEY = BuildConfig.ABLY_API_KEY
-
 private const val AGENT_HEADER_NAME = "ably-asset-tracking-android-publisher-tests"
 
 private const val PROXY_HOST = "localhost"
@@ -75,11 +76,12 @@ class LocationHelper(
         this.key = ABLY_API_KEY
         this.logHandler = Logging.ablyJavaDebugLogger
     }
-
-    private val gson = Gson()
     private val ably = AblyRealtime(opts)
+
     val channelName = "locations:$trackableId"
     private val channel = ably.channels.get(channelName)
+
+    private val gson = Gson()
 
     /**
      * Send a location update message on trackable channel and wait for confirmation
@@ -118,9 +120,32 @@ class LocationHelper(
     }
 }
 
+/**
+ * Helper to capture an expected set of successful or unsuccessful TrackableState
+ * transitions using the StateFlows provided by publishers.
+ */
+class TrackableStateReceiver(
+    private val label: String,
+    private val expectedStates: Set<KClass<out TrackableState>>,
+    private val failureStates: Set<KClass<out TrackableState>>
+) {
+    val outcome = BooleanExpectation(label)
+
+    fun receive(state: TrackableState) {
+        if (failureStates.contains((state::class))) {
+            testLogD("TrackableStateReceived (FAIL): $label - $state")
+            outcome.fulfill(false)
+        } else if (expectedStates.contains(state::class)) {
+            testLogD("TrackableStateReceived (SUCCESS): $label - $state")
+            outcome.fulfill(true)
+        } else {
+            testLogD("TrackableStateReceived (IGNORED): $label - $state")
+        }
+    }
+}
+
 @RunWith(AndroidJUnit4::class)
 class NetworkConnectivityTests {
-
 
     @Test
     fun createAndStartPublishingNormalConnectivity() {
@@ -130,8 +155,8 @@ class NetworkConnectivityTests {
         testLogD("GIVEN")
         val trackableId = "123abc"
         val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val locationHelper = LocationHelper(trackableId)
         val scope = CoroutineScope(Dispatchers.Unconfined)
+        val locationHelper = LocationHelper(trackableId)
         createNotificationChannel(context)
 
         // proxy
@@ -142,43 +167,65 @@ class NetworkConnectivityTests {
         testLogD("WHEN")
         val publisher = createPublisher(
             context,
-            realtime = AblyRealtime(proxiedClientOptions()),
+            AblyRealtime(proxiedClientOptions()),
             locationHelper.channelName
         )
 
-        val trackExpectation = BooleanExpectation("track response")
-        val connectionSuccessExpectation = BooleanExpectation("trackable connected")
-        runBlocking {
-            try {
-                publisher.track(Trackable(trackableId)).onEach {
-                    testLogD("JALEY: $it")
-                    when(it) {
-                        is TrackableState.Failed -> connectionSuccessExpectation.fulfill(false)
-                        is TrackableState.Offline -> {}
-                        TrackableState.Online -> connectionSuccessExpectation.fulfill(true)
-                        TrackableState.Publishing -> {}
-                    }
-                }.launchIn(scope)
+        val connectedReceiver = TrackableStateReceiver(
+            "trackable online",
+            expectedStates = setOf(TrackableState.Online::class),
+            failureStates = setOf(TrackableState.Failed::class)
+        )
 
-                testLogD("track success")
-                trackExpectation.fulfill(true)
-                // locationHelper.sendUpdate(50.0, 50.0)
-            } catch (e: Exception) {
-                testLogD("track failed")
-                trackExpectation.fulfill(false)
-            }
+        val trackExpectation = failOnException("track new Trackable($trackableId)") {
+            publisher.track(Trackable(trackableId))
+                .onEach(connectedReceiver::receive)
+                .launchIn(scope)
+            locationHelper.sendUpdate(10.0, 11.0)
         }
-
-        locationHelper.sendUpdate(10.0, 11.0)
 
         // await asynchronous events
         testLogD("AWAIT")
         trackExpectation.await()
-        connectionSuccessExpectation.await(10L)
-        connectionSuccessExpectation.assertSuccess()
+        connectedReceiver.outcome.await()
+        connectedReceiver.outcome.assertSuccess()
 
         // cleanup
         testLogD("CLEANUP")
+        val stopExpectation = shutdownPublisher(publisher)
+
+        // then
+        testLogD("THEN")
+        trackExpectation.assertSuccess()
+        stopExpectation.assertSuccess()
+    }
+
+    /**
+     * Run the (suspending) async operation in a runBlocking and capture any exceptions that
+     * occur. A BooleanExpectation is returned, which will be completed with success if asyncOp
+     * completes without errors, or failed if an exception is thrown.
+     */
+    private fun failOnException(label: String, asyncOp: suspend () -> Unit) : BooleanExpectation {
+        val opCompleted = BooleanExpectation(label)
+        runBlocking {
+            try {
+                asyncOp()
+                testLogD("$label - success")
+                opCompleted.fulfill(true)
+            } catch (e: java.lang.Exception) {
+                testLogD("$label - failed - ${e.toString()}")
+                opCompleted.fulfill(false)
+            }
+        }
+        return opCompleted
+    }
+
+    /**
+     * Shutdown the given publisher and wait for confirmation, or a timeout.
+     * Returns a BooleanExpectation, which can be used to check for successful
+     * shutdown of the publisher
+     */
+    private fun shutdownPublisher(publisher: Publisher) : BooleanExpectation {
         val stopExpectation = BooleanExpectation("stop response")
         runBlocking {
             try {
@@ -191,13 +238,14 @@ class NetworkConnectivityTests {
             }
         }
         stopExpectation.await()
-
-        // then
-        testLogD("THEN")
-        trackExpectation.assertSuccess()
-        stopExpectation.assertSuccess()
+        return stopExpectation
     }
 
+    /**
+     * Returns AblyRealtime ClientOptions that are configured to direct traffic through
+     * a local proxy server using an insecure connection, so that messages can be
+     * intercepted and faked for testing purposes.
+     */
     private fun proxiedClientOptions() = ClientOptions().apply {
         this.clientId = CLIENT_ID
         this.agents = mapOf(AGENT_HEADER_NAME to com.ably.tracking.common.BuildConfig.VERSION_NAME)
@@ -210,6 +258,10 @@ class NetworkConnectivityTests {
         this.tls = false
     }
 
+    /**
+     * Injects a pre-configured AblyRealtime instance to the Publisher by constructing it
+     * and all dependencies by hand, side-stepping the builders, which block this.
+     */
     private fun createPublisher(
         context: Context,
         realtime: AblyRealtime,
@@ -237,12 +289,12 @@ class NetworkConnectivityTests {
                 resolution,
                 VehicleProfile.BICYCLE
             ),
-            DefaultResolutionPolicyFactory(resolution, context),
-            RoutingProfile.CYCLING,
-            Logging.aatDebugLogger,
+            resolutionPolicyFactory = DefaultResolutionPolicyFactory(resolution, context),
+            routingProfile = RoutingProfile.CYCLING,
+            logHandler = Logging.aatDebugLogger,
             areRawLocationsEnabled = true,
             sendResolutionEnabled = true,
-            resolution
+            constantLocationEngineResolution = resolution
         )
     }
 
