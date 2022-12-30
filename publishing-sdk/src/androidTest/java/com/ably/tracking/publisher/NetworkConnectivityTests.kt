@@ -7,7 +7,12 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ably.tracking.Accuracy
 import com.ably.tracking.Resolution
+import com.ably.tracking.TrackableState
 import com.ably.tracking.common.DefaultAbly
+import com.ably.tracking.common.EventNames
+import com.ably.tracking.common.message.LocationGeometry
+import com.ably.tracking.common.message.LocationMessage
+import com.ably.tracking.common.message.LocationProperties
 import com.ably.tracking.connection.Authentication
 import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.logging.LogHandler
@@ -15,11 +20,19 @@ import com.ably.tracking.logging.LogLevel
 import com.ably.tracking.test.android.common.*
 import com.google.gson.Gson
 import io.ably.lib.realtime.AblyRealtime
+import io.ably.lib.realtime.CompletionListener
 import io.ably.lib.types.ClientOptions
+import io.ably.lib.types.ErrorInfo
+import io.ably.lib.types.Message
 import io.ably.lib.util.Log
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.util.Date
 
 private const val MAPBOX_ACCESS_TOKEN = BuildConfig.MAPBOX_ACCESS_TOKEN
 private const val CLIENT_ID = "IntegrationTestsClient"
@@ -32,11 +45,82 @@ private const val PROXY_PORT = 13579
 private const val REALTIME_HOST = "realtime.ably.io"
 private const val REALTIME_PORT = 443
 
+/**
+ * Redirect Ably and AAT logging to Log.d
+ */
+object Logging {
+    val aatDebugLogger = object : LogHandler {
+        override fun logMessage(level: LogLevel, message: String, throwable: Throwable?) {
+            if (throwable != null) {
+                testLogD("$message $throwable")
+            } else {
+                testLogD(message)
+            }
+        }
+    }
+
+    val ablyJavaDebugLogger = Log.LogHandler { _, _, msg, tr ->
+        aatDebugLogger.logMessage(LogLevel.DEBUG, msg!!, tr)
+    }
+}
+
+/**
+ * Helper class to publish basic location updates through a known Ably channel name
+ */
+class LocationHelper(
+    trackableId: String
+) {
+    private val opts = ClientOptions().apply {
+        this.clientId = "IntegTests_LocationHelper"
+        this.key = ABLY_API_KEY
+        this.logHandler = Logging.ablyJavaDebugLogger
+    }
+
+    private val gson = Gson()
+    private val ably = AblyRealtime(opts)
+    val channelName = "locations:$trackableId"
+    private val channel = ably.channels.get(channelName)
+
+    /**
+     * Send a location update message on trackable channel and wait for confirmation
+     * of publish completing successfully. Will fail the test if publishing fails.
+     */
+    fun sendUpdate(lat: Double, long: Double) {
+        val geoJson = LocationMessage(
+            type = "Feature",
+            geometry = LocationGeometry(
+                type = "Point",
+                coordinates = listOf(lat, long, 0.0)
+            ),
+            properties = LocationProperties(
+                accuracyHorizontal = 5.0f,
+                bearing = 0.0f,
+                speed = 5.0f,
+                time = Date().time.toDouble() / 1000
+            )
+        )
+
+        val ablyMessage = Message(EventNames.ENHANCED, gson.toJson(arrayOf((geoJson))))
+        val publishExpectation = BooleanExpectation("publishing Ably location update")
+        channel.publish(ablyMessage, object: CompletionListener {
+            override fun onSuccess() {
+                testLogD("Location publish success")
+                publishExpectation.fulfill(true)
+            }
+            override fun onError(err: ErrorInfo?) {
+                testLogD("Location publish failed: ${err?.code} - ${err?.message}")
+                publishExpectation.fulfill(false)
+            }
+        })
+
+        publishExpectation.await()
+        publishExpectation.assertSuccess()
+    }
+}
 
 @RunWith(AndroidJUnit4::class)
 class NetworkConnectivityTests {
 
-    val gson = Gson()
 
     @Test
     fun createAndStartPublishingNormalConnectivity() {
@@ -44,10 +128,10 @@ class NetworkConnectivityTests {
 
         // given
         testLogD("GIVEN")
-        val dataEndedExpectation = UnitExpectation("data ended")
-        val trackExpectation = BooleanExpectation("track response")
+        val trackableId = "123abc"
         val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val locationData = getLocationData(context)
+        val locationHelper = LocationHelper(trackableId)
+        val scope = CoroutineScope(Dispatchers.Unconfined)
         createNotificationChannel(context)
 
         // proxy
@@ -58,29 +142,40 @@ class NetworkConnectivityTests {
         testLogD("WHEN")
         val publisher = createPublisher(
             context,
-            locationData = locationData,
-            onLocationDataEnded = {
-                testLogD("data ended")
-                dataEndedExpectation.fulfill()
-            },
-            realtime = AblyRealtime(clientOptions())
+            realtime = AblyRealtime(proxiedClientOptions()),
+            locationHelper.channelName
         )
 
+        val trackExpectation = BooleanExpectation("track response")
+        val connectionSuccessExpectation = BooleanExpectation("trackable connected")
         runBlocking {
             try {
-                publisher.track(Trackable("ID"))
+                publisher.track(Trackable(trackableId)).onEach {
+                    testLogD("JALEY: $it")
+                    when(it) {
+                        is TrackableState.Failed -> connectionSuccessExpectation.fulfill(false)
+                        is TrackableState.Offline -> {}
+                        TrackableState.Online -> connectionSuccessExpectation.fulfill(true)
+                        TrackableState.Publishing -> {}
+                    }
+                }.launchIn(scope)
+
                 testLogD("track success")
                 trackExpectation.fulfill(true)
+                // locationHelper.sendUpdate(50.0, 50.0)
             } catch (e: Exception) {
                 testLogD("track failed")
                 trackExpectation.fulfill(false)
             }
         }
 
+        locationHelper.sendUpdate(10.0, 11.0)
+
         // await asynchronous events
         testLogD("AWAIT")
-        dataEndedExpectation.await()
         trackExpectation.await()
+        connectionSuccessExpectation.await(10L)
+        connectionSuccessExpectation.assertSuccess()
 
         // cleanup
         testLogD("CLEANUP")
@@ -99,33 +194,17 @@ class NetworkConnectivityTests {
 
         // then
         testLogD("THEN")
-        dataEndedExpectation.assertFulfilled()
         trackExpectation.assertSuccess()
         stopExpectation.assertSuccess()
     }
 
-    private val aatDebugLogger = object : LogHandler {
-        override fun logMessage(level: LogLevel, message: String, throwable: Throwable?) {
-            if (throwable != null) {
-                testLogD("$message $throwable")
-            } else {
-                testLogD(message)
-            }
-        }
-    }
-
-    private val ablyJavaDebugLogger = Log.LogHandler {
-            _, _, msg, tr -> aatDebugLogger.logMessage(LogLevel.DEBUG, msg!!, tr)
-    }
-
-
-    private fun clientOptions() = ClientOptions().apply {
+    private fun proxiedClientOptions() = ClientOptions().apply {
         this.clientId = CLIENT_ID
         this.agents = mapOf(AGENT_HEADER_NAME to com.ably.tracking.common.BuildConfig.VERSION_NAME)
         this.idempotentRestPublishing = true
         this.autoConnect = false
         this.key = ABLY_API_KEY
-        this.logHandler = ablyJavaDebugLogger
+        this.logHandler = Logging.ablyJavaDebugLogger
         this.realtimeHost = PROXY_HOST
         this.port = PROXY_PORT
         this.tls = false
@@ -134,8 +213,7 @@ class NetworkConnectivityTests {
     private fun createPublisher(
         context: Context,
         realtime: AblyRealtime,
-        locationData: LocationHistoryData,
-        onLocationDataEnded: () -> Unit
+        locationChannelName: String
     ) : Publisher {
         val resolution = Resolution(Accuracy.BALANCED, 1000L, 0.0)
         return DefaultPublisher(
@@ -144,8 +222,8 @@ class NetworkConnectivityTests {
                 context,
                 MapConfiguration(MAPBOX_ACCESS_TOKEN),
                 ConnectionConfiguration(Authentication.basic(CLIENT_ID, ABLY_API_KEY)),
-                LocationSourceRaw.create(locationData, onLocationDataEnded),
-                null,
+                LocationSourceAbly.create(locationChannelName),
+                logHandler = Logging.aatDebugLogger,
                 object : PublisherNotificationProvider {
                     override fun getNotification(): Notification =
                         NotificationCompat.Builder(context, NOTIFICATION_CHANNEL_ID)
@@ -161,16 +239,11 @@ class NetworkConnectivityTests {
             ),
             DefaultResolutionPolicyFactory(resolution, context),
             RoutingProfile.CYCLING,
-            aatDebugLogger,
+            Logging.aatDebugLogger,
             areRawLocationsEnabled = true,
             sendResolutionEnabled = true,
             resolution
         )
-    }
-
-    private fun getLocationData(context: Context): LocationHistoryData {
-        val historyString = context.assets.open("location_history_small.txt").use { String(it.readBytes()) }
-        return gson.fromJson(historyString, LocationHistoryData::class.java)
     }
 
 }
