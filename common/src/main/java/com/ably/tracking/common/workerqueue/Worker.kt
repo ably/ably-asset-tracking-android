@@ -83,3 +83,17 @@ abstract class CallbackWorker<PropertiesType : Properties, WorkerSpecification>(
         callbackFunction(Result.failure(exception))
     }
 }
+
+/**
+ * An abstract class to avoid duplication of default [doWhenStopped], [onUnexpectedError]
+ * and [onUnexpectedAsyncError] implementation for workers without callbacks.
+ */
+abstract class DefaultWorker<PropertiesType : Properties, WorkerSpecification> :
+    Worker<PropertiesType, WorkerSpecification> {
+
+    override fun doWhenStopped(exception: Exception) = Unit
+
+    override fun onUnexpectedError(exception: Exception, postWork: (WorkerSpecification) -> Unit) = Unit
+
+    override fun onUnexpectedAsyncError(exception: Exception, postWork: (WorkerSpecification) -> Unit) = Unit
+}

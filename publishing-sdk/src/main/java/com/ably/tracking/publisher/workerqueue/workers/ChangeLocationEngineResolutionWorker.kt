@@ -1,6 +1,6 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
-import com.ably.tracking.common.workerqueue.Worker
+import com.ably.tracking.common.workerqueue.DefaultWorker
 import com.ably.tracking.publisher.Mapbox
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.ResolutionPolicy
@@ -9,7 +9,7 @@ import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 internal class ChangeLocationEngineResolutionWorker(
     private val policy: ResolutionPolicy,
     private val mapbox: Mapbox,
-) : Worker<PublisherProperties, WorkerSpecification> {
+) : DefaultWorker<PublisherProperties, WorkerSpecification>() {
 
     override fun doWork(
         properties: PublisherProperties,
@@ -23,6 +23,4 @@ internal class ChangeLocationEngineResolutionWorker(
         }
         return properties
     }
-
-    override fun doWhenStopped(exception: Exception) = Unit
 }
