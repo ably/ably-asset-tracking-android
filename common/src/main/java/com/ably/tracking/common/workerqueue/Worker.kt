@@ -65,12 +65,21 @@ interface Worker<PropertiesType : Properties, WorkerSpecificationType> {
 }
 
 /**
- * An abstract class to avoid duplication of default [doWhenStopped] implementation
+ * An abstract class to avoid duplication of default [doWhenStopped], [onUnexpectedError]
+ * and [onUnexpectedAsyncError] implementation for workers with callbacks.
  */
 abstract class CallbackWorker<PropertiesType : Properties, WorkerSpecification>(protected val callbackFunction: ResultCallbackFunction<Unit>) :
     Worker<PropertiesType, WorkerSpecification> {
 
     override fun doWhenStopped(exception: Exception) {
+        callbackFunction(Result.failure(exception))
+    }
+
+    override fun onUnexpectedError(exception: Exception, postWork: (WorkerSpecification) -> Unit) {
+        callbackFunction(Result.failure(exception))
+    }
+
+    override fun onUnexpectedAsyncError(exception: Exception, postWork: (WorkerSpecification) -> Unit) {
         callbackFunction(Result.failure(exception))
     }
 }
