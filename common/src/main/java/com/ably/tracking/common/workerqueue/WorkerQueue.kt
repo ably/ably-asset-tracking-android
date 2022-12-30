@@ -29,10 +29,17 @@ class WorkerQueue<PropertiesType : Properties, WorkerSpecificationType>(
 
     private suspend fun executeWorkers() {
         for (worker in workerChannel) {
-            if (properties.isStopped) {
-                worker.doWhenStopped(getStoppedException())
-            } else {
-                execute(worker)
+            try {
+                if (properties.isStopped) {
+                    worker.doWhenStopped(getStoppedException())
+                } else {
+                    execute(worker)
+                }
+            } catch (unexpectedException: Exception) {
+                worker.onUnexpectedError(
+                    exception = unexpectedException,
+                    postWork = ::enqueue
+                )
             }
         }
     }
@@ -40,7 +47,18 @@ class WorkerQueue<PropertiesType : Properties, WorkerSpecificationType>(
     private fun execute(worker: Worker<PropertiesType, WorkerSpecificationType>) {
         properties = worker.doWork(
             properties = properties.copyProperties(),
-            doAsyncWork = { asyncWork -> scope.launch { asyncWork() } },
+            doAsyncWork = { asyncWork ->
+                scope.launch {
+                    try {
+                        asyncWork()
+                    } catch (unexpectedException: Exception) {
+                        worker.onUnexpectedAsyncError(
+                            exception = unexpectedException,
+                            postWork = ::enqueue
+                        )
+                    }
+                }
+            },
             postWork = ::enqueue
         )
     }

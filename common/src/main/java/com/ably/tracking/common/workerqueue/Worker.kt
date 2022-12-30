@@ -34,6 +34,34 @@ interface Worker<PropertiesType : Properties, WorkerSpecificationType> {
      * @param exception The exception created by the stopped worker queue.
      */
     fun doWhenStopped(exception: Exception)
+
+    /**
+     * This function is provided in order for implementors to define what should happen when the worker
+     * breaks due to an unexpected exception while [doWork] or [doWhenStopped] is being executed.
+     * This should usually be a rollback operation and/or a call to the worker's callback function
+     * with a failure with the [exception].
+     *
+     * @param exception The unexpected exception that broke the worker.
+     * @param postWork this function allows worker to add other workers to the queue calling it.
+     */
+    fun onUnexpectedError(
+        exception: Exception,
+        postWork: (WorkerSpecificationType) -> Unit,
+    )
+
+    /**
+     * This function is provided in order for implementors to define what should happen when the worker
+     * breaks due to an unexpected exception while the async work from [doWork] is being executed.
+     * This should usually be a rollback operation and/or a call to the worker's callback function
+     * with a failure with the [exception].
+     *
+     * @param exception The unexpected exception that broke the worker.
+     * @param postWork this function allows worker to add other workers to the queue calling it.
+     */
+    fun onUnexpectedAsyncError(
+        exception: Exception,
+        postWork: (WorkerSpecificationType) -> Unit,
+    )
 }
 
 /**
