@@ -10,6 +10,8 @@ import io.mockk.slot
 import io.mockk.verify
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -47,6 +49,7 @@ class WorkerQueueTest {
 
         // when
         workerQueue.enqueue(Unit)
+        waitForWorkerToBeProcessed()
 
         // then
         verify(exactly = 1) { worker.doWork(any(), any(), any()) }
@@ -59,6 +62,7 @@ class WorkerQueueTest {
 
         // when
         workerQueue.enqueue(Unit)
+        waitForWorkerToBeProcessed()
 
         // then
         verify(exactly = 1) { worker.doWhenStopped(any()) }
@@ -72,6 +76,7 @@ class WorkerQueueTest {
 
         // when
         workerQueue.enqueue(Unit)
+        waitForWorkerToBeProcessed()
 
         // then
         verify(exactly = 1) { worker.onUnexpectedError(any(), any()) }
@@ -101,6 +106,7 @@ class WorkerQueueTest {
 
         // when
         workerQueue.enqueue(Unit)
+        waitForWorkerToBeProcessed()
 
         // then
         verify(exactly = 1) { worker.onUnexpectedError(any(), any()) }
@@ -119,4 +125,12 @@ class WorkerQueueTest {
     }
 
     private fun anyUnexpectedException() = java.lang.IllegalStateException("Unexpected worker exception")
+
+    /**
+     * Blocks the test to make sure that the worker is processed by the worker queue before a test case ends.
+     * If tests from this file become flaky try increasing the delay value or find a better way for waiting on workers to be processed.
+     */
+    private fun waitForWorkerToBeProcessed() {
+        runBlocking { delay(100L) }
+    }
 }
