@@ -27,14 +27,16 @@ import io.ably.lib.types.Message
 import io.ably.lib.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.runBlocking
+import org.junit.After
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.util.Date
+import java.util.*
 import kotlin.reflect.KClass
-import kotlin.reflect.KType
 
 private const val MAPBOX_ACCESS_TOKEN = BuildConfig.MAPBOX_ACCESS_TOKEN
 private const val CLIENT_ID = "IntegrationTestsClient"
@@ -118,6 +120,13 @@ class LocationHelper(
         publishExpectation.await()
         publishExpectation.assertSuccess()
     }
+
+    /**
+     * Close Ably connection
+     */
+    fun close() {
+        ably.close()
+    }
 }
 
 /**
@@ -147,30 +156,90 @@ class TrackableStateReceiver(
 @RunWith(AndroidJUnit4::class)
 class NetworkConnectivityTests {
 
-    @Test
-    fun createAndStartPublishingNormalConnectivity() {
-        testLogD("#### NetworkConnectivityTests.createAndStartPublishingNormalConnectivity ####")
+    // Common test resources
+    private var trackableId: String? = null
+    private var context : Context? = null
+    private var scope : CoroutineScope? = null
+    private var locationHelper : LocationHelper? = null
+    private var proxy : AblyProxy? = null
+    private var publisher : Publisher? = null
 
-        // given
-        testLogD("GIVEN")
-        val trackableId = "123abc"
-        val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val scope = CoroutineScope(Dispatchers.Unconfined)
-        val locationHelper = LocationHelper(trackableId)
-        createNotificationChannel(context)
+    @Before
+    fun setUp() {
+        trackableId = UUID.randomUUID().toString()
+        context = InstrumentationRegistry.getInstrumentation().targetContext
+        scope =  CoroutineScope(Dispatchers.Unconfined)
+        locationHelper = LocationHelper(trackableId!!)
+        createNotificationChannel(context!!)
 
-        // proxy
-        val proxy = AblyProxy(PROXY_PORT, REALTIME_HOST, REALTIME_PORT) { s: String -> testLogD(s) }
-        proxy.start()
+        proxy = AblyProxy(PROXY_PORT, REALTIME_HOST, REALTIME_PORT) { s: String -> testLogD(s) }
+        proxy?.start()
 
-        // when
-        testLogD("WHEN")
-        val publisher = createPublisher(
-            context,
+        publisher = createPublisher(
+            context!!,
             AblyRealtime(proxiedClientOptions()),
-            locationHelper.channelName
+            locationHelper!!.channelName
         )
+    }
 
+    @After
+    fun tearDown() {
+        scope?.cancel()
+        val stopExpectation = shutdownPublisher(publisher!!)
+        stopExpectation.assertSuccess()
+        proxy?.close()
+        locationHelper?.close()
+    }
+
+    /**
+     * This test ensures that attempts to track a trackable under normal network conditions
+     * are working, ensuring the Proxy isn't causing unintended problems.
+     *
+     * 1. Configure Publisher to use Ably through AblyProxy
+     * 2. Attempt to track a new Trackable
+     * 3. Trigger a location update
+     * 4. Ensure Trackable state is now Online
+     * 5. Shutdown publisher
+     */
+    @Test
+    fun publishesTrackableStateThroughStableProxy() {
+        testLogD("#### NetworkConnectivityTests.publishesTrackableStateThroughStableProxy ####")
+        trackNewTrackable(trackableId!!, publisher!!, locationHelper!!)
+    }
+
+    /**
+     *
+     *  Test that a Trackable moves to offline state when connection is broken,
+     *  then returns to the Online state when connectivity is restored.
+     *
+     * 1.  Configure Publisher to use Ably through proxy
+     * 2.  Attempt to track a new Trackable
+     * 3.  Publish a location update
+     * 4.  Ensure Trackable is initially Online
+     * 5.  Interrupt proxy connection
+     * 6.  Publish another location update
+     * 7.  Ensure Trackable is now Offline
+     * 8.  Restore proxy connectivity
+     * 9.  Publish another location update
+     * 10. Ensure Trackable is finally Online again
+     * 11. Shutdown publisher
+     */
+    @Test
+    fun resumesPublishingAfterInterruptedConnectivity() {
+        testLogD("#### NetworkConnectivityTests.publishesTrackableStateThroughStableProxy ####")
+
+        trackNewTrackable(trackableId!!, publisher!!, locationHelper!!)
+    }
+
+    /**
+     * Helper to initiate tracking of a new Trackable and assert that it reaches the Online
+     * state initially.
+     */
+    private fun trackNewTrackable(
+        trackableId: String,
+        publisher: Publisher,
+        locationHelper: LocationHelper
+    ) {
         val connectedReceiver = TrackableStateReceiver(
             "trackable online",
             expectedStates = setOf(TrackableState.Online::class),
@@ -180,24 +249,16 @@ class NetworkConnectivityTests {
         val trackExpectation = failOnException("track new Trackable($trackableId)") {
             publisher.track(Trackable(trackableId))
                 .onEach(connectedReceiver::receive)
-                .launchIn(scope)
+                .launchIn(scope!!)
             locationHelper.sendUpdate(10.0, 11.0)
         }
 
         // await asynchronous events
         testLogD("AWAIT")
         trackExpectation.await()
+        trackExpectation.assertSuccess()
         connectedReceiver.outcome.await()
         connectedReceiver.outcome.assertSuccess()
-
-        // cleanup
-        testLogD("CLEANUP")
-        val stopExpectation = shutdownPublisher(publisher)
-
-        // then
-        testLogD("THEN")
-        trackExpectation.assertSuccess()
-        stopExpectation.assertSuccess()
     }
 
     /**

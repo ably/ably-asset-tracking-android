@@ -17,7 +17,9 @@ constructor (
     private val logHandler: (String) -> Unit,
 ){
     private val server: ServerSocket = ServerSocket(listenPort)
-    private  val sslsocketfactory = SSLSocketFactory.getDefault()
+    private val sslsocketfactory = SSLSocketFactory.getDefault()
+
+    private val connections : MutableList<AblyConnection> = mutableListOf()
 
     var connectionsBroken = false
 
@@ -26,11 +28,17 @@ constructor (
         logHandler( "PROXY accepted connection")
 
         val serverSock = sslsocketfactory.createSocket(targetAddress, targetPort)
-        return AblyConnection(serverSock, clientSock, targetAddress, logHandler, this)
+        val conn = AblyConnection(serverSock, clientSock, targetAddress, logHandler, this)
+        connections.add(conn)
+        return conn
     }
 
     fun close() {
         server.close()
+        connections.forEach {
+            it.stop()
+        }
+        connections.clear()
     }
 
     fun start() = Thread {
@@ -58,7 +66,7 @@ constructor(
 ) {
 
     fun run() {
-        Thread { proxy(server, client, true) }.start() // TODO snoop on packets
+        Thread { proxy(server, client, true) }.start()
         Thread { proxy(client, server) }.start()
     }
 
