@@ -80,6 +80,7 @@ class WorkerQueueTest {
 
         // when
         workerQueue.enqueue(Unit)
+        waitForWorkerToBeProcessed()
         asyncWorkSlot.waitForCapture()
         asyncWorkSlot.captured { throw anyUnexpectedException() }
 
