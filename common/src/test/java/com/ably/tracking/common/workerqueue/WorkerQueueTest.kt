@@ -19,29 +19,20 @@ import org.junit.Test
 typealias TestWorkerSpecificationType = Unit
 
 class WorkerQueueTest {
-    private lateinit var workerQueue: WorkerQueue<Properties, TestWorkerSpecificationType>
     private val properties = mockk<Properties>()
     private val scope = CoroutineScope(createSingleThreadDispatcher() + SupervisorJob())
     private val worker = mockk<Worker<Properties, TestWorkerSpecificationType>>(relaxed = true)
     private val workerFactory = mockk<WorkerFactory<Properties, TestWorkerSpecificationType>>() {
         every { createWorker(Unit) } returns worker
     }
-
-    @Before
-    fun setup() {
-        workerQueue = WorkerQueue(
+    private val workerQueue: WorkerQueue<Properties, TestWorkerSpecificationType> =
+        WorkerQueue(
             properties = properties,
             scope = scope,
             workerFactory = workerFactory,
             copyProperties = { properties },
             getStoppedException = { Exception("WorkerQueue is stopped") }
         )
-    }
-
-    @After
-    fun cleanup() {
-        clearAllMocks()
-    }
 
     @Test
     fun `started queue should call worker's regular work method`() {
