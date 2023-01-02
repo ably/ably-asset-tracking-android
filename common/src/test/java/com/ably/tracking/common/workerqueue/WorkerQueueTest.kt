@@ -131,6 +131,6 @@ class WorkerQueueTest {
      * If tests from this file become flaky try increasing the delay value or find a better way for waiting on workers to be processed.
      */
     private fun waitForWorkerToBeProcessed() {
-        runBlocking { delay(100L) }
+        runBlocking { delay(300L) }
     }
 }
