@@ -3,7 +3,6 @@ package com.ably.tracking.common.workerqueue
 import com.ably.tracking.common.createSingleThreadDispatcher
 import com.ably.tracking.test.common.waitForCapture
 import io.mockk.CapturingSlot
-import io.mockk.clearAllMocks
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
@@ -12,8 +11,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
-import org.junit.After
-import org.junit.Before
 import org.junit.Test
 
 typealias TestWorkerSpecificationType = Unit
