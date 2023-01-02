@@ -22,12 +22,13 @@ class WorkerQueueTest {
     private lateinit var workerQueue: WorkerQueue<Properties, TestWorkerSpecificationType>
     private val properties = mockk<Properties>()
     private val scope = CoroutineScope(createSingleThreadDispatcher() + SupervisorJob())
-    private val workerFactory = mockk<WorkerFactory<Properties, TestWorkerSpecificationType>>()
     private val worker = mockk<Worker<Properties, TestWorkerSpecificationType>>(relaxed = true)
+    private val workerFactory = mockk<WorkerFactory<Properties, TestWorkerSpecificationType>>() {
+        every { createWorker(Unit) } returns worker
+    }
 
     @Before
     fun setup() {
-        mockAllWorkers(worker)
         workerQueue = WorkerQueue(
             properties = properties,
             scope = scope,
@@ -118,10 +119,6 @@ class WorkerQueueTest {
 
     private fun mockWorkerQueueStarted() {
         every { properties.isStopped } returns false
-    }
-
-    private fun mockAllWorkers(worker: Worker<Properties, TestWorkerSpecificationType>) {
-        every { workerFactory.createWorker(Unit) } returns worker
     }
 
     private fun anyUnexpectedException() = java.lang.IllegalStateException("Unexpected worker exception")
