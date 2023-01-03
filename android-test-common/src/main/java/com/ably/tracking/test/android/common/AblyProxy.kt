@@ -11,30 +11,30 @@ import kotlin.experimental.or
 
 class AblyProxy
 constructor (
-    listenPort: Int,
+    private val listenPort: Int,
     private val targetAddress: String,
     private val targetPort: Int,
     private val logHandler: (String) -> Unit,
 ){
-    private val server: ServerSocket = ServerSocket(listenPort)
+    private var server: ServerSocket? = null
     private val sslsocketfactory = SSLSocketFactory.getDefault()
 
     private val connections : MutableList<AblyConnection> = mutableListOf()
 
     var connectionsBroken = false
 
-    fun accept() : AblyConnection {
-        val clientSock = server.accept()
+    private fun accept() : AblyConnection {
+        val clientSock = server?.accept()
         logHandler( "PROXY accepted connection")
 
         val serverSock = sslsocketfactory.createSocket(targetAddress, targetPort)
-        val conn = AblyConnection(serverSock, clientSock, targetAddress, logHandler, this)
+        val conn = AblyConnection(serverSock, clientSock!!, targetAddress, logHandler, this)
         connections.add(conn)
         return conn
     }
 
     fun close() {
-        server.close()
+        server?.close()
         connections.forEach {
             it.stop()
         }
@@ -42,6 +42,7 @@ constructor (
     }
 
     fun start() = Thread {
+        server = ServerSocket(listenPort)
         while (true) {
             testLogD("proxy trying to accept")
             try {

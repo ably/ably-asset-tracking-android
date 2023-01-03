@@ -25,12 +25,10 @@ import io.ably.lib.types.ClientOptions
 import io.ably.lib.types.ErrorInfo
 import io.ably.lib.types.Message
 import io.ably.lib.util.Log
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert
 import org.junit.Before
@@ -255,7 +253,7 @@ class NetworkConnectivityTests {
 
         proxy?.close()
         locationHelper?.sendUpdate(12.0, 13.0)
-        offlineReceiver.outcome.await(30L)
+        offlineReceiver.outcome.await()
         offlineReceiver.outcome.assertSuccess()
 
         // (8, 9, 10)
@@ -294,8 +292,9 @@ class NetworkConnectivityTests {
             failureStates = setOf(TrackableState.Failed::class)
         )
 
+        var trackableStateJob: Job? = null
         val trackExpectation = failOnException("track new Trackable($trackableId)") {
-            publisher.track(Trackable(trackableId))
+            trackableStateJob = publisher.track(Trackable(trackableId))
                 .onEach(connectedReceiver::receive)
                 .launchIn(scope!!)
             locationHelper.sendUpdate(10.0, 11.0)
@@ -307,6 +306,9 @@ class NetworkConnectivityTests {
         trackExpectation.assertSuccess()
         connectedReceiver.outcome.await()
         connectedReceiver.outcome.assertSuccess()
+        runBlocking {
+            trackableStateJob?.cancelAndJoin()
+        }
     }
 
     /**
