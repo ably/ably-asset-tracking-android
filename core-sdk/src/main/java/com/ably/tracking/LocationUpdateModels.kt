@@ -71,6 +71,7 @@ enum class LocationUpdateType {
     /**
      * The location was predicted using the previous locations of the publisher.
      */
+    @Deprecated("Predictions are disabled internally so we will never receive a predicted location")
     PREDICTED,
 
     /**

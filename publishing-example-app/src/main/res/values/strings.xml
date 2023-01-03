@@ -80,4 +80,6 @@
   <string name="preferences_vehicle_profile_label">Vehicle profile</string>
   <string name="vehicle_profile_car">Car</string>
   <string name="vehicle_profile_bicycle">Bicycle</string>
+  <string name="set_destination_button_text">Set Destination</string>
+  <string name="accept_destination_button_text">Accept</string>
 </resources>

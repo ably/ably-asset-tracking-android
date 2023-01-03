@@ -89,12 +89,14 @@ fun Message.getRawLocationUpdate(gson: Gson): LocationUpdate? =
             )
         }
 
+@Suppress("DEPRECATION")
 fun LocationUpdateTypeMessage.toTracking(): LocationUpdateType =
     when (this) {
         LocationUpdateTypeMessage.PREDICTED -> LocationUpdateType.PREDICTED
         LocationUpdateTypeMessage.ACTUAL -> LocationUpdateType.ACTUAL
     }
 
+@Suppress("DEPRECATION")
 fun LocationUpdateType.toMessage(): LocationUpdateTypeMessage =
     when (this) {
         LocationUpdateType.PREDICTED -> LocationUpdateTypeMessage.PREDICTED

@@ -7,6 +7,7 @@ import androidx.annotation.RequiresPermission
 import com.ably.tracking.BuilderConfigurationIncompleteException
 import com.ably.tracking.Resolution
 import com.ably.tracking.common.DefaultAbly
+import com.ably.tracking.common.DefaultAblySdkRealtimeFactory
 import com.ably.tracking.common.logging.createLoggingTag
 import com.ably.tracking.common.logging.v
 import com.ably.tracking.connection.ConnectionConfiguration
@@ -81,7 +82,7 @@ internal data class PublisherBuilder(
         logHandler?.v("$TAG Creating a publisher instance")
         // All below fields are required and above code checks if they are nulls, so using !! should be safe from NPE
         return DefaultPublisher(
-            DefaultAbly(connectionConfiguration!!, logHandler),
+            DefaultAbly(DefaultAblySdkRealtimeFactory(), connectionConfiguration!!, logHandler),
             DefaultMapbox(
                 androidContext!!,
                 mapConfiguration!!,

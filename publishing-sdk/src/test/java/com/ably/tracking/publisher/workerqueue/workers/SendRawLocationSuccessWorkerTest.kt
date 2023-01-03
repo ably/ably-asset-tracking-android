@@ -1,98 +1,111 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
-import com.ably.tracking.Location
-import com.ably.tracking.publisher.CorePublisher
-import com.ably.tracking.publisher.PublisherProperties
+import com.ably.tracking.publisher.PublisherInteractor
+import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 import com.ably.tracking.test.common.anyLocation
-import io.mockk.clearAllMocks
+import com.google.common.truth.Truth.assertThat
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.runs
 import io.mockk.verify
-import org.junit.After
-import org.junit.Assert
-import org.junit.Before
 import org.junit.Test
 
 class SendRawLocationSuccessWorkerTest {
-    private lateinit var worker: SendRawLocationSuccessWorker
     private val location = anyLocation()
+
     private val trackableId = "test-trackable"
-    private val corePublisher = mockk<CorePublisher>(relaxed = true)
-    private val lastSentRawLocations = mockk<MutableMap<String, Location>>(relaxed = true)
-    private val publisherProperties = mockk<PublisherProperties>(relaxed = true)
 
-    @Before
-    fun setUp() {
-        worker = SendRawLocationSuccessWorker(location, trackableId, corePublisher, null)
-        every { publisherProperties.lastSentRawLocations } returns lastSentRawLocations
+    private val publisherInteractor: PublisherInteractor = mockk {
+        every { processNextWaitingRawLocationUpdate(any(), any()) } just runs
     }
 
-    @After
-    fun cleanUp() {
-        clearAllMocks()
-    }
+    private val worker = SendRawLocationSuccessWorker(location, trackableId, publisherInteractor, null)
 
-    @Test
-    fun `should always return an empty result`() {
-        // given
-
-        // when
-        val result = worker.doWork(publisherProperties)
-
-        // then
-        Assert.assertNull(result.syncWorkResult)
-        Assert.assertNull(result.asyncWork)
-    }
+    private val asyncWorks = mutableListOf<suspend () -> Unit>()
+    private val postedWorks = mutableListOf<WorkerSpecification>()
 
     @Test
     fun `should unmark message pending state`() {
         // given
+        val initialProperties = createPublisherProperties()
+        initialProperties.rawLocationsPublishingState.markMessageAsPending(trackableId)
 
         // when
-        worker.doWork(publisherProperties)
+        val updatedProperties = worker.doWork(
+            initialProperties,
+            asyncWorks.appendWork(),
+            postedWorks.appendSpecification()
+        )
 
         // then
-        verify(exactly = 1) {
-            publisherProperties.rawLocationsPublishingState.unmarkMessageAsPending(trackableId)
-        }
+        assertThat(asyncWorks).isEmpty()
+        assertThat(postedWorks).isEmpty()
+
+        assertThat(updatedProperties.rawLocationsPublishingState.hasPendingMessage(trackableId))
+            .isFalse()
     }
 
     @Test
     fun `should set the location as the last sent location`() {
         // given
+        val initialProperties = createPublisherProperties()
+        initialProperties.rawLocationsPublishingState.markMessageAsPending(trackableId)
 
         // when
-        worker.doWork(publisherProperties)
+        val updatedProperties = worker.doWork(
+            initialProperties,
+            asyncWorks.appendWork(),
+            postedWorks.appendSpecification()
+        )
 
         // then
-        verify(exactly = 1) {
-            lastSentRawLocations[trackableId] = location
-        }
+        assertThat(asyncWorks).isEmpty()
+        assertThat(postedWorks).isEmpty()
+
+        assertThat(updatedProperties.lastSentRawLocations[trackableId])
+            .isEqualTo(location)
     }
 
     @Test
     fun `should clear the skipped locations`() {
         // given
+        val initialProperties = createPublisherProperties()
+        initialProperties.skippedRawLocations.add(trackableId, anyLocation())
 
         // when
-        worker.doWork(publisherProperties)
+        val updatedProperties = worker.doWork(
+            initialProperties,
+            asyncWorks.appendWork(),
+            postedWorks.appendSpecification()
+        )
 
         // then
-        verify(exactly = 1) {
-            publisherProperties.skippedRawLocations.clear(trackableId)
-        }
+        assertThat(asyncWorks).isEmpty()
+        assertThat(postedWorks).isEmpty()
+
+        assertThat(updatedProperties.skippedRawLocations.toList(trackableId))
+            .isEmpty()
     }
 
     @Test
     fun `should process the next waiting location update if it is available`() {
         // given
+        val initialProperties = createPublisherProperties()
 
         // when
-        worker.doWork(publisherProperties)
+        val updatedProperties = worker.doWork(
+            initialProperties,
+            asyncWorks.appendWork(),
+            postedWorks.appendSpecification()
+        )
 
         // then
+        assertThat(asyncWorks).isEmpty()
+        assertThat(postedWorks).isEmpty()
+
         verify(exactly = 1) {
-            corePublisher.processNextWaitingRawLocationUpdate(publisherProperties, trackableId)
+            publisherInteractor.processNextWaitingRawLocationUpdate(updatedProperties, trackableId)
         }
     }
 }

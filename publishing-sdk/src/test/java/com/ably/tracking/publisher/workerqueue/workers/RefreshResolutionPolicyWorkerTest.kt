@@ -1,61 +1,52 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
-import com.ably.tracking.publisher.CorePublisher
-import com.ably.tracking.publisher.PublisherProperties
+import com.ably.tracking.publisher.PublisherInteractor
 import com.ably.tracking.publisher.Trackable
-import io.mockk.clearAllMocks
+import com.ably.tracking.publisher.workerqueue.WorkerSpecification
+import com.google.common.truth.Truth
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.runs
 import io.mockk.verify
-import org.junit.After
-import org.junit.Assert
-import org.junit.Before
 import org.junit.Test
 
 class RefreshResolutionPolicyWorkerTest {
-    private lateinit var worker: RefreshResolutionPolicyWorker
-    private val corePublisher = mockk<CorePublisher>(relaxed = true)
-    private val publisherProperties = mockk<PublisherProperties>(relaxed = true)
-
-    @Before
-    fun setUp() {
-        worker = RefreshResolutionPolicyWorker(corePublisher)
+    private val publisherInteractor: PublisherInteractor = mockk {
+        every { resolveResolution(any(), any()) } just runs
     }
 
-    @After
-    fun cleanUp() {
-        clearAllMocks()
-    }
+    private val worker = RefreshResolutionPolicyWorker(publisherInteractor)
 
-    @Test
-    fun `should always return an empty result`() {
-        // given
-
-        // when
-        val result = worker.doWork(publisherProperties)
-
-        // then
-        Assert.assertNull(result.syncWorkResult)
-        Assert.assertNull(result.asyncWork)
-    }
+    private val asyncWorks = mutableListOf<suspend () -> Unit>()
+    private val postedWorks = mutableListOf<WorkerSpecification>()
 
     @Test
     fun `should resolve resolution for all trackables`() {
         // given
+        val initialProperties = createPublisherProperties()
         val firstTrackable = Trackable("first")
+        initialProperties.trackables.add(firstTrackable)
         val secondTrackable = Trackable("second")
+        initialProperties.trackables.add(secondTrackable)
         val thirdTrackable = Trackable("third")
-        val allTrackables = mutableSetOf(firstTrackable, secondTrackable, thirdTrackable)
-        every { publisherProperties.trackables } returns allTrackables
+        initialProperties.trackables.add(thirdTrackable)
 
         // when
-        worker.doWork(publisherProperties)
+        worker.doWork(
+            initialProperties,
+            asyncWorks.appendWork(),
+            postedWorks.appendSpecification()
+        )
 
         // then
+        Truth.assertThat(asyncWorks).isEmpty()
+        Truth.assertThat(postedWorks).isEmpty()
+
         verify(exactly = 1) {
-            corePublisher.resolveResolution(firstTrackable, publisherProperties)
-            corePublisher.resolveResolution(secondTrackable, publisherProperties)
-            corePublisher.resolveResolution(thirdTrackable, publisherProperties)
+            publisherInteractor.resolveResolution(firstTrackable, initialProperties)
+            publisherInteractor.resolveResolution(secondTrackable, initialProperties)
+            publisherInteractor.resolveResolution(thirdTrackable, initialProperties)
         }
     }
 }

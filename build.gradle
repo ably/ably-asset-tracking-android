@@ -1,10 +1,11 @@
 buildscript {
-    ext.kotlin_version = '1.6.10'
-    ext.copyright_message = 'Copyright 2020-2021 Ably Real-time Ltd (ably.com)'
+    ext.kotlin_version = '1.6.21'
+    ext.copyright_message = (new File('COPYRIGHT')).readLines().get(0)
+
     // The version of Ably's client library for Java that we're using.
     // Source code: https://github.com/ably/ably-java
     // Maven coordinates: groupId 'io.ably', artifactId ':'ably-android'.
-    ext.ably_core_version = '1.2.18'
+    ext.ably_core_version = '1.2.21'
 
     repositories {
         google()
@@ -12,13 +13,13 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.1.1'
+        classpath 'com.android.tools.build:gradle:7.3.1'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
 
         // Firebase Crashlytics
         // see: https://firebase.google.com/docs/crashlytics/get-started?platform=android
-        classpath 'com.google.gms:google-services:4.3.5'
-        classpath 'com.google.firebase:firebase-crashlytics-gradle:2.5.2'
+        classpath 'com.google.gms:google-services:4.3.14'
+        classpath 'com.google.firebase:firebase-crashlytics-gradle:2.9.2'
 
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
@@ -44,7 +45,7 @@ allprojects {
 
     // version MUST conform to the Semantic Versioning Specification (https://semver.org/) version 2.0.0
     // on incrementing this value, ensure to also increment versionCode in android defaultConfig (also in this file)
-    version = '1.5.0'
+    version = '1.5.1'
 
     // Values used to publish the SDK to maven repositories.
     ext {
@@ -111,7 +112,7 @@ subprojects {
                 // projects in this repository. Therefore, this same version number is used for SDK and
                 // example app projects alike.
                 // - versionCode MUST be incremented by 1 for each release from the main branch
-                versionCode 34
+                versionCode 35
                 versionName version
 
                 testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
@@ -130,7 +131,7 @@ subprojects {
                 kotlinOptions {
                     jvmTarget = '1.8'
                     allWarningsAsErrors = true
-                    freeCompilerArgs += '-Xopt-in=kotlin.RequiresOptIn'
+                    freeCompilerArgs += '-opt-in=kotlin.RequiresOptIn'
                 }
             }
 

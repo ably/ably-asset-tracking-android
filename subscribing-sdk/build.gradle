@@ -11,6 +11,7 @@ android {
     defaultConfig {
         consumerProguardFiles 'consumer-rules.pro'
     }
+    namespace 'com.ably.tracking.subscriber'
 }
 
 dependencies {

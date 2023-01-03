@@ -2,13 +2,14 @@ package com.ably.tracking.publisher.workerqueue.workers
 
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ResultCallbackFunction
-import com.ably.tracking.publisher.CorePublisher
-import com.ably.tracking.publisher.PublisherProperties
+import com.ably.tracking.publisher.PublisherInteractor
 import com.ably.tracking.publisher.PublisherState
+import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 import com.ably.tracking.test.common.mockCloseFailure
 import com.ably.tracking.test.common.mockCloseSuccessWithDelay
+import com.google.common.truth.Truth.assertThat
 import io.mockk.CapturingSlot
-import io.mockk.clearAllMocks
+import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.just
@@ -16,89 +17,105 @@ import io.mockk.mockk
 import io.mockk.runs
 import io.mockk.slot
 import io.mockk.verify
-import org.junit.After
-import org.junit.Assert
-import org.junit.Before
 import org.junit.Test
 
 class StopWorkerTest {
-    private lateinit var worker: StopWorker
     private val resultCallbackFunction = mockk<ResultCallbackFunction<Unit>>(relaxed = true)
-    private val ably = mockk<Ably>(relaxed = true)
-    private val corePublisher = mockk<CorePublisher>(relaxed = true)
-    private val publisherProperties = mockk<PublisherProperties>(relaxed = true)
-
-    @Before
-    fun setUp() {
-        worker = createWorker()
+    private val ably: Ably = mockk {
+        coEvery { close(any()) } just runs
     }
 
-    @After
-    fun cleanUp() {
-        clearAllMocks()
+    private val publisherInteractor: PublisherInteractor = mockk {
+        every { stopLocationUpdates(any()) } just runs
+        every { closeMapbox() } just runs
     }
 
-    @Test
-    fun `should always return an empty result`() {
-        // given
+    private var worker: StopWorker = createWorker()
 
-        // when
-        val result = worker.doWork(publisherProperties)
-
-        // then
-        Assert.assertNull(result.syncWorkResult)
-        Assert.assertNull(result.asyncWork)
-    }
+    private val asyncWorks = mutableListOf<suspend () -> Unit>()
+    private val postedWorks = mutableListOf<WorkerSpecification>()
 
     @Test
     fun `should stop location updates if is currently tracking trackables`() {
         // given
-        every { publisherProperties.isTracking } returns true
+        val initialProperties = createPublisherProperties()
+        initialProperties.isTracking = true
 
         // when
-        worker.doWork(publisherProperties)
+        worker.doWork(
+            initialProperties,
+            asyncWorks.appendWork(),
+            postedWorks.appendSpecification()
+        )
 
         // then
+        assertThat(asyncWorks).isEmpty()
+        assertThat(postedWorks).isEmpty()
+
         verify(exactly = 1) {
-            corePublisher.stopLocationUpdates(any())
+            publisherInteractor.stopLocationUpdates(any())
         }
     }
 
     @Test
     fun `should not stop location updates if is not currently tracking trackables`() {
         // given
-        every { publisherProperties.isTracking } returns false
+        val initialProperties = createPublisherProperties()
+        initialProperties.isTracking = false
 
         // when
-        worker.doWork(publisherProperties)
+        worker.doWork(
+            initialProperties,
+            asyncWorks.appendWork(),
+            postedWorks.appendSpecification()
+        )
 
         // then
+        assertThat(asyncWorks).isEmpty()
+        assertThat(postedWorks).isEmpty()
+
         verify(exactly = 0) {
-            corePublisher.stopLocationUpdates(any())
+            publisherInteractor.stopLocationUpdates(any())
         }
     }
 
     @Test
     fun `should close the whole Mapbox`() {
         // given
+        val initialProperties = createPublisherProperties()
 
         // when
-        worker.doWork(publisherProperties)
+        worker.doWork(
+            initialProperties,
+            asyncWorks.appendWork(),
+            postedWorks.appendSpecification()
+        )
 
         // then
+        assertThat(asyncWorks).isEmpty()
+        assertThat(postedWorks).isEmpty()
+
         verify(exactly = 1) {
-            corePublisher.closeMapbox()
+            publisherInteractor.closeMapbox()
         }
     }
 
     @Test
     fun `should close the whole Ably object`() {
         // given
+        val initialProperties = createPublisherProperties()
 
         // when
-        worker.doWork(publisherProperties)
+        worker.doWork(
+            initialProperties,
+            asyncWorks.appendWork(),
+            postedWorks.appendSpecification()
+        )
 
         // then
+        assertThat(asyncWorks).isEmpty()
+        assertThat(postedWorks).isEmpty()
+
         coVerify(exactly = 1) {
             ably.close(any())
         }
@@ -107,113 +124,175 @@ class StopWorkerTest {
     @Test
     fun `should dispose the publisher properties if closing Ably was successful`() {
         // given
+        val initialProperties = createPublisherProperties()
 
         // when
-        worker.doWork(publisherProperties)
+        worker.doWork(
+            initialProperties,
+            asyncWorks.appendWork(),
+            postedWorks.appendSpecification()
+        )
 
         // then
-        verify(exactly = 1) {
-            publisherProperties.dispose()
-        }
+        assertThat(asyncWorks).isEmpty()
+        assertThat(postedWorks).isEmpty()
+
+        assertThat(initialProperties.isDisposed)
+            .isTrue()
     }
 
     @Test
     fun `should not dispose the publisher properties if closing Ably failed`() {
         // given
+        val initialProperties = createPublisherProperties()
         ably.mockCloseFailure()
 
         // when
-        worker.doWork(publisherProperties)
+        worker.doWork(
+            initialProperties,
+            asyncWorks.appendWork(),
+            postedWorks.appendSpecification()
+        )
 
         // then
-        verify(exactly = 0) {
-            publisherProperties.dispose()
-        }
+        assertThat(asyncWorks).isEmpty()
+        assertThat(postedWorks).isEmpty()
+
+        assertThat(initialProperties.isDisposed)
+            .isFalse()
     }
 
     @Test
     fun `should mark that the publisher is stopped if closing Ably was successful`() {
         // given
+        val initialProperties = createPublisherProperties()
 
         // when
-        worker.doWork(publisherProperties)
+        val updatedProperties = worker.doWork(
+            initialProperties,
+            asyncWorks.appendWork(),
+            postedWorks.appendSpecification()
+        )
 
         // then
-        verify(exactly = 1) {
-            publisherProperties setProperty PublisherProperties::state.name value PublisherState.STOPPED
-        }
+        assertThat(asyncWorks).isEmpty()
+        assertThat(postedWorks).isEmpty()
+
+        assertThat(updatedProperties.state)
+            .isEqualTo(PublisherState.STOPPED)
     }
 
     @Test
     fun `should mark that the publisher is stopped if closing Ably failed`() {
         // given
+        val initialProperties = createPublisherProperties()
         ably.mockCloseFailure()
 
         // when
-        worker.doWork(publisherProperties)
+        val updatedProperties = worker.doWork(
+            initialProperties,
+            asyncWorks.appendWork(),
+            postedWorks.appendSpecification()
+        )
 
         // then
-        verify(exactly = 1) {
-            publisherProperties setProperty PublisherProperties::state.name value PublisherState.STOPPED
-        }
+        assertThat(asyncWorks).isEmpty()
+        assertThat(postedWorks).isEmpty()
+
+        assertThat(updatedProperties.state)
+            .isEqualTo(PublisherState.STOPPED)
     }
 
     @Test
     fun `should mark that the publisher is stopped if stopping thrown a timeout`() {
         // given
+        val initialProperties = createPublisherProperties()
         worker = createWorker(timeoutInMilliseconds = 10L)
         ably.mockCloseSuccessWithDelay(delayInMilliseconds = 1000L)
 
         // when
-        worker.doWork(publisherProperties)
+        val updatedProperties = worker.doWork(
+            initialProperties,
+            asyncWorks.appendWork(),
+            postedWorks.appendSpecification()
+        )
 
         // then
-        verify(exactly = 1) {
-            publisherProperties setProperty PublisherProperties::state.name value PublisherState.STOPPED
-        }
+        assertThat(asyncWorks).isEmpty()
+        assertThat(postedWorks).isEmpty()
+
+        assertThat(updatedProperties.state)
+            .isEqualTo(PublisherState.STOPPED)
     }
 
     @Test
     fun `should call the callback function with a success if closing Ably was successful`() {
         // given
+        val initialProperties = createPublisherProperties()
         val resultSlot = captureCallbackFunctionResult()
 
         // when
-        worker.doWork(publisherProperties)
+        worker.doWork(
+            initialProperties,
+            asyncWorks.appendWork(),
+            postedWorks.appendSpecification()
+        )
 
         // then
-        Assert.assertTrue(resultSlot.captured.isSuccess)
+        assertThat(asyncWorks).isEmpty()
+        assertThat(postedWorks).isEmpty()
+
+        assertThat(resultSlot.captured.isSuccess)
+            .isTrue()
     }
 
     @Test
     fun `should call the callback function with a failure if closing Ably failed`() {
         // given
-        ably.mockCloseFailure()
+        val initialProperties = createPublisherProperties()
         val resultSlot = captureCallbackFunctionResult()
+        ably.mockCloseFailure()
 
         // when
-        worker.doWork(publisherProperties)
+        worker.doWork(
+            initialProperties,
+            asyncWorks.appendWork(),
+            postedWorks.appendSpecification()
+        )
 
         // then
-        Assert.assertTrue(resultSlot.captured.isFailure)
+        assertThat(asyncWorks).isEmpty()
+        assertThat(postedWorks).isEmpty()
+
+        assertThat(resultSlot.captured.isFailure)
+            .isTrue()
     }
 
     @Test
     fun `should call the callback function with a failure if stopping thrown a timeout`() {
         // given
+        val initialProperties = createPublisherProperties()
         worker = createWorker(timeoutInMilliseconds = 10L)
         ably.mockCloseSuccessWithDelay(delayInMilliseconds = 1000L)
         val resultSlot = captureCallbackFunctionResult()
 
         // when
-        worker.doWork(publisherProperties)
+        worker.doWork(
+            initialProperties,
+            asyncWorks.appendWork(),
+            postedWorks.appendSpecification()
+        )
 
         // then
-        Assert.assertTrue(resultSlot.captured.isFailure)
+        assertThat(asyncWorks).isEmpty()
+        assertThat(postedWorks).isEmpty()
+
+        assertThat(resultSlot.captured.isFailure)
+            .isTrue()
     }
 
     private fun createWorker(timeoutInMilliseconds: Long = 30_000L) =
-        StopWorker(resultCallbackFunction, ably, corePublisher, timeoutInMilliseconds)
+        StopWorker(resultCallbackFunction, ably, publisherInteractor, timeoutInMilliseconds)
 
     private fun captureCallbackFunctionResult(): CapturingSlot<Result<Unit>> {
         val resultSlot = slot<Result<Unit>>()

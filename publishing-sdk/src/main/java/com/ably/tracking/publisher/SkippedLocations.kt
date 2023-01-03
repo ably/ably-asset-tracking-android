@@ -30,6 +30,10 @@ internal class SkippedLocations {
         skippedLocations[trackableId] = locations
     }
 
+    fun addAll(other: SkippedLocations) {
+        skippedLocations.putAll(other.skippedLocations)
+    }
+
     /**
      * Returns the skipped locations list sorted by time for the specified trackable.
      * If no locations are added for a trackable then it returns an empty list.

@@ -3,136 +3,128 @@ package com.ably.tracking.publisher.workerqueue.workers
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ResultCallbackFunction
-import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.Trackable
-import com.ably.tracking.publisher.guards.DuplicateTrackableGuard
-import com.ably.tracking.publisher.workerqueue.assertNotNullAndExecute
-import com.ably.tracking.publisher.workerqueue.results.AddTrackableWorkResult
-import com.ably.tracking.test.common.mockConnectSuccess
+import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 import com.ably.tracking.test.common.mockConnectFailure
-import io.mockk.clearAllMocks
-import io.mockk.every
+import com.ably.tracking.test.common.mockConnectSuccess
+import com.google.common.truth.Truth.assertThat
+import io.mockk.coEvery
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.runBlocking
-import org.junit.After
-import org.junit.Assert
-import org.junit.Before
 import org.junit.Test
 
 class AddTrackableWorkerTest {
-    private lateinit var worker: AddTrackableWorker
 
-    // dependencies
-    private val resultCallbackFunction: ResultCallbackFunction<StateFlow<TrackableState>> = {}
-    private val ably = mockk<Ably>(relaxed = true)
+    private val resultCallbackFunction: ResultCallbackFunction<StateFlow<TrackableState>> = mockk(relaxed = true)
+    private val ably: Ably = mockk {
+        coEvery { startConnection() } returns Result.success(Unit)
+    }
     private val trackable = Trackable("testtrackable")
-    private val duplicateTrackableGuard = mockk<DuplicateTrackableGuard>(relaxed = true)
-    private val publisherProperties = mockk<PublisherProperties>(relaxed = true)
 
-    @Before
-    fun setUp() {
-        worker = AddTrackableWorker(trackable, resultCallbackFunction, {}, {}, ably)
-        every { publisherProperties.duplicateTrackableGuard } returns duplicateTrackableGuard
-    }
+    private val worker = AddTrackableWorker(trackable, resultCallbackFunction, {}, {}, ably)
 
-    @After
-    fun cleanUp() {
-        clearAllMocks()
-    }
-
-    @Test
-    fun `should return only async work when adding a trackable that is not added and not being added`() {
-        // given
-        mockTrackableIsNeitherAddedNorCurrentlyBeingAdded()
-
-        // when
-        val result = worker.doWork(publisherProperties)
-
-        // then
-        Assert.assertNull(result.syncWorkResult)
-        Assert.assertNotNull(result.asyncWork)
-    }
+    private val asyncWorks = mutableListOf<suspend () -> Unit>()
+    private val postedWorks = mutableListOf<WorkerSpecification>()
 
     @Test
     fun `should start adding a trackable when adding a trackable that is not added and not being added`() {
         // given
-        mockTrackableIsNeitherAddedNorCurrentlyBeingAdded()
+        val initialProperties = createPublisherProperties()
+        initialProperties.duplicateTrackableGuard.clear(trackable)
 
         // when
-        worker.doWork(publisherProperties)
+        val updatedProperties = worker.doWork(
+            initialProperties,
+            asyncWorks.appendWork(),
+            postedWorks.appendSpecification()
+        )
 
         // then
-        verify(exactly = 1) {
-            duplicateTrackableGuard.startAddingTrackable(trackable)
-        }
-    }
+        assertThat(asyncWorks).isNotEmpty()
+        assertThat(postedWorks).isEmpty()
 
-    @Test
-    fun `should return empty result when adding a trackable that is being added`() {
-        // given
-        mockTrackableIsCurrentlyBeingAdded()
-
-        // when
-        val result = worker.doWork(publisherProperties)
-
-        // then
-        Assert.assertNull(result.asyncWork)
-        Assert.assertNull(result.syncWorkResult)
+        assertThat(updatedProperties.duplicateTrackableGuard.isCurrentlyAddingTrackable(trackable))
+            .isTrue()
     }
 
     @Test
     fun `should save the trackable callback function when adding a trackable that is being added`() {
         // given
-        mockTrackableIsCurrentlyBeingAdded()
+        val initialProperties = createPublisherProperties()
+        initialProperties.duplicateTrackableGuard.startAddingTrackable(trackable)
+        val addTrackableResult = Result.success(MutableStateFlow(TrackableState.Offline()))
 
         // when
-        worker.doWork(publisherProperties)
+        val updatedProperties = worker.doWork(
+            initialProperties,
+            asyncWorks.appendWork(),
+            postedWorks.appendSpecification()
+        )
+
+        updatedProperties.duplicateTrackableGuard.finishAddingTrackable(trackable, addTrackableResult)
 
         // then
+        assertThat(asyncWorks).isEmpty()
+        assertThat(postedWorks).isEmpty()
+
         verify(exactly = 1) {
-            duplicateTrackableGuard.saveDuplicateAddHandler(trackable, resultCallbackFunction)
+            resultCallbackFunction.invoke(addTrackableResult)
         }
     }
 
     @Test
-    fun `should return an 'AlreadyIn' result when adding a trackable that is already added`() {
+    fun `should call callback with success when adding a trackable that is already added`() {
         // given
-        mockTrackableIsAlreadyAdded()
+        val initialProperties = createPublisherProperties()
+        initialProperties.trackables.add(trackable)
+        initialProperties.trackableStateFlows[trackable.id] = MutableStateFlow(TrackableState.Offline())
 
         // when
-        val result = worker.doWork(publisherProperties)
+        val updatedProperties = worker.doWork(
+            initialProperties,
+            asyncWorks.appendWork(),
+            postedWorks.appendSpecification()
+        )
 
         // then
-        Assert.assertNull(result.asyncWork)
-        Assert.assertTrue(result.syncWorkResult is AddTrackableWorkResult.AlreadyIn)
+        assertThat(asyncWorks).isEmpty()
+        assertThat(postedWorks).isEmpty()
 
-        // also make sure it has the right content
-        val alreadyIn = result.syncWorkResult as AddTrackableWorkResult.AlreadyIn
-        Assert.assertEquals(resultCallbackFunction, alreadyIn.callbackFunction)
-        Assert.assertEquals(publisherProperties.trackableStateFlows[trackable.id], alreadyIn.trackableStateFlow)
+        verify(exactly = 1) {
+            resultCallbackFunction(
+                match {
+                    it.getOrNull() == updatedProperties.trackableStateFlows[trackable.id]
+                }
+            )
+        }
     }
 
     // async work tests
     @Test
-    fun `should successfully add a trackable when connection was successful`() {
+    fun `should post ConnectionCreated work when connection was successful`() {
         runBlocking {
             // given
-            mockTrackableIsNeitherAddedNorCurrentlyBeingAdded()
+            val initialProperties = createPublisherProperties()
+            initialProperties.duplicateTrackableGuard.clear(trackable)
             ably.mockConnectSuccess(trackable.id)
 
             // when
-            val result = worker.doWork(publisherProperties)
+            worker.doWork(
+                initialProperties,
+                asyncWorks.appendWork(),
+                postedWorks.appendSpecification()
+            )
 
             // then
-            val asyncWorkResult = result.asyncWork.assertNotNullAndExecute()
-            Assert.assertTrue(asyncWorkResult is AddTrackableWorkResult.Success)
-            // also check content
-            val success = asyncWorkResult as AddTrackableWorkResult.Success
-            Assert.assertEquals(trackable, success.trackable)
-            Assert.assertEquals(resultCallbackFunction, success.callbackFunction)
+            asyncWorks.executeAll()
+            assertThat(asyncWorks).isNotEmpty()
+
+            val postedWorkerSpecification = postedWorks[0] as WorkerSpecification.ConnectionCreated
+            assertThat(postedWorkerSpecification.trackable).isEqualTo(trackable)
+            assertThat(postedWorkerSpecification.callbackFunction).isEqualTo(resultCallbackFunction)
         }
     }
 
@@ -140,35 +132,24 @@ class AddTrackableWorkerTest {
     fun `should fail to add a trackable when connection failed`() {
         runBlocking {
             // given
-            mockTrackableIsNeitherAddedNorCurrentlyBeingAdded()
+            val initialProperties = createPublisherProperties()
+            initialProperties.duplicateTrackableGuard.clear(trackable)
             ably.mockConnectFailure(trackable.id)
 
             // when
-            val result = worker.doWork(publisherProperties)
+            worker.doWork(
+                initialProperties,
+                asyncWorks.appendWork(),
+                postedWorks.appendSpecification()
+            )
 
             // then
-            val asyncWorkResult = result.asyncWork.assertNotNullAndExecute()
-            Assert.assertTrue(asyncWorkResult is AddTrackableWorkResult.Fail)
-            // also check content
-            val fail = asyncWorkResult as AddTrackableWorkResult.Fail
-            Assert.assertEquals(trackable, fail.trackable)
-            Assert.assertEquals(resultCallbackFunction, fail.callbackFunction)
+            asyncWorks.executeAll()
+            assertThat(asyncWorks).isNotEmpty()
+
+            val postedWorkerSpecification = postedWorks[0] as WorkerSpecification.AddTrackableFailed
+            assertThat(postedWorkerSpecification.trackable).isEqualTo(trackable)
+            assertThat(postedWorkerSpecification.callbackFunction).isEqualTo(resultCallbackFunction)
         }
-    }
-
-    private fun mockTrackableIsNeitherAddedNorCurrentlyBeingAdded() {
-        every { duplicateTrackableGuard.isCurrentlyAddingTrackable(any()) } returns false
-    }
-
-    private fun mockTrackableIsCurrentlyBeingAdded() {
-        every { duplicateTrackableGuard.isCurrentlyAddingTrackable(any()) } returns true
-    }
-
-    private fun mockTrackableIsAlreadyAdded() {
-        every { duplicateTrackableGuard.isCurrentlyAddingTrackable(any()) } returns false
-        every { publisherProperties.trackables } returns mutableSetOf(trackable)
-        every { publisherProperties.trackableStateFlows } returns mutableMapOf(
-            trackable.id to MutableStateFlow(TrackableState.Online)
-        )
     }
 }

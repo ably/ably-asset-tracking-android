@@ -26,7 +26,7 @@ internal class DisconnectWorkerTest {
     @Test
     fun `should call ably disconnect and notify callback`() = runBlockingTest {
         // given
-        val initialProperties = SubscriberProperties(Resolution(Accuracy.BALANCED, 100, 100.0))
+        val initialProperties = SubscriberProperties(Resolution(Accuracy.BALANCED, 100, 100.0), mockk())
         ably.mockDisconnectSuccess(trackableId)
 
         // when

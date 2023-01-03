@@ -1,85 +1,89 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
-import com.ably.tracking.publisher.CorePublisher
 import com.ably.tracking.publisher.Destination
-import com.ably.tracking.publisher.PublisherProperties
+import com.ably.tracking.publisher.PublisherInteractor
 import com.ably.tracking.publisher.RoutingProfile
-import io.mockk.clearAllMocks
+import com.ably.tracking.publisher.workerqueue.WorkerSpecification
+import com.google.common.truth.Truth.assertThat
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.runs
 import io.mockk.verify
-import org.junit.After
-import org.junit.Assert
-import org.junit.Before
 import org.junit.Test
 
 class ChangeRoutingProfileWorkerTest {
-    private lateinit var worker: ChangeRoutingProfileWorker
+    private val publisherInteractor: PublisherInteractor = mockk {
+        every { setDestination(any(), any()) } just runs
+    }
     private val routingProfile = RoutingProfile.WALKING
-    private val corePublisher = mockk<CorePublisher>(relaxed = true)
-    private val publisherProperties = mockk<PublisherProperties>(relaxed = true)
+    private val worker = ChangeRoutingProfileWorker(
+        routingProfile = routingProfile,
+        publisherInteractor = publisherInteractor
+    )
 
-    @Before
-    fun setUp() {
-        worker = ChangeRoutingProfileWorker(routingProfile, corePublisher)
-    }
-
-    @After
-    fun cleanUp() {
-        clearAllMocks()
-    }
-
-    @Test
-    fun `should always return an empty result`() {
-        // given
-
-        // when
-        val result = worker.doWork(publisherProperties)
-
-        // then
-        Assert.assertNull(result.syncWorkResult)
-        Assert.assertNull(result.asyncWork)
-    }
+    private val asyncWorks = mutableListOf<suspend () -> Unit>()
+    private val postedWorks = mutableListOf<WorkerSpecification>()
 
     @Test
     fun `should set the routing profile`() {
         // given
+        val initialProperties = createPublisherProperties()
 
         // when
-        worker.doWork(publisherProperties)
+        val updatedProperties = worker.doWork(
+            initialProperties,
+            asyncWorks.appendWork(),
+            postedWorks.appendSpecification()
+        )
 
         // then
-        verify(exactly = 1) {
-            publisherProperties.routingProfile = routingProfile
-        }
+        assertThat(asyncWorks).isEmpty()
+        assertThat(postedWorks).isEmpty()
+        assertThat(updatedProperties.routingProfile)
+            .isEqualTo(routingProfile)
     }
 
     @Test
     fun `should refresh the destination with the new routing profile if the current destination is present`() {
         // given
+        val initialProperties = createPublisherProperties()
         val currentDestination = Destination(1.0, 1.0)
-        every { publisherProperties.currentDestination } returns currentDestination
+        initialProperties.currentDestination = currentDestination
 
         // when
-        worker.doWork(publisherProperties)
+        val updatedProperties = worker.doWork(
+            initialProperties,
+            asyncWorks.appendWork(),
+            postedWorks.appendSpecification()
+        )
 
         // then
+        assertThat(asyncWorks).isEmpty()
+        assertThat(postedWorks).isEmpty()
         verify(exactly = 1) {
-            corePublisher.setDestination(currentDestination, publisherProperties)
+            publisherInteractor.setDestination(currentDestination, updatedProperties)
         }
     }
 
     @Test
     fun `should not refresh the destination with the new routing profile if there is no current destination`() {
         // given
-        every { publisherProperties.currentDestination } returns null
+        val initialProperties = createPublisherProperties()
+        initialProperties.currentDestination = null
 
         // when
-        worker.doWork(publisherProperties)
+        worker.doWork(
+            initialProperties,
+            asyncWorks.appendWork(),
+            postedWorks.appendSpecification()
+        )
 
         // then
+        assertThat(asyncWorks).isEmpty()
+        assertThat(postedWorks).isEmpty()
         verify(exactly = 0) {
-            corePublisher.setDestination(any(), publisherProperties)
+            publisherInteractor.setDestination(any(), any())
         }
     }
 }

@@ -127,13 +127,13 @@ you can then add the Ably Asset Tracking dependency that you require in your Gra
 ```groovy
 dependencies {
     // Publishers, developing in Kotlin, will need the Publishing SDK
-    implementation 'com.ably.tracking:publishing-sdk:1.5.0'
+    implementation 'com.ably.tracking:publishing-sdk:1.5.1'
 
     // Subscribers, developing in Kotlin, will need the Subscribing SDK
-    implementation 'com.ably.tracking:subscribing-sdk:1.5.0'
+    implementation 'com.ably.tracking:subscribing-sdk:1.5.1'
 
     // Subscribers, developing in Kotlin, can optionally use the UI utilities
-    implementation 'com.ably.tracking:ui-sdk:1.5.0'
+    implementation 'com.ably.tracking:ui-sdk:1.5.1'
 }
 ```
 
@@ -261,7 +261,7 @@ To use the API you must explicitly opt in to it by adding the following to your 
 ```groovy
 android {
     kotlinOptions {
-        freeCompilerArgs += "-Xopt-in=kotlin.RequiresOptIn"
+        freeCompilerArgs += "-opt-in=kotlin.RequiresOptIn"
     }
 }
 ```
@@ -356,7 +356,7 @@ Firstly, you have to exclude the notification module from Mapbox Navigation SDK 
 
 ```groovy
 // The Ably Asset Tracking Publisher SDK for Android.
-implementation ('com.ably.tracking:publishing-sdk:1.5.0')
+implementation ('com.ably.tracking:publishing-sdk:1.5.1')
 
 // The Mapbox Navigation SDK.
 implementation ('com.mapbox.navigation:android:2.8.0') {
@@ -390,6 +390,14 @@ W/System.err: SLF4J: Defaulting to no-operation (NOP) logger implementation
 ```
 
 This is normal behaviour if no specific SLF4J logger implementation is provided. If you want to fix those warnings you have to provide a SLF4J logger implementation in your project.
+
+### Using multiple publishers at the same time
+
+While it's possible to create multiple publishers and use them at the same time it is not advised. The reason is that the underlying location service is created when the publisher is created and it is destroyed when the publisher is stopped.
+Therefore, if you create a publisher after another publisher was created but not stopped, the new publisher's location engine configuration won't be applied, since the location service is already created and running.
+Additionally, since all publishers use the same location service instance, when one of them stops location updates (by removing its last trackable) they will stop for all of them.
+
+All the above issues won't occur when you create a new publisher after stopping the previous one, which is the recommended way of using the SDK.
 
 ## Contributing
 

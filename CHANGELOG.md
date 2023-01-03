@@ -1,5 +1,23 @@
 # Change log
 
+## [1.5.1](https://github.com/ably/ably-asset-tracking-android/tree/v1.5.1)
+
+[Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.5.0...v1.5.1)
+
+**Implemented enhancements:**
+
+- Provide a fix/option for intermittent connection issue on publisher [\#803](https://github.com/ably/ably-asset-tracking-android/issues/803)
+
+**Fixed bugs:**
+
+- Fix crash when publisher tries to modify its internal state after being stopped [\#808](https://github.com/ably/ably-asset-tracking-android/issues/808)
+- Fix not re-entering presence after connection is recovered via "Upgrade ably-java to 1.2.20" [\#822](https://github.com/ably/ably-asset-tracking-android/pull/822) ([KacperKluka](https://github.com/KacperKluka))
+
+**Merged pull requests:**
+
+- Check publisher state before emitting state on flow [\#820](https://github.com/ably/ably-asset-tracking-android/pull/820) ([ikbalkaya](https://github.com/ikbalkaya))
+- Allow to specify the remainPresentFor Ably transport parameter [\#806](https://github.com/ably/ably-asset-tracking-android/pull/806) ([KacperKluka](https://github.com/KacperKluka))
+
 ## [1.5.0](https://github.com/ably/ably-asset-tracking-android/tree/v1.5.0)
 
 [Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.4.1...v1.5.0)
