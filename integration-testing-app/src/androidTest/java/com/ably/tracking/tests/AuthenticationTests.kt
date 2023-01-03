@@ -102,7 +102,8 @@ class AuthenticationTests {
         val keyParts = ABLY_API_KEY.split(":")
         val keyName = keyParts[0]
         val keySecret = keyParts[1]
-        val tokenValidityInSeconds = if (tokenParams != null && tokenParams.ttl > 0L) tokenParams.ttl else 3600L
+        val tokenValidityInSeconds =
+            if (tokenParams != null && tokenParams.ttl > 0L) (tokenParams.ttl / 1000L) else 3600L
         val currentTimestampInSeconds = (Date().time / 1000L)
         val tokenExpirationTimestampInSeconds = currentTimestampInSeconds + tokenValidityInSeconds
         val tokenCapability =
