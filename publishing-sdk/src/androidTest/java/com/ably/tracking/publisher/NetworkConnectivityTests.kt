@@ -27,6 +27,7 @@ import io.ably.lib.types.Message
 import io.ably.lib.util.Log
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import org.junit.After
@@ -240,39 +241,38 @@ class NetworkConnectivityTests {
         trackNewTrackable(trackableId!!, publisher!!, locationHelper!!)
 
         // (5, 6, 7)
-        val offlineReceiver = TrackableStateReceiver(
-            label = "trackable offline when interrupted",
-            expectedStates = setOf(TrackableState.Offline::class),
-            failureStates = setOf(TrackableState.Failed::class)
-        )
-
-        publisher
-            ?.getTrackableState(trackableId!!)
-            ?.onEach(offlineReceiver::receive)
-            ?.launchIn(scope!!)
-
-        proxy?.close()
-        locationHelper?.sendUpdate(12.0, 13.0)
-        offlineReceiver.outcome.await()
-        offlineReceiver.outcome.assertSuccess()
+        waitForStateTransition(
+            actionLabel = "terminate proxy and publish another location update",
+            receiver = TrackableStateReceiver(
+                label = "trackable offline when interrupted",
+                expectedStates = setOf(TrackableState.Offline::class),
+                failureStates = setOf(TrackableState.Failed::class)
+            )
+        ) {
+            publisher
+                ?.getTrackableState(trackableId!!)
+                ?.also {
+                    proxy?.close()
+                    locationHelper?.sendUpdate(12.0, 13.0)
+                }!!
+        }
 
         // (8, 9, 10)
-        val reconnectedReceiver = TrackableStateReceiver(
-            label = "trackable reconnected",
-            expectedStates = setOf(TrackableState.Online::class),
-            failureStates = setOf(TrackableState.Failed::class)
-        )
-
-        publisher
-            ?.getTrackableState(trackableId!!)
-            ?.onEach(reconnectedReceiver::receive)
-            ?.launchIn(scope!!)
-
-        proxy?.start()
-        locationHelper?.sendUpdate(14.0, 15.0)
-
-        reconnectedReceiver.outcome.await(30L)
-        reconnectedReceiver.outcome.assertSuccess()
+        waitForStateTransition(
+            actionLabel = "restore connection and publish an update",
+            receiver = TrackableStateReceiver(
+                label = "trackable reconnected",
+                expectedStates = setOf(TrackableState.Online::class),
+                failureStates = setOf(TrackableState.Failed::class)
+            )
+        ) {
+            publisher
+                ?.getTrackableState(trackableId!!)
+                ?.also {
+                    proxy?.start()
+                    locationHelper?.sendUpdate(14.0, 15.0)
+                }!!
+        }
 
         // (11) in tearDown
     }
@@ -286,28 +286,41 @@ class NetworkConnectivityTests {
         publisher: Publisher,
         locationHelper: LocationHelper
     ) {
-        val connectedReceiver = TrackableStateReceiver(
-            label = "trackable online",
-            expectedStates = setOf(TrackableState.Online::class),
-            failureStates = setOf(TrackableState.Failed::class)
-        )
+        waitForStateTransition(
+            actionLabel = "track new Trackable($trackableId)",
+            receiver = TrackableStateReceiver(
+                label = "trackable online",
+                expectedStates = setOf(TrackableState.Online::class),
+                failureStates = setOf(TrackableState.Failed::class)
+            )
+        ) {
+            publisher.track(Trackable(trackableId)).also {
+                locationHelper.sendUpdate(10.0, 11.0)
+            }
+        }
+    }
 
-        var trackableStateJob: Job? = null
-        val trackExpectation = failOnException("track new Trackable($trackableId)") {
-            trackableStateJob = publisher.track(Trackable(trackableId))
-                .onEach(connectedReceiver::receive)
-                .launchIn(scope!!)
-            locationHelper.sendUpdate(10.0, 11.0)
+    /**
+     * Performs the given async (suspending) operation in a runBlocking, attaching the
+     * returned StateFlow<TrackableState> to the given receiver, then waits for expectations
+     * to be delivered (or not) before cleaning up.
+     */
+    private fun waitForStateTransition(
+        actionLabel: String,
+        receiver: TrackableStateReceiver,
+        asyncOp: suspend () -> StateFlow<TrackableState>
+    ) {
+        var job: Job? = null
+        val completedExpectation = failOnException(actionLabel) {
+            job = asyncOp().onEach(receiver::receive).launchIn(scope!!)
         }
 
-        // await asynchronous events
-        testLogD("AWAIT")
-        trackExpectation.await()
-        trackExpectation.assertSuccess()
-        connectedReceiver.outcome.await()
-        connectedReceiver.outcome.assertSuccess()
+        completedExpectation.await()
+        completedExpectation.assertSuccess()
+        receiver.outcome.await()
+        receiver.outcome.assertSuccess()
         runBlocking {
-            trackableStateJob?.cancelAndJoin()
+            job?.cancelAndJoin()
         }
     }
 
@@ -324,7 +337,7 @@ class NetworkConnectivityTests {
                 testLogD("$label - success")
                 opCompleted.fulfill(true)
             } catch (e: java.lang.Exception) {
-                testLogD("$label - failed - ${e.toString()}")
+                testLogD("$label - failed - $e")
                 opCompleted.fulfill(false)
             }
         }
