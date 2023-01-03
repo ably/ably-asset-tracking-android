@@ -21,12 +21,12 @@ import com.ably.tracking.publisher.RoutingProfile
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.workers.AblyConnectionStateChangeWorker
 import com.ably.tracking.publisher.workerqueue.workers.AddTrackableFailedWorker
-import com.ably.tracking.publisher.workerqueue.workers.AddTrackableWorker
+import com.ably.tracking.publisher.workerqueue.workers.PrepareConnectionForTrackableWorker
 import com.ably.tracking.publisher.workerqueue.workers.ChangeLocationEngineResolutionWorker
 import com.ably.tracking.publisher.workerqueue.workers.ChangeRoutingProfileWorker
 import com.ably.tracking.publisher.workerqueue.workers.ChannelConnectionStateChangeWorker
-import com.ably.tracking.publisher.workerqueue.workers.ConnectionCreatedWorker
-import com.ably.tracking.publisher.workerqueue.workers.ConnectionReadyWorker
+import com.ably.tracking.publisher.workerqueue.workers.SubscribeToTrackablePresenceWorker
+import com.ably.tracking.publisher.workerqueue.workers.AddTrackableToPublisherWorker
 import com.ably.tracking.publisher.workerqueue.workers.DestinationSetWorker
 import com.ably.tracking.publisher.workerqueue.workers.DisconnectSuccessWorker
 import com.ably.tracking.publisher.workerqueue.workers.EnhancedLocationChangedWorker
@@ -67,7 +67,7 @@ internal class WorkerFactory(
      */
     override fun createWorker(workerSpecification: WorkerSpecification): Worker<PublisherProperties, WorkerSpecification> =
         when (workerSpecification) {
-            is WorkerSpecification.AddTrackable -> AddTrackableWorker(
+            is WorkerSpecification.PrepareConnectionForTrackable -> PrepareConnectionForTrackableWorker(
                 workerSpecification.trackable,
                 workerSpecification.callbackFunction,
                 workerSpecification.presenceUpdateListener,
@@ -81,7 +81,7 @@ internal class WorkerFactory(
                 workerSpecification.isConnectedToAbly,
                 ably,
             )
-            is WorkerSpecification.ConnectionCreated -> ConnectionCreatedWorker(
+            is WorkerSpecification.SubscribeToTrackablePresence -> SubscribeToTrackablePresenceWorker(
                 workerSpecification.trackable,
                 workerSpecification.callbackFunction,
                 ably,
@@ -89,7 +89,7 @@ internal class WorkerFactory(
                 workerSpecification.presenceUpdateListener,
                 workerSpecification.channelStateChangeListener,
             )
-            is WorkerSpecification.ConnectionReady -> ConnectionReadyWorker(
+            is WorkerSpecification.AddTrackableToPublisher -> AddTrackableToPublisherWorker(
                 workerSpecification.trackable,
                 workerSpecification.callbackFunction,
                 ably,
@@ -217,7 +217,7 @@ internal sealed class WorkerSpecification {
         val connectionStateChange: ConnectionStateChange,
     ) : WorkerSpecification()
 
-    data class AddTrackable(
+    data class PrepareConnectionForTrackable(
         val trackable: Trackable,
         val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>,
         val presenceUpdateListener: ((presenceMessage: com.ably.tracking.common.PresenceMessage) -> Unit),
@@ -242,14 +242,14 @@ internal sealed class WorkerSpecification {
         val connectionStateChange: ConnectionStateChange,
     ) : WorkerSpecification()
 
-    data class ConnectionCreated(
+    data class SubscribeToTrackablePresence(
         val trackable: Trackable,
         val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>,
         val presenceUpdateListener: ((presenceMessage: com.ably.tracking.common.PresenceMessage) -> Unit),
         val channelStateChangeListener: ((connectionStateChange: ConnectionStateChange) -> Unit),
     ) : WorkerSpecification()
 
-    data class ConnectionReady(
+    data class AddTrackableToPublisher(
         val trackable: Trackable,
         val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>,
         val channelStateChangeListener: ((connectionStateChange: ConnectionStateChange) -> Unit),

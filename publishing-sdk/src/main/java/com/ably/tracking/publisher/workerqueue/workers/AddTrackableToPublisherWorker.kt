@@ -12,7 +12,11 @@ import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-internal class ConnectionReadyWorker(
+/**
+ * This worker adds the trackable to the publisher and notifies all listeners.
+ * Last of three steps required to add a trackable, previous steps are [PrepareConnectionForTrackableWorker] and [AddTrackableToPublisherWorker].
+ */
+internal class AddTrackableToPublisherWorker(
     private val trackable: Trackable,
     private val callbackFunction: AddTrackableCallbackFunction,
     private val ably: Ably,
