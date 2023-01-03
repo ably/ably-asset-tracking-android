@@ -1,5 +1,7 @@
 package com.ably.tracking.common.workerqueue
 
+import com.ably.tracking.common.logging.e
+import com.ably.tracking.logging.LogHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
@@ -19,6 +21,7 @@ class WorkerQueue<PropertiesType : Properties, WorkerSpecificationType>(
     private val copyProperties: PropertiesType.() -> PropertiesType,
     private val getStoppedException: () -> Exception,
     maximumWorkerQueueCapacity: Int = 100,
+    private val logHandler: LogHandler? = null,
 ) {
 
     private val workerChannel = Channel<Worker<PropertiesType, WorkerSpecificationType>>(capacity = maximumWorkerQueueCapacity)
@@ -36,6 +39,10 @@ class WorkerQueue<PropertiesType : Properties, WorkerSpecificationType>(
                     execute(worker)
                 }
             } catch (unexpectedException: Exception) {
+                logHandler?.e(
+                    "Unexpected error thrown from the synchronous work of ${worker.javaClass.simpleName}",
+                    unexpectedException,
+                )
                 worker.onUnexpectedError(
                     exception = unexpectedException,
                     postWork = ::enqueue
@@ -52,6 +59,10 @@ class WorkerQueue<PropertiesType : Properties, WorkerSpecificationType>(
                     try {
                         asyncWork()
                     } catch (unexpectedException: Exception) {
+                        logHandler?.e(
+                            "Unexpected error thrown from the asynchronous work of ${worker.javaClass.simpleName}",
+                            unexpectedException,
+                        )
                         worker.onUnexpectedAsyncError(
                             exception = unexpectedException,
                             postWork = ::enqueue
