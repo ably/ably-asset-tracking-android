@@ -69,7 +69,7 @@ class AuthenticationTests {
     private fun createTokenRequest(ably: AblyRealtime, requestParameters: TokenParams? = null): TokenRequest {
         val ablyTokenRequest = ably.auth.createTokenRequest(
             Auth.TokenParams().apply {
-                ttl = requestParameters?.ttl ?: 3600L
+                ttl = requestParameters?.ttl ?: (60L * 60L * 1000L) // default to one hour
                 capability = requestParameters?.capability ?: "{\"*\":[\"*\"]}"
                 clientId = CLIENT_ID
                 timestamp = requestParameters?.timestamp ?: Date().time
