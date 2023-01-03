@@ -13,6 +13,7 @@ import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.excludeRecords
 import io.mockk.confirmVerified
+import io.mockk.verifySequence
 import io.ably.lib.realtime.ConnectionState
 import io.ably.lib.realtime.ConnectionStateListener
 import io.ably.lib.types.ErrorInfo
@@ -103,16 +104,34 @@ class DefaultAblyTestEnvironment private constructor(
         }
 
         /**
-         * Mocks [presenceMock]’s [AblySdkRealtime.Presence.enter] method to immediately call its received completion listener’s [CompletionListener.onSuccess] method.
+         * Mocks [presenceMock]’s [AblySdkRealtime.Presence.enter] method to immediately pass its received completion listener to [handler].
+         *
+         * @param handler The function that should receive the completion listener passed to [presenceMock]’s [AblySdkRealtime.Presence.enter] method.
          */
-        fun mockSuccessfulPresenceEnter() {
+        private fun mockPresenceEnterResult(handler: (CompletionListener) -> Unit) {
             val completionListenerSlot = slot<CompletionListener>()
             every {
                 presenceMock.enter(
                     any(),
                     capture(completionListenerSlot)
                 )
-            } answers { completionListenerSlot.captured.onSuccess() }
+            } answers { handler(completionListenerSlot.captured) }
+        }
+
+        /**
+         * Mocks [presenceMock]’s [AblySdkRealtime.Presence.enter] method to immediately call its received completion listener’s [CompletionListener.onSuccess] method.
+         */
+        fun mockSuccessfulPresenceEnter() {
+            mockPresenceEnterResult { it.onSuccess() }
+        }
+
+        /**
+         * Mocks [presenceMock]’s [AblySdkRealtime.Presence.enter] method to immediately call its received completion listener’s [CompletionListener.onError] method.
+         *
+         * @param errorInfo The error that should be passed to the completion listener’s [CompletionListener.onError] method.
+         */
+        fun mockFailedPresenceEnter(errorInfo: ErrorInfo) {
+            mockPresenceEnterResult { it.onError(errorInfo) }
         }
 
         /**
@@ -153,6 +172,36 @@ class DefaultAblyTestEnvironment private constructor(
          */
         fun mockNonCompletingPresenceLeave() {
             mockPresenceLeaveResult { }
+        }
+
+        /**
+         * Mocks [channelMock]’s [AblySdkRealtime.Channel.attach] method to immediately pass its received completion listener to [handler].
+         *
+         * @param handler The function that should receive the completion listener passed to [channelMock]’s [AblySdkRealtime.Channel.attach] method.
+         */
+        private fun mockAttachResult(handler: (CompletionListener) -> Unit) {
+            val completionListenerSlot = slot<CompletionListener>()
+            every { channelMock.attach(capture(completionListenerSlot)) } answers {
+                handler(
+                    completionListenerSlot.captured
+                )
+            }
+        }
+
+        /**
+         * Mocks [channelMock]’s [AblySdkRealtime.Channel.attach] method to immediately call its received completion listener’s [CompletionListener.onSuccess] method.
+         */
+        fun mockSuccessfulAttach() {
+            mockAttachResult { it.onSuccess() }
+        }
+
+        /**
+         * Mocks [channelMock]’s [AblySdkRealtime.Channel.attach] method to immediately call its received completion listener’s [CompletionListener.onError] method.
+         *
+         * @param errorInfo The error that should be passed to the completion listener’s [CompletionListener.onError] method.
+         */
+        fun mockFailedAttach(errorInfo: ErrorInfo) {
+            mockAttachResult { it.onError(errorInfo) }
         }
     }
 
@@ -215,6 +264,26 @@ class DefaultAblyTestEnvironment private constructor(
     fun mockChannelsContainsKey(key: Any, result: Boolean) {
         every { channelsMock.containsKey(key) } returns result
     }
+
+    /**
+     * An array of all of the MockK mock objects that this test environment has created.
+     *
+     * By passing this array to [confirmVerified], you can confirm that the mock verifications that your test makes using MockK’s `verify*` methods contain a comprehensive list of all the methods called on the mocks created by this test environment. This is a more comprehensive approach than using, for example, [verifySequence], which only verifies the mock objects which are mentioned inside its `verifyBlock`.
+     */
+    val allMocks: Array<Any>
+        get() {
+            val list = listOf(
+                realtimeMock,
+                connectionMock,
+                channelsMock
+            ) + configuredChannels.flatMap {
+                listOf(
+                    it.channelMock,
+                    it.presenceMock
+                )
+            }
+            return list.toTypedArray()
+        }
 
     /**
      * Mocks [channelsMock]’s [AblySdkRealtime.Channels.entrySet] method to return the list of channel mocks currently contained in [configuredChannels].
