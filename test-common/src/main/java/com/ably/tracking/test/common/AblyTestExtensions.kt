@@ -66,22 +66,10 @@ fun Ably.mockSubscribeToPresenceSuccess(
     trackableId: String,
     listenerSlot: CapturingSlot<(PresenceMessage) -> Unit> = slot()
 ) {
-    val callbackSlot = slot<(Result<Unit>) -> Unit>()
-    every {
-        subscribeForPresenceMessages(trackableId, capture(listenerSlot), capture(callbackSlot))
-    } answers {
-        callbackSlot.captured(Result.success(Unit))
-    }
     coEvery { subscribeForPresenceMessages(trackableId, capture(listenerSlot), any<Boolean>()) } returns Result.success(Unit)
 }
 
 fun Ably.mockSubscribeToPresenceError(trackableId: String) {
-    val callbackSlot = slot<(Result<Unit>) -> Unit>()
-    every {
-        subscribeForPresenceMessages(trackableId, any(), capture(callbackSlot))
-    } answers {
-        callbackSlot.captured(Result.failure(anyConnectionException()))
-    }
     coEvery { subscribeForPresenceMessages(trackableId, any(), any<Boolean>()) } returns Result.failure(anyConnectionException())
 }
 
@@ -108,12 +96,6 @@ fun Ably.mockDisconnect(trackableId: String, result: Result<Unit>) {
 
 fun Ably.mockDisconnectSuccess(trackableId: String) {
     mockDisconnect(trackableId, Result.success(Unit))
-}
-
-fun Ably.mockSuspendingDisconnectSuccessAndCapturePresenceData(trackableId: String): CapturingSlot<PresenceData> {
-    val presenceDataSlot = slot<PresenceData>()
-    coEvery { disconnect(trackableId, capture(presenceDataSlot)) } returns Result.success(Unit)
-    return presenceDataSlot
 }
 
 fun Ably.mockSendEnhancedLocationSuccess(trackableId: String) {

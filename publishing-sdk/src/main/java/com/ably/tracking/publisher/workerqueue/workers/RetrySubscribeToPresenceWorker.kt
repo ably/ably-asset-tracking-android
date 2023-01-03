@@ -33,7 +33,7 @@ internal class RetrySubscribeToPresenceWorker(
                 return@doAsyncWork
             }
 
-            val subscribeToPresenceResult = subscribeToPresenceMessages()
+            val subscribeToPresenceResult = ably.subscribeForPresenceMessages(trackable.id, presenceUpdateListener)
             if (subscribeToPresenceResult.isSuccess) {
                 postWork(WorkerSpecification.RetrySubscribeToPresenceSuccess(trackable))
             } else {
@@ -46,14 +46,6 @@ internal class RetrySubscribeToPresenceWorker(
         }
 
         return properties
-    }
-
-    private suspend fun subscribeToPresenceMessages(): Result<Unit> {
-        return suspendCoroutine { continuation ->
-            ably.subscribeForPresenceMessages(trackable.id, presenceUpdateListener) { result ->
-                continuation.resume(result)
-            }
-        }
     }
 
     private suspend fun waitForChannelToBeConnected(trackable: Trackable): Result<Unit> {

@@ -9,10 +9,10 @@ import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 import com.ably.tracking.test.common.mockSubscribeToPresenceError
 import com.ably.tracking.test.common.mockSubscribeToPresenceSuccess
 import com.google.common.truth.Truth.assertThat
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
-import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.Test
@@ -82,8 +82,8 @@ internal class RetrySubscribeToPresenceWorkerTest {
         asyncWorks.executeAll()
 
         // then
-        verify(exactly = 0) {
-            ably.subscribeForPresenceMessages(trackable.id, any(), any<(Result<Unit>) -> Unit>())
+        coVerify(exactly = 0) {
+            ably.subscribeForPresenceMessages(trackable.id, any())
         }
     }
 

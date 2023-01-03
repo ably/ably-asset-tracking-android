@@ -11,8 +11,6 @@ import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.PublisherState
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.WorkerSpecification
-import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
 
 /**
  * This worker subscribes to presence messages on the trackable channel.
@@ -46,7 +44,7 @@ internal class SubscribeToTrackablePresenceWorker(
         }
 
         doAsyncWork {
-            val subscribeToPresenceResult = subscribeToPresenceMessages()
+            val subscribeToPresenceResult = ably.subscribeForPresenceMessages(trackable.id, presenceUpdateListener)
             try {
                 subscribeToPresenceResult.getOrThrow()
                 postWork(
@@ -65,14 +63,6 @@ internal class SubscribeToTrackablePresenceWorker(
         }
 
         return properties
-    }
-
-    private suspend fun subscribeToPresenceMessages(): Result<Unit> {
-        return suspendCoroutine { continuation ->
-            ably.subscribeForPresenceMessages(trackable.id, presenceUpdateListener) { result ->
-                continuation.resume(result)
-            }
-        }
     }
 
     private fun createConnectionReadyWorkerSpecification(isSubscribedToPresence: Boolean) =

@@ -70,23 +70,12 @@ interface Ably {
      * Adds a listener for the presence messages that are received from the channel's presence.
      * After adding a listener it will emit [PresenceMessage] for each client that's currently in the presence.
      * Should be called only when there's an existing channel for the [trackableId].
-     * If a channel for the [trackableId] doesn't exist then it just calls [callback] with success.
+     * If a channel for the [trackableId] doesn't exist then it just returns success.
      *
      * @param trackableId The ID of the trackable channel.
      * @param listener The function that will be called each time a presence message is received.
-     * @param callback The function that will be called when subscribing completes. If something goes wrong it will be called with [ConnectionException].
-     */
-    fun subscribeForPresenceMessages(
-        trackableId: String,
-        listener: (PresenceMessage) -> Unit,
-        callback: (Result<Unit>) -> Unit,
-    )
-
-    /**
-     * A suspending version of [subscribeForPresenceMessages]
-     *
      * @param emitCurrentMessages If set to true it emits messages for each client that's currently in the presence.
-     * */
+     */
     suspend fun subscribeForPresenceMessages(
         trackableId: String,
         listener: (PresenceMessage) -> Unit,
@@ -1024,7 +1013,7 @@ constructor(
                 }
             }
         } catch (exception: TimeoutCancellationException) {
-            throw ConnectionException(ErrorInformation("Timeout was thrown when waiting for Ably to connect")).also {
+            ConnectionException(ErrorInformation("Timeout was thrown when waiting for Ably to connect")).also {
                 logHandler?.w("$TAG Timeout while waiting for Ably to connect", it)
             }
         }
