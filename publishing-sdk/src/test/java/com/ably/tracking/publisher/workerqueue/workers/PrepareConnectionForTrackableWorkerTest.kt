@@ -16,7 +16,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 
-class AddTrackableWorkerTest {
+class PrepareConnectionForTrackableWorkerTest {
 
     private val resultCallbackFunction: ResultCallbackFunction<StateFlow<TrackableState>> = mockk(relaxed = true)
     private val ably: Ably = mockk {
@@ -24,7 +24,7 @@ class AddTrackableWorkerTest {
     }
     private val trackable = Trackable("testtrackable")
 
-    private val worker = AddTrackableWorker(trackable, resultCallbackFunction, {}, {}, ably)
+    private val worker = PrepareConnectionForTrackableWorker(trackable, resultCallbackFunction, {}, {}, ably)
 
     private val asyncWorks = mutableListOf<suspend () -> Unit>()
     private val postedWorks = mutableListOf<WorkerSpecification>()
@@ -122,7 +122,7 @@ class AddTrackableWorkerTest {
             asyncWorks.executeAll()
             assertThat(asyncWorks).isNotEmpty()
 
-            val postedWorkerSpecification = postedWorks[0] as WorkerSpecification.ConnectionCreated
+            val postedWorkerSpecification = postedWorks[0] as WorkerSpecification.SubscribeToTrackablePresence
             assertThat(postedWorkerSpecification.trackable).isEqualTo(trackable)
             assertThat(postedWorkerSpecification.callbackFunction).isEqualTo(resultCallbackFunction)
         }

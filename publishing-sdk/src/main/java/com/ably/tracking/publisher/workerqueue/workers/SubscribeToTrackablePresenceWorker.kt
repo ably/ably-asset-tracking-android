@@ -14,7 +14,11 @@ import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
-internal class ConnectionCreatedWorker(
+/**
+ * This worker subscribes to presence messages on the trackable channel.
+ * Second of three steps required to add a trackable, previous step is [PrepareConnectionForTrackableWorker] and the next step is [AddTrackableToPublisherWorker].
+ */
+internal class SubscribeToTrackablePresenceWorker(
     private val trackable: Trackable,
     private val callbackFunction: AddTrackableCallbackFunction,
     private val ably: Ably,
@@ -78,7 +82,7 @@ internal class ConnectionCreatedWorker(
     }
 
     private fun createConnectionReadyWorkerSpecification(isSubscribedToPresence: Boolean) =
-        WorkerSpecification.ConnectionReady(
+        WorkerSpecification.AddTrackableToPublisher(
             trackable,
             callbackFunction,
             channelStateChangeListener,

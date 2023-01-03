@@ -231,7 +231,7 @@ constructor(
         callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>
     ) {
         enqueue(
-            WorkerSpecification.AddTrackable(
+            WorkerSpecification.PrepareConnectionForTrackable(
                 trackable = trackable,
                 callbackFunction = callbackFunction,
                 presenceUpdateListener = {

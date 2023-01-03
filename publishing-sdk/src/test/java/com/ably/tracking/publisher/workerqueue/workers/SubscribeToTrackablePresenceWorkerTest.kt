@@ -18,14 +18,14 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
 @ExperimentalCoroutinesApi
-class ConnectionCreatedWorkerTest {
+class SubscribeToTrackablePresenceWorkerTest {
     private val trackable = Trackable("test-trackable")
     private val resultCallbackFunction = mockk<ResultCallbackFunction<StateFlow<TrackableState>>>(relaxed = true)
     private val ably = mockk<Ably>(relaxed = true)
     private val presenceUpdateListener: (PresenceMessage) -> Unit = {}
 
     private val worker =
-        ConnectionCreatedWorker(trackable, resultCallbackFunction, ably, null, presenceUpdateListener) {}
+        SubscribeToTrackablePresenceWorker(trackable, resultCallbackFunction, ably, null, presenceUpdateListener) {}
 
     private val asyncWorks = mutableListOf<suspend () -> Unit>()
     private val postedWorks = mutableListOf<WorkerSpecification>()
@@ -50,7 +50,7 @@ class ConnectionCreatedWorkerTest {
             assertThat(asyncWorks).hasSize(1)
             assertThat(postedWorks).hasSize(1)
 
-            val postedWork = postedWorks.first() as WorkerSpecification.ConnectionReady
+            val postedWork = postedWorks.first() as WorkerSpecification.AddTrackableToPublisher
             assertThat(postedWork.trackable).isEqualTo(trackable)
             assertThat(postedWork.callbackFunction).isEqualTo(resultCallbackFunction)
             assertThat(postedWork.presenceUpdateListener).isEqualTo(presenceUpdateListener)
@@ -77,7 +77,7 @@ class ConnectionCreatedWorkerTest {
             assertThat(asyncWorks).hasSize(1)
             assertThat(postedWorks).hasSize(1)
 
-            val postedWork = postedWorks.first() as WorkerSpecification.ConnectionReady
+            val postedWork = postedWorks.first() as WorkerSpecification.AddTrackableToPublisher
             assertThat(postedWork.trackable).isEqualTo(trackable)
             assertThat(postedWork.callbackFunction).isEqualTo(resultCallbackFunction)
             assertThat(postedWork.presenceUpdateListener).isEqualTo(presenceUpdateListener)
