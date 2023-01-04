@@ -40,7 +40,7 @@ class WorkerQueue<PropertiesType : Properties, WorkerSpecificationType>(
                 }
             } catch (unexpectedException: Exception) {
                 logHandler?.e(
-                    "Unexpected error thrown from the synchronous work of ${worker.javaClass.simpleName}",
+                    "Unexpected exception thrown from the synchronous work of ${worker.javaClass.simpleName}",
                     unexpectedException,
                 )
                 worker.onUnexpectedError(
@@ -60,7 +60,7 @@ class WorkerQueue<PropertiesType : Properties, WorkerSpecificationType>(
                         asyncWork()
                     } catch (unexpectedException: Exception) {
                         logHandler?.e(
-                            "Unexpected error thrown from the asynchronous work of ${worker.javaClass.simpleName}",
+                            "Unexpected exception thrown from the asynchronous work of ${worker.javaClass.simpleName}",
                             unexpectedException,
                         )
                         worker.onUnexpectedAsyncError(
