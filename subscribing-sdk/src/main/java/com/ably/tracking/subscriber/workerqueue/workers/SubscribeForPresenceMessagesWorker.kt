@@ -49,4 +49,10 @@ internal class SubscribeForPresenceMessagesWorker(
             }
         )
     }
+
+    override fun onUnexpectedAsyncError(exception: Exception, postWork: (WorkerSpecification) -> Unit) {
+        // All error paths for the async work end in posting the disconnect worker so it feels right to do the same on
+        // unexpected errors
+        postDisconnectWork(postWork, Result.failure(exception))
+    }
 }
