@@ -112,9 +112,7 @@ class PublisherService : Service() {
                 }
             })
             .backgroundTrackingNotificationProvider(
-                object : PublisherNotificationProvider {
-                    override fun getNotification(): Notification = notification
-                },
+                ExamplePublisherNotificationProvider(notification),
                 NOTIFICATION_ID
             )
             .rawLocations(appPreferences.shouldSendRawLocations())
@@ -145,4 +143,9 @@ class PublisherService : Service() {
         } else {
             null
         }
+}
+
+class ExamplePublisherNotificationProvider(private val notificationValue: Notification) :
+    PublisherNotificationProvider {
+    override fun getNotification(): Notification = notificationValue
 }
