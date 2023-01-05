@@ -156,6 +156,16 @@ class DefaultAblyTestEnvironment private constructor(
     }
 
     /**
+     * Mocks [channelsMock]’s [AblySdkRealtime.Channels.containsKey] method to return [result] for key [key].
+     *
+     * @param result The result that [channelsMock]’s [AblySdkRealtime.Channels.containsKey] method should return for key [key].
+     * @param key The key for which [result] should be returned.
+     */
+    fun mockChannelsContainsKey(key: Any, result: Boolean) {
+        every { channelsMock.containsKey(key) } returns result
+    }
+
+    /**
      * Mocks [channelsMock]’s [AblySdkRealtime.Channels.entrySet] method to return the list of channel mocks currently contained in [configuredChannels].
      */
     fun mockChannelsEntrySet() {
@@ -226,9 +236,7 @@ class DefaultAblyTestEnvironment private constructor(
          *
          * 1. It creates [numberOfTrackables] channel mocks, and configures each of their [AblySdkRealtime.Channel.state] properties to return [ChannelState.initialized].
          *    It exposes these channel mocks via the [configuredChannels] property, each with a different [ConfiguredChannel.name] value, each of which have a `"tracking:"` prefix.
-         * 1. It creates a [AblySdkRealtime.Channels] mock, and configures it as follows:
-         *    1. Its [AblySdkRealtime.Channels.containsKey] method returns `false` for all inputs;
-         *    1. Its [AblySdkRealtime.Channels.get(channelName: String, channelOptions: ChannelOptions?)] method returns the mock from [configuredChannels] with the corresponding [ConfiguredChannel.channelName] property.
+         * 1. It creates a [AblySdkRealtime.Channels] mock, and configures it so that its [AblySdkRealtime.Channels.get] method returns the mock from [configuredChannels] with the corresponding [ConfiguredChannel.channelName] property.
          * 1. It creates a [DefaultAbly] object using the mocks described above and in the documentation for the properties of [DefaultAblyTestEnvironment].
          *
          *    It provides arbitrary values for required parameters that we here consider to be unimportant – namely the `connectionConfiguration` and `logHandler` parameters of [DefaultAbly]’s constructor.
@@ -253,7 +261,6 @@ class DefaultAblyTestEnvironment private constructor(
             }
 
             val channelsMock = mockk<AblySdkRealtime.Channels>()
-            every { channelsMock.containsKey(any()) } returns false
             for (configuredChannel in configuredChannels) {
                 every {
                     channelsMock.get(

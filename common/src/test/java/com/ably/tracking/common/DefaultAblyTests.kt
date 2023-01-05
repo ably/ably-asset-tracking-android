@@ -19,6 +19,7 @@ class DefaultAblyTests {
         // Given
         val testEnvironment = DefaultAblyTestEnvironment.create(numberOfTrackables = 1)
         val configuredChannel = testEnvironment.configuredChannels[0]
+        testEnvironment.mockChannelsContainsKey(key = configuredChannel.channelName, result = false)
         configuredChannel.mockSuccessfulPresenceEnter()
 
         // When
