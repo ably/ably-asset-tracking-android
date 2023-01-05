@@ -78,60 +78,111 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
      */
     @Test
     fun faultBeforeAddingTrackable() {
+        val primaryTrackable = Trackable(UUID.randomUUID().toString())
+        val secondaryTrackable = Trackable(UUID.randomUUID().toString())
+
         withResources { resources ->
             resources.fault.enable()
+
+            // Add an active trackable while fault active
             waitForStateTransition(
-                actionLabel = "attempt to add Trackable while fault active",
+                actionLabel = "attempt to add active Trackable while fault active",
                 receiver = resources.fault.stateReceiverForStage(FaultSimulationStage.FaultActive)
             ) {
-                resources.publisher.track(
-                    Trackable(resources.activeTracklableId)
-                ).also {
+                resources.publisher.track(primaryTrackable).also {
                     resources.locationHelper.sendUpdate(100.0, 100.0)
                 }
             }
 
+            // Add a secondary (not active) trackable too
+            waitForStateTransition(
+                actionLabel = "add secondary (inactive) trackable",
+                receiver = resources.fault.stateReceiverForStage(FaultSimulationStage.FaultActive)
+            ) {
+                resources.publisher.add(secondaryTrackable).also {
+                    // apparently another location update is needed for this to go online
+                    resources.locationHelper.sendUpdate(101.0, 101.0)
+                }
+            }
+
+            // Remove that second trackable while fault still active
+            runBlocking {
+                Assert.assertTrue(resources.publisher.remove(secondaryTrackable))
+            }
+
+            /// Resolve the fault and ensure active trackable reaches intended state
             resources.fault.resolve()
             waitForStateTransition(
                 actionLabel = "resolve fault and wait for updated state",
                 receiver = resources.fault.stateReceiverForStage(FaultSimulationStage.FaultResolved)
             ) {
-                resources.publisher.getTrackableState(resources.activeTracklableId)!!
+                resources.publisher.getTrackableState(primaryTrackable.id)!!
             }
+
+            Assert.assertNull(
+                resources.publisher.getTrackableState(secondaryTrackable.id)
+            )
         }
     }
 
     /**
      * Tests that tracking of a Trackable recovers if a connectivity fault
      * occurs after a Trackable has been added and already reached the
-     * Online state.
+     * Online state. Also adds a secondary trackable (non-active) before the fault
+     * occurs, ensures this reaches the online state too, then attempts to remove it
+     * during the fault.
      */
     @Test
     fun faultDuringTracking() {
+        val primaryTrackable = Trackable(UUID.randomUUID().toString())
+        val secondaryTrackable = Trackable(UUID.randomUUID().toString())
+
         withResources { resources ->
-            // Add trackable, wait for it to reach Online state
+            // Add active trackable, wait for it to reach Online state
             waitForStateTransition(
-                actionLabel = "add new Trackables with working connectivity",
+                actionLabel = "add new active Trackable with working connectivity",
                 receiver = TrackableStateReceiver.onlineWithoutFail(
-                    "new trackable reaches online state"
+                    "active trackable reaches online state"
                 )
             ) {
-                resources.publisher.track(
-                    Trackable(resources.activeTracklableId)
-                ).also {
-                    resources.locationHelper.sendUpdate(101.0, 101.0)
+                resources.publisher.track(primaryTrackable).also {
+                    resources.locationHelper.sendUpdate(102.0, 102.0)
+                }
+            }
+
+            // Add another (non-active) trackable and wait for it to be online
+            waitForStateTransition(
+                actionLabel = "add secondary (inactive) trackable",
+                receiver = TrackableStateReceiver.onlineWithoutFail(
+                    "secondary trackable reaches online state"
+                )
+            ) {
+                resources.publisher.add(secondaryTrackable).also {
+                    // apparently another location update is needed for this to go online
+                    resources.locationHelper.sendUpdate(103.0, 103.0)
                 }
             }
 
             // Enable the fault, wait for Trackable to move to expected state
             waitForStateTransition(
-                actionLabel = "monitor state transition during fault",
+                actionLabel = "await active trackable state transition during fault",
                 receiver = resources.fault.stateReceiverForStage(FaultSimulationStage.FaultActive)
             ) {
                 resources.fault.enable()
-                resources.publisher.getTrackableState(
-                    resources.activeTracklableId
-                )!!
+                resources.publisher.getTrackableState(primaryTrackable.id)!!
+            }
+
+            // Ensure secondary trackable is also now in expected fault state
+            waitForStateTransition(
+                actionLabel = "await secondary trackable state transition during fault",
+                receiver = resources.fault.stateReceiverForStage(FaultSimulationStage.FaultActive)
+            ) {
+                resources.publisher.getTrackableState(secondaryTrackable.id)!!
+            }
+
+            // Remove the secondary trackable while fault is active
+            runBlocking {
+                Assert.assertTrue(resources.publisher.remove(secondaryTrackable))
             }
 
             // Resolve the fault, wait for Trackable to move to expected state
@@ -140,10 +191,13 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
                 receiver = resources.fault.stateReceiverForStage(FaultSimulationStage.FaultResolved)
             ) {
                 resources.fault.resolve()
-                resources.publisher.getTrackableState(
-                    resources.activeTracklableId
-                )!!
+                resources.publisher.getTrackableState(primaryTrackable.id)!!
             }
+
+            // Ensure that the secondary Trackable is gone
+            Assert.assertNull(
+                resources.publisher.getTrackableState(secondaryTrackable.id)
+            )
         }
     }
 
@@ -211,7 +265,6 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
  * null-checking in every test implementation
  */
 class TestResources(
-    val activeTracklableId: String,
     val context: Context,
     val scope: CoroutineScope,
     val locationHelper: LocationHelper,
@@ -223,16 +276,14 @@ class TestResources(
          * Initialize common test resources required for all tests
          */
         fun setUp(faultParam: FaultSimulation): TestResources {
-            val id = UUID.randomUUID().toString()
             val context = InstrumentationRegistry.getInstrumentation().targetContext
             val scope =  CoroutineScope(Dispatchers.Unconfined)
-            val locationHelper = LocationHelper(id)
+            val locationHelper = LocationHelper()
             val publisher = createPublisher(context, faultParam.proxy.clientOptions, locationHelper.channelName)
 
             faultParam.proxy.start()
 
             return TestResources(
-                activeTracklableId = id,
                 context = context,
                 scope = scope,
                 locationHelper = locationHelper,
@@ -349,13 +400,11 @@ private val LOCATION_SOURCE_OPTS = ClientOptions().apply {
 /**
  * Helper class to publish basic location updates through a known Ably channel name
  */
-class LocationHelper(
-    trackableId: String
-) {
+class LocationHelper {
     private val opts = LOCATION_SOURCE_OPTS
     private val ably = AblyRealtime(opts)
 
-    val channelName = "locations:$trackableId"
+    val channelName = "testLocations"
     private val channel = ably.channels.get(channelName)
 
     private val gson = Gson()
