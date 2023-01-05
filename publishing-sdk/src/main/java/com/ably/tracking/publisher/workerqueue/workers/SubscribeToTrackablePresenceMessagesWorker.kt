@@ -61,16 +61,17 @@ internal class SubscribeToTrackablePresenceMessagesWorker(
                         isSubscribedToPresence = true
                     )
                 )
-            }
-            catch (timeoutCancellationException: TimeoutCancellationException){
-                logHandler?.w("Subscribing to presence for trackable ${trackable.id} timed out", timeoutCancellationException)
+            } catch (timeoutCancellationException: TimeoutCancellationException) {
+                logHandler?.w(
+                    "Subscribing to presence for trackable ${trackable.id} timed out",
+                    timeoutCancellationException
+                )
                 postWork(
                     createConnectionReadyWorkerSpecification(
                         isSubscribedToPresence = false
                     )
                 )
-            }
-            catch (exception: ConnectionException) {
+            } catch (exception: ConnectionException) {
                 logHandler?.w("Failed to subscribe to presence for trackable ${trackable.id}", exception)
                 postWork(
                     createConnectionReadyWorkerSpecification(
