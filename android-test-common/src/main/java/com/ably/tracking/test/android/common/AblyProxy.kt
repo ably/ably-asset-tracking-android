@@ -7,7 +7,6 @@ import java.net.Socket
 import java.net.SocketException
 import java.util.*
 import javax.net.ssl.SSLSocketFactory
-import kotlin.math.log
 
 private const val AGENT_HEADER_NAME = "ably-asset-tracking-android-publisher-tests"
 
@@ -17,13 +16,33 @@ private const val REALTIME_HOST = "realtime.ably.io"
 private const val REALTIME_PORT = 443
 
 
+/**
+ * A local proxy that can be used to intercept Realtime traffic for testing
+ */
 interface RealtimeProxy {
+    /**
+     * Start the proxy listening for connections
+     */
     fun start()
+
+    /**
+     * Stop the proxy and close any active connetions
+     */
     fun stop()
 
+    /**
+     * Ably ClientOptions that have been configured to direct traffic
+     * through this proxy service
+     */
     val clientOptions: ClientOptions
 }
 
+/**
+ * A TCP Proxy, which can run locally and intercept traffic to Ably realtime.
+ *
+ * This proxy is only capable of simulating faults at the transport layer, such
+ * as connections being interrupted or packets being dropped entirely.
+ */
 class Layer4Proxy(
     val listenHost: String = PROXY_HOST,
     val listenPort: Int = PROXY_PORT,
@@ -37,6 +56,10 @@ class Layer4Proxy(
     private val sslSocketFactory = SSLSocketFactory.getDefault()
     private val connections : MutableList<Layer4ProxyConnection> = mutableListOf()
 
+    /**
+     * Block current thread and wait for a new incoming client connection on the server socket.
+     * Returns a connection object when a client has connected.
+     */
     private fun accept() : Layer4ProxyConnection {
         val clientSock = server?.accept()
         testLogD( "$loggingTag: accepted connection")
@@ -47,6 +70,10 @@ class Layer4Proxy(
         return conn
     }
 
+    /**
+     * Pre-configured client options to configure AblyRealtime to send traffic locally through
+     * this proxy. Note that TLS is disabled, so that the proxy can act as a man in the middle.
+     */
     override val clientOptions = ClientOptions().apply {
         this.clientId = "AatTestProxy_${UUID.randomUUID()}"
         this.agents = mapOf(AGENT_HEADER_NAME to BuildConfig.VERSION_NAME)
@@ -61,6 +88,9 @@ class Layer4Proxy(
         this.tls = false
     }
 
+    /**
+     * Close open connections and stop listening for new local connections
+     */
     override fun stop() {
         server?.close()
         server = null
@@ -71,6 +101,9 @@ class Layer4Proxy(
         connections.clear()
     }
 
+    /**
+     * Begin a background thread listening for local Realtime connections
+     */
     override fun start() {
         server = ServerSocket(listenPort)
         Thread {
@@ -89,6 +122,9 @@ class Layer4Proxy(
     }
 }
 
+/**
+ * A TCP Proxy connection between a local client and the remote Ably service.
+ */
 internal class Layer4ProxyConnection(
     private val server: Socket,
     private val client: Socket,
@@ -98,11 +134,18 @@ internal class Layer4ProxyConnection(
 
     private val loggingTag = "Layer4ProxyConnection"
 
+    /**
+     * Starts two threads, one forwarding traffic in each direction between
+     * the local client and the Ably Realtime service.
+     */
     fun run() {
         Thread { proxy(server, client, true) }.start()
         Thread { proxy(client, server) }.start()
     }
 
+    /**
+     * Close socket connections, causing proxy threads to exit.
+     */
     fun stop() {
         try {
             server.close()
@@ -117,6 +160,10 @@ internal class Layer4ProxyConnection(
         }
     }
 
+    /**
+     * Copies traffic between source and destination sockets, rewriting the
+     * HTTP host header if requested to remove the proxy host details.
+     */
     private fun proxy(dstSock: Socket , srcSock: Socket, rewriteHost: Boolean = false) {
         try {
             val dst = dstSock.getOutputStream()

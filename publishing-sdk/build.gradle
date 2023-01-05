@@ -11,6 +11,7 @@ apply from: '../jacoco.gradle'
 android {
     defaultConfig {
         consumerProguardFiles 'consumer-rules.pro'
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     namespace 'com.ably.tracking.publisher'
 }
