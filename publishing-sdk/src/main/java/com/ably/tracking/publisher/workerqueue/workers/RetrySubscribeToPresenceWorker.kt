@@ -4,7 +4,7 @@ import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ConnectionState
 import com.ably.tracking.common.PresenceMessage
 import com.ably.tracking.common.logging.w
-import com.ably.tracking.common.workerqueue.Worker
+import com.ably.tracking.common.workerqueue.DefaultWorker
 import com.ably.tracking.logging.LogHandler
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.Trackable
@@ -17,7 +17,7 @@ internal class RetrySubscribeToPresenceWorker(
     private val ably: Ably,
     private val logHandler: LogHandler?,
     private val presenceUpdateListener: ((presenceMessage: PresenceMessage) -> Unit),
-) : Worker<PublisherProperties, WorkerSpecification> {
+) : DefaultWorker<PublisherProperties, WorkerSpecification>() {
     override fun doWork(
         properties: PublisherProperties,
         doAsyncWork: (suspend () -> Unit) -> Unit,
@@ -68,6 +68,4 @@ internal class RetrySubscribeToPresenceWorker(
             }
         }
     }
-
-    override fun doWhenStopped(exception: Exception) = Unit
 }

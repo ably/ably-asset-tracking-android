@@ -101,4 +101,12 @@ internal class ConnectionReadyWorker(
         callbackFunction(successResult)
         properties.duplicateTrackableGuard.finishAddingTrackable(trackable, successResult)
     }
+
+    override fun onUnexpectedError(exception: Exception, postWork: (WorkerSpecification) -> Unit) {
+        callbackFunction(Result.failure(exception))
+    }
+
+    override fun onUnexpectedAsyncError(exception: Exception, postWork: (WorkerSpecification) -> Unit) {
+        callbackFunction(Result.failure(exception))
+    }
 }

@@ -26,4 +26,12 @@ internal class DisconnectWorker(
     override fun doWhenStopped(exception: Exception) {
         callbackFunction()
     }
+
+    override fun onUnexpectedError(exception: Exception, postWork: (WorkerSpecification) -> Unit) {
+        callbackFunction()
+    }
+
+    override fun onUnexpectedAsyncError(exception: Exception, postWork: (WorkerSpecification) -> Unit) {
+        callbackFunction()
+    }
 }

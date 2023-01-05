@@ -6,6 +6,7 @@ import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.subscriber.SubscriberProperties
 import com.ably.tracking.subscriber.SubscriberInteractor
+import com.ably.tracking.subscriber.SubscriberStoppedException
 import com.ably.tracking.subscriber.workerqueue.WorkerSpecification
 import com.ably.tracking.test.common.mockCloseFailure
 import com.ably.tracking.test.common.mockCloseSuccessWithDelay
@@ -59,5 +60,17 @@ internal class StopConnectionWorkerTest {
 
         // then
         verify { callbackFunction.invoke(match { it.isFailure }) }
+    }
+
+    @Test
+    fun `should call the callback function with a success if subscriber is already stopped`() = runBlockingTest {
+        // given
+        ably.mockCloseSuccessWithDelay(10)
+
+        // when
+        stopConnectionWorker.doWhenStopped(SubscriberStoppedException())
+
+        // then
+        verify { callbackFunction.invoke(match { it.isSuccess }) }
     }
 }
