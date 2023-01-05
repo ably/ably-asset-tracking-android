@@ -312,7 +312,10 @@ constructor(
                 val renewAuthResult = renewAuthSuspending()
 
                 renewAuthResult.errorInfo?.let {
-                    logHandler?.w("$TAG Failed to renew auth while entering the presence of channel ${channel.name}", it.toTrackingException())
+                    logHandler?.w(
+                        "$TAG Failed to renew auth while entering the presence of channel ${channel.name}",
+                        it.toTrackingException()
+                    )
                     throw it.toTrackingException()
                 }
                 channel.attachSuspending()
@@ -362,8 +365,12 @@ constructor(
                         callback(Result.success(Unit))
                     } catch (connectionException: ConnectionException) {
                         logHandler?.w("$TAG Failed to connect for channel ${channel.name}", connectionException)
-                        ably.channels.release(channelName)
-                        callback(Result.failure(connectionException))
+                        if (channel.state == ChannelState.failed) {
+                            ably.channels.release(channelName)
+                            callback(Result.failure(connectionException))
+                        } else {
+                            callback(Result.success(Unit))
+                        }
                     }
                 }
             } catch (ablyException: AblyException) {
@@ -445,7 +452,11 @@ constructor(
         }
     }
 
-    private suspend fun failChannel(channel: AblySdkRealtime.Channel, presenceData: PresenceData, errorInfo: ErrorInfo) {
+    private suspend fun failChannel(
+        channel: AblySdkRealtime.Channel,
+        presenceData: PresenceData,
+        errorInfo: ErrorInfo
+    ) {
         leavePresence(channel, presenceData)
         channel.unsubscribe()
         channel.presence.unsubscribe()
@@ -467,7 +478,10 @@ constructor(
                         override fun onError(reason: ErrorInfo?) {
                             val trackingException = reason?.toTrackingException()
                                 ?: ConnectionException(ErrorInformation("Unknown error when leaving presence ${channel.name}"))
-                            logHandler?.w("$TAG Failed to leave presence for channel ${channel.name}", trackingException)
+                            logHandler?.w(
+                                "$TAG Failed to leave presence for channel ${channel.name}",
+                                trackingException
+                            )
                             continuation.resumeWithException(trackingException)
                         }
                     }
@@ -566,7 +580,10 @@ constructor(
                         override fun onError(reason: ErrorInfo?) {
                             val trackingException = reason?.toTrackingException()
                                 ?: ConnectionException(ErrorInformation("Unknown error when sending message ${channel.name}"))
-                            logHandler?.w("$TAG Failed to suspend send message for channel ${channel.name}", trackingException)
+                            logHandler?.w(
+                                "$TAG Failed to suspend send message for channel ${channel.name}",
+                                trackingException
+                            )
                             continuation.resumeWithException(trackingException)
                         }
                     }
@@ -651,17 +668,6 @@ constructor(
         return "$TAG Could not deserialize $locationType location update message, channel will be closed"
     }
 
-    override fun subscribeForPresenceMessages(
-        trackableId: String,
-        listener: (PresenceMessage) -> Unit,
-        callback: (Result<Unit>) -> Unit,
-    ) {
-        scope.launch {
-            val result = subscribeForPresenceMessages(trackableId, listener)
-            callback(result)
-        }
-    }
-
     override suspend fun subscribeForPresenceMessages(
         trackableId: String,
         listener: (PresenceMessage) -> Unit,
@@ -683,12 +689,18 @@ constructor(
             Result.success(Unit)
         } catch (exception: AblyException) {
             val trackingException = exception.errorInfo.toTrackingException()
-            logHandler?.w("$TAG Failed to subscriber for presence messages for trackable $trackableId", trackingException)
+            logHandler?.w(
+                "$TAG Failed to subscriber for presence messages for trackable $trackableId",
+                trackingException
+            )
             Result.failure(trackingException)
         }
     }
 
-    private fun emitAllCurrentMessagesFromPresence(channel: AblySdkRealtime.Channel, listener: (PresenceMessage) -> Unit) {
+    private fun emitAllCurrentMessagesFromPresence(
+        channel: AblySdkRealtime.Channel,
+        listener: (PresenceMessage) -> Unit
+    ) {
         getAllCurrentMessagesFromPresence(channel).forEach { presenceMessage ->
             // Each message is launched in a fire-and-forget manner to not block this method on the listener() call
             scope.launch { listener(presenceMessage) }
@@ -703,7 +715,10 @@ constructor(
                 continuation.resume(Result.success(currentPresenceMessages))
             } catch (ablyException: AblyException) {
                 val trackingException = ablyException.errorInfo.toTrackingException()
-                logHandler?.w("$TAG Failed to get current presence messages for trackable $trackableId", trackingException)
+                logHandler?.w(
+                    "$TAG Failed to get current presence messages for trackable $trackableId",
+                    trackingException
+                )
                 continuation.resume(Result.failure(trackingException))
             }
         }
@@ -754,14 +769,20 @@ constructor(
                         override fun onError(reason: ErrorInfo?) {
                             val trackingException = reason?.toTrackingException()
                                 ?: ConnectionException(ErrorInformation("Unknown error when updating presence ${channel.name}"))
-                            logHandler?.w("$TAG Failed to suspend update presence data for channel ${channel.name}", trackingException)
+                            logHandler?.w(
+                                "$TAG Failed to suspend update presence data for channel ${channel.name}",
+                                trackingException
+                            )
                             continuation.resumeWithException(trackingException)
                         }
                     }
                 )
             } catch (exception: AblyException) {
                 val trackingException = exception.errorInfo.toTrackingException()
-                logHandler?.w("$TAG Failed to suspend update presence data for channel ${channel.name}", trackingException)
+                logHandler?.w(
+                    "$TAG Failed to suspend update presence data for channel ${channel.name}",
+                    trackingException
+                )
                 continuation.resumeWithException(trackingException)
             }
         }
@@ -859,7 +880,10 @@ constructor(
      * If the [channel] state already is the [ChannelState.attached] state it does not wait and returns immediately.
      * If this doesn't happen during the next [timeoutInMilliseconds] milliseconds, then an exception is thrown.
      */
-    private suspend fun waitForChannelReconnection(channel: AblySdkRealtime.Channel, timeoutInMilliseconds: Long = 10_000L) {
+    private suspend fun waitForChannelReconnection(
+        channel: AblySdkRealtime.Channel,
+        timeoutInMilliseconds: Long = 10_000L
+    ) {
         if (channel.state.isConnected()) {
             return
         }

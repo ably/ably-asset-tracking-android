@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.asStateFlow
 
 /**
  * This worker adds the trackable to the publisher and notifies all listeners.
- * Last of three steps required to add a trackable, previous steps are [PrepareConnectionForTrackableWorker] and [AddTrackableToPublisherWorker].
+ * Last of three steps required to add a trackable, previous steps are [PrepareConnectionForTrackableWorker] and [SubscribeToTrackablePresenceMessagesWorker].
  */
 internal class AddTrackableToPublisherWorker(
     private val trackable: Trackable,

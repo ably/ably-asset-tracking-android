@@ -3,7 +3,6 @@ package com.ably.tracking.test.common
 import com.ably.tracking.ConnectionException
 import com.ably.tracking.ErrorInformation
 import com.ably.tracking.common.Ably
-import com.ably.tracking.common.PresenceData
 import com.ably.tracking.common.PresenceMessage
 import io.mockk.CapturingSlot
 import io.mockk.coEvery
@@ -66,11 +65,11 @@ fun Ably.mockSubscribeToPresenceSuccess(
     trackableId: String,
     listenerSlot: CapturingSlot<(PresenceMessage) -> Unit> = slot()
 ) {
-    coEvery { subscribeForPresenceMessages(trackableId, capture(listenerSlot), any<Boolean>()) } returns Result.success(Unit)
+    coEvery { subscribeForPresenceMessages(trackableId, capture(listenerSlot), any()) } returns Result.success(Unit)
 }
 
 fun Ably.mockSubscribeToPresenceError(trackableId: String) {
-    coEvery { subscribeForPresenceMessages(trackableId, any(), any<Boolean>()) } returns Result.failure(anyConnectionException())
+    coEvery { subscribeForPresenceMessages(trackableId, any(), any()) } returns Result.failure(anyConnectionException())
 }
 
 fun Ably.mockGetCurrentPresenceSuccess(

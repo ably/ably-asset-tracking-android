@@ -41,7 +41,9 @@ internal class RetrySubscribeToPresenceWorker(
                     "Failed to resubscribe to presence for trackable ${trackable.id}",
                     subscribeToPresenceResult.exceptionOrNull()
                 )
-                postWork(WorkerSpecification.RetrySubscribeToPresence(trackable, presenceUpdateListener))
+                postWork(
+                    WorkerSpecification.RetrySubscribeToPresence(trackable, presenceUpdateListener)
+                )
             }
         }
 

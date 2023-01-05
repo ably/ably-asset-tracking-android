@@ -11,12 +11,14 @@ import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.PublisherState
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.WorkerSpecification
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.withTimeout
 
 /**
  * This worker subscribes to presence messages on the trackable channel.
  * Second of three steps required to add a trackable, previous step is [PrepareConnectionForTrackableWorker] and the next step is [AddTrackableToPublisherWorker].
  */
-internal class SubscribeToTrackablePresenceWorker(
+internal class SubscribeToTrackablePresenceMessagesWorker(
     private val trackable: Trackable,
     private val callbackFunction: AddTrackableCallbackFunction,
     private val ably: Ably,
@@ -24,6 +26,10 @@ internal class SubscribeToTrackablePresenceWorker(
     private val presenceUpdateListener: ((presenceMessage: PresenceMessage) -> Unit),
     private val channelStateChangeListener: ((connectionStateChange: ConnectionStateChange) -> Unit),
 ) : Worker<PublisherProperties, WorkerSpecification> {
+
+    companion object {
+        private const val SUBSCRIBE_TO_PRESENCE_TIMEOUT = 2_000L
+    }
 
     override fun doWork(
         properties: PublisherProperties,
@@ -44,15 +50,27 @@ internal class SubscribeToTrackablePresenceWorker(
         }
 
         doAsyncWork {
-            val subscribeToPresenceResult = ably.subscribeForPresenceMessages(trackable.id, presenceUpdateListener)
             try {
-                subscribeToPresenceResult.getOrThrow()
+                withTimeout(SUBSCRIBE_TO_PRESENCE_TIMEOUT) {
+                    val subscribeToPresenceResult =
+                        ably.subscribeForPresenceMessages(trackable.id, presenceUpdateListener)
+                    subscribeToPresenceResult.getOrThrow()
+                }
                 postWork(
                     createConnectionReadyWorkerSpecification(
                         isSubscribedToPresence = true
                     )
                 )
-            } catch (exception: ConnectionException) {
+            }
+            catch (timeoutCancellationException: TimeoutCancellationException){
+                logHandler?.w("Subscribing to presence for trackable ${trackable.id} timed out", timeoutCancellationException)
+                postWork(
+                    createConnectionReadyWorkerSpecification(
+                        isSubscribedToPresence = false
+                    )
+                )
+            }
+            catch (exception: ConnectionException) {
                 logHandler?.w("Failed to subscribe to presence for trackable ${trackable.id}", exception)
                 postWork(
                     createConnectionReadyWorkerSpecification(
