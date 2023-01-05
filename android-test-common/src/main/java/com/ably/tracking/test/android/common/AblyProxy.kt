@@ -1,70 +1,102 @@
 package com.ably.tracking.test.android.common
 
-import org.msgpack.core.MessagePack
+import io.ably.lib.types.ClientOptions
+import io.ably.lib.util.Log
 import java.net.ServerSocket
 import java.net.Socket
 import java.net.SocketException
+import java.util.*
 import javax.net.ssl.SSLSocketFactory
-import kotlin.experimental.and
-import kotlin.experimental.or
+import kotlin.math.log
+
+private const val AGENT_HEADER_NAME = "ably-asset-tracking-android-publisher-tests"
+
+private const val PROXY_HOST = "localhost"
+private const val PROXY_PORT = 13579
+private const val REALTIME_HOST = "realtime.ably.io"
+private const val REALTIME_PORT = 443
 
 
-class AblyProxy
-constructor (
-    private val listenPort: Int,
-    private val targetAddress: String,
-    private val targetPort: Int,
-    private val logHandler: (String) -> Unit,
-){
+interface RealtimeProxy {
+    fun start()
+    fun stop()
+
+    val clientOptions: ClientOptions
+}
+
+class Layer4Proxy(
+    val listenHost: String = PROXY_HOST,
+    val listenPort: Int = PROXY_PORT,
+    private val targetAddress: String = REALTIME_HOST,
+    private val targetPort: Int = REALTIME_PORT
+    ): RealtimeProxy {
+
+    private val loggingTag = "Layer4Proxy"
+
     private var server: ServerSocket? = null
-    private val sslsocketfactory = SSLSocketFactory.getDefault()
+    private val sslSocketFactory = SSLSocketFactory.getDefault()
+    private val connections : MutableList<Layer4ProxyConnection> = mutableListOf()
 
-    private val connections : MutableList<AblyConnection> = mutableListOf()
-
-    var connectionsBroken = false
-
-    private fun accept() : AblyConnection {
+    private fun accept() : Layer4ProxyConnection {
         val clientSock = server?.accept()
-        logHandler( "PROXY accepted connection")
+        testLogD( "$loggingTag: accepted connection")
 
-        val serverSock = sslsocketfactory.createSocket(targetAddress, targetPort)
-        val conn = AblyConnection(serverSock, clientSock!!, targetAddress, logHandler, this)
+        val serverSock = sslSocketFactory.createSocket(targetAddress, targetPort)
+        val conn = Layer4ProxyConnection(serverSock, clientSock!!, targetAddress, parentProxy = this)
         connections.add(conn)
         return conn
     }
 
-    fun close() {
+    override val clientOptions = ClientOptions().apply {
+        this.clientId = "AatTestProxy_${UUID.randomUUID()}"
+        this.agents = mapOf(AGENT_HEADER_NAME to BuildConfig.VERSION_NAME)
+        this.idempotentRestPublishing = true
+        this.autoConnect = false
+        this.key = BuildConfig.ABLY_API_KEY
+        this.logHandler = Log.LogHandler { _, _, msg, tr ->
+            testLogD("${msg!!} - $tr")
+        }
+        this.realtimeHost = listenHost
+        this.port = listenPort
+        this.tls = false
+    }
+
+    override fun stop() {
         server?.close()
+        server = null
+
         connections.forEach {
             it.stop()
         }
         connections.clear()
     }
 
-    fun start() = Thread {
+    override fun start() {
         server = ServerSocket(listenPort)
-        while (true) {
-            testLogD("proxy trying to accept")
-            try {
-                val conn = this.accept()
-                testLogD("proxy starting to run")
-                conn.run()
-            } catch (e : Exception) {
-                testLogD("proxy shutting down" + e.message)
-                break
+        Thread {
+            while (true) {
+                testLogD("$loggingTag: proxy trying to accept")
+                try {
+                    val conn = this.accept()
+                    testLogD("$loggingTag: proxy starting to run")
+                    conn.run()
+                } catch (e : Exception) {
+                    testLogD("$loggingTag: proxy shutting down: " + e.message)
+                    break
+                }
             }
-        }
-    }.apply { this.start() }
+        }.start()
+    }
 }
 
-class AblyConnection
-constructor(
+internal class Layer4ProxyConnection(
     private val server: Socket,
     private val client: Socket,
     private val targetHost: String,
-    private val logHandler: (String)->Unit,
-    private val parentProxy: AblyProxy
+    private val parentProxy: Layer4Proxy
 ) {
+
+    private val loggingTag = "Layer4ProxyConnection"
 
     fun run() {
         Thread { proxy(server, client, true) }.start()
@@ -74,11 +106,15 @@ constructor(
     fun stop() {
         try {
             server.close()
-        } catch (ignored: Exception) {}
+        } catch (e: Exception) {
+            testLogD("$loggingTag: stop() server: $e")
+        }
 
         try {
             client.close()
-        } catch (ignored: Exception) {}
+        } catch (e: Exception) {
+            testLogD("$loggingTag: stop() client: $e")
+        }
     }
 
     private fun proxy(dstSock: Socket , srcSock: Socket, rewriteHost: Boolean = false) {
@@ -94,107 +130,32 @@ constructor(
                 return
             }
 
-            // TODO check the message ends with CLRF CLRF or save off the start of the ws payload
-
             // HTTP is plaintext so we can just read it
             val msg = String(buff, 0, bytesRead)
-            logHandler("PROXY-MSG: " + String(buff.copyOfRange(0, bytesRead)))
+            testLogD("$loggingTag: ${String(buff.copyOfRange(0, bytesRead))}")
             if (rewriteHost) {
-                val newMsg = msg.replace("localhost:13579", targetHost)
+                val newMsg = msg.replace(
+                    oldValue = "${parentProxy.listenHost}:${parentProxy.listenPort}",
+                    newValue = targetHost
+                )
                 val newBuff = newMsg.toByteArray()
                 dst.write(newBuff, 0, newBuff.size)
             } else {
                 dst.write(buff, 0, bytesRead)
             }
 
-
             while (-1 != src.read(buff).also { bytesRead = it }) {
-                // get the length of the websocket frame in bytes:
-                //      0                   1                   2                   3
-                //      0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-                //     +-+-+-+-+-------+-+-------------+-------------------------------+
-                //     |F|R|R|R| opcode|M| Payload len |    Extended payload length    |
-                //     |I|S|S|S|  (4)  |A|     (7)     |             (16/64)           |
-                //     |N|V|V|V|       |S|             |   (if payload len==126/127)   |
-                //     | |1|2|3|       |K|             |                               |
-                //     +-+-+-+-+-------+-+-------------+ - - - - - - - - - - - - - - - +
-                //     |     Extended payload length continued, if payload len == 127  |
-                //     + - - - - - - - - - - - - - - - +-------------------------------+
-                //     |                               |Masking-key, if MASK set to 1  |
-                //     +-------------------------------+-------------------------------+
-                //     | Masking-key (continued)       |          Payload Data         |
-                //     +-------------------------------- - - - - - - - - - - - - - - - +
-                //     :                     Payload Data continued ...                :
-                //     + - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
-                //     |                     Payload Data continued ...                |
-                //     +---------------------------------------------------------------+
-                var dataOff = 2
-                var payloadLen = buff[1].and(0x7F).toUInt()
-                if (payloadLen == 126U) {
-                    dataOff += 2
-                    payloadLen = bigEndianConversion(buff.copyOfRange(2, 4), logHandler)
-                } else if (payloadLen == 127U) {
-                    dataOff += 4
-                    payloadLen = bigEndianConversion(buff.copyOfRange(2, 10), logHandler)
-                }
-
-                val op = buff[0].toUInt().and(0x0Fu)
-                if (op<3u) {
-                    logHandler("PROXY-MSG: payload length: " + payloadLen + " data offset: " + dataOff + " buff len: " + bytesRead)
-
-                    val isMasked = buff[1].toInt().and(0x01) == 1
-                    if (isMasked) {
-                        dataOff+=4
-                    }
-
-                    var data = buff.copyOfRange(dataOff, dataOff + payloadLen.toInt())
-                    if (isMasked) {
-                        val mask = buff.copyOfRange(dataOff-4, dataOff)
-                        for (i in data.indices) {
-                            data[i] = data[i].or(mask[i%4])
-                        }
-                    }
-
-                    val unpacker = MessagePack.newDefaultUnpacker(
-                        buff.copyOfRange(
-                            dataOff,
-                            dataOff + payloadLen.toInt()
-                        )
-                    )
-                    if (unpacker.hasNext()) {
-                        try {
-                            // TODO: This often crashes with MsgPack trying to allocate crazy amounts of memory
-                            // Disabled for now as we're not using the protocol yet
-                            // logHandler("PROXY-MSG: " + unpacker.unpackValue())
-                        } catch (e: Exception) {
-                            logHandler("PROXY-MSG: unpacking msg " + e.message)
-                        }
-                    }
-                }
-
-                if (!parentProxy.connectionsBroken) {
-                    dst.write(buff, 0, bytesRead)
-                }
+                dst.write(buff, 0, bytesRead)
             }
+
         } catch (ignored: SocketException) {
         } catch (e: Exception ) {
-            e.printStackTrace();
+            testLogD("${loggingTag}: $e")
         } finally {
             try {
-                srcSock.close();
+                srcSock.close()
             } catch (ignored: Exception) {}
         }
     }
 
-}
-
-fun bigEndianConversion(bytes: ByteArray, logHandler: (String)->Unit): UInt {
-    var result = 0U
-    val size = bytes.size
-    for (i in bytes.indices) {
-        // Kotlin does stupid things when converting from byte to uint and fills the preceding bits with 1s so remove them
-        logHandler("PROXY-DECODE: byte: "+ i + " val: " + bytes[i].toUInt().and(0xFFu))
-        result = result or (bytes[i].toUInt().and(0xFFu) shl (8 * (size - i -1)))
-    }
-    return result
 }
