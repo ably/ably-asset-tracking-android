@@ -82,8 +82,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
             resources.fault.enable()
             waitForStateTransition(
                 actionLabel = "attempt to add Trackable while fault active",
-                receiver = resources.fault.stateReceiverForStage(FaultSimulationStage.FaultActive),
-                resources.scope
+                receiver = resources.fault.stateReceiverForStage(FaultSimulationStage.FaultActive)
             ) {
                 resources.publisher.track(
                     Trackable(resources.activeTracklableId)
@@ -95,10 +94,55 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
             resources.fault.resolve()
             waitForStateTransition(
                 actionLabel = "resolve fault and wait for updated state",
-                receiver = resources.fault.stateReceiverForStage(FaultSimulationStage.FaultResolved),
-                resources.scope
+                receiver = resources.fault.stateReceiverForStage(FaultSimulationStage.FaultResolved)
             ) {
                 resources.publisher.getTrackableState(resources.activeTracklableId)!!
+            }
+        }
+    }
+
+    /**
+     * Tests that tracking of a Trackable recovers if a connectivity fault
+     * occurs after a Trackable has been added and already reached the
+     * Online state.
+     */
+    @Test
+    fun faultDuringTracking() {
+        withResources { resources ->
+            // Add trackable, wait for it to reach Online state
+            waitForStateTransition(
+                actionLabel = "add new Trackables with working connectivity",
+                receiver = TrackableStateReceiver.onlineWithoutFail(
+                    "new trackable reaches online state"
+                )
+            ) {
+                resources.publisher.track(
+                    Trackable(resources.activeTracklableId)
+                ).also {
+                    resources.locationHelper.sendUpdate(101.0, 101.0)
+                }
+            }
+
+            // Enable the fault, wait for Trackable to move to expected state
+            waitForStateTransition(
+                actionLabel = "monitor state transition during fault",
+                receiver = resources.fault.stateReceiverForStage(FaultSimulationStage.FaultActive)
+            ) {
+                resources.fault.enable()
+                resources.publisher.getTrackableState(
+                    resources.activeTracklableId
+                )!!
+            }
+
+            // Resolve the fault, wait for Trackable to move to expected state
+            waitForStateTransition(
+                actionLabel = "resolve fault and wait for transition",
+                receiver = resources.fault.stateReceiverForStage(FaultSimulationStage.FaultResolved)
+            ) {
+                resources.fault.resolve()
+                resources.publisher.getTrackableState(
+                    resources.activeTracklableId
+                )!!
             }
         }
     }
@@ -111,20 +155,21 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
     private fun waitForStateTransition(
         actionLabel: String,
         receiver: TrackableStateReceiver,
-        scope: CoroutineScope,
         asyncOp: suspend () -> StateFlow<TrackableState>
     ) {
-        var job: Job? = null
-        val completedExpectation = failOnException(actionLabel) {
-            job = asyncOp().onEach(receiver::receive).launchIn(scope)
-        }
+        withResources { resources ->
+            var job: Job? = null
+            val completedExpectation = failOnException(actionLabel) {
+                job = asyncOp().onEach(receiver::receive).launchIn(resources.scope)
+            }
 
-        completedExpectation.await()
-        completedExpectation.assertSuccess()
-        receiver.outcome.await(DEFAULT_STATE_TRANSITION_TIMEOUT_SECONDS)
-        receiver.outcome.assertSuccess()
-        runBlocking {
-            job?.cancelAndJoin()
+            completedExpectation.await()
+            completedExpectation.assertSuccess()
+            receiver.outcome.await(DEFAULT_STATE_TRANSITION_TIMEOUT_SECONDS)
+            receiver.outcome.assertSuccess()
+            runBlocking {
+                job?.cancelAndJoin()
+            }
         }
     }
 
