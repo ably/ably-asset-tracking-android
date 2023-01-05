@@ -7,6 +7,7 @@ import com.ably.tracking.connection.Authentication
 import com.ably.tracking.connection.ConnectionConfiguration
 import io.ably.lib.realtime.ChannelState
 import io.ably.lib.realtime.CompletionListener
+import io.ably.lib.types.ChannelOptions
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
@@ -156,6 +157,56 @@ class DefaultAblyTestEnvironment private constructor(
     }
 
     /**
+     * Describes an overload of [AblySdkRealtime.Channels.get].
+     */
+    enum class ChannelsGetOverload {
+        /**
+         * The overload of [AblySdkRealtime.Channels.get] which does not accept a [ChannelOptions] object.
+         */
+        WITHOUT_CHANNEL_OPTIONS,
+
+        /**
+         * The overload of [AblySdkRealtime.Channels.get] which accepts a [ChannelOptions] object.
+         */
+        WITH_CHANNEL_OPTIONS,
+    }
+
+    /**
+     * Mocks [channelsMock]’s [AblySdkRealtime.Channels.get] method to return [configuredChannel]’s [ConfiguredChannel.channelMock].
+     *
+     * @param configuredChannel The object whose [ConfiguredChannel.channelMock] should be used.
+     * @param overload Specifies which overload of `get` to mock.
+     */
+    private fun mockChannelsGet(
+        configuredChannel: ConfiguredChannel,
+        overload: ChannelsGetOverload
+    ) {
+        when (overload) {
+            ChannelsGetOverload.WITHOUT_CHANNEL_OPTIONS -> {
+                every {
+                    channelsMock.get(configuredChannel.channelName)
+                } returns configuredChannel.channelMock
+            }
+            ChannelsGetOverload.WITH_CHANNEL_OPTIONS -> {
+                every {
+                    channelsMock.get(configuredChannel.channelName, any())
+                } returns configuredChannel.channelMock
+            }
+        }
+    }
+
+    /**
+     * For each `configuredChannel` in [configuredChannels], mocks [channelsMock]’s [AblySdkRealtime.Channels.get] method to return `configuredChannel`’s [ConfiguredChannel.channelMock].
+     *
+     * @param overload Specifies which overload of `get` to mock.
+     */
+    fun mockChannelsGet(overload: ChannelsGetOverload) {
+        for (configuredChannel in configuredChannels) {
+            mockChannelsGet(configuredChannel, overload)
+        }
+    }
+
+    /**
      * Mocks [channelsMock]’s [AblySdkRealtime.Channels.containsKey] method to return [result] for key [key].
      *
      * @param result The result that [channelsMock]’s [AblySdkRealtime.Channels.containsKey] method should return for key [key].
@@ -236,7 +287,7 @@ class DefaultAblyTestEnvironment private constructor(
          *
          * 1. It creates [numberOfTrackables] channel mocks, and configures each of their [AblySdkRealtime.Channel.state] properties to return [ChannelState.initialized].
          *    It exposes these channel mocks via the [configuredChannels] property, each with a different [ConfiguredChannel.name] value, each of which have a `"tracking:"` prefix.
-         * 1. It creates a [AblySdkRealtime.Channels] mock, and configures it so that its [AblySdkRealtime.Channels.get] method returns the mock from [configuredChannels] with the corresponding [ConfiguredChannel.channelName] property.
+         * 1. It creates a [AblySdkRealtime.Channels] mock.
          * 1. It creates a [DefaultAbly] object using the mocks described above and in the documentation for the properties of [DefaultAblyTestEnvironment].
          *
          *    It provides arbitrary values for required parameters that we here consider to be unimportant – namely the `connectionConfiguration` and `logHandler` parameters of [DefaultAbly]’s constructor.
@@ -261,15 +312,6 @@ class DefaultAblyTestEnvironment private constructor(
             }
 
             val channelsMock = mockk<AblySdkRealtime.Channels>()
-            for (configuredChannel in configuredChannels) {
-                every {
-                    channelsMock.get(
-                        configuredChannel.channelName,
-                        any()
-                    )
-                } returns configuredChannel.channelMock
-            }
-
             val connectionMock = mockk<AblySdkRealtime.Connection>()
 
             val realtimeMock = mockk<AblySdkRealtime>()
