@@ -100,6 +100,32 @@ class TcpConnectionRefused : TransportFault() {
     }
 }
 
+/**
+ * A fault implementation that hangs the TCP connection by preventing the Layer 4
+ * proxy from forwarding packets in both directions
+ */
+class TcpConnectionUnresponsive : TransportFault() {
+
+    override val name = "TcpConnectionUnresponsive"
+
+    override fun enable() {
+        tcpProxy.isForwarding = false
+    }
+
+    override fun resolve() {
+        tcpProxy.isForwarding = true
+    }
+
+    override fun stateReceiverForStage(
+        stage: FaultSimulationStage
+    ) = when (stage) {
+        FaultSimulationStage.FaultActive ->
+            TrackableStateReceiver.offlineWithoutFail("$name: $stage")
+        FaultSimulationStage.FaultResolved ->
+            TrackableStateReceiver.onlineWithoutFail("$name: $stage")
+    }
+}
+
 
 /**
  * Helper to capture an expected set of successful or unsuccessful TrackableState

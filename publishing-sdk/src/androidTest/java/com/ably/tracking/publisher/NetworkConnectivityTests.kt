@@ -39,11 +39,11 @@ import java.util.*
 private const val MAPBOX_ACCESS_TOKEN = BuildConfig.MAPBOX_ACCESS_TOKEN
 
 /**
- * Unfortunately, state transitions need to wait for SDK retry loops, some of which
- * have a 15s pause. Setting this to two attempts should mean that the test has a chance
- * to pass even if it just missed a retry before listening.
+ * Certain state transitions have very long timeouts in ably-java,
+ * so we need the option of waiting ~2 minutes for certain state transitions to
+ * happen in asset tracking.
  */
-private const val DEFAULT_STATE_TRANSITION_TIMEOUT_SECONDS = 30L
+private const val DEFAULT_STATE_TRANSITION_TIMEOUT_SECONDS = 125L
 
 
 @RunWith(Parameterized::class)
@@ -56,7 +56,8 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
         @Parameterized.Parameters(name = "{0}")
         fun data() = listOf(
             arrayOf(NullTransportFault()),
-            arrayOf(TcpConnectionRefused())
+            arrayOf(TcpConnectionRefused()),
+            arrayOf(TcpConnectionUnresponsive())
         )
     }
 

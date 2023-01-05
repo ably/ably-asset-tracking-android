@@ -57,6 +57,11 @@ class Layer4Proxy(
     private val connections : MutableList<Layer4ProxyConnection> = mutableListOf()
 
     /**
+     * Flag mutated by fault implementations to hang the TCP connection
+     */
+    var isForwarding = true
+
+    /**
      * Block current thread and wait for a new incoming client connection on the server socket.
      * Returns a connection object when a client has connected.
      */
@@ -192,7 +197,9 @@ internal class Layer4ProxyConnection(
             }
 
             while (-1 != src.read(buff).also { bytesRead = it }) {
-                dst.write(buff, 0, bytesRead)
+                if (parentProxy.isForwarding) {
+                    dst.write(buff, 0, bytesRead)
+                }
             }
 
         } catch (ignored: SocketException) {
