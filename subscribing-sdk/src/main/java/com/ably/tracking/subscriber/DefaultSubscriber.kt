@@ -44,7 +44,7 @@ internal class DefaultSubscriber(
         get() = core.nextLocationUpdateIntervals
 
     init {
-        core = createCoreSubscriber(ably, resolution, trackableId)
+        core = createCoreSubscriber(ably, resolution, trackableId, logHandler)
         logHandler?.v("$TAG Created a subscriber instance")
     }
 
