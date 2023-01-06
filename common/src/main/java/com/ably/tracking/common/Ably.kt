@@ -244,18 +244,21 @@ private const val CHANNEL_NAME_PREFIX = "tracking:"
 private const val AGENT_HEADER_NAME = "ably-asset-tracking-android"
 private const val AUTH_TOKEN_CAPABILITY_ERROR_CODE = 40160
 
-class DefaultAbly : Ably {
+class DefaultAbly
+/**
+ * @throws ConnectionException if something goes wrong during Ably SDK initialization.
+ */
+constructor(
+    realtimeFactory: AblySdkRealtimeFactory,
+    connectionConfiguration: ConnectionConfiguration,
+    private val logHandler: LogHandler?,
+) : Ably {
     private val gson = Gson()
-    private val ably: AblyRealtime
+    private val ably: AblySdkRealtime
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-    private val logHandler: LogHandler?
     private val TAG = createLoggingTag(this)
 
-    /**
-     * @throws ConnectionException if something goes wrong during Ably SDK initialization.
-     */
-    constructor(connectionConfiguration: ConnectionConfiguration, logHandler: LogHandler?) {
-        this.logHandler = logHandler
+    init {
         try {
             val clientOptions = connectionConfiguration.authentication.clientOptions.apply {
                 this.agents = mapOf(AGENT_HEADER_NAME to BuildConfig.VERSION_NAME)
@@ -273,17 +276,12 @@ class DefaultAbly : Ably {
                     )
                 }
             }
-            ably = AblyRealtime(clientOptions)
+            ably = realtimeFactory.create(clientOptions)
         } catch (exception: AblyException) {
             throw exception.errorInfo.toTrackingException().also {
                 logHandler?.w("$TAG Failed to create an Ably instance", it)
             }
         }
-    }
-
-    constructor(ablyRealtime: AblyRealtime, logHandler: LogHandler?) {
-        this.logHandler = logHandler
-        ably = ablyRealtime
     }
 
     private fun logMessage(severity: Int, tag: String?, message: String?, throwable: Throwable?) {
@@ -317,7 +315,7 @@ class DefaultAbly : Ably {
      * a new auth token is requested and the operation is retried once more.
      * @throws ConnectionException if something goes wrong or the retry fails
      */
-    private suspend fun enterChannelPresence(channel: Channel, presenceData: PresenceData) {
+    private suspend fun enterChannelPresence(channel: AblySdkRealtime.Channel, presenceData: PresenceData) {
         try {
             channel.enterPresenceSuspending(presenceData)
         } catch (connectionException: ConnectionException) {
@@ -442,14 +440,14 @@ class DefaultAbly : Ably {
         }
     }
 
-    private suspend fun tryDisconnectChannel(channelToRemove: Channel, presenceData: PresenceData) =
+    private suspend fun tryDisconnectChannel(channelToRemove: AblySdkRealtime.Channel, presenceData: PresenceData) =
         try {
             disconnectChannel(channelToRemove, presenceData)
         } catch (exception: Exception) {
             // no-op
         }
 
-    private suspend fun disconnectChannel(channelToRemove: Channel, presenceData: PresenceData) {
+    private suspend fun disconnectChannel(channelToRemove: AblySdkRealtime.Channel, presenceData: PresenceData) {
         retryChannelOperationIfConnectionResumeFails(channelToRemove) { channel ->
             leavePresence(channel, presenceData)
             channel.unsubscribe()
@@ -458,7 +456,7 @@ class DefaultAbly : Ably {
         }
     }
 
-    private suspend fun failChannel(channel: Channel, presenceData: PresenceData, errorInfo: ErrorInfo) {
+    private suspend fun failChannel(channel: AblySdkRealtime.Channel, presenceData: PresenceData, errorInfo: ErrorInfo) {
         leavePresence(channel, presenceData)
         channel.unsubscribe()
         channel.presence.unsubscribe()
@@ -467,7 +465,7 @@ class DefaultAbly : Ably {
         ably.channels.release(channel.name)
     }
 
-    private suspend fun leavePresence(channel: Channel, presenceData: PresenceData) {
+    private suspend fun leavePresence(channel: AblySdkRealtime.Channel, presenceData: PresenceData) {
         suspendCancellableCoroutine<Unit> { continuation ->
             try {
                 channel.presence.leave(
@@ -552,7 +550,7 @@ class DefaultAbly : Ably {
         }
     }
 
-    private fun sendMessage(channel: Channel, message: Message?, callback: (Result<Unit>) -> Unit) {
+    private fun sendMessage(channel: AblySdkRealtime.Channel, message: Message?, callback: (Result<Unit>) -> Unit) {
         scope.launch {
             try {
                 retryChannelOperationIfConnectionResumeFails(channel) {
@@ -566,7 +564,7 @@ class DefaultAbly : Ably {
         }
     }
 
-    private suspend fun sendMessage(channel: Channel, message: Message?) {
+    private suspend fun sendMessage(channel: AblySdkRealtime.Channel, message: Message?) {
         suspendCancellableCoroutine<Unit> { continuation ->
             try {
                 channel.publish(
@@ -641,7 +639,7 @@ class DefaultAbly : Ably {
     }
 
     private fun processReceivedLocationUpdateMessage(
-        channel: Channel,
+        channel: AblySdkRealtime.Channel,
         presenceData: PresenceData,
         message: Message,
         listener: (LocationUpdate) -> Unit,
@@ -701,7 +699,7 @@ class DefaultAbly : Ably {
         }
     }
 
-    private fun emitAllCurrentMessagesFromPresence(channel: Channel, listener: (PresenceMessage) -> Unit) {
+    private fun emitAllCurrentMessagesFromPresence(channel: AblySdkRealtime.Channel, listener: (PresenceMessage) -> Unit) {
         getAllCurrentMessagesFromPresence(channel).forEach { presenceMessage ->
             // Each message is launched in a fire-and-forget manner to not block this method on the listener() call
             scope.launch { listener(presenceMessage) }
@@ -725,7 +723,7 @@ class DefaultAbly : Ably {
     /**
      * Warning: This method might block the current thread due to the presence.get(true) call.
      */
-    private fun getAllCurrentMessagesFromPresence(channel: Channel): List<PresenceMessage> =
+    private fun getAllCurrentMessagesFromPresence(channel: AblySdkRealtime.Channel): List<PresenceMessage> =
         channel.presence.get(true).mapNotNull { presenceMessage ->
             presenceMessage.toTracking(gson).also {
                 if (it == null) {
@@ -754,7 +752,7 @@ class DefaultAbly : Ably {
         }
     }
 
-    private suspend fun updatePresenceData(channel: Channel, presenceData: PresenceData) {
+    private suspend fun updatePresenceData(channel: AblySdkRealtime.Channel, presenceData: PresenceData) {
         suspendCancellableCoroutine<Unit> { continuation ->
             try {
                 channel.presence.update(
@@ -780,7 +778,7 @@ class DefaultAbly : Ably {
         }
     }
 
-    private fun getChannelIfExists(trackableId: String): Channel? {
+    private fun getChannelIfExists(trackableId: String): AblySdkRealtime.Channel? {
         val channelName = trackableId.toChannelName()
         return if (ably.channels.containsKey(channelName)) {
             ably.channels.get(channelName)
@@ -802,14 +800,14 @@ class DefaultAbly : Ably {
     }
 
     /**
-     * Closes [AblyRealtime] and waits until it's either closed or failed.
+     * Closes [AblySdkRealtime] and waits until it's either closed or failed.
      * If the connection is already closed it returns immediately.
      * If the connection is already failed it returns immediately as closing a failed connection should be a no-op
      * according to the Ably features spec (https://sdk.ably.com/builds/ably/specification/main/features/#state-conditions-and-operations).
      *
-     * @throws ConnectionException if the [AblyRealtime] state changes to [ConnectionState.failed].
+     * @throws ConnectionException if the [AblySdkRealtime] state changes to [ConnectionState.failed].
      */
-    private suspend fun AblyRealtime.closeSuspending() {
+    private suspend fun AblySdkRealtime.closeSuspending() {
         if (connection.state.isClosed() || connection.state.isFailed()) {
             return
         }
@@ -836,8 +834,8 @@ class DefaultAbly : Ably {
      * the second time the exception is rethrown no matter if it was the "connection resume" exception or not.
      */
     private suspend fun retryChannelOperationIfConnectionResumeFails(
-        channel: Channel,
-        operation: suspend (Channel) -> Unit
+        channel: AblySdkRealtime.Channel,
+        operation: suspend (AblySdkRealtime.Channel) -> Unit
     ) {
         try {
             if (channel.state == ChannelState.suspended) {
@@ -872,7 +870,7 @@ class DefaultAbly : Ably {
      * If the [channel] state already is the [ChannelState.attached] state it does not wait and returns immediately.
      * If this doesn't happen during the next [timeoutInMilliseconds] milliseconds, then an exception is thrown.
      */
-    private suspend fun waitForChannelReconnection(channel: Channel, timeoutInMilliseconds: Long = 10_000L) {
+    private suspend fun waitForChannelReconnection(channel: AblySdkRealtime.Channel, timeoutInMilliseconds: Long = 10_000L) {
         if (channel.state.isConnected()) {
             return
         }
@@ -911,7 +909,7 @@ class DefaultAbly : Ably {
      * Enter the presence of the [Channel] and waits for this operation to complete.
      * If something goes wrong then it throws a [ConnectionException].
      */
-    private suspend fun Channel.enterPresenceSuspending(presenceData: PresenceData) {
+    private suspend fun AblySdkRealtime.Channel.enterPresenceSuspending(presenceData: PresenceData) {
         suspendCancellableCoroutine<Unit> { continuation ->
             try {
                 presence.enter(
@@ -938,10 +936,10 @@ class DefaultAbly : Ably {
     }
 
     /**
-     * Attaches the [Channel] and waits for this operation to complete.
+     * Attaches the [AblySdkRealtime.Channel] and waits for this operation to complete.
      * If something goes wrong then it throws a [ConnectionException].
      */
-    private suspend fun Channel.attachSuspending() {
+    private suspend fun AblySdkRealtime.Channel.attachSuspending() {
         suspendCancellableCoroutine<Unit> { continuation ->
             try {
                 attach(object : CompletionListener {
@@ -964,7 +962,7 @@ class DefaultAbly : Ably {
         }
     }
 
-    private fun Channel.isDetachedOrFailed(): Boolean =
+    private fun AblySdkRealtime.Channel.isDetachedOrFailed(): Boolean =
         state == ChannelState.detached || state == ChannelState.failed
 
     private fun createMalformedMessageErrorInfo(): ErrorInfo = ErrorInfo("Received a malformed message", 100_001, 400)
@@ -990,7 +988,7 @@ class DefaultAbly : Ably {
     }
 
     /**
-     * A suspending version of the [AblyRealtime.connect] method. It will begin connecting and wait until it's connected.
+     * A suspending version of the [AblySdkRealtime.connect] method. It will begin connecting and wait until it's connected.
      * If the connection enters the "failed" state it will throw a [ConnectionException].
      * If the operation doesn't complete in [timeoutInMilliseconds] it will throw a [ConnectionException].
      * If the instance is already connected it will finish immediately.
@@ -998,11 +996,12 @@ class DefaultAbly : Ably {
      *
      * @throws ConnectionException if something goes wrong.
      */
-    private suspend fun AblyRealtime.connectSuspending(timeoutInMilliseconds: Long = 10_000L) {
+    private suspend fun AblySdkRealtime.connectSuspending(timeoutInMilliseconds: Long = 10_000L) {
         if (connection.state.isConnected()) {
             return
         } else if (connection.state.isFailed()) {
-            throw connection.reason.toTrackingException()
+            // We expect connection.reason to be non-null if the connection is in a failed state
+            throw connection.reason!!.toTrackingException()
         }
         try {
             withTimeout(timeoutInMilliseconds) {

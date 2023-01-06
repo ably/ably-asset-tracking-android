@@ -122,4 +122,12 @@ internal class AddTrackableWorker(
     override fun doWhenStopped(exception: Exception) {
         callbackFunction(Result.failure(exception))
     }
+
+    override fun onUnexpectedError(exception: Exception, postWork: (WorkerSpecification) -> Unit) {
+        callbackFunction(Result.failure(exception))
+    }
+
+    override fun onUnexpectedAsyncError(exception: Exception, postWork: (WorkerSpecification) -> Unit) {
+        callbackFunction(Result.failure(exception))
+    }
 }

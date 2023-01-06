@@ -2,7 +2,7 @@ package com.ably.tracking.publisher.workerqueue.workers
 
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ResultCallbackFunction
-import com.ably.tracking.common.workerqueue.Worker
+import com.ably.tracking.common.workerqueue.CallbackWorker
 import com.ably.tracking.publisher.PublisherInteractor
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.PublisherState
@@ -11,11 +11,11 @@ import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 
 internal class DisconnectSuccessWorker(
     private val trackable: Trackable,
-    private val callbackFunction: ResultCallbackFunction<Unit>,
+    callbackFunction: ResultCallbackFunction<Unit>,
     private val publisherInteractor: PublisherInteractor,
     private val shouldRecalculateResolutionCallback: () -> Unit,
     private val ably: Ably,
-) : Worker<PublisherProperties, WorkerSpecification> {
+) : CallbackWorker<PublisherProperties, WorkerSpecification>(callbackFunction) {
     override fun doWork(
         properties: PublisherProperties,
         doAsyncWork: (suspend () -> Unit) -> Unit,
@@ -44,10 +44,6 @@ internal class DisconnectSuccessWorker(
         }
 
         return properties
-    }
-
-    override fun doWhenStopped(exception: Exception) {
-        callbackFunction(Result.failure(exception))
     }
 
     private fun removeTrackable(properties: PublisherProperties) {

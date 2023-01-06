@@ -1,7 +1,7 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
 import com.ably.tracking.common.ResultCallbackFunction
-import com.ably.tracking.common.workerqueue.Worker
+import com.ably.tracking.common.workerqueue.CallbackWorker
 import com.ably.tracking.publisher.DefaultCorePublisher
 import com.ably.tracking.publisher.PublisherInteractor
 import com.ably.tracking.publisher.PublisherProperties
@@ -10,10 +10,10 @@ import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 
 internal class SetActiveTrackableWorker(
     private val trackable: Trackable,
-    private val callbackFunction: ResultCallbackFunction<Unit>,
+    callbackFunction: ResultCallbackFunction<Unit>,
     private val publisherInteractor: PublisherInteractor,
     private val hooks: DefaultCorePublisher.Hooks
-) : Worker<PublisherProperties, WorkerSpecification> {
+) : CallbackWorker<PublisherProperties, WorkerSpecification>(callbackFunction) {
 
     override fun doWork(
         properties: PublisherProperties,
@@ -35,9 +35,5 @@ internal class SetActiveTrackableWorker(
         }
         callbackFunction(Result.success(Unit))
         return properties
-    }
-
-    override fun doWhenStopped(exception: Exception) {
-        callbackFunction(Result.failure(exception))
     }
 }

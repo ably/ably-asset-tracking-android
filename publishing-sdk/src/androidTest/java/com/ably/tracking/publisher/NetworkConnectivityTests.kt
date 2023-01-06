@@ -7,8 +7,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.ably.tracking.Accuracy
 import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
-import com.ably.tracking.common.DefaultAbly
-import com.ably.tracking.common.EventNames
+import com.ably.tracking.common.*
 import com.ably.tracking.common.message.LocationGeometry
 import com.ably.tracking.common.message.LocationMessage
 import com.ably.tracking.common.message.LocationProperties
@@ -299,21 +298,26 @@ class TestResources(
          */
         private fun createPublisher(
             context: Context,
-            clientOptions: ClientOptions,
+            proxyClientOptions: ClientOptions,
             locationChannelName: String
         ) : Publisher {
             val resolution = Resolution(Accuracy.BALANCED, 1000L, 0.0)
+            val realtimeFactory = object: AblySdkRealtimeFactory {
+                override fun create(clientOptions: ClientOptions) = DefaultAblySdkRealtime(proxyClientOptions)
+            }
+            val connectionConfiguration = ConnectionConfiguration(
+                Authentication.basic(
+                    proxyClientOptions.clientId,
+                    proxyClientOptions.key
+                )
+            )
+
             return DefaultPublisher(
-                DefaultAbly(AblyRealtime(clientOptions), null),
+                DefaultAbly(realtimeFactory, connectionConfiguration, Logging.aatDebugLogger),
                 DefaultMapbox(
                     context,
                     MapConfiguration(MAPBOX_ACCESS_TOKEN),
-                    ConnectionConfiguration(
-                        Authentication.basic(
-                            clientOptions.clientId,
-                            clientOptions.key
-                        )
-                    ),
+                    connectionConfiguration,
                     LocationSourceAbly.create(locationChannelName, LOCATION_SOURCE_OPTS),
                     logHandler = Logging.aatDebugLogger,
                     object : PublisherNotificationProvider {

@@ -3,7 +3,7 @@ package com.ably.tracking.publisher.workerqueue.workers
 import com.ably.tracking.ConnectionException
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ResultCallbackFunction
-import com.ably.tracking.common.workerqueue.Worker
+import com.ably.tracking.common.workerqueue.CallbackWorker
 import com.ably.tracking.publisher.PublisherInteractor
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.PublisherState
@@ -13,11 +13,11 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 
 internal class StopWorker(
-    private val callbackFunction: ResultCallbackFunction<Unit>,
+    callbackFunction: ResultCallbackFunction<Unit>,
     private val ably: Ably,
     private val publisherInteractor: PublisherInteractor,
     private val timeoutInMilliseconds: Long,
-) : Worker<PublisherProperties, WorkerSpecification> {
+) : CallbackWorker<PublisherProperties, WorkerSpecification>(callbackFunction) {
 
     override fun doWork(
         properties: PublisherProperties,

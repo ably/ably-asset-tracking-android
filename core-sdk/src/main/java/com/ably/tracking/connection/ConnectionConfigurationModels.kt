@@ -143,7 +143,7 @@ private class JwtAuthentication(clientId: String?, configuration: JwtConfigurati
 
 interface TokenParams {
     /**
-     * Time to live of the token.
+     * Time to live of the token, in milliseconds.
      * If set to 0 then the default value will be used.
      */
     val ttl: Long

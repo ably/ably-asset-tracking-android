@@ -13,6 +13,7 @@ import com.ably.tracking.common.PresenceMessage
 import com.ably.tracking.common.createSingleThreadDispatcher
 import com.ably.tracking.common.workerqueue.Properties
 import com.ably.tracking.common.workerqueue.WorkerQueue
+import com.ably.tracking.logging.LogHandler
 import com.ably.tracking.subscriber.workerqueue.WorkerFactory
 import com.ably.tracking.subscriber.workerqueue.WorkerSpecification
 import kotlinx.coroutines.CoroutineScope
@@ -52,8 +53,9 @@ internal fun createCoreSubscriber(
     ably: Ably,
     initialResolution: Resolution? = null,
     trackableId: String,
+    logHandler: LogHandler?,
 ): CoreSubscriber {
-    return DefaultCoreSubscriber(ably, initialResolution, trackableId)
+    return DefaultCoreSubscriber(ably, initialResolution, trackableId, logHandler)
 }
 
 /**
@@ -65,6 +67,7 @@ private class DefaultCoreSubscriber(
     private val ably: Ably,
     initialResolution: Resolution?,
     private val trackableId: String,
+    logHandler: LogHandler?,
 ) :
     CoreSubscriber, SubscriberInteractor {
     private val workerQueue: WorkerQueue<SubscriberProperties, WorkerSpecification>
@@ -99,7 +102,8 @@ private class DefaultCoreSubscriber(
             scope = scope,
             workerFactory = workerFactory,
             copyProperties = { copy() },
-            getStoppedException = { SubscriberStoppedException() }
+            getStoppedException = { SubscriberStoppedException() },
+            logHandler = logHandler,
         )
 
         ably.subscribeForAblyStateChange { enqueue(WorkerSpecification.UpdateConnectionState(it)) }
