@@ -15,6 +15,8 @@ import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import io.ktor.server.websocket.WebSockets
+import io.ktor.websocket.*
+import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import org.msgpack.core.MessagePack
@@ -265,6 +267,7 @@ class Layer7Proxy(
     }
 
     private var server: NettyApplicationEngine? = null
+    var interceptor = PassThroughInterceptor()
 
     override fun start() {
         testLogD("$tag: starting...")
@@ -278,7 +281,11 @@ class Layer7Proxy(
             }
             install(WebSockets)
             routing {
-                wsProxy("/", target = Url("wss://$targetHost:$targetPort/"))
+                wsProxy(
+                    path = "/",
+                    target = Url("wss://$targetHost:$targetPort/"),
+                    parent = this@Layer7Proxy
+                )
             }
         }.start(wait = false)
     }
@@ -287,13 +294,42 @@ class Layer7Proxy(
         testLogD("$tag: stopping...")
         server?.stop()
     }
+
+    /**
+     * Receives frames from incoming channel and forwards to receiver as appropriate,
+     * calling an intercept to see if any interventions are required.
+     */
+    suspend fun forwardFrames(
+        direction: FrameDirection,
+        incoming: ReceiveChannel<Frame>,
+        clientSession: ClientWebSocketSession,
+        serverSession: WebSocketServerSession,
+    ) {
+        for (received in incoming) {
+            testLogD("${tag}: [$direction] ${unpack(received.data)}")
+            try {
+                val action = interceptor.intercept(direction, received)
+                for(frame in action.framesToAbly) {
+                    testLogD("$tag: [framesToAbly]: ${unpack(frame.data)}")
+                    clientSession.send(frame)
+                }
+                for(frame in action.framesToClient) {
+                    testLogD("$tag: [framesToClient]: ${unpack(frame.data)}")
+                    serverSession.send(frame)
+                }
+            } catch (e: Exception) {
+                testLogD("$tag: forwardFrames error: $e")
+                throw(e)
+            }
+        }
+    }
 }
 
 /**
  * Proxy a WebSocket connection to the remote URL, setting up coroutines
  * to send a receive frames in both directions
  */
-fun Route.wsProxy(path: String, target: Url) {
+fun Route.wsProxy(path: String, target: Url, parent: Layer7Proxy) {
     webSocket(path) {
         testLogD("${Layer7Proxy.tag}: Client connected to $path")
 
@@ -318,18 +354,22 @@ fun Route.wsProxy(path: String, target: Url) {
 
             val serverJob = launch {
                 testLogD("${Layer7Proxy.tag}: ==> (started)")
-                for (received in serverSession.incoming) {
-                    testLogD("${Layer7Proxy.tag}: ==> ${unpack(received.data)}")
-                    clientSession.send(received)
-                }
+                parent.forwardFrames(
+                    FrameDirection.ClientToServer,
+                    serverSession.incoming,
+                    clientSession,
+                    serverSession
+                )
             }
 
             val clientJob = launch {
                 testLogD("${Layer7Proxy.tag}: <== (started)")
-                for (received in clientSession.incoming) {
-                    testLogD("${Layer7Proxy.tag}: <== ${unpack(received.data)}")
-                    serverSession.send((received))
-                }
+                parent.forwardFrames(
+                    FrameDirection.ServerToClient,
+                    clientSession.incoming,
+                    clientSession,
+                    serverSession
+                )
             }
 
             listOf(serverJob, clientJob).joinAll()
@@ -359,5 +399,56 @@ fun configureWsClient() =
  * Unpacks MsgPack data to a MapValue
  */
 fun unpack(data: ByteArray): ImmutableMapValue? =
-    MessagePack.newDefaultUnpacker(data).unpackValue().asMapValue()
+    try {
+        MessagePack.newDefaultUnpacker(data).unpackValue().asMapValue()
+    } catch (e: Exception) {
+        testLogD("MsgPack Error: $e")
+        throw(e)
+    }
 
+interface Layer7Interceptor {
+    /**
+     * Intercept a Frame being passed through the proxy, returning either a
+     * replacement frame to forward in the given direction
+     */
+    fun intercept(direction: FrameDirection, frame: Frame): Action
+}
+
+/**
+ * Direction of a WebSocket Frame being intercepted by the proxy
+ */
+enum class FrameDirection {
+    ClientToServer,
+    ServerToClient,
+}
+
+/**
+ * Action an interception wants to perform in response to an observed
+ * message, or potentially a sequence of messages if it's retaining state.
+ * `framesToAbly` will be send in the direction of Ably
+ */
+data class Action(
+    val framesToAbly: List<Frame> = listOf(),
+    val framesToClient: List<Frame> = listOf()
+)
+
+/**
+ * An interceptor implementation that passes all data through normally
+ */
+class PassThroughInterceptor : Layer7Interceptor {
+    override fun intercept(
+        direction: FrameDirection,
+        frame: Frame
+    ) = when (direction) {
+        FrameDirection.ClientToServer ->
+            Action(
+                framesToAbly = listOf(frame),
+                framesToClient = listOf()
+            )
+        FrameDirection.ServerToClient ->
+            Action(
+                framesToAbly = listOf(),
+                framesToClient = listOf(frame)
+            )
+    }
+}
