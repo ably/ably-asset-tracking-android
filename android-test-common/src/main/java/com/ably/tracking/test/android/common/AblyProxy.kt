@@ -17,6 +17,8 @@ import io.ktor.server.websocket.*
 import io.ktor.server.websocket.WebSockets
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
+import org.msgpack.core.MessagePack
+import org.msgpack.value.ImmutableMapValue
 import org.slf4j.event.Level
 import java.net.ServerSocket
 import java.net.Socket
@@ -317,7 +319,7 @@ fun Route.wsProxy(path: String, target: Url) {
             val serverJob = launch {
                 testLogD("${Layer7Proxy.tag}: ==> (started)")
                 for (received in serverSession.incoming) {
-                    testLogD("${Layer7Proxy.tag}: ==> $received")
+                    testLogD("${Layer7Proxy.tag}: ==> ${unpack(received.data)}")
                     clientSession.send(received)
                 }
             }
@@ -325,7 +327,7 @@ fun Route.wsProxy(path: String, target: Url) {
             val clientJob = launch {
                 testLogD("${Layer7Proxy.tag}: <== (started)")
                 for (received in clientSession.incoming) {
-                    testLogD("${Layer7Proxy.tag}: <== $received")
+                    testLogD("${Layer7Proxy.tag}: <== ${unpack(received.data)}")
                     serverSession.send((received))
                 }
             }
@@ -352,3 +354,10 @@ fun configureWsClient() =
             level = LogLevel.ALL
         }
     }
+
+/**
+ * Unpacks MsgPack data to a MapValue
+ */
+fun unpack(data: ByteArray): ImmutableMapValue? =
+    MessagePack.newDefaultUnpacker(data).unpackValue().asMapValue()
+

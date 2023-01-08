@@ -21,6 +21,8 @@ dependencies {
     implementation "io.ktor:ktor-client-websockets:$ktor_version"
     implementation "io.ktor:ktor-client-logging:$ktor_version"
     implementation "uk.uuid.slf4j:slf4j-android:1.7.30-0"
+
+    implementation 'org.msgpack:msgpack-core:0.8.11'
 }
 
 android {
