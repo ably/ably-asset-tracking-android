@@ -237,7 +237,7 @@ subprojects {
             if (evaluatedSubProjectIsKotlin) {
                 implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
                 implementation 'androidx.core:core-ktx:1.3.2'
-                implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.2'
+                implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4'
 
                 // Projects that use our SDK projects will crash when dispatching to the Main thread on
                 // the Android runtime unless we include this dependency. See:

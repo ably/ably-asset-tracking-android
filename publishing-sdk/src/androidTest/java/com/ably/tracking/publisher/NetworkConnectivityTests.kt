@@ -55,6 +55,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
         @Parameterized.Parameters(name = "{0}")
         fun data() = listOf(
             arrayOf(NullTransportFault()),
+            arrayOf(NullApplicationLayerFault()),
             arrayOf(TcpConnectionRefused()),
             arrayOf(TcpConnectionUnresponsive())
         )
@@ -279,7 +280,7 @@ class TestResources(
             val context = InstrumentationRegistry.getInstrumentation().targetContext
             val scope =  CoroutineScope(Dispatchers.Unconfined)
             val locationHelper = LocationHelper()
-            val publisher = createPublisher(context, faultParam.proxy.clientOptions, locationHelper.channelName)
+            val publisher = createPublisher(context, faultParam.proxy.clientOptions(), locationHelper.channelName)
 
             faultParam.proxy.start()
 
@@ -303,7 +304,8 @@ class TestResources(
         ) : Publisher {
             val resolution = Resolution(Accuracy.BALANCED, 1000L, 0.0)
             val realtimeFactory = object: AblySdkRealtimeFactory {
-                override fun create(clientOptions: ClientOptions) = DefaultAblySdkRealtime(proxyClientOptions)
+                override fun create(clientOptions: ClientOptions) =
+                    DefaultAblySdkRealtime(proxyClientOptions)
             }
             val connectionConfiguration = ConnectionConfiguration(
                 Authentication.basic(

@@ -2,6 +2,22 @@ package com.ably.tracking.test.android.common
 
 import io.ably.lib.types.ClientOptions
 import io.ably.lib.util.Log
+import io.ktor.client.*
+import io.ktor.client.engine.cio.*
+import io.ktor.client.plugins.logging.*
+import io.ktor.client.plugins.websocket.*
+import io.ktor.http.*
+import io.ktor.server.application.*
+import io.ktor.server.engine.*
+import io.ktor.server.netty.*
+import io.ktor.server.plugins.callloging.*
+import io.ktor.server.request.*
+import io.ktor.server.routing.*
+import io.ktor.server.websocket.*
+import io.ktor.server.websocket.WebSockets
+import kotlinx.coroutines.joinAll
+import kotlinx.coroutines.launch
+import org.slf4j.event.Level
 import java.net.ServerSocket
 import java.net.Socket
 import java.net.SocketException
@@ -34,7 +50,42 @@ interface RealtimeProxy {
      * Ably ClientOptions that have been configured to direct traffic
      * through this proxy service
      */
-    val clientOptions: ClientOptions
+    fun clientOptions(): ClientOptions
+}
+
+/**
+ * Common base class for proxies to provide ClientOptions generation
+ */
+abstract class AatProxy : RealtimeProxy {
+
+    /**
+     * The host address the proxy will listen on
+     */
+    abstract val listenHost: String
+
+    /**
+     * The port the proxy will be listening on
+     */
+    abstract val listenPort: Int
+
+    /**
+     * Pre-configured client options to configure AblyRealtime to send traffic locally through
+     * this proxy. Note that TLS is disabled, so that the proxy can act as a man in the middle.
+     */
+    override fun clientOptions() = ClientOptions().apply {
+        this.clientId = "AatTestProxy_${UUID.randomUUID()}"
+        this.agents = mapOf(AGENT_HEADER_NAME to BuildConfig.VERSION_NAME)
+        this.idempotentRestPublishing = true
+        this.autoConnect = false
+        this.key = BuildConfig.ABLY_API_KEY
+        this.logHandler = Log.LogHandler { _, _, msg, tr ->
+            testLogD("${msg!!} - $tr")
+        }
+        this.realtimeHost = listenHost
+        this.port = listenPort
+        this.tls = false
+    }
+
 }
 
 /**
@@ -44,11 +95,11 @@ interface RealtimeProxy {
  * as connections being interrupted or packets being dropped entirely.
  */
 class Layer4Proxy(
-    val listenHost: String = PROXY_HOST,
-    val listenPort: Int = PROXY_PORT,
+    override val listenHost: String = PROXY_HOST,
+    override val listenPort: Int = PROXY_PORT,
     private val targetAddress: String = REALTIME_HOST,
     private val targetPort: Int = REALTIME_PORT
-    ): RealtimeProxy {
+    ): AatProxy() {
 
     private val loggingTag = "Layer4Proxy"
 
@@ -73,24 +124,6 @@ class Layer4Proxy(
         val conn = Layer4ProxyConnection(serverSock, clientSock!!, targetAddress, parentProxy = this)
         connections.add(conn)
         return conn
-    }
-
-    /**
-     * Pre-configured client options to configure AblyRealtime to send traffic locally through
-     * this proxy. Note that TLS is disabled, so that the proxy can act as a man in the middle.
-     */
-    override val clientOptions = ClientOptions().apply {
-        this.clientId = "AatTestProxy_${UUID.randomUUID()}"
-        this.agents = mapOf(AGENT_HEADER_NAME to BuildConfig.VERSION_NAME)
-        this.idempotentRestPublishing = true
-        this.autoConnect = false
-        this.key = BuildConfig.ABLY_API_KEY
-        this.logHandler = Log.LogHandler { _, _, msg, tr ->
-            testLogD("${msg!!} - $tr")
-        }
-        this.realtimeHost = listenHost
-        this.port = listenPort
-        this.tls = false
     }
 
     /**
@@ -213,3 +246,109 @@ internal class Layer4ProxyConnection(
     }
 
 }
+
+/**
+ * A WebSocket proxy for realtime connections, to allow interventions at
+ * the Ably protocol level.
+ */
+class Layer7Proxy(
+    override val listenHost: String = PROXY_HOST,
+    override val listenPort: Int = PROXY_PORT,
+    private val targetHost: String = REALTIME_HOST,
+    private val targetPort: Int = REALTIME_PORT
+) : AatProxy() {
+
+    companion object {
+        const val tag = "Layer7Proxy"
+    }
+
+    private var server: NettyApplicationEngine? = null
+
+    override fun start() {
+        testLogD("$tag: starting...")
+        server = embeddedServer(
+            Netty,
+            port = listenPort,
+            host = listenHost
+        ) {
+            install(CallLogging) {
+                level = Level.TRACE
+            }
+            install(WebSockets)
+            routing {
+                wsProxy("/", target = Url("wss://$targetHost:$targetPort/"))
+            }
+        }.start(wait = false)
+    }
+
+    override fun stop() {
+        testLogD("$tag: stopping...")
+        server?.stop()
+    }
+}
+
+/**
+ * Proxy a WebSocket connection to the remote URL, setting up coroutines
+ * to send a receive frames in both directions
+ */
+fun Route.wsProxy(path: String, target: Url) {
+    webSocket(path) {
+        testLogD("${Layer7Proxy.tag}: Client connected to $path")
+
+        val serverSession = this
+        val client = configureWsClient()
+
+        client.webSocket(
+            method = call.request.httpMethod,
+            host = target.host,
+            port = target.port,
+            path = call.request.path(),
+            request = {
+                url.protocol = target.protocol
+                url.port = target.port
+
+                // Forward connection parameters and rewrite the Host header, as
+                // it will be the proxy host by default
+                url.parameters.appendAll(call.request.queryParameters)
+                headers["Host"] = target.host
+            }) {
+            val clientSession = this
+
+            val serverJob = launch {
+                testLogD("${Layer7Proxy.tag}: ==> (started)")
+                for (received in serverSession.incoming) {
+                    testLogD("${Layer7Proxy.tag}: ==> $received")
+                    clientSession.send(received)
+                }
+            }
+
+            val clientJob = launch {
+                testLogD("${Layer7Proxy.tag}: <== (started)")
+                for (received in clientSession.incoming) {
+                    testLogD("${Layer7Proxy.tag}: <== $received")
+                    serverSession.send((received))
+                }
+            }
+
+            listOf(serverJob, clientJob).joinAll()
+        }
+    }
+}
+
+/**
+ * Return a Ktor HTTP Client configured for WebSockets and with logging
+ * we can see in logcat
+ */
+fun configureWsClient() =
+    HttpClient(CIO).config {
+        install(io.ktor.client.plugins.websocket.WebSockets) {
+        }
+        install(Logging) {
+            logger = object: Logger {
+                override fun log(message: String) {
+                    testLogD("${Layer7Proxy.tag}: ktor client: $message")
+                }
+            }
+            level = LogLevel.ALL
+        }
+    }

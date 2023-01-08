@@ -58,7 +58,7 @@ enum class FaultSimulationStage {
 /**
  * Base class for faults requiring a Layer 4 proxy for simulation.
  */
-abstract class TransportFault : FaultSimulation() {
+abstract class TransportLayerFault : FaultSimulation() {
     val tcpProxy =  Layer4Proxy()
     override val proxy = tcpProxy
 }
@@ -67,7 +67,7 @@ abstract class TransportFault : FaultSimulation() {
  * A Transport-layer fault implementation that breaks nothing, useful for ensuring the
  * test code works under normal proxy functionality.
  */
-class NullTransportFault : TransportFault() {
+class NullTransportFault : TransportLayerFault() {
     override val name = "NullTransportFault"
     override fun enable() { }
     override fun resolve() { }
@@ -78,7 +78,7 @@ class NullTransportFault : TransportFault() {
 /**
  * A fault implementation that will prevent the proxy from accepting TCP connections when active
  */
-class TcpConnectionRefused : TransportFault() {
+class TcpConnectionRefused : TransportLayerFault() {
 
     override val name = "TcpConnectionRefused"
 
@@ -104,7 +104,7 @@ class TcpConnectionRefused : TransportFault() {
  * A fault implementation that hangs the TCP connection by preventing the Layer 4
  * proxy from forwarding packets in both directions
  */
-class TcpConnectionUnresponsive : TransportFault() {
+class TcpConnectionUnresponsive : TransportLayerFault() {
 
     override val name = "TcpConnectionUnresponsive"
 
@@ -124,6 +124,27 @@ class TcpConnectionUnresponsive : TransportFault() {
         FaultSimulationStage.FaultResolved ->
             TrackableStateReceiver.onlineWithoutFail("$name: $stage")
     }
+}
+
+/**
+ * Base class for Application layer faults, which will need access to the Ably
+ * WebSockets protocol, and therefore a Layer 7 proxy.
+ */
+abstract class ApplicationLayerFault : FaultSimulation() {
+    val applicationProxy = Layer7Proxy()
+    override val proxy = applicationProxy
+}
+
+/**
+ * An empty fault implementation for the Layer 7 proxy to ensure that normal
+ * functionality is working with no interventions
+ */
+class NullApplicationLayerFault : ApplicationLayerFault() {
+    override val name = "NullApplicationLayerFault"
+    override fun enable() { }
+    override fun resolve() { }
+    override fun stateReceiverForStage(stage: FaultSimulationStage) =
+        TrackableStateReceiver.onlineWithoutFail("$name: $stage")
 }
 
 
