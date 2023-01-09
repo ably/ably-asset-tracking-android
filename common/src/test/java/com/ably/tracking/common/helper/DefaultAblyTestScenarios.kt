@@ -774,4 +774,357 @@ class DefaultAblyTestScenarios {
             }
         }
     }
+
+    /**
+     * Provides test scenarios for [DefaultAbly.disconnect]. See the [Companion.test] method.
+     */
+    class Disconnect {
+        /**
+         * This class provides properties for configuring the "Given..." part of the parameterised test case described by [Companion.test]. See that method’s documentation for information about the effect of this class’s properties.
+         */
+        class GivenConfig(
+            val channelsContainsKey: Boolean,
+            val mockChannelsGet: Boolean,
+            /**
+             * This must be `null` if and only if [mockChannelsGet] is `false`.
+             */
+            val initialChannelState: ChannelState?,
+            /**
+             * If [mockChannelsGet] is `false` then this must be [GivenTypes.ChannelStateChangeBehaviour.NoBehaviour].
+             */
+            val channelStateChangeBehaviour: GivenTypes.ChannelStateChangeBehaviour,
+            /**
+             * If [mockChannelsGet] is `false` then this must be [GivenTypes.CompletionListenerMockBehaviour.NotMocked].
+             */
+            val presenceLeaveBehaviour: GivenTypes.CompletionListenerMockBehaviour
+        ) {
+            /**
+             * Checks that this object represents a valid test configuration.
+             *
+             * @throws InvalidTestConfigurationException If this object does not represent a valid test configuration.
+             */
+            fun validate() {
+                if (mockChannelsGet) {
+                    if (initialChannelState == null) {
+                        throw InvalidTestConfigurationException("initialChannelState must be non-null when mockChannelsGet is true")
+                    }
+                } else {
+                    if (initialChannelState != null) {
+                        throw InvalidTestConfigurationException("initialChannelState must be null when mockChannelsGet is false")
+                    }
+                    if (channelStateChangeBehaviour !is GivenTypes.ChannelStateChangeBehaviour.NoBehaviour) {
+                        throw InvalidTestConfigurationException("channelStateChangeBehaviour must be NoBehaviour when mockChannelsGet is false")
+                    }
+                    if (presenceLeaveBehaviour !is GivenTypes.CompletionListenerMockBehaviour.NotMocked) {
+                        throw InvalidTestConfigurationException("presenceLeaveBehaviour must be NotMocked when mockChannelsGet is false")
+                    }
+                }
+            }
+        }
+
+        /**
+         * This class provides properties for configuring the "Then..." part of the parameterised test case described by [Companion.test]. See that method’s documentation for information about the effect of this class’s properties.
+         */
+        class ThenConfig(
+            val verifyChannelsGet: Boolean,
+            /**
+             * If [GivenConfig.mockChannelsGet] is `false` then this must be zero.
+             */
+            val numberOfChannelStateFetchesToVerify: Int,
+            /**
+             * If [GivenConfig.mockChannelsGet] is `false` then this must be `false`.
+             */
+            val verifyChannelOn: Boolean,
+            /**
+             * If [GivenConfig.channelStateChangeBehaviour] is not [GivenTypes.ChannelStateChangeBehaviour.EmitStateChange] then this must be `false`.
+             */
+            val verifyChannelStateChangeCurrent: Boolean,
+            /**
+             * If [GivenConfig.mockChannelsGet] is `false` then this must be `false`.
+             */
+            val verifyChannelOff: Boolean,
+            /**
+             * If [GivenConfig.mockChannelsGet] is `false` then this must be `false`.
+             */
+            val verifyPresenceLeave: Boolean,
+            /**
+             * If [GivenConfig.mockChannelsGet] is `false` then this must be `false`.
+             */
+            val verifyChannelUnsubscribeAndRelease: Boolean,
+            val resultOfDisconnectCallOnObjectUnderTest: ThenTypes.ExpectedAsyncResult
+        ) {
+            /**
+             * Checks that this object represents a valid test configuration to be used with [givenConfig].
+             *
+             * @param givenConfig The configuration that `this` is intended to be used with.
+             * @throws InvalidTestConfigurationException If this object does not represent a valid test configuration.
+             */
+            fun validate(givenConfig: GivenConfig) {
+                if (!givenConfig.mockChannelsGet) {
+                    if (numberOfChannelStateFetchesToVerify != 0) {
+                        throw InvalidTestConfigurationException("numberOfChannelStateFetchesToVerify must be zero when mockChannelsGet is false")
+                    }
+                    if (verifyChannelOn) {
+                        throw InvalidTestConfigurationException("verifyChannelOn must be false when mockChannelsGet is false")
+                    }
+                    if (verifyPresenceLeave) {
+                        throw InvalidTestConfigurationException("verifyPresenceLeave must be false when mockChannelsGet is false")
+                    }
+                    if (verifyChannelOff) {
+                        throw InvalidTestConfigurationException("verifyChannelOff must be false when mockChannelsGet is false")
+                    }
+                    if (verifyChannelUnsubscribeAndRelease) {
+                        throw InvalidTestConfigurationException("verifyChannelUnsubscribeAndRelease must be false when mockChannelsGet is false")
+                    }
+                }
+                if (givenConfig.channelStateChangeBehaviour !is GivenTypes.ChannelStateChangeBehaviour.EmitStateChange) {
+                    if (verifyChannelStateChangeCurrent) {
+                        throw InvalidTestConfigurationException("verifyChannelStateChangeCurrent must be false when channelStateChangeBehaviour is not EmitStateChange")
+                    }
+                }
+            }
+        }
+
+        /**
+         * Implements the following parameterised test case for [DefaultAbly.disconnect]:
+         *
+         * ```text
+         * Given...
+         *
+         * ...that calling containsKey on the Channels instance returns ${givenConfig.channelsContainsKey}...
+         *
+         * if ${givenConfig.mockChannelsGet} {
+         * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel in state ${givenConfig.initialChannelState}...
+         * }
+         *
+         * when ${givenConfig.channelStateChangeBehaviour} is EmitStateChange {
+         * ...which, when its `on` method is called, immediately calls the received listener with a channel state change whose `current` property is ${givenConfig.channelStateChangeBehaviour.current}...
+         * }
+         *
+         * when ${givenConfig.presenceLeaveBehaviour} is Success {
+         * ...[and] which, when told to leave presence, does so successfully...
+         * }
+         *
+         * when ${givenConfig.presenceLeaveBehaviour} is Failure {
+         * ...[and] which, when told to leave presence, fails to do so with error ${givenConfig.presenceLeaveBehaviour.errorInfo}...
+         * }
+         *
+         * when ${givenConfig.presenceLeaveBehaviour} is DoesNotComplete {
+         * ...[and] which, when told to leave presence, never finishes doing so...
+         * }
+         *
+         * When...
+         *
+         * ...we call `disconnect` on the object under test,
+         *
+         * Then...
+         * ...in the following order, precisely the following things happen...
+         *
+         * ...it calls `containsKey` on the Channels instance...
+         *
+         * if ${thenConfig.verifyChannelsGet} {
+         * ...and calls `get` on the Channels instance...
+         * }
+         *
+         * ...and fetches the channel’s state ${thenConfig.numberOfChannelStateFetchesToVerify} times...
+         *
+         * if ${thenConfig.verifyChannelOn} {
+         * ...and calls `on` on the channel...
+         * }
+         *
+         * if ${thenConfig.verifyChannelStateChangeCurrent} {
+         * ...and checks the `current` property of the emitted channel state change...
+         * }
+         *
+         *  if ${thenConfig.verifyChannelOff} {
+         * ...and calls `off` on the channel...
+         * }
+         *
+         * if ${thenConfig.verifyPresenceLeave} {
+         * ...and tells the channel to leave presence...
+         * }
+         *
+         * if ${thenConfig.verifyChannelUnsubscribeAndRelease} {
+         * ...and calls `unsubscribe` on the channel and on its Presence instance...
+         * ...and fetches the channel’s name and calls `release` on the Channels instance...
+         * }
+         *
+         * when ${thenConfig.resultOfDisconnectCallOnObjectUnderTest} is Terminates and ${thenConfig.resultOfDisconnectCallOnObjectUnderTest.expectedResult} is Success {
+         * ...and the call to `disconnect` (on the object under test) succeeds.
+         * }
+         *
+         * when ${thenConfig.resultOfDisconnectCallOnObjectUnderTest} is Terminates and ${thenConfig.resultOfDisconnectCallOnObjectUnderTest.expectedResult} is FailureWithConnectionException {
+         * ...and the call to `disconnect` (on the object under test) fails with a ConnectionException whose errorInformation is equal to ${thenConfig.resultOfDisconnectCallOnObjectUnderTest.errorInformation}.
+         * }
+         *
+         * when ${thenConfig.resultOfDisconnectCallOnObjectUnderTest} is DoesNotTerminate {
+         * ...and the call to `disconnect` (on the object under test) does not complete within ${thenConfig.resultOfDisconnectCallOnObjectUnderTest.timeoutInMilliseconds} milliseconds.
+         * }
+         * ```
+         */
+        companion object {
+            suspend fun test(givenConfig: GivenConfig, thenConfig: ThenConfig) {
+                givenConfig.validate()
+                thenConfig.validate(givenConfig)
+
+                val testEnvironment = DefaultAblyTestEnvironment.create(numberOfTrackables = 1)
+                val configuredChannel = testEnvironment.configuredChannels[0]
+
+                // Given...
+
+                // ...that calling containsKey on the Channels instance returns ${givenConfig.channelsContainsKey}...
+                testEnvironment.mockChannelsContainsKey(
+                    configuredChannel.channelName,
+                    givenConfig.channelsContainsKey
+                )
+
+                if (givenConfig.mockChannelsGet) {
+                    /* if ${givenConfig.mockChannelsGet} {
+                     * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel in state ${givenConfig.initialChannelState}...
+                     * }
+                     */
+                    testEnvironment.mockChannelsGet(DefaultAblyTestEnvironment.ChannelsGetOverload.WITHOUT_CHANNEL_OPTIONS)
+                    configuredChannel.mockState(givenConfig.initialChannelState!!)
+                }
+
+                val channelStateChangeMock: AblySdkChannelStateListener.ChannelStateChange?
+                when (val givenChannelStateBehaviour = givenConfig.channelStateChangeBehaviour) {
+                    is GivenTypes.ChannelStateChangeBehaviour.NoBehaviour -> {
+                        configuredChannel.stubOn()
+                        channelStateChangeMock = null
+                    }
+                    is GivenTypes.ChannelStateChangeBehaviour.EmitStateChange -> {
+                        /* when ${givenConfig.channelStateChangeBehaviour} is EmitStateChange {
+                         * ...which, when its `on` method is called, immediately calls the received listener with a channel state change whose `current` property is ${givenConfig.channelStateChangeBehaviour.current}...
+                         * }
+                         */
+                        channelStateChangeMock =
+                            configuredChannel.mockOnToEmitStateChange(current = givenChannelStateBehaviour.current)
+                        configuredChannel.stubOff()
+                    }
+                }
+
+                when (val givenPresenceLeaveBehaviour = givenConfig.presenceLeaveBehaviour) {
+                    is GivenTypes.CompletionListenerMockBehaviour.NotMocked -> {}
+                    /* when ${givenConfig.presenceLeaveBehaviour} is Success {
+                     * ...[and] which, when told to leave presence, does so successfully...
+                     * }
+                     */
+                    is GivenTypes.CompletionListenerMockBehaviour.Success -> {
+                        configuredChannel.mockSuccessfulPresenceLeave()
+                    }
+                    /* when ${givenConfig.presenceLeaveBehaviour} is Failure {
+                     * ...[and] which, when told to leave presence, fails to do so with error ${givenConfig.presenceLeaveBehaviour.errorInfo}...
+                     * }
+                     */
+                    is GivenTypes.CompletionListenerMockBehaviour.Failure -> {
+                        configuredChannel.mockFailedPresenceLeave(givenPresenceLeaveBehaviour.errorInfo)
+                    }
+                    /* when ${givenConfig.presenceLeaveBehaviour} is DoesNotComplete {
+                     * ...[and] which, when told to leave presence, never finishes doing so...
+                     * }
+                     */
+                    is GivenTypes.CompletionListenerMockBehaviour.DoesNotComplete -> {
+                        configuredChannel.mockNonCompletingPresenceLeave()
+                    }
+                }
+
+                configuredChannel.stubUnsubscribe()
+                configuredChannel.stubPresenceUnsubscribe()
+                configuredChannel.mockName()
+                testEnvironment.stubRelease(configuredChannel)
+
+                // When...
+
+                val result = executeForVerifying(thenConfig.resultOfDisconnectCallOnObjectUnderTest) {
+                    // ...we call `disconnect` on the object under test,
+                    testEnvironment.objectUnderTest.disconnect(
+                        configuredChannel.trackableId,
+                        PresenceData("")
+                    )
+                }
+
+                // Then...
+                // ...in the following order, precisely the following things happen...
+
+                verifyOrder {
+                    // ...it calls `containsKey` on the Channels instance...
+                    testEnvironment.channelsMock.containsKey(configuredChannel.channelName)
+
+                    if (thenConfig.verifyChannelsGet) {
+                        /* if ${thenConfig.verifyChannelsGet} {
+                         * ...and calls `get` on the Channels instance...
+                         * }
+                         */
+                        testEnvironment.channelsMock.get(configuredChannel.channelName)
+                    }
+
+                    // ...and fetches the channel’s state ${thenConfig.numberOfChannelStateFetchesToVerify} times...
+                    repeat(thenConfig.numberOfChannelStateFetchesToVerify) {
+                        configuredChannel.channelMock.state
+                    }
+
+                    if (thenConfig.verifyChannelOn) {
+                        /* if ${thenConfig.verifyChannelOn} {
+                         * ...and calls `on` on the channel...
+                         * }
+                         */
+                        configuredChannel.channelMock.on(any())
+                    }
+
+                    if (thenConfig.verifyChannelStateChangeCurrent) {
+                        /* if ${thenConfig.verifyChannelStateChangeCurrent} {
+                         * ...and checks the `current` property of the emitted channel state change...
+                         * }
+                         */
+                        channelStateChangeMock!!.current
+                    }
+
+                    if (thenConfig.verifyChannelOff) {
+                        /* if ${thenConfig.verifyChannelOff} {
+                         * ...and calls `off` on the channel...
+                         * }
+                         */
+                        configuredChannel.channelMock.off(any())
+                    }
+
+                    if (thenConfig.verifyPresenceLeave) {
+                        /* if ${thenConfig.verifyPresenceLeave} {
+                         * ...and tells the channel to leave presence...
+                         * }
+                         */
+                        configuredChannel.presenceMock.leave(any(), any())
+                    }
+
+                    if (thenConfig.verifyChannelUnsubscribeAndRelease) {
+                        /* if ${thenConfig.verifyChannelUnsubscribeAndRelease} {
+                         * ...and calls `unsubscribe` on the channel and on its Presence instance...
+                         * ...and fetches the channel’s name and calls `release` on the Channels instance...
+                         * }
+                         */
+                        configuredChannel.channelMock.unsubscribe()
+                        configuredChannel.presenceMock.unsubscribe()
+                        configuredChannel.channelMock.name
+                        testEnvironment.channelsMock.release(configuredChannel.channelName)
+                    }
+                }
+
+                /* when ${thenConfig.resultOfDisconnectCallOnObjectUnderTest} is Terminates and ${thenConfig.resultOfDisconnectCallOnObjectUnderTest.expectedResult} is Success {
+                 * ...and the call to `disconnect` (on the object under test) succeeds.
+                 * }
+                 *
+                 * when ${thenConfig.resultOfDisconnectCallOnObjectUnderTest} is Terminates and ${thenConfig.resultOfDisconnectCallOnObjectUnderTest.expectedResult} is FailureWithConnectionException {
+                 * ...and the call to `disconnect` (on the object under test) fails with a ConnectionException whose errorInformation is equal to ${thenConfig.resultOfDisconnectCallOnObjectUnderTest.errorInformation}.
+                 * }
+                 *
+                 * when ${thenConfig.resultOfDisconnectCallOnObjectUnderTest} is DoesNotTerminate {
+                 * ...and the call to `disconnect` (on the object under test) does not complete within ${thenConfig.resultOfDisconnectCallOnObjectUnderTest.timeoutInMilliseconds} milliseconds.
+                 * }
+                 */
+                thenConfig.resultOfDisconnectCallOnObjectUnderTest.verify(result)
+
+                confirmVerified(*testEnvironment.allMocks)
+            }
+        }
+    }
 }
