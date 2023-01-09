@@ -14,7 +14,7 @@ import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
 @ExperimentalCoroutinesApi
@@ -32,7 +32,7 @@ class ConnectionCreatedWorkerTest {
 
     @Test
     fun `should return presence success result when executing normally and presence enter was successful`() =
-        runBlockingTest {
+        runTest {
             // given
             val initialProperties = createPublisherProperties()
             ably.mockSubscribeToPresenceSuccess(trackable.id)
@@ -59,7 +59,7 @@ class ConnectionCreatedWorkerTest {
 
     @Test
     fun `should return presence failure result when executing normally and presence enter failed`() =
-        runBlockingTest {
+        runTest {
             // given
             val initialProperties = createPublisherProperties()
             ably.mockSubscribeToPresenceError(trackable.id)
@@ -85,7 +85,7 @@ class ConnectionCreatedWorkerTest {
         }
 
     @Test
-    fun `should post TrackableRemovalRequested work when trackable removal was requested`() = runBlockingTest {
+    fun `should post TrackableRemovalRequested work when trackable removal was requested`() = runTest {
         // given
         val initialProperties = createPublisherProperties()
         initialProperties.trackableRemovalGuard.markForRemoval(trackable) {}
@@ -112,7 +112,7 @@ class ConnectionCreatedWorkerTest {
     }
 
     @Test
-    fun `should disconnect from Ably when trackable removal was requested`() = runBlockingTest {
+    fun `should disconnect from Ably when trackable removal was requested`() = runTest {
         // given
         val initialProperties = createPublisherProperties()
         initialProperties.trackableRemovalGuard.markForRemoval(trackable) {}
