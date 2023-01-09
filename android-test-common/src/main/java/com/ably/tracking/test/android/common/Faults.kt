@@ -38,8 +38,8 @@ abstract class FaultSimulation {
      * during the given fault stage.
      */
     abstract fun stateReceiverForStage(
-        stage: FaultSimulationStage)
-    : TrackableStateReceiver
+        stage: FaultSimulationStage
+    ): TrackableStateReceiver
 
     override fun toString() = name
 }
@@ -59,7 +59,7 @@ enum class FaultSimulationStage {
  * Base class for faults requiring a Layer 4 proxy for simulation.
  */
 abstract class TransportFault : FaultSimulation() {
-    val tcpProxy =  Layer4Proxy()
+    val tcpProxy = Layer4Proxy()
     override val proxy = tcpProxy
 }
 
@@ -125,7 +125,6 @@ class TcpConnectionUnresponsive : TransportFault() {
             TrackableStateReceiver.onlineWithoutFail("$name: $stage")
     }
 }
-
 
 /**
  * Helper to capture an expected set of successful or unsuccessful TrackableState

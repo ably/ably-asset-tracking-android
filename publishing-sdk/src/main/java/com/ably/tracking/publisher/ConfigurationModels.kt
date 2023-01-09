@@ -413,7 +413,7 @@ sealed class LocationSource
 class LocationSourceAbly private constructor(
     val simulationChannelName: String,
     val overrideClientOptions: ClientOptions?
-    ) : LocationSource() {
+) : LocationSource() {
     companion object {
         @JvmStatic
         fun create(simulationChannelName: String, clientOptsOverride: ClientOptions? = null) =

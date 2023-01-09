@@ -15,7 +15,6 @@ private const val PROXY_PORT = 13579
 private const val REALTIME_HOST = "realtime.ably.io"
 private const val REALTIME_PORT = 443
 
-
 /**
  * A local proxy that can be used to intercept Realtime traffic for testing
  */
@@ -48,13 +47,13 @@ class Layer4Proxy(
     val listenPort: Int = PROXY_PORT,
     private val targetAddress: String = REALTIME_HOST,
     private val targetPort: Int = REALTIME_PORT
-    ): RealtimeProxy {
+) : RealtimeProxy {
 
     private val loggingTag = "Layer4Proxy"
 
     private var server: ServerSocket? = null
     private val sslSocketFactory = SSLSocketFactory.getDefault()
-    private val connections : MutableList<Layer4ProxyConnection> = mutableListOf()
+    private val connections: MutableList<Layer4ProxyConnection> = mutableListOf()
 
     /**
      * Flag mutated by fault implementations to hang the TCP connection
@@ -65,9 +64,9 @@ class Layer4Proxy(
      * Block current thread and wait for a new incoming client connection on the server socket.
      * Returns a connection object when a client has connected.
      */
-    private fun accept() : Layer4ProxyConnection {
+    private fun accept(): Layer4ProxyConnection {
         val clientSock = server?.accept()
-        testLogD( "$loggingTag: accepted connection")
+        testLogD("$loggingTag: accepted connection")
 
         val serverSock = sslSocketFactory.createSocket(targetAddress, targetPort)
         val conn = Layer4ProxyConnection(serverSock, clientSock!!, targetAddress, parentProxy = this)
@@ -118,7 +117,7 @@ class Layer4Proxy(
                     val conn = this.accept()
                     testLogD("$loggingTag: proxy starting to run")
                     conn.run()
-                } catch (e : Exception) {
+                } catch (e: Exception) {
                     testLogD("$loggingTag: proxy shutting down: " + e.message)
                     break
                 }
@@ -169,7 +168,7 @@ internal class Layer4ProxyConnection(
      * Copies traffic between source and destination sockets, rewriting the
      * HTTP host header if requested to remove the proxy host details.
      */
-    private fun proxy(dstSock: Socket , srcSock: Socket, rewriteHost: Boolean = false) {
+    private fun proxy(dstSock: Socket, srcSock: Socket, rewriteHost: Boolean = false) {
         try {
             val dst = dstSock.getOutputStream()
             val src = srcSock.getInputStream()
@@ -178,7 +177,7 @@ internal class Layer4ProxyConnection(
 
             // deal with the initial HTTP upgrade packet
             bytesRead = src.read(buff)
-            if (bytesRead <0 ) {
+            if (bytesRead <0) {
                 return
             }
 
@@ -201,15 +200,13 @@ internal class Layer4ProxyConnection(
                     dst.write(buff, 0, bytesRead)
                 }
             }
-
         } catch (ignored: SocketException) {
-        } catch (e: Exception ) {
-            testLogD("${loggingTag}: $e")
+        } catch (e: Exception) {
+            testLogD("$loggingTag: $e")
         } finally {
             try {
                 srcSock.close()
             } catch (ignored: Exception) {}
         }
     }
-
 }

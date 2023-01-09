@@ -44,7 +44,6 @@ private const val MAPBOX_ACCESS_TOKEN = BuildConfig.MAPBOX_ACCESS_TOKEN
  */
 private const val DEFAULT_STATE_TRANSITION_TIMEOUT_SECONDS = 125L
 
-
 @RunWith(Parameterized::class)
 class NetworkConnectivityTests(private val testFault: FaultSimulation) {
 
@@ -110,7 +109,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
                 Assert.assertTrue(resources.publisher.remove(secondaryTrackable))
             }
 
-            /// Resolve the fault and ensure active trackable reaches intended state
+            // / Resolve the fault and ensure active trackable reaches intended state
             resources.fault.resolve()
             waitForStateTransition(
                 actionLabel = "resolve fault and wait for updated state",
@@ -232,7 +231,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
      * occur. A BooleanExpectation is returned, which will be completed with success if asyncOp
      * completes without errors, or failed if an exception is thrown.
      */
-    private fun failOnException(label: String, asyncOp: suspend () -> Unit) : BooleanExpectation {
+    private fun failOnException(label: String, asyncOp: suspend () -> Unit): BooleanExpectation {
         val opCompleted = BooleanExpectation(label)
         runBlocking {
             try {
@@ -277,7 +276,7 @@ class TestResources(
          */
         fun setUp(faultParam: FaultSimulation): TestResources {
             val context = InstrumentationRegistry.getInstrumentation().targetContext
-            val scope =  CoroutineScope(Dispatchers.Unconfined)
+            val scope = CoroutineScope(Dispatchers.Unconfined)
             val locationHelper = LocationHelper()
             val publisher = createPublisher(context, faultParam.proxy.clientOptions, locationHelper.channelName)
 
@@ -300,9 +299,9 @@ class TestResources(
             context: Context,
             proxyClientOptions: ClientOptions,
             locationChannelName: String
-        ) : Publisher {
+        ): Publisher {
             val resolution = Resolution(Accuracy.BALANCED, 1000L, 0.0)
-            val realtimeFactory = object: AblySdkRealtimeFactory {
+            val realtimeFactory = object : AblySdkRealtimeFactory {
                 override fun create(clientOptions: ClientOptions) = DefaultAblySdkRealtime(proxyClientOptions)
             }
             val connectionConfiguration = ConnectionConfiguration(
@@ -356,7 +355,7 @@ class TestResources(
      * Returns a BooleanExpectation, which can be used to check for successful
      * shutdown of the publisher
      */
-    private fun shutdownPublisher(publisher: Publisher) : BooleanExpectation {
+    private fun shutdownPublisher(publisher: Publisher): BooleanExpectation {
         val stopExpectation = BooleanExpectation("stop response")
         runBlocking {
             try {
@@ -401,7 +400,6 @@ private val LOCATION_SOURCE_OPTS = ClientOptions().apply {
     this.logHandler = Logging.ablyJavaDebugLogger
 }
 
-
 /**
  * Helper class to publish basic location updates through a known Ably channel name
  */
@@ -435,16 +433,19 @@ class LocationHelper {
 
         val ablyMessage = Message(EventNames.ENHANCED, gson.toJson(arrayOf((geoJson))))
         val publishExpectation = BooleanExpectation("publishing Ably location update")
-        channel.publish(ablyMessage, object: CompletionListener {
-            override fun onSuccess() {
-                testLogD("Location publish success")
-                publishExpectation.fulfill(true)
+        channel.publish(
+            ablyMessage,
+            object : CompletionListener {
+                override fun onSuccess() {
+                    testLogD("Location publish success")
+                    publishExpectation.fulfill(true)
+                }
+                override fun onError(err: ErrorInfo?) {
+                    testLogD("Location publish failed: ${err?.code} - ${err?.message}")
+                    publishExpectation.fulfill(false)
+                }
             }
-            override fun onError(err: ErrorInfo?) {
-                testLogD("Location publish failed: ${err?.code} - ${err?.message}")
-                publishExpectation.fulfill(false)
-            }
-        })
+        )
 
         publishExpectation.await()
         publishExpectation.assertSuccess()
