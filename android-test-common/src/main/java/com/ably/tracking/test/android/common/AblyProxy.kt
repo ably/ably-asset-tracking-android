@@ -5,7 +5,7 @@ import io.ably.lib.util.Log
 import java.net.ServerSocket
 import java.net.Socket
 import java.net.SocketException
-import java.util.*
+import java.util.UUID
 import javax.net.ssl.SSLSocketFactory
 
 private const val AGENT_HEADER_NAME = "ably-asset-tracking-android-publisher-tests"
@@ -177,7 +177,7 @@ internal class Layer4ProxyConnection(
 
             // deal with the initial HTTP upgrade packet
             bytesRead = src.read(buff)
-            if (bytesRead <0) {
+            if (bytesRead < 0) {
                 return
             }
 
@@ -206,7 +206,8 @@ internal class Layer4ProxyConnection(
         } finally {
             try {
                 srcSock.close()
-            } catch (ignored: Exception) {}
+            } catch (ignored: Exception) {
+            }
         }
     }
 }
