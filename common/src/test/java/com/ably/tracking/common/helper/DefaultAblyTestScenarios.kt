@@ -2,8 +2,10 @@ package com.ably.tracking.common.helper
 
 import com.ably.tracking.ConnectionException
 import com.ably.tracking.ErrorInformation
+import com.ably.tracking.common.AblySdkChannelStateListener
 import com.ably.tracking.common.DefaultAbly
 import com.ably.tracking.common.PresenceData
+import com.ably.tracking.common.AblySdkRealtime
 import io.ably.lib.realtime.ChannelState
 import io.ably.lib.types.ErrorInfo
 import io.mockk.confirmVerified
@@ -28,6 +30,14 @@ class DefaultAblyTestScenarios {
             object Success : CompletionListenerMockBehaviour()
             class Failure(val errorInfo: ErrorInfo) : CompletionListenerMockBehaviour()
             object DoesNotComplete : CompletionListenerMockBehaviour()
+        }
+
+        /**
+         * Describes how a test case should interact with the [AblySdkChannelStateListener] instances added to a channel using [AblySdkRealtime.Channel.on]. Individual test cases should document how they interpret the values this class can take.
+         */
+        sealed class ChannelStateChangeBehaviour() {
+            object NoBehaviour : ChannelStateChangeBehaviour()
+            class EmitStateChange(val current: ChannelState) : ChannelStateChangeBehaviour()
         }
     }
 
@@ -148,6 +158,49 @@ class DefaultAblyTestScenarios {
                          * }
                          */
                         Assert.assertNull(result)
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * This exception is thrown when a test scenario is executed with an invalid configuration due to programmer error.
+     */
+    class InvalidTestConfigurationException(message: String) : Exception(message)
+
+    companion object {
+        /**
+         * Executes asynchronous operation [operation] in an environment suitable for later verifying whether its result was as described by [expectedAsyncResult].
+         *
+         * @param expectedAsyncResult The expected result of [operation].
+         * @param operation The operation to execute, whose result the caller intends to subsequently verify [expectedAsyncResult] as describing.
+         * @return `null` if the execution of [operation] lasted longer than some timeout described by [expectedAsyncResult], else the result of [operation]’s execution. You can later pass this value to [ThenTypes.ExpectedAsyncResult.verify].
+         */
+        suspend fun <T> executeForVerifying(
+            expectedAsyncResult: ThenTypes.ExpectedAsyncResult,
+            operation: suspend () -> T
+        ): T? {
+            return when (expectedAsyncResult) {
+                is ThenTypes.ExpectedAsyncResult.Terminates -> {
+                    operation()
+                }
+                is ThenTypes.ExpectedAsyncResult.DoesNotTerminate -> {
+                    try {
+                        withTimeout(timeMillis = expectedAsyncResult.timeoutInMilliseconds) {
+                            /* This usage of runInterruptible is intended to ensure that even if `operation` is not cancellable — that is, even if it does not cooperate with cancellation (https://kotlinlang.org/docs/cancellation-and-timeouts.html#cancellation-is-cooperative) — the withTimeout method call will return after the timeout elapses. We have some methods in DefaultAbly that are not cancellable – see https://github.com/ably/ably-asset-tracking-android/issues/908.
+                             *
+                             * Perhaps there’s a better way to do this — to create a coroutine that’s cancellable even if it calls a non-cancellable one — that doesn’t involve making a trip from coroutines land to synchronous land and back again. I’m not familiar enough with the coroutines APIs to know.
+                             */
+
+                            runInterruptible {
+                                runBlocking {
+                                    operation()
+                                }
+                            }
+                        }
+                    } catch (e: TimeoutCancellationException) {
+                        null
                     }
                 }
             }
@@ -391,6 +444,332 @@ class DefaultAblyTestScenarios {
                  * }
                  */
                 thenConfig.resultOfConnectCallOnObjectUnderTest.verify(result)
+
+                confirmVerified(*testEnvironment.allMocks)
+            }
+        }
+    }
+
+    /**
+     * Provides test scenarios for [DefaultAbly.updatePresenceData]. See the [Companion.test] method.
+     */
+    class UpdatePresenceData {
+        /**
+         * This class provides properties for configuring the "Given..." part of the parameterised test case described by [Companion.test]. See that method’s documentation for information about the effect of this class’s properties.
+         */
+        class GivenConfig(
+            val channelsContainsKey: Boolean,
+            val mockChannelsGet: Boolean,
+            /**
+             * This must be `null` if and only if [mockChannelsGet] is `false`.
+             */
+            val initialChannelState: ChannelState?,
+            /**
+             * If [mockChannelsGet] is `false` then this must be [GivenTypes.ChannelStateChangeBehaviour.NoBehaviour].
+             */
+            val channelStateChangeBehaviour: GivenTypes.ChannelStateChangeBehaviour,
+            /**
+             * If [mockChannelsGet] is `false` then this must be [GivenTypes.CompletionListenerMockBehaviour.NotMocked].
+             */
+            val presenceUpdateBehaviour: GivenTypes.CompletionListenerMockBehaviour
+        ) {
+            /**
+             * Checks that this object represents a valid test configuration.
+             *
+             * @throws InvalidTestConfigurationException If this object does not represent a valid test configuration.
+             */
+            fun validate() {
+                if (mockChannelsGet) {
+                    if (initialChannelState == null) {
+                        throw InvalidTestConfigurationException("initialChannelState must be non-null when mockChannelsGet is true")
+                    }
+                } else {
+                    if (initialChannelState != null) {
+                        throw InvalidTestConfigurationException("initialChannelState must be null when mockChannelsGet is false")
+                    }
+                    if (channelStateChangeBehaviour !is GivenTypes.ChannelStateChangeBehaviour.NoBehaviour) {
+                        throw InvalidTestConfigurationException("channelStateChangeBehaviour must be NoBehaviour when mockChannelsGet is false")
+                    }
+                    if (presenceUpdateBehaviour !is GivenTypes.CompletionListenerMockBehaviour.NotMocked) {
+                        throw InvalidTestConfigurationException("presenceUpdateBehaviour must be NotMocked when mockChannelsGet is false")
+                    }
+                }
+            }
+        }
+
+        /**
+         * This class provides properties for configuring the "Then..." part of the parameterised test case described by [Companion.test]. See that method’s documentation for information about the effect of this class’s properties.
+         */
+        class ThenConfig(
+            val verifyChannelsGet: Boolean,
+            /**
+             * If [GivenConfig.mockChannelsGet] is `false` then this must be zero.
+             */
+            val numberOfChannelStateFetchesToVerify: Int,
+            /**
+             * If [GivenConfig.mockChannelsGet] is `false` then this must be `false`.
+             */
+            val verifyChannelOn: Boolean,
+            /**
+             * If [GivenConfig.channelStateChangeBehaviour] is not [GivenTypes.ChannelStateChangeBehaviour.EmitStateChange] then this must be `false`.
+             */
+            val verifyChannelStateChangeCurrent: Boolean,
+            /**
+             * If [GivenConfig.mockChannelsGet] is `false` then this must be `false`.
+             */
+            val verifyChannelOff: Boolean,
+            /**
+             * If [GivenConfig.mockChannelsGet] is `false` then this must be `false`.
+             */
+            val verifyPresenceUpdate: Boolean,
+            val resultOfUpdatePresenceCallOnObjectUnderTest: ThenTypes.ExpectedAsyncResult
+        ) {
+            /**
+             * Checks that this object represents a valid test configuration to be used with [givenConfig].
+             *
+             * @param givenConfig The configuration that `this` is intended to be used with.
+             * @throws InvalidTestConfigurationException If this object does not represent a valid test configuration.
+             */
+            fun validate(givenConfig: GivenConfig) {
+                if (!givenConfig.mockChannelsGet) {
+                    if (numberOfChannelStateFetchesToVerify != 0) {
+                        throw InvalidTestConfigurationException("numberOfChannelStateFetchesToVerify must be zero when mockChannelsGet is false")
+                    }
+                    if (verifyChannelOn) {
+                        throw InvalidTestConfigurationException("verifyChannelOn must be false when mockChannelsGet is false")
+                    }
+                    if (verifyChannelOff) {
+                        throw InvalidTestConfigurationException("verifyChannelOn must be false when mockChannelsGet is false")
+                    }
+                    if (verifyPresenceUpdate) {
+                        throw InvalidTestConfigurationException("verifyPresenceUpdate must be false when mockChannelsGet is false")
+                    }
+                }
+                if (givenConfig.channelStateChangeBehaviour !is GivenTypes.ChannelStateChangeBehaviour.EmitStateChange) {
+                    if (verifyChannelStateChangeCurrent) {
+                        throw InvalidTestConfigurationException("verifyChannelStateChangeCurrent must be false when channelStateChangeBehaviour is not EmitStateChange")
+                    }
+                }
+            }
+        }
+
+        companion object {
+            /**
+             * Implements the following parameterised test case for [DefaultAbly.updatePresenceData]:
+             *
+             * ```text
+             * Given...
+             *
+             * ...that calling `containsKey` on the Channels instance returns ${givenConfig.channelsContainsKey}...
+             *
+             * if ${givenConfig.mockChannelsGet} {
+             * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel in state ${givenConfig.initialChannelState}...
+             * }
+             *
+             * when ${givenConfig.channelStateChangeBehaviour} is EmitStateChange {
+             * ...which, when its `on` method is called, immediately calls the received listener with a channel state change whose `current` property is ${givenConfig.channelStateChangeBehaviour.current}...
+             * }
+             *
+             * when ${givenConfig.presenceUpdateBehaviour} is Success {
+             * ...[and] which, when told to update presence data, does so successfully...
+             * }
+             *
+             * when ${givenConfig.presenceUpdateBehaviour} is Failure {
+             * ...[and] which, when told to update presence data, fails to do so with error ${givenConfig.presenceUpdateBehaviour.errorInfo}...
+             * }
+             *
+             * when ${givenConfig.presenceUpdateBehaviour} is DoesNotComplete {
+             * ...[and] which, when told to update presence data, never finishes doing so...
+             * }
+             *
+             *
+             * When...
+             *
+             * ...we call `updatePresenceData` on the object under test,
+             *
+             * Then...
+             * ...in the following order, precisely the following things happen...
+             *
+             * ...it calls `containsKey` on the Channels instance...
+             *
+             * if ${thenConfig.verifyChannelsGet} {
+             * ...and calls `get` (the overload that does not accept a ChannelOptions object) on the Channels instance...
+             * }
+             *
+             * ...and checks the channel’s state ${thenConfig.numberOfChannelStateFetchesToVerify} times...
+             *
+             * if ${thenConfig.verifyChannelOn} {
+             * ...and calls `on` on the channel...
+             * }
+             *
+             * if ${thenConfig.verifyChannelStateChangeCurrent}
+             * ...and checks the state change’s `current` property...
+             * }
+             *
+             * if ${thenConfig.verifyChannelOff} {
+             * ...and calls `off` on the channel...
+             * }
+             *
+             * if ${thenConfig.verifyPresenceUpdate} {
+             * ...and tells the channel to update presence data...
+             * }
+             *
+             * when ${thenConfig.resultOfUpdatePresenceCallOnObjectUnderTest} is Terminates and ${thenConfig.resultOfUpdatePresenceCallOnObjectUnderTest.expectedResult} is Success {
+             * ...and the call to `updatePresenceData` (on the object under test) succeeds.
+             * }
+             *
+             * when ${thenConfig.resultOfUpdatePresenceCallOnObjectUnderTest} is Terminates and ${thenConfig.resultOfUpdatePresenceCallOnObjectUnderTest.expectedResult} is FailureWithConnectionException {
+             * ...and the call to `updatePresenceData` (on the object under test) fails with a ConnectionException whose errorInformation is equal to ${thenConfig.resultOfUpdatePresenceCallOnObjectUnderTest.errorInformation}.
+             * }
+             *
+             * when ${thenConfig.resultOfUpdatePresenceCallOnObjectUnderTest} is DoesNotTerminate {
+             * ...and the call to `updatePresenceData` (on the object under test) does not complete within ${thenConfig.resultOfUpdatePresenceCallOnObjectUnderTest.timeoutInMilliseconds} milliseconds.
+             * }
+             * ```
+             */
+            suspend fun test(givenConfig: GivenConfig, thenConfig: ThenConfig) {
+                givenConfig.validate()
+                thenConfig.validate(givenConfig)
+
+                // Given...
+
+                val testEnvironment = DefaultAblyTestEnvironment.create(numberOfTrackables = 1)
+                val configuredChannel = testEnvironment.configuredChannels[0]
+
+                // ...that calling `containsKey` on the Channels instance returns ${givenConfig.channelsContainsKey}...
+                testEnvironment.mockChannelsContainsKey(
+                    configuredChannel.channelName,
+                    givenConfig.channelsContainsKey
+                )
+
+                if (givenConfig.mockChannelsGet) {
+                    /* if ${givenConfig.mockChannelsGet} {
+                     * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel in state ${givenConfig.initialChannelState}...
+                     * }
+                     */
+                    testEnvironment.mockChannelsGet(DefaultAblyTestEnvironment.ChannelsGetOverload.WITHOUT_CHANNEL_OPTIONS)
+                    configuredChannel.mockState(givenConfig.initialChannelState!!)
+                }
+
+                val channelStateChangeMock: AblySdkChannelStateListener.ChannelStateChange?
+                when (
+                    val givenChannelStateChangeBehaviour =
+                        givenConfig.channelStateChangeBehaviour
+                ) {
+                    is GivenTypes.ChannelStateChangeBehaviour.NoBehaviour -> {
+                        configuredChannel.stubOn()
+                        channelStateChangeMock = null
+                    }
+                    is GivenTypes.ChannelStateChangeBehaviour.EmitStateChange -> {
+                        /* when ${givenConfig.channelStateChangeBehaviour} is EmitStateChange {
+                         * ...which, when its `on` method is called, immediately calls the received listener with a channel state change whose `current` property is ${givenConfig.channelStateChangeBehaviour.current}...
+                         * }
+                         */
+                        channelStateChangeMock =
+                            configuredChannel.mockOnToEmitStateChange(current = givenChannelStateChangeBehaviour.current)
+                        configuredChannel.stubOff()
+                    }
+                }
+
+                when (val givenPresenceUpdateBehaviour = givenConfig.presenceUpdateBehaviour) {
+                    is GivenTypes.CompletionListenerMockBehaviour.NotMocked -> {}
+                    /* when ${givenConfig.presenceUpdateBehaviour} is Success {
+                     * ...[and] which, when told to update presence data, does so successfully...
+                     * }
+                     */
+                    is GivenTypes.CompletionListenerMockBehaviour.Success -> {
+                        configuredChannel.mockSuccessfulPresenceUpdate()
+                    }
+                    /* when ${givenConfig.presenceUpdateBehaviour} is Failure {
+                     * ...[and] which, when told to update presence data, fails to do so with error ${givenConfig.presenceUpdateBehaviour.errorInfo}...
+                     * }
+                     */
+                    is GivenTypes.CompletionListenerMockBehaviour.Failure -> {
+                        configuredChannel.mockFailedPresenceUpdate(givenPresenceUpdateBehaviour.errorInfo)
+                    }
+                    /* when ${givenConfig.presenceUpdateBehaviour} is DoesNotComplete {
+                     * ...[and] which, when told to update presence data, never finishes doing so...
+                     * }
+                     */
+                    is GivenTypes.CompletionListenerMockBehaviour.DoesNotComplete -> {
+                        configuredChannel.mockNonCompletingPresenceUpdate()
+                    }
+                }
+
+                // When...
+
+                val result = executeForVerifying(thenConfig.resultOfUpdatePresenceCallOnObjectUnderTest) {
+                    // ...we call `updatePresenceData` on the object under test,
+                    testEnvironment.objectUnderTest.updatePresenceData(
+                        configuredChannel.trackableId,
+                        PresenceData("") /* arbitrarily chosen */
+                    )
+                }
+
+                // Then...
+                // ...in the following order, precisely the following things happen...
+                verifyOrder {
+                    // ...it calls `containsKey` on the Channels instance...
+                    testEnvironment.channelsMock.containsKey(configuredChannel.channelName)
+
+                    if (thenConfig.verifyChannelsGet) {
+                        /* if ${thenConfig.verifyChannelsGet} {
+                         * ...and calls `get` (the overload that does not accept a ChannelOptions object) on the Channels instance...
+                         * }
+                         */
+                        testEnvironment.channelsMock.get(configuredChannel.channelName)
+                    }
+
+                    repeat(thenConfig.numberOfChannelStateFetchesToVerify) {
+                        // ...and checks the channel’s state ${thenConfig.numberOfChannelStateFetchesToVerify} times...
+                        configuredChannel.channelMock.state
+                    }
+
+                    if (thenConfig.verifyChannelOn) {
+                        /* if ${thenConfig.verifyChannelOn} {
+                         * ...and calls `on` on the channel...
+                         */
+                        configuredChannel.channelMock.on(any())
+                    }
+
+                    if (thenConfig.verifyChannelStateChangeCurrent) {
+                        /* if ${thenConfig.verifyChannelStateChangeCurrent}
+                         * ...and checks the state change’s `current` property...
+                         * }
+                         */
+                        channelStateChangeMock!!.current
+                    }
+
+                    if (thenConfig.verifyChannelOff) {
+                        /* if ${thenConfig.verifyChannelOff} {
+                         * ...and calls `off` on the channel...
+                         * }
+                         */
+                        configuredChannel.channelMock.off(any())
+                    }
+
+                    if (thenConfig.verifyPresenceUpdate) {
+                        /* if ${thenConfig.verifyPresenceUpdate} {
+                         * ...and tells the channel to update presence data...
+                         * }
+                         */
+                        configuredChannel.presenceMock.update(any(), any())
+                    }
+                }
+
+                /* when ${thenConfig.resultOfUpdatePresenceCallOnObjectUnderTest} is Terminates and ${thenConfig.resultOfUpdatePresenceCallOnObjectUnderTest.expectedResult} is Success {
+                 * ...and the call to `updatePresenceData` (on the object under test) succeeds.
+                 * }
+                 *
+                 * when ${thenConfig.resultOfUpdatePresenceCallOnObjectUnderTest} is Terminates and ${thenConfig.resultOfUpdatePresenceCallOnObjectUnderTest.expectedResult} is FailureWithConnectionException {
+                 * ...and the call to `updatePresenceData` (on the object under test) fails with a ConnectionException whose errorInformation is equal to ${thenConfig.resultOfUpdatePresenceCallOnObjectUnderTest.errorInformation}.
+                 * }
+                 *
+                 * when ${thenConfig.resultOfUpdatePresenceCallOnObjectUnderTest} is DoesNotTerminate {
+                 * ...and the call to `updatePresenceData` (on the object under test) does not complete within ${thenConfig.resultOfUpdatePresenceCallOnObjectUnderTest.timeoutInMilliseconds} milliseconds.
+                 * }
+                 */
+                thenConfig.resultOfUpdatePresenceCallOnObjectUnderTest.verify(result)
 
                 confirmVerified(*testEnvironment.allMocks)
             }
