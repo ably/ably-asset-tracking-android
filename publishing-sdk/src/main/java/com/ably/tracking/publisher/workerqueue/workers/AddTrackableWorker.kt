@@ -30,6 +30,17 @@ internal class AddTrackableWorker(
     private val channelStateChangeListener: ((connectionStateChange: ConnectionStateChange) -> Unit),
     private val ably: Ably
 ) : Worker<PublisherProperties, WorkerSpecification> {
+    /**
+     * Whether the worker is delaying its work.
+     * Used to properly handle unexpected exceptions in [onUnexpectedAsyncError].
+     */
+    private var isDelayingWork: Boolean = false
+
+    /**
+     * Whether the SDK is connected to Ably.
+     * Used to properly handle unexpected exceptions in [onUnexpectedAsyncError].
+     */
+    private var isConnectedToAbly: Boolean = true
 
     override fun doWork(
         properties: PublisherProperties,
@@ -46,16 +57,10 @@ internal class AddTrackableWorker(
             }
             properties.state == PublisherState.CONNECTING || properties.state == PublisherState.DISCONNECTING -> {
                 doAsyncWork {
+                    isDelayingWork = true
                     // delay work until Ably connection manipulation ends
                     delay(WORK_DELAY_IN_MILLISECONDS)
-                    postWork(
-                        WorkerSpecification.AddTrackable(
-                            trackable,
-                            callbackFunction,
-                            presenceUpdateListener,
-                            channelStateChangeListener
-                        )
-                    )
+                    postWork(createWorkerSpecificationToDelay())
                 }
             }
             else -> {
@@ -78,6 +83,7 @@ internal class AddTrackableWorker(
         presenceData: PresenceData
     ) {
         if (isAddingTheFirstTrackable) {
+            isConnectedToAbly = false
             val startAblyConnectionResult = ably.startConnection()
             if (startAblyConnectionResult.isFailure) {
                 val workerSpecification = createAddTrackableFailedWorker(
@@ -87,6 +93,7 @@ internal class AddTrackableWorker(
                 postWork(workerSpecification)
                 return
             }
+            isConnectedToAbly = true
         }
         val connectResult = ably.connect(
             trackableId = trackable.id,
@@ -119,6 +126,14 @@ internal class AddTrackableWorker(
         isConnectedToAbly
     )
 
+    private fun createWorkerSpecificationToDelay() =
+        WorkerSpecification.AddTrackable(
+            trackable,
+            callbackFunction,
+            presenceUpdateListener,
+            channelStateChangeListener
+        )
+
     override fun doWhenStopped(exception: Exception) {
         callbackFunction(Result.failure(exception))
     }
@@ -128,6 +143,10 @@ internal class AddTrackableWorker(
     }
 
     override fun onUnexpectedAsyncError(exception: Exception, postWork: (WorkerSpecification) -> Unit) {
-        callbackFunction(Result.failure(exception))
+        if (isDelayingWork) {
+            postWork(createWorkerSpecificationToDelay())
+        } else {
+            postWork(createAddTrackableFailedWorker(exception, isConnectedToAbly))
+        }
     }
 }
