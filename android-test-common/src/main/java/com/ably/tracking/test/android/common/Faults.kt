@@ -51,12 +51,16 @@ abstract class FaultSimulation {
 
 /**
  * Steps during a fault simulation test:
- *   - FaultActive - fault.enable() has been called
+ *   - FaultActiveBeforeTracking - fault.enable() has been called but trackables
+ *     have not yet been tracked, so attempts to track will follow
+ *   - FaultActiveDuringTracking - fault.enable() has been called while trackables
+ *     were already online
  *   - FaultResolved - fault.enable() was called earlier, now fault.resolve()
  *     has also been called.
  */
 enum class FaultSimulationStage {
-    FaultActive,
+    FaultActiveBeforeTracking,
+    FaultActiveDuringTracking,
     FaultResolved
 }
 
@@ -98,7 +102,8 @@ class TcpConnectionRefused : TransportLayerFault() {
     override fun stateReceiverForStage(
         stage: FaultSimulationStage
     ) = when (stage) {
-        FaultSimulationStage.FaultActive ->
+        FaultSimulationStage.FaultActiveBeforeTracking,
+        FaultSimulationStage.FaultActiveDuringTracking ->
             TrackableStateReceiver.offlineWithoutFail("$name: $stage")
         FaultSimulationStage.FaultResolved ->
             TrackableStateReceiver.onlineWithoutFail("$name: $stage")
@@ -124,7 +129,8 @@ class TcpConnectionUnresponsive : TransportLayerFault() {
     override fun stateReceiverForStage(
         stage: FaultSimulationStage
     ) = when (stage) {
-        FaultSimulationStage.FaultActive ->
+        FaultSimulationStage.FaultActiveBeforeTracking,
+        FaultSimulationStage.FaultActiveDuringTracking ->
             TrackableStateReceiver.offlineWithoutFail("$name: $stage")
         FaultSimulationStage.FaultResolved ->
             TrackableStateReceiver.onlineWithoutFail("$name: $stage")
@@ -192,7 +198,9 @@ abstract class DropAction(
     override fun stateReceiverForStage(
         stage: FaultSimulationStage
     ) = when (stage) {
-        FaultSimulationStage.FaultActive ->
+        FaultSimulationStage.FaultActiveDuringTracking ->
+            TrackableStateReceiver.onlineWithoutFail("$name: $stage")
+        FaultSimulationStage.FaultActiveBeforeTracking ->
             TrackableStateReceiver.offlineWithoutFail("$name: $stage")
         FaultSimulationStage.FaultResolved ->
             TrackableStateReceiver.onlineWithoutFail("$name: $stage")

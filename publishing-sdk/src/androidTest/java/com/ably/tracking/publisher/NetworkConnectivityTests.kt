@@ -91,7 +91,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
             // Add an active trackable while fault active
             waitForStateTransition(
                 actionLabel = "attempt to add active Trackable while fault active",
-                receiver = resources.fault.stateReceiverForStage(FaultSimulationStage.FaultActive)
+                receiver = resources.fault.stateReceiverForStage(FaultSimulationStage.FaultActiveBeforeTracking)
             ) {
                 resources.publisher.track(primaryTrackable).also {
                     resources.locationHelper.sendUpdate(100.0, 100.0)
@@ -101,7 +101,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
             // Add a secondary (not active) trackable too
             waitForStateTransition(
                 actionLabel = "add secondary (inactive) trackable",
-                receiver = resources.fault.stateReceiverForStage(FaultSimulationStage.FaultActive)
+                receiver = resources.fault.stateReceiverForStage(FaultSimulationStage.FaultActiveBeforeTracking)
             ) {
                 resources.publisher.add(secondaryTrackable).also {
                     // apparently another location update is needed for this to go online
@@ -170,7 +170,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
             // Enable the fault, wait for Trackable to move to expected state
             waitForStateTransition(
                 actionLabel = "await active trackable state transition during fault",
-                receiver = resources.fault.stateReceiverForStage(FaultSimulationStage.FaultActive)
+                receiver = resources.fault.stateReceiverForStage(FaultSimulationStage.FaultActiveDuringTracking)
             ) {
                 resources.fault.enable()
                 resources.publisher.getTrackableState(primaryTrackable.id)!!
@@ -179,7 +179,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
             // Ensure secondary trackable is also now in expected fault state
             waitForStateTransition(
                 actionLabel = "await secondary trackable state transition during fault",
-                receiver = resources.fault.stateReceiverForStage(FaultSimulationStage.FaultActive)
+                receiver = resources.fault.stateReceiverForStage(FaultSimulationStage.FaultActiveDuringTracking)
             ) {
                 resources.publisher.getTrackableState(secondaryTrackable.id)!!
             }
