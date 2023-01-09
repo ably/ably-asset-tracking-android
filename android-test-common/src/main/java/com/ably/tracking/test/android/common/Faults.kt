@@ -1,6 +1,11 @@
 package com.ably.tracking.test.android.common
 
 import com.ably.tracking.TrackableState
+import io.ktor.websocket.*
+import org.msgpack.value.ImmutableStringValue
+import org.msgpack.value.StringValue
+import org.msgpack.value.Value
+import org.msgpack.value.impl.ImmutableStringValueImpl
 import kotlin.reflect.KClass
 
 /**
@@ -145,6 +150,102 @@ class NullApplicationLayerFault : ApplicationLayerFault() {
     override fun resolve() { }
     override fun stateReceiverForStage(stage: FaultSimulationStage) =
         TrackableStateReceiver.onlineWithoutFail("$name: $stage")
+}
+
+//
+// Ably protocol action identifiers used by interceptors
+//
+const val ATTACH_ACTION = 10
+const val DETACH_ACTION = 12
+const val PRESENCE_ACTION = 14
+
+/**
+ * Base class for all faults that simply drop messages with a specific action
+ * type in a specified direction
+ */
+abstract class DropAction(
+    private val direction: FrameDirection,
+    private val action: Int
+    ) : ApplicationLayerFault() {
+
+    companion object {
+        private const val tag = "DropAction"
+    }
+
+    override fun enable() {
+        applicationProxy.interceptor = object: Layer7Interceptor {
+            override fun intercept(direction: FrameDirection, frame: Frame) =
+                if (shouldFilter(direction, frame)) {
+                    testLogD("$tag: dropping: $direction - ${unpack(frame.data)}")
+                    listOf()
+                } else {
+                    testLogD("$tag: keeping: $direction - ${unpack(frame.data)}")
+                    listOf(Action(direction, frame))
+                }
+            }
+        }
+
+    override fun resolve() {
+        applicationProxy.interceptor = PassThroughInterceptor()
+    }
+
+    override fun stateReceiverForStage(
+        stage: FaultSimulationStage
+    ) = when (stage) {
+        FaultSimulationStage.FaultActive ->
+            TrackableStateReceiver.offlineWithoutFail("$name: $stage")
+        FaultSimulationStage.FaultResolved ->
+            TrackableStateReceiver.onlineWithoutFail("$name: $stage")
+    }
+
+    /**
+     * Check whether this frame and direction messages the fault specification
+     */
+    private fun shouldFilter(direction: FrameDirection, frame: Frame) =
+        direction == this.direction && messageAction(frame) == action
+
+    /**
+     * Unpack the action field from the WebSocket frame using MsgPack
+     */
+    private fun messageAction(frame: Frame) =
+        unpack(frame.data)
+            ?.map()
+            ?.get(ImmutableStringValueImpl("action"))
+            ?.asIntegerValue()
+            ?.asInt()
+}
+
+/**
+ * A DropAction fault implementation to drop ATTACH messages,
+ * simulating the Ably server failing to respond to channel attachment
+ */
+class AttachUnresponsive : DropAction(
+    direction = FrameDirection.ClientToServer,
+    action = ATTACH_ACTION
+) {
+    override val name = "AttachUnresponsive"
+}
+
+/**
+ * A DropAction fault implementation to drop DETACH messages,
+ * simulating the Ably server failing to detach a client from a channel.
+ */
+class DetachUnresponsive : DropAction(
+    direction = FrameDirection.ClientToServer,
+    action = DETACH_ACTION
+) {
+    override val name = "DetachUnresponsive"
+}
+
+/**
+ * A DropAction fault implementation to drop PRESENCE messages,
+ * simulating a presence enter failure
+ */
+class EnterUnresponsive : DropAction(
+    direction = FrameDirection.ClientToServer,
+    action = PRESENCE_ACTION
+) {
+    override val name = "EnterUnresponsive"
 }
 
 

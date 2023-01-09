@@ -57,7 +57,10 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
             arrayOf(NullTransportFault()),
             arrayOf(NullApplicationLayerFault()),
             arrayOf(TcpConnectionRefused()),
-            arrayOf(TcpConnectionUnresponsive())
+            arrayOf(TcpConnectionUnresponsive()),
+            arrayOf(AttachUnresponsive()),
+            arrayOf(DetachUnresponsive()),
+            arrayOf(EnterUnresponsive()),
         )
     }
 

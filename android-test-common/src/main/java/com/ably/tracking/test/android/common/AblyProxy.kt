@@ -267,7 +267,7 @@ class Layer7Proxy(
     }
 
     private var server: NettyApplicationEngine? = null
-    var interceptor = PassThroughInterceptor()
+    var interceptor: Layer7Interceptor = PassThroughInterceptor()
 
     override fun start() {
         testLogD("$tag: starting...")
@@ -308,14 +308,12 @@ class Layer7Proxy(
         for (received in incoming) {
             testLogD("${tag}: [$direction] ${unpack(received.data)}")
             try {
-                val action = interceptor.intercept(direction, received)
-                for(frame in action.framesToAbly) {
-                    testLogD("$tag: [framesToAbly]: ${unpack(frame.data)}")
-                    clientSession.send(frame)
-                }
-                for(frame in action.framesToClient) {
-                    testLogD("$tag: [framesToClient]: ${unpack(frame.data)}")
-                    serverSession.send(frame)
+                for (action in interceptor.intercept(direction, received)) {
+                    testLogD("$tag: [${action.direction}]: ${unpack(action.frame.data)}")
+                    when (direction) {
+                        FrameDirection.ClientToServer -> clientSession.send(action.frame)
+                        FrameDirection.ServerToClient -> serverSession.send(action.frame)
+                    }
                 }
             } catch (e: Exception) {
                 testLogD("$tag: forwardFrames error: $e")
@@ -408,10 +406,11 @@ fun unpack(data: ByteArray): ImmutableMapValue? =
 
 interface Layer7Interceptor {
     /**
-     * Intercept a Frame being passed through the proxy, returning either a
-     * replacement frame to forward in the given direction
+     * Intercept a Frame being passed through the proxy, returning a list
+     * of Actions to be performed in response. Note that doing nothing
+     * (i.e. passing through), is an Action in itself
      */
-    fun intercept(direction: FrameDirection, frame: Frame): Action
+    fun intercept(direction: FrameDirection, frame: Frame): List<Action>
 }
 
 /**
@@ -425,11 +424,17 @@ enum class FrameDirection {
 /**
  * Action an interception wants to perform in response to an observed
  * message, or potentially a sequence of messages if it's retaining state.
- * `framesToAbly` will be send in the direction of Ably
  */
 data class Action(
-    val framesToAbly: List<Frame> = listOf(),
-    val framesToClient: List<Frame> = listOf()
+    /**
+     * Direction to send the frame in
+     */
+    val direction: FrameDirection,
+
+    /**
+     * Websocket frame to be sent
+     */
+    val frame: Frame
 )
 
 /**
@@ -439,16 +444,5 @@ class PassThroughInterceptor : Layer7Interceptor {
     override fun intercept(
         direction: FrameDirection,
         frame: Frame
-    ) = when (direction) {
-        FrameDirection.ClientToServer ->
-            Action(
-                framesToAbly = listOf(frame),
-                framesToClient = listOf()
-            )
-        FrameDirection.ServerToClient ->
-            Action(
-                framesToAbly = listOf(),
-                framesToClient = listOf(frame)
-            )
-    }
+    ) = listOf(Action(direction, frame))
 }
