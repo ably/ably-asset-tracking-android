@@ -75,6 +75,20 @@ class DefaultAblyTestEnvironment private constructor(
         val presenceMock: AblySdkRealtime.Presence
     ) {
         /**
+         * Contains the [AblySdkChannelStateListener.ChannelStateChange] MockK mocks created by [mockOnToEmitStateChange].
+         */
+        private var stateChangeMocks =
+            mutableListOf<AblySdkChannelStateListener.ChannelStateChange>()
+
+        /**
+         * A list of all of the MockK mock objects that this object has created.
+         */
+        val allMocks: List<Any>
+            get() {
+                return listOf(channelMock, presenceMock) + stateChangeMocks
+            }
+
+        /**
          * Mocks [channelMock]’s [AblySdkRealtime.Channel.name] property to return [channelName].
          */
         fun mockName() {
@@ -140,6 +154,44 @@ class DefaultAblyTestEnvironment private constructor(
          */
         fun mockNonCompletingPresenceEnter() {
             mockPresenceEnterResult { }
+        }
+
+        /**
+         * Mocks [presenceMock]’s [AblySdkRealtime.Presence.update] method to immediately pass its received completion listener to [handler].
+         *
+         * @param handler The function that should receive the completion listener passed to [presenceMock]’s [AblySdkRealtime.Presence.update] method.
+         */
+        private fun mockPresenceUpdateResult(handler: (CompletionListener) -> Unit) {
+            val completionListenerSlot = slot<CompletionListener>()
+            every {
+                presenceMock.update(
+                    any(),
+                    capture(completionListenerSlot)
+                )
+            } answers { handler(completionListenerSlot.captured) }
+        }
+
+        /**
+         * Mocks [presenceMock]’s [AblySdkRealtime.Presence.update] method to immediately call its received completion listener’s [CompletionListener.onSuccess] method.
+         */
+        fun mockSuccessfulPresenceUpdate() {
+            mockPresenceUpdateResult { it.onSuccess() }
+        }
+
+        /**
+         * Mocks [presenceMock]’s [AblySdkRealtime.Presence.update] method to immediately call its received completion listener’s [CompletionListener.onError] method.
+         *
+         * @param errorInfo The error that should be passed to the completion listener’s [CompletionListener.onError] method.
+         */
+        fun mockFailedPresenceUpdate(errorInfo: ErrorInfo) {
+            mockPresenceUpdateResult { it.onError(errorInfo) }
+        }
+
+        /**
+         * Mocks [presenceMock]’s [AblySdkRealtime.Presence.update] method to never call any methods on its received completion listener.
+         */
+        fun mockNonCompletingPresenceUpdate() {
+            mockPresenceUpdateResult { }
         }
 
         /**
@@ -218,6 +270,40 @@ class DefaultAblyTestEnvironment private constructor(
         fun mockNonCompletingAttach() {
             mockAttachResult { }
         }
+
+        /**
+         * Stubs [channelMock]’s [AblySdkRealtime.Channel.on] method.
+         */
+        fun stubOn() {
+            every { channelMock.on(any()) } returns Unit
+        }
+
+        /**
+         * Stubs [channelMock]’s [AblySdkRealtime.Channel.off] method (the overload which accepts an [AblySdkChannelStateListener] object).
+         */
+        fun stubOff() {
+            every { channelMock.off(any()) } returns Unit
+        }
+
+        /**
+         * Mocks [channelMock]’s [AblySdkRealtime.Channel.on] method to capture the received [AblySdkChannelStateListener], and to then immediately call this listener with a [AblySdkChannelStateListener.ChannelStateChange] MockK mock constructed from the [current] argument.
+         *
+         * @param current The value that the state change’s [ConnectionStateListener.ConnectionStateChange.current] property will return.
+         * @return The [AblySdkChannelStateListener.ChannelStateChange] MockK mock that will be passed to the listener.
+         */
+        fun mockOnToEmitStateChange(current: ChannelState): AblySdkChannelStateListener.ChannelStateChange {
+            val listenerSlot = slot<AblySdkChannelStateListener>()
+
+            val stateChangeMock = mockk<AblySdkChannelStateListener.ChannelStateChange>()
+            stateChangeMocks.add(stateChangeMock)
+            every { stateChangeMock.current } returns current
+
+            every { channelMock.on(capture(listenerSlot)) } answers {
+                listenerSlot.captured.onChannelStateChanged(stateChangeMock)
+            }
+
+            return stateChangeMock
+        }
     }
 
     /**
@@ -291,12 +377,8 @@ class DefaultAblyTestEnvironment private constructor(
                 realtimeMock,
                 connectionMock,
                 channelsMock
-            ) + configuredChannels.flatMap {
-                listOf(
-                    it.channelMock,
-                    it.presenceMock
-                )
-            }
+            ) + configuredChannels.flatMap { it.allMocks }
+
             return list.toTypedArray()
         }
 
@@ -406,6 +488,20 @@ class DefaultAblyTestEnvironment private constructor(
 
             val factory = mockk<AblySdkFactory<AblySdkChannelStateListener>>()
             every { factory.createRealtime(any()) } returns realtimeMock
+
+            // We provide an implementation of wrapChannelStateListener whose return value just calls the underlying listener.
+            every { factory.wrapChannelStateListener(any()) } answers {
+                val underlyingListener =
+                    arg(0) as AblySdkFactory.UnderlyingChannelStateListener<AblySdkChannelStateListener>
+                val wrapper = mockk<AblySdkChannelStateListener>()
+
+                every { wrapper.onChannelStateChanged(any()) } answers {
+                    val stateChange = arg(0) as AblySdkChannelStateListener.ChannelStateChange
+                    underlyingListener.onChannelStateChanged(wrapper, stateChange)
+                }
+
+                wrapper
+            }
 
             val connectionConfiguration =
                 ConnectionConfiguration(Authentication.basic("", "")) // arbitrarily chosen
