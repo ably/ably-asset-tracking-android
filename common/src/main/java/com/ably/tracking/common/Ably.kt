@@ -83,7 +83,7 @@ interface Ably {
     /**
      * A suspending version of [subscribeForPresenceMessages]
      *
-     * @param emitCurrentMessages If set to true it emits messages for each client that's currently in the presence.
+     * @param emitCurrentMessages If set to true it emits messages for each client that's currently in the presence, might block the current thread due to the presence.get(true) call.
      * */
     suspend fun subscribeForPresenceMessages(
         trackableId: String,
@@ -95,6 +95,7 @@ interface Ably {
      * Returns current messages from the trackable channel's presence.
      * Should be called only when there's an existing channel for the [trackableId].
      * If a channel for the [trackableId] doesn't exist then this method returns a Result with an empty list.
+     * Might block the current thread due to the presence.get(true) call.
      *
      * @param trackableId The ID of the trackable channel.
      *
@@ -701,6 +702,9 @@ constructor(
         }
     }
 
+    /**
+     * Warning: This method might block the current thread due to the presence.get(true) call.
+     */
     private fun emitAllCurrentMessagesFromPresence(channel: AblySdkRealtime.Channel<ChannelStateListenerType>, listener: (PresenceMessage) -> Unit) {
         getAllCurrentMessagesFromPresence(channel).forEach { presenceMessage ->
             // Each message is launched in a fire-and-forget manner to not block this method on the listener() call

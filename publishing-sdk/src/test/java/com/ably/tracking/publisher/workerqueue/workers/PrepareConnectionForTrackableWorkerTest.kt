@@ -122,7 +122,7 @@ class PrepareConnectionForTrackableWorkerTest {
             asyncWorks.executeAll()
             assertThat(asyncWorks).isNotEmpty()
 
-            val postedWorkerSpecification = postedWorks[0] as WorkerSpecification.SubscribeToTrackablePresence
+            val postedWorkerSpecification = postedWorks[0] as WorkerSpecification.SubscribeToTrackablePresenceMessages
             assertThat(postedWorkerSpecification.trackable).isEqualTo(trackable)
             assertThat(postedWorkerSpecification.callbackFunction).isEqualTo(resultCallbackFunction)
         }

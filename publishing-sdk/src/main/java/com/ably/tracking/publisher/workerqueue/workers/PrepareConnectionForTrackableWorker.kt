@@ -25,7 +25,7 @@ private const val WORK_DELAY_IN_MILLISECONDS = 200L
 
 /**
  * This worker establishes Ably connection and enters trackable to specific channel.
- * First of three steps required to add a trackable, the next step is [SubscribeToTrackablePresenceWorker] and [FinishAddingTrackableToPublisherWorker] afterwards.
+ * First of three steps required to add a trackable, the next step is [SubscribeToTrackablePresenceMessagesWorker] and [FinishAddingTrackableToPublisherWorker] afterwards.
  */
 internal class PrepareConnectionForTrackableWorker(
     private val trackable: Trackable,
@@ -113,7 +113,7 @@ internal class PrepareConnectionForTrackableWorker(
     }
 
     private fun createConnectionCreatedWorker() =
-        WorkerSpecification.SubscribeToTrackablePresence(
+        WorkerSpecification.SubscribeToTrackablePresenceMessages(
             trackable,
             callbackFunction,
             presenceUpdateListener,

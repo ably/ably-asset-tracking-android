@@ -25,7 +25,6 @@ import com.ably.tracking.publisher.workerqueue.workers.PrepareConnectionForTrack
 import com.ably.tracking.publisher.workerqueue.workers.ChangeLocationEngineResolutionWorker
 import com.ably.tracking.publisher.workerqueue.workers.ChangeRoutingProfileWorker
 import com.ably.tracking.publisher.workerqueue.workers.ChannelConnectionStateChangeWorker
-import com.ably.tracking.publisher.workerqueue.workers.SubscribeToTrackablePresenceWorker
 import com.ably.tracking.publisher.workerqueue.workers.FinishAddingTrackableToPublisherWorker
 import com.ably.tracking.publisher.workerqueue.workers.DestinationSetWorker
 import com.ably.tracking.publisher.workerqueue.workers.DisconnectSuccessWorker
@@ -43,6 +42,7 @@ import com.ably.tracking.publisher.workerqueue.workers.SendRawLocationSuccessWor
 import com.ably.tracking.publisher.workerqueue.workers.SetActiveTrackableWorker
 import com.ably.tracking.publisher.workerqueue.workers.StopWorker
 import com.ably.tracking.publisher.workerqueue.workers.StoppingConnectionFinishedWorker
+import com.ably.tracking.publisher.workerqueue.workers.SubscribeToTrackablePresenceMessagesWorker
 import com.ably.tracking.publisher.workerqueue.workers.TrackableRemovalRequestedWorker
 import kotlinx.coroutines.flow.StateFlow
 
@@ -81,7 +81,7 @@ internal class WorkerFactory(
                 workerSpecification.isConnectedToAbly,
                 ably,
             )
-            is WorkerSpecification.SubscribeToTrackablePresence -> SubscribeToTrackablePresenceWorker(
+            is WorkerSpecification.SubscribeToTrackablePresenceMessages -> SubscribeToTrackablePresenceMessagesWorker(
                 workerSpecification.trackable,
                 workerSpecification.callbackFunction,
                 ably,
@@ -241,7 +241,7 @@ internal sealed class WorkerSpecification {
         val connectionStateChange: ConnectionStateChange,
     ) : WorkerSpecification()
 
-    data class SubscribeToTrackablePresence(
+    data class SubscribeToTrackablePresenceMessages(
         val trackable: Trackable,
         val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>,
         val presenceUpdateListener: ((presenceMessage: com.ably.tracking.common.PresenceMessage) -> Unit),

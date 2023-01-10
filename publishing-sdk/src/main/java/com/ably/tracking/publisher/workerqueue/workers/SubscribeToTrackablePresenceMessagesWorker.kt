@@ -11,14 +11,14 @@ import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.PublisherState
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.WorkerSpecification
-import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.withTimeout
 
 /**
  * This worker subscribes to presence messages on the trackable channel.
  * Second of three steps required to add a trackable, previous step is [PrepareConnectionForTrackableWorker] and the next step is [FinishAddingTrackableToPublisherWorker].
  */
-internal class SubscribeToTrackablePresenceWorker(
+internal class SubscribeToTrackablePresenceMessagesWorker(
     private val trackable: Trackable,
     private val callbackFunction: AddTrackableCallbackFunction,
     private val ably: Ably,
@@ -31,6 +31,14 @@ internal class SubscribeToTrackablePresenceWorker(
      * Used to properly handle unexpected exceptions in [onUnexpectedAsyncError].
      */
     private var isBeingRemoved = false
+
+    companion object {
+        /**
+         * This timeout is added to prevent blocking the caller for a prolonged time and retrying later if subscribing does not complete smoothly.
+         * The exact value was chosen arbitrarily.
+         */
+        private const val SUBSCRIBE_TO_PRESENCE_TIMEOUT = 2_000L
+    }
 
     override fun doWork(
         properties: PublisherProperties,
@@ -52,15 +60,27 @@ internal class SubscribeToTrackablePresenceWorker(
         }
 
         doAsyncWork {
-            val subscribeToPresenceResult = subscribeToPresenceMessages()
             try {
-                subscribeToPresenceResult.getOrThrow()
+                withTimeout(SUBSCRIBE_TO_PRESENCE_TIMEOUT) {
+                    val subscribeToPresenceResult =
+                        ably.subscribeForPresenceMessages(trackable.id, presenceUpdateListener)
+                    subscribeToPresenceResult.getOrThrow()
+                }
                 postWork(
                     createConnectionReadyWorkerSpecification(
                         isSubscribedToPresence = true
                     )
                 )
-            } catch (exception: ConnectionException) {
+            }
+            catch (timeoutCancellationException: TimeoutCancellationException){
+                logHandler?.w("Subscribing to presence for trackable ${trackable.id} timed out", timeoutCancellationException)
+                postWork(
+                    createConnectionReadyWorkerSpecification(
+                        isSubscribedToPresence = false
+                    )
+                )
+            }
+            catch (exception: ConnectionException) {
                 logHandler?.w("Failed to subscribe to presence for trackable ${trackable.id}", exception)
                 postWork(
                     createConnectionReadyWorkerSpecification(
@@ -71,14 +91,6 @@ internal class SubscribeToTrackablePresenceWorker(
         }
 
         return properties
-    }
-
-    private suspend fun subscribeToPresenceMessages(): Result<Unit> {
-        return suspendCoroutine { continuation ->
-            ably.subscribeForPresenceMessages(trackable.id, presenceUpdateListener) { result ->
-                continuation.resume(result)
-            }
-        }
     }
 
     private fun createConnectionReadyWorkerSpecification(isSubscribedToPresence: Boolean) =

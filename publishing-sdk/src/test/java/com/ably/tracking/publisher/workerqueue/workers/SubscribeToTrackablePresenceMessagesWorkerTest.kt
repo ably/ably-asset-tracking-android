@@ -18,14 +18,14 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
 @ExperimentalCoroutinesApi
-class SubscribeToTrackablePresenceWorkerTest {
+class SubscribeToTrackablePresenceMessagesWorkerTest {
     private val trackable = Trackable("test-trackable")
     private val resultCallbackFunction = mockk<ResultCallbackFunction<StateFlow<TrackableState>>>(relaxed = true)
     private val ably = mockk<Ably>(relaxed = true)
     private val presenceUpdateListener: (PresenceMessage) -> Unit = {}
 
     private val worker =
-        SubscribeToTrackablePresenceWorker(trackable, resultCallbackFunction, ably, null, presenceUpdateListener) {}
+        SubscribeToTrackablePresenceMessagesWorker(trackable, resultCallbackFunction, ably, null, presenceUpdateListener) {}
 
     private val asyncWorks = mutableListOf<suspend () -> Unit>()
     private val postedWorks = mutableListOf<WorkerSpecification>()
