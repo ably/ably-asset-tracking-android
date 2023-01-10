@@ -16,7 +16,7 @@ import kotlin.coroutines.suspendCoroutine
 
 /**
  * This worker subscribes to presence messages on the trackable channel.
- * Second of three steps required to add a trackable, previous step is [PrepareConnectionForTrackableWorker] and the next step is [AddTrackableToPublisherWorker].
+ * Second of three steps required to add a trackable, previous step is [PrepareConnectionForTrackableWorker] and the next step is [FinishAddingTrackableToPublisherWorker].
  */
 internal class SubscribeToTrackablePresenceWorker(
     private val trackable: Trackable,
@@ -82,7 +82,7 @@ internal class SubscribeToTrackablePresenceWorker(
     }
 
     private fun createConnectionReadyWorkerSpecification(isSubscribedToPresence: Boolean) =
-        WorkerSpecification.AddTrackableToPublisher(
+        WorkerSpecification.FinishAddingTrackableToPublisher(
             trackable,
             callbackFunction,
             channelStateChangeListener,

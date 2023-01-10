@@ -26,7 +26,7 @@ import com.ably.tracking.publisher.workerqueue.workers.ChangeLocationEngineResol
 import com.ably.tracking.publisher.workerqueue.workers.ChangeRoutingProfileWorker
 import com.ably.tracking.publisher.workerqueue.workers.ChannelConnectionStateChangeWorker
 import com.ably.tracking.publisher.workerqueue.workers.SubscribeToTrackablePresenceWorker
-import com.ably.tracking.publisher.workerqueue.workers.AddTrackableToPublisherWorker
+import com.ably.tracking.publisher.workerqueue.workers.FinishAddingTrackableToPublisherWorker
 import com.ably.tracking.publisher.workerqueue.workers.DestinationSetWorker
 import com.ably.tracking.publisher.workerqueue.workers.DisconnectSuccessWorker
 import com.ably.tracking.publisher.workerqueue.workers.EnhancedLocationChangedWorker
@@ -89,7 +89,7 @@ internal class WorkerFactory(
                 workerSpecification.presenceUpdateListener,
                 workerSpecification.channelStateChangeListener,
             )
-            is WorkerSpecification.AddTrackableToPublisher -> AddTrackableToPublisherWorker(
+            is WorkerSpecification.FinishAddingTrackableToPublisher -> FinishAddingTrackableToPublisherWorker(
                 workerSpecification.trackable,
                 workerSpecification.callbackFunction,
                 ably,
@@ -248,7 +248,7 @@ internal sealed class WorkerSpecification {
         val channelStateChangeListener: ((connectionStateChange: ConnectionStateChange) -> Unit),
     ) : WorkerSpecification()
 
-    data class AddTrackableToPublisher(
+    data class FinishAddingTrackableToPublisher(
         val trackable: Trackable,
         val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>,
         val channelStateChangeListener: ((connectionStateChange: ConnectionStateChange) -> Unit),

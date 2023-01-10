@@ -24,7 +24,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
 @ExperimentalCoroutinesApi
-class AddTrackableToPublisherWorkerTest {
+class FinishAddingTrackableToPublisherWorkerTest {
     private val trackable = Trackable("test-trackable")
     private val resultCallbackFunction: ResultCallbackFunction<StateFlow<TrackableState>> = mockk(relaxed = true)
     private val ably: Ably = mockk {
@@ -417,7 +417,7 @@ class AddTrackableToPublisherWorkerTest {
     }
 
     private fun createWorker(isSubscribedToPresence: Boolean) =
-        AddTrackableToPublisherWorker(
+        FinishAddingTrackableToPublisherWorker(
             trackable,
             resultCallbackFunction,
             ably,

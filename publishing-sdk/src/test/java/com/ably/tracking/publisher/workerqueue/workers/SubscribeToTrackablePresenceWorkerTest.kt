@@ -50,7 +50,7 @@ class SubscribeToTrackablePresenceWorkerTest {
             assertThat(asyncWorks).hasSize(1)
             assertThat(postedWorks).hasSize(1)
 
-            val postedWork = postedWorks.first() as WorkerSpecification.AddTrackableToPublisher
+            val postedWork = postedWorks.first() as WorkerSpecification.FinishAddingTrackableToPublisher
             assertThat(postedWork.trackable).isEqualTo(trackable)
             assertThat(postedWork.callbackFunction).isEqualTo(resultCallbackFunction)
             assertThat(postedWork.presenceUpdateListener).isEqualTo(presenceUpdateListener)
@@ -58,7 +58,7 @@ class SubscribeToTrackablePresenceWorkerTest {
         }
 
     @Test
-    fun `should return presence failure result when executing normally and presence enter failed`() =
+    fun `should post AddTrackableToPublisher work when executing normally and presence enter failed`() =
         runTest {
             // given
             val initialProperties = createPublisherProperties()
@@ -77,7 +77,34 @@ class SubscribeToTrackablePresenceWorkerTest {
             assertThat(asyncWorks).hasSize(1)
             assertThat(postedWorks).hasSize(1)
 
-            val postedWork = postedWorks.first() as WorkerSpecification.AddTrackableToPublisher
+            val postedWork = postedWorks.first() as WorkerSpecification.FinishAddingTrackableToPublisher
+            assertThat(postedWork.trackable).isEqualTo(trackable)
+            assertThat(postedWork.callbackFunction).isEqualTo(resultCallbackFunction)
+            assertThat(postedWork.presenceUpdateListener).isEqualTo(presenceUpdateListener)
+            assertThat(postedWork.isSubscribedToPresence).isFalse()
+        }
+
+    @Test
+    fun `should post AddTrackableToPublisher work when presence enter extends timeout`() =
+        runTest {
+            // given
+            val initialProperties = createPublisherProperties()
+            ably.mockSubscribeToPresenceError(trackable.id)
+
+            // when
+            worker.doWork(
+                initialProperties,
+                asyncWorks.appendWork(),
+                postedWorks.appendSpecification()
+            )
+
+            asyncWorks.executeAll()
+
+            // then
+            assertThat(asyncWorks).hasSize(1)
+            assertThat(postedWorks).hasSize(1)
+
+            val postedWork = postedWorks.first() as WorkerSpecification.FinishAddingTrackableToPublisher
             assertThat(postedWork.trackable).isEqualTo(trackable)
             assertThat(postedWork.callbackFunction).isEqualTo(resultCallbackFunction)
             assertThat(postedWork.presenceUpdateListener).isEqualTo(presenceUpdateListener)

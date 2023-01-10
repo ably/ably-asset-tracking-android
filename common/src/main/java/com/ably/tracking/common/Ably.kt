@@ -993,7 +993,7 @@ constructor(
     /**
      * A suspending version of the [AblySdkRealtime.connect] method. It will begin connecting [ably] and wait until it's connected.
      * If the connection enters the "failed" state it will throw a [ConnectionException].
-     * If the operation doesn't complete in [timeoutInMilliseconds] it will throw a [ConnectionException].
+     * If the operation doesn't complete in [timeoutInMilliseconds] it will return and let ably-java handle reconnection.
      * If the instance is already connected it will finish immediately.
      * If the connection is already failed it throws a [ConnectionException].
      *
