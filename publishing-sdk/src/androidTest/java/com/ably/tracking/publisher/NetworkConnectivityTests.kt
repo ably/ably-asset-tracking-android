@@ -7,7 +7,10 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.ably.tracking.Accuracy
 import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
-import com.ably.tracking.common.*
+import com.ably.tracking.common.AblySdkRealtimeFactory
+import com.ably.tracking.common.DefaultAbly
+import com.ably.tracking.common.DefaultAblySdkRealtime
+import com.ably.tracking.common.EventNames
 import com.ably.tracking.common.message.LocationGeometry
 import com.ably.tracking.common.message.LocationMessage
 import com.ably.tracking.common.message.LocationProperties
@@ -15,7 +18,16 @@ import com.ably.tracking.connection.Authentication
 import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.logging.LogHandler
 import com.ably.tracking.logging.LogLevel
-import com.ably.tracking.test.android.common.*
+import com.ably.tracking.test.android.common.BooleanExpectation
+import com.ably.tracking.test.android.common.FaultSimulation
+import com.ably.tracking.test.android.common.FaultSimulationStage
+import com.ably.tracking.test.android.common.NOTIFICATION_CHANNEL_ID
+import com.ably.tracking.test.android.common.NullTransportFault
+import com.ably.tracking.test.android.common.TcpConnectionRefused
+import com.ably.tracking.test.android.common.TcpConnectionUnresponsive
+import com.ably.tracking.test.android.common.TrackableStateReceiver
+import com.ably.tracking.test.android.common.createNotificationChannel
+import com.ably.tracking.test.android.common.testLogD
 import com.google.gson.Gson
 import io.ably.lib.realtime.AblyRealtime
 import io.ably.lib.realtime.CompletionListener
@@ -23,17 +35,23 @@ import io.ably.lib.types.ClientOptions
 import io.ably.lib.types.ErrorInfo
 import io.ably.lib.types.Message
 import io.ably.lib.util.Log
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
-import java.util.*
+import java.util.Date
+import java.util.UUID
 
 private const val MAPBOX_ACCESS_TOKEN = BuildConfig.MAPBOX_ACCESS_TOKEN
 
@@ -440,6 +458,7 @@ class LocationHelper {
                     testLogD("Location publish success")
                     publishExpectation.fulfill(true)
                 }
+
                 override fun onError(err: ErrorInfo?) {
                     testLogD("Location publish failed: ${err?.code} - ${err?.message}")
                     publishExpectation.fulfill(false)
