@@ -8,13 +8,17 @@ import com.ably.tracking.test.common.mockConnectSuccess
 import com.ably.tracking.test.common.mockDisconnectSuccess
 import com.ably.tracking.test.common.mockSubscribeToPresenceError
 import com.ably.tracking.test.common.mockSubscribeToPresenceSuccess
+import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.TimeoutCancellationException
 import java.util.UUID
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.junit.Assert
 import org.junit.Test
 
@@ -220,5 +224,36 @@ class DefaultPublisherTest {
         verify(exactly = 1) {
             mapbox.clearRoute()
         }
+    }
+
+    @Test()
+    fun `close - behaviour when wrapped in a withTimeout block, when the timeout elapses during the presence leave operation`() {
+        // Given...
+        // ...when ably.close() is called, it takes 2 seconds to complete...
+        coEvery { ably.close(any()) } coAnswers { delay(2000) }
+
+        // When...
+        var caughtTimeoutCancellationException = false
+        runBlocking {
+            try {
+                // ...we call publisher.stop() from within a withTimeout block with a timeout of 1 second...
+                withTimeout(1000) {
+                    publisher.stop()
+                }
+            } catch (e: TimeoutCancellationException) {
+                caughtTimeoutCancellationException = true
+            }
+        }
+
+        // Then...
+        coVerify(exactly = 1) {
+            // ...ably.close() is called...
+            ably.close(any())
+        }
+
+        // ...and the withTimeout block throws a TimeoutCancellationException.
+        Assert.assertTrue(caughtTimeoutCancellationException)
+
+        // This test exists for similar probably-paranoid-and-misguided reasons as the test "close - behaviour when wrapped in a withTimeout block, when the timeout elapses during the presence leave operation" in DefaultAblyTests - to give me confidence that if the publisher.close() call is wrapped in a withTimeout block and the timeout elapses, then the TimeoutCancellationException will find its way to the caller of withTimeout.
     }
 }

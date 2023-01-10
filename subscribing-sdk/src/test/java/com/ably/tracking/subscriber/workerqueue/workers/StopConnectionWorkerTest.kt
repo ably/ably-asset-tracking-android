@@ -9,7 +9,7 @@ import com.ably.tracking.subscriber.SubscriberInteractor
 import com.ably.tracking.subscriber.SubscriberStoppedException
 import com.ably.tracking.subscriber.workerqueue.WorkerSpecification
 import com.ably.tracking.test.common.mockCloseFailure
-import com.ably.tracking.test.common.mockCloseSuccessWithDelay
+import com.ably.tracking.test.common.mockCloseSuccess
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -37,7 +37,7 @@ internal class StopConnectionWorkerTest {
     fun `should call ably close and notify callback with success`() = runBlockingTest {
         // given
         val initialProperties = SubscriberProperties(Resolution(Accuracy.BALANCED, 100, 100.0), mockk())
-        ably.mockCloseSuccessWithDelay(10)
+        ably.mockCloseSuccess()
 
         // when
         val updatedProperties =
@@ -65,7 +65,7 @@ internal class StopConnectionWorkerTest {
     @Test
     fun `should call the callback function with a success if subscriber is already stopped`() = runBlockingTest {
         // given
-        ably.mockCloseSuccessWithDelay(10)
+        ably.mockCloseSuccess()
 
         // when
         stopConnectionWorker.doWhenStopped(SubscriberStoppedException())
