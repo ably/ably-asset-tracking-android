@@ -187,11 +187,13 @@ subprojects {
                     // Configuration that must not be applied to SDK project main source set builds for the release variant/buildType.
                     // This configuration is, however, required for Android's connectedCheck task (which uses the androidTest source set
                     // with the debug variant/buildType).
-                    if (findProperty('runtimeSecrets') == 'INTENTIONALLY_UNAVAILABLE') {
+                    if (findProperty('runtimeSecrets') == 'USE_DUMMY_EMPTY_STRING_VALUES') {
                         // We know that we're not going to need to compile anything that needs BuildConfig to contain
                         // any of these secrets. For example, unit test runs, where we know there are no system tests
                         // being run or app builds being made where those apps embed secrets.
-                        logger.lifecycle('Skipping secrets configuration (ABLY_API_KEY and MAPBOX_ACCESS_TOKEN), because they are intentionally unavailable.')
+                        logger.lifecycle('Using dummy, empty-string secrets configuration (ABLY_API_KEY and MAPBOX_ACCESS_TOKEN).')
+                        buildConfigField 'String', 'ABLY_API_KEY', "\"\""
+                        buildConfigField 'String', 'MAPBOX_ACCESS_TOKEN', "\"\""
                         return
                     }
 

@@ -21,7 +21,7 @@ jobs:
 
       - name: Build Documentation
         run: |
-          ./gradlew dokkaHtmlMultiModule
+          ./gradlew dokkaHtmlMultiModule -PruntimeSecrets=USE_DUMMY_EMPTY_STRING_VALUES
           ls -al build/dokka/htmlMultiModule
         env:
           ORG_GRADLE_PROJECT_MAPBOX_DOWNLOADS_TOKEN: ${{ secrets.MAPBOX_DOWNLOADS_TOKEN }}
