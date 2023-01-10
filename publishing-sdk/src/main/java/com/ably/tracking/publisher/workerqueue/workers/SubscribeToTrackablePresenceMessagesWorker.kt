@@ -33,6 +33,10 @@ internal class SubscribeToTrackablePresenceMessagesWorker(
     private var isBeingRemoved = false
 
     companion object {
+        /**
+         * This timeout is added to prevent blocking the caller for a prolonged time and retrying later if subscribing does not complete smoothly.
+         * The exact value was chosen arbitrarily.
+         */
         private const val SUBSCRIBE_TO_PRESENCE_TIMEOUT = 2_000L
     }
 
