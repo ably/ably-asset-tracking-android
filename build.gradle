@@ -207,11 +207,6 @@ subprojects {
                 }
 
                 debug {
-                    apply secretConfigFields on it
-                    apply versionConfigFields on it
-                }
-
-                release {
                     // Secrets must not be injected into SDK builds - they are only for example apps or SDK
                     // integration tests (via Android's `connectedCheck` task), which are testing using the debug
                     // variant/buildType.
@@ -221,6 +216,10 @@ subprojects {
                     if (evaluatedSubProjectIsALibrary) {
                         apply versionConfigFields on it
                     }
+                }
+
+                release {
+                    initWith debug
 
                     minifyEnabled false
                 }
