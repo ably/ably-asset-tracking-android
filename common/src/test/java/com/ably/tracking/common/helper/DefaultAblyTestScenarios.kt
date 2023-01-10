@@ -3,6 +3,8 @@ package com.ably.tracking.common.helper
 import com.ably.tracking.ConnectionException
 import com.ably.tracking.ErrorInformation
 import com.ably.tracking.common.AblySdkChannelStateListener
+import com.ably.tracking.Location
+import com.ably.tracking.LocationUpdate
 import com.ably.tracking.common.DefaultAbly
 import com.ably.tracking.common.PresenceData
 import com.ably.tracking.common.AblySdkRealtime
@@ -17,6 +19,8 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.withTimeout
 import org.junit.Assert
+import kotlin.coroutines.resume
+import kotlinx.coroutines.suspendCancellableCoroutine
 
 class DefaultAblyTestScenarios {
     /**
@@ -1498,6 +1502,343 @@ class DefaultAblyTestScenarios {
                  * }
                  */
                 thenConfig.resultOfStopConnectionCallOnObjectUnderTest.verify(result)
+
+                confirmVerified(*testEnvironment.allMocks)
+            }
+        }
+    }
+
+    /**
+     * Provides test scenarios for [DefaultAbly.sendRawLocation]. See the [Companion.test] method.
+     */
+    class SendRawLocation {
+        /**
+         * This class provides properties for configuring the "Given..." part of the parameterised test case described by [Companion.test]. See that method’s documentation for information about the effect of this class’s properties.
+         */
+        class GivenConfig(
+            val channelsContainsKey: Boolean,
+            val mockChannelsGet: Boolean,
+            /**
+             * This must be `null` if and only if [mockChannelsGet] is `false`.
+             */
+            val initialChannelState: ChannelState?,
+            /**
+             * If [mockChannelsGet] is `false` then this must be [GivenTypes.ChannelStateChangeBehaviour.NoBehaviour].
+             */
+            val channelStateChangeBehaviour: GivenTypes.ChannelStateChangeBehaviour,
+            /**
+             * If [mockChannelsGet] is `false` then this must be [GivenTypes.CompletionListenerMockBehaviour.NotMocked].
+             */
+            val publishBehaviour: GivenTypes.CompletionListenerMockBehaviour
+        ) {
+            /**
+             * Checks that this object represents a valid test configuration.
+             *
+             * @throws InvalidTestConfigurationException If this object does not represent a valid test configuration.
+             */
+            fun validate() {
+                if (mockChannelsGet) {
+                    if (initialChannelState == null) {
+                        throw InvalidTestConfigurationException("initialChannelState must be non-null when mockChannelsGet is true")
+                    }
+                } else {
+                    if (initialChannelState != null) {
+                        throw InvalidTestConfigurationException("initialChannelState must be null when mockChannelsGet is false")
+                    }
+                    if (channelStateChangeBehaviour !is GivenTypes.ChannelStateChangeBehaviour.NoBehaviour) {
+                        throw InvalidTestConfigurationException("channelStateChangeBehaviour must be NoBehaviour when mockChannelsGet is false")
+                    }
+                    if (publishBehaviour !is GivenTypes.CompletionListenerMockBehaviour.NotMocked) {
+                        throw InvalidTestConfigurationException("publishBehaviour must be NotMocked when mockChannelsGet is false")
+                    }
+                }
+            }
+        }
+
+        /**
+         * This class provides properties for configuring the "Then..." part of the parameterised test case described by [Companion.test]. See that method’s documentation for information about the effect of this class’s properties.
+         */
+        class ThenConfig(
+            val verifyChannelsGet: Boolean,
+            /**
+             * If [GivenConfig.mockChannelsGet] is `false` then this must be zero.
+             */
+            val numberOfChannelStateFetchesToVerify: Int,
+            /**
+             * If [GivenConfig.mockChannelsGet] is `false` then this must be `false`.
+             */
+            val verifyChannelOn: Boolean,
+            /**
+             * If [GivenConfig.channelStateChangeBehaviour] is not [GivenTypes.ChannelStateChangeBehaviour.EmitStateChange] then this must be `false`.
+             */
+            val verifyChannelStateChangeCurrent: Boolean,
+            /**
+             * If [GivenConfig.mockChannelsGet] is `false` then this must be `false`.
+             */
+            val verifyChannelOff: Boolean,
+            /**
+             * If [GivenConfig.mockChannelsGet] is `false` then this must be `false`.
+             */
+            val verifyPublish: Boolean,
+            val resultOfSendRawLocationCallOnObjectUnderTest: ThenTypes.ExpectedAsyncResult,
+        ) {
+            /**
+             * Checks that this object represents a valid test configuration to be used with [givenConfig].
+             *
+             * @param givenConfig The configuration that `this` is intended to be used with.
+             * @throws InvalidTestConfigurationException If this object does not represent a valid test configuration.
+             */
+            fun validate(givenConfig: GivenConfig) {
+                if (!givenConfig.mockChannelsGet) {
+                    if (numberOfChannelStateFetchesToVerify != 0) {
+                        throw InvalidTestConfigurationException("numberOfChannelStateFetchesToVerify must be zero when mockChannelsGet is false")
+                    }
+                    if (verifyChannelOn) {
+                        throw InvalidTestConfigurationException("verifyChannelOn must be false when mockChannelsGet is false")
+                    }
+                    if (verifyChannelOff) {
+                        throw InvalidTestConfigurationException("verifyChannelOff must be false when mockChannelsGet is false")
+                    }
+                    if (verifyPublish) {
+                        throw InvalidTestConfigurationException("verifyPublish must be false when mockChannelsGet is false")
+                    }
+                }
+                if (givenConfig.channelStateChangeBehaviour !is GivenTypes.ChannelStateChangeBehaviour.EmitStateChange) {
+                    if (verifyChannelStateChangeCurrent) {
+                        throw InvalidTestConfigurationException("verifyChannelStateChangeCurrent must be false when channelStateChangeBehaviour is not EmitStateChange")
+                    }
+                }
+            }
+        }
+
+        companion object {
+            /**
+             * Implements the following parameterised test case for [DefaultAbly.sendRawLocation]:
+             *
+             * ```text
+             * Given...
+             *
+             * ...that the Channels instance’s `containsKey` method returns ${givenConfig.channelsContainsKey}...
+             *
+             * if ${givenConfig.mockChannelsGet} {
+             * ...and that the Channels instance’s `get` method (the overload that does not accept a ChannelOptions object) returns a channel in the ${givenConfig.initialChannelState} state...
+             * }
+             *
+             * when ${givenConfig.channelStateChangeBehaviour} is EmitStateChange {
+             * ...which, when its `on` method is called, immediately calls the received listener with a channel state change whose `current` property is ${givenConfig.channelStateChangeBehaviour.current}...
+             * }
+             *
+             * when ${givenConfig.publishBehaviour} is Success {
+             * ...[and] which, when told to publish a message, does so successfully...
+             * }
+             *
+             * when ${givenConfig.publishBehaviour} is Failure {
+             * ...[and] which, when told to publish a message, fails to do so with error ${givenConfig.publishBehaviour.errorInfo}...
+             * }
+             *
+             * when ${givenConfig.publishBehaviour} is DoesNotComplete {
+             * ...[and] which, when told to publish a message, never finishes doing so...
+             * }
+             *
+             * When...
+             *
+             * ...we call `sendRawLocation` on the object under test (with an arbitrarily-chosen LocationUpdate argument),
+             *
+             * Then...
+             * ...in the following order, precisely the following things happen...
+             *
+             * ...it calls `containsKey` on the Channels instance...
+             *
+             * if ${thenConfig.verifyChannelsGet} {
+             * ...and calls `get` (the overload that does not accept a ChannelOptions object) on the Channels instance...
+             * }
+             *
+             * ...and checks the channel’s state ${thenConfig.numberOfChannelStateFetchesToVerify} times...
+             *
+             * if ${thenConfig.verifyChannelOn} {
+             * ...and calls `on` on the channel...
+             * }
+             *
+             * if ${thenConfig.verifyChannelStateChangeCurrent} {
+             * ...and checks the `current` property of the emitted channel state change...
+             * }
+             *
+             * if ${thenConfig.verifyChannelOff} {
+             * ...and calls `off` on the channel...
+             * }
+             *
+             * if ${thenConfig.verifyPublish} {
+             * ...and tells the channel to publish a message whose `name` property is "raw"...
+             * }
+             *
+             * when ${thenConfig.resultOfSendRawLocationCallOnObjectUnderTest} is Terminates and ${thenConfig.resultOfSendRawLocationCallOnObjectUnderTest.expectedResult} is Success {
+             * ...and the call to `sendRawLocation` (on the object under test) succeeds.
+             * }
+             *
+             * when ${thenConfig.resultOfSendRawLocationCallOnObjectUnderTest} is Terminates and ${thenConfig.resultOfSendRawLocationCallOnObjectUnderTest.expectedResult} is FailureWithConnectionException {
+             * ...and the call to `sendRawLocation` (on the object under test) fails with a ConnectionException whose errorInformation is equal to ${thenConfig.resultOfSendRawLocationCallOnObjectUnderTest.errorInformation}.
+             * }
+             *
+             * when ${thenConfig.resultOfSendRawLocationCallOnObjectUnderTest} is DoesNotTerminate {
+             * ...and the call to `sendRawLocation` (on the object under test) does not complete within ${thenConfig.resultOfSendRawLocationCallOnObjectUnderTest.timeoutInMilliseconds} milliseconds.
+             * }
+             * ```
+             */
+            suspend fun test(
+                givenConfig: GivenConfig,
+                thenConfig: ThenConfig
+            ) {
+                givenConfig.validate()
+                thenConfig.validate(givenConfig)
+
+                val testEnvironment = DefaultAblyTestEnvironment.create(numberOfTrackables = 1)
+                val configuredChannel = testEnvironment.configuredChannels[0]
+
+                // Given...
+
+                // ...that the Channels instance’s `containsKey` method returns ${givenConfig.channelsContainsKey}...
+                testEnvironment.mockChannelsContainsKey(
+                    configuredChannel.channelName,
+                    givenConfig.channelsContainsKey
+                )
+
+                if (givenConfig.mockChannelsGet) {
+                    /* if ${givenConfig.mockChannelsGet} {
+                     * ...and that the Channels instance’s `get` method (the overload that does not accept a ChannelOptions object) returns a channel in the ${givenConfig.initialChannelState} state...
+                     * }
+                     */
+                    testEnvironment.mockChannelsGet(DefaultAblyTestEnvironment.ChannelsGetOverload.WITHOUT_CHANNEL_OPTIONS)
+                    configuredChannel.mockState(givenConfig.initialChannelState!!)
+                }
+
+                val channelStateChangeMock: AblySdkChannelStateListener.ChannelStateChange?
+                when (val givenChannelStateBehaviour = givenConfig.channelStateChangeBehaviour) {
+                    is GivenTypes.ChannelStateChangeBehaviour.NoBehaviour -> {
+                        configuredChannel.stubOn()
+                        channelStateChangeMock = null
+                    }
+                    is GivenTypes.ChannelStateChangeBehaviour.EmitStateChange -> {
+                        /* when ${givenConfig.channelStateChangeBehaviour} is EmitStateChange {
+                         * ...which, when its `on` method is called, immediately calls the received listener with a channel state change whose `current` property is ${givenConfig.channelStateChangeBehaviour.current}...
+                         * }
+                         */
+                        channelStateChangeMock =
+                            configuredChannel.mockOnToEmitStateChange(current = givenChannelStateBehaviour.current)
+                        configuredChannel.stubOff()
+                    }
+                }
+
+                when (val givenPublishBehaviour = givenConfig.publishBehaviour) {
+                    is GivenTypes.CompletionListenerMockBehaviour.NotMocked -> {}
+                    /* when ${givenConfig.publishBehaviour} is Success {
+                     * ...[and] which, when told to publish a message, does so successfully...
+                     * }
+                     */
+                    is GivenTypes.CompletionListenerMockBehaviour.Success -> {
+                        configuredChannel.mockSuccessfulPublish()
+                    }
+                    /* when ${givenConfig.publishBehaviour} is Failure {
+                     * ...[and] which, when told to publish a message, fails to do so with error ${givenConfig.publishBehaviour.errorInfo}...
+                     * }
+                     */
+                    is GivenTypes.CompletionListenerMockBehaviour.Failure -> {
+                        configuredChannel.mockFailedPublish(givenPublishBehaviour.errorInfo)
+                    }
+                    /* when ${givenConfig.publishBehaviour} is DoesNotComplete {
+                     * ...[and] which, when told to publish a message, never finishes doing so...
+                     * }
+                     */
+                    is GivenTypes.CompletionListenerMockBehaviour.DoesNotComplete -> {
+                        configuredChannel.mockNonCompletingPublish()
+                    }
+                }
+
+                // When...
+
+                val result = executeForVerifying(thenConfig.resultOfSendRawLocationCallOnObjectUnderTest) {
+                    suspendCancellableCoroutine<Result<Unit>> { continuation ->
+                        // ...we call `sendRawLocation` on the object under test (with an arbitrarily-chosen LocationUpdate argument),
+                        testEnvironment.objectUnderTest.sendRawLocation(
+                            configuredChannel.trackableId,
+                            LocationUpdate(
+                                Location(0.0, 0.0, 0.0, 0.0f, 0.0f, 0.0f, 0),
+                                listOf()
+                            )
+                        ) { result ->
+                            continuation.resume(result)
+                        }
+                    }
+                }
+
+                // Then...
+                // ...in the following order, precisely the following things happen...
+
+                verifyOrder {
+                    // ...it calls `containsKey` on the Channels instance...
+                    testEnvironment.channelsMock.containsKey(configuredChannel.channelName)
+
+                    if (thenConfig.verifyChannelsGet) {
+                        /* if ${thenConfig.verifyChannelsGet} {
+                         * ...and calls `get` (the overload that does not accept a ChannelOptions object) on the Channels instance...
+                         * }
+                         */
+                        testEnvironment.channelsMock.get(configuredChannel.channelName)
+                    }
+
+                    repeat(thenConfig.numberOfChannelStateFetchesToVerify) {
+                        // ...and checks the channel’s state ${thenConfig.numberOfChannelStateFetchesToVerify} times...
+                        configuredChannel.channelMock.state
+                    }
+
+                    if (thenConfig.verifyChannelOn) {
+                        /* if ${thenConfig.verifyChannelOn} {
+                         * ...and calls `on` on the channel...
+                         * }
+                         */
+                        configuredChannel.channelMock.on(any())
+                    }
+
+                    if (thenConfig.verifyChannelStateChangeCurrent) {
+                        /* if ${thenConfig.verifyChannelStateChangeCurrent} {
+                         * ...and checks the `current` property of the emitted channel state change...
+                         * }
+                         */
+                        channelStateChangeMock!!.current
+                    }
+
+                    if (thenConfig.verifyChannelOff) {
+                        /* if ${thenConfig.verifyChannelOff} {
+                         * ...and calls `off` on the channel...
+                         * }
+                         */
+                        configuredChannel.channelMock.off(any())
+                    }
+
+                    if (thenConfig.verifyPublish) {
+                        /* if ${thenConfig.verifyPublish} {
+                         * ...and tells the channel to publish a message whose `name` property is "raw"...
+                         * }
+                         */
+                        configuredChannel.channelMock.publish(
+                            message = match { it.name == "raw" },
+                            any()
+                        )
+                    }
+                }
+
+                /* when ${thenConfig.resultOfSendRawLocationCallOnObjectUnderTest} is Terminates and ${thenConfig.resultOfSendRawLocationCallOnObjectUnderTest.expectedResult} is Success {
+                 * ...and the call to `sendRawLocation` (on the object under test) succeeds.
+                 * }
+                 *
+                 * when ${thenConfig.resultOfSendRawLocationCallOnObjectUnderTest} is Terminates and ${thenConfig.resultOfSendRawLocationCallOnObjectUnderTest.expectedResult} is FailureWithConnectionException {
+                 * ...and the call to `sendRawLocation` (on the object under test) fails with a ConnectionException whose errorInformation is equal to ${thenConfig.resultOfSendRawLocationCallOnObjectUnderTest.errorInformation}.
+                 * }
+                 *
+                 * when ${thenConfig.resultOfSendRawLocationCallOnObjectUnderTest} is DoesNotTerminate {
+                 * ...and the call to `sendRawLocation` (on the object under test) does not complete within ${thenConfig.resultOfSendRawLocationCallOnObjectUnderTest.timeoutInMilliseconds} milliseconds.
+                 * }
+                 */
+                thenConfig.resultOfSendRawLocationCallOnObjectUnderTest.verify(result)
 
                 confirmVerified(*testEnvironment.allMocks)
             }
