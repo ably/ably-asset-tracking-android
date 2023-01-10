@@ -272,6 +272,41 @@ class DefaultAblyTestEnvironment private constructor(
         }
 
         /**
+         * Mocks [channelMock]’s [AblySdkRealtime.Channel.Publish] method to immediately pass its received completion listener to [handler].
+         *
+         * @param handler The function that should receive the completion listener passed to [channelMock]’s [AblySdkRealtime.Channel.publish] method.
+         */
+        private fun mockPublishResult(handler: (CompletionListener) -> Unit) {
+            val completionListenerSlot = slot<CompletionListener>()
+            every {
+                channelMock.publish(any(), capture(completionListenerSlot))
+            } answers { handler(completionListenerSlot.captured) }
+        }
+
+        /**
+         * Mocks [channelMock]’s [AblySdkRealtime.Channel.publish] method to immediately call its received completion listener’s [CompletionListener.onSuccess] method.
+         */
+        fun mockSuccessfulPublish() {
+            mockPublishResult { it.onSuccess() }
+        }
+
+        /**
+         * Mocks [channelMock]’s [AblySdkRealtime.Channel.publish] method to immediately call its received completion listener’s [CompletionListener.onError] method.
+         *
+         * @param errorInfo The error that should be passed to the completion listener’s [CompletionListener.onError] method.
+         */
+        fun mockFailedPublish(errorInfo: ErrorInfo) {
+            mockPublishResult { it.onError(errorInfo) }
+        }
+
+        /**
+         * Mocks [channelMock]’s [AblySdkRealtime.Channel.publish] method to never call any methods on its received completion listener.
+         */
+        fun mockNonCompletingPublish() {
+            mockPublishResult { }
+        }
+
+        /**
          * Stubs [channelMock]’s [AblySdkRealtime.Channel.on] method.
          */
         fun stubOn() {
