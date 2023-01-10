@@ -20,7 +20,7 @@ jobs:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
 
-      - run: ./gradlew check testDebugUnitTestCoverage testReleaseUnitTestCoverage --profile
+      - run: ./gradlew check testDebugUnitTestCoverage --profile
         env:
           ORG_GRADLE_PROJECT_MAPBOX_DOWNLOADS_TOKEN: ${{ secrets.MAPBOX_DOWNLOADS_TOKEN }}
 
