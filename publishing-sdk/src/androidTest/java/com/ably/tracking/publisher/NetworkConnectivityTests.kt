@@ -71,9 +71,9 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
         fun data() = listOf(
-            arrayOf(NullTransportFault()),
-            arrayOf(TcpConnectionRefused()),
-            arrayOf(TcpConnectionUnresponsive())
+            arrayOf(NullTransportFault(BuildConfig.ABLY_API_KEY)),
+            arrayOf(TcpConnectionRefused(BuildConfig.ABLY_API_KEY)),
+            arrayOf(TcpConnectionUnresponsive(BuildConfig.ABLY_API_KEY))
         )
     }
 

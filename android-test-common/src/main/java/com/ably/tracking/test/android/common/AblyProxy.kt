@@ -46,7 +46,8 @@ class Layer4Proxy(
     val listenHost: String = PROXY_HOST,
     val listenPort: Int = PROXY_PORT,
     private val targetAddress: String = REALTIME_HOST,
-    private val targetPort: Int = REALTIME_PORT
+    private val targetPort: Int = REALTIME_PORT,
+    private val apiKey: String,
 ) : RealtimeProxy {
 
     private val loggingTag = "Layer4Proxy"
@@ -83,7 +84,7 @@ class Layer4Proxy(
         this.agents = mapOf(AGENT_HEADER_NAME to BuildConfig.VERSION_NAME)
         this.idempotentRestPublishing = true
         this.autoConnect = false
-        this.key = BuildConfig.ABLY_API_KEY
+        this.key = apiKey
         this.logHandler = Log.LogHandler { _, _, msg, tr ->
             testLogD("${msg!!} - $tr")
         }
