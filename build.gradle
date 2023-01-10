@@ -80,6 +80,7 @@ subprojects {
         final evaluatedSubProjectIsAnApp = evaluatedSubProject.pluginManager.hasPlugin('com.android.application')
         final evaluatedSubProjectIsAnExampleApp = evaluatedSubProjectIsAnApp && evaluatedSubProject.name.contains('example')
         final evaluatedSubProjectIsKotlin = evaluatedSubProject.pluginManager.hasPlugin('kotlin-android')
+        logger.lifecycle("SubProject Evaluation for ${evaluatedSubProject.name}: Library=${evaluatedSubProjectIsALibrary}, App=${evaluatedSubProjectIsAnApp}, ExampleApp=${evaluatedSubProjectIsAnExampleApp}, Kotlin=${evaluatedSubProjectIsKotlin}")
 
         // This is a convention for this Gradle modules/projects in this repository.
         // If the name has 'java' on the end (e.g. 'subscribing-sdk-java') or in the
