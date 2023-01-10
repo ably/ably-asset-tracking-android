@@ -26,6 +26,11 @@ internal class AddTrackableToPublisherWorker(
     private val isSubscribedToPresence: Boolean,
     private val presenceUpdateListener: ((presenceMessage: com.ably.tracking.common.PresenceMessage) -> Unit),
 ) : Worker<PublisherProperties, WorkerSpecification> {
+    /**
+     * Whether the trackable is being removed.
+     * Used to properly handle unexpected exceptions in [onUnexpectedAsyncError].
+     */
+    private var isBeingRemoved = false
 
     override fun doWork(
         properties: PublisherProperties,
@@ -34,6 +39,7 @@ internal class AddTrackableToPublisherWorker(
     ): PublisherProperties {
         if (properties.trackableRemovalGuard.isMarkedForRemoval(trackable)) {
             doAsyncWork {
+                isBeingRemoved = true
                 onTrackableRemovalRequested(properties, postWork)
             }
             return properties
@@ -111,6 +117,12 @@ internal class AddTrackableToPublisherWorker(
     }
 
     override fun onUnexpectedAsyncError(exception: Exception, postWork: (WorkerSpecification) -> Unit) {
-        callbackFunction(Result.failure(exception))
+        if (isBeingRemoved) {
+            postWork(
+                WorkerSpecification.TrackableRemovalRequested(trackable, callbackFunction, Result.failure(exception))
+            )
+        } else {
+            callbackFunction(Result.failure(exception))
+        }
     }
 }

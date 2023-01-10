@@ -26,6 +26,11 @@ internal class SubscribeToTrackablePresenceMessagesWorker(
     private val presenceUpdateListener: ((presenceMessage: PresenceMessage) -> Unit),
     private val channelStateChangeListener: ((connectionStateChange: ConnectionStateChange) -> Unit),
 ) : Worker<PublisherProperties, WorkerSpecification> {
+    /**
+     * Whether the trackable is being removed.
+     * Used to properly handle unexpected exceptions in [onUnexpectedAsyncError].
+     */
+    private var isBeingRemoved = false
 
     companion object {
         private const val SUBSCRIBE_TO_PRESENCE_TIMEOUT = 2_000L
@@ -43,6 +48,7 @@ internal class SubscribeToTrackablePresenceMessagesWorker(
         if (properties.trackableRemovalGuard.isMarkedForRemoval(trackable)) {
             // Leave Ably channel.
             doAsyncWork {
+                isBeingRemoved = true
                 val result = ably.disconnect(trackable.id, properties.presenceData)
                 postWork(WorkerSpecification.TrackableRemovalRequested(trackable, callbackFunction, result))
             }
@@ -102,6 +108,13 @@ internal class SubscribeToTrackablePresenceMessagesWorker(
     }
 
     override fun onUnexpectedAsyncError(exception: Exception, postWork: (WorkerSpecification) -> Unit) {
-        callbackFunction(Result.failure(exception))
+        if (isBeingRemoved) {
+            postWork(
+                WorkerSpecification.TrackableRemovalRequested(trackable, callbackFunction, Result.failure(exception))
+            )
+        } else {
+            // If the async work fails we carry on as if it failed with a regular exception
+            postWork(createConnectionReadyWorkerSpecification(isSubscribedToPresence = false))
+        }
     }
 }

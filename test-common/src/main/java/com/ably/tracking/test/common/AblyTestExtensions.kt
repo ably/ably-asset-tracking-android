@@ -153,8 +153,8 @@ fun Ably.mockCloseFailure(exception: ConnectionException = anyConnectionExceptio
     coEvery { close(any()) } throws exception
 }
 
-fun Ably.mockCloseSuccessWithDelay(delayInMilliseconds: Long) {
-    coEvery { close(any()) } coAnswers { delay(delayInMilliseconds) }
+fun Ably.mockCloseSuccess() {
+    coEvery { close(any()) } returns Unit
 }
 
 private fun anyConnectionException() = ConnectionException(ErrorInformation("Test"))

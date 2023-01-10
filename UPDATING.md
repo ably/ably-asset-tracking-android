@@ -1,5 +1,23 @@
 # Upgrade / Migration Guide
 
+## Version 1.5.1 to 1.6.0
+
+### Removed user-specified timeout from `Publisher.stop`
+
+It is no longer possible to specify a timeout for the `Publisher.stop` operation. The `timeoutInMilliseconds` parameter has been deprecated and will be ignored.
+
+If you do not wish to wait indefinitely for this operation to complete, we recommend using [Kotlin’s `withTimeout`](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines/with-timeout.html) to implement a timeout yourself. For example:
+
+```kotlin
+try {
+    withTimeout(timeMillis = 20_000) {
+        publisher.stop()
+    }
+} catch (e: TimeoutCancellationException) {
+    // Choose how to you want to respond to the timeout, by example for calling publisher.stop() again to retry
+}
+```
+
 ## Version 1.3.0 to 1.4.0
 
 ### Token based auth configuration
