@@ -65,13 +65,6 @@ jobs:
           path: publishing-sdk/build/reports
 
       - uses: actions/upload-artifact@v3
-        name: Build Reports for subscribing-example-app
-        if: always()
-        with:
-          name: java-version-${{ matrix.java-version }}-subscribing-example-app-build-reports
-          path: subscribing-example-app/build/reports
-
-      - uses: actions/upload-artifact@v3
         name: Build Reports for subscribing-java-testing
         if: always()
         with:
