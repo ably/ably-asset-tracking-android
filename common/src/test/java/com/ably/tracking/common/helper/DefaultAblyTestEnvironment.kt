@@ -488,6 +488,13 @@ class DefaultAblyTestEnvironment private constructor(
         every { realtimeMock.connect() } returns Unit
     }
 
+    /**
+     * Stubs [realtimeMock]’s [AblySdkRealtime.close] method.
+     */
+    fun stubClose() {
+        every { realtimeMock.close() } returns Unit
+    }
+
     companion object {
         /**
          * Creates an instance of [DefaultAblyTestEnvironment], with some basic initial configuration applied to its mocks.
