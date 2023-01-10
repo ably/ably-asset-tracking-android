@@ -191,6 +191,7 @@ subprojects {
                         // We know that we're not going to need to compile anything that needs BuildConfig to contain
                         // any of these secrets. For example, unit test runs, where we know there are no system tests
                         // being run or app builds being made where those apps embed secrets.
+                        logger.lifecycle('Skipping secrets configuration (ABLY_API_KEY and MAPBOX_ACCESS_TOKEN), because they are intentionally unavailable.')
                         return
                     }
 
@@ -202,8 +203,10 @@ subprojects {
                     if (MAPBOX_ACCESS_TOKEN == null || MAPBOX_ACCESS_TOKEN.trim().length() < 1) {
                         throw new GradleException('MAPBOX_ACCESS_TOKEN not specified or is empty.')
                     }
+
                     buildConfigField 'String', 'ABLY_API_KEY', "\"${ABLY_API_KEY}\""
                     buildConfigField 'String', 'MAPBOX_ACCESS_TOKEN', "\"${MAPBOX_ACCESS_TOKEN}\""
+                    logger.lifecycle('Secrets have been added to BuildConfig (ABLY_API_KEY and MAPBOX_ACCESS_TOKEN).')
                 }
 
                 def versionConfigFields = {
