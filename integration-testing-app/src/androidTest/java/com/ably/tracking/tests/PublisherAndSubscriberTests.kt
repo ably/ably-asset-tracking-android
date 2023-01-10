@@ -251,6 +251,7 @@ class PublisherAndSubscriberTests {
     @Test
     fun shouldNotEmitPublisherPresenceFalseIfPublisherIsPresentFromTheStart() {
         // given
+        val publisherViewsTrackableAsOnline = UnitExpectation("publisher views trackable as online")
         val subscriberEmittedPublisherPresentExpectation = UnitExpectation("subscriber emitted publisher present")
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val trackableId = UUID.randomUUID().toString()
@@ -261,8 +262,13 @@ class PublisherAndSubscriberTests {
         // create publisher and start tracking
         val publisher = createAndStartPublisher(context, sendResolution = true)
         runBlocking {
-            publisher.track(Trackable(trackableId))
+            publisher.track(Trackable(trackableId)).onEach { trackableState ->
+                if (trackableState == TrackableState.Online) {
+                    publisherViewsTrackableAsOnline.fulfill()
+                }
+            }.launchIn(scope)
         }
+        publisherViewsTrackableAsOnline.await()
 
         // create subscriber and listen for publisher presence
         var subscriber: Subscriber
@@ -290,6 +296,7 @@ class PublisherAndSubscriberTests {
         }
 
         // then
+        publisherViewsTrackableAsOnline.assertFulfilled()
         subscriberEmittedPublisherPresentExpectation.assertFulfilled()
         Assert.assertTrue("first publisherPresence value should be true", publisherPresentValues.first())
     }
