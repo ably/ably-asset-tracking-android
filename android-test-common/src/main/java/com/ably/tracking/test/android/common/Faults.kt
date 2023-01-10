@@ -2,9 +2,6 @@ package com.ably.tracking.test.android.common
 
 import com.ably.tracking.TrackableState
 import io.ktor.websocket.*
-import org.msgpack.value.ImmutableStringValue
-import org.msgpack.value.StringValue
-import org.msgpack.value.Value
 import org.msgpack.value.impl.ImmutableStringValueImpl
 import kotlin.reflect.KClass
 
@@ -178,21 +175,37 @@ abstract class DropAction(
         private const val tag = "DropAction"
     }
 
+    private var initialConnection = true
+
     override fun enable() {
         applicationProxy.interceptor = object: Layer7Interceptor {
-            override fun intercept(direction: FrameDirection, frame: Frame) =
+
+            override fun interceptConnection(params: ConnectionParams): ConnectionParams {
+                if (initialConnection) {
+                    initialConnection = false
+                } else {
+                    testLogD("$tag: second connection -- resolving fault")
+                    resolve()
+                }
+
+                return params
+            }
+
+            override fun interceptFrame(direction: FrameDirection, frame: Frame) =
                 if (shouldFilter(direction, frame)) {
-                    testLogD("$tag: dropping: $direction - ${unpack(frame.data)}")
+                    testLogD("$tag: dropping: $direction - ${logFrame(frame)}")
                     listOf()
                 } else {
-                    testLogD("$tag: keeping: $direction - ${unpack(frame.data)}")
+                    testLogD("$tag: keeping: $direction - ${logFrame(frame)}")
                     listOf(Action(direction, frame))
                 }
             }
+
         }
 
     override fun resolve() {
         applicationProxy.interceptor = PassThroughInterceptor()
+        initialConnection = true
     }
 
     override fun stateReceiverForStage(
@@ -210,17 +223,9 @@ abstract class DropAction(
      * Check whether this frame and direction messages the fault specification
      */
     private fun shouldFilter(direction: FrameDirection, frame: Frame) =
-        direction == this.direction && messageAction(frame) == action
-
-    /**
-     * Unpack the action field from the WebSocket frame using MsgPack
-     */
-    private fun messageAction(frame: Frame) =
-        unpack(frame.data)
-            ?.map()
-            ?.get(ImmutableStringValueImpl("action"))
-            ?.asIntegerValue()
-            ?.asInt()
+        frame.frameType == FrameType.BINARY &&
+            direction == this.direction &&
+            messageAction(frame) == action
 }
 
 /**
@@ -246,14 +251,87 @@ class DetachUnresponsive : DropAction(
 }
 
 /**
+ * Abstract fault implementation to trigger the proxy to go unresponsive
+ * (i.e. stop forwarding messages in a specific direction) once a particular
+ * action has been seen in the given direction.
+ */
+abstract class UnresponsiveAfterAction(
+    private val direction: FrameDirection,
+    private val action: Int
+) : ApplicationLayerFault() {
+
+    companion object {
+        private const val tag = "UnresponsiveAfterAction"
+        private const val restoreFunctionalityAfterConnections = 2
+    }
+
+    private var nConnections = 0
+    private var isTriggered = false
+
+    override fun enable() {
+        applicationProxy.interceptor = object: Layer7Interceptor {
+
+            override fun interceptConnection(params: ConnectionParams): ConnectionParams {
+                nConnections += 1
+                if (nConnections >= restoreFunctionalityAfterConnections) {
+                    testLogD("$tag: resolved after $restoreFunctionalityAfterConnections connections")
+                    resolve()
+                }
+
+                return params
+            }
+
+            override fun interceptFrame(direction: FrameDirection, frame: Frame): List<Action> {
+                if (shouldActivate(direction, frame)) {
+                    testLogD("$tag: $name - connection going unresponsive")
+                    isTriggered = true
+                }
+
+                return if (isTriggered) {
+                    testLogD("$tag: $name unresponsive: dropping ${logFrame(frame)}")
+                    listOf()
+                } else {
+                    listOf(Action(direction, frame))
+                }
+            }
+        }
+    }
+
+    override fun resolve() {
+        applicationProxy.interceptor = PassThroughInterceptor()
+        isTriggered = false
+        nConnections = 0
+    }
+
+    private fun shouldActivate(direction: FrameDirection, frame: Frame) =
+        frame.frameType == FrameType.BINARY &&
+            direction == this.direction &&
+            messageAction(frame) == action
+}
+
+/**
  * A DropAction fault implementation to drop PRESENCE messages,
  * simulating a presence enter failure
  */
-class EnterUnresponsive : DropAction(
+class EnterUnresponsive : UnresponsiveAfterAction(
     direction = FrameDirection.ClientToServer,
     action = PRESENCE_ACTION
 ) {
     override val name = "EnterUnresponsive"
+
+    override fun stateReceiverForStage(
+        stage: FaultSimulationStage
+    ) = when (stage) {
+        FaultSimulationStage.FaultActiveDuringTracking ->
+            // There won't be a presence.enter() during tracking
+            TrackableStateReceiver.onlineWithoutFail("$name: $stage")
+        FaultSimulationStage.FaultActiveBeforeTracking ->
+            // presence.enter() when trackable added will trigger fault
+            TrackableStateReceiver.offlineWithoutFail("$name: $stage")
+        FaultSimulationStage.FaultResolved ->
+            // always return to online state when there's no fault
+            TrackableStateReceiver.onlineWithoutFail("$name: $stage")
+    }
 }
 
 
@@ -294,3 +372,13 @@ class TrackableStateReceiver(
         }
     }
 }
+
+/**
+ * Unpack the action field from the WebSocket frame using MsgPack
+ */
+internal fun messageAction(frame: Frame) =
+    unpack(frame.data)
+        ?.map()
+        ?.get(ImmutableStringValueImpl("action"))
+        ?.asIntegerValue()
+        ?.asInt()

@@ -6,6 +6,7 @@ import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.logging.*
 import io.ktor.client.plugins.websocket.*
+import io.ktor.client.plugins.websocket.cio.*
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
@@ -89,7 +90,6 @@ abstract class AatProxy : RealtimeProxy {
         this.port = listenPort
         this.tls = false
     }
-
 }
 
 /**
@@ -306,13 +306,23 @@ class Layer7Proxy(
         serverSession: WebSocketServerSession,
     ) {
         for (received in incoming) {
-            testLogD("${tag}: [$direction] ${unpack(received.data)}")
+            testLogD("${tag}: (raw) [$direction] ${logFrame(received)}")
             try {
-                for (action in interceptor.intercept(direction, received)) {
-                    testLogD("$tag: [${action.direction}]: ${unpack(action.frame.data)}")
+                for (action in interceptor.interceptFrame(direction, received)) {
+                    testLogD("$tag: (forwarding) [${action.direction}]: ${logFrame(action.frame)}")
                     when (direction) {
-                        FrameDirection.ClientToServer -> clientSession.send(action.frame)
-                        FrameDirection.ServerToClient -> serverSession.send(action.frame)
+                        FrameDirection.ClientToServer -> {
+                            clientSession.send(action.frame)
+                            if (action.sendAndClose) {
+                                clientSession.close()
+                            }
+                        }
+                        FrameDirection.ServerToClient -> {
+                            serverSession.send(action.frame)
+                            if (action.sendAndClose) {
+                                clientSession.close()
+                            }
+                        }
                     }
                 }
             } catch (e: Exception) {
@@ -321,6 +331,7 @@ class Layer7Proxy(
             }
         }
     }
+
 }
 
 /**
@@ -328,13 +339,17 @@ class Layer7Proxy(
  * to send a receive frames in both directions
  */
 fun Route.wsProxy(path: String, target: Url, parent: Layer7Proxy) {
-    webSocket(path) {
+    webSocketRaw(path) {
         testLogD("${Layer7Proxy.tag}: Client connected to $path")
 
         val serverSession = this
         val client = configureWsClient()
 
-        client.webSocket(
+        val params = parent.interceptor.interceptConnection(
+            ConnectionParams.fromRequestParameters(call.request.queryParameters)
+        )
+
+        client.wsRaw(
             method = call.request.httpMethod,
             host = target.host,
             port = target.port,
@@ -345,7 +360,7 @@ fun Route.wsProxy(path: String, target: Url, parent: Layer7Proxy) {
 
                 // Forward connection parameters and rewrite the Host header, as
                 // it will be the proxy host by default
-                url.parameters.appendAll(call.request.queryParameters)
+                params.applyToBuilder(url.parameters)
                 headers["Host"] = target.host
             }) {
             val clientSession = this
@@ -404,13 +419,96 @@ fun unpack(data: ByteArray): ImmutableMapValue? =
         throw(e)
     }
 
+/**
+ * Return a string representation of a WS Frame for logging purposes
+ */
+fun logFrame(frame: Frame) =
+    if (frame.frameType == FrameType.BINARY) {
+        unpack(frame.data).toString()
+    } else {
+        frame.toString()
+    }
+
 interface Layer7Interceptor {
+
+    /**
+     * Handle a new incoming connection with provided parameters.
+     * Return (potentially) altered connection parameters and apply any
+     * fault-specific side-effects internally.
+     */
+    fun interceptConnection(params: ConnectionParams): ConnectionParams
+
     /**
      * Intercept a Frame being passed through the proxy, returning a list
      * of Actions to be performed in response. Note that doing nothing
      * (i.e. passing through), is an Action in itself
      */
-    fun intercept(direction: FrameDirection, frame: Frame): List<Action>
+    fun interceptFrame(direction: FrameDirection, frame: Frame): List<Action>
+}
+
+/**
+ * Ably WebSocket connection parameters.
+ * Enables faults to make alterations to incoming request parameters, before
+ * the corresponding outgoing connection is made.
+ */
+data class ConnectionParams(
+    val clientId: String?,
+    val connectionSerial: String?,
+    val resume: String?,
+    val key: String?,
+    val heartbeats: String?,
+    val v: String?,
+    val format: String?,
+    val agent: String?
+) {
+    companion object {
+
+        /**
+         * Construct ConnectionParams from an incoming WebSocket connection request
+         */
+        fun fromRequestParameters(params: Parameters) =
+            ConnectionParams(
+                clientId = params["clientId"],
+                connectionSerial = params["connectionSerial"],
+                resume = params["resume"],
+                key = params["key"],
+                heartbeats = params["heartbeats"],
+                v = params["v"],
+                format = params["format"],
+                agent = params["agent"]
+            )
+    }
+
+    /**
+     * Apply the (potentially altered) connection parameters in this instance
+     * to an outgoing connection WebSocket connection request
+     */
+    fun applyToBuilder(paramsBuilder: ParametersBuilder) {
+        if (clientId != null) {
+            paramsBuilder["clientId"] = clientId
+        }
+        if (connectionSerial != null) {
+            paramsBuilder["connectionSerial"] = connectionSerial
+        }
+        if (resume != null) {
+            paramsBuilder["resume"] = resume
+        }
+        if (key != null) {
+            paramsBuilder["key"] = key
+        }
+        if (heartbeats != null) {
+            paramsBuilder["heartbeats"] = heartbeats
+        }
+        if (v != null) {
+            paramsBuilder["v"] = v
+        }
+        if (format != null) {
+            paramsBuilder["format"] = format
+        }
+        if (agent != null) {
+            paramsBuilder["agent"] = agent
+        }
+    }
 }
 
 /**
@@ -434,15 +532,25 @@ data class Action(
     /**
      * Websocket frame to be sent
      */
-    val frame: Frame
+    val frame: Frame,
+
+    /**
+     * Flag to instruct proxy to close connection after performing
+     * this action
+     */
+    val sendAndClose: Boolean = frame.frameType == FrameType.CLOSE
 )
 
 /**
  * An interceptor implementation that passes all data through normally
  */
 class PassThroughInterceptor : Layer7Interceptor {
-    override fun intercept(
+
+    override fun interceptConnection(params: ConnectionParams) = params
+
+    override fun interceptFrame(
         direction: FrameDirection,
         frame: Frame
     ) = listOf(Action(direction, frame))
+
 }
