@@ -38,7 +38,7 @@ internal interface CorePublisher {
     fun addTrackable(trackable: Trackable, callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>)
     fun removeTrackable(trackable: Trackable, callbackFunction: ResultCallbackFunction<Boolean>)
     fun changeRoutingProfile(routingProfile: RoutingProfile)
-    fun stop(timeoutInMilliseconds: Long, callbackFunction: ResultCallbackFunction<Unit>)
+    fun stop(callbackFunction: ResultCallbackFunction<Unit>)
     val locations: SharedFlow<LocationUpdate>
     val trackables: SharedFlow<Set<Trackable>>
     val locationHistory: SharedFlow<LocationHistoryData>
@@ -252,8 +252,8 @@ constructor(
         enqueue(WorkerSpecification.ChangeRoutingProfile(routingProfile))
     }
 
-    override fun stop(timeoutInMilliseconds: Long, callbackFunction: ResultCallbackFunction<Unit>) {
-        enqueue(WorkerSpecification.Stop(callbackFunction, timeoutInMilliseconds))
+    override fun stop(callbackFunction: ResultCallbackFunction<Unit>) {
+        enqueue(WorkerSpecification.Stop(callbackFunction))
     }
 
     override fun retrySendingEnhancedLocation(

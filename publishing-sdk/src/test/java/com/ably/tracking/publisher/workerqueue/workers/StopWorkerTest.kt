@@ -7,7 +7,6 @@ import com.ably.tracking.publisher.PublisherState
 import com.ably.tracking.publisher.PublisherStoppedException
 import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 import com.ably.tracking.test.common.mockCloseFailure
-import com.ably.tracking.test.common.mockCloseSuccessWithDelay
 import com.google.common.truth.Truth.assertThat
 import io.mockk.CapturingSlot
 import io.mockk.coEvery
@@ -205,28 +204,6 @@ class StopWorkerTest {
     }
 
     @Test
-    fun `should mark that the publisher is stopped if stopping thrown a timeout`() {
-        // given
-        val initialProperties = createPublisherProperties()
-        worker = createWorker(timeoutInMilliseconds = 10L)
-        ably.mockCloseSuccessWithDelay(delayInMilliseconds = 1000L)
-
-        // when
-        val updatedProperties = worker.doWork(
-            initialProperties,
-            asyncWorks.appendWork(),
-            postedWorks.appendSpecification()
-        )
-
-        // then
-        assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).isEmpty()
-
-        assertThat(updatedProperties.state)
-            .isEqualTo(PublisherState.STOPPED)
-    }
-
-    @Test
     fun `should call the callback function with a success if closing Ably was successful`() {
         // given
         val initialProperties = createPublisherProperties()
@@ -270,29 +247,6 @@ class StopWorkerTest {
     }
 
     @Test
-    fun `should call the callback function with a failure if stopping thrown a timeout`() {
-        // given
-        val initialProperties = createPublisherProperties()
-        worker = createWorker(timeoutInMilliseconds = 10L)
-        ably.mockCloseSuccessWithDelay(delayInMilliseconds = 1000L)
-        val resultSlot = captureCallbackFunctionResult()
-
-        // when
-        worker.doWork(
-            initialProperties,
-            asyncWorks.appendWork(),
-            postedWorks.appendSpecification()
-        )
-
-        // then
-        assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).isEmpty()
-
-        assertThat(resultSlot.captured.isFailure)
-            .isTrue()
-    }
-
-    @Test
     fun `should call the callback function with a success if publisher is already stopped`() {
         // given
         val resultSlot = captureCallbackFunctionResult()
@@ -305,8 +259,8 @@ class StopWorkerTest {
             .isTrue()
     }
 
-    private fun createWorker(timeoutInMilliseconds: Long = 30_000L) =
-        StopWorker(resultCallbackFunction, ably, publisherInteractor, timeoutInMilliseconds)
+    private fun createWorker() =
+        StopWorker(resultCallbackFunction, ably, publisherInteractor)
 
     private fun captureCallbackFunctionResult(): CapturingSlot<Result<Unit>> {
         val resultSlot = slot<Result<Unit>>()
