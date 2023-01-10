@@ -16,7 +16,7 @@ import kotlinx.coroutines.withTimeout
 
 /**
  * This worker subscribes to presence messages on the trackable channel.
- * Second of three steps required to add a trackable, previous step is [PrepareConnectionForTrackableWorker] and the next step is [AddTrackableToPublisherWorker].
+ * Second of three steps required to add a trackable, previous step is [PrepareConnectionForTrackableWorker] and the next step is [FinishAddingTrackableToPublisherWorker].
  */
 internal class SubscribeToTrackablePresenceMessagesWorker(
     private val trackable: Trackable,
@@ -91,7 +91,7 @@ internal class SubscribeToTrackablePresenceMessagesWorker(
     }
 
     private fun createConnectionReadyWorkerSpecification(isSubscribedToPresence: Boolean) =
-        WorkerSpecification.AddTrackableToPublisher(
+        WorkerSpecification.FinishAddingTrackableToPublisher(
             trackable,
             callbackFunction,
             channelStateChangeListener,

@@ -53,7 +53,7 @@ class SubscribeToTrackablePresenceMessagesWorkerTest {
             assertThat(asyncWorks).hasSize(1)
             assertThat(postedWorks).hasSize(1)
 
-            val postedWork = postedWorks.first() as WorkerSpecification.AddTrackableToPublisher
+            val postedWork = postedWorks.first() as WorkerSpecification.FinishAddingTrackableToPublisher
             assertThat(postedWork.trackable).isEqualTo(trackable)
             assertThat(postedWork.callbackFunction).isEqualTo(resultCallbackFunction)
             assertThat(postedWork.presenceUpdateListener).isEqualTo(presenceUpdateListener)
@@ -80,7 +80,7 @@ class SubscribeToTrackablePresenceMessagesWorkerTest {
             assertThat(asyncWorks).hasSize(1)
             assertThat(postedWorks).hasSize(1)
 
-            val postedWork = postedWorks.first() as WorkerSpecification.AddTrackableToPublisher
+            val postedWork = postedWorks.first() as WorkerSpecification.FinishAddingTrackableToPublisher
             assertThat(postedWork.trackable).isEqualTo(trackable)
             assertThat(postedWork.callbackFunction).isEqualTo(resultCallbackFunction)
             assertThat(postedWork.presenceUpdateListener).isEqualTo(presenceUpdateListener)
@@ -112,7 +112,7 @@ class SubscribeToTrackablePresenceMessagesWorkerTest {
             assertThat(asyncWorks).hasSize(1)
             assertThat(postedWorks).hasSize(1)
 
-            val postedWork = postedWorks.first() as WorkerSpecification.AddTrackableToPublisher
+            val postedWork = postedWorks.first() as WorkerSpecification.FinishAddingTrackableToPublisher
             assertThat(postedWork.trackable).isEqualTo(trackable)
             assertThat(postedWork.callbackFunction).isEqualTo(resultCallbackFunction)
             assertThat(postedWork.presenceUpdateListener).isEqualTo(presenceUpdateListener)
