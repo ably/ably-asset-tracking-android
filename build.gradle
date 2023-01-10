@@ -187,6 +187,13 @@ subprojects {
                     // Configuration that must not be applied to SDK project main source set builds for the release variant/buildType.
                     // This configuration is, however, required for Android's connectedCheck task (which uses the androidTest source set
                     // with the debug variant/buildType).
+                    if (findProperty('runtimeSecrets') == 'INTENTIONALLY_UNAVAILABLE') {
+                        // We know that we're not going to need to compile anything that needs BuildConfig to contain
+                        // any of these secrets. For example, unit test runs, where we know there are no system tests
+                        // being run or app builds being made where those apps embed secrets.
+                        return
+                    }
+
                     final ABLY_API_KEY = findProperty('ABLY_API_KEY')
                     final MAPBOX_ACCESS_TOKEN = findProperty('MAPBOX_ACCESS_TOKEN')
                     if (ABLY_API_KEY == null || ABLY_API_KEY.trim().length() < 1) {
