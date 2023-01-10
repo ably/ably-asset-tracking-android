@@ -1036,9 +1036,7 @@ constructor(
                 }
             }
         } catch (exception: TimeoutCancellationException) {
-            ConnectionException(ErrorInformation("Timeout was thrown when waiting for Ably to connect")).also {
-                logHandler?.w("$TAG Timeout while waiting for Ably to connect", it)
-            }
+            logHandler?.w("$TAG Timeout while waiting for Ably to connect")
         }
     }
 
