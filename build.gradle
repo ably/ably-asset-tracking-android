@@ -186,8 +186,16 @@ subprojects {
                     // Configuration that must not be applied to SDK project main source set builds for the release variant/buildType.
                     // This configuration is, however, required for Android's connectedCheck task (which uses the androidTest source set
                     // with the debug variant/buildType).
-                    buildConfigField 'String', 'ABLY_API_KEY', "\"${findProperty('ABLY_API_KEY') ?: ""}\""
-                    buildConfigField 'String', 'MAPBOX_ACCESS_TOKEN', "\"${findProperty('MAPBOX_ACCESS_TOKEN') ?: ""}\""
+                    final ABLY_API_KEY = findProperty('ABLY_API_KEY')
+                    final MAPBOX_ACCESS_TOKEN = findProperty('MAPBOX_ACCESS_TOKEN')
+                    if (ABLY_API_KEY == null || ABLY_API_KEY.trim().length() < 1) {
+                        throw new GradleException('ABLY_API_KEY not specified or is empty.')
+                    }
+                    if (MAPBOX_ACCESS_TOKEN == null || MAPBOX_ACCESS_TOKEN.trim().length() < 1) {
+                        throw new GradleException('MAPBOX_ACCESS_TOKEN not specified or is empty.')
+                    }
+                    buildConfigField 'String', 'ABLY_API_KEY', "\"${ABLY_API_KEY}\""
+                    buildConfigField 'String', 'MAPBOX_ACCESS_TOKEN', "\"${MAPBOX_ACCESS_TOKEN}\""
                 }
 
                 def versionConfigFields = {
