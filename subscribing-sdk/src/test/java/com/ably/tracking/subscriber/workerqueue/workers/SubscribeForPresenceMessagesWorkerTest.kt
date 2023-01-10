@@ -127,6 +127,20 @@ internal class SubscribeForPresenceMessagesWorkerTest {
         Assert.assertTrue(postedWorks[0] is WorkerSpecification.Disconnect)
     }
 
+    @Test
+    fun `should post disconnect work when async work throw an unexpected exception`() = runBlockingTest {
+        // given
+
+        // when
+        subscribeForPresenceMessagesWorker.onUnexpectedAsyncError(
+            Exception("Unexpected exception"),
+            postedWorks.appendSpecification(),
+        )
+
+        // then
+        Assert.assertTrue(postedWorks[0] is WorkerSpecification.Disconnect)
+    }
+
     private fun anyPresenceMessage() =
         PresenceMessage(PresenceAction.PRESENT_OR_ENTER, PresenceData(ClientTypes.PUBLISHER), "any-client-id")
 }
