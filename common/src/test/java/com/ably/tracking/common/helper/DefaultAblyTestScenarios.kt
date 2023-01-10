@@ -1337,4 +1337,171 @@ class DefaultAblyTestScenarios {
             }
         }
     }
+
+    /**
+     * Provides test scenarios for [DefaultAbly.stopConnection]. See the [Companion.test] method.
+     */
+    class StopConnection {
+        /**
+         * This class provides properties for configuring the "Given..." part of the parameterised test case described by [Companion.test]. See that method’s documentation for information about the effect of this class’s properties.
+         */
+        class GivenConfig(
+            val initialConnectionState: ConnectionState,
+            val closeBehaviour: GivenTypes.ConnectionStateChangeBehaviour
+        )
+
+        /**
+         * This class provides properties for configuring the "Then..." part of the parameterised test case described by [Companion.test]. See that method’s documentation for information about the effect of this class’s properties.
+         */
+        class ThenConfig(
+            val numberOfConnectionStateFetchesToVerify: Int,
+            val verifyConnectionOn: Boolean,
+            val verifyClose: Boolean,
+            val verifyConnectionOff: Boolean,
+            val resultOfStopConnectionCallOnObjectUnderTest: ThenTypes.ExpectedAsyncResult
+        ) {
+            /**
+             * Checks that this object represents a valid test configuration.
+             *
+             * @throws InvalidTestConfigurationException If this object does not represent a valid test configuration.
+             */
+            fun validate() {
+                if (resultOfStopConnectionCallOnObjectUnderTest is ThenTypes.ExpectedAsyncResult.Terminates && resultOfStopConnectionCallOnObjectUnderTest.expectedResult is ThenTypes.ExpectedResult.FailureWithConnectionException) {
+                    throw InvalidTestConfigurationException("resultOfStopConnectionCallOnObjectUnderTest.expectedResult must not be FailureWithConnectionException")
+                }
+            }
+        }
+
+        companion object {
+            /**
+             * Implements the following parameterised test case for [DefaultAbly.stopConnection]:
+             *
+             * ```text
+             * Given...
+             *
+             * ...that the connection’s `state` property returns ${givenConfig.initialConnectionState}...
+             *
+             * when ${givenConfig.closeBehaviour} is EmitStateChange {
+             * ...and that when the Realtime instance’s `close` method is called, its connection’s `on` method immediately emits a connection state change whose `previous`, `current`, `retryIn` and `reason` are those of ${givenConfig.closeBehaviour}...
+             * }
+             *
+             * When...
+             *
+             * ...`stopConnection` is called on the object under test...
+             *
+             * Then...
+             * ...in the following order, precisely the following things happen...
+             *
+             * ...it fetches the connection’s state ${thenConfig.numberOfConnectionStateFetchesToVerify} times...
+             *
+             * if ${thenConfig.verifyConnectionOn} {
+             * ...and adds a listener to the connection using `on`...
+             * }
+             *
+             * if ${thenConfig.verifyClose} {
+             * ...and tells the Realtime instance to close...
+             * }
+             *
+             * if ${thenConfig.verifyConnectionOff} {
+             * ...and removes a listener from the connection using `off`...
+             * }
+             *
+             * when ${thenConfig.resultOfStopConnectionCallOnObjectUnderTest} is Terminates and ${thenConfig.resultOfStopConnectionCallOnObjectUnderTest.result} is Success {
+             * ...and the call to `stopConnection` (on the object under test) succeeds.
+             * }
+             *
+             * when ${thenConfig.resultOfStopConnectionCallOnObjectUnderTest} is DoesNotTerminate {
+             * ...and the call to `stopConnection` (on the object under test) does not complete within ${thenConfig.resultOfStopConnectionCallOnObjectUnderTest} milliseconds.
+             * }
+             * ```
+             */
+            suspend fun test(
+                givenConfig: GivenConfig,
+                thenConfig: ThenConfig
+            ) {
+                thenConfig.validate()
+
+                val testEnvironment = DefaultAblyTestEnvironment.create(numberOfTrackables = 0)
+
+                // Given...
+
+                // ...that the connection’s `state` property returns ${givenConfig.initialConnectionState}...
+                testEnvironment.mockConnectionState(givenConfig.initialConnectionState)
+
+                when (val givenCloseBehaviour = givenConfig.closeBehaviour) {
+                    is GivenTypes.ConnectionStateChangeBehaviour.NoBehaviour -> {
+                        testEnvironment.stubConnectionOn()
+                        testEnvironment.stubClose()
+                    }
+                    is GivenTypes.ConnectionStateChangeBehaviour.EmitStateChange -> {
+                        /* when ${givenConfig.closeBehaviour} is EmitStateChange {
+                         * ...and that when the Realtime instance’s `close` method is called, its connection’s `on` method immediately emits a connection state change whose `previous`, `current`, `retryIn` and `reason` are those of ${givenConfig.closeBehaviour}...
+                         * }
+                         */
+                        testEnvironment.mockCloseToEmitStateChange(
+                            previous = givenCloseBehaviour.previous,
+                            current = givenCloseBehaviour.current,
+                            retryIn = givenCloseBehaviour.retryIn,
+                            reason = givenCloseBehaviour.reason
+                        )
+                    }
+                }
+
+                testEnvironment.stubConnectionOff()
+
+                // When...
+
+                val result = executeForVerifying(thenConfig.resultOfStopConnectionCallOnObjectUnderTest) {
+                    // ...`stopConnection` is called on the object under test...
+                    testEnvironment.objectUnderTest.stopConnection()
+                }
+
+                // Then...
+                // ...in the following order, precisely the following things happen...
+
+                verifyOrder {
+                    // ...it fetches the connection’s state ${thenConfig.numberOfConnectionStateFetchesToVerify} times...
+                    repeat(thenConfig.numberOfConnectionStateFetchesToVerify) {
+                        testEnvironment.connectionMock.state
+                    }
+
+                    if (thenConfig.verifyConnectionOn) {
+                        /* if ${thenConfig.verifyConnectionOn} {
+                         * ...and adds a listener to the connection using `on`...
+                         * }
+                         */
+                        testEnvironment.connectionMock.on(any())
+                    }
+
+                    if (thenConfig.verifyClose) {
+                        /* if ${thenConfig.verifyClose} {
+                         * ...and tells the Realtime instance to close...
+                         * }
+                         */
+                        testEnvironment.realtimeMock.close()
+                    }
+
+                    if (thenConfig.verifyConnectionOff) {
+                        /* if ${thenConfig.verifyConnectionOff} {
+                         * ...and removes a listener from the connection using `off`...
+                         * }
+                         */
+                        testEnvironment.connectionMock.off(any())
+                    }
+                }
+
+                /* when ${thenConfig.resultOfStopConnectionCallOnObjectUnderTest} is Terminates and ${thenConfig.resultOfStopConnectionCallOnObjectUnderTest.result} is Success {
+                 * ...and the call to `stopConnection` (on the object under test) succeeds.
+                 * }
+                 *
+                 * when ${thenConfig.resultOfStopConnectionCallOnObjectUnderTest} is DoesNotTerminate {
+                 * ...and the call to `stopConnection` (on the object under test) does not complete within ${thenConfig.resultOfStopConnectionCallOnObjectUnderTest} milliseconds.
+                 * }
+                 */
+                thenConfig.resultOfStopConnectionCallOnObjectUnderTest.verify(result)
+
+                confirmVerified(*testEnvironment.allMocks)
+            }
+        }
+    }
 }

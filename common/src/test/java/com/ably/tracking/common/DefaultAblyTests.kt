@@ -2442,6 +2442,392 @@ class DefaultAblyTests {
         }
     }
 
+    /*
+    Observations from writing black-box tests for `stopConnection`:
+
+    - When given a connection in certain states, it seems to fetch the connection’s state more than once. I have not tested what happens if a different state is returned on the second call.
+    */
+
+    @Test
+    fun `stopConnection - when connection is in INITIALIZED state and, after close called, changes to CONNECTED`() {
+        /* Given...
+         *
+         * ...that the connection’s `state` property returns INITIALIZED...
+         * ...and that when the Realtime instance’s `close` method is called, its connection’s `on` method immediately emits a connection state change whose `previous` is INITIALIZED, `current` is CLOSED, `retryIn` is (arbitrarily-chosen) 0 and `reason` is (arbitrarily-chosen) null...
+         *
+         * When...
+         *
+         * ...`stopConnection` is called on the object under test...
+         *
+         * Then...
+         * ...in the following order, precisely the following things happen...
+         *
+         * ...it fetches the connection’s state 2 times...
+         * ...and adds a listener to the connection using `on`...
+         * ...and tells the Realtime instance to close...
+         * ...and removes a listener from the connection using `off`...
+         * ...and the call to `stopConnection` (on the object under test) succeeds.
+         */
+
+        runBlocking {
+            DefaultAblyTestScenarios.StopConnection.test(
+                DefaultAblyTestScenarios.StopConnection.GivenConfig(
+                    initialConnectionState = ConnectionState.initialized,
+                    closeBehaviour = DefaultAblyTestScenarios.GivenTypes.ConnectionStateChangeBehaviour.EmitStateChange(
+                        previous = ConnectionState.initialized,
+                        current = ConnectionState.closed,
+                        retryIn = 0,
+                        reason = null
+                    )
+                ),
+                DefaultAblyTestScenarios.StopConnection.ThenConfig(
+                    numberOfConnectionStateFetchesToVerify = 2,
+                    verifyConnectionOn = true,
+                    verifyClose = true,
+                    verifyConnectionOff = true,
+                    resultOfStopConnectionCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
+                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
+                    )
+                ),
+            )
+        }
+    }
+
+    @Test
+    fun `stopConnection - when connection is in CONNECTING state and, after close called, changes to CLOSED`() {
+        /* Given...
+         *
+         * ...that the connection’s `state` property returns CONNECTING...
+         * ...and that when the Realtime instance’s `close` method is called, its connection’s `on` method immediately emits a connection state change whose `previous` is CONNECTING, `current` is CLOSED, `retryIn` is (arbitrarily-chosen) 0 and `reason` is (arbitrarily-chosen) null...
+         *
+         * When...
+         *
+         * ...`stopConnection` is called on the object under test...
+         *
+         * Then...
+         * ...in the following order, precisely the following things happen...
+         *
+         * ...it fetches the connection’s state 2 times...
+         * ...and adds a listener to the connection using `on`...
+         * ...and tells the Realtime instance to close...
+         * ...and removes a listener from the connection using `off`...
+         * ...and the call to `stopConnection` (on the object under test) succeeds.
+         */
+
+        runBlocking {
+            DefaultAblyTestScenarios.StopConnection.test(
+                DefaultAblyTestScenarios.StopConnection.GivenConfig(
+                    initialConnectionState = ConnectionState.connecting,
+                    closeBehaviour = DefaultAblyTestScenarios.GivenTypes.ConnectionStateChangeBehaviour.EmitStateChange(
+                        previous = ConnectionState.connecting,
+                        current = ConnectionState.closed,
+                        retryIn = 0,
+                        reason = null
+                    )
+                ),
+                DefaultAblyTestScenarios.StopConnection.ThenConfig(
+                    numberOfConnectionStateFetchesToVerify = 2,
+                    verifyConnectionOn = true,
+                    verifyClose = true,
+                    verifyConnectionOff = true,
+                    resultOfStopConnectionCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
+                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
+                    )
+                ),
+            )
+        }
+    }
+
+    @Test
+    fun `stopConnection - when connection is in CONNECTED state and, after close called, changes to CLOSED`() {
+        /* Given...
+         *
+         * ...that the connection’s `state` property returns CONNECTED...
+         * ...and that when the Realtime instance’s `close` method is called, its connection’s `on` method immediately emits a connection state change whose `previous` is CONNECTED, `current` is CLOSED, `retryIn` is (arbitrarily-chosen) 0 and `reason` is (arbitrarily-chosen) null...
+         *
+         * When...
+         *
+         * ...`stopConnection` is called on the object under test...
+         *
+         * Then...
+         * ...in the following order, precisely the following things happen...
+         *
+         * ...it fetches the connection’s state 2 times...
+         * ...and adds a listener to the connection using `on`...
+         * ...and tells the Realtime instance to close...
+         * ...and removes a listener from the connection using `off`...
+         * ...and the call to `stopConnection` (on the object under test) succeeds.
+         */
+
+        runBlocking {
+            DefaultAblyTestScenarios.StopConnection.test(
+                DefaultAblyTestScenarios.StopConnection.GivenConfig(
+                    initialConnectionState = ConnectionState.connected,
+                    closeBehaviour = DefaultAblyTestScenarios.GivenTypes.ConnectionStateChangeBehaviour.EmitStateChange(
+                        previous = ConnectionState.connected,
+                        current = ConnectionState.closed,
+                        retryIn = 0,
+                        reason = null
+                    )
+                ),
+                DefaultAblyTestScenarios.StopConnection.ThenConfig(
+                    numberOfConnectionStateFetchesToVerify = 2,
+                    verifyConnectionOn = true,
+                    verifyClose = true,
+                    verifyConnectionOff = true,
+                    resultOfStopConnectionCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
+                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
+                    )
+                ),
+            )
+        }
+    }
+
+    @Test
+    fun `stopConnection - when connection is in DISCONNECTED state and, after close called, changes to CLOSED`() {
+        /* Given...
+         *
+         * ...that the connection’s `state` property returns DISCONNECTED...
+         * ...and that when the Realtime instance’s `close` method is called, its connection’s `on` method immediately emits a connection state change whose `previous` is DISCONNECTED, `current` is CLOSED, `retryIn` is (arbitrarily-chosen) 0 and `reason` is (arbitrarily-chosen) null...
+         *
+         * When...
+         *
+         * ...`stopConnection` is called on the object under test...
+         *
+         * Then...
+         * ...in the following order, precisely the following things happen...
+         *
+         * ...it fetches the connection’s state 2 times...
+         * ...and adds a listener to the connection using `on`...
+         * ...and tells the Realtime instance to close...
+         * ...and removes a listener from the connection using `off`...
+         * ...and the call to `stopConnection` (on the object under test) succeeds.
+         */
+
+        runBlocking {
+            DefaultAblyTestScenarios.StopConnection.test(
+                DefaultAblyTestScenarios.StopConnection.GivenConfig(
+                    initialConnectionState = ConnectionState.disconnected,
+                    closeBehaviour = DefaultAblyTestScenarios.GivenTypes.ConnectionStateChangeBehaviour.EmitStateChange(
+                        previous = ConnectionState.disconnected,
+                        current = ConnectionState.closed,
+                        retryIn = 0,
+                        reason = null
+                    )
+                ),
+                DefaultAblyTestScenarios.StopConnection.ThenConfig(
+                    numberOfConnectionStateFetchesToVerify = 2,
+                    verifyConnectionOn = true,
+                    verifyClose = true,
+                    verifyConnectionOff = true,
+                    resultOfStopConnectionCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
+                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
+                    )
+                ),
+            )
+        }
+    }
+
+    @Test
+    fun `stopConnection - when connection is in SUSPENDED state and, after close called, changes to CLOSED`() {
+        /* Given...
+         *
+         * ...that the connection’s `state` property returns SUSPENDED...
+         * ...and that when the Realtime instance’s `close` method is called, its connection’s `on` method immediately emits a connection state change whose `previous` is SUSPENDED, `current` is CLOSED, `retryIn` is (arbitrarily-chosen) 0 and `reason` is (arbitrarily-chosen) null...
+         *
+         * When...
+         *
+         * ...`stopConnection` is called on the object under test...
+         *
+         * Then...
+         * ...in the following order, precisely the following things happen...
+         *
+         * ...it fetches the connection’s state 2 times...
+         * ...and adds a listener to the connection using `on`...
+         * ...and tells the Realtime instance to close...
+         * ...and removes a listener from the connection using `off`...
+         * ...and the call to `stopConnection` (on the object under test) succeeds.
+         */
+
+        runBlocking {
+            DefaultAblyTestScenarios.StopConnection.test(
+                DefaultAblyTestScenarios.StopConnection.GivenConfig(
+                    initialConnectionState = ConnectionState.suspended,
+                    closeBehaviour = DefaultAblyTestScenarios.GivenTypes.ConnectionStateChangeBehaviour.EmitStateChange(
+                        previous = ConnectionState.suspended,
+                        current = ConnectionState.closed,
+                        retryIn = 0,
+                        reason = null
+                    )
+                ),
+                DefaultAblyTestScenarios.StopConnection.ThenConfig(
+                    numberOfConnectionStateFetchesToVerify = 2,
+                    verifyConnectionOn = true,
+                    verifyClose = true,
+                    verifyConnectionOff = true,
+                    resultOfStopConnectionCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
+                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
+                    )
+                ),
+            )
+        }
+    }
+
+    @Test
+    fun `stopConnection - when connection is in CLOSING state and, after close called, changes to CLOSED`() {
+        /* Given...
+         *
+         * ...that the connection’s `state` property returns CLOSING...
+         * ...and that when the Realtime instance’s `close` method is called, its connection’s `on` method immediately emits a connection state change whose `previous` is CLOSING, `current` is CLOSED, `retryIn` is (arbitrarily-chosen) 0 and `reason` is (arbitrarily-chosen) null...
+         *
+         * When...
+         *
+         * ...`stopConnection` is called on the object under test...
+         *
+         * Then...
+         * ...in the following order, precisely the following things happen...
+         *
+         * ...it fetches the connection’s state 2 times...
+         * ...and adds a listener to the connection using `on`...
+         * ...and tells the Realtime instance to close...
+         * ...and removes a listener from the connection using `off`...
+         * ...and the call to `stopConnection` (on the object under test) succeeds.
+         */
+
+        runBlocking {
+            DefaultAblyTestScenarios.StopConnection.test(
+                DefaultAblyTestScenarios.StopConnection.GivenConfig(
+                    initialConnectionState = ConnectionState.closing,
+                    closeBehaviour = DefaultAblyTestScenarios.GivenTypes.ConnectionStateChangeBehaviour.EmitStateChange(
+                        previous = ConnectionState.closing,
+                        current = ConnectionState.closed,
+                        retryIn = 0,
+                        reason = null
+                    )
+                ),
+                DefaultAblyTestScenarios.StopConnection.ThenConfig(
+                    numberOfConnectionStateFetchesToVerify = 2,
+                    verifyConnectionOn = true,
+                    verifyClose = true,
+                    verifyConnectionOff = true,
+                    resultOfStopConnectionCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
+                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
+                    )
+                ),
+            )
+        }
+    }
+
+    @Test
+    fun `stopConnection - when connection is in CLOSED state`() {
+        /* Given...
+         *
+         * ...that the connection’s `state` property returns CLOSED...
+         *
+         * When...
+         *
+         * ...`stopConnection` is called on the object under test...
+         *
+         * Then...
+         * ...in the following order, precisely the following things happen...
+         *
+         * ...it fetches the connection’s state once...
+         * ...and the call to `stopConnection` (on the object under test) succeeds.
+         */
+
+        runBlocking {
+            DefaultAblyTestScenarios.StopConnection.test(
+                DefaultAblyTestScenarios.StopConnection.GivenConfig(
+                    initialConnectionState = ConnectionState.closed,
+                    closeBehaviour = DefaultAblyTestScenarios.GivenTypes.ConnectionStateChangeBehaviour.NoBehaviour,
+                ),
+                DefaultAblyTestScenarios.StopConnection.ThenConfig(
+                    numberOfConnectionStateFetchesToVerify = 1,
+                    verifyConnectionOn = false,
+                    verifyClose = false,
+                    verifyConnectionOff = false,
+                    resultOfStopConnectionCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
+                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
+                    )
+                ),
+            )
+        }
+    }
+
+    @Test
+    fun `stopConnection - when connection is in FAILED state`() {
+        /* Given...
+         *
+         * ...that the connection’s `state` property returns FAILED...
+         *
+         * When...
+         *
+         * ...`stopConnection` is called on the object under test...
+         *
+         * Then...
+         * ...in the following order, precisely the following things happen...
+         *
+         * ...it fetches the connection’s state 2 times...
+         * ...and the call to `stopConnection` (on the object under test) succeeds.
+         */
+
+        runBlocking {
+            DefaultAblyTestScenarios.StopConnection.test(
+                DefaultAblyTestScenarios.StopConnection.GivenConfig(
+                    initialConnectionState = ConnectionState.failed,
+                    closeBehaviour = DefaultAblyTestScenarios.GivenTypes.ConnectionStateChangeBehaviour.NoBehaviour
+                ),
+                DefaultAblyTestScenarios.StopConnection.ThenConfig(
+                    numberOfConnectionStateFetchesToVerify = 2,
+                    verifyConnectionOn = false,
+                    verifyClose = false,
+                    verifyConnectionOff = false,
+                    resultOfStopConnectionCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
+                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
+                    )
+                ),
+            )
+        }
+    }
+
+    @Test
+    fun `stopConnection - when, after close is called, no connection state change occurs`() {
+        /* Given...
+         *
+         * ...that the connection’s `state` property returns CONNECTED (arbitrarily chosen)...
+         *
+         * When...
+         *
+         * ...`stopConnection` is called on the object under test...
+         *
+         * Then...
+         * ...in the following order, precisely the following things happen...
+         *
+         * ...it fetches the connection’s state 2 times...
+         * ...and adds a listener to the connection using `on`...
+         * ...and tells the Realtime instance to close...
+         * ...and the call to `stopConnection` (on the object under test) does not complete.
+         */
+
+        runBlocking {
+            DefaultAblyTestScenarios.StopConnection.test(
+                DefaultAblyTestScenarios.StopConnection.GivenConfig(
+                    initialConnectionState = ConnectionState.connected, // arbitrarily chosen
+                    closeBehaviour = DefaultAblyTestScenarios.GivenTypes.ConnectionStateChangeBehaviour.NoBehaviour
+                ),
+                DefaultAblyTestScenarios.StopConnection.ThenConfig(
+                    numberOfConnectionStateFetchesToVerify = 2,
+                    verifyConnectionOn = true,
+                    verifyClose = true,
+                    verifyConnectionOff = false,
+                    resultOfStopConnectionCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.DoesNotTerminate(
+                        timeoutInMilliseconds = noTimeoutDemonstrationWaitingTimeInMilliseconds
+                    )
+                )
+            )
+        }
+    }
+
     @Test
     fun `close - behaviour when all presence leave calls succeed`() {
         // Given...
