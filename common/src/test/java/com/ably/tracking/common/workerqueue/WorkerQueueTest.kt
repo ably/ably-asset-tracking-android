@@ -13,8 +13,9 @@ import org.junit.Test
 
 typealias TestWorkerSpecificationType = Unit
 
+private const val ASYNC_WORK_TIMEOUT_IN_MILLISECONDS = 5000L
+
 class WorkerQueueTest {
-    private val ASYNC_WORK_TIMEOUT_IN_MILLISECONDS = 5000L
     private val properties = mockk<Properties>()
     private val scope = CoroutineScope(createSingleThreadDispatcher() + SupervisorJob())
     private val worker = mockk<Worker<Properties, TestWorkerSpecificationType>>(relaxed = true)
