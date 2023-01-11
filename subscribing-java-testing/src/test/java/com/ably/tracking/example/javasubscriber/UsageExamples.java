@@ -39,6 +39,9 @@ public class UsageExamples {
     Subscriber.Builder nativeSubscriberBuilder;
     SubscriberFacade.Builder subscriberFacadeBuilder;
 
+    // We need to inject a different coroutine dispatcher in place of the Main dispatcher,
+    // because DefaultSubscriberFacade is directly accessing it.
+    // Otherwise, tests fail with RuntimeException: Stub!
     @Rule
     public ReplaceMainCoroutineDispatcherRule replaceMainCoroutineDispatcherRule = new ReplaceMainCoroutineDispatcherRule();
 
