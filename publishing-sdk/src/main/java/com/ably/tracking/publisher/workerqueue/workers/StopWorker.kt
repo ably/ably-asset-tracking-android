@@ -8,15 +8,12 @@ import com.ably.tracking.publisher.PublisherInteractor
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.PublisherState
 import com.ably.tracking.publisher.workerqueue.WorkerSpecification
-import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeout
 
 internal class StopWorker(
     callbackFunction: ResultCallbackFunction<Unit>,
     private val ably: Ably,
     private val publisherInteractor: PublisherInteractor,
-    private val timeoutInMilliseconds: Long,
 ) : CallbackWorker<PublisherProperties, WorkerSpecification>(callbackFunction) {
 
     override fun doWork(
@@ -26,22 +23,17 @@ internal class StopWorker(
     ): PublisherProperties {
         ably
         publisherInteractor
-        timeoutInMilliseconds
         // We're using [runBlocking] on purpose as we want to block the whole publisher when it's stopping.
         runBlocking {
             try {
-                withTimeout(timeoutInMilliseconds) {
-                    if (properties.isTracking) {
-                        publisherInteractor.stopLocationUpdates(properties)
-                    }
-                    publisherInteractor.closeMapbox()
-                    ably.close(properties.presenceData)
-                    properties.dispose()
-                    callbackFunction(Result.success(Unit))
+                if (properties.isTracking) {
+                    publisherInteractor.stopLocationUpdates(properties)
                 }
+                publisherInteractor.closeMapbox()
+                ably.close(properties.presenceData)
+                properties.dispose()
+                callbackFunction(Result.success(Unit))
             } catch (exception: ConnectionException) {
-                callbackFunction(Result.failure(exception))
-            } catch (exception: TimeoutCancellationException) {
                 callbackFunction(Result.failure(exception))
             }
         }

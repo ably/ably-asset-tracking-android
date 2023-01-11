@@ -1,10 +1,12 @@
 package com.ably.tracking.publisher
 
+import android.annotation.SuppressLint
 import android.app.Notification
 import android.content.Context
 import androidx.core.app.NotificationCompat
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ably.tracking.Accuracy
+import com.ably.tracking.Location
 import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.AblySdkRealtimeFactory
@@ -14,6 +16,9 @@ import com.ably.tracking.common.EventNames
 import com.ably.tracking.common.message.LocationGeometry
 import com.ably.tracking.common.message.LocationMessage
 import com.ably.tracking.common.message.LocationProperties
+import com.ably.tracking.common.message.getLocationMessages
+import com.ably.tracking.common.message.synopsis
+import com.ably.tracking.common.message.toTracking
 import com.ably.tracking.connection.Authentication
 import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.logging.LogHandler
@@ -44,9 +49,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert
@@ -66,7 +74,6 @@ private const val MAPBOX_ACCESS_TOKEN = BuildConfig.MAPBOX_ACCESS_TOKEN
  */
 private const val DEFAULT_STATE_TRANSITION_TIMEOUT_SECONDS = 125L
 
-
 @RunWith(Parameterized::class)
 class NetworkConnectivityTests(private val testFault: FaultSimulation) {
 
@@ -76,16 +83,16 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
         fun data() = listOf(
-            arrayOf(NullTransportFault()),
-            arrayOf(NullApplicationLayerFault()),
-            arrayOf(TcpConnectionRefused()),
-            arrayOf(TcpConnectionUnresponsive()),
-            arrayOf(AttachUnresponsive()),
-            arrayOf(DetachUnresponsive()),
-            arrayOf(DisconnectWithFailedResume())
+            arrayOf(NullTransportFault(BuildConfig.ABLY_API_KEY)),
+            arrayOf(NullApplicationLayerFault(BuildConfig.ABLY_API_KEY)),
+            arrayOf(TcpConnectionRefused(BuildConfig.ABLY_API_KEY)),
+            arrayOf(TcpConnectionUnresponsive(BuildConfig.ABLY_API_KEY)),
+            arrayOf(AttachUnresponsive(BuildConfig.ABLY_API_KEY)),
+            arrayOf(DetachUnresponsive(BuildConfig.ABLY_API_KEY)),
+            arrayOf(DisconnectWithFailedResume(BuildConfig.ABLY_API_KEY))
 
             // publisher.track() hangs indefinitely with this fault
-            // arrayOf(EnterUnresponsive()),
+            // arrayOf(EnterUnresponsive(BuildConfig.ABLY_API_KEY)),
         )
     }
 
@@ -139,7 +146,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
                 Assert.assertTrue(resources.publisher.remove(secondaryTrackable))
             }
 
-            /// Resolve the fault and ensure active trackable reaches intended state
+            // / Resolve the fault and ensure active trackable reaches intended state
             resources.fault.resolve()
             waitForStateTransition(
                 actionLabel = "resolve fault and wait for updated state",
@@ -261,7 +268,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
      * occur. A BooleanExpectation is returned, which will be completed with success if asyncOp
      * completes without errors, or failed if an exception is thrown.
      */
-    private fun failOnException(label: String, asyncOp: suspend () -> Unit) : BooleanExpectation {
+    private fun failOnException(label: String, asyncOp: suspend () -> Unit): BooleanExpectation {
         val opCompleted = BooleanExpectation(label)
         runBlocking {
             try {
@@ -306,7 +313,7 @@ class TestResources(
          */
         fun setUp(faultParam: FaultSimulation): TestResources {
             val context = InstrumentationRegistry.getInstrumentation().targetContext
-            val scope =  CoroutineScope(Dispatchers.Unconfined)
+            val scope = CoroutineScope(Dispatchers.Unconfined)
             val locationHelper = LocationHelper()
             val publisher = createPublisher(context, faultParam.proxy.clientOptions(), locationHelper.channelName)
 
@@ -325,11 +332,12 @@ class TestResources(
          * Injects a pre-configured AblyRealtime instance to the Publisher by constructing it
          * and all dependencies by hand, side-stepping the builders, which block this.
          */
+        @SuppressLint("MissingPermission")
         private fun createPublisher(
             context: Context,
             proxyClientOptions: ClientOptions,
             locationChannelName: String
-        ) : Publisher {
+        ): Publisher {
             val resolution = Resolution(Accuracy.BALANCED, 1000L, 0.0)
             val realtimeFactory = object: AblySdkRealtimeFactory {
                 override fun create(clientOptions: ClientOptions) =
@@ -348,7 +356,7 @@ class TestResources(
                     context,
                     MapConfiguration(MAPBOX_ACCESS_TOKEN),
                     connectionConfiguration,
-                    LocationSourceAbly.create(locationChannelName, LOCATION_SOURCE_OPTS),
+                    LocationSourceFlow(createAblyLocationSource(locationChannelName)),
                     logHandler = Logging.aatDebugLogger,
                     object : PublisherNotificationProvider {
                         override fun getNotification(): Notification =
@@ -371,6 +379,35 @@ class TestResources(
                 constantLocationEngineResolution = resolution
             )
         }
+
+        private fun createAblyLocationSource(channelName: String): Flow<Location> {
+            val ably = AblyRealtime(LOCATION_SOURCE_OPTS)
+            val simulationChannel = ably.channels.get(channelName)
+            val flow = MutableSharedFlow<Location>()
+            val scope = CoroutineScope(Dispatchers.IO)
+            val gson = Gson()
+
+            ably.connection.on { testLogD("Ably connection state change: $it") }
+            simulationChannel.on { testLogD("Ably channel state change: $it") }
+
+            simulationChannel.subscribe(EventNames.ENHANCED) { message ->
+                testLogD("Ably channel message: $message")
+                message.getLocationMessages(gson).forEach {
+                    testLogD("Received enhanced location: ${it.synopsis()}")
+                    val loc = it.toTracking()
+
+                    // TODO do we need to overwrite loc.time here?
+                    // previously, for Android Location, we had:
+                    //   loc.elapsedRealtimeNanos = SystemClock.elapsedRealtimeNanos()
+
+                    scope.launch {
+                        flow.emit(loc)
+                    }
+                }
+            }
+
+            return flow
+        }
     }
 
     fun tearDown() {
@@ -386,7 +423,7 @@ class TestResources(
      * Returns a BooleanExpectation, which can be used to check for successful
      * shutdown of the publisher
      */
-    private fun shutdownPublisher(publisher: Publisher) : BooleanExpectation {
+    private fun shutdownPublisher(publisher: Publisher): BooleanExpectation {
         val stopExpectation = BooleanExpectation("stop response")
         runBlocking {
             try {
@@ -431,7 +468,6 @@ private val LOCATION_SOURCE_OPTS = ClientOptions().apply {
     this.logHandler = Logging.ablyJavaDebugLogger
 }
 
-
 /**
  * Helper class to publish basic location updates through a known Ably channel name
  */
@@ -465,16 +501,20 @@ class LocationHelper {
 
         val ablyMessage = Message(EventNames.ENHANCED, gson.toJson(arrayOf((geoJson))))
         val publishExpectation = BooleanExpectation("publishing Ably location update")
-        channel.publish(ablyMessage, object: CompletionListener {
-            override fun onSuccess() {
-                testLogD("Location publish success")
-                publishExpectation.fulfill(true)
+        channel.publish(
+            ablyMessage,
+            object : CompletionListener {
+                override fun onSuccess() {
+                    testLogD("Location publish success")
+                    publishExpectation.fulfill(true)
+                }
+
+                override fun onError(err: ErrorInfo?) {
+                    testLogD("Location publish failed: ${err?.code} - ${err?.message}")
+                    publishExpectation.fulfill(false)
+                }
             }
-            override fun onError(err: ErrorInfo?) {
-                testLogD("Location publish failed: ${err?.code} - ${err?.message}")
-                publishExpectation.fulfill(false)
-            }
-        })
+        )
 
         publishExpectation.await()
         publishExpectation.assertSuccess()

@@ -46,7 +46,6 @@ private const val PROXY_PORT = 13579
 private const val REALTIME_HOST = "realtime.ably.io"
 private const val REALTIME_PORT = 443
 
-
 /**
  * A local proxy that can be used to intercept Realtime traffic for testing
  */
@@ -71,7 +70,9 @@ interface RealtimeProxy {
 /**
  * Common base class for proxies to provide ClientOptions generation
  */
-abstract class AatProxy : RealtimeProxy {
+abstract class AatProxy(
+    private val apiKey: String
+) : RealtimeProxy {
 
     /**
      * The host address the proxy will listen on
@@ -92,9 +93,9 @@ abstract class AatProxy : RealtimeProxy {
         this.agents = mapOf(AGENT_HEADER_NAME to BuildConfig.VERSION_NAME)
         this.idempotentRestPublishing = true
         this.autoConnect = false
-        this.key = BuildConfig.ABLY_API_KEY
+        this.key = apiKey
         this.logHandler = Log.LogHandler { _, _, msg, tr ->
-            testLogD("${msg!!} - $tr")
+            testLogD("${msg!!} - $tr", tr)
         }
         this.realtimeHost = listenHost
         this.port = listenPort
@@ -109,17 +110,18 @@ abstract class AatProxy : RealtimeProxy {
  * as connections being interrupted or packets being dropped entirely.
  */
 class Layer4Proxy(
+    apiKey: String,
     override val listenHost: String = PROXY_HOST,
     override val listenPort: Int = PROXY_PORT,
     private val targetAddress: String = REALTIME_HOST,
-    private val targetPort: Int = REALTIME_PORT
-    ): AatProxy() {
+    private val targetPort: Int = REALTIME_PORT,
+) : AatProxy(apiKey) {
 
     private val loggingTag = "Layer4Proxy"
 
     private var server: ServerSocket? = null
     private val sslSocketFactory = SSLSocketFactory.getDefault()
-    private val connections : MutableList<Layer4ProxyConnection> = mutableListOf()
+    private val connections: MutableList<Layer4ProxyConnection> = mutableListOf()
 
     /**
      * Flag mutated by fault implementations to hang the TCP connection
@@ -130,9 +132,9 @@ class Layer4Proxy(
      * Block current thread and wait for a new incoming client connection on the server socket.
      * Returns a connection object when a client has connected.
      */
-    private fun accept() : Layer4ProxyConnection {
+    private fun accept(): Layer4ProxyConnection {
         val clientSock = server?.accept()
-        testLogD( "$loggingTag: accepted connection")
+        testLogD("$loggingTag: accepted connection")
 
         val serverSock = sslSocketFactory.createSocket(targetAddress, targetPort)
         val conn = Layer4ProxyConnection(serverSock, clientSock!!, targetAddress, parentProxy = this)
@@ -165,7 +167,7 @@ class Layer4Proxy(
                     val conn = this.accept()
                     testLogD("$loggingTag: proxy starting to run")
                     conn.run()
-                } catch (e : Exception) {
+                } catch (e: Exception) {
                     testLogD("$loggingTag: proxy shutting down: " + e.message)
                     break
                 }
@@ -216,7 +218,7 @@ internal class Layer4ProxyConnection(
      * Copies traffic between source and destination sockets, rewriting the
      * HTTP host header if requested to remove the proxy host details.
      */
-    private fun proxy(dstSock: Socket , srcSock: Socket, rewriteHost: Boolean = false) {
+    private fun proxy(dstSock: Socket, srcSock: Socket, rewriteHost: Boolean = false) {
         try {
             val dst = dstSock.getOutputStream()
             val src = srcSock.getInputStream()
@@ -225,7 +227,7 @@ internal class Layer4ProxyConnection(
 
             // deal with the initial HTTP upgrade packet
             bytesRead = src.read(buff)
-            if (bytesRead <0 ) {
+            if (bytesRead < 0) {
                 return
             }
 
@@ -248,17 +250,16 @@ internal class Layer4ProxyConnection(
                     dst.write(buff, 0, bytesRead)
                 }
             }
-
         } catch (ignored: SocketException) {
         } catch (e: Exception ) {
-            testLogD("${loggingTag}: $e", e)
+            testLogD("$loggingTag: $e", e)
         } finally {
             try {
                 srcSock.close()
-            } catch (ignored: Exception) {}
+            } catch (ignored: Exception) {
+            }
         }
     }
-
 }
 
 /**
@@ -266,11 +267,12 @@ internal class Layer4ProxyConnection(
  * the Ably protocol level.
  */
 class Layer7Proxy(
+    apiKey: String,
     override val listenHost: String = PROXY_HOST,
     override val listenPort: Int = PROXY_PORT,
     private val targetHost: String = REALTIME_HOST,
     private val targetPort: Int = REALTIME_PORT
-) : AatProxy() {
+) : AatProxy(apiKey) {
 
     companion object {
         const val tag = "Layer7Proxy"

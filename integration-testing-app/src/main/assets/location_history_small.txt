@@ -31,7 +31,7 @@
         "accuracyHorizontal": 20.0,
         "altitude": 5.0,
         "bearing": 0.0,
-        "speed": 0.0,
+        "speed": 1.0,
         "time": 1.607347950390277E9
       },
       "type": "Feature"
@@ -49,7 +49,7 @@
         "accuracyHorizontal": 20.0,
         "altitude": 5.0,
         "bearing": 0.0,
-        "speed": 0.0,
+        "speed": 2.0,
         "time": 1.607347950392239E9
       },
       "type": "Feature"
@@ -67,7 +67,7 @@
         "accuracyHorizontal": 20.0,
         "altitude": 0.0,
         "bearing": 0.0,
-        "speed": 0.0,
+        "speed": 3.0,
         "time": 1.607347951401546E9
       },
       "type": "Feature"
@@ -85,7 +85,7 @@
         "accuracyHorizontal": 20.0,
         "altitude": 0.0,
         "bearing": 0.0,
-        "speed": 0.0,
+        "speed": 4.0,
         "time": 1.607347951403518E9
       },
       "type": "Feature"
@@ -103,7 +103,7 @@
         "accuracyHorizontal": 20.0,
         "altitude": 0.0,
         "bearing": 0.0,
-        "speed": 0.0,
+        "speed": 5.0,
         "time": 1.607347952394775E9
       },
       "type": "Feature"
@@ -121,7 +121,7 @@
         "accuracyHorizontal": 20.0,
         "altitude": 0.0,
         "bearing": 0.0,
-        "speed": 0.0,
+        "speed": 6.0,
         "time": 1.607347952397098E9
       },
       "type": "Feature"

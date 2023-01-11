@@ -41,8 +41,8 @@ abstract class FaultSimulation {
      * during the given fault stage.
      */
     abstract fun stateReceiverForStage(
-        stage: FaultSimulationStage)
-    : TrackableStateReceiver
+        stage: FaultSimulationStage
+    ): TrackableStateReceiver
 
     override fun toString() = name
 }
@@ -65,8 +65,8 @@ enum class FaultSimulationStage {
 /**
  * Base class for faults requiring a Layer 4 proxy for simulation.
  */
-abstract class TransportLayerFault : FaultSimulation() {
-    val tcpProxy =  Layer4Proxy()
+abstract class TransportLayerFault(apiKey: String) : FaultSimulation() {
+    val tcpProxy = Layer4Proxy(apiKey = apiKey)
     override val proxy = tcpProxy
 }
 
@@ -74,10 +74,10 @@ abstract class TransportLayerFault : FaultSimulation() {
  * A Transport-layer fault implementation that breaks nothing, useful for ensuring the
  * test code works under normal proxy functionality.
  */
-class NullTransportFault : TransportLayerFault() {
+class NullTransportFault(apiKey: String) : TransportLayerFault(apiKey) {
     override val name = "NullTransportFault"
-    override fun enable() { }
-    override fun resolve() { }
+    override fun enable() {}
+    override fun resolve() {}
     override fun stateReceiverForStage(stage: FaultSimulationStage) =
         TrackableStateReceiver.onlineWithoutFail("$name: $stage")
 }
@@ -85,7 +85,7 @@ class NullTransportFault : TransportLayerFault() {
 /**
  * A fault implementation that will prevent the proxy from accepting TCP connections when active
  */
-class TcpConnectionRefused : TransportLayerFault() {
+class TcpConnectionRefused(apiKey: String) : TransportLayerFault(apiKey) {
 
     override val name = "TcpConnectionRefused"
 
@@ -112,7 +112,7 @@ class TcpConnectionRefused : TransportLayerFault() {
  * A fault implementation that hangs the TCP connection by preventing the Layer 4
  * proxy from forwarding packets in both directions
  */
-class TcpConnectionUnresponsive : TransportLayerFault() {
+class TcpConnectionUnresponsive(apiKey: String) : TransportLayerFault(apiKey) {
 
     override val name = "TcpConnectionUnresponsive"
 
@@ -139,8 +139,8 @@ class TcpConnectionUnresponsive : TransportLayerFault() {
  * Base class for Application layer faults, which will need access to the Ably
  * WebSockets protocol, and therefore a Layer 7 proxy.
  */
-abstract class ApplicationLayerFault : FaultSimulation() {
-    val applicationProxy = Layer7Proxy()
+abstract class ApplicationLayerFault(apiKey: String) : FaultSimulation() {
+    val applicationProxy = Layer7Proxy(apiKey)
     override val proxy = applicationProxy
 }
 
@@ -148,7 +148,7 @@ abstract class ApplicationLayerFault : FaultSimulation() {
  * An empty fault implementation for the Layer 7 proxy to ensure that normal
  * functionality is working with no interventions
  */
-class NullApplicationLayerFault : ApplicationLayerFault() {
+class NullApplicationLayerFault(apiKey: String) : ApplicationLayerFault(apiKey) {
     override val name = "NullApplicationLayerFault"
     override fun enable() { }
     override fun resolve() { }
@@ -169,9 +169,10 @@ const val PRESENCE_ACTION = 14
  * type in a specified direction
  */
 abstract class DropAction(
+    apiKey: String,
     private val direction: FrameDirection,
     private val action: Int
-    ) : ApplicationLayerFault() {
+    ) : ApplicationLayerFault(apiKey) {
 
     companion object {
         private const val tag = "DropAction"
@@ -234,7 +235,8 @@ abstract class DropAction(
  * A DropAction fault implementation to drop ATTACH messages,
  * simulating the Ably server failing to respond to channel attachment
  */
-class AttachUnresponsive : DropAction(
+class AttachUnresponsive(apiKey: String) : DropAction(
+    apiKey = apiKey,
     direction = FrameDirection.ClientToServer,
     action = ATTACH_ACTION
 ) {
@@ -245,7 +247,8 @@ class AttachUnresponsive : DropAction(
  * A DropAction fault implementation to drop DETACH messages,
  * simulating the Ably server failing to detach a client from a channel.
  */
-class DetachUnresponsive : DropAction(
+class DetachUnresponsive(apiKey: String) : DropAction(
+    apiKey = apiKey,
     direction = FrameDirection.ClientToServer,
     action = DETACH_ACTION
 ) {
@@ -258,9 +261,10 @@ class DetachUnresponsive : DropAction(
  * action has been seen in the given direction.
  */
 abstract class UnresponsiveAfterAction(
+    apiKey: String,
     private val direction: FrameDirection,
     private val action: Int
-) : ApplicationLayerFault() {
+) : ApplicationLayerFault(apiKey) {
 
     companion object {
         private const val tag = "UnresponsiveAfterAction"
@@ -315,7 +319,8 @@ abstract class UnresponsiveAfterAction(
  * A DropAction fault implementation to drop PRESENCE messages,
  * simulating a presence enter failure
  */
-class EnterUnresponsive : UnresponsiveAfterAction(
+class EnterUnresponsive(apiKey: String) : UnresponsiveAfterAction(
+    apiKey = apiKey,
     direction = FrameDirection.ClientToServer,
     action = PRESENCE_ACTION
 ) {
@@ -344,7 +349,7 @@ class EnterUnresponsive : UnresponsiveAfterAction(
  * connectionId, causing the resume attempt to fail. This should not be a fatal error, the
  * Publisher should continue regardless.
  */
-class DisconnectWithFailedResume : ApplicationLayerFault() {
+class DisconnectWithFailedResume(apiKey: String) : ApplicationLayerFault(apiKey) {
 
     /**
      * State of the fault, used to control whether we're intercepting
