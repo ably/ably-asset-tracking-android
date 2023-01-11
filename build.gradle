@@ -222,7 +222,7 @@ subprojects {
                     // Secrets must not be injected into SDK builds - they are only for example apps or SDK
                     // integration tests (via Android's `connectedCheck` task), which are testing using the debug
                     // variant/buildType.
-                    if (evaluatedSubProjectIsAnApp) {
+                    if (evaluatedSubProjectIsAnApp || findProperty('runtimeSecrets') == 'FOR_ALL_PROJECTS_BECAUSE_WE_ARE_RUNNING_INTEGRATION_TESTS') {
                         apply secretConfigFields on it
                     }
                     if (evaluatedSubProjectIsALibrary) {
@@ -234,7 +234,7 @@ subprojects {
                     // Secrets must not be injected into SDK builds - they are only for example apps or SDK
                     // integration tests (via Android's `connectedCheck` task), which are testing using the debug
                     // variant/buildType.
-                    if (evaluatedSubProjectIsAnApp) {
+                    if (evaluatedSubProjectIsAnApp || findProperty('runtimeSecrets') == 'FOR_ALL_PROJECTS_BECAUSE_WE_ARE_RUNNING_INTEGRATION_TESTS') {
                         apply secretConfigFields on it
                     }
                     if (evaluatedSubProjectIsALibrary) {
