@@ -192,13 +192,13 @@ internal class Layer4ProxyConnection(
         try {
             server.close()
         } catch (e: Exception) {
-            testLogD("$loggingTag: stop() server: $e")
+            testLogD("$loggingTag: stop() server: $e", e)
         }
 
         try {
             client.close()
         } catch (e: Exception) {
-            testLogD("$loggingTag: stop() client: $e")
+            testLogD("$loggingTag: stop() client: $e", e)
         }
     }
 
@@ -241,7 +241,7 @@ internal class Layer4ProxyConnection(
 
         } catch (ignored: SocketException) {
         } catch (e: Exception ) {
-            testLogD("${loggingTag}: $e")
+            testLogD("${loggingTag}: $e", e)
         } finally {
             try {
                 srcSock.close()
@@ -326,7 +326,7 @@ class Layer7Proxy(
                     }
                 }
             } catch (e: Exception) {
-                testLogD("$tag: forwardFrames error: $e")
+                testLogD("$tag: forwardFrames error: $e", e)
                 throw(e)
             }
         }
@@ -415,7 +415,7 @@ fun unpack(data: ByteArray): ImmutableMapValue? =
     try {
         MessagePack.newDefaultUnpacker(data).unpackValue().asMapValue()
     } catch (e: Exception) {
-        testLogD("MsgPack Error: $e")
+        testLogD("MsgPack Error: $e", e)
         throw(e)
     }
 

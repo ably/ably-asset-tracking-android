@@ -247,7 +247,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
                 testLogD("$label - success")
                 opCompleted.fulfill(true)
             } catch (e: Exception) {
-                testLogD("$label - failed - $e")
+                testLogD("$label - failed - $e", e)
                 opCompleted.fulfill(false)
             }
         }
