@@ -99,17 +99,24 @@ constructor(
         }
     }
 
-    override suspend fun stop(timeoutInMilliseconds: Long) {
+    override suspend fun stop() {
         logHandler?.v("$TAG Publisher stop operation started")
         suspendCoroutine<Unit> { continuation ->
             core.stop(
-                timeoutInMilliseconds,
                 continuation.wrapInResultCallback(
                     onSuccess = { logHandler?.v("$TAG Publisher stop operation succeeded") },
                     onError = { logHandler?.w("$TAG Publisher stop operation failed", it) },
                 ),
             )
         }
+    }
+
+    @Deprecated(
+        "The timeoutInMilliseconds parameter is now ignored and should not be used.",
+        replaceWith = ReplaceWith("stop()")
+    )
+    override suspend fun stop(timeoutInMilliseconds: Long) {
+        stop()
     }
 
     override fun getTrackableState(trackableId: String): StateFlow<TrackableState>? =

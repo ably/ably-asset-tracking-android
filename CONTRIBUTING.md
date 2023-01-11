@@ -1,5 +1,13 @@
 # Contributing to the Ably Asset Tracking SDKs for Android
 
+## Java version
+
+To run the `./gradlew` script locally, you need to be using a version of Java which is supported by the version of Gradle that this project uses.
+
+The version of Gradle that this project uses is specified by the `distributionUrl` in [gradle/wrapper/gradle-wrapper.properties](gradle/wrapper/gradle-wrapper.properties). To find out which versions of Java are compatible with this version of Gradle, consult the [Gradle compatibility matrix](https://docs.gradle.org/current/userguide/compatibility.html#java).
+
+If you are using [`asdf`](https://asdf-vm.com) to manage tool versions, then you can rely on the `.tool-versions` file in this repository, which is configured to use an appropriate version of Java.
+
 ## Development
 
 This repository is structured as a Gradle [Multi-Project Build](https://docs.gradle.org/current/userguide/multi_project_builds.html).
