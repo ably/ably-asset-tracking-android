@@ -1,8 +1,9 @@
 package com.ably.tracking.publisher
 
 import android.app.Notification
+import com.ably.tracking.Location
 import com.ably.tracking.Resolution
-import io.ably.lib.types.ClientOptions
+import kotlinx.coroutines.flow.Flow
 
 data class MapConfiguration(val apiKey: String)
 
@@ -410,17 +411,22 @@ enum class RoutingProfile {
 }
 
 sealed class LocationSource
+
+/**
+ * This API supports Kotlin users only. Java users may be able to find a way to use it but it's been designed
+ * for Kotlin only.
+ */
+class LocationSourceFlow(val flow: Flow<Location>) : LocationSource()
+
 class LocationSourceAbly private constructor(
     val simulationChannelName: String,
-    val overrideClientOptions: ClientOptions?
 ) : LocationSource() {
     companion object {
         @JvmStatic
-        fun create(simulationChannelName: String, clientOptsOverride: ClientOptions? = null) =
-            LocationSourceAbly(simulationChannelName, clientOptsOverride)
+        fun create(simulationChannelName: String) = LocationSourceAbly(simulationChannelName)
     }
 
-    private constructor() : this("", null)
+    private constructor() : this("")
 }
 
 class LocationSourceRaw private constructor(

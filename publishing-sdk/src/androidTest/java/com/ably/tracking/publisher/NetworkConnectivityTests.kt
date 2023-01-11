@@ -1,10 +1,12 @@
 package com.ably.tracking.publisher
 
+import android.annotation.SuppressLint
 import android.app.Notification
 import android.content.Context
 import androidx.core.app.NotificationCompat
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ably.tracking.Accuracy
+import com.ably.tracking.Location
 import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.AblySdkRealtimeFactory
@@ -14,6 +16,9 @@ import com.ably.tracking.common.EventNames
 import com.ably.tracking.common.message.LocationGeometry
 import com.ably.tracking.common.message.LocationMessage
 import com.ably.tracking.common.message.LocationProperties
+import com.ably.tracking.common.message.getLocationMessages
+import com.ably.tracking.common.message.synopsis
+import com.ably.tracking.common.message.toTracking
 import com.ably.tracking.connection.Authentication
 import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.logging.LogHandler
@@ -40,9 +45,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert
@@ -313,6 +321,7 @@ class TestResources(
          * Injects a pre-configured AblyRealtime instance to the Publisher by constructing it
          * and all dependencies by hand, side-stepping the builders, which block this.
          */
+        @SuppressLint("MissingPermission")
         private fun createPublisher(
             context: Context,
             proxyClientOptions: ClientOptions,
@@ -335,7 +344,7 @@ class TestResources(
                     context,
                     MapConfiguration(MAPBOX_ACCESS_TOKEN),
                     connectionConfiguration,
-                    LocationSourceAbly.create(locationChannelName, LOCATION_SOURCE_OPTS),
+                    LocationSourceFlow(createAblyLocationSource(locationChannelName)),
                     logHandler = Logging.aatDebugLogger,
                     object : PublisherNotificationProvider {
                         override fun getNotification(): Notification =
@@ -357,6 +366,35 @@ class TestResources(
                 sendResolutionEnabled = true,
                 constantLocationEngineResolution = resolution
             )
+        }
+
+        private fun createAblyLocationSource(channelName: String): Flow<Location> {
+            val ably = AblyRealtime(LOCATION_SOURCE_OPTS)
+            val simulationChannel = ably.channels.get(channelName)
+            val flow = MutableSharedFlow<Location>()
+            val scope = CoroutineScope(Dispatchers.IO)
+            val gson = Gson()
+
+            ably.connection.on { testLogD("Ably connection state change: $it") }
+            simulationChannel.on { testLogD("Ably channel state change: $it") }
+
+            simulationChannel.subscribe(EventNames.ENHANCED) { message ->
+                testLogD("Ably channel message: $message")
+                message.getLocationMessages(gson).forEach {
+                    testLogD("Received enhanced location: ${it.synopsis()}")
+                    val loc = it.toTracking()
+
+                    // TODO do we need to overwrite loc.time here?
+                    // previously, for Android Location, we had:
+                    //   loc.elapsedRealtimeNanos = SystemClock.elapsedRealtimeNanos()
+
+                    scope.launch {
+                        flow.emit(loc)
+                    }
+                }
+            }
+
+            return flow
         }
     }
 
