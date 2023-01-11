@@ -2,6 +2,7 @@ package com.ably.tracking.common
 
 import io.ably.lib.realtime.AblyRealtime
 import io.ably.lib.realtime.Channel.MessageListener
+import io.ably.lib.realtime.ChannelEvent
 import io.ably.lib.realtime.ChannelState
 import io.ably.lib.realtime.ChannelStateListener
 import io.ably.lib.realtime.CompletionListener
@@ -18,14 +19,42 @@ import io.ably.lib.types.PresenceMessage
 /**
  * An implementation of [AblySdkFactory] which uses the `ably-java` client library.
  */
-class DefaultAblySdkFactory : AblySdkFactory {
-    override fun createRealtime(clientOptions: ClientOptions): AblySdkRealtime {
+class DefaultAblySdkFactory : AblySdkFactory<DefaultAblySdkChannelStateListener> {
+    override fun createRealtime(clientOptions: ClientOptions): AblySdkRealtime<DefaultAblySdkChannelStateListener> {
         return DefaultAblySdkRealtime(clientOptions)
+    }
+
+    override fun wrapChannelStateListener(underlyingListener: AblySdkFactory.UnderlyingChannelStateListener<DefaultAblySdkChannelStateListener>): DefaultAblySdkChannelStateListener {
+        return DefaultAblySdkChannelStateListener(underlyingListener)
+    }
+}
+
+class DefaultAblySdkChannelStateListener(private val underlyingListener: AblySdkFactory.UnderlyingChannelStateListener<DefaultAblySdkChannelStateListener>) :
+    AblySdkChannelStateListener {
+    val ablyJavaListener = ChannelStateListener { stateChange ->
+        onChannelStateChanged(
+            object : AblySdkChannelStateListener.ChannelStateChange {
+                override val event: ChannelEvent
+                    get() = stateChange.event
+                override val current: ChannelState
+                    get() = stateChange.current
+                override val previous: ChannelState
+                    get() = stateChange.previous
+                override val reason: ErrorInfo?
+                    get() = stateChange.reason
+                override val resumed: Boolean
+                    get() = stateChange.resumed
+            }
+        )
+    }
+
+    override fun onChannelStateChanged(stateChange: AblySdkChannelStateListener.ChannelStateChange) {
+        underlyingListener.onChannelStateChanged(this, stateChange)
     }
 }
 
 class DefaultAblySdkRealtime
-constructor(clientOptions: ClientOptions) : AblySdkRealtime {
+constructor(clientOptions: ClientOptions) : AblySdkRealtime<DefaultAblySdkChannelStateListener> {
     private val realtime = AblyRealtime(clientOptions)
 
     override val auth = Auth(realtime.auth)
@@ -65,15 +94,15 @@ constructor(clientOptions: ClientOptions) : AblySdkRealtime {
     }
 
     class Channels
-    constructor(private val channels: AblyRealtime.Channels) : AblySdkRealtime.Channels {
+    constructor(private val channels: AblyRealtime.Channels) : AblySdkRealtime.Channels<DefaultAblySdkChannelStateListener> {
         override fun get(
             channelName: String,
             channelOptions: ChannelOptions?
-        ): AblySdkRealtime.Channel {
+        ): AblySdkRealtime.Channel<DefaultAblySdkChannelStateListener> {
             return Channel(channels.get(channelName, channelOptions))
         }
 
-        override fun get(channelName: String): AblySdkRealtime.Channel {
+        override fun get(channelName: String): AblySdkRealtime.Channel<DefaultAblySdkChannelStateListener> {
             return Channel(channels.get(channelName))
         }
 
@@ -85,9 +114,9 @@ constructor(clientOptions: ClientOptions) : AblySdkRealtime {
             channels.release(channelName)
         }
 
-        override fun entrySet(): Iterable<Map.Entry<String, AblySdkRealtime.Channel>> {
+        override fun entrySet(): Iterable<Map.Entry<String, AblySdkRealtime.Channel<DefaultAblySdkChannelStateListener>>> {
             return channels.entrySet().map { entry ->
-                object : Map.Entry<String, AblySdkRealtime.Channel> {
+                object : Map.Entry<String, AblySdkRealtime.Channel<DefaultAblySdkChannelStateListener>> {
                     override val key = entry.key
                     override val value = Channel(entry.value)
                 }
@@ -96,7 +125,7 @@ constructor(clientOptions: ClientOptions) : AblySdkRealtime {
     }
 
     class Channel
-    constructor(private val channel: io.ably.lib.realtime.Channel) : AblySdkRealtime.Channel {
+    constructor(private val channel: io.ably.lib.realtime.Channel) : AblySdkRealtime.Channel<DefaultAblySdkChannelStateListener> {
         override val name = channel.name
         override val state: ChannelState
             get() = channel.state
@@ -106,12 +135,12 @@ constructor(clientOptions: ClientOptions) : AblySdkRealtime {
             channel.attach(listener)
         }
 
-        override fun on(listener: ChannelStateListener) {
-            channel.on(listener)
+        override fun on(listener: DefaultAblySdkChannelStateListener) {
+            channel.on(listener.ablyJavaListener)
         }
 
-        override fun off(listener: ChannelStateListener) {
-            channel.off(listener)
+        override fun off(listener: DefaultAblySdkChannelStateListener) {
+            channel.off(listener.ablyJavaListener)
         }
 
         override fun off() {

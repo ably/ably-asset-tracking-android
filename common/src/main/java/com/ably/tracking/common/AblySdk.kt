@@ -2,7 +2,7 @@ package com.ably.tracking.common
 
 import io.ably.lib.realtime.Channel.MessageListener
 import io.ably.lib.realtime.ChannelState
-import io.ably.lib.realtime.ChannelStateListener
+import io.ably.lib.realtime.ChannelEvent
 import io.ably.lib.realtime.CompletionListener
 import io.ably.lib.realtime.ConnectionState
 import io.ably.lib.realtime.ConnectionStateListener
@@ -14,8 +14,41 @@ import io.ably.lib.types.ErrorInfo
 import io.ably.lib.types.Message
 import io.ably.lib.types.PresenceMessage
 
-interface AblySdkFactory {
-    fun createRealtime(clientOptions: ClientOptions): AblySdkRealtime
+interface AblySdkFactory<ChannelStateListenerType : AblySdkChannelStateListener> {
+    fun createRealtime(clientOptions: ClientOptions): AblySdkRealtime<ChannelStateListenerType>
+
+    /**
+     * A channel state listener which [wrapChannelStateListener] can wrap to create a listener of type [ChannelStateListenerType].
+     */
+    fun interface UnderlyingChannelStateListener<ChannelStateListenerType : AblySdkChannelStateListener> {
+        /**
+         * This method is called whenever the [AblySdkChannelStateListener.onChannelStateChanged] method is called on an object [wrapper] which was the return value of calling [wrapChannelStateListener] with the receiver as the `underlyingListener` argument.
+         *
+         * @param wrapper The wrapper on which the [AblySdkChannelStateListener.onChannelStateChanged] method was called.
+         * @param stateChange The `stateChange` argument received by [AblySdkChannelStateListener.onChannelStateChanged].
+         */
+        fun onChannelStateChanged(wrapper: ChannelStateListenerType, stateChange: AblySdkChannelStateListener.ChannelStateChange)
+    }
+
+    /**
+     * Creates a channel state listener of type [ChannelStateListenerType], whose [AblySdkChannelStateListener.onChannelStateChanged] method calls [UnderlyingChannelStateListener.onChannelStateChanged] on [underlyingListener], passing the created listener as the `wrapper` argument.
+     *
+     * @param underlyingListener The listener to wrap.
+     * @return A listener of type [ChannelStateListenerType] which wraps [underlyingListener].
+     */
+    fun wrapChannelStateListener(underlyingListener: UnderlyingChannelStateListener<ChannelStateListenerType>): ChannelStateListenerType
+}
+
+fun interface AblySdkChannelStateListener {
+    interface ChannelStateChange {
+        val event: ChannelEvent
+        val current: ChannelState
+        val previous: ChannelState
+        val reason: ErrorInfo?
+        val resumed: Boolean
+    }
+
+    fun onChannelStateChanged(stateChange: ChannelStateChange)
 }
 
 /**
@@ -27,10 +60,10 @@ interface AblySdkFactory {
  *
  * `ably-java` doesn’t currently have nullability annotations (see [issue #639](https://github.com/ably/ably-java/issues/639) there), so when writing these interfaces we need to make our own judgements about nullability, based on our knowledge of the behaviour of the Ably client libraries.
  */
-interface AblySdkRealtime {
+interface AblySdkRealtime<ChannelStateListenerType : AblySdkChannelStateListener> {
     val auth: Auth
     val connection: Connection
-    val channels: Channels
+    val channels: Channels<ChannelStateListenerType>
 
     fun connect()
     fun close()
@@ -39,15 +72,15 @@ interface AblySdkRealtime {
         fun renewAuth(result: RenewAuthResult)
     }
 
-    interface Channel {
+    interface Channel<ChannelStateListenerType : AblySdkChannelStateListener> {
         val name: String
         val state: ChannelState
         val presence: Presence
 
         fun attach(listener: CompletionListener)
         fun publish(message: Message?, listener: CompletionListener)
-        fun on(listener: ChannelStateListener)
-        fun off(listener: ChannelStateListener)
+        fun on(listener: ChannelStateListenerType)
+        fun off(listener: ChannelStateListenerType)
         fun off()
         fun subscribe(name: String, listener: MessageListener)
         fun unsubscribe()
@@ -63,10 +96,10 @@ interface AblySdkRealtime {
         fun leave(data: Any, listener: CompletionListener)
     }
 
-    interface Channels {
-        fun get(channelName: String, channelOptions: ChannelOptions?): Channel
-        fun get(channelName: String): Channel
-        fun entrySet(): Iterable<Map.Entry<String, Channel>>
+    interface Channels<ChannelStateListenerType : AblySdkChannelStateListener> {
+        fun get(channelName: String, channelOptions: ChannelOptions?): Channel<ChannelStateListenerType>
+        fun get(channelName: String): Channel<ChannelStateListenerType>
+        fun entrySet(): Iterable<Map.Entry<String, Channel<ChannelStateListenerType>>>
         fun containsKey(key: Any): Boolean
         fun release(channelName: String)
     }
