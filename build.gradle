@@ -191,7 +191,7 @@ subprojects {
                         // We know that we're not going to need to compile anything that needs BuildConfig to contain
                         // any of these secrets. For example, unit test runs, where we know there are no system tests
                         // being run or app builds being made where those apps embed secrets.
-                        logger.lifecycle('Using dummy, empty-string secrets configuration (ABLY_API_KEY and MAPBOX_ACCESS_TOKEN).')
+                        logger.lifecycle("Using dummy, empty-string secrets configuration (ABLY_API_KEY and MAPBOX_ACCESS_TOKEN) for the '${delegate.name}' Android build type.")
                         buildConfigField 'String', 'ABLY_API_KEY', "\"\""
                         buildConfigField 'String', 'MAPBOX_ACCESS_TOKEN', "\"\""
                         return
@@ -208,7 +208,7 @@ subprojects {
 
                     buildConfigField 'String', 'ABLY_API_KEY', "\"${ABLY_API_KEY}\""
                     buildConfigField 'String', 'MAPBOX_ACCESS_TOKEN', "\"${MAPBOX_ACCESS_TOKEN}\""
-                    logger.lifecycle('Secrets have been added to BuildConfig (ABLY_API_KEY and MAPBOX_ACCESS_TOKEN).')
+                    logger.lifecycle("Secrets have been added to BuildConfig (ABLY_API_KEY and MAPBOX_ACCESS_TOKEN) for the '${delegate.name}' Android build type.")
                 }
 
                 def versionConfigFields = {
