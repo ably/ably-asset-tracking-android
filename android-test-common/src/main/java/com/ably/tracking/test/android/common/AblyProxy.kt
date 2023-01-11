@@ -2,21 +2,31 @@ package com.ably.tracking.test.android.common
 
 import io.ably.lib.types.ClientOptions
 import io.ably.lib.util.Log
-import io.ktor.client.*
-import io.ktor.client.engine.cio.*
-import io.ktor.client.plugins.logging.*
-import io.ktor.client.plugins.websocket.*
-import io.ktor.client.plugins.websocket.cio.*
-import io.ktor.http.*
-import io.ktor.server.application.*
-import io.ktor.server.engine.*
-import io.ktor.server.netty.*
-import io.ktor.server.plugins.callloging.*
-import io.ktor.server.request.*
-import io.ktor.server.routing.*
-import io.ktor.server.websocket.*
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.cio.CIO
+import io.ktor.client.plugins.logging.LogLevel
+import io.ktor.client.plugins.logging.Logger
+import io.ktor.client.plugins.logging.Logging
+import io.ktor.client.plugins.websocket.ClientWebSocketSession
+import io.ktor.client.plugins.websocket.cio.wsRaw
+import io.ktor.http.Parameters
+import io.ktor.http.ParametersBuilder
+import io.ktor.http.Url
+import io.ktor.server.application.install
+import io.ktor.server.engine.embeddedServer
+import io.ktor.server.netty.Netty
+import io.ktor.server.netty.NettyApplicationEngine
+import io.ktor.server.plugins.callloging.CallLogging
+import io.ktor.server.request.httpMethod
+import io.ktor.server.request.path
+import io.ktor.server.routing.Route
+import io.ktor.server.routing.routing
+import io.ktor.server.websocket.WebSocketServerSession
 import io.ktor.server.websocket.WebSockets
-import io.ktor.websocket.*
+import io.ktor.server.websocket.webSocketRaw
+import io.ktor.websocket.Frame
+import io.ktor.websocket.FrameType
+import io.ktor.websocket.close
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
@@ -26,7 +36,7 @@ import org.slf4j.event.Level
 import java.net.ServerSocket
 import java.net.Socket
 import java.net.SocketException
-import java.util.*
+import java.util.UUID
 import javax.net.ssl.SSLSocketFactory
 
 private const val AGENT_HEADER_NAME = "ably-asset-tracking-android-publisher-tests"

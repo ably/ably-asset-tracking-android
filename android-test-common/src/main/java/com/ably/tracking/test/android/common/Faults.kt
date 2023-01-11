@@ -1,7 +1,8 @@
 package com.ably.tracking.test.android.common
 
 import com.ably.tracking.TrackableState
-import io.ktor.websocket.*
+import io.ktor.websocket.Frame
+import io.ktor.websocket.FrameType
 import org.msgpack.value.impl.ImmutableStringValueImpl
 import kotlin.reflect.KClass
 
