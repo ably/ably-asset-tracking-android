@@ -58,7 +58,7 @@ enum class FaultSimulationStage {
 /**
  * Base class for faults requiring a Layer 4 proxy for simulation.
  */
-abstract class TransportFault(open val apiKey: String) : FaultSimulation() {
+abstract class TransportFault(apiKey: String) : FaultSimulation() {
     val tcpProxy = Layer4Proxy(apiKey = apiKey)
     override val proxy = tcpProxy
 }
@@ -67,7 +67,7 @@ abstract class TransportFault(open val apiKey: String) : FaultSimulation() {
  * A Transport-layer fault implementation that breaks nothing, useful for ensuring the
  * test code works under normal proxy functionality.
  */
-class NullTransportFault(override val apiKey: String) : TransportFault(apiKey) {
+class NullTransportFault(apiKey: String) : TransportFault(apiKey) {
     override val name = "NullTransportFault"
     override fun enable() {}
     override fun resolve() {}
@@ -78,7 +78,7 @@ class NullTransportFault(override val apiKey: String) : TransportFault(apiKey) {
 /**
  * A fault implementation that will prevent the proxy from accepting TCP connections when active
  */
-class TcpConnectionRefused(override val apiKey: String) : TransportFault(apiKey) {
+class TcpConnectionRefused(apiKey: String) : TransportFault(apiKey) {
 
     override val name = "TcpConnectionRefused"
 
@@ -104,7 +104,7 @@ class TcpConnectionRefused(override val apiKey: String) : TransportFault(apiKey)
  * A fault implementation that hangs the TCP connection by preventing the Layer 4
  * proxy from forwarding packets in both directions
  */
-class TcpConnectionUnresponsive(override val apiKey: String) : TransportFault(apiKey) {
+class TcpConnectionUnresponsive(apiKey: String) : TransportFault(apiKey) {
 
     override val name = "TcpConnectionUnresponsive"
 
