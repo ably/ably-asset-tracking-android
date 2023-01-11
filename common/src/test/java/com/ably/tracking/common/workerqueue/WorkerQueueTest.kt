@@ -14,6 +14,7 @@ import org.junit.Test
 typealias TestWorkerSpecificationType = Unit
 
 class WorkerQueueTest {
+    private val ASYNC_WORK_TIMEOUT_IN_MILLISECONDS = 5000L
     private val properties = mockk<Properties>()
     private val scope = CoroutineScope(createSingleThreadDispatcher() + SupervisorJob())
     private val worker = mockk<Worker<Properties, TestWorkerSpecificationType>>(relaxed = true)
@@ -38,7 +39,7 @@ class WorkerQueueTest {
         workerQueue.enqueue(Unit)
 
         // then
-        verify(exactly = 1, timeout = 5000) { worker.doWork(any(), any(), any()) }
+        verify(exactly = 1, timeout = ASYNC_WORK_TIMEOUT_IN_MILLISECONDS) { worker.doWork(any(), any(), any()) }
     }
 
     @Test
@@ -50,7 +51,7 @@ class WorkerQueueTest {
         workerQueue.enqueue(Unit)
 
         // then
-        verify(exactly = 1, timeout = 5000) { worker.doWhenStopped(any()) }
+        verify(exactly = 1, timeout = ASYNC_WORK_TIMEOUT_IN_MILLISECONDS) { worker.doWhenStopped(any()) }
     }
 
     @Test
@@ -63,7 +64,7 @@ class WorkerQueueTest {
         workerQueue.enqueue(Unit)
 
         // then
-        verify(exactly = 1, timeout = 5000) { worker.onUnexpectedError(any(), any()) }
+        verify(exactly = 1, timeout = ASYNC_WORK_TIMEOUT_IN_MILLISECONDS) { worker.onUnexpectedError(any(), any()) }
     }
 
     @Test
@@ -79,7 +80,7 @@ class WorkerQueueTest {
         asyncWorkSlot.captured { throw anyUnexpectedException() }
 
         // then
-        verify(exactly = 1, timeout = 5000) { worker.onUnexpectedAsyncError(any(), any()) }
+        verify(exactly = 1, timeout = ASYNC_WORK_TIMEOUT_IN_MILLISECONDS) { worker.onUnexpectedAsyncError(any(), any()) }
     }
 
     @Test
@@ -92,7 +93,7 @@ class WorkerQueueTest {
         workerQueue.enqueue(Unit)
 
         // then
-        verify(exactly = 1, timeout = 5000) { worker.onUnexpectedError(any(), any()) }
+        verify(exactly = 1, timeout = ASYNC_WORK_TIMEOUT_IN_MILLISECONDS) { worker.onUnexpectedError(any(), any()) }
     }
 
     private fun mockWorkerQueueStopped() {
