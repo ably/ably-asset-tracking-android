@@ -172,7 +172,7 @@ abstract class DropAction(
     apiKey: String,
     private val direction: FrameDirection,
     private val action: Int
-    ) : ApplicationLayerFault(apiKey) {
+) : ApplicationLayerFault(apiKey) {
 
     companion object {
         private const val tag = "DropAction"
@@ -181,7 +181,7 @@ abstract class DropAction(
     private var initialConnection = true
 
     override fun enable() {
-        applicationProxy.interceptor = object: Layer7Interceptor {
+        applicationProxy.interceptor = object : Layer7Interceptor {
 
             override fun interceptConnection(params: ConnectionParams): ConnectionParams {
                 if (initialConnection) {
@@ -202,9 +202,8 @@ abstract class DropAction(
                     testLogD("$tag: keeping: $direction - ${logFrame(frame)}")
                     listOf(Action(direction, frame))
                 }
-            }
-
         }
+    }
 
     override fun resolve() {
         applicationProxy.interceptor = PassThroughInterceptor()
@@ -275,7 +274,7 @@ abstract class UnresponsiveAfterAction(
     private var isTriggered = false
 
     override fun enable() {
-        applicationProxy.interceptor = object: Layer7Interceptor {
+        applicationProxy.interceptor = object : Layer7Interceptor {
 
             override fun interceptConnection(params: ConnectionParams): ConnectionParams {
                 nConnections += 1
@@ -365,7 +364,7 @@ class DisconnectWithFailedResume(apiKey: String) : ApplicationLayerFault(apiKey)
     override val name = "DisconnectWithFailedResume"
 
     override fun enable() {
-        applicationProxy.interceptor = object: Layer7Interceptor {
+        applicationProxy.interceptor = object : Layer7Interceptor {
 
             override fun interceptConnection(params: ConnectionParams): ConnectionParams {
                 return when (state) {
@@ -435,7 +434,6 @@ class DisconnectWithFailedResume(apiKey: String) : ApplicationLayerFault(apiKey)
             frame.frameType == FrameType.BINARY &&
             messageAction(frame) == CONNECTED_ACTION
 }
-
 
 /**
  * Helper to capture an expected set of successful or unsuccessful TrackableState

@@ -251,7 +251,7 @@ internal class Layer4ProxyConnection(
                 }
             }
         } catch (ignored: SocketException) {
-        } catch (e: Exception ) {
+        } catch (e: Exception) {
             testLogD("$loggingTag: $e", e)
         } finally {
             try {
@@ -318,7 +318,7 @@ class Layer7Proxy(
         serverSession: WebSocketServerSession,
     ) {
         for (received in incoming) {
-            testLogD("${tag}: (raw) [$direction] ${logFrame(received)}")
+            testLogD("$tag: (raw) [$direction] ${logFrame(received)}")
             try {
                 for (action in interceptor.interceptFrame(direction, received)) {
                     testLogD("$tag: (forwarding) [${action.direction}]: ${logFrame(action.frame)}")
@@ -343,7 +343,6 @@ class Layer7Proxy(
             }
         }
     }
-
 }
 
 /**
@@ -374,7 +373,8 @@ fun Route.wsProxy(path: String, target: Url, parent: Layer7Proxy) {
                 // it will be the proxy host by default
                 params.applyToBuilder(url.parameters)
                 headers["Host"] = target.host
-            }) {
+            }
+        ) {
             val clientSession = this
 
             val serverJob = launch {
@@ -411,7 +411,7 @@ fun configureWsClient() =
         install(io.ktor.client.plugins.websocket.WebSockets) {
         }
         install(Logging) {
-            logger = object: Logger {
+            logger = object : Logger {
                 override fun log(message: String) {
                     testLogD("${Layer7Proxy.tag}: ktor client: $message")
                 }
@@ -564,5 +564,4 @@ class PassThroughInterceptor : Layer7Interceptor {
         direction: FrameDirection,
         frame: Frame
     ) = listOf(Action(direction, frame))
-
 }

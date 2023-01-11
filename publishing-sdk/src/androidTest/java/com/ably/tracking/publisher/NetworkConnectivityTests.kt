@@ -339,7 +339,7 @@ class TestResources(
             locationChannelName: String
         ): Publisher {
             val resolution = Resolution(Accuracy.BALANCED, 1000L, 0.0)
-            val realtimeFactory = object: AblySdkRealtimeFactory {
+            val realtimeFactory = object : AblySdkRealtimeFactory {
                 override fun create(clientOptions: ClientOptions) =
                     DefaultAblySdkRealtime(proxyClientOptions)
             }
