@@ -11,6 +11,8 @@ import com.ably.tracking.Resolution
 import com.ably.tracking.connection.Authentication
 import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.connection.TokenRequest
+import com.ably.tracking.logging.LogHandler
+import com.ably.tracking.logging.LogLevel
 import com.ably.tracking.test.android.common.NOTIFICATION_CHANNEL_ID
 import com.google.gson.Gson
 import io.ably.lib.realtime.AblyRealtime
@@ -127,6 +129,11 @@ class RequestingNewTokenTest {
             .map(MapConfiguration(MAPBOX_ACCESS_TOKEN))
             .resolutionPolicy(DefaultResolutionPolicyFactory(Resolution(Accuracy.BALANCED, 1000L, 0.0), context))
             .locationSource(LocationSourceRaw.create(getLocationData(context)))
+            .logHandler(object : LogHandler {
+                override fun logMessage(level: LogLevel, message: String, throwable: Throwable?) {
+                    println(message)
+                }
+            })
             .backgroundTrackingNotificationProvider(
                 object : PublisherNotificationProvider {
                     override fun getNotification(): Notification =
