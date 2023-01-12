@@ -9,7 +9,7 @@ import io.mockk.just
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
 @ExperimentalCoroutinesApi
@@ -24,7 +24,7 @@ internal class UpdateConnectionStateWorkerTest {
     private val postedWorks = mutableListOf<WorkerSpecification>()
 
     @Test
-    fun `should call updateForConnectionStateChangeAndThenEmitStateEventsIfRequired`() = runBlockingTest {
+    fun `should call updateForConnectionStateChangeAndThenEmitStateEventsIfRequired`() = runTest {
         // given
         every { subscriberProperties.updateForConnectionStateChangeAndThenEmitStateEventsIfRequired(any()) } just Runs
 
