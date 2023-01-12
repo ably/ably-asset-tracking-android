@@ -26,6 +26,7 @@ import com.ably.tracking.logging.LogLevel
 import com.ably.tracking.test.android.common.AttachUnresponsive
 import com.ably.tracking.test.android.common.BooleanExpectation
 import com.ably.tracking.test.android.common.DetachUnresponsive
+import com.ably.tracking.test.android.common.DisconnectAndSuspend
 import com.ably.tracking.test.android.common.DisconnectWithFailedResume
 import com.ably.tracking.test.android.common.EnterFailedWithNonfatalNack
 import com.ably.tracking.test.android.common.FaultSimulation
@@ -75,7 +76,7 @@ private const val MAPBOX_ACCESS_TOKEN = BuildConfig.MAPBOX_ACCESS_TOKEN
  * so we need the option of waiting ~2 minutes for certain state transitions to
  * happen in asset tracking.
  */
-private const val DEFAULT_STATE_TRANSITION_TIMEOUT_SECONDS = 125L
+private const val DEFAULT_STATE_TRANSITION_TIMEOUT_SECONDS = 130L
 
 @RunWith(Parameterized::class)
 class NetworkConnectivityTests(private val testFault: FaultSimulation) {
@@ -95,6 +96,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
             arrayOf(DisconnectWithFailedResume(BuildConfig.ABLY_API_KEY)),
             arrayOf(EnterFailedWithNonfatalNack(BuildConfig.ABLY_API_KEY)),
             arrayOf(UpdateFailedWithNonfatalNack(BuildConfig.ABLY_API_KEY)),
+            arrayOf(DisconnectAndSuspend(BuildConfig.ABLY_API_KEY))
 
             // publisher.track() hangs indefinitely with this fault
             // arrayOf(EnterUnresponsive(BuildConfig.ABLY_API_KEY)),

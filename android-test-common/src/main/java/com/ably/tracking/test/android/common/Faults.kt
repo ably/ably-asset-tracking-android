@@ -4,6 +4,8 @@ import com.ably.tracking.TrackableState
 import io.ktor.websocket.Frame
 import io.ktor.websocket.FrameType
 import org.msgpack.value.impl.ImmutableStringValueImpl
+import java.util.Timer
+import kotlin.concurrent.timerTask
 import kotlin.reflect.KClass
 
 /**
@@ -158,6 +160,38 @@ class TcpConnectionUnresponsive(apiKey: String) : TransportLayerFault(apiKey) {
         FaultSimulationStage.FaultResolved ->
             TrackableStateReceiver.onlineWithoutFail("$name: $stage")
     }
+}
+
+/**
+ * Fault implementation that causes the proxy to reject incoming connections entirely
+ * for two minutes, then comes back online. This should force client side
+ */
+class DisconnectAndSuspend(apiKey: String) : TransportLayerFault(apiKey) {
+
+    companion object {
+        const val SUSPEND_DELAY_MILLIS: Long = 2 * 60 * 1000
+    }
+
+    private val timer = Timer()
+
+    override val name = "DisconnectAndSuspend"
+
+    override fun enable() {
+        tcpProxy.stop()
+        timer.schedule(timerTask {
+            tcpProxy.start()
+        }, SUSPEND_DELAY_MILLIS)
+    }
+
+    override fun resolve() {
+        timer.cancel()
+        tcpProxy.start()
+    }
+
+    override fun stateReceiverForStage(stage: FaultSimulationStage) =
+        // After two minutes, trackables should always return to online state
+        // with no fatal error
+        TrackableStateReceiver.onlineWithoutFail("$name: $stage")
 }
 
 /**

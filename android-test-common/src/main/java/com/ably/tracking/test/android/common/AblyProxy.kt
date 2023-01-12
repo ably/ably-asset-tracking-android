@@ -160,6 +160,11 @@ class Layer4Proxy(
      * Begin a background thread listening for local Realtime connections
      */
     override fun start() {
+        if (server != null) {
+            testLogD("$loggingTag: start() called while already running")
+            return
+        }
+
         server = ServerSocket(listenPort)
         Thread {
             while (true) {
