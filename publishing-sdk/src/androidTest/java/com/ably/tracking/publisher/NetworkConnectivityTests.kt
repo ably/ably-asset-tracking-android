@@ -60,6 +60,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert
+import org.junit.Assume
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -102,6 +103,8 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
 
     @Before
     fun setUp() {
+        Assume.assumeFalse(testFault.skipTest)
+
         testResources = TestResources.setUp(testFault)
         createNotificationChannel(testResources?.context!!)
     }
@@ -294,7 +297,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
         if (testResources == null) {
             Assert.fail("Test has not been initialized")
         } else {
-            testResources?.let(testBody)
+            testResources!!.let(testBody)
         }
     }
 }

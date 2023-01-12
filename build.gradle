@@ -1,5 +1,6 @@
 buildscript {
     ext.kotlin_version = '1.6.21'
+    ext.kotlin_coroutines_version = '1.6.4'
     ext.copyright_message = (new File('COPYRIGHT')).readLines().get(0)
 
     // The version of Ably's client library for Java that we're using.
@@ -270,11 +271,12 @@ subprojects {
                 // Projects that use our SDK projects will crash when dispatching to the Main thread on
                 // the Android runtime unless we include this dependency. See:
                 // https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines/-dispatchers/-main.html
-                implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.4.2'
-                testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.4.2"
+                implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$kotlin_coroutines_version"
+                testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$kotlin_coroutines_version"
                 testImplementation 'io.mockk:mockk:1.12.2'
             } else {
                 testImplementation 'org.mockito:mockito-core:3.6.28'
+                testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test-jvm:$kotlin_coroutines_version"
             }
 
             if (evaluatedSubProjectIsAnApp) {

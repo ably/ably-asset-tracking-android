@@ -22,6 +22,15 @@ abstract class FaultSimulation {
     abstract val name: String
 
     /**
+     * Subclasses can override this value to `true` in order to skip test that use this fault.
+     * We're using this in order to allow us to write tests which are known to fail, then allow them to pass in the CI
+     * environment temporarily until we subsequently raise a pull request to fix them.
+     * The advantage of this approach is that the test code remains active and continually compiled as
+     * a first class citizen of the codebase, while we work on other things to get it passing.
+     */
+    open val skipTest: Boolean = false
+
+    /**
      * A RealtimeProxy instance that will be manipulated by this fault
      */
     abstract val proxy: RealtimeProxy
@@ -89,6 +98,14 @@ class TcpConnectionRefused(apiKey: String) : TransportLayerFault(apiKey) {
 
     override val name = "TcpConnectionRefused"
 
+    /**
+     * This fault type is temporarily disabled at runtime. It can be re-enabled by removing this override.
+     * We will re-enable this test when the following have been addressed:
+     * - https://github.com/ably/ably-asset-tracking-android/issues/859
+     * - https://github.com/ably/ably-asset-tracking-android/issues/871
+     */
+    override val skipTest = true
+
     override fun enable() {
         tcpProxy.stop()
     }
@@ -115,6 +132,14 @@ class TcpConnectionRefused(apiKey: String) : TransportLayerFault(apiKey) {
 class TcpConnectionUnresponsive(apiKey: String) : TransportLayerFault(apiKey) {
 
     override val name = "TcpConnectionUnresponsive"
+
+    /**
+     * This fault type is temporarily disabled at runtime. It can be re-enabled by removing this override.
+     * We will re-enable this test when the following have been addressed:
+     * - https://github.com/ably/ably-asset-tracking-android/issues/859
+     * - https://github.com/ably/ably-asset-tracking-android/issues/871
+     */
+    override val skipTest = true
 
     override fun enable() {
         tcpProxy.isForwarding = false

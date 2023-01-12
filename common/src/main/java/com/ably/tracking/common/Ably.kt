@@ -245,7 +245,7 @@ private const val AUTH_TOKEN_CAPABILITY_ERROR_CODE = 40160
 
 class DefaultAbly
 /**
- * @throws ConnectionException if something goes wrong during Ably SDK initialization.
+ * @throws ConnectionException If connection configuration is invalid.
  */
 constructor(
     realtimeFactory: AblySdkRealtimeFactory,
