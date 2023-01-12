@@ -9,7 +9,7 @@ import io.mockk.coEvery
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
 @ExperimentalCoroutinesApi
@@ -24,7 +24,7 @@ class RemoveTrackableWorkerTest {
     private val postedWorks = mutableListOf<WorkerSpecification>()
 
     @Test
-    fun `when removing trackable that is not present should invoke callback with Success(false)`() = runBlockingTest {
+    fun `when removing trackable that is not present should invoke callback with Success(false)`() = runTest {
         // given
         val initialProperties = createPublisherProperties()
 
@@ -47,7 +47,7 @@ class RemoveTrackableWorkerTest {
 
     @Test
     fun `when removing trackable that is currently added should add it to trackableRemovalGuard`() =
-        runBlockingTest {
+        runTest {
             // given
             val initialProperties = createPublisherProperties()
             initialProperties.duplicateTrackableGuard.startAddingTrackable(trackable)
@@ -68,7 +68,7 @@ class RemoveTrackableWorkerTest {
 
     @Test
     fun `when removing trackable that is present succeeded should invoke callback with exception`() =
-        runBlockingTest {
+        runTest {
             // given
             val initialProperties = createPublisherProperties()
             initialProperties.trackables.add(trackable)
@@ -91,7 +91,7 @@ class RemoveTrackableWorkerTest {
 
     @Test
     fun `when removing trackable that is present fails should invoke callback with exception`() =
-        runBlockingTest {
+        runTest {
             // given
             val initialProperties = createPublisherProperties()
             initialProperties.trackables.add(trackable)

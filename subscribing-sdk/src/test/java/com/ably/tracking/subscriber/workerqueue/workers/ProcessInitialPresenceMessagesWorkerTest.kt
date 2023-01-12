@@ -13,7 +13,7 @@ import io.mockk.just
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert
 import org.junit.Test
 
@@ -25,7 +25,7 @@ internal class ProcessInitialPresenceMessagesWorkerTest {
     private val postedWorks = mutableListOf<WorkerSpecification>()
 
     @Test
-    fun `should process all presence messages`() = runBlockingTest {
+    fun `should process all presence messages`() = runTest {
         // given
         val presenceMessages = listOf(anyPresenceMessage(), anyPresenceMessage(), anyPresenceMessage())
         val worker = ProcessInitialPresenceMessagesWorker(presenceMessages) {}
@@ -45,7 +45,7 @@ internal class ProcessInitialPresenceMessagesWorkerTest {
     }
 
     @Test
-    fun `should post subscribe to channel work after processing presence messages`() = runBlockingTest {
+    fun `should post subscribe to channel work after processing presence messages`() = runTest {
         // given
         val callbackFunction: ResultCallbackFunction<Unit> = {}
         val presenceMessages = emptyList<PresenceMessage>()

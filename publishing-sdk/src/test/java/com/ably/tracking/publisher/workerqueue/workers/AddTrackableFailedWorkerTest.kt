@@ -11,7 +11,7 @@ import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
 @ExperimentalCoroutinesApi
@@ -95,7 +95,7 @@ class AddTrackableFailedWorkerTest {
     }
 
     @Test
-    fun `should post StoppingConnectionFinished work after performing async work`() = runBlockingTest {
+    fun `should post StoppingConnectionFinished work after performing async work`() = runTest {
         // given
         val initialProperties = createPublisherProperties()
         initialProperties.trackables.clear()

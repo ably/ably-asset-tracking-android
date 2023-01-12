@@ -25,7 +25,7 @@ import io.mockk.runs
 import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
 @ExperimentalCoroutinesApi
@@ -668,7 +668,7 @@ class DisconnectSuccessWorkerTest {
 
     @Test
     fun `should stop ably and post StoppingConnectionFinished work if the removed trackable was the last one`() =
-        runBlockingTest {
+        runTest {
             // given
             val initialProperties = createPublisherPropertiesWithMultipleTrackables()
             initialProperties.trackables.remove(otherTrackable)
