@@ -9,11 +9,11 @@ import io.mockk.slot
 import io.mockk.verify
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
 import org.junit.Test
 
 typealias TestWorkerSpecificationType = Unit
+
+private const val ASYNC_WORK_TIMEOUT_IN_MILLISECONDS = 5000L
 
 class WorkerQueueTest {
     private val properties = mockk<Properties>()
@@ -38,10 +38,9 @@ class WorkerQueueTest {
 
         // when
         workerQueue.enqueue(Unit)
-        waitForWorkerToBeProcessed()
 
         // then
-        verify(exactly = 1) { worker.doWork(any(), any(), any()) }
+        verify(exactly = 1, timeout = ASYNC_WORK_TIMEOUT_IN_MILLISECONDS) { worker.doWork(any(), any(), any()) }
     }
 
     @Test
@@ -51,10 +50,9 @@ class WorkerQueueTest {
 
         // when
         workerQueue.enqueue(Unit)
-        waitForWorkerToBeProcessed()
 
         // then
-        verify(exactly = 1) { worker.doWhenStopped(any()) }
+        verify(exactly = 1, timeout = ASYNC_WORK_TIMEOUT_IN_MILLISECONDS) { worker.doWhenStopped(any()) }
     }
 
     @Test
@@ -65,10 +63,9 @@ class WorkerQueueTest {
 
         // when
         workerQueue.enqueue(Unit)
-        waitForWorkerToBeProcessed()
 
         // then
-        verify(exactly = 1) { worker.onUnexpectedError(any(), any()) }
+        verify(exactly = 1, timeout = ASYNC_WORK_TIMEOUT_IN_MILLISECONDS) { worker.onUnexpectedError(any(), any()) }
     }
 
     @Test
@@ -80,12 +77,11 @@ class WorkerQueueTest {
 
         // when
         workerQueue.enqueue(Unit)
-        waitForWorkerToBeProcessed()
         asyncWorkSlot.waitForCapture()
         asyncWorkSlot.captured { throw anyUnexpectedException() }
 
         // then
-        verify(exactly = 1) { worker.onUnexpectedAsyncError(any(), any()) }
+        verify(exactly = 1, timeout = ASYNC_WORK_TIMEOUT_IN_MILLISECONDS) { worker.onUnexpectedAsyncError(any(), any()) }
     }
 
     @Test
@@ -96,10 +92,9 @@ class WorkerQueueTest {
 
         // when
         workerQueue.enqueue(Unit)
-        waitForWorkerToBeProcessed()
 
         // then
-        verify(exactly = 1) { worker.onUnexpectedError(any(), any()) }
+        verify(exactly = 1, timeout = ASYNC_WORK_TIMEOUT_IN_MILLISECONDS) { worker.onUnexpectedError(any(), any()) }
     }
 
     private fun mockWorkerQueueStopped() {
@@ -111,12 +106,4 @@ class WorkerQueueTest {
     }
 
     private fun anyUnexpectedException() = java.lang.IllegalStateException("Unexpected worker exception")
-
-    /**
-     * Blocks the test to make sure that the worker is processed by the worker queue before a test case ends.
-     * If tests from this file become flaky try increasing the delay value or find a better way for waiting on workers to be processed.
-     */
-    private fun waitForWorkerToBeProcessed() {
-        runBlocking { delay(300L) }
-    }
 }

@@ -16,7 +16,7 @@ import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
 @ExperimentalCoroutinesApi
@@ -35,7 +35,7 @@ class SubscribeToTrackablePresenceMessagesWorkerTest {
 
     @Test
     fun `should return presence success result when executing normally and presence enter was successful`() =
-        runBlockingTest {
+        runTest {
             // given
             val initialProperties = createPublisherProperties()
             ably.mockSubscribeToPresenceSuccess(trackable.id)
@@ -62,7 +62,7 @@ class SubscribeToTrackablePresenceMessagesWorkerTest {
 
     @Test
     fun `should post AddTrackableToPublisher work when executing normally and presence enter failed`() =
-        runBlockingTest {
+        runTest {
             // given
             val initialProperties = createPublisherProperties()
             ably.mockSubscribeToPresenceError(trackable.id)
@@ -89,7 +89,7 @@ class SubscribeToTrackablePresenceMessagesWorkerTest {
 
     @Test
     fun `should post AddTrackableToPublisher work when presence enter extends timeout`() =
-        runBlockingTest {
+        runTest {
             // given
             val initialProperties = createPublisherProperties()
             ably.mockSubscribeToPresenceError(trackable.id)
@@ -120,7 +120,7 @@ class SubscribeToTrackablePresenceMessagesWorkerTest {
         }
 
     @Test
-    fun `should post TrackableRemovalRequested work when trackable removal was requested`() = runBlockingTest {
+    fun `should post TrackableRemovalRequested work when trackable removal was requested`() = runTest {
         // given
         val initialProperties = createPublisherProperties()
         initialProperties.trackableRemovalGuard.markForRemoval(trackable) {}
@@ -147,7 +147,7 @@ class SubscribeToTrackablePresenceMessagesWorkerTest {
     }
 
     @Test
-    fun `should disconnect from Ably when trackable removal was requested`() = runBlockingTest {
+    fun `should disconnect from Ably when trackable removal was requested`() = runTest {
         // given
         val initialProperties = createPublisherProperties()
         initialProperties.trackableRemovalGuard.markForRemoval(trackable) {}

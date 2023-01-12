@@ -14,7 +14,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
 @ExperimentalCoroutinesApi
@@ -46,7 +46,7 @@ internal class RetrySubscribeToPresenceWorkerTest {
     }
 
     @Test
-    fun `should post no other works if the channel went to the failed state`() = runBlockingTest {
+    fun `should post no other works if the channel went to the failed state`() = runTest {
         // given
         val initialProperties = createPublisherProperties()
         initialProperties.trackables.add(trackable)
@@ -67,7 +67,7 @@ internal class RetrySubscribeToPresenceWorkerTest {
     }
 
     @Test
-    fun `should not try to subscribe to presence if the channel went to the failed state`() = runBlockingTest {
+    fun `should not try to subscribe to presence if the channel went to the failed state`() = runTest {
         // given
         val initialProperties = createPublisherProperties()
         mockChannelStateChange(ConnectionState.FAILED)
@@ -89,7 +89,7 @@ internal class RetrySubscribeToPresenceWorkerTest {
 
     @Test
     fun `should post RetrySubscribeToPresenceSuccess if the channel went to the online state and subscribe to presence was successful`() =
-        runBlockingTest {
+        runTest {
             // given
             val initialProperties = createPublisherProperties()
             initialProperties.trackables.add(trackable)
@@ -113,7 +113,7 @@ internal class RetrySubscribeToPresenceWorkerTest {
 
     @Test
     fun `should return failure if the channel went to the online state but subscribe to presence has failed`() =
-        runBlockingTest {
+        runTest {
             // given
             val initialProperties = createPublisherProperties()
             initialProperties.trackables.add(trackable)

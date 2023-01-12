@@ -9,7 +9,7 @@ import io.mockk.just
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
 @ExperimentalCoroutinesApi
@@ -21,7 +21,7 @@ internal class UpdatePublisherPresenceWorkerTest {
     private val postedWorks = mutableListOf<WorkerSpecification>()
 
     @Test
-    fun `should call updateForPresenceMessagesAndThenEmitStateEventsIfRequired`() = runBlockingTest {
+    fun `should call updateForPresenceMessagesAndThenEmitStateEventsIfRequired`() = runTest {
         // given
         val worker = UpdatePublisherPresenceWorker(presenceMessage)
         every { subscriberProperties.updateForPresenceMessagesAndThenEmitStateEventsIfRequired(any()) } just Runs

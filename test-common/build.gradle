@@ -8,6 +8,8 @@ dependencies {
     implementation project(':core-sdk')
     implementation project(':common')
     implementation 'io.mockk:mockk:1.10.2'
+    implementation 'junit:junit:4.13.2'
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$kotlin_coroutines_version"
 }
 
 // The mockk library depends on the objenesis library in version 3. This forces using minSdkLevel to 26 or above.

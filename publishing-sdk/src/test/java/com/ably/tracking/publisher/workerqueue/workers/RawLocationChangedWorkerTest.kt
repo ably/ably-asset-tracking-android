@@ -13,7 +13,7 @@ import io.mockk.mockk
 import io.mockk.runs
 import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
 @ExperimentalCoroutinesApi
@@ -27,7 +27,7 @@ class RawLocationChangedWorkerTest {
     private val postedWorks = mutableListOf<WorkerSpecification>()
 
     @Test
-    fun `should set the last publisher known location`() = runBlockingTest {
+    fun `should set the last publisher known location`() = runTest {
         // given
         val initialProperties = createPublisherProperties()
 
