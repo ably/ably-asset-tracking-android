@@ -364,18 +364,19 @@ constructor(
                         enterChannelPresence(channel, presenceData)
                         callback(Result.success(Unit))
                     } catch (connectionException: ConnectionException) {
-                        logHandler?.w("$TAG Failed to connect for channel ${channel.name}", connectionException)
-                        if (channel.state == ChannelState.failed) {
-                            ably.channels.release(channelName)
-                            callback(Result.failure(connectionException))
-                        } else {
-                            callback(Result.success(Unit))
-                        }
+                        logHandler?.w(
+                            "$TAG Failed to connect for channel ${channel.name}",
+                            connectionException
+                        )
+                        callback(Result.success(Unit))
                     }
                 }
             } catch (ablyException: AblyException) {
                 val trackingException = ablyException.errorInfo.toTrackingException()
-                logHandler?.w("$TAG Failed to connect for trackable $trackableId", trackingException)
+                logHandler?.w(
+                    "$TAG Failed to connect for trackable $trackableId",
+                    trackingException
+                )
                 callback(Result.failure(trackingException))
             }
         } else {
