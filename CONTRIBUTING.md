@@ -64,6 +64,17 @@ The `taskTree` task requires a preceding task name and can be run per project, a
 
     ./gradlew tasks --all | grep taskTree
 
+### Automated Testing
+
+There are a few things that you need to be aware of when writing automated tests.
+
+#### Mapbox Replays
+
+When writing automated tests using Mapbox's replay engine, you may notice that the first location event appears to be replayed twice when a trip is started.
+
+This is expected, and is due to the fact that our event listeners get registered within Mapbox for both "location updates" and also a "first location" -
+which tells us where the asset is at the start of the trip. Subsequent location updates will only be received once.
+
 ## Secrets Required to Release
 
 This section defines the names of the
