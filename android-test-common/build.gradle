@@ -27,4 +27,9 @@ dependencies {
 
 android {
     namespace 'com.ably.tracking.test.android.common'
+
+    packagingOptions {
+        exclude 'META-INF/INDEX.LIST'
+        exclude 'META-INF/io.netty.versions.properties'
+    }
 }
