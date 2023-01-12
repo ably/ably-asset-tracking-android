@@ -280,8 +280,8 @@ interface Publisher {
          * In order to detect device's location ACCESS_COARSE_LOCATION or ACCESS_FINE_LOCATION permission must be granted.
          *
          * @return A new publisher instance.
-         * @throws com.ably.tracking.BuilderConfigurationIncompleteException If all required params aren't set
-         * @throws ConnectionException If something goes wrong during connection initialization
+         * @throws com.ably.tracking.BuilderConfigurationIncompleteException If all required params aren't set.
+         * @throws ConnectionException If connection configuration is invalid.
          */
         @RequiresPermission(anyOf = [ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION])
         @Throws(BuilderConfigurationIncompleteException::class, ConnectionException::class)
