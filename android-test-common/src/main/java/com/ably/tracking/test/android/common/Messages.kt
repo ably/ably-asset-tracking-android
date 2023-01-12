@@ -76,4 +76,3 @@ internal fun packMap(value: Map<String, Any?>, packer: MessagePacker) {
         }
     }
 }
-

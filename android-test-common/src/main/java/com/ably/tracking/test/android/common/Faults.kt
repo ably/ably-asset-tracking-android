@@ -3,7 +3,6 @@ package com.ably.tracking.test.android.common
 import com.ably.tracking.TrackableState
 import io.ktor.websocket.Frame
 import io.ktor.websocket.FrameType
-import org.msgpack.value.ImmutableStringValue
 import org.msgpack.value.impl.ImmutableStringValueImpl
 import kotlin.reflect.KClass
 
@@ -451,7 +450,7 @@ abstract class PresenceNackFault(
     private val nackedPresenceAction: Int,
     private val response: (msgSerial: Int) -> Map<String, Any?>,
     private val nackLimit: Int = 3
-): ApplicationLayerFault(apiKey) {
+) : ApplicationLayerFault(apiKey) {
 
     private var nacksSent = 0
 
@@ -461,7 +460,7 @@ abstract class PresenceNackFault(
             override fun interceptConnection(params: ConnectionParams) = params
 
             override fun interceptFrame(direction: FrameDirection, frame: Frame): List<Action> {
-                return if(shouldNack(direction, frame)) {
+                return if (shouldNack(direction, frame)) {
                     testLogD("$name: will nack ($nacksSent): ${unpack(frame.data)}")
                     val msgSerial = messageField(frame, "msgSerial")
                         ?.asIntegerValue()
@@ -515,7 +514,6 @@ abstract class PresenceNackFault(
         val action = presenceMessage?.get(ImmutableStringValueImpl("action"))
         return action?.asIntegerValue()?.asInt()
     }
-
 }
 
 /**
@@ -534,7 +532,6 @@ class EnterFailedWithNonfatalNack(apiKey: String) : PresenceNackFault(
     override fun stateReceiverForStage(stage: FaultSimulationStage) =
         // Note: 5xx presence errors should always be non-fatal and recovered seamlessly
         TrackableStateReceiver.onlineWithoutFail("$name: $stage")
-
 }
 
 /**
