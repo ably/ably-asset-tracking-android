@@ -368,7 +368,12 @@ constructor(
                             "$TAG Failed to connect for channel ${channel.name}",
                             connectionException
                         )
-                        callback(Result.success(Unit))
+                        if (channel.state == ChannelState.failed) {
+                            ably.channels.release(channelName)
+                            callback(Result.failure(connectionException))
+                        } else {
+                            callback(Result.success(Unit))
+                        }
                     }
                 }
             } catch (ablyException: AblyException) {
