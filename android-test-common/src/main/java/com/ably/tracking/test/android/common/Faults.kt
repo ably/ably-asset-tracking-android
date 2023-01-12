@@ -3,6 +3,7 @@ package com.ably.tracking.test.android.common
 import com.ably.tracking.TrackableState
 import io.ktor.websocket.Frame
 import io.ktor.websocket.FrameType
+import org.msgpack.value.ImmutableStringValue
 import org.msgpack.value.impl.ImmutableStringValueImpl
 import kotlin.reflect.KClass
 
@@ -435,6 +436,136 @@ class DisconnectWithFailedResume(apiKey: String) : ApplicationLayerFault(apiKey)
             messageAction(frame) == CONNECTED_ACTION
 }
 
+//
+// Presence action codes used in Ably protocol
+//
+const val PRESENCE_ENTER = 2
+const val PRESENCE_UPDATE = 4
+
+/**
+ * Abstract fault implementation to intercept outgoing presence messages, preventing
+ * them from reaching Ably, and injecting NACK responses as replies to the client.
+ */
+abstract class PresenceNackFault(
+    apiKey: String,
+    private val nackedPresenceAction: Int,
+    private val response: (msgSerial: Int) -> Map<String, Any?>,
+    private val nackLimit: Int = 3
+): ApplicationLayerFault(apiKey) {
+
+    private var nacksSent = 0
+
+    override fun enable() {
+        applicationProxy.interceptor = object : Layer7Interceptor {
+
+            override fun interceptConnection(params: ConnectionParams) = params
+
+            override fun interceptFrame(direction: FrameDirection, frame: Frame): List<Action> {
+                return if(shouldNack(direction, frame)) {
+                    testLogD("$name: will nack ($nacksSent): ${unpack(frame.data)}")
+                    val msgSerial = messageField(frame, "msgSerial")
+                        ?.asIntegerValue()
+                        ?.asInt()
+
+                    val nackFrame = Frame.Binary(true, response(msgSerial!!).pack())
+                    testLogD("$name: sending nack: ${unpack(nackFrame.data)}")
+                    nacksSent += 1
+
+                    listOf(
+                        // note: not sending this presence message to server
+                        Action(FrameDirection.ServerToClient, nackFrame)
+                    )
+                } else {
+                    listOf(Action(direction, frame))
+                }
+            }
+        }
+    }
+
+    override fun resolve() {
+        applicationProxy.interceptor = PassThroughInterceptor()
+    }
+
+    /**
+     * Check whether this frame (and direction) is the kind we're trying to
+     * simulate a server NACK response for
+     */
+    private fun shouldNack(direction: FrameDirection, frame: Frame) =
+        nacksSent < nackLimit &&
+            frame.frameType == FrameType.BINARY &&
+            direction == FrameDirection.ClientToServer &&
+            messageAction(frame) == PRESENCE_ACTION &&
+            presenceAction(frame) == nackedPresenceAction
+
+    /**
+     * Returns the presence action (integer) field from a Frame, or null if this
+     * appears not to be a valid presence message
+     */
+    private fun presenceAction(frame: Frame): Int? {
+        val presenceArray = messageField(frame, "presence")
+            ?.asArrayValue()
+
+        if (presenceArray?.size() == 0) {
+            // No presence updates in this message
+            return null
+        }
+
+        // Should only be one member, as we have only one client?
+        val presenceMessage = presenceArray?.get(0)?.asMapValue()?.map()
+        val action = presenceMessage?.get(ImmutableStringValueImpl("action"))
+        return action?.asIntegerValue()?.asInt()
+    }
+
+}
+
+/**
+ * Simulates retryable presence.enter() failure. Will stop
+ * nacking after 3 failures
+ */
+class EnterFailedWithNonfatalNack(apiKey: String) : PresenceNackFault(
+    apiKey = apiKey,
+    nackedPresenceAction = PRESENCE_ENTER,
+    response = ::nonFatalNack,
+    nackLimit = 3
+) {
+
+    override val name = "EnterFailedWithNonfatalNack"
+
+    override fun stateReceiverForStage(stage: FaultSimulationStage) =
+        // Note: 5xx presence errors should always be non-fatal and recovered seamlessly
+        TrackableStateReceiver.onlineWithoutFail("$name: $stage")
+
+}
+
+/**
+ * Simulates a retryable presence.update() failure. Will stop
+ * nacking after 3 faulures
+ */
+class UpdateFailedWithNonfatalNack(apiKey: String) : PresenceNackFault(
+    apiKey = apiKey,
+    nackedPresenceAction = PRESENCE_UPDATE,
+    response = ::nonFatalNack,
+    nackLimit = 3
+) {
+    override val name = "UpdateFailedWithNonfatalNack"
+
+    override fun stateReceiverForStage(stage: FaultSimulationStage) =
+        // Note: 5xx presence errors should always be non-fatal and recovered seamlessly
+        TrackableStateReceiver.onlineWithoutFail("$name: $stage")
+}
+
+/**
+ * A non-fatal nack response for given message serial
+ */
+internal fun nonFatalNack(msgSerial: Int) =
+    Message.nack(
+        msgSerial = msgSerial,
+        count = 1,
+        errorCode = 50000,
+        errorStatusCode = 500,
+        errorMessage = "injected by proxy"
+    )
+
 /**
  * Helper to capture an expected set of successful or unsuccessful TrackableState
  * transitions using the StateFlows provided by publishers.
@@ -477,8 +608,14 @@ class TrackableStateReceiver(
  * Unpack the action field from the WebSocket frame using MsgPack
  */
 internal fun messageAction(frame: Frame) =
-    unpack(frame.data)
-        ?.map()
-        ?.get(ImmutableStringValueImpl("action"))
+    messageField(frame, "action")
         ?.asIntegerValue()
         ?.asInt()
+
+/**
+ * Read a specific top-level field from an Ably protocol message
+ */
+internal fun messageField(frame: Frame, key: String) =
+    unpack(frame.data)
+        ?.map()
+        ?.get(ImmutableStringValueImpl(key))

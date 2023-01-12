@@ -27,6 +27,7 @@ import com.ably.tracking.test.android.common.AttachUnresponsive
 import com.ably.tracking.test.android.common.BooleanExpectation
 import com.ably.tracking.test.android.common.DetachUnresponsive
 import com.ably.tracking.test.android.common.DisconnectWithFailedResume
+import com.ably.tracking.test.android.common.EnterFailedWithNonfatalNack
 import com.ably.tracking.test.android.common.FaultSimulation
 import com.ably.tracking.test.android.common.FaultSimulationStage
 import com.ably.tracking.test.android.common.NOTIFICATION_CHANNEL_ID
@@ -35,6 +36,7 @@ import com.ably.tracking.test.android.common.NullTransportFault
 import com.ably.tracking.test.android.common.TcpConnectionRefused
 import com.ably.tracking.test.android.common.TcpConnectionUnresponsive
 import com.ably.tracking.test.android.common.TrackableStateReceiver
+import com.ably.tracking.test.android.common.UpdateFailedWithNonfatalNack
 import com.ably.tracking.test.android.common.createNotificationChannel
 import com.ably.tracking.test.android.common.testLogD
 import com.google.gson.Gson
@@ -89,7 +91,9 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
             arrayOf(TcpConnectionUnresponsive(BuildConfig.ABLY_API_KEY)),
             arrayOf(AttachUnresponsive(BuildConfig.ABLY_API_KEY)),
             arrayOf(DetachUnresponsive(BuildConfig.ABLY_API_KEY)),
-            arrayOf(DisconnectWithFailedResume(BuildConfig.ABLY_API_KEY))
+            arrayOf(DisconnectWithFailedResume(BuildConfig.ABLY_API_KEY)),
+            arrayOf(EnterFailedWithNonfatalNack(BuildConfig.ABLY_API_KEY)),
+            arrayOf(UpdateFailedWithNonfatalNack(BuildConfig.ABLY_API_KEY)),
 
             // publisher.track() hangs indefinitely with this fault
             // arrayOf(EnterUnresponsive(BuildConfig.ABLY_API_KEY)),

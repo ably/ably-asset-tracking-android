@@ -97,6 +97,7 @@ abstract class AatProxy(
         this.logHandler = Log.LogHandler { _, _, msg, tr ->
             testLogD("${msg!!} - $tr", tr)
         }
+        this.logLevel = Log.VERBOSE
         this.realtimeHost = listenHost
         this.port = listenPort
         this.tls = false
@@ -322,7 +323,7 @@ class Layer7Proxy(
             try {
                 for (action in interceptor.interceptFrame(direction, received)) {
                     testLogD("$tag: (forwarding) [${action.direction}]: ${logFrame(action.frame)}")
-                    when (direction) {
+                    when (action.direction) {
                         FrameDirection.ClientToServer -> {
                             clientSession.send(action.frame)
                             if (action.sendAndClose) {
@@ -332,7 +333,7 @@ class Layer7Proxy(
                         FrameDirection.ServerToClient -> {
                             serverSession.send(action.frame)
                             if (action.sendAndClose) {
-                                clientSession.close()
+                                serverSession.close()
                             }
                         }
                     }
