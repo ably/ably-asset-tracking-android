@@ -178,9 +178,12 @@ class DisconnectAndSuspend(apiKey: String) : TransportLayerFault(apiKey) {
 
     override fun enable() {
         tcpProxy.stop()
-        timer.schedule(timerTask {
-            tcpProxy.start()
-        }, SUSPEND_DELAY_MILLIS)
+        timer.schedule(
+            timerTask {
+                tcpProxy.start()
+            },
+            SUSPEND_DELAY_MILLIS
+        )
     }
 
     override fun resolve() {
