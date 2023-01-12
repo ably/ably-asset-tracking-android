@@ -20,7 +20,7 @@ import io.mockk.slot
 import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
 @ExperimentalCoroutinesApi
@@ -143,7 +143,7 @@ class TrackableRemovalRequestedWorkerTest {
     }
 
     @Test
-    fun `should stop ably connection after removing last trackable`() = runBlockingTest {
+    fun `should stop ably connection after removing last trackable`() = runTest {
         // given
         val initialProperties = createPublisherPropertiesWithMultipleTrackables()
         initialProperties.trackables.clear()

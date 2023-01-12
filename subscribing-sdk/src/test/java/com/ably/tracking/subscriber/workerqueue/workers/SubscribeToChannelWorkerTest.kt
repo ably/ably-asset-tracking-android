@@ -3,8 +3,8 @@ package com.ably.tracking.subscriber.workerqueue.workers
 import com.ably.tracking.Accuracy
 import com.ably.tracking.Resolution
 import com.ably.tracking.common.ResultCallbackFunction
-import com.ably.tracking.subscriber.SubscriberProperties
 import com.ably.tracking.subscriber.SubscriberInteractor
+import com.ably.tracking.subscriber.SubscriberProperties
 import com.ably.tracking.subscriber.workerqueue.WorkerSpecification
 import io.mockk.every
 import io.mockk.just
@@ -12,7 +12,7 @@ import io.mockk.mockk
 import io.mockk.runs
 import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
 @ExperimentalCoroutinesApi
@@ -31,7 +31,7 @@ internal class SubscribeToChannelWorkerTest {
     private val postedWorks = mutableListOf<WorkerSpecification>()
 
     @Test
-    fun `should notify callback after calling subscriberInteractor`() = runBlockingTest {
+    fun `should notify callback after calling subscriberInteractor`() = runTest {
         // given
         val initialProperties = SubscriberProperties(Resolution(Accuracy.BALANCED, 100, 100.0), mockk())
 

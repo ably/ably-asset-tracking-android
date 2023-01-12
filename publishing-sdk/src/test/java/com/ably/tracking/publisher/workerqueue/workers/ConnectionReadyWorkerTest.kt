@@ -20,7 +20,7 @@ import io.mockk.runs
 import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
 @ExperimentalCoroutinesApi
@@ -331,7 +331,7 @@ class ConnectionReadyWorkerTest {
     }
 
     @Test
-    fun `should return trackable removal work result when trackable removal was requested`() = runBlockingTest {
+    fun `should return trackable removal work result when trackable removal was requested`() = runTest {
         // given
         val initialProperties = createPublisherProperties()
         initialProperties.trackableRemovalGuard.markForRemoval(trackable) {}
@@ -360,7 +360,7 @@ class ConnectionReadyWorkerTest {
     }
 
     @Test
-    fun `should disconnect from Ably when trackable removal was requested`() = runBlockingTest {
+    fun `should disconnect from Ably when trackable removal was requested`() = runTest {
         // given
         val initialProperties = createPublisherProperties()
         initialProperties.trackableRemovalGuard.markForRemoval(trackable) {}
@@ -383,7 +383,7 @@ class ConnectionReadyWorkerTest {
     }
 
     @Test
-    fun `should not perform any of the normal operations when trackable removal was requested`() = runBlockingTest {
+    fun `should not perform any of the normal operations when trackable removal was requested`() = runTest {
         // given
         val initialProperties = createPublisherProperties()
         initialProperties.trackableRemovalGuard.markForRemoval(trackable) {}
