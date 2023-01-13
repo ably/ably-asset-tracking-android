@@ -7,6 +7,8 @@ import com.ably.tracking.common.DefaultAbly
 import com.ably.tracking.common.PresenceData
 import com.ably.tracking.common.AblySdkRealtime
 import io.ably.lib.realtime.ChannelState
+import io.ably.lib.realtime.ConnectionState
+import io.ably.lib.realtime.ConnectionStateListener
 import io.ably.lib.types.ErrorInfo
 import io.mockk.confirmVerified
 import io.mockk.verifyOrder
@@ -37,6 +39,27 @@ class DefaultAblyTestScenarios {
         sealed class ChannelStateChangeBehaviour() {
             object NoBehaviour : ChannelStateChangeBehaviour()
             class EmitStateChange(val current: ChannelState) : ChannelStateChangeBehaviour()
+        }
+
+        /**
+         * Describes how a test case should interact with the [ConnectionStateListener] instances added to a connection using [AblySdkRealtime.Connection.on]. Individual test cases should document how they interpret the values this class can take.
+         */
+        sealed class ConnectionStateChangeBehaviour() {
+            object NoBehaviour : ConnectionStateChangeBehaviour()
+            class EmitStateChange(
+                val previous: ConnectionState,
+                val current: ConnectionState,
+                val retryIn: Long,
+                val reason: ErrorInfo?
+            ) : ConnectionStateChangeBehaviour()
+        }
+
+        /**
+         * Describes how a test case mocks the return value of an [AblySdkRealtime.Connection] object’s [AblySdkRealtime.Connection.reason] property. Individual test cases should document how they interpret the values this class can take.
+         */
+        sealed class ConnectionReasonMockBehaviour() {
+            object NotMocked : ConnectionReasonMockBehaviour()
+            class Mocked(val reason: ErrorInfo?) : ConnectionReasonMockBehaviour()
         }
     }
 
@@ -1118,6 +1141,192 @@ class DefaultAblyTestScenarios {
                  * }
                  */
                 thenConfig.resultOfDisconnectCallOnObjectUnderTest.verify(result)
+
+                confirmVerified(*testEnvironment.allMocks)
+            }
+        }
+    }
+
+    /**
+     * Provides test scenarios for [DefaultAbly.startConnection]. See the [Companion.test] method.
+     */
+    class StartConnection {
+        /**
+         * This class provides properties for configuring the "Given..." part of the parameterised test case described by [Companion.test]. See that method’s documentation for information about the effect of this class’s properties.
+         */
+        class GivenConfig(
+            val initialConnectionState: ConnectionState,
+            val connectionReasonBehaviour: GivenTypes.ConnectionReasonMockBehaviour,
+            val connectBehaviour: GivenTypes.ConnectionStateChangeBehaviour
+        )
+
+        /**
+         * This class provides properties for configuring the "Then..." part of the parameterised test case described by [Companion.test]. See that method’s documentation for information about the effect of this class’s properties.
+         */
+        class ThenConfig(
+            val numberOfConnectionStateFetchesToVerify: Int,
+            val verifyConnectionReasonFetch: Boolean,
+            val verifyConnectionOn: Boolean,
+            val verifyConnect: Boolean,
+            val verifyConnectionOff: Boolean,
+            val resultOfStartConnectionCallOnObjectUnderTest: ThenTypes.ExpectedResult
+        )
+
+        companion object {
+            /**
+             * Implements the following parameterised test case for [DefaultAbly.startConnection]:
+             *
+             * ```text
+             * Given...
+             *
+             * ...that the connection’s `state` property returns ${givenConfig.initialConnectionState}...
+             *
+             * when ${givenConfig.connectionReasonBehaviour} is Mocked {
+             * ...and that the connection’s `reason` property returns ${givenConfig.connectionReasonBehaviour}...
+             * }
+             *
+             * when ${givenConfig.connectBehaviour} is EmitStateChange {
+             * ...and that when the Realtime instance’s `connect` method is called, its connection’s `on` method immediately emits a connection state change whose `previous`, `current`, `retryIn` and `reason` are those of ${givenConfig.connectBehaviour}...
+             * }
+             *
+             * When...
+             *
+             * ...the `startConnection` method is called on the object under test...
+             *
+             * Then...
+             * ...in the following order, precisely the following things happen...
+             *
+             * ...it fetches the connection’s state ${thenConfig.numberOfConnectionStateFetchesToVerify} times...
+             *
+             * if ${thenConfig.verifyConnectionReasonFetch} {
+             * ...and fetches the connection’s `reason`...
+             * }
+             *
+             * if ${thenConfig.verifyConnectionOn} {
+             * ...and adds a listener to the connection using `on`...
+             * }
+             *
+             * if ${thenConfig.verifyConnect} {
+             * ...and tells the Realtime instance to connect...
+             * }
+             *
+             * if ${thenConfig.verifyConnectionOff} {
+             * ...and removes a listener from the connection using `off`...
+             * }
+             *
+             * when ${thenConfig.resultOfStartConnectionCallOnObjectUnderTest} is Terminates and ${thenConfig.resultOfStartConnectionCallOnObjectUnderTest.expectedResult} is Success {
+             * ...and the call to `startConnection` (on the object under test) succeeds.
+             * }
+             *
+             * when ${thenConfig.resultOfStartConnectionCallOnObjectUnderTest} is Terminates and ${thenConfig.resultOfStartConnectionCallOnObjectUnderTest.expectedResult} is FailureWithConnectionException {
+             * ...and the call to `startConnection` (on the object under test) fails with a ConnectionException whose errorInformation is equal to ${thenConfig.resultOfStartConnectionCallOnObjectUnderTest.errorInformation}.
+             * }
+             *
+             * when ${thenConfig.resultOfStartConnectionCallOnObjectUnderTest} is DoesNotTerminate {
+             * ...and the call to `startConnection` (on the object under test) does not complete within ${thenConfig.resultOfStartConnectionCallOnObjectUnderTest.timeoutInMilliseconds} milliseconds.
+             * }
+             * ```
+             */
+            suspend fun test(givenConfig: GivenConfig, thenConfig: ThenConfig) {
+                val testEnvironment = DefaultAblyTestEnvironment.create(numberOfTrackables = 0)
+
+                // Given...
+
+                // ...that the connection’s `state` property returns ${givenConfig.initialConnectionState}...
+                testEnvironment.mockConnectionState(givenConfig.initialConnectionState)
+
+                when (val givenConnectionReasonBehaviour = givenConfig.connectionReasonBehaviour) {
+                    is GivenTypes.ConnectionReasonMockBehaviour.NotMocked -> {}
+                    is GivenTypes.ConnectionReasonMockBehaviour.Mocked -> {
+                        /* when ${givenConfig.connectionReasonBehaviour} is Mocked {
+                         * ...and that the connection’s `reason` property returns ${givenConfig.connectionReasonBehaviour}...
+                         * }
+                         */
+                        testEnvironment.mockConnectionReason(givenConnectionReasonBehaviour.reason)
+                    }
+                }
+
+                when (val givenConnectBehaviour = givenConfig.connectBehaviour) {
+                    is GivenTypes.ConnectionStateChangeBehaviour.NoBehaviour -> {
+                        testEnvironment.stubConnectionOn()
+                        testEnvironment.stubConnect()
+                    }
+                    is GivenTypes.ConnectionStateChangeBehaviour.EmitStateChange -> {
+                        /* when ${givenConfig.connectBehaviour} is EmitStateChange {
+                         * ...and that when the Realtime instance’s `connect` method is called, its connection’s `on` method immediately emits a connection state change whose `previous`, `current`, `retryIn` and `reason` are those of ${givenConfig.connectBehaviour}...
+                         * }
+                         */
+                        testEnvironment.mockConnectToEmitStateChange(
+                            previous = givenConnectBehaviour.previous,
+                            current = givenConnectBehaviour.current,
+                            retryIn = givenConnectBehaviour.retryIn,
+                            reason = givenConnectBehaviour.reason
+                        )
+                    }
+                }
+
+                testEnvironment.stubConnectionOff()
+
+                // When...
+
+                // ...the `startConnection` method is called on the object under test...
+                val result = testEnvironment.objectUnderTest.startConnection()
+
+                // Then...
+                // ...in the following order, precisely the following things happen...
+
+                verifyOrder {
+                    // ...it fetches the connection’s state ${thenConfig.numberOfConnectionStateFetchesToVerify} times...
+                    repeat(thenConfig.numberOfConnectionStateFetchesToVerify) {
+                        testEnvironment.connectionMock.state
+                    }
+
+                    if (thenConfig.verifyConnectionReasonFetch) {
+                        /* if ${thenConfig.verifyConnectionReasonFetch} {
+                         * ...and fetches the connection’s `reason`...
+                         * }
+                         */
+                        testEnvironment.connectionMock.reason
+                    }
+
+                    if (thenConfig.verifyConnectionOn) {
+                        /* if ${thenConfig.verifyConnectionOn} {
+                         * ...and adds a listener to the connection using `on`...
+                         * }
+                         */
+                        testEnvironment.connectionMock.on(any())
+                    }
+
+                    if (thenConfig.verifyConnect) {
+                        /* if ${thenConfig.verifyConnect} {
+                         * ...and tells the Realtime instance to connect...
+                         * }
+                         */
+                        testEnvironment.realtimeMock.connect()
+                    }
+
+                    if (thenConfig.verifyConnectionOff) {
+                        /* if ${thenConfig.verifyConnectionOff} {
+                         * ...and removes a listener from the connection using `off`...
+                         * }
+                         */
+                        testEnvironment.connectionMock.off(any())
+                    }
+                }
+
+                /* when ${thenConfig.resultOfStartConnectionCallOnObjectUnderTest} is Terminates and ${thenConfig.resultOfStartConnectionCallOnObjectUnderTest.expectedResult} is Success {
+                 * ...and the call to `startConnection` (on the object under test) succeeds.
+                 * }
+                 *
+                 * when ${thenConfig.resultOfStartConnectionCallOnObjectUnderTest} is Terminates and ${thenConfig.resultOfStartConnectionCallOnObjectUnderTest.expectedResult} is FailureWithConnectionException {
+                 * ...and the call to `startConnection` (on the object under test) fails with a ConnectionException whose errorInformation is equal to ${thenConfig.resultOfStartConnectionCallOnObjectUnderTest.errorInformation}.
+                 * }
+                 *
+                 * when ${thenConfig.resultOfStartConnectionCallOnObjectUnderTest} is DoesNotTerminate {
+                 * ...and the call to `startConnection` (on the object under test) does not complete within ${thenConfig.resultOfStartConnectionCallOnObjectUnderTest.timeoutInMilliseconds} milliseconds.
+                 * }
+                 */
+                thenConfig.resultOfStartConnectionCallOnObjectUnderTest.verify(result)
 
                 confirmVerified(*testEnvironment.allMocks)
             }
