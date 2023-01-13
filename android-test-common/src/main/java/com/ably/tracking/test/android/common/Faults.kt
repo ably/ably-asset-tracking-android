@@ -1,6 +1,9 @@
 package com.ably.tracking.test.android.common
 
 import com.ably.tracking.TrackableState
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.mapNotNull
 import kotlin.reflect.KClass
 
 /**
@@ -160,8 +163,6 @@ class TrackableStateReceiver(
     private val expectedStates: Set<KClass<out TrackableState>>,
     private val failureStates: Set<KClass<out TrackableState>>
 ) {
-    val outcome = BooleanExpectation(label)
-
     companion object {
         fun onlineWithoutFail(label: String) = TrackableStateReceiver(
             label,
@@ -176,15 +177,26 @@ class TrackableStateReceiver(
         )
     }
 
-    fun receive(state: TrackableState) {
-        if (failureStates.contains((state::class))) {
-            testLogD("TrackableStateReceived (FAIL): $label - $state")
-            outcome.fulfill(false)
-        } else if (expectedStates.contains(state::class)) {
-            testLogD("TrackableStateReceived (SUCCESS): $label - $state")
-            outcome.fulfill(true)
-        } else {
-            testLogD("TrackableStateReceived (IGNORED): $label - $state")
+    suspend fun assertStateTransition(stateFlow: StateFlow<TrackableState>) {
+        val result = stateFlow.mapNotNull { receive(it) }.first()
+        if (!result) {
+            throw AssertionError("Expectation '$label' did not result in success.")
         }
     }
+
+    private fun receive(state: TrackableState): Boolean? =
+        when {
+            failureStates.contains(state::class) -> {
+                testLogD("TrackableStateReceived (FAIL): $label - $state")
+                false
+            }
+            expectedStates.contains(state::class) -> {
+                testLogD("TrackableStateReceived (SUCCESS): $label - $state")
+                true
+            }
+            else -> {
+                testLogD("TrackableStateReceived (IGNORED): $label - $state")
+                null
+            }
+        }
 }
