@@ -2139,6 +2139,475 @@ class DefaultAblyTests {
         }
     }
 
+    /*
+    Observations from writing black-box tests for `startConnection`:
+
+    - When given a connection in certain states, it seems to fetch the connection’s state more than once. I have not tested what happens if a different state is returned on the second call.
+     */
+
+    @Test
+    fun `startConnection - when connection is in INITIALIZED state, and, after connect called, changes to CONNECTED`() {
+        /* Given...
+         *
+         * ...that the connection’s `state` property returns INITIALIZED...
+         * ...and that when the Realtime instance’s `connect` method is called, its connection’s `on` method immediately emits a connection state change whose `previous` is INITIALIZED, `current` is CONNECTED, `retryIn` is (arbitrarily-chosen) 0 and `reason` is (arbitrarily-chosen) null...
+         *
+         * When...
+         *
+         * ...the `startConnection` method is called on the object under test...
+         *
+         * Then...
+         * ...in the following order, precisely the following things happen...
+         *
+         * ...it fetches the connection’s state 2 times...
+         * ...and adds a listener to the connection using `on`...
+         * ...and tells the Realtime instance to connect...
+         * ...and removes a listener from the connection using `off`...
+         * ...and the call to `startConnection` (on the object under test) succeeds.
+         */
+
+        runBlocking {
+            DefaultAblyTestScenarios.StartConnection.test(
+                DefaultAblyTestScenarios.StartConnection.GivenConfig(
+                    initialConnectionState = ConnectionState.initialized,
+                    connectionReasonBehaviour = DefaultAblyTestScenarios.GivenTypes.ConnectionReasonMockBehaviour.NotMocked,
+                    connectBehaviour = DefaultAblyTestScenarios.GivenTypes.ConnectionStateChangeBehaviour.EmitStateChange(
+                        previous = ConnectionState.initialized,
+                        current = ConnectionState.connected,
+                        retryIn = 0, /* arbitrarily-chosen */
+                        reason = null /* arbitrarily-chosen */
+                    ),
+                ),
+                DefaultAblyTestScenarios.StartConnection.ThenConfig(
+                    numberOfConnectionStateFetchesToVerify = 2,
+                    verifyConnectionReasonFetch = false,
+                    verifyConnectionOn = true,
+                    verifyConnect = true,
+                    verifyConnectionOff = true,
+                    resultOfStartConnectionCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
+                )
+            )
+        }
+    }
+
+    @Test
+    fun `startConnection - when connection is in CONNECTING state and, after connect called, changes to CONNECTED`() {
+        /* Given...
+         *
+         * ...that the connection’s `state` property returns CONNECTING...
+         * ...and that when the Realtime instance’s `connect` method is called, its connection’s `on` method immediately emits a connection state change whose `previous` is CONNECTING, `current` is CONNECTED, `retryIn` is (arbitrarily-chosen) 0 and `reason` is (arbitrarily-chosen) null...
+         *
+         * When...
+         *
+         * ...the `startConnection` method is called on the object under test...
+         *
+         * Then...
+         * ...in the following order, precisely the following things happen...
+         *
+         * ...it fetches the connection’s state 2 times...
+         * ...and adds a listener to the connection using `on`...
+         * ...and tells the Realtime instance to connect...
+         * ...and removes a listener from the connection using `off`...
+         * ...and the call to `startConnection` (on the object under test) succeeds.
+         */
+
+        runBlocking {
+            DefaultAblyTestScenarios.StartConnection.test(
+                DefaultAblyTestScenarios.StartConnection.GivenConfig(
+                    initialConnectionState = ConnectionState.connecting,
+                    connectionReasonBehaviour = DefaultAblyTestScenarios.GivenTypes.ConnectionReasonMockBehaviour.NotMocked,
+                    connectBehaviour = DefaultAblyTestScenarios.GivenTypes.ConnectionStateChangeBehaviour.EmitStateChange(
+                        previous = ConnectionState.connecting,
+                        current = ConnectionState.connected,
+                        retryIn = 0, /* arbitrarily-chosen */
+                        reason = null /* arbitrarily-chosen */
+                    ),
+                ),
+                DefaultAblyTestScenarios.StartConnection.ThenConfig(
+                    numberOfConnectionStateFetchesToVerify = 2,
+                    verifyConnectionReasonFetch = false,
+                    verifyConnectionOn = true,
+                    verifyConnect = true,
+                    verifyConnectionOff = true,
+                    resultOfStartConnectionCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
+                )
+            )
+        }
+    }
+
+    @Test
+    fun `startConnection - when connection is in DISCONNECTED state and, after connect called, changes to CONNECTED`() {
+        /* Given...
+         *
+         * ...that the connection’s `state` property returns DISCONNECTED...
+         * ...and that when the Realtime instance’s `connect` method is called, its connection’s `on` method immediately emits a connection state change whose `previous` is DISCONNECTED, `current` is CONNECTED, `retryIn` is (arbitrarily-chosen) 0 and `reason` is (arbitrarily-chosen) null...
+         *
+         * When...
+         *
+         * ...the `startConnection` method is called on the object under test...
+         *
+         * Then...
+         * ...in the following order, precisely the following things happen...
+         *
+         * ...it fetches the connection’s state 2 times...
+         * ...and adds a listener to the connection using `on`...
+         * ...and tells the Realtime instance to connect...
+         * ...and removes a listener from the connection using `off`...
+         * ...and the call to `startConnection` (on the object under test) succeeds.
+         */
+
+        runBlocking {
+            DefaultAblyTestScenarios.StartConnection.test(
+                DefaultAblyTestScenarios.StartConnection.GivenConfig(
+                    initialConnectionState = ConnectionState.disconnected,
+                    connectionReasonBehaviour = DefaultAblyTestScenarios.GivenTypes.ConnectionReasonMockBehaviour.NotMocked,
+                    connectBehaviour = DefaultAblyTestScenarios.GivenTypes.ConnectionStateChangeBehaviour.EmitStateChange(
+                        previous = ConnectionState.disconnected,
+                        current = ConnectionState.connected,
+                        retryIn = 0,
+                        reason = null
+                    ),
+                ),
+                DefaultAblyTestScenarios.StartConnection.ThenConfig(
+                    numberOfConnectionStateFetchesToVerify = 2,
+                    verifyConnectionReasonFetch = false,
+                    verifyConnectionOn = true,
+                    verifyConnect = true,
+                    verifyConnectionOff = true,
+                    resultOfStartConnectionCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
+                )
+            )
+        }
+    }
+
+    @Test
+    fun `startConnection - when connection is in SUSPENDED state and, after connect called, changes to CONNECTED`() {
+        /* Given...
+         *
+         * ...that the connection’s `state` property returns SUSPENDED...
+         * ...and that when the Realtime instance’s `connect` method is called, its connection’s `on` method immediately emits a connection state change whose `previous` is SUSPENDED, `current` is CONNECTED, `retryIn` is (arbitrarily-chosen) 0 and `reason` is (arbitrarily-chosen) null...
+         *
+         * When...
+         *
+         * ...the `startConnection` method is called on the object under test...
+         *
+         * Then...
+         * ...in the following order, precisely the following things happen...
+         *
+         * ...it fetches the connection’s state 2 times...
+         * ...and adds a listener to the connection using `on`...
+         * ...and tells the Realtime instance to connect...
+         * ...and removes a listener from the connection using `off`...
+         * ...and the call to `startConnection` (on the object under test) succeeds.
+         */
+
+        runBlocking {
+            DefaultAblyTestScenarios.StartConnection.test(
+                DefaultAblyTestScenarios.StartConnection.GivenConfig(
+                    initialConnectionState = ConnectionState.suspended,
+                    connectionReasonBehaviour = DefaultAblyTestScenarios.GivenTypes.ConnectionReasonMockBehaviour.NotMocked,
+                    connectBehaviour = DefaultAblyTestScenarios.GivenTypes.ConnectionStateChangeBehaviour.EmitStateChange(
+                        previous = ConnectionState.suspended,
+                        current = ConnectionState.connected,
+                        retryIn = 0,
+                        reason = null
+                    ),
+                ),
+                DefaultAblyTestScenarios.StartConnection.ThenConfig(
+                    numberOfConnectionStateFetchesToVerify = 2,
+                    verifyConnectionReasonFetch = false,
+                    verifyConnectionOn = true,
+                    verifyConnect = true,
+                    verifyConnectionOff = true,
+                    resultOfStartConnectionCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
+                )
+            )
+        }
+    }
+
+    @Test
+    fun `startConnection - when connection is in CLOSING state and, after connect called, changes to CONNECTED`() {
+        /* Given...
+         *
+         * ...that the connection’s `state` property returns CLOSING...
+         * ...and that when the Realtime instance’s `connect` method is called, its connection’s `on` method immediately emits a connection state change whose `previous` is CLOSING, `current` is CONNECTED, `retryIn` is (arbitrarily-chosen) 0 and `reason` is (arbitrarily-chosen) null...
+         *
+         * When...
+         *
+         * ...the `startConnection` method is called on the object under test...
+         *
+         * Then...
+         * ...in the following order, precisely the following things happen...
+         *
+         * ...it fetches the connection’s state 2 times...
+         * ...and adds a listener to the connection using `on`...
+         * ...and tells the Realtime instance to connect...
+         * ...and removes a listener from the connection using `off`...
+         * ...and the call to `startConnection` (on the object under test) succeeds.
+         */
+
+        runBlocking {
+            DefaultAblyTestScenarios.StartConnection.test(
+                DefaultAblyTestScenarios.StartConnection.GivenConfig(
+                    initialConnectionState = ConnectionState.closing,
+                    connectionReasonBehaviour = DefaultAblyTestScenarios.GivenTypes.ConnectionReasonMockBehaviour.NotMocked,
+                    connectBehaviour = DefaultAblyTestScenarios.GivenTypes.ConnectionStateChangeBehaviour.EmitStateChange(
+                        previous = ConnectionState.closing,
+                        current = ConnectionState.connected,
+                        retryIn = 0,
+                        reason = null
+                    ),
+                ),
+                DefaultAblyTestScenarios.StartConnection.ThenConfig(
+                    numberOfConnectionStateFetchesToVerify = 2,
+                    verifyConnectionReasonFetch = false,
+                    verifyConnectionOn = true,
+                    verifyConnect = true,
+                    verifyConnectionOff = true,
+                    resultOfStartConnectionCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
+                )
+            )
+        }
+    }
+
+    @Test
+    fun `startConnection - when connection is in CLOSED state and, after connect called, changes to CONNECTED`() {
+        /* Given...
+         *
+         * ...that the connection’s `state` property returns CLOSED...
+         * ...and that when the Realtime instance’s `connect` method is called, its connection’s `on` method immediately emits a connection state change whose `previous` is CLOSED, `current` is CONNECTED, `retryIn` is (arbitrarily-chosen) 0 and `reason` is (arbitrarily-chosen) null...
+         *
+         * When...
+         *
+         * ...the `startConnection` method is called on the object under test...
+         *
+         * Then...
+         * ...in the following order, precisely the following things happen...
+         *
+         * ...it fetches the connection’s state 2 times...
+         * ...and adds a listener to the connection using `on`...
+         * ...and tells the Realtime instance to connect...
+         * ...and removes a listener from the connection using `off`...
+         * ...and the call to `startConnection` (on the object under test) succeeds.
+         */
+
+        runBlocking {
+            DefaultAblyTestScenarios.StartConnection.test(
+                DefaultAblyTestScenarios.StartConnection.GivenConfig(
+                    initialConnectionState = ConnectionState.closed,
+                    connectionReasonBehaviour = DefaultAblyTestScenarios.GivenTypes.ConnectionReasonMockBehaviour.NotMocked,
+                    connectBehaviour = DefaultAblyTestScenarios.GivenTypes.ConnectionStateChangeBehaviour.EmitStateChange(
+                        previous = ConnectionState.closed,
+                        current = ConnectionState.connected,
+                        retryIn = 0,
+                        reason = null
+                    ),
+                ),
+                DefaultAblyTestScenarios.StartConnection.ThenConfig(
+                    numberOfConnectionStateFetchesToVerify = 2,
+                    verifyConnectionReasonFetch = false,
+                    verifyConnectionOn = true,
+                    verifyConnect = true,
+                    verifyConnectionOff = true,
+                    resultOfStartConnectionCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
+                )
+            )
+        }
+    }
+
+    @Test
+    fun `startConnection - when connection is in FAILED state`() {
+        /* Given...
+         *
+         * ...that the connection’s `state` property returns FAILED...
+         * ...and that the connection’s `reason` property returns the arbitrarily-chosen error `connectionReason`...
+         *
+         * When...
+         *
+         * ...the `startConnection` method is called on the object under test...
+         *
+         * Then...
+         * ...in the following order, precisely the following things happen...
+         *
+         * ...it fetches the connection’s state 2 times...
+         * ...and fetches the connection’s `reason`...
+         * ...and the call to `startConnection` (on the object under test) fails with a ConnectionException whose `code` and `message` are equal to those of `connectionReason`.
+         */
+
+        val connectionReason = ErrorInfo(
+            "example of an error message", /* arbitrarily chosen */
+            123 /* arbitrarily chosen */
+        )
+
+        runBlocking {
+            DefaultAblyTestScenarios.StartConnection.test(
+                DefaultAblyTestScenarios.StartConnection.GivenConfig(
+                    initialConnectionState = ConnectionState.failed,
+                    connectionReasonBehaviour = DefaultAblyTestScenarios.GivenTypes.ConnectionReasonMockBehaviour.Mocked(
+                        connectionReason
+                    ),
+                    connectBehaviour = DefaultAblyTestScenarios.GivenTypes.ConnectionStateChangeBehaviour.NoBehaviour
+                ),
+                DefaultAblyTestScenarios.StartConnection.ThenConfig(
+                    numberOfConnectionStateFetchesToVerify = 2,
+                    verifyConnectionReasonFetch = true,
+                    verifyConnectionOn = false,
+                    verifyConnect = false,
+                    verifyConnectionOff = false,
+                    resultOfStartConnectionCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.FailureWithConnectionException(
+                        ErrorInformation(
+                            connectionReason.code,
+                            0,
+                            connectionReason.message,
+                            null,
+                            null
+                        )
+                    )
+                )
+            )
+        }
+    }
+
+    @Test
+    fun `startConnection - when connection is in CONNECTED state`() {
+        /* Given...
+         *
+         * ...that the connection’s `state` property returns CONNECTED...
+         *
+         * When...
+         *
+         * ...the `startConnection` method is called on the object under test...
+         *
+         * Then...
+         * ...in the following order, precisely the following things happen...
+         *
+         * ...it fetches the connection’s state once...
+         * ...and the call to `startConnection` (on the object under test) succeeds.
+         */
+
+        runBlocking {
+            DefaultAblyTestScenarios.StartConnection.test(
+                DefaultAblyTestScenarios.StartConnection.GivenConfig(
+                    initialConnectionState = ConnectionState.connected,
+                    connectionReasonBehaviour = DefaultAblyTestScenarios.GivenTypes.ConnectionReasonMockBehaviour.NotMocked,
+                    connectBehaviour = DefaultAblyTestScenarios.GivenTypes.ConnectionStateChangeBehaviour.NoBehaviour,
+                ),
+                DefaultAblyTestScenarios.StartConnection.ThenConfig(
+                    numberOfConnectionStateFetchesToVerify = 1,
+                    verifyConnectionReasonFetch = false,
+                    verifyConnectionOn = false,
+                    verifyConnect = false,
+                    verifyConnectionOff = false,
+                    resultOfStartConnectionCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
+                )
+            )
+        }
+    }
+
+    @Test
+    fun `startConnection - when, after connect called, connection changes to FAILED state`() {
+        /* Given...
+         *
+         * ...that the connection’s `state` property returns (arbitrarily chosen) INITIALIZED...
+         * ...and that when the Realtime instance’s `connect` method is called, its connection’s `on` method immediately emits a connection state change whose `previous` is INITIALIZED, `current` is FAILED, `retryIn` is (arbitrarily-chosen) 0 and `reason` is the arbitrarily-chosen error `connectionError`...
+         *
+         * When...
+         *
+         * ...the `startConnection` method is called on the object under test...
+         *
+         * Then...
+         * ...in the following order, precisely the following things happen...
+         *
+         * ...it fetches the connection’s state 2 times...
+         * ...and adds a listener to the connection using `on`...
+         * ...and tells the Realtime instance to connect...
+         * ...and removes a listener from the connection using `off`...
+         * ...and the call to `startConnection` (on the object under test) fails with a ConnectionException whose `code` and `message` are equal to those of `connectionError`.
+         */
+
+        val connectionError = ErrorInfo(
+            "example of an error message", /* arbitrarily chosen */
+            123 /* arbitrarily chosen */
+        )
+
+        runBlocking {
+            DefaultAblyTestScenarios.StartConnection.test(
+                DefaultAblyTestScenarios.StartConnection.GivenConfig(
+                    initialConnectionState = ConnectionState.initialized, /* arbitrarily-chosen */
+                    connectionReasonBehaviour = DefaultAblyTestScenarios.GivenTypes.ConnectionReasonMockBehaviour.NotMocked,
+                    connectBehaviour = DefaultAblyTestScenarios.GivenTypes.ConnectionStateChangeBehaviour.EmitStateChange(
+                        previous = ConnectionState.initialized,
+                        current = ConnectionState.failed,
+                        retryIn = 0,
+                        reason = connectionError
+                    ),
+                ),
+                DefaultAblyTestScenarios.StartConnection.ThenConfig(
+                    numberOfConnectionStateFetchesToVerify = 2,
+                    verifyConnectionReasonFetch = false,
+                    verifyConnectionOn = true,
+                    verifyConnect = true,
+                    verifyConnectionOff = true,
+                    resultOfStartConnectionCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.FailureWithConnectionException(
+                        ErrorInformation(
+                            connectionError.code,
+                            0,
+                            connectionError.message,
+                            null,
+                            null
+                        )
+                    )
+                )
+            )
+        }
+    }
+
+    @Test
+    fun `startConnection - when, after connect is called, no connection state change occurs`() {
+        /* Given...
+         *
+         * ...that the connection’s `state` property returns (arbitrarily chosen) INITIALIZED...
+         *
+         * When...
+         *
+         * ...the `startConnection` method is called on the object under test...
+         *
+         * Then...
+         * ...in the following order, precisely the following things happen...
+         *
+         * ...it fetches the connection’s state 2 times...
+         * ...and adds a listener to the connection using `on`...
+         * ...and tells the Realtime instance to connect...
+         * ...and the call to `startConnection` (on the object under test) fails with a ConnectionException whose `errorInformation` has `code` 100000 and `message` "Timeout was thrown when waiting for Ably to connect".
+         */
+
+        runBlocking {
+            DefaultAblyTestScenarios.StartConnection.test(
+                DefaultAblyTestScenarios.StartConnection.GivenConfig(
+                    initialConnectionState = ConnectionState.initialized, /* arbitrarily-chosen */
+                    connectionReasonBehaviour = DefaultAblyTestScenarios.GivenTypes.ConnectionReasonMockBehaviour.NotMocked,
+                    connectBehaviour = DefaultAblyTestScenarios.GivenTypes.ConnectionStateChangeBehaviour.NoBehaviour,
+                ),
+                DefaultAblyTestScenarios.StartConnection.ThenConfig(
+                    numberOfConnectionStateFetchesToVerify = 2,
+                    verifyConnectionReasonFetch = false,
+                    verifyConnectionOn = true,
+                    verifyConnect = true,
+                    verifyConnectionOff = false,
+                    resultOfStartConnectionCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.FailureWithConnectionException(
+                        ErrorInformation(
+                            code = 100000,
+                            statusCode = 0,
+                            message = "Timeout was thrown when waiting for Ably to connect",
+                            href = null,
+                            cause = null
+                        )
+                    )
+                )
+            )
+        }
+    }
+
     @Test
     fun `close - behaviour when all presence leave calls succeed`() {
         // Given...
