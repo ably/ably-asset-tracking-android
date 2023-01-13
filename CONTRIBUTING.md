@@ -57,9 +57,9 @@ This is a property unique to the projects in this repository, altering the build
 
 | `runtimeSecrets` value | Build Configuration | Notes |
 | ---------------------- | ------------------- | ----- |
-| `FOR_ALL_PROJECTS_BECAUSE_WE_ARE_RUNNING_INTEGRATION_TESTS` | Production secrets injected into all projects, for both `release` and `debug` build types. | Allows integration tests (connected checks, the `androidTest` source set in each project) to have access to these secrets. Used by the emulate workflow. |
-| `USE_DUMMY_EMPTY_STRING_VALUES` | Dummy secrets injected only into app projects. This allows the projects to build without production secrets needing to be supplied via Gradle properties. It means that any app or live-service integration test builds that attempt to use these secret values at runtime will fail. Used by the [check](.github/workflows/check.yml), [docs](.github/workflows/docs.yml) and publishing workflows. |
-| _either undefined or any other value_ | Production secrets injected only into app projects. | Ensures that they are not accidentally exposed to any of the SDK projects. Used, implicitly, by the assemble workflow. |
+| `FOR_ALL_PROJECTS_BECAUSE_WE_ARE_RUNNING_INTEGRATION_TESTS` | Production secrets injected into all projects, for both `release` and `debug` build types. | Allows integration tests (connected checks, the `androidTest` source set in each project) to have access to these secrets. Used by the [emulate](.github/workflows/emulate.yml) workflow. |
+| `USE_DUMMY_EMPTY_STRING_VALUES` | Dummy secrets injected only into app projects. This allows the projects to build without production secrets needing to be supplied via Gradle properties. | This means that any app or live-service integration test builds that attempt to use these secret values at runtime will fail. Used by the [check](.github/workflows/check.yml), [docs](.github/workflows/docs.yml) and publishing workflows. |
+| _either undefined or any other value_ | Production secrets injected only into app projects. | Ensures that they are not accidentally exposed to any of the SDK projects. Used, implicitly, by the [assemble](.github/workflows/assemble.yml) workflow. |
 
 It is a little bit hacky and there might be another way to do this in a more Gradle or Android idiomatic manner, however it suits the needs of our project build for the time being and does not change or otherwise alter the SDK products we publish.
 
@@ -80,6 +80,17 @@ If such a view is required then we suggest installing [this Gradle-global, user-
 The `taskTree` task requires a preceding task name and can be run per project, a fact that's visible with:
 
     ./gradlew tasks --all | grep taskTree
+
+### Automated Testing
+
+There are a few things that you need to be aware of when writing automated tests.
+
+#### Mapbox Replays
+
+When writing automated tests using Mapbox's replay engine, you may notice that the first location event appears to be replayed twice when a trip is started.
+
+This is expected, and is due to the fact that our event listeners get registered within Mapbox for both "location updates" and also a "first location" -
+which tells us where the asset is at the start of the trip. Subsequent location updates will only be received once.
 
 ## Secrets Required to Release
 
