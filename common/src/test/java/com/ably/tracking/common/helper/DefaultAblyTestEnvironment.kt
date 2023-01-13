@@ -413,6 +413,10 @@ class DefaultAblyTestEnvironment private constructor(
         every { connectionMock.state } returns state
     }
 
+    fun mockConnectionReason(reason: ErrorInfo?) {
+        every { connectionMock.reason } returns reason
+    }
+
     /**
      * Mocks [connectionMock]’s [AblySdkRealtime.Connection.on] method to capture the received [ConnectionStateListener], and mocks [realtimeMock]’s [AblySdkRealtime.close] method to immediately call this listener with a [ConnectionStateListener.ConnectionStateChange] object constructed from the [previous], [current], [retryIn] and [reason] arguments.
      *
@@ -439,10 +443,49 @@ class DefaultAblyTestEnvironment private constructor(
     }
 
     /**
+     * Mocks [connectionMock]’s [AblySdkRealtime.Connection.on] method to capture the received [ConnectionStateListener], and mocks [realtimeMock]’s [AblySdkRealtime.connect] method to immediately call this listener with a [ConnectionStateListener.ConnectionStateChange] object constructed from the [previous], [current], [retryIn] and [reason] arguments.
+     *
+     * @param previous The value to be used as the `previous` parameter of [ConnectionStateListener.ConnectionStateChange]’s constructor.
+     * @param current The value to be used as the `current` parameter of [ConnectionStateListener.ConnectionStateChange]’s constructor.
+     * @param retryIn The value to be used as the `retryIn` parameter of [ConnectionStateListener.ConnectionStateChange]’s constructor.
+     * @param reason The value to be used as the `reason` parameter of [ConnectionStateListener.ConnectionStateChange]’s constructor.
+     */
+    fun mockConnectToEmitStateChange(
+        previous: ConnectionState,
+        current: ConnectionState,
+        retryIn: Long,
+        reason: ErrorInfo?
+    ) {
+        val connectionStateListenerSlot = slot<ConnectionStateListener>()
+        every { connectionMock.on(capture(connectionStateListenerSlot)) } returns Unit
+
+        every { realtimeMock.connect() } answers {
+            val connectionStateChange = ConnectionStateListener.ConnectionStateChange(
+                previous, current, retryIn, reason
+            )
+            connectionStateListenerSlot.captured.onConnectionStateChanged(connectionStateChange)
+        }
+    }
+
+    /**
+     * Stubs [connectionMock]’s [AblySdkRealtime.Connection.on] method.
+     */
+    fun stubConnectionOn() {
+        every { connectionMock.on(any()) } returns Unit
+    }
+
+    /**
      * Stubs [connectionMock]’s [AblySdkRealtime.Connection.off] method.
      */
     fun stubConnectionOff() {
         every { connectionMock.off(any()) } returns Unit
+    }
+
+    /**
+     * Stubs [realtimeMock]’s [AblySdkRealtime.connect] method.
+     */
+    fun stubConnect() {
+        every { realtimeMock.connect() } returns Unit
     }
 
     companion object {
