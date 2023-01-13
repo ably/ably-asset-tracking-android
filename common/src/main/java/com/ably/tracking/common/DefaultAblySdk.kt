@@ -16,9 +16,9 @@ import io.ably.lib.types.Message
 import io.ably.lib.types.PresenceMessage
 
 /**
- * An implementation of [AblySdkRealtimeFactory] which uses the `ably-java` client library.
+ * An implementation of [AblySdkFactory] which uses the `ably-java` client library.
  */
-class DefaultAblySdkRealtimeFactory : AblySdkRealtimeFactory {
+class DefaultAblySdkFactory : AblySdkFactory {
     override fun create(clientOptions: ClientOptions): AblySdkRealtime {
         return DefaultAblySdkRealtime(clientOptions)
     }

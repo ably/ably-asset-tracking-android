@@ -14,7 +14,7 @@ import io.ably.lib.types.ErrorInfo
 import io.ably.lib.types.Message
 import io.ably.lib.types.PresenceMessage
 
-interface AblySdkRealtimeFactory {
+interface AblySdkFactory {
     fun create(clientOptions: ClientOptions): AblySdkRealtime
 }
 

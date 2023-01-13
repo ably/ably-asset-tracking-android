@@ -1,7 +1,7 @@
 package com.ably.tracking.common.helper
 
 import com.ably.tracking.common.AblySdkRealtime
-import com.ably.tracking.common.AblySdkRealtimeFactory
+import com.ably.tracking.common.AblySdkFactory
 import com.ably.tracking.common.DefaultAbly
 import com.ably.tracking.connection.Authentication
 import com.ably.tracking.connection.ConnectionConfiguration
@@ -27,7 +27,7 @@ import io.ably.lib.types.ErrorInfo
 class DefaultAblyTestEnvironment private constructor(
     /**
      * The [DefaultAbly] object created by [create].
-     * It has been configured with an [AblySdkRealtimeFactory] mock that supplies [realtimeMock].
+     * It has been configured with an [AblySdkFactory] mock that supplies [realtimeMock].
      */
     val objectUnderTest: DefaultAbly,
     /**
@@ -389,7 +389,7 @@ class DefaultAblyTestEnvironment private constructor(
             every { realtimeMock.connection } returns connectionMock
             excludeRecords { realtimeMock.connection }
 
-            val factory = mockk<AblySdkRealtimeFactory>()
+            val factory = mockk<AblySdkFactory>()
             every { factory.create(any()) } returns realtimeMock
 
             val connectionConfiguration =

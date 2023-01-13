@@ -248,7 +248,7 @@ class DefaultAbly
  * @throws ConnectionException If connection configuration is invalid.
  */
 constructor(
-    realtimeFactory: AblySdkRealtimeFactory,
+    ablySdkFactory: AblySdkFactory,
     connectionConfiguration: ConnectionConfiguration,
     private val logHandler: LogHandler?,
 ) : Ably {
@@ -275,7 +275,7 @@ constructor(
                     )
                 }
             }
-            ably = realtimeFactory.create(clientOptions)
+            ably = ablySdkFactory.create(clientOptions)
         } catch (exception: AblyException) {
             throw exception.errorInfo.toTrackingException().also {
                 logHandler?.w("$TAG Failed to create an Ably instance", it)

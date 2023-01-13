@@ -9,7 +9,7 @@ import com.ably.tracking.Accuracy
 import com.ably.tracking.Location
 import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
-import com.ably.tracking.common.AblySdkRealtimeFactory
+import com.ably.tracking.common.AblySdkFactory
 import com.ably.tracking.common.DefaultAbly
 import com.ably.tracking.common.DefaultAblySdkRealtime
 import com.ably.tracking.common.EventNames
@@ -331,7 +331,7 @@ class TestResources(
             locationChannelName: String
         ): Publisher {
             val resolution = Resolution(Accuracy.BALANCED, 1000L, 0.0)
-            val realtimeFactory = object : AblySdkRealtimeFactory {
+            val ablySdkFactory = object : AblySdkFactory {
                 override fun create(clientOptions: ClientOptions) = DefaultAblySdkRealtime(proxyClientOptions)
             }
             val connectionConfiguration = ConnectionConfiguration(
@@ -342,7 +342,7 @@ class TestResources(
             )
 
             return DefaultPublisher(
-                DefaultAbly(realtimeFactory, connectionConfiguration, Logging.aatDebugLogger),
+                DefaultAbly(ablySdkFactory, connectionConfiguration, Logging.aatDebugLogger),
                 DefaultMapbox(
                     context,
                     MapConfiguration(MAPBOX_ACCESS_TOKEN),
