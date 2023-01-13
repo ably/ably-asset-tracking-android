@@ -275,7 +275,7 @@ constructor(
                     )
                 }
             }
-            ably = ablySdkFactory.create(clientOptions)
+            ably = ablySdkFactory.createRealtime(clientOptions)
         } catch (exception: AblyException) {
             throw exception.errorInfo.toTrackingException().also {
                 logHandler?.w("$TAG Failed to create an Ably instance", it)

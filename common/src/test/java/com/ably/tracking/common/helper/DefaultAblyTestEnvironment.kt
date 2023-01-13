@@ -390,7 +390,7 @@ class DefaultAblyTestEnvironment private constructor(
             excludeRecords { realtimeMock.connection }
 
             val factory = mockk<AblySdkFactory>()
-            every { factory.create(any()) } returns realtimeMock
+            every { factory.createRealtime(any()) } returns realtimeMock
 
             val connectionConfiguration =
                 ConnectionConfiguration(Authentication.basic("", "")) // arbitrarily chosen

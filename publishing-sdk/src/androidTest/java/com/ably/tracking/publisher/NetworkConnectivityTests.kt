@@ -332,7 +332,7 @@ class TestResources(
         ): Publisher {
             val resolution = Resolution(Accuracy.BALANCED, 1000L, 0.0)
             val ablySdkFactory = object : AblySdkFactory {
-                override fun create(clientOptions: ClientOptions) = DefaultAblySdkRealtime(proxyClientOptions)
+                override fun createRealtime(clientOptions: ClientOptions) = DefaultAblySdkRealtime(proxyClientOptions)
             }
             val connectionConfiguration = ConnectionConfiguration(
                 Authentication.basic(
