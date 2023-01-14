@@ -13,7 +13,23 @@ import kotlinx.coroutines.withTimeout
 import org.junit.Assert
 import org.junit.Test
 
+/**
+ * # Unit tests for [DefaultAbly]
+ *
+ * Here are some notes about the approach taken for testing [DefaultAbly].
+ *
+ * ## Documenting the absence of built-in timeout
+ *
+ * Whilst writing black-box tests for this class, I wanted to document which parts of DefaultAbly have a built-in timeout behaviour, and which don't. So, I’ve written some tests which examine how this class’s methods behave when an underlying Ably SDK operation runs indefinitely. In the case where we wish to document that there is no built-in timeout behaviour, these tests aren't really _testing_ anything – there’s no good way to prove that something doesn’t have a timeout other than reading the implementation. So, these tests just demonstrate that in the absence of activity from the Ably SDK, the [DefaultAbly] method will not return within [noTimeoutDemonstrationWaitingTimeInMilliseconds]. If you want to convince yourself that there really is no built-in timeout, you can set [noTimeoutDemonstrationWaitingTimeInMilliseconds] to a larger number and run the tests.
+ *
+ * If we remove all of the built-in timeout behaviour from DefaultAbly in the future then it’ll be fine to delete these tests.
+ */
 class DefaultAblyTests {
+    /**
+     * The arbitrarily-chosen number of milliseconds that a test will wait as a demonstration that a given operation does not have a built-in timeout. See "Demonstrating the absence of no built-in timeout" above.
+     */
+    private val noTimeoutDemonstrationWaitingTimeInMilliseconds = 100L
+
     /*
     Observations from writing black-box tests for `connect`:
 
@@ -57,7 +73,9 @@ class DefaultAblyTests {
                     verifyPresenceEnter = true,
                     verifyChannelAttach = false,
                     verifyChannelRelease = false,
-                    resultOfConnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
+                    resultOfConnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
+                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
+                    )
                 )
             )
         }
@@ -100,7 +118,9 @@ class DefaultAblyTests {
                     verifyPresenceEnter = true,
                     verifyChannelAttach = false,
                     verifyChannelRelease = false,
-                    resultOfConnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
+                    resultOfConnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
+                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
+                    )
                 )
             )
         }
@@ -143,7 +163,9 @@ class DefaultAblyTests {
                     verifyPresenceEnter = true,
                     verifyChannelAttach = false,
                     verifyChannelRelease = false,
-                    resultOfConnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
+                    resultOfConnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
+                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
+                    )
                 )
             )
         }
@@ -186,7 +208,9 @@ class DefaultAblyTests {
                     verifyPresenceEnter = true,
                     verifyChannelAttach = false,
                     verifyChannelRelease = false,
-                    resultOfConnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
+                    resultOfConnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
+                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
+                    )
                 )
             )
         }
@@ -237,14 +261,61 @@ class DefaultAblyTests {
                     verifyPresenceEnter = true,
                     verifyChannelAttach = false,
                     verifyChannelRelease = true,
-                    resultOfConnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.FailureWithConnectionException(
-                        ErrorInformation(
-                            presenceError.code,
-                            0,
-                            presenceError.message,
-                            null,
-                            null
+                    resultOfConnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
+                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.FailureWithConnectionException(
+                            ErrorInformation(
+                                presenceError.code,
+                                0,
+                                presenceError.message,
+                                null,
+                                null
+                            )
                         )
+                    )
+                )
+            )
+        }
+    }
+
+    @Test
+    fun `connect - when presence enter does not complete`() {
+        /* Given...
+         *
+         * ...that calling `containsKey` on the Channels instance returns false...
+         * ...and that calling `get` (the overload that accepts a ChannelOptions object) on the Channels instance returns a channel in the (arbitrarily chosen) INITIALIZED state...
+         * ...which, when told to enter presence, never finishes doing so...
+         *
+         * When...
+         *
+         * ...we call `connect` on the object under test,
+         *
+         * Then...
+         * ...in the following order, precisely the following things happen...
+         *
+         * ...it calls `containsKey` on the Channels instance...
+         * ...and calls `get` (the overload that accepts a ChannelOptions object) on the Channels instance...
+         * ...and checks the channel’s state twice...
+         * ...and tells the channel to enter presence...
+         * ...and the call to `connect` (on the object under test) does not complete (see “Documenting the absence of built-in timeout” above).
+         */
+
+        runBlocking {
+            DefaultAblyTestScenarios.Connect.test(
+                DefaultAblyTestScenarios.Connect.GivenConfig(
+                    channelsContainsKey = false,
+                    channelsGetOverload = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
+                    channelState = ChannelState.initialized, /* arbitrarily chosen */
+                    presenceEnterBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.DoesNotComplete,
+                    channelAttachBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.NotMocked,
+                ),
+                DefaultAblyTestScenarios.Connect.ThenConfig(
+                    overloadOfChannelsGetToVerify = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
+                    numberOfChannelStateFetchesToVerify = 2,
+                    verifyPresenceEnter = true,
+                    verifyChannelAttach = false,
+                    verifyChannelRelease = false,
+                    resultOfConnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.DoesNotTerminate(
+                        timeoutInMilliseconds = noTimeoutDemonstrationWaitingTimeInMilliseconds
                     )
                 )
             )
@@ -290,7 +361,9 @@ class DefaultAblyTests {
                     numberOfChannelStateFetchesToVerify = 2,
                     verifyPresenceEnter = true,
                     verifyChannelRelease = false,
-                    resultOfConnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
+                    resultOfConnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
+                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
+                    )
                 )
             )
         }
@@ -341,8 +414,10 @@ class DefaultAblyTests {
                     verifyPresenceEnter = false,
                     verifyChannelAttach = true,
                     verifyChannelRelease = true,
-                    resultOfConnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.FailureWithConnectionException(
-                        ErrorInformation(attachError.code, 0, attachError.message, null, null)
+                    resultOfConnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
+                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.FailureWithConnectionException(
+                            ErrorInformation(attachError.code, 0, attachError.message, null, null)
+                        )
                     ),
                 )
             )
@@ -388,7 +463,9 @@ class DefaultAblyTests {
                     verifyChannelAttach = true,
                     verifyPresenceEnter = true,
                     verifyChannelRelease = false,
-                    resultOfConnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
+                    resultOfConnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
+                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
+                    )
                 )
             )
         }
@@ -439,8 +516,10 @@ class DefaultAblyTests {
                     verifyChannelAttach = true,
                     verifyPresenceEnter = false,
                     verifyChannelRelease = true,
-                    resultOfConnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.FailureWithConnectionException(
-                        ErrorInformation(attachError.code, 0, attachError.message, null, null)
+                    resultOfConnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
+                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.FailureWithConnectionException(
+                            ErrorInformation(attachError.code, 0, attachError.message, null, null)
+                        )
                     )
                 )
             )
@@ -484,7 +563,54 @@ class DefaultAblyTests {
                     verifyPresenceEnter = true,
                     verifyChannelAttach = false,
                     verifyChannelRelease = false,
-                    resultOfConnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
+                    resultOfConnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
+                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
+                    )
+                )
+            )
+        }
+    }
+
+    @Test
+    fun `connect - when channel attach does not complete`() {
+        /* Given...
+         *
+         * ...that calling `containsKey` on the Channels instance returns false...
+         * ...and that calling `get` (the overload that accepts a ChannelOptions object) on the Channels instance returns a channel in the (arbitrarily-chosen) DETACHED state...
+         * ...which, when told to attach, never finishes doing so...
+         *
+         * When...
+         *
+         * ...we call `connect` on the object under test,
+         *
+         * Then...
+         * ...in the following order, precisely the following things happen...
+         *
+         * ...it calls `containsKey` on the Channels instance...
+         * ...and calls `get` (the overload that accepts a ChannelOptions object) on the Channels instance...
+         * ...and checks the channel’s state once...
+         * ...and tells the channel to attach...
+         * ...and the call to `connect` (on the object under test) does not complete (see “Documenting the absence of built-in timeout” above).
+         */
+
+        runBlocking {
+            DefaultAblyTestScenarios.Connect.test(
+                DefaultAblyTestScenarios.Connect.GivenConfig(
+                    channelsContainsKey = false,
+                    channelsGetOverload = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
+                    channelState = ChannelState.detached, /* arbitrarily chosen */
+                    presenceEnterBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.NotMocked,
+                    channelAttachBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.DoesNotComplete,
+                ),
+                DefaultAblyTestScenarios.Connect.ThenConfig(
+                    overloadOfChannelsGetToVerify = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
+                    numberOfChannelStateFetchesToVerify = 1,
+                    verifyPresenceEnter = false,
+                    verifyChannelAttach = true,
+                    verifyChannelRelease = false,
+                    resultOfConnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.DoesNotTerminate(
+                        timeoutInMilliseconds = noTimeoutDemonstrationWaitingTimeInMilliseconds
+                    )
                 )
             )
         }
@@ -525,7 +651,9 @@ class DefaultAblyTests {
                     verifyPresenceEnter = false,
                     verifyChannelAttach = false,
                     verifyChannelRelease = false,
-                    resultOfConnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
+                    resultOfConnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
+                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
+                    )
                 )
             )
         }

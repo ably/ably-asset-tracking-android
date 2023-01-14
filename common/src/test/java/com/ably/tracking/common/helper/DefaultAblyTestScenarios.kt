@@ -8,6 +8,10 @@ import io.ably.lib.realtime.ChannelState
 import io.ably.lib.types.ErrorInfo
 import io.mockk.confirmVerified
 import io.mockk.verifyOrder
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.runInterruptible
+import kotlinx.coroutines.withTimeout
 import org.junit.Assert
 
 class DefaultAblyTestScenarios {
@@ -22,6 +26,7 @@ class DefaultAblyTestScenarios {
             object NotMocked : CompletionListenerMockBehaviour()
             object Success : CompletionListenerMockBehaviour()
             class Failure(val errorInfo: ErrorInfo) : CompletionListenerMockBehaviour()
+            object DoesNotComplete : CompletionListenerMockBehaviour()
         }
     }
 
@@ -85,6 +90,105 @@ class DefaultAblyTestScenarios {
                 }
             }
         }
+
+        /**
+         * Describes the expected result of an asynchronous operation which returns a [Result] instance to communicate its result.
+         */
+        sealed class ExpectedAsyncResult {
+            /**
+             * The operation terminates and its result is described by [expectedResult].
+             */
+            class Terminates(val expectedResult: ExpectedResult) : ExpectedAsyncResult()
+
+            /**
+             * The operation does not terminate within [timeoutInMilliseconds] milliseconds.
+             */
+            class DoesNotTerminate(val timeoutInMilliseconds: Long) : ExpectedAsyncResult()
+
+            /**
+             * Given [result], which represents the result of an asynchronous operation `op`, this implements the following steps of the "Then..." part of a parameterised test case:
+             *
+             * ```text
+             * when ${this} is Terminates and ${this.expectedResult} is Success {
+             * ...and ${op} succeeds.
+             * }
+             *
+             * when ${this} is Terminates and ${this.expectedResult} is FailureWithConnectionException {
+             * ...and ${op} fails with a ConnectionException whose errorInformation is equal to ${this.errorInformation}.
+             * }
+             *
+             * when ${this} is DoesNotTerminate {
+             * ...and ${op} does not complete within ${this.timeoutInMilliseconds} milliseconds.
+             * }
+             * ```
+             *
+             * @param result `null` if the execution of `op` lasted longer than some timeout described by `this`, else the result of `op`’s execution. For example, a value returned by executing `op` using [executeForVerifying], with `this` as the `expectedAsyncResult` argument.
+             */
+            fun <T> verify(result: Result<T>?) {
+                when (this) {
+                    is Terminates -> {
+                        /* when ${this} is Terminates and ${this.expectedResult} is Success {
+                         * ...and ${op} succeeds.
+                         * }
+                         *
+                         * when ${this} is Terminates and ${this.expectedResult} is FailureWithConnectionException {
+                         * ...and ${op} fails with a ConnectionException whose errorInformation is equal to ${this.errorInformation}.
+                         * }
+                         */
+                        Assert.assertNotNull(result)
+                        if (result != null) {
+                            expectedResult.verify(result)
+                        }
+                    }
+
+                    is DoesNotTerminate -> {
+                        /* when ${this} is DoesNotTerminate {
+                         * ...and ${op} does not complete within ${this.timeoutInMilliseconds} milliseconds.
+                         * }
+                         */
+                        Assert.assertNull(result)
+                    }
+                }
+            }
+        }
+    }
+
+    companion object {
+        /**
+         * Executes asynchronous operation [operation] in an environment suitable for later verifying whether its result was as described by [expectedAsyncResult].
+         *
+         * @param expectedAsyncResult The expected result of [operation].
+         * @param operation The operation to execute, whose result the caller intends to subsequently verify [expectedAsyncResult] as describing.
+         * @return `null` if the execution of [operation] lasted longer than some timeout described by [expectedAsyncResult], else the result of [operation]’s execution. You can later pass this value to [ThenTypes.ExpectedAsyncResult.verify].
+         */
+        suspend fun <T> executeForVerifying(
+            expectedAsyncResult: ThenTypes.ExpectedAsyncResult,
+            operation: suspend () -> T
+        ): T? {
+            return when (expectedAsyncResult) {
+                is ThenTypes.ExpectedAsyncResult.Terminates -> {
+                    operation()
+                }
+                is ThenTypes.ExpectedAsyncResult.DoesNotTerminate -> {
+                    try {
+                        withTimeout(timeMillis = expectedAsyncResult.timeoutInMilliseconds) {
+                            /* This usage of runInterruptible is intended to ensure that even if `operation` is not cancellable — that is, even if it does not cooperate with cancellation (https://kotlinlang.org/docs/cancellation-and-timeouts.html#cancellation-is-cooperative) — the withTimeout method call will return after the timeout elapses. We have some methods in DefaultAbly that are not cancellable – see https://github.com/ably/ably-asset-tracking-android/issues/908.
+                             *
+                             * Perhaps there’s a better way to do this — to create a coroutine that’s cancellable even if it calls a non-cancellable one — that doesn’t involve making a trip from coroutines land to synchronous land and back again. I’m not familiar enough with the coroutines APIs to know.
+                             */
+
+                            runInterruptible {
+                                runBlocking {
+                                    operation()
+                                }
+                            }
+                        }
+                    } catch (e: TimeoutCancellationException) {
+                        null
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -111,7 +215,7 @@ class DefaultAblyTestScenarios {
             val verifyPresenceEnter: Boolean,
             val verifyChannelAttach: Boolean,
             val verifyChannelRelease: Boolean,
-            val resultOfConnectCallOnObjectUnderTest: ThenTypes.ExpectedResult
+            val resultOfConnectCallOnObjectUnderTest: ThenTypes.ExpectedAsyncResult
         )
 
         companion object {
@@ -132,12 +236,20 @@ class DefaultAblyTestScenarios {
              * ...which, when told to enter presence, fails to do so with error ${givenConfig.presenceEnterBehaviour.errorInfo}...
              * }
              *
-             * when ${givenConfig.channelAttachBehaviour} is Success {
-             * ...[and] which, when told to attach, does so successfully...
+             * when ${givenConfig.presenceEnterBehaviour} is DoesNotComplete {
+             * ...which, when told to enter presence, never finishes doing so...
+             * }
+             *
+             * when ${givenConfig.presenceEnterBehaviour} is Success {
+             * ...[and] which, when told to enter presence, does so successfully...
              * }
              *
              * when ${givenConfig.channelAttachBehaviour} is Failure {
              * ...[and] which, when told to attach, fails to do so with error ${givenConfig.channelAttachBehaviour.errorInfo}...
+             * }
+             *
+             * when ${givenConfig.channelAttachBehaviour} is DoesNotComplete {
+             * ...[and] which, when told to attach, never finishes doing so...
              * }
              *
              * When...
@@ -163,12 +275,16 @@ class DefaultAblyTestScenarios {
              * ...and releases the channel...
              * }
              *
-             * when ${thenConfig.resultOfConnectCallOnObjectUnderTest} is Success {
+             * when ${thenConfig.resultOfConnectCallOnObjectUnderTest} is Terminates and ${thenConfig.resultOfConnectCallOnObjectUnderTest.expectedResult} is Success {
              * ...and the call to `connect` (on the object under test) succeeds.
              * }
              *
-             * when ${thenConfig.resultOfConnectCallOnObjectUnderTest} is FailureWithConnectionException {
-             * ...and the call to `connect` (on the object under test) fails with a ConnectionException whose errorInformation is equal to ${thenConfig.resultOfConnectCallOnObjectUnderTest.errorInfo}.
+             * when ${thenConfig.resultOfConnectCallOnObjectUnderTest} is Terminates and ${thenConfig.resultOfConnectCallOnObjectUnderTest.expectedResult} is FailureWithConnectionException {
+             * ...and the call to `connect` (on the object under test) fails with a ConnectionException whose errorInformation is equal to ${thenConfig.resultOfConnectCallOnObjectUnderTest.errorInformation}.
+             * }
+             *
+             * when ${thenConfig.resultOfConnectCallOnObjectUnderTest} is DoesNotTerminate {
+             * ...and the call to `connect` (on the object under test) does not complete within ${thenConfig.resultOfConnectCallOnObjectUnderTest.timeoutInMilliseconds} milliseconds.
              * }
              * ```
              *
@@ -209,6 +325,13 @@ class DefaultAblyTestScenarios {
                     is GivenTypes.CompletionListenerMockBehaviour.Failure -> {
                         configuredChannel.mockFailedPresenceEnter(givenPresenceEnterBehaviour.errorInfo)
                     }
+                    /* when ${givenConfig.channelAttachBehaviour} is DoesNotComplete {
+                     * ...which, when told to attach, never finishes doing so...
+                     * }
+                     */
+                    is GivenTypes.CompletionListenerMockBehaviour.DoesNotComplete -> {
+                        configuredChannel.mockNonCompletingAttach()
+                    }
                 }
 
                 when (val givenChannelAttachBehaviour = givenConfig.channelAttachBehaviour) {
@@ -227,15 +350,24 @@ class DefaultAblyTestScenarios {
                     is GivenTypes.CompletionListenerMockBehaviour.Failure -> {
                         configuredChannel.mockFailedAttach(givenChannelAttachBehaviour.errorInfo)
                     }
+                    /* when ${givenConfig.presenceEnterBehaviour} is DoesNotComplete {
+                     * ...[and] which, when told to enter presence, never finishes doing so...
+                     * }
+                     */
+                    is GivenTypes.CompletionListenerMockBehaviour.DoesNotComplete -> {
+                        configuredChannel.mockNonCompletingPresenceEnter()
+                    }
                 }
 
                 // When...
 
-                // ...we call `connect` on the object under test,
-                val result = testEnvironment.objectUnderTest.connect(
-                    configuredChannel.trackableId,
-                    PresenceData("")
-                )
+                val result = executeForVerifying(thenConfig.resultOfConnectCallOnObjectUnderTest) {
+                    // ...we call `connect` on the object under test,
+                    testEnvironment.objectUnderTest.connect(
+                        configuredChannel.trackableId,
+                        PresenceData("")
+                    )
+                }
 
                 // Then...
                 // ...in the following order, precisely the following things happen...
@@ -283,12 +415,16 @@ class DefaultAblyTestScenarios {
                     }
                 }
 
-                /* when ${thenConfig.resultOfConnectCallOnObjectUnderTest} is Success {
+                /* when ${thenConfig.resultOfConnectCallOnObjectUnderTest} is Terminates and ${thenConfig.resultOfConnectCallOnObjectUnderTest.expectedResult} is Success {
                  * ...and the call to `connect` (on the object under test) succeeds.
                  * }
                  *
-                 * when ${thenConfig.resultOfConnectCallOnObjectUnderTest} is FailureWithConnectionException {
-                 * ...and the call to `connect` (on the object under test) fails with a ConnectionException whose errorInformation is equal to ${thenConfig.resultOfConnectCallOnObjectUnderTest.errorInfo}.
+                 * when ${thenConfig.resultOfConnectCallOnObjectUnderTest} is Terminates and ${thenConfig.resultOfConnectCallOnObjectUnderTest.expectedResult} is FailureWithConnectionException {
+                 * ...and the call to `connect` (on the object under test) fails with a ConnectionException whose errorInformation is equal to ${thenConfig.resultOfConnectCallOnObjectUnderTest.errorInformation}.
+                 * }
+                 *
+                 * when ${thenConfig.resultOfConnectCallOnObjectUnderTest} is DoesNotTerminate {
+                 * ...and the call to `connect` (on the object under test) does not complete within ${thenConfig.resultOfConnectCallOnObjectUnderTest.timeoutInMilliseconds} milliseconds.
                  * }
                  */
                 thenConfig.resultOfConnectCallOnObjectUnderTest.verify(result)
