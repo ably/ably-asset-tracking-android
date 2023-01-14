@@ -136,6 +136,13 @@ class DefaultAblyTestEnvironment private constructor(
         }
 
         /**
+         * Mocks [presenceMock]’s [AblySdkRealtime.Presence.enter] method to never call any methods on its received completion listener.
+         */
+        fun mockNonCompletingPresenceEnter() {
+            mockPresenceEnterResult { }
+        }
+
+        /**
          * Mocks [presenceMock]’s [AblySdkRealtime.Presence.leave] method to immediately pass its received completion listener to [handler].
          *
          * @param handler The function that should receive the completion listener passed to [presenceMock]’s [AblySdkRealtime.Presence.leave] method.
@@ -203,6 +210,13 @@ class DefaultAblyTestEnvironment private constructor(
          */
         fun mockFailedAttach(errorInfo: ErrorInfo) {
             mockAttachResult { it.onError(errorInfo) }
+        }
+
+        /**
+         * Mocks [channelMock]’s [AblySdkRealtime.Channel.attach] method to never call any methods on its received completion listener.
+         */
+        fun mockNonCompletingAttach() {
+            mockAttachResult { }
         }
     }
 
