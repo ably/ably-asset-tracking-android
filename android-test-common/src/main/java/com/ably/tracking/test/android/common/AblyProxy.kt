@@ -30,8 +30,6 @@ import io.ktor.websocket.close
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
-import org.msgpack.core.MessagePack
-import org.msgpack.value.ImmutableMapValue
 import org.slf4j.event.Level
 import java.net.ServerSocket
 import java.net.Socket
@@ -427,22 +425,11 @@ fun configureWsClient() =
     }
 
 /**
- * Unpacks MsgPack data to a MapValue
- */
-fun unpack(data: ByteArray): ImmutableMapValue? =
-    try {
-        MessagePack.newDefaultUnpacker(data).unpackValue().asMapValue()
-    } catch (e: Exception) {
-        testLogD("MsgPack Error: $e", e)
-        throw(e)
-    }
-
-/**
  * Return a string representation of a WS Frame for logging purposes
  */
 fun logFrame(frame: Frame) =
     if (frame.frameType == FrameType.BINARY) {
-        unpack(frame.data).toString()
+        (frame.data.unpack()).toString()
     } else {
         frame.toString()
     }

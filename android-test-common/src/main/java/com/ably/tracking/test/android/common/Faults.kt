@@ -3,7 +3,6 @@ package com.ably.tracking.test.android.common
 import com.ably.tracking.TrackableState
 import io.ktor.websocket.Frame
 import io.ktor.websocket.FrameType
-import org.msgpack.value.impl.ImmutableStringValueImpl
 import java.util.Timer
 import kotlin.concurrent.timerTask
 import kotlin.reflect.KClass
@@ -218,14 +217,6 @@ class NullApplicationLayerFault(apiKey: String) : ApplicationLayerFault(apiKey) 
         TrackableStateReceiver.onlineWithoutFail("$name: $stage")
 }
 
-//
-// Ably protocol action identifiers used by interceptors
-//
-const val CONNECTED_ACTION = 4
-const val ATTACH_ACTION = 10
-const val DETACH_ACTION = 12
-const val PRESENCE_ACTION = 14
-
 /**
  * Base class for all faults that simply drop messages with a specific action
  * type in a specified direction
@@ -233,7 +224,7 @@ const val PRESENCE_ACTION = 14
 abstract class DropAction(
     apiKey: String,
     private val direction: FrameDirection,
-    private val action: Int
+    private val action: Message.Action
 ) : ApplicationLayerFault(apiKey) {
 
     companion object {
@@ -289,7 +280,7 @@ abstract class DropAction(
     private fun shouldFilter(direction: FrameDirection, frame: Frame) =
         frame.frameType == FrameType.BINARY &&
             direction == this.direction &&
-            messageAction(frame) == action
+            frame.data.unpack().isAction(action)
 }
 
 /**
@@ -299,7 +290,7 @@ abstract class DropAction(
 class AttachUnresponsive(apiKey: String) : DropAction(
     apiKey = apiKey,
     direction = FrameDirection.ClientToServer,
-    action = ATTACH_ACTION
+    action = Message.Action.ATTACH
 ) {
     override val name = "AttachUnresponsive"
 }
@@ -311,7 +302,7 @@ class AttachUnresponsive(apiKey: String) : DropAction(
 class DetachUnresponsive(apiKey: String) : DropAction(
     apiKey = apiKey,
     direction = FrameDirection.ClientToServer,
-    action = DETACH_ACTION
+    action = Message.Action.DETACH
 ) {
     override val name = "DetachUnresponsive"
 }
@@ -324,7 +315,7 @@ class DetachUnresponsive(apiKey: String) : DropAction(
 abstract class UnresponsiveAfterAction(
     apiKey: String,
     private val direction: FrameDirection,
-    private val action: Int
+    private val action: Message.Action
 ) : ApplicationLayerFault(apiKey) {
 
     companion object {
@@ -373,7 +364,7 @@ abstract class UnresponsiveAfterAction(
     private fun shouldActivate(direction: FrameDirection, frame: Frame) =
         frame.frameType == FrameType.BINARY &&
             direction == this.direction &&
-            messageAction(frame) == action
+            frame.data.unpack().isAction(action)
 }
 
 /**
@@ -383,7 +374,7 @@ abstract class UnresponsiveAfterAction(
 class EnterUnresponsive(apiKey: String) : UnresponsiveAfterAction(
     apiKey = apiKey,
     direction = FrameDirection.ClientToServer,
-    action = PRESENCE_ACTION
+    action = Message.Action.PRESENCE
 ) {
     override val name = "EnterUnresponsive"
 
@@ -494,14 +485,8 @@ class DisconnectWithFailedResume(apiKey: String) : ApplicationLayerFault(apiKey)
     private fun shouldDisconnect(direction: FrameDirection, frame: Frame) =
         direction == FrameDirection.ServerToClient &&
             frame.frameType == FrameType.BINARY &&
-            messageAction(frame) == CONNECTED_ACTION
+            frame.data.unpack().isAction(Message.Action.CONNECTED)
 }
-
-//
-// Presence action codes used in Ably protocol
-//
-const val PRESENCE_ENTER = 2
-const val PRESENCE_UPDATE = 4
 
 /**
  * Abstract fault implementation to intercept outgoing presence messages, preventing
@@ -509,8 +494,8 @@ const val PRESENCE_UPDATE = 4
  */
 abstract class PresenceNackFault(
     apiKey: String,
-    private val nackedPresenceAction: Int,
-    private val response: (msgSerial: Int) -> Map<String, Any?>,
+    private val nackedPresenceAction: Message.PresenceAction,
+    private val response: (msgSerial: Int) -> Map<String?, Any?>,
     private val nackLimit: Int = 3
 ) : ApplicationLayerFault(apiKey) {
 
@@ -523,13 +508,12 @@ abstract class PresenceNackFault(
 
             override fun interceptFrame(direction: FrameDirection, frame: Frame): List<Action> {
                 return if (shouldNack(direction, frame)) {
-                    testLogD("$name: will nack ($nacksSent): ${unpack(frame.data)}")
-                    val msgSerial = messageField(frame, "msgSerial")
-                        ?.asIntegerValue()
-                        ?.asInt()
+                    val msg = frame.data.unpack()
+                    testLogD("$name: will nack ($nacksSent): $msg")
 
-                    val nackFrame = Frame.Binary(true, response(msgSerial!!).pack())
-                    testLogD("$name: sending nack: ${unpack(nackFrame.data)}")
+                    val msgSerial = msg["msgSerial"] as Int
+                    val nackFrame = Frame.Binary(true, response(msgSerial).pack())
+                    testLogD("$name: sending nack: ${nackFrame.data.unpack()}")
                     nacksSent += 1
 
                     listOf(
@@ -555,27 +539,10 @@ abstract class PresenceNackFault(
         nacksSent < nackLimit &&
             frame.frameType == FrameType.BINARY &&
             direction == FrameDirection.ClientToServer &&
-            messageAction(frame) == PRESENCE_ACTION &&
-            presenceAction(frame) == nackedPresenceAction
-
-    /**
-     * Returns the presence action (integer) field from a Frame, or null if this
-     * appears not to be a valid presence message
-     */
-    private fun presenceAction(frame: Frame): Int? {
-        val presenceArray = messageField(frame, "presence")
-            ?.asArrayValue()
-
-        if (presenceArray?.size() == 0) {
-            // No presence updates in this message
-            return null
-        }
-
-        // Should only be one member, as we have only one client?
-        val presenceMessage = presenceArray?.get(0)?.asMapValue()?.map()
-        val action = presenceMessage?.get(ImmutableStringValueImpl("action"))
-        return action?.asIntegerValue()?.asInt()
-    }
+            frame.data.unpack().let {
+                it.isAction(Message.Action.PRESENCE) &&
+                    it.isPresenceAction(nackedPresenceAction)
+            }
 }
 
 /**
@@ -584,7 +551,7 @@ abstract class PresenceNackFault(
  */
 class EnterFailedWithNonfatalNack(apiKey: String) : PresenceNackFault(
     apiKey = apiKey,
-    nackedPresenceAction = PRESENCE_ENTER,
+    nackedPresenceAction = Message.PresenceAction.ENTER,
     response = ::nonFatalNack,
     nackLimit = 3
 ) {
@@ -602,7 +569,7 @@ class EnterFailedWithNonfatalNack(apiKey: String) : PresenceNackFault(
  */
 class UpdateFailedWithNonfatalNack(apiKey: String) : PresenceNackFault(
     apiKey = apiKey,
-    nackedPresenceAction = PRESENCE_UPDATE,
+    nackedPresenceAction = Message.PresenceAction.UPDATE,
     response = ::nonFatalNack,
     nackLimit = 3
 ) {
@@ -662,19 +629,3 @@ class TrackableStateReceiver(
         }
     }
 }
-
-/**
- * Unpack the action field from the WebSocket frame using MsgPack
- */
-internal fun messageAction(frame: Frame) =
-    messageField(frame, "action")
-        ?.asIntegerValue()
-        ?.asInt()
-
-/**
- * Read a specific top-level field from an Ably protocol message
- */
-internal fun messageField(frame: Frame, key: String) =
-    unpack(frame.data)
-        ?.map()
-        ?.get(ImmutableStringValueImpl(key))
