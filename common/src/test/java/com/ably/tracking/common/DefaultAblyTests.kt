@@ -594,6 +594,8 @@ class DefaultAblyTests {
          * ...and the call to `connect` (on the object under test) does not complete.
          */
 
+        println("before runBlocking in test case")
+
         runBlocking {
             DefaultAblyTestScenarios.Connect.test(
                 DefaultAblyTestScenarios.Connect.GivenConfig(
@@ -605,9 +607,9 @@ class DefaultAblyTests {
                 ),
                 DefaultAblyTestScenarios.Connect.ThenConfig(
                     overloadOfChannelsGetToVerify = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
-                    numberOfChannelStateFetchesToVerify = 1,
+                    numberOfChannelStateFetchesToVerify = 0,
                     verifyPresenceEnter = false,
-                    verifyChannelAttach = true,
+                    verifyChannelAttach = false,
                     verifyChannelRelease = false,
                     resultOfConnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.DoesNotTerminate(
                         timeoutInMilliseconds = noTimeoutDemonstrationWaitingTimeInMilliseconds
@@ -615,6 +617,8 @@ class DefaultAblyTests {
                 )
             )
         }
+
+        println("after runBlocking in test case")
     }
 
     @Test

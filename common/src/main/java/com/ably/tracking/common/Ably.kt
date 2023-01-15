@@ -367,6 +367,12 @@ constructor(
             try {
                 val channel = ably.channels.get(channelName, channelOptions)
                 scope.launch {
+                    // This exception will be suppressed
+                    val foo: () -> String = {
+                        throw Exception("Hello here's an exception")
+                    }
+                    foo()
+
                     try {
                         if (channel.isDetachedOrFailed()) {
                             attachSuspending(channel)

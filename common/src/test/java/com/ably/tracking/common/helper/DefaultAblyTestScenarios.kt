@@ -214,19 +214,32 @@ class DefaultAblyTestScenarios {
                 }
                 is ThenTypes.ExpectedAsyncResult.DoesNotTerminate -> {
                     try {
-                        withTimeout(timeMillis = expectedAsyncResult.timeoutInMilliseconds) {
+                        println("before withTimeout")
+                        val result = withTimeout(timeMillis = expectedAsyncResult.timeoutInMilliseconds) {
                             /* This usage of runInterruptible is intended to ensure that even if `operation` is not cancellable — that is, even if it does not cooperate with cancellation (https://kotlinlang.org/docs/cancellation-and-timeouts.html#cancellation-is-cooperative) — the withTimeout method call will return after the timeout elapses. We have some methods in DefaultAbly that are not cancellable – see https://github.com/ably/ably-asset-tracking-android/issues/908.
                              *
                              * Perhaps there’s a better way to do this — to create a coroutine that’s cancellable even if it calls a non-cancellable one — that doesn’t involve making a trip from coroutines land to synchronous land and back again. I’m not familiar enough with the coroutines APIs to know.
                              */
 
-                            runInterruptible {
-                                runBlocking {
-                                    operation()
+                            println("before runInterruptible")
+                            val result = runInterruptible {
+                                println("before runBlocking")
+                                val result = runBlocking {
+                                    println("before operation")
+                                    val result = operation()
+                                    println("after operation")
+                                    result
                                 }
+                                println("after runBlocking")
+                                result
                             }
+                            println("after runInterruptible")
+                            result
                         }
+                        println("after withTimeout")
+                        result
                     } catch (e: TimeoutCancellationException) {
+                        println("caught TimeoutCancellationException: ${e.stackTraceToString()}")
                         null
                     }
                 }
@@ -404,13 +417,18 @@ class DefaultAblyTestScenarios {
 
                 // When...
 
+                println("before executeForVerifying")
                 val result = executeForVerifying(thenConfig.resultOfConnectCallOnObjectUnderTest) {
                     // ...we call `connect` on the object under test,
-                    testEnvironment.objectUnderTest.connect(
+                    println("before connect on object under test")
+                    val result = testEnvironment.objectUnderTest.connect(
                         configuredChannel.trackableId,
                         PresenceData("")
                     )
+                    println("after connect on object under test")
+                    result
                 }
+                println("after executeForVerifying")
 
                 // Then...
                 // ...in the following order, precisely the following things happen...
