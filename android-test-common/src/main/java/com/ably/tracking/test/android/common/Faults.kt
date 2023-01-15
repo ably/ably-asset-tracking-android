@@ -630,7 +630,6 @@ class ReenterOnResumeFailed(apiKey: String) : ApplicationLayerFault(apiKey) {
                     State.WorkingNormally -> listOf(Action(direction, frame))
                 }
             }
-
         }
     }
 

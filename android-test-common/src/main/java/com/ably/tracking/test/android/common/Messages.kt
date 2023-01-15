@@ -30,7 +30,6 @@ object Message {
         UPDATE(4)
     }
 
-
     /**
      * Construct a map containing Ably ErrorInfo data
      */
@@ -149,7 +148,6 @@ fun ByteArray.unpack(): Map<String?, Any?> {
                 throw Exception("unpack: ByteArray did not contain MsgPack Map")
             }
         }
-
     } catch (e: Exception) {
         testLogD("MsgPack Error: $e", e)
         throw(e)
@@ -186,4 +184,3 @@ fun unpackValue(value: Value?): Any? =
         value.isMapValue -> unpackStringMap(value.asMapValue().map())
         else -> throw Exception("unpackValue: Unimplemented MsgPack conversion")
     }
-
