@@ -13,11 +13,6 @@ android {
         consumerProguardFiles 'consumer-rules.pro'
     }
     namespace 'com.ably.tracking.publisher'
-
-    packagingOptions {
-        exclude 'META-INF/INDEX.LIST'
-        exclude 'META-INF/io.netty.versions.properties'
-    }
 }
 
 dependencies {

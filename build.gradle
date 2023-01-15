@@ -106,6 +106,30 @@ subprojects {
             compileSdkVersion 31
             buildToolsVersion '30.0.3'
 
+            packagingOptions {
+                // If we don't exclude 'META-INF/*' then `./gradlew/connectedCheck` fails with:
+                //   Execution failed for task ':core-sdk-java:mergeDebugAndroidTestJavaResource'.
+                //   > A failure occurred while executing com.android.build.gradle.internal.tasks.MergeJavaResWorkAction
+                //       > 12 files found with path 'META-INF/INDEX.LIST' from inputs:
+                //   - /Users/quintinwillison/.gradle/caches/transforms-3/ae58b6a62ada6747292af50f47ad3fee/transformed/jetified-netty-codec-http2-4.1.86.Final.jar
+                //   - /Users/quintinwillison/.gradle/caches/transforms-3/f1236fea4dbae41bc32ac55a85f6b3bd/transformed/jetified-netty-transport-native-kqueue-4.1.86.Final.jar
+                //   - /Users/quintinwillison/.gradle/caches/transforms-3/3bde7caee3288eeec736343e1ef6bcf9/transformed/jetified-netty-transport-native-epoll-4.1.86.Final.jar
+                //   - /Users/quintinwillison/.gradle/caches/transforms-3/12e69c78bc747486c940da51810bfd9c/transformed/jetified-netty-codec-http-4.1.86.Final.jar
+                //   - /Users/quintinwillison/.gradle/caches/transforms-3/d4184ed97d39c5a1d0b706dbbe0dbf35/transformed/jetified-netty-handler-4.1.86.Final.jar
+                //   - /Users/quintinwillison/.gradle/caches/transforms-3/99bb3b8608be9c2bd59c61265d224fb6/transformed/jetified-netty-codec-4.1.86.Final.jar
+                //   - /Users/quintinwillison/.gradle/caches/transforms-3/fc3f8bcdefe05d515a75cd71c6757335/transformed/jetified-netty-transport-classes-kqueue-4.1.86.Final.jar
+                //   - /Users/quintinwillison/.gradle/caches/transforms-3/e7af7f748138f134013b272874950077/transformed/jetified-netty-transport-classes-epoll-4.1.86.Final.jar
+                //   - /Users/quintinwillison/.gradle/caches/transforms-3/fd2e0a57576bd59a1650c0494ab3fc0a/transformed/jetified-netty-transport-native-unix-common-4.1.86.Final.jar
+                //   - /Users/quintinwillison/.gradle/caches/transforms-3/0fd5b682236ce9fd53e58aecc05a5ffd/transformed/jetified-netty-transport-4.1.86.Final.jar
+                //   - /Users/quintinwillison/.gradle/caches/transforms-3/1502ea043ca2e82ce79bfa06181a8a4d/transformed/jetified-netty-buffer-4.1.86.Final.jar
+                //   - /Users/quintinwillison/.gradle/caches/transforms-3/a7a5476cb4601d76f24b1d349745bfe6/transformed/jetified-netty-resolver-4.1.86.Final.jar
+                //   Adding a packagingOptions block may help, please refer to
+                //   https://developer.android.com/reference/tools/gradle-api/7.3/com/android/build/api/dsl/ResourcesPackagingOptions
+                //   for more information                //
+                // from: https://stackoverflow.com/a/68136374
+                exclude 'META-INF/*'
+            }
+
             defaultConfig {
                 minSdkVersion((evaluatedSubProjectIsJava || evaluatedSubProjectIsAnExampleApp) ? 24 : 21)
                 targetSdkVersion 31
