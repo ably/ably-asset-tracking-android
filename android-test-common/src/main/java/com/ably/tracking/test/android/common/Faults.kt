@@ -565,7 +565,7 @@ class EnterFailedWithNonfatalNack(apiKey: String) : PresenceNackFault(
 
 /**
  * Simulates a retryable presence.update() failure. Will stop
- * nacking after 3 faulures
+ * nacking after 3 failures
  */
 class UpdateFailedWithNonfatalNack(apiKey: String) : PresenceNackFault(
     apiKey = apiKey,
@@ -578,6 +578,185 @@ class UpdateFailedWithNonfatalNack(apiKey: String) : PresenceNackFault(
     override fun stateReceiverForStage(stage: FaultSimulationStage) =
         // Note: 5xx presence errors should always be non-fatal and recovered seamlessly
         TrackableStateReceiver.onlineWithoutFail("$name: $stage")
+}
+
+/**
+ * Simulates a client being disconnected while present on a channel,
+ * reconnecting with a successful resume, but the presence re-enter
+ * failing. Client should handle this by re-entering presence when
+ * it sees that re-enter has failed.
+ */
+class ReenterOnResumeFailed(apiKey: String) : ApplicationLayerFault(apiKey) {
+
+    override val name = "ReenterOnResumeFailed"
+
+    private var state = State.DisconnectAfterPresence
+    private var presenceEnterSerial: Int? = null
+
+    private enum class State {
+        // Waiting for client presence enter before forcing disconnect
+        DisconnectAfterPresence,
+
+        // Wait for server SYNC message, remove client from presence member
+        InterceptingServerSync,
+
+        // Wait for client to respond by re-entering, note the msgSerial
+        InterceptingClientEnter,
+
+        // Wait for server to ACK the enter, swap it for a NACK
+        InterceptingServerAck,
+
+        // Finished - return to normal pass-through
+        WorkingNormally
+    }
+
+    override fun enable() {
+        applicationProxy.interceptor = object : Layer7Interceptor {
+
+            override fun interceptConnection(params: ConnectionParams): ConnectionParams {
+                testLogD("$name: [$state] new connection: $params")
+                if (state == State.DisconnectAfterPresence) {
+                    state = State.InterceptingServerSync
+                }
+                return params
+            }
+
+            override fun interceptFrame(direction: FrameDirection, frame: Frame): List<Action> {
+                return when (state) {
+                    State.DisconnectAfterPresence -> disconnectAfterPresence(direction, frame)
+                    State.InterceptingServerSync -> interceptServerSync(direction, frame)
+                    State.InterceptingClientEnter -> interceptClientEnter(direction, frame)
+                    State.InterceptingServerAck -> interceptServerAck(direction, frame)
+                    State.WorkingNormally -> listOf(Action(direction, frame))
+                }
+            }
+
+        }
+    }
+
+    override fun resolve() {
+        state = State.DisconnectAfterPresence
+        applicationProxy.interceptor = PassThroughInterceptor()
+    }
+
+    override fun stateReceiverForStage(stage: FaultSimulationStage) =
+        // This fault should not be non-fatal, Trackables should
+        // return to online state before resolve() is called
+        TrackableStateReceiver.onlineWithoutFail("$name: $stage")
+
+    /**
+     * Step 1: disconnect the client to cause it to attempt a resume,
+     * but wait until we know the client has attempted to enter presence
+     * beforehand.
+     */
+    private fun disconnectAfterPresence(
+        direction: FrameDirection,
+        frame: Frame
+    ): List<Action> {
+        return if (
+            direction == FrameDirection.ClientToServer &&
+            frame.frameType == FrameType.BINARY &&
+            frame.data.unpack().isAction(Message.Action.PRESENCE)
+        ) {
+            testLogD("$name: [$state] forcing disconnect")
+            // Note: state will advance in interceptConnection
+            listOf(
+                Action(direction, frame),
+                Action(FrameDirection.ServerToClient, Frame.Close(), true)
+            )
+        } else {
+            listOf(Action(direction, frame))
+        }
+    }
+
+    /**
+     * Step 2: Now that the client has reconnected, tamper with the
+     * incoming server SYNC message to remove this client's presence
+     * data, causing it to think that re-enter on resume has failed.
+     */
+    private fun interceptServerSync(
+        direction: FrameDirection,
+        frame: Frame
+    ): List<Action> {
+        return if (
+            direction == FrameDirection.ServerToClient &&
+            frame.frameType == FrameType.BINARY &&
+            frame.data.unpack().isAction(Message.Action.SYNC)
+        ) {
+            testLogD("$name: [$state] intercepting sync")
+            state = State.InterceptingClientEnter
+            listOf(
+                Action(direction, removePresenceFromSync(frame))
+            )
+        } else {
+            listOf(Action(direction, frame))
+        }
+    }
+
+    /**
+     * Step 3: The client should respond to the failed presence re-enter
+     * on resume by attempting to enter presence again. Note the msgSerial
+     * of the outgoing presence message so that we can intercept the ACK
+     */
+    private fun interceptClientEnter(
+        direction: FrameDirection,
+        frame: Frame
+    ): List<Action> {
+        if (direction == FrameDirection.ClientToServer &&
+            frame.frameType == FrameType.BINARY
+        ) {
+            val msg = frame.data.unpack()
+            if (msg.isAction(Message.Action.PRESENCE) &&
+                msg.isPresenceAction(Message.PresenceAction.ENTER)
+            ) {
+                presenceEnterSerial = msg["msgSerial"] as Int
+                testLogD("$name: [$state] presence enter serial: $presenceEnterSerial")
+                state = State.InterceptingServerAck
+            }
+        }
+
+        return listOf(Action(direction, frame))
+    }
+
+    /**
+     * Step 4: Replace server ACK response with a NACK for the same msgSerial
+     */
+    private fun interceptServerAck(
+        direction: FrameDirection,
+        frame: Frame
+    ): List<Action> {
+        return if (
+            direction == FrameDirection.ServerToClient &&
+            frame.frameType == FrameType.BINARY &&
+            frame.data.unpack().let {
+                it.isAction(Message.Action.ACK) &&
+                    (it["msgSerial"] as Int) == presenceEnterSerial
+            }
+        ) {
+            val nack = Message.nack(
+                msgSerial = presenceEnterSerial!!,
+                count = 1,
+                errorCode = 50000,
+                errorStatusCode = 500,
+                errorMessage = "injected by proxy"
+            )
+            testLogD("$name: [$state] sending nack: $nack")
+            state = State.WorkingNormally
+            listOf(Action(direction, Frame.Binary(true, nack.pack())))
+        } else {
+            listOf(Action(direction, frame))
+        }
+    }
+
+    /**
+     * Remove presence data, causing client to believe re-enter
+     * on resume has failed
+     */
+    private fun removePresenceFromSync(frame: Frame): Frame {
+        val syncMsg = frame.data.unpack().toMutableMap()
+        syncMsg["presence"] = listOf<Any?>()
+        return Frame.Binary(true, syncMsg.pack())
+    }
 }
 
 /**

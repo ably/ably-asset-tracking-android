@@ -14,10 +14,12 @@ object Message {
      * Ably protocol action codes
      */
     enum class Action(val code: Int) {
+        ACK(1),
         CONNECTED(4),
         ATTACH(10),
         DETACH(12),
-        PRESENCE(14)
+        PRESENCE(14),
+        SYNC(16)
     }
 
     /**

@@ -96,9 +96,10 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
             arrayOf(DisconnectWithFailedResume(BuildConfig.ABLY_API_KEY)),
             arrayOf(EnterFailedWithNonfatalNack(BuildConfig.ABLY_API_KEY)),
             arrayOf(UpdateFailedWithNonfatalNack(BuildConfig.ABLY_API_KEY)),
-            arrayOf(DisconnectAndSuspend(BuildConfig.ABLY_API_KEY))
+            arrayOf(DisconnectAndSuspend(BuildConfig.ABLY_API_KEY)),
 
             // publisher.track() hangs indefinitely with this fault
+            // arrayOf(ReenterOnResumeFailed(BuildConfig.ABLY_API_KEY)),
             // arrayOf(EnterUnresponsive(BuildConfig.ABLY_API_KEY)),
         )
     }
