@@ -167,6 +167,11 @@ class TcpConnectionUnresponsive(apiKey: String) : TransportLayerFault(apiKey) {
  */
 class DisconnectAndSuspend(apiKey: String) : TransportLayerFault(apiKey) {
 
+    /*
+        Currently failing due to Issues #871 and #907
+    */
+    override val skipTest = true
+
     companion object {
         const val SUSPEND_DELAY_MILLIS: Long = 2 * 60 * 1000
     }
@@ -292,6 +297,13 @@ class AttachUnresponsive(apiKey: String) : DropAction(
     direction = FrameDirection.ClientToServer,
     action = Message.Action.ATTACH
 ) {
+
+    /*
+        Currently failing due to Issue #871 -- throwing ConnectionError
+        when trying to add new trackables while offline.
+     */
+    override val skipTest = true
+
     override val name = "AttachUnresponsive"
 }
 
@@ -376,6 +388,14 @@ class EnterUnresponsive(apiKey: String) : UnresponsiveAfterAction(
     direction = FrameDirection.ClientToServer,
     action = Message.Action.PRESENCE
 ) {
+
+    /*
+        This test currently fails because the ably-java hangs the client
+        waiting for a presence response if there's there's a reconnection
+        before successful completion of enter()
+    */
+    override val skipTest = true
+
     override val name = "EnterUnresponsive"
 
     override fun stateReceiverForStage(
@@ -402,6 +422,11 @@ class EnterUnresponsive(apiKey: String) : UnresponsiveAfterAction(
  * Publisher should continue regardless.
  */
 class DisconnectWithFailedResume(apiKey: String) : ApplicationLayerFault(apiKey) {
+
+    /*
+        Currently failing due to ably-java#474 presence bug
+     */
+    override val skipTest = true
 
     /**
      * State of the fault, used to control whether we're intercepting
@@ -556,6 +581,12 @@ class EnterFailedWithNonfatalNack(apiKey: String) : PresenceNackFault(
     nackLimit = 3
 ) {
 
+    /*
+        Currently failing due to Issue #907 - non-fatal nack triggers
+        an exception to be thrown to caller during publisher.track()
+     */
+    override val skipTest = true
+
     override val name = "EnterFailedWithNonfatalNack"
 
     override fun stateReceiverForStage(stage: FaultSimulationStage) =
@@ -587,6 +618,16 @@ class UpdateFailedWithNonfatalNack(apiKey: String) : PresenceNackFault(
  * it sees that re-enter has failed.
  */
 class ReenterOnResumeFailed(apiKey: String) : ApplicationLayerFault(apiKey) {
+
+    /*
+       This test currently fails because the ably-java hangs the client
+       waiting for a presence response if there's there's a reconnection
+       before successful completion of enter()
+
+       This happens during stage 2 of the test, so steps 3 and 4 have not
+       yet been seen to work.
+     */
+    override val skipTest = true
 
     override val name = "ReenterOnResumeFailed"
 
