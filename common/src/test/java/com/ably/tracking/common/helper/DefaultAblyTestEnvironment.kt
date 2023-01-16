@@ -1,7 +1,8 @@
 package com.ably.tracking.common.helper
 
+import com.ably.tracking.common.AblySdkChannelStateListener
 import com.ably.tracking.common.AblySdkRealtime
-import com.ably.tracking.common.AblySdkRealtimeFactory
+import com.ably.tracking.common.AblySdkFactory
 import com.ably.tracking.common.DefaultAbly
 import com.ably.tracking.connection.Authentication
 import com.ably.tracking.connection.ConnectionConfiguration
@@ -27,14 +28,14 @@ import io.ably.lib.types.ErrorInfo
 class DefaultAblyTestEnvironment private constructor(
     /**
      * The [DefaultAbly] object created by [create].
-     * It has been configured with an [AblySdkRealtimeFactory] mock that supplies [realtimeMock].
+     * It has been configured with an [AblySdkFactory] mock that supplies [realtimeMock].
      */
-    val objectUnderTest: DefaultAbly,
+    val objectUnderTest: DefaultAbly<AblySdkChannelStateListener>,
     /**
      * The [AblySdkRealtime] mock created by [create].
      * Its [AblySdkRealtime.connection] property returns [connectionMock], and its [AblySdkRealtime.channels] property returns [channelsMock]. Calls to these property getters are ignored by MockK’s [confirmVerified] method (by use of [excludeRecords]).
      */
-    val realtimeMock: AblySdkRealtime,
+    val realtimeMock: AblySdkRealtime<AblySdkChannelStateListener>,
     /**
      * The [AblySdkRealtime.Connection] mock which [create] has created and configured [realtimeMock]’s [AblySdkRealtime.connection] property to return.
      */
@@ -43,7 +44,7 @@ class DefaultAblyTestEnvironment private constructor(
      * The [AblySdkRealtime.Channels] mock which [create] has created and configured [realtimeMock]’s [AblySdkRealtime.channels] property to return.
      * See the documentation for that method for details of how this mock is configured.
      */
-    val channelsMock: AblySdkRealtime.Channels,
+    val channelsMock: AblySdkRealtime.Channels<AblySdkChannelStateListener>,
     /**
      * The set of [AblySdkRealtime.Channel] mocks that [create] has configured [channelsMock] to supply.
      * See the documentation for that method for details of how these mocks are configured.
@@ -67,7 +68,7 @@ class DefaultAblyTestEnvironment private constructor(
          * See the documentation for that method for details of how this mock is configured.
          * Its [AblySdkRealtime.Channel.presence] property returns [presenceMock]. Calls to this property getter are ignored by MockK’s [confirmVerified] method (by use of [excludeRecords]).
          */
-        val channelMock: AblySdkRealtime.Channel,
+        val channelMock: AblySdkRealtime.Channel<AblySdkChannelStateListener>,
         /**
          * The [AblySdkRealtime.Presence] mock which [create] has created and configured [channelMock]’s [AblySdkRealtime.Channel.presence] property to return.
          */
@@ -290,7 +291,7 @@ class DefaultAblyTestEnvironment private constructor(
      */
     fun mockChannelsEntrySet() {
         val entrySet = configuredChannels.map { configuredChannel ->
-            object : Map.Entry<String, AblySdkRealtime.Channel> {
+            object : Map.Entry<String, AblySdkRealtime.Channel<AblySdkChannelStateListener>> {
                 override val key = configuredChannel.channelName
                 override val value = configuredChannel.channelMock
             }
@@ -372,7 +373,7 @@ class DefaultAblyTestEnvironment private constructor(
 
                 val presenceMock = mockk<AblySdkRealtime.Presence>()
 
-                val channelMock = mockk<AblySdkRealtime.Channel>()
+                val channelMock = mockk<AblySdkRealtime.Channel<AblySdkChannelStateListener>>()
                 every { channelMock.state } returns ChannelState.initialized
                 every { channelMock.presence } returns presenceMock
                 excludeRecords { channelMock.presence }
@@ -380,17 +381,17 @@ class DefaultAblyTestEnvironment private constructor(
                 ConfiguredChannel(trackableId, channelName, channelMock, presenceMock)
             }
 
-            val channelsMock = mockk<AblySdkRealtime.Channels>()
+            val channelsMock = mockk<AblySdkRealtime.Channels<AblySdkChannelStateListener>>()
             val connectionMock = mockk<AblySdkRealtime.Connection>()
 
-            val realtimeMock = mockk<AblySdkRealtime>()
+            val realtimeMock = mockk<AblySdkRealtime<AblySdkChannelStateListener>>()
             every { realtimeMock.channels } returns channelsMock
             excludeRecords { realtimeMock.channels }
             every { realtimeMock.connection } returns connectionMock
             excludeRecords { realtimeMock.connection }
 
-            val factory = mockk<AblySdkRealtimeFactory>()
-            every { factory.create(any()) } returns realtimeMock
+            val factory = mockk<AblySdkFactory<AblySdkChannelStateListener>>()
+            every { factory.createRealtime(any()) } returns realtimeMock
 
             val connectionConfiguration =
                 ConnectionConfiguration(Authentication.basic("", "")) // arbitrarily chosen

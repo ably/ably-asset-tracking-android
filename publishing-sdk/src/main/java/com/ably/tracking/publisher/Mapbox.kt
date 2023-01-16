@@ -18,6 +18,7 @@ import com.ably.tracking.common.toAssetTracking
 import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.logging.LogHandler
 import com.ably.tracking.publisher.debug.AblySimulationLocationEngine
+import com.ably.tracking.publisher.debug.FlowLocationEngine
 import com.ably.tracking.publisher.locationengine.FusedAndroidLocationEngine
 import com.ably.tracking.publisher.locationengine.GoogleLocationEngine
 import com.ably.tracking.publisher.locationengine.LocationEngineUtils
@@ -304,6 +305,10 @@ internal class DefaultMapbox(
                 is LocationSourceRaw -> {
                     logHandler?.v("$TAG Use history data replayer location engine")
                     useHistoryDataReplayerLocationEngine(mapboxBuilder, it)
+                }
+                is LocationSourceFlow -> {
+                    logHandler?.v("$TAG Use flow replayer location engine")
+                    mapboxBuilder.locationEngine(FlowLocationEngine(it.flow, logHandler))
                 }
             }
         }
