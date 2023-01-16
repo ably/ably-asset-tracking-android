@@ -34,7 +34,7 @@ jobs:
           #emulator which might be taking long and causing a timeout issue or a freeze.
           #Adding -no-snapshot-save will enable quick
           #boot. See https://developer.android.com/studio/run/emulator-commandline#common for more
-          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -verbose -logcat '*:e *:w *:i *:d *:v'
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -verbose -logcat '*:e *:w *:i *:d *:v -f logcat.txt'
           # ${{ condition && 'ifTrue' || 'ifFalse' }} is a workaround for a ternary operator https://github.com/actions/runner/issues/409#issuecomment-752775072
           script: |
             ${{
@@ -94,3 +94,10 @@ jobs:
         with:
           name: api-level-${{ matrix.api-level }}-publishing-sdk-build-reports
           path: publishing-sdk/build/reports
+
+      - uses: actions/upload-artifact@v3
+        name: Logcat output
+        if: always()
+        with:
+          name: api-level-${{ matrix.api-level }}-logcat
+          path: logcat.txt
