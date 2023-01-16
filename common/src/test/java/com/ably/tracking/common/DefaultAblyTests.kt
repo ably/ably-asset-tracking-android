@@ -64,8 +64,8 @@ class DefaultAblyTests {
                     channelsContainsKey = false,
                     channelsGetOverload = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
                     channelState = ChannelState.initialized,
-                    presenceEnterBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Success,
                     channelAttachBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.NotMocked,
+                    presenceEnterBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Success,
                 ),
                 DefaultAblyTestScenarios.Connect.ThenConfig(
                     overloadOfChannelsGetToVerify = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
@@ -109,8 +109,8 @@ class DefaultAblyTests {
                     channelsContainsKey = false,
                     channelsGetOverload = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
                     channelState = ChannelState.attached,
-                    presenceEnterBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Success,
                     channelAttachBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.NotMocked,
+                    presenceEnterBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Success,
                 ),
                 DefaultAblyTestScenarios.Connect.ThenConfig(
                     overloadOfChannelsGetToVerify = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
@@ -154,8 +154,8 @@ class DefaultAblyTests {
                     channelsContainsKey = false,
                     channelsGetOverload = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
                     channelState = ChannelState.attaching,
-                    presenceEnterBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Success,
                     channelAttachBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.NotMocked,
+                    presenceEnterBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Success,
                 ),
                 DefaultAblyTestScenarios.Connect.ThenConfig(
                     overloadOfChannelsGetToVerify = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
@@ -199,8 +199,8 @@ class DefaultAblyTests {
                     channelsContainsKey = false,
                     channelsGetOverload = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
                     channelState = ChannelState.detaching,
-                    presenceEnterBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Success,
                     channelAttachBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.NotMocked,
+                    presenceEnterBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Success,
                 ),
                 DefaultAblyTestScenarios.Connect.ThenConfig(
                     overloadOfChannelsGetToVerify = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
@@ -250,10 +250,10 @@ class DefaultAblyTests {
                     channelsContainsKey = false,
                     channelsGetOverload = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
                     channelState = ChannelState.initialized, /* arbitrarily chosen */
+                    channelAttachBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.NotMocked,
                     presenceEnterBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Failure(
                         presenceError
                     ),
-                    channelAttachBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.NotMocked,
                 ),
                 DefaultAblyTestScenarios.Connect.ThenConfig(
                     overloadOfChannelsGetToVerify = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
@@ -305,8 +305,8 @@ class DefaultAblyTests {
                     channelsContainsKey = false,
                     channelsGetOverload = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
                     channelState = ChannelState.initialized, /* arbitrarily chosen */
-                    presenceEnterBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.DoesNotComplete,
                     channelAttachBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.NotMocked,
+                    presenceEnterBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.DoesNotComplete,
                 ),
                 DefaultAblyTestScenarios.Connect.ThenConfig(
                     overloadOfChannelsGetToVerify = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
@@ -328,8 +328,8 @@ class DefaultAblyTests {
          *
          * ...that calling `containsKey` on the Channels instance returns false...
          * ...and that calling `get` (the overload that accepts a ChannelOptions object) on the Channels instance returns a channel in the FAILED state...
-         * ...which, when told to enter presence, does so successfully...
-         * ...and which, when told to attach, does so successfully...
+         * ...which, when told to attach, does so successfully...
+         * ...and which, when told to enter presence, does so successfully...
          *
          * When...
          *
@@ -352,8 +352,8 @@ class DefaultAblyTests {
                     channelsContainsKey = false,
                     channelsGetOverload = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
                     channelState = ChannelState.failed,
-                    presenceEnterBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Success,
                     channelAttachBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Success,
+                    presenceEnterBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Success,
                 ),
                 DefaultAblyTestScenarios.Connect.ThenConfig(
                     verifyChannelAttach = true,
@@ -403,10 +403,10 @@ class DefaultAblyTests {
                     channelsContainsKey = false,
                     channelsGetOverload = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
                     channelState = ChannelState.failed,
-                    presenceEnterBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.NotMocked,
                     channelAttachBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Failure(
                         attachError
                     ),
+                    presenceEnterBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.NotMocked,
                 ),
                 DefaultAblyTestScenarios.Connect.ThenConfig(
                     overloadOfChannelsGetToVerify = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
@@ -430,8 +430,8 @@ class DefaultAblyTests {
          *
          * ...that calling `containsKey` on the Channels instance returns false...
          * ...and that calling `get` (the overload that accepts a ChannelOptions object) on the Channels instance returns a channel in the DETACHED state...
-         * ...which, when told to enter presence, does so successfully...
-         * ...and which, when told to attach, does so successfully...
+         * ...which, when told to attach, does so successfully...
+         * ...and which, when told to enter presence, does so successfully...
          *
          * When...
          *
@@ -454,8 +454,8 @@ class DefaultAblyTests {
                     channelsContainsKey = false,
                     channelsGetOverload = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
                     channelState = ChannelState.detached,
-                    presenceEnterBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Success,
                     channelAttachBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Success,
+                    presenceEnterBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Success,
                 ),
                 DefaultAblyTestScenarios.Connect.ThenConfig(
                     overloadOfChannelsGetToVerify = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
@@ -554,8 +554,8 @@ class DefaultAblyTests {
                     channelsContainsKey = false,
                     channelsGetOverload = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
                     channelState = ChannelState.suspended,
-                    presenceEnterBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Success,
                     channelAttachBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.NotMocked,
+                    presenceEnterBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Success,
                 ),
                 DefaultAblyTestScenarios.Connect.ThenConfig(
                     overloadOfChannelsGetToVerify = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
@@ -599,8 +599,8 @@ class DefaultAblyTests {
                     channelsContainsKey = false,
                     channelsGetOverload = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
                     channelState = ChannelState.detached, /* arbitrarily chosen */
-                    presenceEnterBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.NotMocked,
                     channelAttachBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.DoesNotComplete,
+                    presenceEnterBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.NotMocked,
                 ),
                 DefaultAblyTestScenarios.Connect.ThenConfig(
                     overloadOfChannelsGetToVerify = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
@@ -642,8 +642,8 @@ class DefaultAblyTests {
                     channelsContainsKey = true,
                     channelsGetOverload = DefaultAblyTestEnvironment.ChannelsGetOverload.WITHOUT_CHANNEL_OPTIONS,
                     channelState = ChannelState.initialized, /* arbitrarily chosen */
-                    presenceEnterBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Success,
                     channelAttachBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.NotMocked,
+                    presenceEnterBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Success,
                 ),
                 DefaultAblyTestScenarios.Connect.ThenConfig(
                     overloadOfChannelsGetToVerify = DefaultAblyTestEnvironment.ChannelsGetOverload.WITHOUT_CHANNEL_OPTIONS,
