@@ -177,7 +177,7 @@ class DefaultAblyTests {
          *
          * ...that calling `containsKey` on the Channels instance returns false...
          * ...and that calling `get` (the overload that accepts a ChannelOptions object) on the Channels instance returns a channel in the DETACHING state...
-         * ...which, when told to enter presence, does so successfully...
+         * ...which, when told to enter presence, fails to do so with an arbitrarily-chosen error `presenceError`...
          *
          * When...
          *
@@ -190,8 +190,19 @@ class DefaultAblyTests {
          * ...and calls `get` (the overload that accepts a ChannelOptions object) on the Channels instance...
          * ...and checks the channel’s state 2 times...
          * ...and tells the channel to enter presence...
-         * ...and the call to `connect` (on the object under test) succeeds.
+         * ...and releases the channel...
+         * ...and the call to `connect` (on the object under test) fails with a ConnectionException whose errorInformation has the same `code` and `message` as `presenceError`.
          */
+
+        /* A note on this test:
+         *
+         * RTP16c tells us that a presence operation on a channel in the DETACHING state will fail.
+         */
+
+        val presenceError = ErrorInfo(
+            "example of an error message", /* arbitrarily chosen */
+            123 /* arbitrarily chosen */
+        )
 
         runBlocking {
             DefaultAblyTestScenarios.Connect.test(
@@ -200,16 +211,26 @@ class DefaultAblyTests {
                     channelsGetOverload = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
                     channelState = ChannelState.detaching,
                     channelAttachBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.NotMocked,
-                    presenceEnterBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Success,
+                    presenceEnterBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Failure(
+                        presenceError
+                    ),
                 ),
                 DefaultAblyTestScenarios.Connect.ThenConfig(
                     overloadOfChannelsGetToVerify = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
                     numberOfChannelStateFetchesToVerify = 2,
                     verifyPresenceEnter = true,
                     verifyChannelAttach = false,
-                    verifyChannelRelease = false,
+                    verifyChannelRelease = true,
                     resultOfConnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
-                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
+                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.FailureWithConnectionException(
+                            ErrorInformation(
+                                presenceError.code,
+                                0,
+                                presenceError.message,
+                                null,
+                                null
+                            )
+                        )
                     )
                 )
             )
@@ -532,7 +553,7 @@ class DefaultAblyTests {
          *
          * ...that calling `containsKey` on the Channels instance returns false...
          * ...and that calling `get` (the overload that accepts a ChannelOptions object) on the Channels instance returns a channel in the SUSPENDED state...
-         * ...which, when told to enter presence, does so successfully...
+         * ...which, when told to enter presence, fails to do so with an arbitrarily-chosen error `presenceError`...
          *
          * When...
          *
@@ -545,8 +566,19 @@ class DefaultAblyTests {
          * ...and calls `get` (the overload that accepts a ChannelOptions object) on the Channels instance...
          * ...and checks the channel’s state 2 times...
          * ...and tells the channel to enter presence...
-         * ...and the call to `connect` (on the object under test) succeeds.
+         * ...and releases the channel...
+         * ...and the call to `connect` (on the object under test) fails with a ConnectionException whose errorInformation has the same `code` and `message` as `presenceError`.
          */
+
+        /* A note on this test:
+         *
+         * RTP16c tells us that a presence operation on a channel in the SUSPENDED state will fail.
+         */
+
+        val presenceError = ErrorInfo(
+            "example of an error message", /* arbitrarily chosen */
+            123 /* arbitrarily chosen */
+        )
 
         runBlocking {
             DefaultAblyTestScenarios.Connect.test(
@@ -555,16 +587,26 @@ class DefaultAblyTests {
                     channelsGetOverload = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
                     channelState = ChannelState.suspended,
                     channelAttachBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.NotMocked,
-                    presenceEnterBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Success,
+                    presenceEnterBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Failure(
+                        presenceError
+                    ),
                 ),
                 DefaultAblyTestScenarios.Connect.ThenConfig(
                     overloadOfChannelsGetToVerify = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
                     numberOfChannelStateFetchesToVerify = 2,
                     verifyPresenceEnter = true,
                     verifyChannelAttach = false,
-                    verifyChannelRelease = false,
+                    verifyChannelRelease = true,
                     resultOfConnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
-                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
+                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.FailureWithConnectionException(
+                            ErrorInformation(
+                                presenceError.code,
+                                0,
+                                presenceError.message,
+                                null,
+                                null
+                            )
+                        )
                     )
                 )
             )
