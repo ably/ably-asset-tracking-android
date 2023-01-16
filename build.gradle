@@ -81,6 +81,7 @@ subprojects {
         final evaluatedSubProjectIsAnApp = evaluatedSubProject.pluginManager.hasPlugin('com.android.application')
         final evaluatedSubProjectIsAnExampleApp = evaluatedSubProjectIsAnApp && evaluatedSubProject.name.contains('example')
         final evaluatedSubProjectIsKotlin = evaluatedSubProject.pluginManager.hasPlugin('kotlin-android')
+        logger.lifecycle("SubProject Evaluation for ${evaluatedSubProject.name}: Library=${evaluatedSubProjectIsALibrary}, App=${evaluatedSubProjectIsAnApp}, ExampleApp=${evaluatedSubProjectIsAnExampleApp}, Kotlin=${evaluatedSubProjectIsKotlin}")
 
         // This is a convention for this Gradle modules/projects in this repository.
         // If the name has 'java' on the end (e.g. 'subscribing-sdk-java') or in the
@@ -187,8 +188,28 @@ subprojects {
                     // Configuration that must not be applied to SDK project main source set builds for the release variant/buildType.
                     // This configuration is, however, required for Android's connectedCheck task (which uses the androidTest source set
                     // with the debug variant/buildType).
-                    buildConfigField 'String', 'ABLY_API_KEY', "\"${findProperty('ABLY_API_KEY') ?: ""}\""
-                    buildConfigField 'String', 'MAPBOX_ACCESS_TOKEN', "\"${findProperty('MAPBOX_ACCESS_TOKEN') ?: ""}\""
+                    if (findProperty('runtimeSecrets') == 'USE_DUMMY_EMPTY_STRING_VALUES') {
+                        // We know that we're not going to need to compile anything that needs BuildConfig to contain
+                        // any of these secrets. For example, unit test runs, where we know there are no system tests
+                        // being run or app builds being made where those apps embed secrets.
+                        logger.lifecycle("Using dummy, empty-string secrets configuration (ABLY_API_KEY and MAPBOX_ACCESS_TOKEN) for the '${delegate.name}' Android build type.")
+                        buildConfigField 'String', 'ABLY_API_KEY', "\"\""
+                        buildConfigField 'String', 'MAPBOX_ACCESS_TOKEN', "\"\""
+                        return
+                    }
+
+                    final ABLY_API_KEY = findProperty('ABLY_API_KEY')
+                    final MAPBOX_ACCESS_TOKEN = findProperty('MAPBOX_ACCESS_TOKEN')
+                    if (ABLY_API_KEY == null || ABLY_API_KEY.trim().length() < 1) {
+                        throw new GradleException('ABLY_API_KEY not specified or is empty.')
+                    }
+                    if (MAPBOX_ACCESS_TOKEN == null || MAPBOX_ACCESS_TOKEN.trim().length() < 1) {
+                        throw new GradleException('MAPBOX_ACCESS_TOKEN not specified or is empty.')
+                    }
+
+                    buildConfigField 'String', 'ABLY_API_KEY', "\"${ABLY_API_KEY}\""
+                    buildConfigField 'String', 'MAPBOX_ACCESS_TOKEN', "\"${MAPBOX_ACCESS_TOKEN}\""
+                    logger.lifecycle("Secrets have been added to BuildConfig (ABLY_API_KEY and MAPBOX_ACCESS_TOKEN) for the '${delegate.name}' Android build type.")
                 }
 
                 def versionConfigFields = {
@@ -199,15 +220,22 @@ subprojects {
                 }
 
                 debug {
-                    apply secretConfigFields on it
-                    apply versionConfigFields on it
+                    // Secrets must not be injected into SDK builds - they are only for example apps or SDK
+                    // integration tests (via Android's `connectedCheck` task), which are testing using the debug
+                    // variant/buildType.
+                    if (evaluatedSubProjectIsAnApp || findProperty('runtimeSecrets') == 'FOR_ALL_PROJECTS_BECAUSE_WE_ARE_RUNNING_INTEGRATION_TESTS') {
+                        apply secretConfigFields on it
+                    }
+                    if (evaluatedSubProjectIsALibrary) {
+                        apply versionConfigFields on it
+                    }
                 }
 
                 release {
                     // Secrets must not be injected into SDK builds - they are only for example apps or SDK
                     // integration tests (via Android's `connectedCheck` task), which are testing using the debug
                     // variant/buildType.
-                    if (evaluatedSubProjectIsAnApp) {
+                    if (evaluatedSubProjectIsAnApp || findProperty('runtimeSecrets') == 'FOR_ALL_PROJECTS_BECAUSE_WE_ARE_RUNNING_INTEGRATION_TESTS') {
                         apply secretConfigFields on it
                     }
                     if (evaluatedSubProjectIsALibrary) {

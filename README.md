@@ -1,8 +1,9 @@
 # Ably Asset Tracking SDKs for Android
 
-![.github/workflows/check.yml](https://github.com/ably/ably-asset-tracking-android/workflows/.github/workflows/check.yml/badge.svg)
-![.github/workflows/emulate.yml](https://github.com/ably/ably-asset-tracking-android/workflows/.github/workflows/emulate.yml/badge.svg)
-![.github/workflows/assemble.yml](https://github.com/ably/ably-asset-tracking-android/workflows/.github/workflows/assemble.yml/badge.svg)
+[![.github/workflows/check.yml](https://github.com/ably/ably-asset-tracking-android/actions/workflows/check.yml/badge.svg)](https://github.com/ably/ably-asset-tracking-android/actions/workflows/check.yml)
+[![.github/workflows/emulate.yml](https://github.com/ably/ably-asset-tracking-android/actions/workflows/emulate.yml/badge.svg)](https://github.com/ably/ably-asset-tracking-android/actions/workflows/emulate.yml)
+[![.github/workflows/assemble.yml](https://github.com/ably/ably-asset-tracking-android/actions/workflows/assemble.yml/badge.svg)](https://github.com/ably/ably-asset-tracking-android/actions/workflows/assemble.yml)
+[![.github/workflows/docs.yml](https://github.com/ably/ably-asset-tracking-android/actions/workflows/docs.yml/badge.svg)](https://github.com/ably/ably-asset-tracking-android/actions/workflows/docs.yml)
 
 _[Ably](https://ably.com) is the platform that powers synchronized digital experiences in realtime. Whether attending an event in a virtual venue, receiving realtime financial information, or monitoring live car performance data – consumers simply expect realtime digital experiences as standard. Ably provides a suite of APIs to build, extend, and deliver powerful digital experiences in realtime for more than 250 million devices across 80 countries each month. Organizations like Bloomberg, HubSpot, Verizon, and Hopin depend on Ably’s platform to offload the growing complexity of business-critical realtime data synchronization at global scale. For more information, see the [Ably documentation](https://ably.com/docs)._
 
