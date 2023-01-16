@@ -10,6 +10,7 @@ import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.OnFailureListener
 import com.google.android.gms.tasks.OnSuccessListener
 import com.mapbox.android.core.location.LocationEngineCallback
@@ -63,20 +64,18 @@ class GoogleLocationEngine(context: Context) : ResolutionLocationEngine {
         listeners[callback] ?: LocationCallbackWrapper(callback).apply { listeners[callback] = this }
 
     private fun toGMSLocationRequest(request: LocationEngineRequest): LocationRequest =
-        LocationRequest().apply {
-            interval = request.interval
-            fastestInterval = request.fastestInterval
-            smallestDisplacement = request.displacement
-            maxWaitTime = request.maxWaitTime
-            priority = toGMSLocationPriority(request.priority)
-        }
+        LocationRequest.Builder(toGMSLocationPriority(request.priority), request.interval).apply {
+            setMinUpdateIntervalMillis(request.fastestInterval)
+            setMinUpdateDistanceMeters(request.displacement)
+            setMaxUpdateDelayMillis(request.maxWaitTime)
+        }.build()
 
     private fun toGMSLocationPriority(enginePriority: Int): Int =
         when (enginePriority) {
-            LocationEngineRequest.PRIORITY_HIGH_ACCURACY -> LocationRequest.PRIORITY_HIGH_ACCURACY
-            LocationEngineRequest.PRIORITY_BALANCED_POWER_ACCURACY -> LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY
-            LocationEngineRequest.PRIORITY_LOW_POWER -> LocationRequest.PRIORITY_LOW_POWER
-            else -> LocationRequest.PRIORITY_NO_POWER
+            LocationEngineRequest.PRIORITY_HIGH_ACCURACY -> Priority.PRIORITY_HIGH_ACCURACY
+            LocationEngineRequest.PRIORITY_BALANCED_POWER_ACCURACY -> Priority.PRIORITY_BALANCED_POWER_ACCURACY
+            LocationEngineRequest.PRIORITY_LOW_POWER -> Priority.PRIORITY_LOW_POWER
+            else -> Priority.PRIORITY_PASSIVE
         }
 
     private class LocationCallbackWrapper(private val callback: LocationEngineCallback<LocationEngineResult>) :
