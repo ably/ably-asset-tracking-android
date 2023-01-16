@@ -202,8 +202,8 @@ class DefaultAblyTestScenarios {
             val channelsContainsKey: Boolean,
             val channelsGetOverload: DefaultAblyTestEnvironment.ChannelsGetOverload,
             val channelState: ChannelState,
-            val presenceEnterBehaviour: GivenTypes.CompletionListenerMockBehaviour,
-            val channelAttachBehaviour: GivenTypes.CompletionListenerMockBehaviour
+            val channelAttachBehaviour: GivenTypes.CompletionListenerMockBehaviour,
+            val presenceEnterBehaviour: GivenTypes.CompletionListenerMockBehaviour
         )
 
         /**
@@ -228,28 +228,28 @@ class DefaultAblyTestScenarios {
              * ...that calling `containsKey` on the Channels instance returns ${givenConfig.channelsContainsKey}...
              * ...and that calling `get` (the overload described by ${givenConfig.channelsGetOverload}) on the Channels instance returns a channel in the ${givenConfig.channelState} state...
              *
-             * when ${givenConfig.presenceEnterBehaviour} is Success {
-             * ...which, when told to enter presence, does so successfully...
+             * when ${givenConfig.channelAttachBehaviour} is Success {
+             * ...which, when told to attach, does so successfully...
              * }
              *
-             * when ${givenConfig.presenceEnterBehaviour} is Failure {
-             * ...which, when told to enter presence, fails to do so with error ${givenConfig.presenceEnterBehaviour.errorInfo}...
+             * when ${givenConfig.channelAttachBehaviour} is Failure {
+             * ...which, when told to attach, fails to do so with error ${givenConfig.channelAttachBehaviour.errorInfo}...
              * }
              *
-             * when ${givenConfig.presenceEnterBehaviour} is DoesNotComplete {
-             * ...which, when told to enter presence, never finishes doing so...
+             * when ${givenConfig.channelAttachBehaviour} is DoesNotComplete {
+             * ...which, when told to attach, never finishes doing so...
              * }
              *
              * when ${givenConfig.presenceEnterBehaviour} is Success {
              * ...[and] which, when told to enter presence, does so successfully...
              * }
              *
-             * when ${givenConfig.channelAttachBehaviour} is Failure {
-             * ...[and] which, when told to attach, fails to do so with error ${givenConfig.channelAttachBehaviour.errorInfo}...
+             * when ${givenConfig.presenceEnterBehaviour} is Failure {
+             * ...[and] which, when told to enter presence, fails to do so with error ${givenConfig.presenceEnterBehaviour.errorInfo}...
              * }
              *
-             * when ${givenConfig.channelAttachBehaviour} is DoesNotComplete {
-             * ...[and] which, when told to attach, never finishes doing so...
+             * when ${givenConfig.presenceEnterBehaviour} is DoesNotComplete {
+             * ...[and] which, when told to enter presence, never finishes doing so...
              * }
              *
              * When...
@@ -309,21 +309,21 @@ class DefaultAblyTestScenarios {
 
                 testEnvironment.stubRelease(configuredChannel)
 
-                when (val givenPresenceEnterBehaviour = givenConfig.presenceEnterBehaviour) {
+                when (val givenChannelAttachBehaviour = givenConfig.channelAttachBehaviour) {
                     is GivenTypes.CompletionListenerMockBehaviour.NotMocked -> {}
-                    /* when ${givenConfig.presenceEnterBehaviour} is Success {
-                     * ...which, when told to enter presence, does so successfully...
+                    /* when ${givenConfig.channelAttachBehaviour} is Success {
+                     * ...which, when told to attach, does so successfully...
                      * }
                      */
                     is GivenTypes.CompletionListenerMockBehaviour.Success -> {
-                        configuredChannel.mockSuccessfulPresenceEnter()
+                        configuredChannel.mockSuccessfulAttach()
                     }
-                    /* when ${givenConfig.presenceEnterBehaviour} is Failure {
-                     * ...which, when told to enter presence, fails to do so with error ${givenConfig.presenceEnterBehaviour.errorInfo}...
+                    /* when ${givenConfig.channelAttachBehaviour} is Failure {
+                     * ...which, when told to attach, fails to do so with error ${givenConfig.channelAttachBehaviour.errorInfo}...
                      * }
                      */
                     is GivenTypes.CompletionListenerMockBehaviour.Failure -> {
-                        configuredChannel.mockFailedPresenceEnter(givenPresenceEnterBehaviour.errorInfo)
+                        configuredChannel.mockFailedAttach(givenChannelAttachBehaviour.errorInfo)
                     }
                     /* when ${givenConfig.channelAttachBehaviour} is DoesNotComplete {
                      * ...which, when told to attach, never finishes doing so...
@@ -334,21 +334,21 @@ class DefaultAblyTestScenarios {
                     }
                 }
 
-                when (val givenChannelAttachBehaviour = givenConfig.channelAttachBehaviour) {
+                when (val givenPresenceEnterBehaviour = givenConfig.presenceEnterBehaviour) {
                     is GivenTypes.CompletionListenerMockBehaviour.NotMocked -> {}
-                    /* when ${givenConfig.channelAttachBehaviour} is Success {
-                     * ...[and] which, when told to attach, does so successfully...
+                    /* when ${givenConfig.presenceEnterBehaviour} is Success {
+                     * ...[and] which, when told to enter presence, does so successfully...
                      * }
                      */
                     is GivenTypes.CompletionListenerMockBehaviour.Success -> {
-                        configuredChannel.mockSuccessfulAttach()
+                        configuredChannel.mockSuccessfulPresenceEnter()
                     }
-                    /* when ${givenConfig.channelAttachBehaviour} is Failure {
-                     * ...[and] which, when told to attach, fails to do so with error ${givenConfig.channelAttachBehaviour.errorInfo}...
+                    /* when ${givenConfig.presenceEnterBehaviour} is Failure {
+                     * ...[and] which, when told to enter presence, fails to do so with error ${givenConfig.presenceEnterBehaviour.errorInfo}...
                      * }
                      */
                     is GivenTypes.CompletionListenerMockBehaviour.Failure -> {
-                        configuredChannel.mockFailedAttach(givenChannelAttachBehaviour.errorInfo)
+                        configuredChannel.mockFailedPresenceEnter(givenPresenceEnterBehaviour.errorInfo)
                     }
                     /* when ${givenConfig.presenceEnterBehaviour} is DoesNotComplete {
                      * ...[and] which, when told to enter presence, never finishes doing so...
