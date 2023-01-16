@@ -4,7 +4,9 @@ import com.ably.tracking.ConnectionException
 import com.ably.tracking.ErrorInformation
 import com.ably.tracking.common.DefaultAbly
 import com.ably.tracking.common.PresenceData
+import com.ably.tracking.common.helper.DefaultAblyTestScenarios.Connect.Companion
 import io.ably.lib.realtime.ChannelState
+import io.ably.lib.realtime.ConnectionState
 import io.ably.lib.types.ErrorInfo
 import io.mockk.confirmVerified
 import io.mockk.verifyOrder
@@ -95,6 +97,7 @@ class DefaultAblyTestScenarios {
          * This class provides properties for configuring the "Given..." part of the parameterised test case described by [Companion.test]. See that method’s documentation for information about the effect of this class’s properties.
          */
         class GivenConfig(
+            val connectionState: ConnectionState?,
             val channelsContainsKey: Boolean,
             val channelsGetOverload: DefaultAblyTestEnvironment.ChannelsGetOverload,
             val channelState: ChannelState,
@@ -110,6 +113,8 @@ class DefaultAblyTestScenarios {
             val numberOfChannelStateFetchesToVerify: Int,
             val verifyPresenceEnter: Boolean,
             val verifyChannelAttach: Boolean,
+            val numberOfChannelStateFetchesToVerifyAfterPresence: Int,
+            val verifyConnectionStateFetch: Boolean,
             val verifyChannelRelease: Boolean,
             val resultOfConnectCallOnObjectUnderTest: ThenTypes.ExpectedResult
         )
@@ -190,6 +195,10 @@ class DefaultAblyTestScenarios {
                 )
                 testEnvironment.mockChannelsGet(givenConfig.channelsGetOverload)
                 configuredChannel.mockState(givenConfig.channelState)
+
+                givenConfig.connectionState?.let { connectionState ->
+                    testEnvironment.mockConnectionState(connectionState)
+                }
 
                 testEnvironment.stubRelease(configuredChannel)
 
@@ -272,6 +281,19 @@ class DefaultAblyTestScenarios {
                          * }
                          */
                         configuredChannel.presenceMock.enter(any(), any())
+                    }
+
+                    // ...and checks the channel’s state ${thenConfig.numberOfChannelStateFetchesToVerifyAfterPresence} times...
+                    repeat(thenConfig.numberOfChannelStateFetchesToVerifyAfterPresence) {
+                        configuredChannel.channelMock.state
+                    }
+
+                    if (thenConfig.verifyConnectionStateFetch) {
+                        /* if ${thenConfig.verifyConnectionStateFetch} {
+                         * ...and checks the connection's state...
+                         * }
+                         */
+                        testEnvironment.connectionMock.state
                     }
 
                     if (thenConfig.verifyChannelRelease) {

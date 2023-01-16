@@ -300,7 +300,7 @@ class DefaultAblyTestEnvironment private constructor(
     }
 
     /**
-     * Stubs [channelMock]’s [AblySdkRealtime.Channels.release] method for the channel named by [configuredChannel]’s [ConfiguredChannel.channelName] property.
+     * Stubs [channelsMock]’s [AblySdkRealtime.Channels.release] method for the channel named by [configuredChannel]’s [ConfiguredChannel.channelName] property.
      *
      * @param configuredChannel The object whose [ConfiguredChannel.channelName] property should be used.
      */
