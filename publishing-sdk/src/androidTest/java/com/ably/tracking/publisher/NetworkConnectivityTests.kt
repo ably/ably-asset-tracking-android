@@ -356,7 +356,6 @@ class TestResources(
                 override fun wrapChannelStateListener(
                     underlyingListener: AblySdkFactory.UnderlyingChannelStateListener<DefaultAblySdkChannelStateListener>
                 ) = DefaultAblySdkChannelStateListener(underlyingListener)
-
             }
             val connectionConfiguration = ConnectionConfiguration(
                 Authentication.basic(
