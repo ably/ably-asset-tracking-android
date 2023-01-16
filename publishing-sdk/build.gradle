@@ -45,7 +45,7 @@ dependencies {
 
     // Required for FusedLocationProviderClient that's used in Google location engine implementation
     // https://developers.google.com/android/reference/com/google/android/gms/location/FusedLocationProviderClient
-    implementation 'com.google.android.gms:play-services-location:17.1.0'
+    implementation 'com.google.android.gms:play-services-location:21.0.1'
 }
 
 ext {
