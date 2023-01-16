@@ -102,7 +102,7 @@ class PublisherAndSubscriberTests {
          */
         runBlocking {
             while (publishedLocations.size < receivedLocations.size) {
-                delay(100);
+                delay(100)
             }
         }
 
