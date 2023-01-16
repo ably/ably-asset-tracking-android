@@ -132,6 +132,10 @@ class DefaultAblyTestScenarios {
              * ...which, when told to enter presence, does so successfully...
              * }
              *
+             * if ${givenConfig.connectionState != null} {
+             * ...that the connection’s `state` property returns ${givenConfig.connectionState}...
+             * }
+             *
              * when ${givenConfig.presenceEnterBehaviour} is Failure {
              * ...which, when told to enter presence, fails to do so with error ${givenConfig.presenceEnterBehaviour.errorInfo}...
              * }
@@ -161,6 +165,12 @@ class DefaultAblyTestScenarios {
              *
              * if ${thenConfig.verifyPresenceEnter} {
              * ...and tells the channel to enter presence...
+             * }
+             *
+             * ...and checks the channel’s state ${thenConfig.numberOfChannelStateFetchesToVerifyAfterPresence} times...
+             *
+             * if ${thenConfig.verifyConnectionStateFetch} {
+             * ...and checks the connection's state...
              * }
              *
              * if ${thenConfig.verifyChannelRelease} {
@@ -195,6 +205,11 @@ class DefaultAblyTestScenarios {
                 testEnvironment.mockChannelsGet(givenConfig.channelsGetOverload)
                 configuredChannel.mockState(givenConfig.channelState)
 
+                /*
+                 * if ${givenConfig.connectionState != null} {
+                 * ...that the connection’s `state` property returns ${givenConfig.connectionState}...
+                 * }
+                 */
                 givenConfig.connectionState?.let { connectionState ->
                     testEnvironment.mockConnectionState(connectionState)
                 }
