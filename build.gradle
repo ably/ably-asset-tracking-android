@@ -184,7 +184,8 @@ subprojects {
                     'IconLocation',
                     'StopShip',
                     'DefaultLocale',
-                    'ObsoleteSdkInt'
+                    'ObsoleteSdkInt',
+                    'MonochromeLauncherIcon'
 
                 // Lint rules which are disabled by default (see: lint --show), but which we would
                 // rather were enabled.
