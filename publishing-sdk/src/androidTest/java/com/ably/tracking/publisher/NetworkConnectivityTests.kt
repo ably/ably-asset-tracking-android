@@ -44,7 +44,6 @@ import io.ably.lib.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -274,7 +273,6 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
  */
 class TestResources(
     val context: Context,
-    val scope: CoroutineScope,
     val locationHelper: LocationHelper,
     val fault: FaultSimulation,
     val publisher: Publisher
@@ -285,7 +283,6 @@ class TestResources(
          */
         fun setUp(faultParam: FaultSimulation): TestResources {
             val context = InstrumentationRegistry.getInstrumentation().targetContext
-            val scope = CoroutineScope(Dispatchers.Unconfined)
             val locationHelper = LocationHelper()
             val publisher = createPublisher(context, faultParam.proxy.clientOptions, locationHelper.channelName)
 
@@ -293,7 +290,6 @@ class TestResources(
 
             return TestResources(
                 context = context,
-                scope = scope,
                 locationHelper = locationHelper,
                 fault = faultParam,
                 publisher = publisher
@@ -386,7 +382,6 @@ class TestResources(
     }
 
     fun tearDown() {
-        scope.cancel()
         val stopExpectation = shutdownPublisher(publisher)
         stopExpectation.assertSuccess()
         locationHelper.close()
