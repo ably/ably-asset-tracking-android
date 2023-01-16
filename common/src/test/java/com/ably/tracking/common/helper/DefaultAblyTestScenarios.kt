@@ -4,7 +4,6 @@ import com.ably.tracking.ConnectionException
 import com.ably.tracking.ErrorInformation
 import com.ably.tracking.common.DefaultAbly
 import com.ably.tracking.common.PresenceData
-import com.ably.tracking.common.helper.DefaultAblyTestScenarios.Connect.Companion
 import io.ably.lib.realtime.ChannelState
 import io.ably.lib.realtime.ConnectionState
 import io.ably.lib.types.ErrorInfo
