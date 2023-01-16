@@ -49,7 +49,9 @@ class GoogleLocationEngine(context: Context) : ResolutionLocationEngine {
 
     @SuppressLint("MissingPermission")
     override fun requestLocationUpdates(request: LocationEngineRequest, pendingIntent: PendingIntent?) {
-        fusedLocationProviderClient.requestLocationUpdates(toGMSLocationRequest(request), pendingIntent!!)
+        pendingIntent?.let {
+            fusedLocationProviderClient.requestLocationUpdates(toGMSLocationRequest(request), it)
+        }
     }
 
     override fun removeLocationUpdates(callback: LocationEngineCallback<LocationEngineResult>) {
