@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -101,8 +102,10 @@ class PublisherAndSubscriberTests {
             as this happens on the same coroutine scope as, but outside of, the worker queue.
          */
         runBlocking {
-            while (publishedLocations.size < receivedLocations.size) {
-                delay(100)
+            withTimeout(10000) {
+                while (publishedLocations.size < receivedLocations.size) {
+                    delay(100)
+                }
             }
         }
 
