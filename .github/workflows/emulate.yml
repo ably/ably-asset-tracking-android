@@ -26,6 +26,10 @@ jobs:
       - uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: ${{ matrix.api-level }}
+          arch: x86_64
+          ram-size: 4096M
+          heap-size: 1024M
+          disk-size: 4096M
           #Github's default -no-snapshot option causes check workflow failing.It is likely because it has to cold boot
           #emulator which might be taking long and causing a timeout issue or a freeze.
           #Adding -no-snapshot-save will enable quick
