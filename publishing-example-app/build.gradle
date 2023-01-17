@@ -24,7 +24,7 @@ android {
 
 dependencies {
     implementation project(':publishing-sdk')
-    implementation files('./../lib/aar-with-resumption-issue-solved.aar')
+    implementation files('./../lib/aar-with-protocol-2.0-changes.aar')
 
     implementation 'org.msgpack:msgpack-core:0.8.11'
     implementation 'org.java-websocket:Java-WebSocket:1.5.3'
