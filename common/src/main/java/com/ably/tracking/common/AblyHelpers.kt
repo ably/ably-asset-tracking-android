@@ -161,7 +161,7 @@ fun io.ably.lib.types.PresenceMessage.toTracking(gson: Gson): PresenceMessage? =
         PresenceMessage(
             this.action.toTracking(),
             presenceData,
-            this.clientId
+            this.memberKey(),
         )
     }
 
@@ -191,7 +191,7 @@ fun ChannelState.toTracking() = when (this) {
  * Extension converting Ably Realtime channel state change events to the equivalent [ConnectionStateChange] API
  * presented to users of the Ably Asset Tracking SDKs.
  */
-fun io.ably.lib.realtime.ChannelStateListener.ChannelStateChange.toTracking() =
+fun AblySdkChannelStateListener.ChannelStateChange.toTracking() =
     ConnectionStateChange(
         this.current.toTracking(),
         this.reason?.toTracking()

@@ -6,11 +6,11 @@ import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.PresenceData
 import com.ably.tracking.common.PresenceMessage
 import com.ably.tracking.common.ResultCallbackFunction
+import com.ably.tracking.common.workerqueue.Worker
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.PublisherState
 import com.ably.tracking.publisher.Trackable
-import com.ably.tracking.publisher.workerqueue.results.AddTrackableWorkResult
-import com.ably.tracking.publisher.workerqueue.results.SyncAsyncResult
+import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
 
@@ -29,24 +29,39 @@ internal class AddTrackableWorker(
     private val presenceUpdateListener: ((presenceMessage: PresenceMessage) -> Unit),
     private val channelStateChangeListener: ((connectionStateChange: ConnectionStateChange) -> Unit),
     private val ably: Ably
-) : Worker {
-    override fun doWork(properties: PublisherProperties): SyncAsyncResult {
-        return when {
+) : Worker<PublisherProperties, WorkerSpecification> {
+    /**
+     * Whether the worker is delaying its work.
+     * Used to properly handle unexpected exceptions in [onUnexpectedAsyncError].
+     */
+    private var isDelayingWork: Boolean = false
+
+    /**
+     * Whether the SDK is connected to Ably.
+     * Used to properly handle unexpected exceptions in [onUnexpectedAsyncError].
+     */
+    private var isConnectedToAbly: Boolean = true
+
+    override fun doWork(
+        properties: PublisherProperties,
+        doAsyncWork: (suspend () -> Unit) -> Unit,
+        postWork: (WorkerSpecification) -> Unit
+    ): PublisherProperties {
+        when {
             properties.duplicateTrackableGuard.isCurrentlyAddingTrackable(trackable) -> {
                 properties.duplicateTrackableGuard.saveDuplicateAddHandler(trackable, callbackFunction)
-                SyncAsyncResult()
             }
             properties.trackables.contains(trackable) -> {
-                SyncAsyncResult(AddTrackableWorkResult.AlreadyIn(properties.trackableStateFlows[trackable.id]!!, callbackFunction))
+                val trackableFlow = properties.trackableStateFlows[trackable.id]!!
+                callbackFunction(Result.success(trackableFlow))
             }
             properties.state == PublisherState.CONNECTING || properties.state == PublisherState.DISCONNECTING -> {
-                SyncAsyncResult(
-                    asyncWork = {
-                        // delay work until Ably connection manipulation ends
-                        delay(WORK_DELAY_IN_MILLISECONDS)
-                        AddTrackableWorkResult.WorkDelayed(trackable, callbackFunction, presenceUpdateListener, channelStateChangeListener)
-                    }
-                )
+                doAsyncWork {
+                    isDelayingWork = true
+                    // delay work until Ably connection manipulation ends
+                    delay(WORK_DELAY_IN_MILLISECONDS)
+                    postWork(createWorkerSpecificationToDelay())
+                }
             }
             else -> {
                 val isAddingTheFirstTrackable = properties.hasNoTrackablesAddingOrAdded
@@ -54,37 +69,84 @@ internal class AddTrackableWorker(
                     properties.state = PublisherState.CONNECTING
                 }
                 properties.duplicateTrackableGuard.startAddingTrackable(trackable)
-                val presenceData = properties.presenceData.copy()
-
-                SyncAsyncResult(
-                    asyncWork = {
-                        createConnection(isAddingTheFirstTrackable, presenceData)
-                    }
-                )
+                doAsyncWork {
+                    createConnection(postWork, isAddingTheFirstTrackable, properties.presenceData)
+                }
             }
         }
+        return properties
     }
 
-    private suspend fun createConnection(isAddingTheFirstTrackable: Boolean, presenceData: PresenceData): AddTrackableWorkResult {
+    private suspend fun createConnection(
+        postWork: (WorkerSpecification) -> Unit,
+        isAddingTheFirstTrackable: Boolean,
+        presenceData: PresenceData
+    ) {
         if (isAddingTheFirstTrackable) {
+            isConnectedToAbly = false
             val startAblyConnectionResult = ably.startConnection()
             if (startAblyConnectionResult.isFailure) {
-                return AddTrackableWorkResult.Fail(trackable, startAblyConnectionResult.exceptionOrNull(), isConnectedToAbly = false, callbackFunction)
+                val workerSpecification = createAddTrackableFailedWorker(
+                    startAblyConnectionResult.exceptionOrNull(),
+                    isConnectedToAbly = false
+                )
+                postWork(workerSpecification)
+                return
             }
+            isConnectedToAbly = true
         }
         val connectResult = ably.connect(
             trackableId = trackable.id,
             presenceData = presenceData,
             willPublish = true,
         )
-        return if (connectResult.isSuccess) {
-            AddTrackableWorkResult.Success(trackable, callbackFunction, presenceUpdateListener, channelStateChangeListener)
+        val workerSpecification = if (connectResult.isSuccess) {
+            createConnectionCreatedWorker()
         } else {
-            AddTrackableWorkResult.Fail(trackable, connectResult.exceptionOrNull(), isConnectedToAbly = true, callbackFunction)
+            createAddTrackableFailedWorker(connectResult.exceptionOrNull(), isConnectedToAbly = true)
         }
+        postWork(workerSpecification)
     }
+
+    private fun createConnectionCreatedWorker() =
+        WorkerSpecification.ConnectionCreated(
+            trackable,
+            callbackFunction,
+            presenceUpdateListener,
+            channelStateChangeListener
+        )
+
+    private fun createAddTrackableFailedWorker(
+        exception: Throwable?,
+        isConnectedToAbly: Boolean
+    ) = WorkerSpecification.AddTrackableFailed(
+        trackable,
+        callbackFunction,
+        exception as Exception,
+        isConnectedToAbly
+    )
+
+    private fun createWorkerSpecificationToDelay() =
+        WorkerSpecification.AddTrackable(
+            trackable,
+            callbackFunction,
+            presenceUpdateListener,
+            channelStateChangeListener
+        )
 
     override fun doWhenStopped(exception: Exception) {
         callbackFunction(Result.failure(exception))
+    }
+
+    override fun onUnexpectedError(exception: Exception, postWork: (WorkerSpecification) -> Unit) {
+        callbackFunction(Result.failure(exception))
+    }
+
+    override fun onUnexpectedAsyncError(exception: Exception, postWork: (WorkerSpecification) -> Unit) {
+        if (isDelayingWork) {
+            postWork(createWorkerSpecificationToDelay())
+        } else {
+            postWork(createAddTrackableFailedWorker(exception, isConnectedToAbly))
+        }
     }
 }

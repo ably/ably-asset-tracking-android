@@ -1,198 +1,116 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
 import com.ably.tracking.common.Ably
-import com.ably.tracking.common.PresenceData
 import com.ably.tracking.common.ResultCallbackFunction
-import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.Trackable
-import com.ably.tracking.publisher.guards.DuplicateTrackableGuard
-import com.ably.tracking.publisher.guards.TrackableRemovalGuard
-import com.ably.tracking.publisher.workerqueue.assertNotNullAndExecute
-import com.ably.tracking.publisher.workerqueue.results.RemoveTrackableWorkResult
-import com.ably.tracking.test.common.mockDisconnect
-import com.ably.tracking.test.common.mockSuspendingDisconnectSuccessAndCapturePresenceData
-import io.mockk.clearAllMocks
-import io.mockk.coVerify
-import io.mockk.every
+import com.ably.tracking.publisher.workerqueue.WorkerSpecification
+import com.google.common.truth.Truth.assertThat
+import io.mockk.coEvery
 import io.mockk.mockk
 import io.mockk.verify
-import kotlinx.coroutines.runBlocking
-import org.junit.After
-import org.junit.Assert
-import org.junit.Before
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
+@ExperimentalCoroutinesApi
 class RemoveTrackableWorkerTest {
-    private lateinit var worker: RemoveTrackableWorker
-
     private val trackable = Trackable("testtrackable")
-    private val resultCallbackFunction: ResultCallbackFunction<Boolean> = {}
-    private val ably = mockk<Ably>(relaxed = true)
-    private val publisherProperties = mockk<PublisherProperties>(relaxed = true)
-    private val duplicateTrackableGuard = mockk<DuplicateTrackableGuard>(relaxed = true)
-    private val trackableRemovalGuard = mockk<TrackableRemovalGuard>(relaxed = true)
+    private val ably: Ably = mockk()
+    private val callbackFunction: ResultCallbackFunction<Boolean> = mockk(relaxed = true)
 
-    @Before
-    fun setup() {
-        worker = RemoveTrackableWorker(trackable, resultCallbackFunction, ably)
-        every { publisherProperties.duplicateTrackableGuard } returns duplicateTrackableGuard
-        every { publisherProperties.trackableRemovalGuard } returns trackableRemovalGuard
-    }
+    private val worker = RemoveTrackableWorker(trackable, ably, callbackFunction)
 
-    @After
-    fun cleanUp() {
-        clearAllMocks()
-    }
+    private val asyncWorks = mutableListOf<suspend () -> Unit>()
+    private val postedWorks = mutableListOf<WorkerSpecification>()
 
     @Test
-    fun `should return only async work when removing a trackable that is already added`() {
+    fun `when removing trackable that is not present should invoke callback with Success(false)`() = runTest {
         // given
-        mockTrackableAlreadyAdded()
+        val initialProperties = createPublisherProperties()
 
         // when
-        val result = worker.doWork(publisherProperties)
+        worker.doWork(
+            initialProperties,
+            asyncWorks.appendWork(),
+            postedWorks.appendSpecification()
+        )
+        asyncWorks.executeAll()
 
         // then
-        Assert.assertNull(result.syncWorkResult)
-        Assert.assertNotNull(result.asyncWork)
+        assertThat(asyncWorks.size).isEqualTo(1)
+        assertThat(postedWorks).isEmpty()
+
+        verify {
+            callbackFunction(match { it.getOrNull() == false })
+        }
     }
 
     @Test
-    fun `should disconnect the trackable from Ably when removing a trackable that is already added`() {
-        runBlocking {
+    fun `when removing trackable that is currently added should add it to trackableRemovalGuard`() =
+        runTest {
             // given
-            mockTrackableAlreadyAdded()
+            val initialProperties = createPublisherProperties()
+            initialProperties.duplicateTrackableGuard.startAddingTrackable(trackable)
 
             // when
-            worker.doWork(publisherProperties).asyncWork.assertNotNullAndExecute()
+            worker.doWork(
+                initialProperties,
+                asyncWorks.appendWork(),
+                postedWorks.appendSpecification()
+            )
 
             // then
-            coVerify(exactly = 1) {
-                ably.disconnect(trackable.id, any())
+            assertThat(asyncWorks).isEmpty()
+            assertThat(postedWorks).isEmpty()
+            assertThat(initialProperties.trackableRemovalGuard.isMarkedForRemoval(trackable))
+                .isEqualTo(true)
+        }
+
+    @Test
+    fun `when removing trackable that is present succeeded should invoke callback with exception`() =
+        runTest {
+            // given
+            val initialProperties = createPublisherProperties()
+            initialProperties.trackables.add(trackable)
+            coEvery { ably.disconnect(trackable.id, any()) } returns Result.success(Unit)
+
+            // when
+            worker.doWork(
+                initialProperties,
+                asyncWorks.appendWork(),
+                postedWorks.appendSpecification()
+            )
+            asyncWorks.executeAll()
+
+            // then
+            assertThat(asyncWorks.size).isEqualTo(1)
+            assertThat(postedWorks.size).isEqualTo(1)
+            assertThat(postedWorks[0])
+                .isInstanceOf(WorkerSpecification.DisconnectSuccess::class.java)
+        }
+
+    @Test
+    fun `when removing trackable that is present fails should invoke callback with exception`() =
+        runTest {
+            // given
+            val initialProperties = createPublisherProperties()
+            initialProperties.trackables.add(trackable)
+            coEvery { ably.disconnect(trackable.id, any()) } returns Result.failure(RuntimeException("testException"))
+
+            // when
+            worker.doWork(
+                initialProperties,
+                asyncWorks.appendWork(),
+                postedWorks.appendSpecification()
+            )
+            asyncWorks.executeAll()
+
+            // then
+            assertThat(asyncWorks.size).isEqualTo(1)
+            assertThat(postedWorks).isEmpty()
+
+            verify {
+                callbackFunction(match { it.exceptionOrNull() is RuntimeException })
             }
         }
-    }
-
-    @Test
-    fun `should use a copy of presence data when disconnecting the trackable from Ably when removing a trackable that is already added`() {
-        runBlocking {
-            // given
-            mockTrackableAlreadyAdded()
-            val originalPresenceData = PresenceData("type")
-            every { publisherProperties.presenceData } returns originalPresenceData
-            val presenceDataSlot = ably.mockSuspendingDisconnectSuccessAndCapturePresenceData(trackable.id)
-
-            // when
-            worker.doWork(publisherProperties).asyncWork.assertNotNullAndExecute()
-
-            // then
-            val usedPresenceData = presenceDataSlot.captured
-            Assert.assertEquals(originalPresenceData, usedPresenceData)
-            Assert.assertNotSame(originalPresenceData, usedPresenceData)
-        }
-    }
-
-    @Test
-    fun `should return a 'Success' result when disconnect was successful when removing a trackable that is already added`() {
-        runBlocking {
-            // given
-            mockTrackableAlreadyAdded()
-            ably.mockDisconnect(trackable.id, Result.success(Unit))
-
-            // when
-            val asyncWorkResult = worker.doWork(publisherProperties).asyncWork.assertNotNullAndExecute()
-
-            // then
-            Assert.assertTrue(asyncWorkResult is RemoveTrackableWorkResult.Success)
-            val success = asyncWorkResult as RemoveTrackableWorkResult.Success
-            Assert.assertEquals(trackable, success.trackable)
-            Assert.assertEquals(resultCallbackFunction, success.callbackFunction)
-        }
-    }
-
-    @Test
-    fun `should return a 'Failure' result when disconnect failed when removing a trackable that is already added`() {
-        runBlocking {
-            // given
-            mockTrackableAlreadyAdded()
-            val disconnectException = Exception("test")
-            ably.mockDisconnect(trackable.id, Result.failure(disconnectException))
-
-            // when
-            val asyncWorkResult = worker.doWork(publisherProperties).asyncWork.assertNotNullAndExecute()
-
-            // then
-            Assert.assertTrue(asyncWorkResult is RemoveTrackableWorkResult.Fail)
-            val fail = asyncWorkResult as RemoveTrackableWorkResult.Fail
-            Assert.assertEquals(resultCallbackFunction, fail.callbackFunction)
-            Assert.assertEquals(disconnectException, fail.exception)
-        }
-    }
-
-    @Test
-    fun `should return empty result when removing a trackable that is currently being added`() {
-        // given
-        mockTrackableIsCurrentlyBeingAdded()
-
-        // when
-        val result = worker.doWork(publisherProperties)
-
-        // then
-        Assert.assertNull(result.syncWorkResult)
-        Assert.assertNull(result.asyncWork)
-    }
-
-    @Test
-    fun `should mark trackable for removal when removing a trackable that is currently being added`() {
-        // given
-        mockTrackableIsCurrentlyBeingAdded()
-
-        // when
-        worker.doWork(publisherProperties)
-
-        // then
-        verify(exactly = 1) {
-            trackableRemovalGuard.markForRemoval(trackable, resultCallbackFunction)
-        }
-    }
-
-    @Test
-    fun `should return only sync work result when removing a trackable that is not already added or currently being added`() {
-        // given
-        mockTrackableNotPresent()
-
-        // when
-        val result = worker.doWork(publisherProperties)
-
-        // then
-        Assert.assertNotNull(result.syncWorkResult)
-        Assert.assertNull(result.asyncWork)
-    }
-
-    @Test
-    fun `should return a 'NotPresent' result when removing a trackable that is not already added or currently being added`() {
-        // given
-        mockTrackableNotPresent()
-
-        // when
-        val result = worker.doWork(publisherProperties)
-
-        // then
-        Assert.assertTrue(result.syncWorkResult is RemoveTrackableWorkResult.NotPresent)
-        val notPresent = result.syncWorkResult as RemoveTrackableWorkResult.NotPresent
-        Assert.assertEquals(resultCallbackFunction, notPresent.callbackFunction)
-    }
-
-    private fun mockTrackableAlreadyAdded() {
-        every { publisherProperties.trackables.contains(trackable) } returns true
-    }
-
-    private fun mockTrackableIsCurrentlyBeingAdded() {
-        every { duplicateTrackableGuard.isCurrentlyAddingTrackable(trackable) } returns true
-    }
-
-    private fun mockTrackableNotPresent() {
-        every { publisherProperties.trackables.contains(trackable) } returns false
-        every { duplicateTrackableGuard.isCurrentlyAddingTrackable(trackable) } returns false
-    }
 }

@@ -3,25 +3,29 @@ package com.ably.tracking.publisher.workerqueue.workers
 import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.logging.createLoggingTag
 import com.ably.tracking.common.logging.v
+import com.ably.tracking.common.workerqueue.DefaultWorker
 import com.ably.tracking.logging.LogHandler
-import com.ably.tracking.publisher.CorePublisher
+import com.ably.tracking.publisher.PublisherInteractor
 import com.ably.tracking.publisher.PublisherProperties
-import com.ably.tracking.publisher.workerqueue.results.SyncAsyncResult
+import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 
 internal class ChannelConnectionStateChangeWorker(
-    private val connectionStateChange: ConnectionStateChange,
     private val trackableId: String,
-    private val corePublisher: CorePublisher,
-    private val logHandler: LogHandler?,
-) : Worker {
+    private val connectionStateChange: ConnectionStateChange,
+    private val publisherInteractor: PublisherInteractor,
+    private val logHandler: LogHandler?
+) : DefaultWorker<PublisherProperties, WorkerSpecification>() {
+
     private val TAG = createLoggingTag(this)
 
-    override fun doWork(properties: PublisherProperties): SyncAsyncResult {
+    override fun doWork(
+        properties: PublisherProperties,
+        doAsyncWork: (suspend () -> Unit) -> Unit,
+        postWork: (WorkerSpecification) -> Unit
+    ): PublisherProperties {
         logHandler?.v("$TAG Trackable $trackableId connection state changed ${connectionStateChange.state}")
         properties.lastChannelConnectionStateChanges[trackableId] = connectionStateChange
-        corePublisher.updateTrackableState(properties, trackableId)
-        return SyncAsyncResult()
+        publisherInteractor.updateTrackableState(properties, trackableId)
+        return properties
     }
-
-    override fun doWhenStopped(exception: Exception) = Unit
 }

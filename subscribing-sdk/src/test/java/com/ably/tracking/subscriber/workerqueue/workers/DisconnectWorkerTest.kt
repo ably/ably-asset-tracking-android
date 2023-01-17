@@ -9,7 +9,7 @@ import io.mockk.coVerify
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert
 import org.junit.Test
 
@@ -24,9 +24,9 @@ internal class DisconnectWorkerTest {
     private val asyncWorks = mutableListOf<suspend () -> Unit>()
 
     @Test
-    fun `should call ably disconnect and notify callback`() = runBlockingTest {
+    fun `should call ably disconnect and notify callback`() = runTest {
         // given
-        val initialProperties = SubscriberProperties(Resolution(Accuracy.BALANCED, 100, 100.0))
+        val initialProperties = SubscriberProperties(Resolution(Accuracy.BALANCED, 100, 100.0), mockk())
         ably.mockDisconnectSuccess(trackableId)
 
         // when

@@ -2,71 +2,52 @@ package com.ably.tracking.publisher.workerqueue.workers
 
 import com.ably.tracking.common.ConnectionState
 import com.ably.tracking.common.ConnectionStateChange
-import com.ably.tracking.publisher.CorePublisher
-import com.ably.tracking.publisher.PublisherProperties
-import io.mockk.clearAllMocks
+import com.ably.tracking.publisher.PublisherInteractor
+import com.ably.tracking.publisher.workerqueue.WorkerSpecification
+import com.google.common.truth.Truth.assertThat
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.runs
 import io.mockk.verify
-import org.junit.After
-import org.junit.Assert
-import org.junit.Before
 import org.junit.Test
 
 class ChannelConnectionStateChangeWorkerTest {
-    private lateinit var worker: ChannelConnectionStateChangeWorker
-    private val connectionStateChange = ConnectionStateChange(ConnectionState.OFFLINE, null)
-    private val trackableId = "test-trackable"
-    private val corePublisher = mockk<CorePublisher>(relaxed = true)
-    private val lastChannelConnectionStateChanges = mockk<MutableMap<String, ConnectionStateChange>>(relaxed = true)
-    private val publisherProperties = mockk<PublisherProperties>(relaxed = true)
-
-    @Before
-    fun setUp() {
-        worker = ChannelConnectionStateChangeWorker(connectionStateChange, trackableId, corePublisher, null)
-        every { publisherProperties.lastChannelConnectionStateChanges } returns lastChannelConnectionStateChanges
+    private val trackableId = "123123"
+    private val connectionStateChange = ConnectionStateChange(ConnectionState.ONLINE, null)
+    private val publisherInteractor: PublisherInteractor = mockk {
+        every { updateTrackableState(any(), trackableId) } just runs
     }
+    private val worker = ChannelConnectionStateChangeWorker(
+        trackableId = trackableId,
+        connectionStateChange = connectionStateChange,
+        publisherInteractor = publisherInteractor,
+        logHandler = null
+    )
 
-    @After
-    fun cleanUp() {
-        clearAllMocks()
-    }
+    private val asyncWorks = mutableListOf<suspend () -> Unit>()
+    private val postedWorks = mutableListOf<WorkerSpecification>()
 
     @Test
-    fun `should always return an empty result`() {
+    fun `should update channel connection state and notify publisher`() {
         // given
+        val initialProperties = createPublisherProperties()
 
         // when
-        val result = worker.doWork(publisherProperties)
+        val updatedProperties = worker.doWork(
+            initialProperties,
+            asyncWorks.appendWork(),
+            postedWorks.appendSpecification()
+        )
 
         // then
-        Assert.assertNull(result.syncWorkResult)
-        Assert.assertNull(result.asyncWork)
-    }
+        assertThat(updatedProperties.lastChannelConnectionStateChanges[trackableId])
+            .isEqualTo(connectionStateChange)
+        assertThat(asyncWorks).isEmpty()
+        assertThat(postedWorks).isEmpty()
 
-    @Test
-    fun `should set the last channel connection state change for the given trackable`() {
-        // given
-
-        // when
-        worker.doWork(publisherProperties)
-
-        // then
-        verify(exactly = 1) {
-            lastChannelConnectionStateChanges[trackableId] = connectionStateChange
-        }
-    }
-
-    @Test
-    fun `should update trackable state for the given trackable`() {
-        // given
-
-        // when
-        worker.doWork(publisherProperties)
-
-        // then
-        verify(exactly = 1) {
-            corePublisher.updateTrackableState(publisherProperties, trackableId)
+        verify {
+            publisherInteractor.updateTrackableState(updatedProperties, trackableId)
         }
     }
 }

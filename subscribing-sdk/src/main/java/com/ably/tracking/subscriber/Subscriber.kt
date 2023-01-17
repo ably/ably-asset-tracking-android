@@ -141,7 +141,7 @@ interface Subscriber {
          *
          * @return A new subscriber instance.
          * @throws BuilderConfigurationIncompleteException If all required params aren't set
-         * @throws ConnectionException If something goes wrong during connection initialization
+         * @throws ConnectionException If connection configuration is invalid.
          */
         @JvmSynthetic
         suspend fun start(): Subscriber

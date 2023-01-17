@@ -1,19 +1,25 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
 import com.ably.tracking.common.ResultCallbackFunction
-import com.ably.tracking.publisher.CorePublisher
+import com.ably.tracking.common.workerqueue.CallbackWorker
 import com.ably.tracking.publisher.DefaultCorePublisher
+import com.ably.tracking.publisher.PublisherInteractor
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.Trackable
-import com.ably.tracking.publisher.workerqueue.results.SyncAsyncResult
+import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 
 internal class SetActiveTrackableWorker(
     private val trackable: Trackable,
-    private val callbackFunction: ResultCallbackFunction<Unit>,
-    private val publisher: CorePublisher,
+    callbackFunction: ResultCallbackFunction<Unit>,
+    private val publisherInteractor: PublisherInteractor,
     private val hooks: DefaultCorePublisher.Hooks
-) : Worker {
-    override fun doWork(properties: PublisherProperties): SyncAsyncResult {
+) : CallbackWorker<PublisherProperties, WorkerSpecification>(callbackFunction) {
+
+    override fun doWork(
+        properties: PublisherProperties,
+        doAsyncWork: (suspend () -> Unit) -> Unit,
+        postWork: (WorkerSpecification) -> Unit
+    ): PublisherProperties {
         if (properties.active != trackable) {
             properties.active = trackable
 
@@ -21,17 +27,13 @@ internal class SetActiveTrackableWorker(
             hooks.trackables?.onActiveTrackableChanged(trackable)
             trackable.destination.let {
                 if (it != null) {
-                    publisher.setDestination(it, properties)
+                    publisherInteractor.setDestination(it, properties)
                 } else {
-                    publisher.removeCurrentDestination(properties)
+                    publisherInteractor.removeCurrentDestination(properties)
                 }
             }
         }
         callbackFunction(Result.success(Unit))
-        return SyncAsyncResult()
-    }
-
-    override fun doWhenStopped(exception: Exception) {
-        callbackFunction(Result.failure(exception))
+        return properties
     }
 }

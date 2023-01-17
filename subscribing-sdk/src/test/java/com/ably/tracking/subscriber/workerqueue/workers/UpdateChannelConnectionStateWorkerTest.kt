@@ -1,50 +1,45 @@
 package com.ably.tracking.subscriber.workerqueue.workers
 
-import com.ably.tracking.Accuracy
-import com.ably.tracking.Resolution
-import com.ably.tracking.common.ConnectionState
 import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.subscriber.SubscriberProperties
-import com.ably.tracking.subscriber.SubscriberInteractor
 import com.ably.tracking.subscriber.workerqueue.WorkerSpecification
+import io.mockk.Runs
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
-import io.mockk.runs
 import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.runBlockingTest
-import org.junit.Assert
+import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
 @ExperimentalCoroutinesApi
 internal class UpdateChannelConnectionStateWorkerTest {
 
-    private val subscriberInteractor: SubscriberInteractor = mockk {
-        every { updateTrackableState(any()) } just runs
-    }
-    private val channelConnectionStateChange = ConnectionStateChange(ConnectionState.ONLINE, null)
+    private val subscriberProperties: SubscriberProperties = mockk()
+    private val channelConnectionStateChange: ConnectionStateChange = mockk()
     private val updateChannelConnectionStateWorker =
-        UpdateChannelConnectionStateWorker(channelConnectionStateChange, subscriberInteractor)
+        UpdateChannelConnectionStateWorker(channelConnectionStateChange)
 
     private val asyncWorks = mutableListOf<suspend () -> Unit>()
     private val postedWorks = mutableListOf<WorkerSpecification>()
 
     @Test
-    fun `should call updateTrackableState and update properties`() = runBlockingTest {
+    fun `should call updateForChannelConnectionStateChangeAndThenEmitStateEventsIfRequired`() = runTest {
         // given
-        val initialProperties = SubscriberProperties(Resolution(Accuracy.BALANCED, 100, 100.0))
+        every { subscriberProperties.updateForChannelConnectionStateChangeAndThenEmitStateEventsIfRequired(any()) } just Runs
 
         // when
-        val updatedProperties =
-            updateChannelConnectionStateWorker.doWork(
-                initialProperties,
-                asyncWorks.appendWork(),
-                postedWorks.appendSpecification()
-            )
+        updateChannelConnectionStateWorker.doWork(
+            subscriberProperties,
+            asyncWorks.appendWork(),
+            postedWorks.appendSpecification()
+        )
 
         // then
-        Assert.assertEquals(channelConnectionStateChange, updatedProperties.lastChannelConnectionStateChange)
-        verify { subscriberInteractor.updateTrackableState(updatedProperties) }
+        verify {
+            subscriberProperties.updateForChannelConnectionStateChangeAndThenEmitStateEventsIfRequired(
+                channelConnectionStateChange
+            )
+        }
     }
 }

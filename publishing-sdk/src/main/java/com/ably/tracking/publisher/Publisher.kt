@@ -11,7 +11,6 @@ import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
 import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.logging.LogHandler
-import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -119,13 +118,24 @@ interface Publisher {
      * Stops this publisher from publishing locations. Once a publisher has been stopped, it cannot be restarted.
      * Please note that calling this method will remove the notification provided by [Builder.backgroundTrackingNotificationProvider].
      *
-     * @param timeoutInMilliseconds After this duration the stopping procedure will be canceled. Default value is 30 seconds.
+     * @throws ConnectionException If something goes wrong during connection closing
+     */
+    suspend fun stop()
+
+    /**
+     * Stops this publisher from publishing locations. Once a publisher has been stopped, it cannot be restarted.
+     * Please note that calling this method will remove the notification provided by [Builder.backgroundTrackingNotificationProvider].
+     *
+     * @param timeoutInMilliseconds This parameter will be ignored.
      *
      * @throws ConnectionException If something goes wrong during connection closing
-     * @throws TimeoutCancellationException If the operation does not complete in the [timeoutInMilliseconds] time
      */
     @JvmSynthetic
-    suspend fun stop(timeoutInMilliseconds: Long = 30_000L)
+    @Deprecated(
+        "The timeoutInMilliseconds parameter is now ignored and should not be used.",
+        replaceWith = ReplaceWith("stop()")
+    )
+    suspend fun stop(timeoutInMilliseconds: Long)
 
     /**
      * The methods implemented by builders capable of starting [Publisher] instances.
@@ -270,8 +280,8 @@ interface Publisher {
          * In order to detect device's location ACCESS_COARSE_LOCATION or ACCESS_FINE_LOCATION permission must be granted.
          *
          * @return A new publisher instance.
-         * @throws com.ably.tracking.BuilderConfigurationIncompleteException If all required params aren't set
-         * @throws ConnectionException If something goes wrong during connection initialization
+         * @throws com.ably.tracking.BuilderConfigurationIncompleteException If all required params aren't set.
+         * @throws ConnectionException If connection configuration is invalid.
          */
         @RequiresPermission(anyOf = [ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION])
         @Throws(BuilderConfigurationIncompleteException::class, ConnectionException::class)

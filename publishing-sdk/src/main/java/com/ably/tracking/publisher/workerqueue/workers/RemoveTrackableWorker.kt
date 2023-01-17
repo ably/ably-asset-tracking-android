@@ -2,43 +2,70 @@ package com.ably.tracking.publisher.workerqueue.workers
 
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ResultCallbackFunction
+import com.ably.tracking.common.workerqueue.Worker
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.Trackable
-import com.ably.tracking.publisher.workerqueue.results.RemoveTrackableWorkResult
-import com.ably.tracking.publisher.workerqueue.results.SyncAsyncResult
+import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 
 internal class RemoveTrackableWorker(
     private val trackable: Trackable,
-    private val callbackFunction: ResultCallbackFunction<Boolean>,
-    private val ably: Ably
-) : Worker {
-    override fun doWork(properties: PublisherProperties): SyncAsyncResult {
-        return when {
+    private val ably: Ably,
+    private val callbackFunction: ResultCallbackFunction<Boolean>
+) : Worker<PublisherProperties, WorkerSpecification> {
+
+    override fun doWork(
+        properties: PublisherProperties,
+        doAsyncWork: (suspend () -> Unit) -> Unit,
+        postWork: (WorkerSpecification) -> Unit
+    ): PublisherProperties {
+        when {
             properties.trackables.contains(trackable) -> {
-                val presenceData = properties.presenceData.copy()
-                SyncAsyncResult(
-                    asyncWork = {
-                        // Leave Ably channel.
-                        val result = ably.disconnect(trackable.id, presenceData)
-                        if (result.isSuccess) {
-                            RemoveTrackableWorkResult.Success(callbackFunction, trackable)
-                        } else {
-                            RemoveTrackableWorkResult.Fail(callbackFunction, result.exceptionOrNull()!!)
-                        }
+                doAsyncWork {
+                    // Leave Ably channel.
+                    val result = ably.disconnect(trackable.id, properties.presenceData)
+                    if (result.isSuccess) {
+                        postWork(buildDisconnectSuccessWorkerSpecification(postWork))
+                    } else {
+                        callbackFunction(Result.failure(result.exceptionOrNull()!!))
                     }
-                )
+                }
             }
             properties.duplicateTrackableGuard.isCurrentlyAddingTrackable(trackable) -> {
                 properties.trackableRemovalGuard.markForRemoval(trackable, callbackFunction)
-                SyncAsyncResult()
             }
             else -> {
-                SyncAsyncResult(RemoveTrackableWorkResult.NotPresent(callbackFunction))
+                doAsyncWork {
+                    callbackFunction(Result.success(false))
+                }
             }
         }
+        return properties
     }
 
+    private fun buildDisconnectSuccessWorkerSpecification(postWork: (WorkerSpecification) -> Unit) =
+        WorkerSpecification.DisconnectSuccess(
+            trackable = trackable,
+            callbackFunction = {
+                if (it.isSuccess) {
+                    callbackFunction(Result.success(true))
+                } else {
+                    callbackFunction(Result.failure(it.exceptionOrNull()!!))
+                }
+            },
+            shouldRecalculateResolutionCallback = {
+                postWork(WorkerSpecification.ChangeLocationEngineResolution)
+            }
+        )
+
     override fun doWhenStopped(exception: Exception) {
+        callbackFunction(Result.failure(exception))
+    }
+
+    override fun onUnexpectedError(exception: Exception, postWork: (WorkerSpecification) -> Unit) {
+        callbackFunction(Result.failure(exception))
+    }
+
+    override fun onUnexpectedAsyncError(exception: Exception, postWork: (WorkerSpecification) -> Unit) {
         callbackFunction(Result.failure(exception))
     }
 }

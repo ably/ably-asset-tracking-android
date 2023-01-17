@@ -1,5 +1,13 @@
 # Contributing to the Ably Asset Tracking SDKs for Android
 
+## Java version
+
+To run the `./gradlew` script locally, you need to be using a version of Java which is supported by the version of Gradle that this project uses.
+
+The version of Gradle that this project uses is specified by the `distributionUrl` in [gradle/wrapper/gradle-wrapper.properties](gradle/wrapper/gradle-wrapper.properties). To find out which versions of Java are compatible with this version of Gradle, consult the [Gradle compatibility matrix](https://docs.gradle.org/current/userguide/compatibility.html#java).
+
+If you are using [`asdf`](https://asdf-vm.com) to manage tool versions, then you can rely on the `.tool-versions` file in this repository, which is configured to use an appropriate version of Java.
+
 ## Development
 
 This repository is structured as a Gradle [Multi-Project Build](https://docs.gradle.org/current/userguide/multi_project_builds.html).
@@ -42,6 +50,23 @@ The following secrets need configuring in a similar manner to that described abo
 - `MAPBOX_ACCESS_TOKEN`
 - `GOOGLE_MAPS_API_KEY`
 
+### Runtime Secrets and Connected Checks
+
+The Gradle build scripts react to values assigned to the `runtimeSecrets` property.
+This is a property unique to the projects in this repository, altering the build configuration depending on the downstream needs of the build, in respect of `BuildConfig` availability and values of `ABLY_API_KEY` and `MAPBOX_ACCESS_TOKEN` (both supplied via Gradle properties).
+
+| `runtimeSecrets` value | Build Configuration | Notes |
+| ---------------------- | ------------------- | ----- |
+| `FOR_ALL_PROJECTS_BECAUSE_WE_ARE_RUNNING_INTEGRATION_TESTS` | Production secrets injected into all projects, for both `release` and `debug` build types. | Allows integration tests (connected checks, the `androidTest` source set in each project) to have access to these secrets. Used by the [emulate](.github/workflows/emulate.yml) workflow. |
+| `USE_DUMMY_EMPTY_STRING_VALUES` | Dummy secrets injected only into app projects. This allows the projects to build without production secrets needing to be supplied via Gradle properties. | This means that any app or live-service integration test builds that attempt to use these secret values at runtime will fail. Used by the [check](.github/workflows/check.yml), [docs](.github/workflows/docs.yml) and publishing workflows. |
+| _either undefined or any other value_ | Production secrets injected only into app projects. | Ensures that they are not accidentally exposed to any of the SDK projects. Used, implicitly, by the [assemble](.github/workflows/assemble.yml) workflow. |
+
+It is a little bit hacky and there might be another way to do this in a more Gradle or Android idiomatic manner, however it suits the needs of our project build for the time being and does not change or otherwise alter the SDK products we publish.
+
+For local development purposes, most developers will find that the most helpful general purpose configuration is to put the following line into their `~/.gradle/gradle.properties` file:
+
+    runtimeSecrets: FOR_ALL_PROJECTS_BECAUSE_WE_ARE_RUNNING_INTEGRATION_TESTS
+
 ### Debugging Gradle Task Dependencies
 
 There isn't an out-of-the-box command provided by Gradle to provide a readable breakdown of which tasks in the build are configured to rely upon which other tasks. The `--dry-run` switch helps a bit, but it provides a flat view which doesn't provide the full picture.
@@ -55,6 +80,17 @@ If such a view is required then we suggest installing [this Gradle-global, user-
 The `taskTree` task requires a preceding task name and can be run per project, a fact that's visible with:
 
     ./gradlew tasks --all | grep taskTree
+
+### Automated Testing
+
+There are a few things that you need to be aware of when writing automated tests.
+
+#### Mapbox Replays
+
+When writing automated tests using Mapbox's replay engine, you may notice that the first location event appears to be replayed twice when a trip is started.
+
+This is expected, and is due to the fact that our event listeners get registered within Mapbox for both "location updates" and also a "first location" -
+which tells us where the asset is at the start of the trip. Subsequent location updates will only be received once.
 
 ## Secrets Required to Release
 

@@ -1,11 +1,12 @@
 buildscript {
     ext.kotlin_version = '1.6.21'
+    ext.kotlin_coroutines_version = '1.6.4'
     ext.copyright_message = (new File('COPYRIGHT')).readLines().get(0)
 
     // The version of Ably's client library for Java that we're using.
     // Source code: https://github.com/ably/ably-java
     // Maven coordinates: groupId 'io.ably', artifactId ':'ably-android'.
-    ext.ably_core_version = '1.2.21'
+    ext.ably_core_version = '1.2.22'
 
     repositories {
         google()
@@ -80,6 +81,7 @@ subprojects {
         final evaluatedSubProjectIsAnApp = evaluatedSubProject.pluginManager.hasPlugin('com.android.application')
         final evaluatedSubProjectIsAnExampleApp = evaluatedSubProjectIsAnApp && evaluatedSubProject.name.contains('example')
         final evaluatedSubProjectIsKotlin = evaluatedSubProject.pluginManager.hasPlugin('kotlin-android')
+        logger.lifecycle("SubProject Evaluation for ${evaluatedSubProject.name}: Library=${evaluatedSubProjectIsALibrary}, App=${evaluatedSubProjectIsAnApp}, ExampleApp=${evaluatedSubProjectIsAnExampleApp}, Kotlin=${evaluatedSubProjectIsKotlin}")
 
         // This is a convention for this Gradle modules/projects in this repository.
         // If the name has 'java' on the end (e.g. 'subscribing-sdk-java') or in the
@@ -195,8 +197,28 @@ subprojects {
                     // Configuration that must not be applied to SDK project main source set builds for the release variant/buildType.
                     // This configuration is, however, required for Android's connectedCheck task (which uses the androidTest source set
                     // with the debug variant/buildType).
-                    buildConfigField 'String', 'ABLY_API_KEY', "\"${findProperty('ABLY_API_KEY') ?: ""}\""
-                    buildConfigField 'String', 'MAPBOX_ACCESS_TOKEN', "\"${findProperty('MAPBOX_ACCESS_TOKEN') ?: ""}\""
+                    if (findProperty('runtimeSecrets') == 'USE_DUMMY_EMPTY_STRING_VALUES') {
+                        // We know that we're not going to need to compile anything that needs BuildConfig to contain
+                        // any of these secrets. For example, unit test runs, where we know there are no system tests
+                        // being run or app builds being made where those apps embed secrets.
+                        logger.lifecycle("Using dummy, empty-string secrets configuration (ABLY_API_KEY and MAPBOX_ACCESS_TOKEN) for the '${delegate.name}' Android build type.")
+                        buildConfigField 'String', 'ABLY_API_KEY', "\"\""
+                        buildConfigField 'String', 'MAPBOX_ACCESS_TOKEN', "\"\""
+                        return
+                    }
+
+                    final ABLY_API_KEY = findProperty('ABLY_API_KEY')
+                    final MAPBOX_ACCESS_TOKEN = findProperty('MAPBOX_ACCESS_TOKEN')
+                    if (ABLY_API_KEY == null || ABLY_API_KEY.trim().length() < 1) {
+                        throw new GradleException('ABLY_API_KEY not specified or is empty.')
+                    }
+                    if (MAPBOX_ACCESS_TOKEN == null || MAPBOX_ACCESS_TOKEN.trim().length() < 1) {
+                        throw new GradleException('MAPBOX_ACCESS_TOKEN not specified or is empty.')
+                    }
+
+                    buildConfigField 'String', 'ABLY_API_KEY', "\"${ABLY_API_KEY}\""
+                    buildConfigField 'String', 'MAPBOX_ACCESS_TOKEN', "\"${MAPBOX_ACCESS_TOKEN}\""
+                    logger.lifecycle("Secrets have been added to BuildConfig (ABLY_API_KEY and MAPBOX_ACCESS_TOKEN) for the '${delegate.name}' Android build type.")
                 }
 
                 def versionConfigFields = {
@@ -207,15 +229,22 @@ subprojects {
                 }
 
                 debug {
-                    apply secretConfigFields on it
-                    apply versionConfigFields on it
+                    // Secrets must not be injected into SDK builds - they are only for example apps or SDK
+                    // integration tests (via Android's `connectedCheck` task), which are testing using the debug
+                    // variant/buildType.
+                    if (evaluatedSubProjectIsAnApp || findProperty('runtimeSecrets') == 'FOR_ALL_PROJECTS_BECAUSE_WE_ARE_RUNNING_INTEGRATION_TESTS') {
+                        apply secretConfigFields on it
+                    }
+                    if (evaluatedSubProjectIsALibrary) {
+                        apply versionConfigFields on it
+                    }
                 }
 
                 release {
                     // Secrets must not be injected into SDK builds - they are only for example apps or SDK
                     // integration tests (via Android's `connectedCheck` task), which are testing using the debug
                     // variant/buildType.
-                    if (evaluatedSubProjectIsAnApp) {
+                    if (evaluatedSubProjectIsAnApp || findProperty('runtimeSecrets') == 'FOR_ALL_PROJECTS_BECAUSE_WE_ARE_RUNNING_INTEGRATION_TESTS') {
                         apply secretConfigFields on it
                     }
                     if (evaluatedSubProjectIsALibrary) {
@@ -251,11 +280,12 @@ subprojects {
                 // Projects that use our SDK projects will crash when dispatching to the Main thread on
                 // the Android runtime unless we include this dependency. See:
                 // https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines/-dispatchers/-main.html
-                implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.4.2'
-                testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.4.2"
+                implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$kotlin_coroutines_version"
+                testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$kotlin_coroutines_version"
                 testImplementation 'io.mockk:mockk:1.12.2'
             } else {
                 testImplementation 'org.mockito:mockito-core:3.6.28'
+                testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test-jvm:$kotlin_coroutines_version"
             }
 
             if (evaluatedSubProjectIsAnApp) {

@@ -1,124 +1,138 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
 import com.ably.tracking.EnhancedLocationUpdate
-import com.ably.tracking.Location
 import com.ably.tracking.LocationUpdateType
-import com.ably.tracking.publisher.CorePublisher
-import com.ably.tracking.publisher.LocationsPublishingState
-import com.ably.tracking.publisher.PublisherProperties
+import com.ably.tracking.publisher.PublisherInteractor
+import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 import com.ably.tracking.test.common.anyLocation
-import io.mockk.clearAllMocks
+import com.google.common.truth.Truth.assertThat
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.runs
 import io.mockk.verify
-import org.junit.After
-import org.junit.Assert
-import org.junit.Before
 import org.junit.Test
 
 class SendEnhancedLocationFailureWorkerTest {
-    private lateinit var worker: SendEnhancedLocationFailureWorker
     private val locationUpdate =
         EnhancedLocationUpdate(anyLocation(), emptyList(), emptyList(), LocationUpdateType.ACTUAL)
     private val trackableId = "test-trackable"
-    private val corePublisher = mockk<CorePublisher>(relaxed = true)
-    private val lastSentEnhancedLocations = mockk<MutableMap<String, Location>>(relaxed = true)
-    private val enhancedLocationsPublishingState =
-        mockk<LocationsPublishingState<EnhancedLocationUpdate>>(relaxed = true)
-    private val publisherProperties = mockk<PublisherProperties>(relaxed = true)
-
-    @Before
-    fun setUp() {
-        worker = SendEnhancedLocationFailureWorker(locationUpdate, trackableId, null, corePublisher, null)
-        every { publisherProperties.lastSentEnhancedLocations } returns lastSentEnhancedLocations
-        every { publisherProperties.enhancedLocationsPublishingState } returns enhancedLocationsPublishingState
+    private val publisherInteractor: PublisherInteractor = mockk {
+        every { saveEnhancedLocationForFurtherSending(any(), any(), any()) } just runs
+        every { retrySendingEnhancedLocation(any(), any(), any()) } just runs
+        every { processNextWaitingEnhancedLocationUpdate(any(), any()) } just runs
     }
+    private val worker = SendEnhancedLocationFailureWorker(locationUpdate, trackableId, null, publisherInteractor, null)
 
-    @After
-    fun cleanUp() {
-        clearAllMocks()
-    }
-
-    @Test
-    fun `should always return an empty result`() {
-        // given
-
-        // when
-        val result = worker.doWork(publisherProperties)
-
-        // then
-        Assert.assertNull(result.syncWorkResult)
-        Assert.assertNull(result.asyncWork)
-    }
+    private val asyncWorks = mutableListOf<suspend () -> Unit>()
+    private val postedWorks = mutableListOf<WorkerSpecification>()
 
     @Test
     fun `should send the location again if should retry publishing`() {
         // given
-        mockShouldRetryPublishing()
+        val initialProperties = createPublisherProperties()
+        // set all the retry counters to 0
+        initialProperties.enhancedLocationsPublishingState.clearAll()
 
         // when
-        worker.doWork(publisherProperties)
+        worker.doWork(
+            initialProperties,
+            asyncWorks.appendWork(),
+            postedWorks.appendSpecification()
+        )
 
         // then
+        assertThat(asyncWorks).isEmpty()
+        assertThat(postedWorks).isEmpty()
+
         verify(exactly = 1) {
-            corePublisher.retrySendingEnhancedLocation(publisherProperties, trackableId, locationUpdate)
+            publisherInteractor.retrySendingEnhancedLocation(initialProperties, trackableId, locationUpdate)
         }
     }
 
     @Test
     fun `should not send the location again if should not retry publishing`() {
         // given
-        mockShouldNotRetryPublishing()
+        val initialProperties = createPublisherProperties()
+        initialProperties.enhancedLocationsPublishingState.maxOutRetryCount(trackableId)
 
         // when
-        worker.doWork(publisherProperties)
+        val updatedProperties = worker.doWork(
+            initialProperties,
+            asyncWorks.appendWork(),
+            postedWorks.appendSpecification()
+        )
 
         // then
+        assertThat(asyncWorks).isEmpty()
+        assertThat(postedWorks).isEmpty()
+
         verify(exactly = 0) {
-            corePublisher.retrySendingEnhancedLocation(publisherProperties, trackableId, locationUpdate)
+            publisherInteractor.retrySendingEnhancedLocation(updatedProperties, trackableId, locationUpdate)
         }
     }
 
     @Test
     fun `should unmark message pending state if should not retry publishing`() {
         // given
-        mockShouldNotRetryPublishing()
+        val initialProperties = createPublisherProperties()
+        initialProperties.enhancedLocationsPublishingState.maxOutRetryCount(trackableId)
 
         // when
-        worker.doWork(publisherProperties)
+        val updatedProperties = worker.doWork(
+            initialProperties,
+            asyncWorks.appendWork(),
+            postedWorks.appendSpecification()
+        )
 
         // then
-        verify(exactly = 1) {
-            enhancedLocationsPublishingState.unmarkMessageAsPending(trackableId)
-        }
+        assertThat(asyncWorks).isEmpty()
+        assertThat(postedWorks).isEmpty()
+
+        assertThat(updatedProperties.enhancedLocationsPublishingState.hasPendingMessage(trackableId))
+            .isFalse()
     }
 
     @Test
     fun `should not unmark message pending state if should retry publishing`() {
         // given
-        mockShouldRetryPublishing()
+        val initialProperties = createPublisherProperties()
+        // set all the retry counters to 0
+        initialProperties.enhancedLocationsPublishingState.clearAll()
+        initialProperties.enhancedLocationsPublishingState.markMessageAsPending(trackableId)
 
         // when
-        worker.doWork(publisherProperties)
+        val updatedProperties = worker.doWork(
+            initialProperties,
+            asyncWorks.appendWork(),
+            postedWorks.appendSpecification()
+        )
 
         // then
-        verify(exactly = 0) {
-            enhancedLocationsPublishingState.unmarkMessageAsPending(trackableId)
-        }
+        assertThat(asyncWorks).isEmpty()
+        assertThat(postedWorks).isEmpty()
+
+        assertThat(updatedProperties.enhancedLocationsPublishingState.hasPendingMessage(trackableId))
+            .isTrue()
     }
 
     @Test
     fun `should save location for further sending if should not retry publishing`() {
         // given
-        mockShouldNotRetryPublishing()
+        val initialProperties = createPublisherProperties()
+        initialProperties.enhancedLocationsPublishingState.maxOutRetryCount(trackableId)
 
         // when
-        worker.doWork(publisherProperties)
+        val updatedProperties = worker.doWork(
+            initialProperties,
+            asyncWorks.appendWork(),
+            postedWorks.appendSpecification()
+        )
 
         // then
         verify(exactly = 1) {
-            corePublisher.saveEnhancedLocationForFurtherSending(
-                publisherProperties,
+            publisherInteractor.saveEnhancedLocationForFurtherSending(
+                updatedProperties,
                 trackableId,
                 locationUpdate.location
             )
@@ -128,15 +142,21 @@ class SendEnhancedLocationFailureWorkerTest {
     @Test
     fun `should not save location for further sending if should retry publishing`() {
         // given
-        mockShouldRetryPublishing()
+        val initialProperties = createPublisherProperties()
+        // set all the retry counters to 0
+        initialProperties.enhancedLocationsPublishingState.clearAll()
 
         // when
-        worker.doWork(publisherProperties)
+        val updatedProperties = worker.doWork(
+            initialProperties,
+            asyncWorks.appendWork(),
+            postedWorks.appendSpecification()
+        )
 
         // then
         verify(exactly = 0) {
-            corePublisher.saveEnhancedLocationForFurtherSending(
-                publisherProperties,
+            publisherInteractor.saveEnhancedLocationForFurtherSending(
+                updatedProperties,
                 trackableId,
                 locationUpdate.location
             )
@@ -146,36 +166,39 @@ class SendEnhancedLocationFailureWorkerTest {
     @Test
     fun `should process next waiting location if should not retry publishing`() {
         // given
-        mockShouldNotRetryPublishing()
+        val initialProperties = createPublisherProperties()
+        initialProperties.enhancedLocationsPublishingState.maxOutRetryCount(trackableId)
 
         // when
-        worker.doWork(publisherProperties)
+        val updatedProperties = worker.doWork(
+            initialProperties,
+            asyncWorks.appendWork(),
+            postedWorks.appendSpecification()
+        )
 
         // then
         verify(exactly = 1) {
-            corePublisher.processNextWaitingEnhancedLocationUpdate(publisherProperties, trackableId)
+            publisherInteractor.processNextWaitingEnhancedLocationUpdate(updatedProperties, trackableId)
         }
     }
 
     @Test
     fun `should not process next waiting location if should retry publishing`() {
         // given
-        mockShouldRetryPublishing()
+        val initialProperties = createPublisherProperties()
+        // set all the retry counters to 0
+        initialProperties.enhancedLocationsPublishingState.clearAll()
 
         // when
-        worker.doWork(publisherProperties)
+        val updatedProperties = worker.doWork(
+            initialProperties,
+            asyncWorks.appendWork(),
+            postedWorks.appendSpecification()
+        )
 
         // then
         verify(exactly = 0) {
-            corePublisher.processNextWaitingEnhancedLocationUpdate(publisherProperties, trackableId)
+            publisherInteractor.processNextWaitingEnhancedLocationUpdate(updatedProperties, trackableId)
         }
-    }
-
-    private fun mockShouldRetryPublishing() {
-        every { enhancedLocationsPublishingState.shouldRetryPublishing(trackableId) } returns true
-    }
-
-    private fun mockShouldNotRetryPublishing() {
-        every { enhancedLocationsPublishingState.shouldRetryPublishing(trackableId) } returns false
     }
 }

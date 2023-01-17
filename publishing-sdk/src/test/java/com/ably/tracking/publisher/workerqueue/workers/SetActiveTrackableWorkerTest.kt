@@ -1,58 +1,52 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
 import com.ably.tracking.common.ResultCallbackFunction
-import com.ably.tracking.publisher.CorePublisher
 import com.ably.tracking.publisher.DefaultCorePublisher
 import com.ably.tracking.publisher.Destination
+import com.ably.tracking.publisher.PublisherInteractor
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.Trackable
-import io.mockk.clearAllMocks
+import com.ably.tracking.publisher.workerqueue.WorkerSpecification
+import com.google.common.truth.Truth.assertThat
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.runs
+import io.mockk.spyk
 import io.mockk.verify
-import org.junit.After
-import org.junit.Assert
-import org.junit.Before
 import org.junit.Test
 
 class SetActiveTrackableWorkerTest {
-    private lateinit var worker: SetActiveTrackableWorker
-    private val trackable = Trackable("test-trackable", Destination(1.0, 2.0))
+    private val publisherInteractor: PublisherInteractor = mockk {
+        every { setDestination(any(), any()) } just runs
+        every { removeCurrentDestination(any()) } just runs
+    }
+
     private val resultCallbackFunction = mockk<ResultCallbackFunction<Unit>>(relaxed = true)
-    private val corePublisher = mockk<CorePublisher>(relaxed = true)
     private val hooks = mockk<DefaultCorePublisher.Hooks>(relaxed = true)
-    private val publisherProperties = mockk<PublisherProperties>(relaxed = true)
 
-    @Before
-    fun setUp() {
-        prepareWorkerWithNewTrackable(trackable)
-    }
+    private lateinit var worker: SetActiveTrackableWorker
 
-    @After
-    fun cleanUp() {
-        clearAllMocks()
-    }
-
-    @Test
-    fun `should always return an empty result`() {
-        // given
-
-        // when
-        val result = worker.doWork(publisherProperties)
-
-        // then
-        Assert.assertNull(result.syncWorkResult)
-        Assert.assertNull(result.asyncWork)
-    }
+    private val asyncWorks = mutableListOf<suspend () -> Unit>()
+    private val postedWorks = mutableListOf<WorkerSpecification>()
 
     @Test
     fun `should always call the callback function with a success`() {
         // given
+        prepareWorkerWithNewTrackable(Trackable("trackable-id", destination = null))
+        val initialProperties = createPublisherProperties()
 
         // when
-        worker.doWork(publisherProperties)
+        worker.doWork(
+            initialProperties,
+            asyncWorks.appendWork(),
+            postedWorks.appendSpecification()
+        )
 
         // then
+        assertThat(asyncWorks).isEmpty()
+        assertThat(postedWorks).isEmpty()
+
         verify(exactly = 1) {
             resultCallbackFunction.invoke(Result.success(Unit))
         }
@@ -61,46 +55,72 @@ class SetActiveTrackableWorkerTest {
     @Test
     fun `should not replace the active trackable if it is the same as the new trackable`() {
         // given
+        val trackable = Trackable("test-trackable", Destination(1.0, 2.0))
         prepareWorkerWithNewTrackable(trackable)
-        mockActiveTrackable(trackable)
+        val initialProperties = spyk(createPublisherProperties())
+        every { initialProperties.active } returns trackable
 
         // when
-        worker.doWork(publisherProperties)
+        worker.doWork(
+            initialProperties,
+            asyncWorks.appendWork(),
+            postedWorks.appendSpecification()
+        )
 
         // then
+        assertThat(asyncWorks).isEmpty()
+        assertThat(postedWorks).isEmpty()
+
         verify(exactly = 0) {
-            publisherProperties setProperty PublisherProperties::active.name value trackable
+            initialProperties setProperty PublisherProperties::active.name value trackable
         }
     }
 
     @Test
     fun `should replace the active trackable if it is different than the new trackable`() {
         // given
+        val trackable = Trackable("test-trackable", Destination(1.0, 2.0))
         prepareWorkerWithNewTrackable(trackable)
-        mockActiveTrackable(Trackable("some-other-trackable-id"))
+        val initialProperties = spyk(createPublisherProperties())
+        initialProperties.active = Trackable("some-other-trackable-id")
 
         // when
-        worker.doWork(publisherProperties)
+        val updatedProperties = worker.doWork(
+            initialProperties,
+            asyncWorks.appendWork(),
+            postedWorks.appendSpecification()
+        )
 
         // then
-        verify(exactly = 1) {
-            publisherProperties setProperty PublisherProperties::active.name value trackable
-        }
+        assertThat(asyncWorks).isEmpty()
+        assertThat(postedWorks).isEmpty()
+
+        assertThat(updatedProperties.active)
+            .isEqualTo(trackable)
     }
 
     @Test
     fun `should set destination if the active trackable is different than the new trackable and has a destination`() {
         // given
         val newTrackableDestination = Destination(1.0, 2.0)
-        prepareWorkerWithNewTrackable(Trackable("trackable-id", newTrackableDestination))
-        mockActiveTrackable(Trackable("some-other-trackable-id"))
+        val trackable = Trackable("test-trackable", newTrackableDestination)
+        prepareWorkerWithNewTrackable(trackable)
+        val initialProperties = spyk(createPublisherProperties())
+        initialProperties.active = Trackable("some-other-trackable-id")
 
         // when
-        worker.doWork(publisherProperties)
+        worker.doWork(
+            initialProperties,
+            asyncWorks.appendWork(),
+            postedWorks.appendSpecification()
+        )
 
         // then
+        assertThat(asyncWorks).isEmpty()
+        assertThat(postedWorks).isEmpty()
+
         verify(exactly = 1) {
-            corePublisher.setDestination(newTrackableDestination, any())
+            publisherInteractor.setDestination(newTrackableDestination, any())
         }
     }
 
@@ -108,22 +128,26 @@ class SetActiveTrackableWorkerTest {
     fun `should remove the current destination if the active trackable is different than the new trackable and does not have a destination`() {
         // given
         prepareWorkerWithNewTrackable(Trackable("trackable-id", destination = null))
-        mockActiveTrackable(Trackable("some-other-trackable-id"))
+        val initialProperties = createPublisherProperties()
+        initialProperties.active = Trackable("some-other-trackable-id")
 
         // when
-        worker.doWork(publisherProperties)
+        worker.doWork(
+            initialProperties,
+            asyncWorks.appendWork(),
+            postedWorks.appendSpecification()
+        )
 
         // then
+        assertThat(asyncWorks).isEmpty()
+        assertThat(postedWorks).isEmpty()
+
         verify(exactly = 1) {
-            corePublisher.removeCurrentDestination(any())
+            publisherInteractor.removeCurrentDestination(any())
         }
     }
 
-    private fun mockActiveTrackable(trackable: Trackable) {
-        every { publisherProperties.active } returns trackable
-    }
-
     private fun prepareWorkerWithNewTrackable(trackable: Trackable) {
-        worker = SetActiveTrackableWorker(trackable, resultCallbackFunction, corePublisher, hooks)
+        worker = SetActiveTrackableWorker(trackable, resultCallbackFunction, publisherInteractor, hooks)
     }
 }

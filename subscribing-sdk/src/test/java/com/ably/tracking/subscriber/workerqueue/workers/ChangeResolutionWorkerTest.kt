@@ -9,7 +9,7 @@ import com.ably.tracking.test.common.mockUpdatePresenceDataSuccess
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert
 import org.junit.Test
 
@@ -25,9 +25,9 @@ internal class ChangeResolutionWorkerTest {
     private val asyncWorks = mutableListOf<suspend () -> Unit>()
 
     @Test
-    fun `should return Properties with updated resolution and notify callback`() = runBlockingTest {
+    fun `should return Properties with updated resolution and notify callback`() = runTest {
         // given
-        val initialProperties = SubscriberProperties(Resolution(Accuracy.BALANCED, 100, 100.0))
+        val initialProperties = SubscriberProperties(Resolution(Accuracy.BALANCED, 100, 100.0), mockk())
         ably.mockUpdatePresenceDataSuccess(trackableId)
 
         // when

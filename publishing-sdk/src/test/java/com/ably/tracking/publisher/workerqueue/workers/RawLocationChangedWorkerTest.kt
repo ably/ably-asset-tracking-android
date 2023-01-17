@@ -1,107 +1,125 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
 import com.ably.tracking.Location
-import com.ably.tracking.publisher.CorePublisher
+import com.ably.tracking.publisher.PublisherInteractor
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.Trackable
-import com.ably.tracking.test.common.anyLocation
-import io.mockk.clearAllMocks
+import com.ably.tracking.publisher.workerqueue.WorkerSpecification
+import com.ably.tracking.test.common.createLocation
+import com.google.common.truth.Truth.assertThat
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.runs
 import io.mockk.verify
-import org.junit.After
-import org.junit.Assert
-import org.junit.Before
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
+@ExperimentalCoroutinesApi
 class RawLocationChangedWorkerTest {
-    private lateinit var worker: RawLocationChangedWorker
-    private val location: Location = anyLocation()
-    private val corePublisher = mockk<CorePublisher>(relaxed = true)
-    private val publisherProperties = mockk<PublisherProperties>(relaxed = true)
+    private val publisherInteractor: PublisherInteractor = mockk()
+    private val location: Location = createLocation()
 
-    @Before
-    fun setUp() {
-        worker = RawLocationChangedWorker(location, corePublisher, null)
-    }
+    private val worker = RawLocationChangedWorker(location, publisherInteractor, null)
 
-    @After
-    fun cleanUp() {
-        clearAllMocks()
-    }
+    private val asyncWorks = mutableListOf<suspend () -> Unit>()
+    private val postedWorks = mutableListOf<WorkerSpecification>()
 
     @Test
-    fun `should always return empty result`() {
+    fun `should set the last publisher known location`() = runTest {
         // given
+        val initialProperties = createPublisherProperties()
 
         // when
-        val result = worker.doWork(publisherProperties)
+        val updatedProperties = worker.doWork(
+            initialProperties,
+            asyncWorks.appendWork(),
+            postedWorks.appendSpecification()
+        )
 
         // then
-        Assert.assertNull(result.syncWorkResult)
-        Assert.assertNull(result.asyncWork)
-    }
-
-    @Test
-    fun `should set the last publisher known location`() {
-        // given
-
-        // when
-        worker.doWork(publisherProperties)
-
-        // then
-        verify(exactly = 1) {
-            publisherProperties.lastPublisherLocation = location
-        }
+        assertThat(asyncWorks).isEmpty()
+        assertThat(postedWorks).isEmpty()
+        assertThat(updatedProperties.lastPublisherLocation).isEqualTo(location)
     }
 
     @Test
     fun `should process all raw location updates if raw locations sending is enabled`() {
         // given
+        val initialProperties = createPublisherProperties(areRawLocationsEnabled = true)
+
         val firstTrackable = Trackable("first-trackable")
+        initialProperties.trackables.add(firstTrackable)
         val secondTrackable = Trackable("second-trackable")
-        mockRawLocationsEnabled()
-        mockTrackables(mutableSetOf(firstTrackable, secondTrackable))
+        initialProperties.trackables.add(secondTrackable)
+
+        every { publisherInteractor.processRawLocationUpdate(any(), any(), any()) } just runs
 
         // when
-        worker.doWork(publisherProperties)
+        val updatedProperties = worker.doWork(
+            initialProperties,
+            asyncWorks.appendWork(),
+            postedWorks.appendSpecification()
+        )
 
         // then
+        assertThat(asyncWorks).isEmpty()
+        assertThat(postedWorks).isEmpty()
         verify(exactly = 1) {
-            corePublisher.processRawLocationUpdate(any(), publisherProperties, firstTrackable.id)
-            corePublisher.processRawLocationUpdate(any(), publisherProperties, secondTrackable.id)
+            publisherInteractor.processRawLocationUpdate(any(), updatedProperties, firstTrackable.id)
+            publisherInteractor.processRawLocationUpdate(any(), updatedProperties, secondTrackable.id)
         }
     }
 
     @Test
     fun `should not process any raw location update if raw locations sending is disabled`() {
         // given
+        val initialProperties = createPublisherProperties(areRawLocationsEnabled = false)
+
         val firstTrackable = Trackable("first-trackable")
+        initialProperties.trackables.add(firstTrackable)
         val secondTrackable = Trackable("second-trackable")
-        mockRawLocationsDisabled()
-        mockTrackables(mutableSetOf(firstTrackable, secondTrackable))
+        initialProperties.trackables.add(secondTrackable)
 
         // when
-        worker.doWork(publisherProperties)
+        worker.doWork(
+            initialProperties,
+            asyncWorks.appendWork(),
+            postedWorks.appendSpecification()
+        )
 
         // then
+        assertThat(asyncWorks).isEmpty()
+        assertThat(postedWorks).isEmpty()
+
         verify(exactly = 0) {
-            corePublisher.processRawLocationUpdate(any(), publisherProperties, firstTrackable.id)
-            corePublisher.processRawLocationUpdate(any(), publisherProperties, secondTrackable.id)
+            publisherInteractor.processRawLocationUpdate(any(), any(), any())
         }
     }
 
     @Test
     fun `should call the raw location changed commands if they are present`() {
         // given
+        val initialProperties = createPublisherProperties(areRawLocationsEnabled = false)
+
         val firstCommand = anyRawLocationChangedCommandMock()
+        initialProperties.rawLocationChangedCommands.add(firstCommand)
+
         val secondCommand = anyRawLocationChangedCommandMock()
-        mockRawLocationChangedCommands(mutableListOf(firstCommand, secondCommand))
+        initialProperties.rawLocationChangedCommands.add(secondCommand)
 
         // when
-        worker.doWork(publisherProperties)
+        worker.doWork(
+            initialProperties,
+            asyncWorks.appendWork(),
+            postedWorks.appendSpecification()
+        )
 
         // then
+        assertThat(asyncWorks).isEmpty()
+        assertThat(postedWorks).isEmpty()
+
         verify(exactly = 1) {
             firstCommand.invoke(any())
             secondCommand.invoke(any())
@@ -111,33 +129,27 @@ class RawLocationChangedWorkerTest {
     @Test
     fun `should clear the raw location changed commands after they are invoked`() {
         // given
-        mockRawLocationChangedCommands(mutableListOf(anyRawLocationChangedCommand(), anyRawLocationChangedCommand()))
-        Assert.assertTrue(publisherProperties.rawLocationChangedCommands.isNotEmpty())
+        val initialProperties = createPublisherProperties(areRawLocationsEnabled = false)
+
+        val firstCommand = anyRawLocationChangedCommandMock()
+        initialProperties.rawLocationChangedCommands.add(firstCommand)
+
+        val secondCommand = anyRawLocationChangedCommandMock()
+        initialProperties.rawLocationChangedCommands.add(secondCommand)
 
         // when
-        worker.doWork(publisherProperties)
+        val updatedProperties = worker.doWork(
+            initialProperties,
+            asyncWorks.appendWork(),
+            postedWorks.appendSpecification()
+        )
 
         // then
-        Assert.assertTrue(publisherProperties.rawLocationChangedCommands.isEmpty())
-    }
+        assertThat(asyncWorks).isEmpty()
+        assertThat(postedWorks).isEmpty()
 
-    private fun mockRawLocationChangedCommands(commands: MutableList<(PublisherProperties) -> Unit>) {
-        every { publisherProperties.rawLocationChangedCommands } returns commands
+        assertThat(updatedProperties.rawLocationChangedCommands).isEmpty()
     }
-
-    private fun mockTrackables(trackables: MutableSet<Trackable>) {
-        every { publisherProperties.trackables } returns trackables
-    }
-
-    private fun mockRawLocationsEnabled() {
-        every { publisherProperties.areRawLocationsEnabled } returns true
-    }
-
-    private fun mockRawLocationsDisabled() {
-        every { publisherProperties.areRawLocationsEnabled } returns false
-    }
-
-    private fun anyRawLocationChangedCommand(): (PublisherProperties) -> Unit = {}
 
     private fun anyRawLocationChangedCommandMock(): (PublisherProperties) -> Unit = mockk(relaxed = true)
 }

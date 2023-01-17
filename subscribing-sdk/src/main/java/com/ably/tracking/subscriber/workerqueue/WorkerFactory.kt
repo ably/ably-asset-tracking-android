@@ -38,7 +38,6 @@ internal class WorkerFactory(
         when (workerSpecification) {
             is WorkerSpecification.StartConnection -> StartConnectionWorker(
                 ably,
-                subscriberInteractor,
                 trackableId,
                 workerSpecification.callbackFunction
             )
@@ -52,16 +51,13 @@ internal class WorkerFactory(
                 workerSpecification.callbackFunction
             )
             is WorkerSpecification.UpdateConnectionState -> UpdateConnectionStateWorker(
-                workerSpecification.connectionStateChange,
-                subscriberInteractor
+                workerSpecification.connectionStateChange
             )
             is WorkerSpecification.UpdateChannelConnectionState -> UpdateChannelConnectionStateWorker(
-                workerSpecification.channelConnectionStateChange,
-                subscriberInteractor
+                workerSpecification.channelConnectionStateChange
             )
             is WorkerSpecification.UpdatePublisherPresence -> UpdatePublisherPresenceWorker(
-                workerSpecification.presenceMessage,
-                subscriberInteractor
+                workerSpecification.presenceMessage
             )
             is WorkerSpecification.ChangeResolution -> ChangeResolutionWorker(
                 ably,
@@ -69,7 +65,11 @@ internal class WorkerFactory(
                 workerSpecification.resolution,
                 workerSpecification.callbackFunction
             )
-            is WorkerSpecification.Disconnect -> DisconnectWorker(ably, workerSpecification.trackableId, workerSpecification.callbackFunction)
+            is WorkerSpecification.Disconnect -> DisconnectWorker(
+                ably,
+                workerSpecification.trackableId,
+                workerSpecification.callbackFunction
+            )
             is WorkerSpecification.StopConnection -> StopConnectionWorker(
                 ably,
                 subscriberInteractor,
@@ -77,7 +77,6 @@ internal class WorkerFactory(
             )
             is WorkerSpecification.ProcessInitialPresenceMessages -> ProcessInitialPresenceMessagesWorker(
                 workerSpecification.presenceMessages,
-                subscriberInteractor,
                 workerSpecification.callbackFunction,
             )
         }

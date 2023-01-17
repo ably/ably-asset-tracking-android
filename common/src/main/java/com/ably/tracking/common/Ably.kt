@@ -18,9 +18,7 @@ import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.logging.LogHandler
 import com.google.gson.Gson
 import io.ably.lib.realtime.AblyRealtime
-import io.ably.lib.realtime.Channel
 import io.ably.lib.realtime.ChannelState
-import io.ably.lib.realtime.ChannelStateListener
 import io.ably.lib.realtime.CompletionListener
 import io.ably.lib.realtime.ConnectionState
 import io.ably.lib.realtime.ConnectionStateListener
@@ -244,16 +242,17 @@ private const val CHANNEL_NAME_PREFIX = "tracking:"
 private const val AGENT_HEADER_NAME = "ably-asset-tracking-android"
 private const val AUTH_TOKEN_CAPABILITY_ERROR_CODE = 40160
 
-class DefaultAbly
+class DefaultAbly<ChannelStateListenerType : AblySdkChannelStateListener>
 /**
- * @throws ConnectionException if something goes wrong during Ably SDK initialization.
+ * @throws ConnectionException If connection configuration is invalid.
  */
 constructor(
+    private val ablySdkFactory: AblySdkFactory<ChannelStateListenerType>,
     connectionConfiguration: ConnectionConfiguration,
     private val logHandler: LogHandler?,
 ) : Ably {
     private val gson = Gson()
-    private val ably: AblyRealtime
+    private val ably: AblySdkRealtime<ChannelStateListenerType>
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private val TAG = createLoggingTag(this)
 
@@ -275,7 +274,7 @@ constructor(
                     )
                 }
             }
-            ably = AblyRealtime(clientOptions)
+            ably = ablySdkFactory.createRealtime(clientOptions)
         } catch (exception: AblyException) {
             throw exception.errorInfo.toTrackingException().also {
                 logHandler?.w("$TAG Failed to create an Ably instance", it)
@@ -305,7 +304,11 @@ constructor(
                 // Initial state is launched in a fire-and-forget manner to not block this method on the listener() call
                 scope.launch { listener(ConnectionStateChange(currentChannelState, null)) }
             }
-            channel.on { listener(it.toTracking()) }
+
+            val wrappedChannelStateListener = ablySdkFactory.wrapChannelStateListener { _, stateChange ->
+                listener(stateChange.toTracking())
+            }
+            channel.on(wrappedChannelStateListener)
         }
     }
 
@@ -314,9 +317,9 @@ constructor(
      * a new auth token is requested and the operation is retried once more.
      * @throws ConnectionException if something goes wrong or the retry fails
      */
-    private suspend fun enterChannelPresence(channel: Channel, presenceData: PresenceData) {
+    private suspend fun enterChannelPresence(channel: AblySdkRealtime.Channel<ChannelStateListenerType>, presenceData: PresenceData) {
         try {
-            channel.enterPresenceSuspending(presenceData)
+            enterPresenceSuspending(channel, presenceData)
         } catch (connectionException: ConnectionException) {
             if (connectionException.errorInformation.code == AUTH_TOKEN_CAPABILITY_ERROR_CODE) {
                 val renewAuthResult = renewAuthSuspending()
@@ -325,8 +328,8 @@ constructor(
                     logHandler?.w("$TAG Failed to renew auth while entering the presence of channel ${channel.name}", it.toTrackingException())
                     throw it.toTrackingException()
                 }
-                channel.attachSuspending()
-                channel.enterPresenceSuspending(presenceData)
+                attachSuspending(channel)
+                enterPresenceSuspending(channel, presenceData)
             } else {
                 logHandler?.w("$TAG Failed to enter the presence of channel ${channel.name}", connectionException)
                 throw connectionException
@@ -366,7 +369,7 @@ constructor(
                 scope.launch {
                     try {
                         if (channel.isDetachedOrFailed()) {
-                            channel.attachSuspending()
+                            attachSuspending(channel)
                         }
                         enterChannelPresence(channel, presenceData)
                         callback(Result.success(Unit))
@@ -439,14 +442,14 @@ constructor(
         }
     }
 
-    private suspend fun tryDisconnectChannel(channelToRemove: Channel, presenceData: PresenceData) =
+    private suspend fun tryDisconnectChannel(channelToRemove: AblySdkRealtime.Channel<ChannelStateListenerType>, presenceData: PresenceData) =
         try {
             disconnectChannel(channelToRemove, presenceData)
         } catch (exception: Exception) {
             // no-op
         }
 
-    private suspend fun disconnectChannel(channelToRemove: Channel, presenceData: PresenceData) {
+    private suspend fun disconnectChannel(channelToRemove: AblySdkRealtime.Channel<ChannelStateListenerType>, presenceData: PresenceData) {
         retryChannelOperationIfConnectionResumeFails(channelToRemove) { channel ->
             leavePresence(channel, presenceData)
             channel.unsubscribe()
@@ -455,7 +458,7 @@ constructor(
         }
     }
 
-    private suspend fun failChannel(channel: Channel, presenceData: PresenceData, errorInfo: ErrorInfo) {
+    private suspend fun failChannel(channel: AblySdkRealtime.Channel<ChannelStateListenerType>, presenceData: PresenceData, errorInfo: ErrorInfo) {
         leavePresence(channel, presenceData)
         channel.unsubscribe()
         channel.presence.unsubscribe()
@@ -464,7 +467,7 @@ constructor(
         ably.channels.release(channel.name)
     }
 
-    private suspend fun leavePresence(channel: Channel, presenceData: PresenceData) {
+    private suspend fun leavePresence(channel: AblySdkRealtime.Channel<ChannelStateListenerType>, presenceData: PresenceData) {
         suspendCancellableCoroutine<Unit> { continuation ->
             try {
                 channel.presence.leave(
@@ -549,7 +552,7 @@ constructor(
         }
     }
 
-    private fun sendMessage(channel: Channel, message: Message?, callback: (Result<Unit>) -> Unit) {
+    private fun sendMessage(channel: AblySdkRealtime.Channel<ChannelStateListenerType>, message: Message?, callback: (Result<Unit>) -> Unit) {
         scope.launch {
             try {
                 retryChannelOperationIfConnectionResumeFails(channel) {
@@ -563,7 +566,7 @@ constructor(
         }
     }
 
-    private suspend fun sendMessage(channel: Channel, message: Message?) {
+    private suspend fun sendMessage(channel: AblySdkRealtime.Channel<ChannelStateListenerType>, message: Message?) {
         suspendCancellableCoroutine<Unit> { continuation ->
             try {
                 channel.publish(
@@ -638,7 +641,7 @@ constructor(
     }
 
     private fun processReceivedLocationUpdateMessage(
-        channel: Channel,
+        channel: AblySdkRealtime.Channel<ChannelStateListenerType>,
         presenceData: PresenceData,
         message: Message,
         listener: (LocationUpdate) -> Unit,
@@ -698,7 +701,7 @@ constructor(
         }
     }
 
-    private fun emitAllCurrentMessagesFromPresence(channel: Channel, listener: (PresenceMessage) -> Unit) {
+    private fun emitAllCurrentMessagesFromPresence(channel: AblySdkRealtime.Channel<ChannelStateListenerType>, listener: (PresenceMessage) -> Unit) {
         getAllCurrentMessagesFromPresence(channel).forEach { presenceMessage ->
             // Each message is launched in a fire-and-forget manner to not block this method on the listener() call
             scope.launch { listener(presenceMessage) }
@@ -722,7 +725,7 @@ constructor(
     /**
      * Warning: This method might block the current thread due to the presence.get(true) call.
      */
-    private fun getAllCurrentMessagesFromPresence(channel: Channel): List<PresenceMessage> =
+    private fun getAllCurrentMessagesFromPresence(channel: AblySdkRealtime.Channel<ChannelStateListenerType>): List<PresenceMessage> =
         channel.presence.get(true).mapNotNull { presenceMessage ->
             presenceMessage.toTracking(gson).also {
                 if (it == null) {
@@ -751,7 +754,7 @@ constructor(
         }
     }
 
-    private suspend fun updatePresenceData(channel: Channel, presenceData: PresenceData) {
+    private suspend fun updatePresenceData(channel: AblySdkRealtime.Channel<ChannelStateListenerType>, presenceData: PresenceData) {
         suspendCancellableCoroutine<Unit> { continuation ->
             try {
                 channel.presence.update(
@@ -777,7 +780,7 @@ constructor(
         }
     }
 
-    private fun getChannelIfExists(trackableId: String): Channel? {
+    private fun getChannelIfExists(trackableId: String): AblySdkRealtime.Channel<ChannelStateListenerType>? {
         val channelName = trackableId.toChannelName()
         return if (ably.channels.containsKey(channelName)) {
             ably.channels.get(channelName)
@@ -799,30 +802,30 @@ constructor(
     }
 
     /**
-     * Closes [AblyRealtime] and waits until it's either closed or failed.
+     * Closes [ably] and waits until it's either closed or failed.
      * If the connection is already closed it returns immediately.
      * If the connection is already failed it returns immediately as closing a failed connection should be a no-op
      * according to the Ably features spec (https://sdk.ably.com/builds/ably/specification/main/features/#state-conditions-and-operations).
      *
-     * @throws ConnectionException if the [AblyRealtime] state changes to [ConnectionState.failed].
+     * @throws ConnectionException if the [AblySdkRealtime] state changes to [ConnectionState.failed].
      */
-    private suspend fun AblyRealtime.closeSuspending() {
-        if (connection.state.isClosed() || connection.state.isFailed()) {
+    private suspend fun closeSuspending() {
+        if (ably.connection.state.isClosed() || ably.connection.state.isFailed()) {
             return
         }
         suspendCancellableCoroutine<Unit> { continuation ->
-            connection.on(object : ConnectionStateListener {
+            ably.connection.on(object : ConnectionStateListener {
                 override fun onConnectionStateChanged(connectionStateChange: ConnectionStateListener.ConnectionStateChange) {
                     if (connectionStateChange.current.isClosed()) {
-                        connection.off(this)
+                        ably.connection.off(this)
                         continuation.resume(Unit)
                     } else if (connectionStateChange.current.isFailed()) {
-                        connection.off(this)
+                        ably.connection.off(this)
                         continuation.resumeWithException(connectionStateChange.reason.toTrackingException())
                     }
                 }
             })
-            close()
+            ably.close()
         }
     }
 
@@ -833,8 +836,8 @@ constructor(
      * the second time the exception is rethrown no matter if it was the "connection resume" exception or not.
      */
     private suspend fun retryChannelOperationIfConnectionResumeFails(
-        channel: Channel,
-        operation: suspend (Channel) -> Unit
+        channel: AblySdkRealtime.Channel<ChannelStateListenerType>,
+        operation: suspend (AblySdkRealtime.Channel<ChannelStateListenerType>) -> Unit
     ) {
         try {
             if (channel.state == ChannelState.suspended) {
@@ -869,21 +872,22 @@ constructor(
      * If the [channel] state already is the [ChannelState.attached] state it does not wait and returns immediately.
      * If this doesn't happen during the next [timeoutInMilliseconds] milliseconds, then an exception is thrown.
      */
-    private suspend fun waitForChannelReconnection(channel: Channel, timeoutInMilliseconds: Long = 10_000L) {
+    private suspend fun waitForChannelReconnection(channel: AblySdkRealtime.Channel<ChannelStateListenerType>, timeoutInMilliseconds: Long = 10_000L) {
         if (channel.state.isConnected()) {
             return
         }
         try {
             withTimeout(timeoutInMilliseconds) {
                 suspendCancellableCoroutine<Unit> { continuation ->
-                    channel.on(object : ChannelStateListener {
-                        override fun onChannelStateChanged(channelStateChange: ChannelStateListener.ChannelStateChange) {
-                            if (channelStateChange.current.isConnected()) {
-                                channel.off(this)
+                    val wrappedChannelStateListener = ablySdkFactory.wrapChannelStateListener(object : AblySdkFactory.UnderlyingChannelStateListener<ChannelStateListenerType> {
+                        override fun onChannelStateChanged(wrapper: ChannelStateListenerType, stateChange: AblySdkChannelStateListener.ChannelStateChange) {
+                            if (stateChange.current.isConnected()) {
+                                channel.off(wrapper)
                                 continuation.resume(Unit)
                             }
                         }
                     })
+                    channel.on(wrappedChannelStateListener)
                 }
             }
         } catch (exception: TimeoutCancellationException) {
@@ -905,13 +909,13 @@ constructor(
         errorInformation.let { it.message == "Connection resume failed" && it.code == 50000 && it.statusCode == 500 }
 
     /**
-     * Enter the presence of the [Channel] and waits for this operation to complete.
+     * Enter the presence of [channel] and waits for this operation to complete.
      * If something goes wrong then it throws a [ConnectionException].
      */
-    private suspend fun Channel.enterPresenceSuspending(presenceData: PresenceData) {
+    private suspend fun enterPresenceSuspending(channel: AblySdkRealtime.Channel<ChannelStateListenerType>, presenceData: PresenceData) {
         suspendCancellableCoroutine<Unit> { continuation ->
             try {
-                presence.enter(
+                channel.presence.enter(
                     gson.toJson(presenceData.toMessage()),
                     object : CompletionListener {
                         override fun onSuccess() {
@@ -920,55 +924,55 @@ constructor(
 
                         override fun onError(reason: ErrorInfo?) {
                             val trackingException = reason?.toTrackingException()
-                                ?: ConnectionException(ErrorInformation("Unknown error when entering presence $name"))
-                            logHandler?.w("$TAG Failed to suspend enter presence for channel $name", trackingException)
+                                ?: ConnectionException(ErrorInformation("Unknown error when entering presence $channel.name"))
+                            logHandler?.w("$TAG Failed to suspend enter presence for channel $channel.name", trackingException)
                             continuation.resumeWithException(trackingException)
                         }
                     }
                 )
             } catch (ablyException: AblyException) {
                 val trackingException = ablyException.errorInfo.toTrackingException()
-                logHandler?.w("$TAG Failed to suspend enter presence for channel $name", trackingException)
+                logHandler?.w("$TAG Failed to suspend enter presence for channel $channel.name", trackingException)
                 continuation.resumeWithException(trackingException)
             }
         }
     }
 
     /**
-     * Attaches the [Channel] and waits for this operation to complete.
+     * Attaches [channel] and waits for this operation to complete.
      * If something goes wrong then it throws a [ConnectionException].
      */
-    private suspend fun Channel.attachSuspending() {
+    private suspend fun attachSuspending(channel: AblySdkRealtime.Channel<ChannelStateListenerType>) {
         suspendCancellableCoroutine<Unit> { continuation ->
             try {
-                attach(object : CompletionListener {
+                channel.attach(object : CompletionListener {
                     override fun onSuccess() {
                         continuation.resume(Unit)
                     }
 
                     override fun onError(reason: ErrorInfo?) {
                         val trackingException = reason?.toTrackingException()
-                            ?: ConnectionException(ErrorInformation("Unknown error when attaching channel $name"))
-                        logHandler?.w("$TAG Failed to suspend attach to channel $name", trackingException)
+                            ?: ConnectionException(ErrorInformation("Unknown error when attaching channel $channel.name"))
+                        logHandler?.w("$TAG Failed to suspend attach to channel $channel.name", trackingException)
                         continuation.resumeWithException(trackingException)
                     }
                 })
             } catch (ablyException: AblyException) {
                 val trackingException = ablyException.errorInfo.toTrackingException()
-                logHandler?.w("$TAG Failed to suspend attach to channel $name", trackingException)
+                logHandler?.w("$TAG Failed to suspend attach to channel $channel.name", trackingException)
                 continuation.resumeWithException(trackingException)
             }
         }
     }
 
-    private fun Channel.isDetachedOrFailed(): Boolean =
+    private fun AblySdkRealtime.Channel<ChannelStateListenerType>.isDetachedOrFailed(): Boolean =
         state == ChannelState.detached || state == ChannelState.failed
 
     private fun createMalformedMessageErrorInfo(): ErrorInfo = ErrorInfo("Received a malformed message", 100_001, 400)
 
     override suspend fun startConnection(): Result<Unit> {
         return try {
-            ably.connectSuspending()
+            connectSuspending()
             Result.success(Unit)
         } catch (connectionException: ConnectionException) {
             logHandler?.w("$TAG Failed to start Ably connection", connectionException)
@@ -978,7 +982,7 @@ constructor(
 
     override suspend fun stopConnection(): Result<Unit> {
         return try {
-            ably.closeSuspending()
+            closeSuspending()
             Result.success(Unit)
         } catch (connectionException: ConnectionException) {
             logHandler?.w("$TAG Failed to stop Ably connection", connectionException)
@@ -987,7 +991,7 @@ constructor(
     }
 
     /**
-     * A suspending version of the [AblyRealtime.connect] method. It will begin connecting and wait until it's connected.
+     * A suspending version of the [AblySdkRealtime.connect] method. It will begin connecting [ably] and wait until it's connected.
      * If the connection enters the "failed" state it will throw a [ConnectionException].
      * If the operation doesn't complete in [timeoutInMilliseconds] it will throw a [ConnectionException].
      * If the instance is already connected it will finish immediately.
@@ -995,30 +999,31 @@ constructor(
      *
      * @throws ConnectionException if something goes wrong.
      */
-    private suspend fun AblyRealtime.connectSuspending(timeoutInMilliseconds: Long = 10_000L) {
-        if (connection.state.isConnected()) {
+    private suspend fun connectSuspending(timeoutInMilliseconds: Long = 10_000L) {
+        if (ably.connection.state.isConnected()) {
             return
-        } else if (connection.state.isFailed()) {
-            throw connection.reason.toTrackingException()
+        } else if (ably.connection.state.isFailed()) {
+            // We expect connection.reason to be non-null if the connection is in a failed state
+            throw ably.connection.reason!!.toTrackingException()
         }
         try {
             withTimeout(timeoutInMilliseconds) {
                 suspendCancellableCoroutine<Unit> { continuation ->
-                    connection.on(object : ConnectionStateListener {
+                    ably.connection.on(object : ConnectionStateListener {
                         override fun onConnectionStateChanged(connectionStateChange: ConnectionStateListener.ConnectionStateChange) {
                             when {
                                 connectionStateChange.current.isConnected() -> {
-                                    connection.off(this)
+                                    ably.connection.off(this)
                                     continuation.resume(Unit)
                                 }
                                 connectionStateChange.current.isFailed() -> {
-                                    connection.off(this)
+                                    ably.connection.off(this)
                                     continuation.resumeWithException(connectionStateChange.reason.toTrackingException())
                                 }
                             }
                         }
                     })
-                    connect()
+                    ably.connect()
                 }
             }
         } catch (exception: TimeoutCancellationException) {

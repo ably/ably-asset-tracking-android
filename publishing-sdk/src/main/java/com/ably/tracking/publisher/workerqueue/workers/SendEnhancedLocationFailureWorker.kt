@@ -3,38 +3,42 @@ package com.ably.tracking.publisher.workerqueue.workers
 import com.ably.tracking.EnhancedLocationUpdate
 import com.ably.tracking.common.logging.createLoggingTag
 import com.ably.tracking.common.logging.w
+import com.ably.tracking.common.workerqueue.DefaultWorker
 import com.ably.tracking.logging.LogHandler
-import com.ably.tracking.publisher.CorePublisher
+import com.ably.tracking.publisher.PublisherInteractor
 import com.ably.tracking.publisher.PublisherProperties
-import com.ably.tracking.publisher.workerqueue.results.SyncAsyncResult
+import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 
 internal class SendEnhancedLocationFailureWorker(
     private val locationUpdate: EnhancedLocationUpdate,
     private val trackableId: String,
     private val exception: Throwable?,
-    private val corePublisher: CorePublisher,
+    private val publisherInteractor: PublisherInteractor,
     private val logHandler: LogHandler?,
-) : Worker {
+) : DefaultWorker<PublisherProperties, WorkerSpecification>() {
     private val TAG = createLoggingTag(this)
 
-    override fun doWork(properties: PublisherProperties): SyncAsyncResult {
+    override fun doWork(
+        properties: PublisherProperties,
+        doAsyncWork: (suspend () -> Unit) -> Unit,
+        postWork: (WorkerSpecification) -> Unit
+    ): PublisherProperties {
         logHandler?.w(
             "$TAG Trackable $trackableId failed to send enhanced location ${locationUpdate.location}",
             exception
         )
-        if (properties.enhancedLocationsPublishingState.shouldRetryPublishing(trackableId)) {
-            corePublisher.retrySendingEnhancedLocation(properties, trackableId, locationUpdate)
+        val shouldRetryPublishing = properties.enhancedLocationsPublishingState.shouldRetryPublishing(trackableId)
+        if (shouldRetryPublishing) {
+            publisherInteractor.retrySendingEnhancedLocation(properties, trackableId, locationUpdate)
         } else {
             properties.enhancedLocationsPublishingState.unmarkMessageAsPending(trackableId)
-            corePublisher.saveEnhancedLocationForFurtherSending(
+            publisherInteractor.saveEnhancedLocationForFurtherSending(
                 properties,
                 trackableId,
                 locationUpdate.location
             )
-            corePublisher.processNextWaitingEnhancedLocationUpdate(properties, trackableId)
+            publisherInteractor.processNextWaitingEnhancedLocationUpdate(properties, trackableId)
         }
-        return SyncAsyncResult()
+        return properties
     }
-
-    override fun doWhenStopped(exception: Exception) = Unit
 }
