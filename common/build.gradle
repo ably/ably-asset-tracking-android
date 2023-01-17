@@ -7,7 +7,7 @@ plugins {
 
 dependencies {
     implementation project(':core-sdk')
-     implementation files('./../lib/aar-main.aar')
+     implementation files('./../lib/aar-with-resumption-issue-solved.aar')
 
 implementation 'org.msgpack:msgpack-core:0.8.11'
 implementation 'org.java-websocket:Java-WebSocket:1.5.3'
