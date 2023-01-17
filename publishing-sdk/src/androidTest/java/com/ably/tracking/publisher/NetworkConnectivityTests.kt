@@ -107,7 +107,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
 
     @Before
     fun setUp() {
-        Assume.assumeFalse(testFault.skipTest)
+//        Assume.assumeFalse(testFault.skipTest)
 
         testResources = TestResources.setUp(testFault)
         createNotificationChannel(testResources?.context!!)
