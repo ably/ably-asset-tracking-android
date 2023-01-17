@@ -50,7 +50,7 @@ internal class DefaultDuplicateTrackableGuard : DuplicateTrackableGuard {
      */
     override fun finishAddingTrackable(trackable: Trackable, result: Result<AddTrackableResult>) {
         trackablesCurrentlyBeingAdded.remove(trackable)
-        duplicateAddCallsHandlers[trackable]?.iterator()!!.forEach { handler -> handler(result) }
+        duplicateAddCallsHandlers[trackable]?.iterator()?.forEach { handler -> handler(result) }
         duplicateAddCallsHandlers[trackable]?.clear()
     }
 

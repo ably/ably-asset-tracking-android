@@ -35,7 +35,7 @@ internal class DefaultTrackableRemovalGuard : TrackableRemovalGuard {
 
     override fun removeMarked(trackable: Trackable, result: Result<Boolean>) {
         val handlers = trackables.remove(trackable)
-        handlers?.iterator()!!.forEach {
+        handlers?.iterator()?.forEach {
             it(result)
         }
     }
