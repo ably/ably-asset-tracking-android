@@ -52,16 +52,13 @@ import io.ably.lib.types.Message
 import io.ably.lib.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Assert
 import org.junit.Assume
@@ -79,7 +76,7 @@ private const val MAPBOX_ACCESS_TOKEN = BuildConfig.MAPBOX_ACCESS_TOKEN
  * so we need the option of waiting ~2 minutes for certain state transitions to
  * happen in asset tracking.
  */
-private const val DEFAULT_STATE_TRANSITION_TIMEOUT_SECONDS = 130L
+private const val DEFAULT_STATE_TRANSITION_TIMEOUT_MILLISECONDS = 125_000L
 
 @RunWith(Parameterized::class)
 class NetworkConnectivityTests(private val testFault: FaultSimulation) {
@@ -258,40 +255,21 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
         receiver: TrackableStateReceiver,
         asyncOp: suspend () -> StateFlow<TrackableState>
     ) {
-        withResources { resources ->
-            var job: Job? = null
-            val completedExpectation = failOnException(actionLabel) {
-                job = asyncOp().onEach(receiver::receive).launchIn(resources.scope)
-            }
-
-            completedExpectation.await()
-            completedExpectation.assertSuccess()
-            receiver.outcome.await(DEFAULT_STATE_TRANSITION_TIMEOUT_SECONDS)
-            receiver.outcome.assertSuccess()
-            runBlocking {
-                job?.cancelAndJoin()
-            }
-        }
-    }
-
-    /**
-     * Run the (suspending) async operation in a runBlocking and capture any exceptions that
-     * occur. A BooleanExpectation is returned, which will be completed with success if asyncOp
-     * completes without errors, or failed if an exception is thrown.
-     */
-    private fun failOnException(label: String, asyncOp: suspend () -> Unit): BooleanExpectation {
-        val opCompleted = BooleanExpectation(label)
         runBlocking {
             try {
-                asyncOp()
-                testLogD("$label - success")
-                opCompleted.fulfill(true)
-            } catch (e: Exception) {
-                testLogD("$label - failed - $e", e)
-                opCompleted.fulfill(false)
+                withTimeout(DEFAULT_STATE_TRANSITION_TIMEOUT_MILLISECONDS) {
+                    val trackableStateFlow = asyncOp()
+                    testLogD("$actionLabel - success")
+                    receiver.assertStateTransition(trackableStateFlow)
+                }
+            } catch (timeoutCancellationException: TimeoutCancellationException) {
+                testLogD("$actionLabel - timed out")
+                throw AssertionError("$actionLabel timed out.")
+            } catch (exception: Exception) {
+                testLogD("$actionLabel - failed - $exception")
+                throw AssertionError("$actionLabel did not result in success.")
             }
         }
-        return opCompleted
     }
 
     /**
@@ -313,7 +291,6 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
  */
 class TestResources(
     val context: Context,
-    val scope: CoroutineScope,
     val locationHelper: LocationHelper,
     val fault: FaultSimulation,
     val publisher: Publisher
@@ -324,7 +301,6 @@ class TestResources(
          */
         fun setUp(faultParam: FaultSimulation): TestResources {
             val context = InstrumentationRegistry.getInstrumentation().targetContext
-            val scope = CoroutineScope(Dispatchers.Unconfined)
             val locationHelper = LocationHelper()
             val publisher = createPublisher(context, faultParam.proxy.clientOptions(), locationHelper.channelName)
 
@@ -332,7 +308,6 @@ class TestResources(
 
             return TestResources(
                 context = context,
-                scope = scope,
                 locationHelper = locationHelper,
                 fault = faultParam,
                 publisher = publisher
@@ -425,7 +400,6 @@ class TestResources(
     }
 
     fun tearDown() {
-        scope.cancel()
         val stopExpectation = shutdownPublisher(publisher)
         stopExpectation.assertSuccess()
         locationHelper.close()
