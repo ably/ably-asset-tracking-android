@@ -1,3 +1,7 @@
+buildscript {
+    ext.ktor_version = '2.2.2'
+}
+
 plugins {
     id 'com.android.library'
     id 'kotlin-android'
@@ -7,6 +11,18 @@ plugins {
 dependencies {
     implementation project(':core-sdk')
     implementation "io.ably:ably-android:$ably_core_version"
+    implementation 'com.google.code.gson:gson:2.9.0'
+
+    // Ktor dependencies for Layer 7 proxy in NetworkConnectivityTest
+    implementation "io.ktor:ktor-server-websockets:$ktor_version"
+    implementation "io.ktor:ktor-server-netty:$ktor_version"
+    implementation "io.ktor:ktor-server-call-logging:$ktor_version"
+    implementation "io.ktor:ktor-client-cio:$ktor_version"
+    implementation "io.ktor:ktor-client-websockets:$ktor_version"
+    implementation "io.ktor:ktor-client-logging:$ktor_version"
+    implementation "uk.uuid.slf4j:slf4j-android:1.7.30-0"
+
+    implementation 'org.msgpack:msgpack-core:0.8.11'
 }
 
 android {

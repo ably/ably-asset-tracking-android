@@ -8,7 +8,7 @@ private val TAG = "PUBLISHING SDK IT"
 private val encounteredThreadIds = HashSet<Long>()
 
 @SuppressLint("LogNotTimber", "LogConditional")
-fun testLogD(message: String) {
+fun testLogD(message: String, exc: Throwable? = null) {
     val thread = Thread.currentThread()
     val currentThreadId = thread.id
     if (!encounteredThreadIds.contains(currentThreadId)) {
@@ -26,5 +26,9 @@ fun testLogD(message: String) {
         encounteredThreadIds.add(currentThreadId)
     }
 
-    Log.d(TAG, "${Thread.currentThread().id}:  $message")
+    if (exc != null) {
+        Log.d(TAG, "${Thread.currentThread().id}:  $message", exc)
+    } else {
+        Log.d(TAG, "${Thread.currentThread().id}:  $message")
+    }
 }
