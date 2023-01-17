@@ -10,7 +10,13 @@ plugins {
 
 dependencies {
     implementation project(':core-sdk')
-    implementation "io.ably:ably-android:$ably_core_version"
+    implementation files('./../lib/aar-main.aar')
+
+    implementation 'org.msgpack:msgpack-core:0.8.11'
+    implementation 'org.java-websocket:Java-WebSocket:1.5.3'
+    implementation 'com.google.code.gson:gson:2.9.0'
+    implementation 'com.davidehrmann.vcdiff:vcdiff-core:0.1.1'
+
     implementation 'com.google.code.gson:gson:2.9.0'
 
     // Ktor dependencies for Layer 7 proxy in NetworkConnectivityTest
