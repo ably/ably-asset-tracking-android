@@ -3,6 +3,7 @@ package com.ably.tracking.publisher
 import android.annotation.SuppressLint
 import android.app.Notification
 import android.content.Context
+import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ably.tracking.Accuracy
@@ -105,6 +106,11 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
     @Before
     fun setUp() {
         Assume.assumeFalse(testFault.skipTest)
+
+        // We cannot use ktor on API Level 21 (Lollipop) because of:
+        // https://youtrack.jetbrains.com/issue/KTOR-4751/HttpCache-plugin-uses-ConcurrentMap.computeIfAbsent-method-that-is-available-only-since-Android-API-24
+        // We we're only running them if runtime API Level is 24 (N) or above.
+        Assume.assumeTrue(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
 
         testResources = TestResources.setUp(testFault)
         createNotificationChannel(testResources?.context!!)
