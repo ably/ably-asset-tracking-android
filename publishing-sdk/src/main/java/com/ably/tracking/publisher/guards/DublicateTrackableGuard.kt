@@ -50,7 +50,11 @@ internal class DefaultDuplicateTrackableGuard : DuplicateTrackableGuard {
      */
     override fun finishAddingTrackable(trackable: Trackable, result: Result<AddTrackableResult>) {
         trackablesCurrentlyBeingAdded.remove(trackable)
-        duplicateAddCallsHandlers[trackable]?.iterator()?.forEach { handler -> handler(result) }
+        duplicateAddCallsHandlers[trackable]?.let {
+            // We're using the iterator() method because we can't use java.lang.Iterable#forEach (gives [NewApi] lint
+            // error because we're supporting API Level 21).
+            it.iterator().forEach { handler -> handler(result) }
+        }
         duplicateAddCallsHandlers[trackable]?.clear()
     }
 
