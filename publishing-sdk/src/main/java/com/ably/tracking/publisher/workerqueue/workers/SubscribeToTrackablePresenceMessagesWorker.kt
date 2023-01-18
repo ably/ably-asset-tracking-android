@@ -54,7 +54,13 @@ internal class SubscribeToTrackablePresenceMessagesWorker(
             doAsyncWork {
                 isBeingRemoved = true
                 val result = ably.disconnect(trackable.id, properties.presenceData)
-                postWork(WorkerSpecification.TrackableRemovalRequested(trackable, callbackFunction, result))
+                postWork(
+                    WorkerSpecification.TrackableRemovalRequested(
+                        trackable,
+                        callbackFunction,
+                        result
+                    )
+                )
             }
             return properties
         }
@@ -71,17 +77,21 @@ internal class SubscribeToTrackablePresenceMessagesWorker(
                         isSubscribedToPresence = true
                     )
                 )
-            }
-            catch (timeoutCancellationException: TimeoutCancellationException){
-                logHandler?.w("Subscribing to presence for trackable ${trackable.id} timed out", timeoutCancellationException)
+            } catch (timeoutCancellationException: TimeoutCancellationException) {
+                logHandler?.w(
+                    "Subscribing to presence for trackable ${trackable.id} timed out",
+                    timeoutCancellationException
+                )
                 postWork(
                     createConnectionReadyWorkerSpecification(
                         isSubscribedToPresence = false
                     )
                 )
-            }
-            catch (exception: ConnectionException) {
-                logHandler?.w("Failed to subscribe to presence for trackable ${trackable.id}", exception)
+            } catch (exception: ConnectionException) {
+                logHandler?.w(
+                    "Failed to subscribe to presence for trackable ${trackable.id}",
+                    exception
+                )
                 postWork(
                     createConnectionReadyWorkerSpecification(
                         isSubscribedToPresence = false
@@ -110,10 +120,17 @@ internal class SubscribeToTrackablePresenceMessagesWorker(
         callbackFunction(Result.failure(exception))
     }
 
-    override fun onUnexpectedAsyncError(exception: Exception, postWork: (WorkerSpecification) -> Unit) {
+    override fun onUnexpectedAsyncError(
+        exception: Exception,
+        postWork: (WorkerSpecification) -> Unit
+    ) {
         if (isBeingRemoved) {
             postWork(
-                WorkerSpecification.TrackableRemovalRequested(trackable, callbackFunction, Result.failure(exception))
+                WorkerSpecification.TrackableRemovalRequested(
+                    trackable,
+                    callbackFunction,
+                    Result.failure(exception)
+                )
             )
         } else {
             // If the async work fails we carry on as if it failed with a regular exception
