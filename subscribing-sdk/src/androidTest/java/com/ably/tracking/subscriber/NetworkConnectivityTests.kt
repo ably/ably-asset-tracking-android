@@ -132,7 +132,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
                 resources.trackableId,
                 presenceData,
                 useRewind = true,
-                willSubscribe = true,
+                willPublish = true,
             ) {result ->
                 connectedToAbly.fulfill(result.isSuccess)
             }
