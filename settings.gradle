@@ -21,4 +21,7 @@ include ':android-test-common',
         ':subscribing-example-app',
         ':subscribing-java-testing',
         ':ui-sdk',
-        ':ui-sdk-java'
+        ':ui-sdk-java',
+        ':ably-java-main',
+        ':ably-java-protocol-2-0',
+        ':ably-java-resume-fixes'
