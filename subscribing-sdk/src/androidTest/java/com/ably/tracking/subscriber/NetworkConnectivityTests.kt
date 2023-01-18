@@ -2,8 +2,7 @@ package com.ably.tracking.subscriber
 
 import android.content.Context
 import androidx.test.platform.app.InstrumentationRegistry
-import com.ably.tracking.Accuracy
-import com.ably.tracking.Resolution
+import com.ably.tracking.*
 import com.ably.tracking.common.*
 import com.ably.tracking.connection.Authentication
 import com.ably.tracking.connection.ConnectionConfiguration
@@ -11,8 +10,11 @@ import com.ably.tracking.logging.LogHandler
 import com.ably.tracking.logging.LogLevel
 import com.ably.tracking.test.android.common.*
 import io.ably.lib.types.ClientOptions
+import io.ably.lib.types.Param
 import io.ably.lib.util.Log
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import org.junit.After
 import org.junit.Assert
 import org.junit.Assume
@@ -20,6 +22,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
+import java.util.*
 
 @RunWith(Parameterized::class)
 class NetworkConnectivityTests(private val testFault: FaultSimulation) {
@@ -30,8 +33,8 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
         @Parameterized.Parameters(name = "{0}")
         fun data() = listOf(
             arrayOf(NullTransportFault(BuildConfig.ABLY_API_KEY)),
-/*            arrayOf(NullApplicationLayerFault(BuildConfig.ABLY_API_KEY)),
-            arrayOf(TcpConnectionRefused(BuildConfig.ABLY_API_KEY)),
+            arrayOf(NullApplicationLayerFault(BuildConfig.ABLY_API_KEY)),
+/*            arrayOf(TcpConnectionRefused(BuildConfig.ABLY_API_KEY)),
             arrayOf(TcpConnectionUnresponsive(BuildConfig.ABLY_API_KEY)),
             arrayOf(AttachUnresponsive(BuildConfig.ABLY_API_KEY)),
             arrayOf(DetachUnresponsive(BuildConfig.ABLY_API_KEY)),
@@ -58,12 +61,143 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
     }
 
     /**
+     * Test that Subscriber can handle the given fault occurring before a user
+     * starts the subscriber, and does not throw an exception.
      *
+     * TODO: Add more detail here about expectations
      */
     @Test
-    fun faultAfterBeforeStartingSubscriber()
+    fun faultBeforeStartingSubscriber()
     {
-        Assert.assertTrue(true)
+        withResources { resources ->
+            resources.fault.enable()
+            resources.subscriber()
+        }
+    }
+
+    /**
+     * Test that Subscriber can handle the given fault occurring after a user
+     * starts the subscriber, and does not throw an exception.
+     *
+     * TODO: Add more detail here about expectations
+     */
+    @Test
+    fun faultAfterStartingSubscriber()
+    {
+        withResources { resources ->
+            resources.subscriber()
+            resources.fault.enable()
+        }
+    }
+
+    /**
+     * Test that Subscriber can handle the given fault occurring whilst tracking,
+     * check that after fault resolution, a location update is received.
+     *
+     * TODO: Add more detail here about expectations
+     */
+    @Test
+    fun faultWhilstTrackingLocationUpdatesArriveAfterResolution()
+    {
+        withResources { resources ->
+            val subscriber = resources.subscriber()
+            resources.fault.enable()
+
+            // Send an enhanced location update on the channel
+            val connectionConfiguration = ConnectionConfiguration(
+                Authentication.basic(
+                    "SubscriberNetworkConnectivityTestsDummyPublisher",
+                    resources.fault.proxy.clientOptions().key
+                )
+            )
+            val defaultAbly = DefaultAbly(DefaultAblySdkFactory(), connectionConfiguration, Logging.aatDebugLogger)
+            val location = Location(
+                1.0,
+                2.0,
+                3000.9,
+                1f,
+                341f,
+                1.5f,
+                1234,
+            )
+
+            val presenceData = PresenceData(ClientTypes.PUBLISHER, Resolution(Accuracy.BALANCED, 1L, 0.0))
+
+            runBlocking {
+                Assert.assertTrue(defaultAbly.startConnection().isSuccess)
+            }
+
+            val connectedToAbly = BooleanExpectation("Successfully connected to Ably")
+            defaultAbly.connect(
+                resources.trackableId,
+                presenceData,
+                useRewind = true,
+                willSubscribe = true,
+            ) {result ->
+                connectedToAbly.fulfill(result.isSuccess)
+            }
+            connectedToAbly.await(10)
+            connectedToAbly.assertSuccess()
+
+            // Channel state
+            val stateChangeExpectation = UnitExpectation("Test")
+            defaultAbly.subscribeForChannelStateChange(resources.trackableId) { connectionStateChange ->
+                if (connectionStateChange.state == ConnectionState.ONLINE) {
+                    stateChangeExpectation.fulfill()
+                } else {
+                    connectionStateChange.state == ConnectionState.ONLINE
+                }
+            }
+            stateChangeExpectation.await(10)
+            stateChangeExpectation.assertFulfilled()
+
+            // Sub to presence
+            var success = false;
+            defaultAbly.subscribeForPresenceMessages(resources.trackableId, {}, {
+                success = it.isSuccess
+            })
+            success != false
+
+
+            val locationSent = BooleanExpectation("Location sent successfully on Ably channel")
+            defaultAbly.sendEnhancedLocation(
+                resources.trackableId,
+                EnhancedLocationUpdate(location, arrayListOf(), arrayListOf(), LocationUpdateType.ACTUAL)
+            ) { result ->
+                locationSent.fulfill(result.isSuccess)
+            }
+
+            locationSent.await(10)
+            locationSent.assertSuccess()
+
+           // Cancel the fault and check that we've received it correctly
+            resources.fault.resolve()
+
+            val locationReceived = UnitExpectation("Position received by subscriber")
+            var receivedLocationUpdate: LocationUpdate? = null
+
+            subscriber.locations
+                .onEach { locationUpdate ->
+                    receivedLocationUpdate = locationUpdate
+                    locationReceived.fulfill()
+                }
+                .launchIn(resources.scope)
+            locationReceived.await(10)
+            locationReceived.assertFulfilled()
+
+            Assert.assertEquals(location, receivedLocationUpdate!!.location)
+        }
+    }
+
+    /**
+     * Checks that we have TestResources initialized and executes the test body
+     */
+    private fun withResources(testBody: (TestResources) -> Unit) {
+        if (testResources == null) {
+            Assert.fail("Test has not been initialized")
+        } else {
+            testResources!!.let(testBody)
+        }
     }
 
     /**
@@ -74,6 +208,8 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
     class TestResources(
         val context: Context,
         val fault: FaultSimulation,
+        val scope: CoroutineScope,
+        val trackableId: String,
         val subscriber: () -> Subscriber
     ) {
         companion object {
@@ -83,14 +219,18 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
              */
             fun setUp(faultParam: FaultSimulation): TestResources {
                 val context = InstrumentationRegistry.getInstrumentation().targetContext
-                val subscriber = createSubscriber(faultParam.proxy.clientOptions(), "subscriberNetworkTests")
+                val scope = CoroutineScope(Dispatchers.Unconfined)
+                val trackableId = UUID.randomUUID().toString()
+                val subscriber = createSubscriber(faultParam.proxy.clientOptions(), trackableId)
 
                 faultParam.proxy.start()
 
                 return TestResources(
                     context = context,
                     fault = faultParam,
-                    subscriber
+                    scope = scope,
+                    trackableId = trackableId,
+                    subscriber = subscriber
                 )
             }
 
@@ -104,7 +244,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
             private fun createSubscriber(
                 proxyClientOptions: ClientOptions,
                 //TODO: Change this to trackable name later?
-                channelName: String
+                trackableId: String
             ): () -> Subscriber {
                 val ablySdkFactory = object : AblySdkFactory<DefaultAblySdkChannelStateListener> {
                     override fun createRealtime(clientOptions: ClientOptions) = DefaultAblySdkRealtime(proxyClientOptions)
@@ -129,7 +269,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
                             subscriber = DefaultSubscriber(
                                 DefaultAbly(ablySdkFactory, connectionConfiguration, Logging.aatDebugLogger),
                                 Resolution(Accuracy.BALANCED, 1L, 0.0),
-                                channelName,
+                                trackableId,
                                 Logging.aatDebugLogger
                             ).apply { start() }
                         }
@@ -143,6 +283,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
         fun tearDown() {
             val stopExpectation = shutdownSubscriber(subscriber())
             stopExpectation.assertSuccess()
+            scope.cancel()
             fault.proxy.stop()
         }
 
