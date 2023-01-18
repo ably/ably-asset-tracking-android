@@ -11,8 +11,10 @@ android {
 
     buildTypes {
         debug {
-            minifyEnabled true
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            minifyEnabled false
+        }
+        release {
+            minifyEnabled false
         }
     }
     namespace 'com.ably.tracking.tests'
@@ -21,8 +23,8 @@ android {
 dependencies {
     implementation project(':subscribing-sdk')
     implementation project(':publishing-sdk')
-    implementation 'com.google.code.gson:gson:2.8.6'
+    implementation 'com.google.code.gson:gson:2.10.1'
     implementation "io.ably:ably-android:$ably_core_version"
-    implementation 'io.jsonwebtoken:jjwt:0.7.0'
-    implementation 'com.squareup.okhttp3:okhttp:4.9.1'
+    implementation 'io.jsonwebtoken:jjwt:0.9.1'
+    implementation 'com.squareup.okhttp3:okhttp:4.10.0'
 }
