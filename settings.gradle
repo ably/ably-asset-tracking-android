@@ -24,5 +24,4 @@ include ':android-test-common',
         ':ui-sdk-java',
         ':ably-java-main',
         ':ably-java-protocol-2-0',
-        ':ably-java-resume-fixes',
-        ':ably-java-protocol-2.0-original'
+        ':ably-java-resume-fixes'
