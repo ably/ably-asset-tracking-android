@@ -18,7 +18,7 @@ android {
 dependencies {
     api project(':core-sdk')
     implementation project(':common')
-     implementation project(":ably-java-resume-fixes")
+     implementation project(":ably-java-protocol-2-0")
 
 implementation 'org.msgpack:msgpack-core:0.8.11'
 implementation 'org.java-websocket:Java-WebSocket:1.5.3'
