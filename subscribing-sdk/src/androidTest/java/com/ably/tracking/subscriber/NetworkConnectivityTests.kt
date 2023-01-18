@@ -67,8 +67,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
      * TODO: Add more detail here about expectations
      */
     @Test
-    fun faultBeforeStartingSubscriber()
-    {
+    fun faultBeforeStartingSubscriber() {
         withResources { resources ->
             resources.fault.enable()
             resources.subscriber()
@@ -82,8 +81,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
      * TODO: Add more detail here about expectations
      */
     @Test
-    fun faultAfterStartingSubscriber()
-    {
+    fun faultAfterStartingSubscriber() {
         withResources { resources ->
             resources.subscriber()
             resources.fault.enable()
@@ -97,8 +95,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
      * TODO: Add more detail here about expectations
      */
     @Test
-    fun faultWhilstTrackingLocationUpdatesArriveAfterResolution()
-    {
+    fun faultWhilstTrackingLocationUpdatesArriveAfterResolution() {
         withResources { resources ->
             val subscriber = resources.subscriber()
             resources.fault.enable()
@@ -110,7 +107,11 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
                     resources.fault.proxy.clientOptions().key
                 )
             )
-            val defaultAbly = DefaultAbly(DefaultAblySdkFactory(), connectionConfiguration, Logging.aatDebugLogger)
+            val defaultAbly = DefaultAbly(
+                DefaultAblySdkFactory(),
+                connectionConfiguration,
+                Logging.aatDebugLogger
+            )
             val location = Location(
                 1.0,
                 2.0,
@@ -121,7 +122,8 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
                 1234,
             )
 
-            val presenceData = PresenceData(ClientTypes.PUBLISHER, Resolution(Accuracy.BALANCED, 1L, 0.0))
+            val presenceData =
+                PresenceData(ClientTypes.PUBLISHER, Resolution(Accuracy.BALANCED, 1L, 0.0))
 
             runBlocking {
                 Assert.assertTrue(defaultAbly.startConnection().isSuccess)
@@ -133,36 +135,31 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
                 presenceData,
                 useRewind = true,
                 willPublish = true,
-            ) {result ->
+            ) { result ->
                 connectedToAbly.fulfill(result.isSuccess)
             }
             connectedToAbly.await(10)
             connectedToAbly.assertSuccess()
 
             // Channel state
-            val stateChangeExpectation = UnitExpectation("Test")
+            val stateChangeExpectation = UnitExpectation("Channel state set to online")
             defaultAbly.subscribeForChannelStateChange(resources.trackableId) { connectionStateChange ->
                 if (connectionStateChange.state == ConnectionState.ONLINE) {
                     stateChangeExpectation.fulfill()
-                } else {
-                    connectionStateChange.state == ConnectionState.ONLINE
                 }
             }
             stateChangeExpectation.await(10)
             stateChangeExpectation.assertFulfilled()
 
-            // Sub to presence
-            var success = false;
-            defaultAbly.subscribeForPresenceMessages(resources.trackableId, {}, {
-                success = it.isSuccess
-            })
-            success != false
-
-
             val locationSent = BooleanExpectation("Location sent successfully on Ably channel")
             defaultAbly.sendEnhancedLocation(
                 resources.trackableId,
-                EnhancedLocationUpdate(location, arrayListOf(), arrayListOf(), LocationUpdateType.ACTUAL)
+                EnhancedLocationUpdate(
+                    location,
+                    arrayListOf(),
+                    arrayListOf(),
+                    LocationUpdateType.ACTUAL
+                )
             ) { result ->
                 locationSent.fulfill(result.isSuccess)
             }
@@ -170,7 +167,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
             locationSent.await(10)
             locationSent.assertSuccess()
 
-           // Cancel the fault and check that we've received it correctly
+            // Resolve the fault and check that we then receive the position update
             resources.fault.resolve()
 
             val locationReceived = UnitExpectation("Position received by subscriber")
@@ -182,7 +179,8 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
                     locationReceived.fulfill()
                 }
                 .launchIn(resources.scope)
-            locationReceived.await(10)
+            // This has to be a long wait because some of the faults take many minutes to resolve
+            locationReceived.await(600)
             locationReceived.assertFulfilled()
 
             Assert.assertEquals(location, receivedLocationUpdate!!.location)
@@ -247,7 +245,8 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
                 trackableId: String
             ): () -> Subscriber {
                 val ablySdkFactory = object : AblySdkFactory<DefaultAblySdkChannelStateListener> {
-                    override fun createRealtime(clientOptions: ClientOptions) = DefaultAblySdkRealtime(proxyClientOptions)
+                    override fun createRealtime(clientOptions: ClientOptions) =
+                        DefaultAblySdkRealtime(proxyClientOptions)
 
                     override fun wrapChannelStateListener(
                         underlyingListener: AblySdkFactory.UnderlyingChannelStateListener<DefaultAblySdkChannelStateListener>
@@ -267,7 +266,11 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
                     runBlocking {
                         if (subscriber == null) {
                             subscriber = DefaultSubscriber(
-                                DefaultAbly(ablySdkFactory, connectionConfiguration, Logging.aatDebugLogger),
+                                DefaultAbly(
+                                    ablySdkFactory,
+                                    connectionConfiguration,
+                                    Logging.aatDebugLogger
+                                ),
                                 Resolution(Accuracy.BALANCED, 1L, 0.0),
                                 trackableId,
                                 Logging.aatDebugLogger
