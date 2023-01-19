@@ -1,13 +1,22 @@
 package com.ably.tracking.test.android.common
 
 import com.ably.tracking.TrackableState
+import io.ably.lib.realtime.Channel
+import io.ably.lib.realtime.CompletionListener
+import io.ably.lib.realtime.Presence.PresenceListener
+import io.ably.lib.types.ErrorInfo
+import io.ably.lib.types.PresenceMessage
 import io.ktor.websocket.Frame
 import io.ktor.websocket.FrameType
+import kotlinx.coroutines.TimeoutCancellationException
 import java.util.Timer
 import kotlin.concurrent.timerTask
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withTimeout
 import kotlin.reflect.KClass
 
 /**
@@ -54,7 +63,8 @@ abstract class FaultSimulation {
      * during the given fault stage.
      */
     abstract fun stateReceiverForStage(
-        stage: FaultSimulationStage
+        stage: FaultSimulationStage,
+        sideEffectsVerificationChannel: Channel
     ): TrackableStateReceiver
 
     override fun toString() = name
@@ -91,8 +101,8 @@ class NullTransportFault(apiKey: String) : TransportLayerFault(apiKey) {
     override val name = "NullTransportFault"
     override fun enable() {}
     override fun resolve() {}
-    override fun stateReceiverForStage(stage: FaultSimulationStage) =
-        TrackableStateReceiver.onlineWithoutFail("$name: $stage")
+    override fun stateReceiverForStage(stage: FaultSimulationStage, sideEffectsVerificationChannel: Channel) =
+        TrackableStateReceiver.onlineWithoutFail("$name: $stage", sideEffectsVerificationChannel)
 }
 
 /**
@@ -119,13 +129,14 @@ class TcpConnectionRefused(apiKey: String) : TransportLayerFault(apiKey) {
     }
 
     override fun stateReceiverForStage(
-        stage: FaultSimulationStage
+        stage: FaultSimulationStage,
+        sideEffectsVerificationChannel: Channel
     ) = when (stage) {
         FaultSimulationStage.FaultActiveBeforeTracking,
         FaultSimulationStage.FaultActiveDuringTracking ->
-            TrackableStateReceiver.offlineWithoutFail("$name: $stage")
+            TrackableStateReceiver.offlineWithoutFail("$name: $stage", sideEffectsVerificationChannel)
         FaultSimulationStage.FaultResolved ->
-            TrackableStateReceiver.onlineWithoutFail("$name: $stage")
+            TrackableStateReceiver.onlineWithoutFail("$name: $stage", sideEffectsVerificationChannel)
     }
 }
 
@@ -154,13 +165,14 @@ class TcpConnectionUnresponsive(apiKey: String) : TransportLayerFault(apiKey) {
     }
 
     override fun stateReceiverForStage(
-        stage: FaultSimulationStage
+        stage: FaultSimulationStage,
+        sideEffectsVerificationChannel: Channel
     ) = when (stage) {
         FaultSimulationStage.FaultActiveBeforeTracking,
         FaultSimulationStage.FaultActiveDuringTracking ->
-            TrackableStateReceiver.offlineWithoutFail("$name: $stage")
+            TrackableStateReceiver.offlineWithoutFail("$name: $stage", sideEffectsVerificationChannel)
         FaultSimulationStage.FaultResolved ->
-            TrackableStateReceiver.onlineWithoutFail("$name: $stage")
+            TrackableStateReceiver.onlineWithoutFail("$name: $stage", sideEffectsVerificationChannel)
     }
 }
 
@@ -198,10 +210,10 @@ class DisconnectAndSuspend(apiKey: String) : TransportLayerFault(apiKey) {
         tcpProxy.start()
     }
 
-    override fun stateReceiverForStage(stage: FaultSimulationStage) =
+    override fun stateReceiverForStage(stage: FaultSimulationStage, sideEffectsVerificationChannel: Channel) =
         // After two minutes, trackables should always return to online state
         // with no fatal error
-        TrackableStateReceiver.onlineWithoutFail("$name: $stage")
+        TrackableStateReceiver.onlineWithoutFail("$name: $stage", sideEffectsVerificationChannel)
 }
 
 /**
@@ -221,8 +233,8 @@ class NullApplicationLayerFault(apiKey: String) : ApplicationLayerFault(apiKey) 
     override val name = "NullApplicationLayerFault"
     override fun enable() { }
     override fun resolve() { }
-    override fun stateReceiverForStage(stage: FaultSimulationStage) =
-        TrackableStateReceiver.onlineWithoutFail("$name: $stage")
+    override fun stateReceiverForStage(stage: FaultSimulationStage, sideEffectsVerificationChannel: Channel) =
+        TrackableStateReceiver.onlineWithoutFail("$name: $stage", sideEffectsVerificationChannel)
 }
 
 /**
@@ -272,14 +284,15 @@ abstract class DropAction(
     }
 
     override fun stateReceiverForStage(
-        stage: FaultSimulationStage
+        stage: FaultSimulationStage,
+        sideEffectsVerificationChannel: Channel
     ) = when (stage) {
         FaultSimulationStage.FaultActiveDuringTracking ->
-            TrackableStateReceiver.onlineWithoutFail("$name: $stage")
+            TrackableStateReceiver.onlineWithoutFail("$name: $stage", sideEffectsVerificationChannel)
         FaultSimulationStage.FaultActiveBeforeTracking ->
-            TrackableStateReceiver.offlineWithoutFail("$name: $stage")
+            TrackableStateReceiver.offlineWithoutFail("$name: $stage", sideEffectsVerificationChannel)
         FaultSimulationStage.FaultResolved ->
-            TrackableStateReceiver.onlineWithoutFail("$name: $stage")
+            TrackableStateReceiver.onlineWithoutFail("$name: $stage", sideEffectsVerificationChannel)
     }
 
     /**
@@ -402,17 +415,18 @@ class EnterUnresponsive(apiKey: String) : UnresponsiveAfterAction(
     override val name = "EnterUnresponsive"
 
     override fun stateReceiverForStage(
-        stage: FaultSimulationStage
+        stage: FaultSimulationStage,
+        sideEffectsVerificationChannel: Channel
     ) = when (stage) {
         FaultSimulationStage.FaultActiveDuringTracking ->
             // There won't be a presence.enter() during tracking
-            TrackableStateReceiver.onlineWithoutFail("$name: $stage")
+            TrackableStateReceiver.onlineWithoutFail("$name: $stage", sideEffectsVerificationChannel)
         FaultSimulationStage.FaultActiveBeforeTracking ->
             // presence.enter() when trackable added will trigger fault
-            TrackableStateReceiver.offlineWithoutFail("$name: $stage")
+            TrackableStateReceiver.offlineWithoutFail("$name: $stage", sideEffectsVerificationChannel)
         FaultSimulationStage.FaultResolved ->
             // always return to online state when there's no fault
-            TrackableStateReceiver.onlineWithoutFail("$name: $stage")
+            TrackableStateReceiver.onlineWithoutFail("$name: $stage", sideEffectsVerificationChannel)
     }
 }
 
@@ -489,14 +503,15 @@ class DisconnectWithFailedResume(apiKey: String) : ApplicationLayerFault(apiKey)
     }
 
     override fun stateReceiverForStage(
-        stage: FaultSimulationStage
+        stage: FaultSimulationStage,
+        sideEffectsVerificationChannel: Channel
     ) = when (stage) {
         // This fault is entirely non-fatal. AAT should recover to online
         // state eventually without failure at any stage in test
         FaultSimulationStage.FaultActiveDuringTracking,
         FaultSimulationStage.FaultActiveBeforeTracking,
         FaultSimulationStage.FaultResolved ->
-            TrackableStateReceiver.onlineWithoutFail("$name: $stage")
+            TrackableStateReceiver.onlineWithoutFail("$name: $stage", sideEffectsVerificationChannel)
     }
 
     /**
@@ -592,9 +607,9 @@ class EnterFailedWithNonfatalNack(apiKey: String) : PresenceNackFault(
 
     override val name = "EnterFailedWithNonfatalNack"
 
-    override fun stateReceiverForStage(stage: FaultSimulationStage) =
+    override fun stateReceiverForStage(stage: FaultSimulationStage, sideEffectsVerificationChannel: Channel) =
         // Note: 5xx presence errors should always be non-fatal and recovered seamlessly
-        TrackableStateReceiver.onlineWithoutFail("$name: $stage")
+        TrackableStateReceiver.onlineWithoutFail("$name: $stage", sideEffectsVerificationChannel)
 }
 
 /**
@@ -609,9 +624,9 @@ class UpdateFailedWithNonfatalNack(apiKey: String) : PresenceNackFault(
 ) {
     override val name = "UpdateFailedWithNonfatalNack"
 
-    override fun stateReceiverForStage(stage: FaultSimulationStage) =
+    override fun stateReceiverForStage(stage: FaultSimulationStage, sideEffectsVerificationChannel: Channel) =
         // Note: 5xx presence errors should always be non-fatal and recovered seamlessly
-        TrackableStateReceiver.onlineWithoutFail("$name: $stage")
+        TrackableStateReceiver.onlineWithoutFail("$name: $stage", sideEffectsVerificationChannel)
 }
 
 /**
@@ -682,10 +697,10 @@ class ReenterOnResumeFailed(apiKey: String) : ApplicationLayerFault(apiKey) {
         applicationProxy.interceptor = PassThroughInterceptor()
     }
 
-    override fun stateReceiverForStage(stage: FaultSimulationStage) =
+    override fun stateReceiverForStage(stage: FaultSimulationStage, sideEffectsVerificationChannel: Channel) =
         // This fault should not be non-fatal, Trackables should
         // return to online state before resolve() is called
-        TrackableStateReceiver.onlineWithoutFail("$name: $stage")
+        TrackableStateReceiver.onlineWithoutFail("$name: $stage", sideEffectsVerificationChannel)
 
     /**
      * Step 1: disconnect the client to cause it to attempt a resume,
@@ -821,26 +836,55 @@ internal fun nonFatalNack(msgSerial: Int) =
 class TrackableStateReceiver(
     private val label: String,
     private val expectedStates: Set<KClass<out TrackableState>>,
-    private val failureStates: Set<KClass<out TrackableState>>
+    private val failureStates: Set<KClass<out TrackableState>>,
+    private val sideEffectsVerificationChannel: Channel
 ) {
-    companion object {
-        fun onlineWithoutFail(label: String) = TrackableStateReceiver(
-            label,
-            setOf(TrackableState.Online::class),
-            setOf(TrackableState.Failed::class)
-        )
+    /**
+     * We publish [Unit] on this channel when the expected side effects for one of the states in [expectedStates] have been observed.
+     *
+     * TODO this isn’t actually quite the right behaviour — we should actually be making sure that the side effects we observed correspond to the state that satisfied the expected transition (this is only relevant if [expectedStates] has more than one element, which I’m not sure it ever does at the moment).
+     *
+     * We’re using a channel here instead of an [Expectation] for a couple of reasons:
+     *
+     * 1. So that the test doesn’t fail if the expected side effects are observed multiple times (an over-fulfill of an [Expectation] is considered an error);
+     * 2. To be consistent with the non-thread-blocking approach taken elsewhere in this class.
+     *
+     * “channel” is unfortunately a word with two meanings inside this class (Ably and Kotlin), hence the `Kotlin` in the name here.
+     */
+    private val sideEffectsVerifiedKotlinChannel = kotlinx.coroutines.channels.Channel<Unit>(capacity = kotlinx.coroutines.channels.Channel.UNLIMITED)
 
-        fun offlineWithoutFail(label: String) = TrackableStateReceiver(
-            label,
-            setOf(TrackableState.Offline::class),
-            setOf(TrackableState.Failed::class)
-        )
+    companion object {
+        fun onlineWithoutFail(label: String, sideEffectsVerificationChannel: Channel) =
+            TrackableStateReceiver(
+                label,
+                setOf(TrackableState.Online::class),
+                setOf(TrackableState.Failed::class),
+                sideEffectsVerificationChannel
+            )
+
+        fun offlineWithoutFail(label: String, sideEffectsVerificationChannel: Channel) =
+            TrackableStateReceiver(
+                label,
+                setOf(TrackableState.Offline::class),
+                setOf(TrackableState.Failed::class),
+                sideEffectsVerificationChannel
+            )
     }
 
-    suspend fun assertStateTransition(stateFlow: StateFlow<TrackableState>) {
-        val result = stateFlow.mapNotNull { receive(it) }.first()
-        if (!result) {
-            throw AssertionError("Expectation '$label' did not result in success.")
+    suspend fun assertStateTransition(asyncOp: suspend () -> StateFlow<TrackableState>) {
+        val sideEffectsListeners = setUpSideEffectsListeners()
+
+        try {
+            val stateFlow = asyncOp()
+
+            val result = stateFlow.mapNotNull { receive(it) }.first()
+            if (!result) {
+                throw AssertionError("Expectation '$label' did not result in success.")
+            }
+
+            assertSideEffectsObserved()
+        } finally {
+            removeSideEffectsListeners(sideEffectsListeners)
         }
     }
 
@@ -859,4 +903,95 @@ class TrackableStateReceiver(
                 null
             }
         }
+
+    private class SideEffectsListener(
+        val presenceListener: PresenceListener,
+        val stateClass: KClass<out TrackableState>
+    )
+
+    private suspend fun setUpSideEffectsListeners(): List<SideEffectsListener> {
+        // Attach to the channel first, to make sure we don’t miss any messages or presence events
+        attachSideEffectsListenerChannel()
+
+        return expectedStates.mapNotNull { expectedState ->
+            when (expectedState) {
+                TrackableState.Online::class -> {
+                    setUpOnlineStateSideEffectsListener()
+                }
+
+                // TODO expand this to handle other states
+                else -> null
+            }
+        }
+    }
+
+    private suspend fun setUpOnlineStateSideEffectsListener(): SideEffectsListener? {
+        // If the trackable is online and nothing happens to make it go offline before we next verify it as being online, then we can’t expect to receive a presence ENTER event, so we need to instead look at who’s currently present on the channel.
+
+        val currentPresenceMembers = sideEffectsVerificationChannel.presence.get(true)
+        if (currentPresenceMembers.any { it.action == PresenceMessage.Action.present } /* TODO see comment below about what other attributes of this presence message we need to check */) {
+            testLogD("SideEffectsVerification (SUCCESS): $label –  a member is already present")
+            sideEffectsVerifiedKotlinChannel.send(Unit)
+
+            // No need to set up a listener
+            return null
+        }
+
+        val onlineStateClass = TrackableState.Online::class
+        testLogD("SideEffectsVerification: $label – setting up listener for $onlineStateClass state side effects")
+
+        val presenceEnterListener = PresenceListener { message ->
+            /* TODO here's an example of a received message, are there any assertions we should be making about its attributes other than its `action` (e.g. should we check client ID)?
+             * 01-18 01:43:16.355  9686  9824 D PUBLISHING SDK IT: s181:  SideEffectsVerification: NullTransportFault: FaultActiveBeforeTracking – got presence message {PresenceMessage clientId=AatTestProxy_7daaa559-3173-474e-984c-42b2cea82158 connectionId=AIFsUpF0Ap data={"rawLocations":true,"type":"PUBLISHER"} id=AIFsUpF0Ap:0:0 action=enter}
+             */
+
+            if (message.action == PresenceMessage.Action.enter) {
+                testLogD("SideEffectsVerification (SUCCESS): $label – listener for $onlineStateClass state observed presence ${message.action}")
+                runBlocking {
+                    sideEffectsVerifiedKotlinChannel.send(Unit)
+                }
+            } else {
+                testLogD("SideEffectsVerification (IGNORED): $label – listener for $onlineStateClass observed presence ${message.action}")
+            }
+        }
+
+        sideEffectsVerificationChannel.presence.subscribe(presenceEnterListener)
+
+        return SideEffectsListener(presenceEnterListener, onlineStateClass)
+    }
+
+    private fun removeSideEffectsListeners(listeners: List<SideEffectsListener>) {
+        listeners.forEach { listener ->
+            testLogD("SideEffectsVerification: $label – removing listener for ${listener.stateClass} side effects")
+            sideEffectsVerificationChannel.presence.unsubscribe(listener.presenceListener)
+        }
+    }
+
+    private suspend fun attachSideEffectsListenerChannel() {
+        suspendCancellableCoroutine { continuation ->
+            sideEffectsVerificationChannel.attach(object : CompletionListener {
+                override fun onSuccess() {
+                    testLogD("SideEffectsVerification: $label - attached channel")
+                    continuation.resumeWith(Result.success(Unit))
+                }
+
+                override fun onError(reason: ErrorInfo?) {
+                    testLogD("SideEffectsVerification: $label - failed to attach channel ($reason)")
+                    continuation.resumeWith(
+                        Result.failure(Exception("SideEffectsVerification: $label – failed to attach channel ($reason)"))
+                    )
+                }
+            })
+        }
+    }
+
+    private suspend fun assertSideEffectsObserved() {
+        try {
+            withTimeout(20_000) {
+                sideEffectsVerifiedKotlinChannel.receive()
+            }
+        } catch (e: TimeoutCancellationException) {
+            throw AssertionError("SideEffectsVerification (TIMEOUT): $label – side effects not observed after 20s")
+        }
+    }
 }
