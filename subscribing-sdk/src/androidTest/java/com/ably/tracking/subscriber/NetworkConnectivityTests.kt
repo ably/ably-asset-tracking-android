@@ -3,6 +3,7 @@ package com.ably.tracking.subscriber
 import android.content.Context
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ably.tracking.*
+import com.ably.tracking.annotations.Experimental
 import com.ably.tracking.common.*
 import com.ably.tracking.connection.Authentication
 import com.ably.tracking.connection.ConnectionConfiguration
@@ -10,7 +11,6 @@ import com.ably.tracking.logging.LogHandler
 import com.ably.tracking.logging.LogLevel
 import com.ably.tracking.test.android.common.*
 import io.ably.lib.types.ClientOptions
-import io.ably.lib.types.Param
 import io.ably.lib.util.Log
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.launchIn
@@ -85,6 +85,9 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
         withResources { resources ->
             resources.subscriber()
             resources.fault.enable()
+            runBlocking {
+                resources.subscriber().stop()
+            }
         }
     }
 
@@ -168,7 +171,6 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
             locationSent.assertSuccess()
 
             // Resolve the fault and check that we then receive the position update
-            resources.fault.resolve()
 
             val locationReceived = UnitExpectation("Position received by subscriber")
             var receivedLocationUpdate: LocationUpdate? = null
@@ -180,10 +182,205 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
                 }
                 .launchIn(resources.scope)
             // This has to be a long wait because some of the faults take many minutes to resolve
+            resources.fault.resolve()
             locationReceived.await(600)
             locationReceived.assertFulfilled()
 
             Assert.assertEquals(location, receivedLocationUpdate!!.location)
+        }
+    }
+
+    /**
+     * Test that Subscriber can handle the given fault occurring whilst tracking,
+     * check that after fault resolution, a location update is received.
+     *
+     * TODO: Add more detail here about expectations
+     */
+    @Test
+    fun faultWhilstTrackingTrackableStatesArriveAfterResolution() {
+        withResources { resources ->
+            val subscriber = resources.subscriber()
+            resources.fault.enable()
+
+            // Begin listening for trackable state changes
+            val initialTrackableStateReceived = UnitExpectation("Initial trackable offline state received")
+            var initialTrackableOfflineStateReceived = false;
+            val trackableOnlineReceived = UnitExpectation("Trackable online state received")
+            val trackableOfflineReceived = UnitExpectation("Trackable offline state received")
+
+            subscriber.trackableStates
+                .onEach { state ->
+                    if (state == TrackableState.Online) {
+                        trackableOnlineReceived.fulfill()
+                    }
+
+                    if (state == TrackableState.Offline()) {
+                        if (!initialTrackableOfflineStateReceived) {
+                            initialTrackableOfflineStateReceived = true;
+                            initialTrackableStateReceived.fulfill()
+                            return@onEach
+                        }
+
+                        trackableOfflineReceived.fulfill()
+                    }
+                }
+                .launchIn(resources.scope)
+
+            initialTrackableStateReceived.await(10)
+            initialTrackableStateReceived.assertFulfilled()
+
+            // Join and then leave the channel to trigger some trackable state updates
+            val connectionConfiguration = ConnectionConfiguration(
+                Authentication.basic(
+                    "SubscriberNetworkConnectivityTestsDummyPublisher",
+                    resources.fault.proxy.clientOptions().key
+                )
+            )
+            val defaultAbly = DefaultAbly(
+                DefaultAblySdkFactory(),
+                connectionConfiguration,
+                Logging.aatDebugLogger
+            )
+            val presenceData =
+                PresenceData(ClientTypes.PUBLISHER, Resolution(Accuracy.BALANCED, 1L, 0.0))
+
+            runBlocking {
+                Assert.assertTrue(defaultAbly.startConnection().isSuccess)
+            }
+
+            val connectedToAbly = BooleanExpectation("Successfully connected to Ably")
+            defaultAbly.connect(
+                resources.trackableId,
+                presenceData,
+                useRewind = true,
+                willPublish = true,
+            ) { result ->
+                connectedToAbly.fulfill(result.isSuccess)
+            }
+            connectedToAbly.await(10)
+            connectedToAbly.assertSuccess()
+
+            // Channel state
+            val stateChangeExpectation = UnitExpectation("Channel state set to online")
+            defaultAbly.subscribeForChannelStateChange(resources.trackableId) { connectionStateChange ->
+                if (connectionStateChange.state == ConnectionState.ONLINE) {
+                    stateChangeExpectation.fulfill()
+                }
+            }
+            stateChangeExpectation.await(10)
+            stateChangeExpectation.assertFulfilled()
+
+            // Resolve the fault and check that we then receive the trackable state updates
+            // This has to be a long wait because some of the faults take many minutes to resolve
+            resources.fault.resolve()
+            trackableOnlineReceived.await(600)
+            trackableOnlineReceived.assertFulfilled()
+
+            // Restart the fault to observe the offline transition
+            resources.fault.enable()
+
+            runBlocking {
+                defaultAbly.close(presenceData)
+            }
+
+            resources.fault.resolve()
+            trackableOfflineReceived.await(600)
+            trackableOfflineReceived.assertFulfilled()
+        }
+    }
+
+    /**
+     * Test that Subscriber can handle the given fault occurring whilst tracking,
+     * check that after fault resolution, a change to publisher state is received.
+     *
+     * TODO: Add more detail here about expectations
+     */
+    @OptIn(Experimental::class)
+    @Test
+    fun faultWhilstTrackingPublisherPresenceUpdatesReceivedAfterResolution() {
+        withResources { resources ->
+            val subscriber = resources.subscriber()
+            resources.fault.enable()
+
+            // Begin listening for trackable state changes
+            val initialPublisherOfflineStateReceived = UnitExpectation("Initial trackable offline state received")
+            var initialNoPresenceReceived = false;
+            val publisherOnlineReceived = UnitExpectation("Publisher online state received")
+            val publisherOfflineReceived = UnitExpectation("Publisher offline state received")
+
+            subscriber.publisherPresence
+                .onEach { presence ->
+                    if (presence) {
+                        publisherOnlineReceived.fulfill()
+                    } else if (!initialNoPresenceReceived) {
+                        initialNoPresenceReceived = true
+                        initialPublisherOfflineStateReceived.fulfill()
+                    } else {
+                        publisherOfflineReceived.fulfill()
+                    }
+                }
+                .launchIn(resources.scope)
+
+            initialPublisherOfflineStateReceived.await(10)
+            initialPublisherOfflineStateReceived.assertFulfilled()
+
+            // Join and then leave the channel to trigger some trackable state updates
+            val connectionConfiguration = ConnectionConfiguration(
+                Authentication.basic(
+                    "SubscriberNetworkConnectivityTestsDummyPublisher",
+                    resources.fault.proxy.clientOptions().key
+                )
+            )
+            val defaultAbly = DefaultAbly(
+                DefaultAblySdkFactory(),
+                connectionConfiguration,
+                Logging.aatDebugLogger
+            )
+            val presenceData =
+                PresenceData(ClientTypes.PUBLISHER, Resolution(Accuracy.BALANCED, 1L, 0.0))
+
+            runBlocking {
+                Assert.assertTrue(defaultAbly.startConnection().isSuccess)
+            }
+
+            val connectedToAbly = BooleanExpectation("Successfully connected to Ably")
+            defaultAbly.connect(
+                resources.trackableId,
+                presenceData,
+                useRewind = true,
+                willPublish = true,
+            ) { result ->
+                connectedToAbly.fulfill(result.isSuccess)
+            }
+            connectedToAbly.await(10)
+            connectedToAbly.assertSuccess()
+
+            // Channel state
+            val stateChangeExpectation = UnitExpectation("Channel state set to online")
+            defaultAbly.subscribeForChannelStateChange(resources.trackableId) { connectionStateChange ->
+                if (connectionStateChange.state == ConnectionState.ONLINE) {
+                    stateChangeExpectation.fulfill()
+                }
+            }
+            stateChangeExpectation.await(10)
+            stateChangeExpectation.assertFulfilled()
+
+            // Resolve the fault and check that we then receive the publisher state updates
+            // This has to be a long wait because some of the faults take many minutes to resolve
+            resources.fault.resolve()
+            publisherOnlineReceived.await(600)
+            publisherOnlineReceived.assertFulfilled()
+
+            // Restart the fault to observe the offline transition
+            resources.fault.enable()
+
+            runBlocking {
+                defaultAbly.close(presenceData)
+            }
+
+            resources.fault.resolve()
+            publisherOfflineReceived.await(600)
+            publisherOfflineReceived.assertFulfilled()
         }
     }
 
