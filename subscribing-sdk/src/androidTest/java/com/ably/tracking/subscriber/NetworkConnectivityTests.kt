@@ -62,9 +62,9 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
 
     /**
      * Test that Subscriber can handle the given fault occurring before a user
-     * starts the subscriber, and does not throw an exception.
+     * starts the subscriber.
      *
-     * TODO: Add more detail here about expectations
+     * We expect the subscriber to not throw an exception.
      */
     @Test
     fun faultBeforeStartingSubscriber() {
@@ -76,9 +76,9 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
 
     /**
      * Test that Subscriber can handle the given fault occurring after a user
-     * starts the subscriber, and does not throw an exception.
+     * starts the subscriber and then proceeds to stop it.
      *
-     * TODO: Add more detail here about expectations
+     * We expect the subscriber to stop cleanly, with no exceptions.
      */
     @Test
     fun faultAfterStartingSubscriber() {
@@ -92,10 +92,10 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
     }
 
     /**
-     * Test that Subscriber can handle the given fault occurring whilst tracking,
-     * check that after fault resolution, a location update is received.
+     * Test that Subscriber can handle the given fault occurring whilst tracking.
      *
-     * TODO: Add more detail here about expectations
+     * We expect that upon the resolution of the fault, location updates sent in
+     * the meantime will be received by the subscriber.
      */
     @Test
     fun faultWhilstTrackingLocationUpdatesArriveAfterResolution() {
@@ -191,10 +191,10 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
     }
 
     /**
-     * Test that Subscriber can handle the given fault occurring whilst tracking,
-     * check that after fault resolution, a location update is received.
+     * Test that Subscriber can handle the given fault occurring whilst tracking.
      *
-     * TODO: Add more detail here about expectations
+     * Check that after resolution, trackable states (via channel presence)
+     * are updated.
      */
     @Test
     fun faultWhilstTrackingTrackableStatesArriveAfterResolution() {
@@ -291,9 +291,9 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
 
     /**
      * Test that Subscriber can handle the given fault occurring whilst tracking,
-     * check that after fault resolution, a change to publisher state is received.
      *
-     * TODO: Add more detail here about expectations
+     * Check that after resolution, changes to the channels publisher presence
+     * are received by the subscriber.
      */
     @OptIn(Experimental::class)
     @Test
@@ -438,7 +438,6 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
              */
             private fun createSubscriber(
                 proxyClientOptions: ClientOptions,
-                //TODO: Change this to trackable name later?
                 trackableId: String
             ): () -> Subscriber {
                 val ablySdkFactory = object : AblySdkFactory<DefaultAblySdkChannelStateListener> {
