@@ -114,11 +114,9 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
     @Test
     fun faultAfterStartingSubscriber() {
         withResources { resources ->
-            val subscriber = resources.getSubscriber()
+            resources.getSubscriber()
             resources.fault.enable()
-            runBlocking {
-                subscriber.stop()
-            }
+            resources.shutdownSubscriber()
         }
     }
 
@@ -470,7 +468,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
          * Returns a BooleanExpectation, which can be used to check for successful
          * shutdown of the publisher
          */
-        private fun shutdownSubscriber(): BooleanExpectation {
+        fun shutdownSubscriber(): BooleanExpectation {
             val stopExpectation = BooleanExpectation("stop response")
             runBlocking {
                 try {
@@ -483,6 +481,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
                 }
             }
             stopExpectation.await()
+            subscriber = null
             return stopExpectation
         }
     }
