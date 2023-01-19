@@ -16,10 +16,12 @@ import java.util.UUID
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -94,6 +96,19 @@ class PublisherAndSubscriberTests {
         trackExpectation.assertSuccess()
         publisherStoppedExpectation.assertFulfilled()
         subscriberStoppedExpectation.assertFulfilled()
+
+        /*
+            Wait for everything to have been emitted onto the publisher locations channel,
+            as this happens on the same coroutine scope as, but outside of, the worker queue.
+         */
+        runBlocking {
+            withTimeout(10000) {
+                while (publishedLocations.size < receivedLocations.size) {
+                    delay(100)
+                }
+            }
+        }
+
         Assert.assertTrue(
             "Subscriber should receive at least half the number of events published (received: ${receivedLocations.size}, published: ${publishedLocations.size})",
             receivedLocations.size >= publishedLocations.size / 2
