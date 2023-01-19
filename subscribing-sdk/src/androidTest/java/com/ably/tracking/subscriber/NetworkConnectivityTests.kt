@@ -22,13 +22,23 @@ import com.ably.tracking.connection.Authentication
 import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.logging.LogHandler
 import com.ably.tracking.logging.LogLevel
-import com.ably.tracking.test.android.common.createNotificationChannel
-import com.ably.tracking.test.android.common.testLogD
+import com.ably.tracking.test.android.common.AttachUnresponsive
 import com.ably.tracking.test.android.common.BooleanExpectation
+import com.ably.tracking.test.android.common.createNotificationChannel
+import com.ably.tracking.test.android.common.DetachUnresponsive
+import com.ably.tracking.test.android.common.DisconnectAndSuspend
+import com.ably.tracking.test.android.common.DisconnectWithFailedResume
+import com.ably.tracking.test.android.common.EnterFailedWithNonfatalNack
+import com.ably.tracking.test.android.common.EnterUnresponsive
 import com.ably.tracking.test.android.common.FaultSimulation
 import com.ably.tracking.test.android.common.NullApplicationLayerFault
 import com.ably.tracking.test.android.common.NullTransportFault
+import com.ably.tracking.test.android.common.ReenterOnResumeFailed
+import com.ably.tracking.test.android.common.TcpConnectionRefused
+import com.ably.tracking.test.android.common.TcpConnectionUnresponsive
+import com.ably.tracking.test.android.common.testLogD
 import com.ably.tracking.test.android.common.UnitExpectation
+import com.ably.tracking.test.android.common.UpdateFailedWithNonfatalNack
 import io.ably.lib.types.ClientOptions
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -55,7 +65,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
         fun data() = listOf(
             arrayOf(NullTransportFault(BuildConfig.ABLY_API_KEY)),
             arrayOf(NullApplicationLayerFault(BuildConfig.ABLY_API_KEY)),
-/*            arrayOf(TcpConnectionRefused(BuildConfig.ABLY_API_KEY)),
+            arrayOf(TcpConnectionRefused(BuildConfig.ABLY_API_KEY)),
             arrayOf(TcpConnectionUnresponsive(BuildConfig.ABLY_API_KEY)),
             arrayOf(AttachUnresponsive(BuildConfig.ABLY_API_KEY)),
             arrayOf(DetachUnresponsive(BuildConfig.ABLY_API_KEY)),
@@ -64,7 +74,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
             arrayOf(UpdateFailedWithNonfatalNack(BuildConfig.ABLY_API_KEY)),
             arrayOf(DisconnectAndSuspend(BuildConfig.ABLY_API_KEY)),
             arrayOf(ReenterOnResumeFailed(BuildConfig.ABLY_API_KEY)),
-            arrayOf(EnterUnresponsive(BuildConfig.ABLY_API_KEY)),*/
+            arrayOf(EnterUnresponsive(BuildConfig.ABLY_API_KEY)),
         )
     }
 
