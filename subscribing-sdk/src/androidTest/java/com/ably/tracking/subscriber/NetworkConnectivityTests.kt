@@ -22,9 +22,18 @@ import com.ably.tracking.connection.Authentication
 import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.logging.LogHandler
 import com.ably.tracking.logging.LogLevel
-import com.ably.tracking.test.android.common.*
+import com.ably.tracking.test.android.common.createNotificationChannel
+import com.ably.tracking.test.android.common.testLogD
+import com.ably.tracking.test.android.common.BooleanExpectation
+import com.ably.tracking.test.android.common.FaultSimulation
+import com.ably.tracking.test.android.common.NullApplicationLayerFault
+import com.ably.tracking.test.android.common.NullTransportFault
+import com.ably.tracking.test.android.common.UnitExpectation
 import io.ably.lib.types.ClientOptions
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import org.junit.After
@@ -34,7 +43,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
-import java.util.*
+import java.util.UUID
 
 @RunWith(Parameterized::class)
 class NetworkConnectivityTests(private val testFault: FaultSimulation) {
@@ -176,7 +185,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
 
             // Begin listening for trackable state changes - the initial state is offline, so we have to ignore the first one
             val initialTrackableStateReceived = UnitExpectation("Initial trackable offline state received")
-            var initialTrackableOfflineStateReceived = false;
+            var initialTrackableOfflineStateReceived = false
             val trackableOnlineReceived = UnitExpectation("Trackable online state received")
             val trackableOfflineReceived = UnitExpectation("Trackable offline state received")
 
@@ -188,7 +197,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
 
                     if (state == TrackableState.Offline()) {
                         if (!initialTrackableOfflineStateReceived) {
-                            initialTrackableOfflineStateReceived = true;
+                            initialTrackableOfflineStateReceived = true
                             initialTrackableStateReceived.fulfill()
                             return@onEach
                         }
@@ -238,7 +247,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
 
             // Begin listening for publisher state changes - the initial state if offline, so we have to ignore the first one
             val initialPublisherOfflineStateReceived = UnitExpectation("Initial trackable offline state received")
-            var initialNoPresenceReceived = false;
+            var initialNoPresenceReceived = false
             val publisherOnlineReceived = UnitExpectation("Publisher online state received")
             val publisherOfflineReceived = UnitExpectation("Publisher offline state received")
 
@@ -376,8 +385,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
          * Creates and starts a connection to an Ably channel for the purpose of publishing location
          * updates and emulating trackable state change events.
          */
-        fun createAndStartPublishingAblyConnection(): DefaultAbly<DefaultAblySdkChannelStateListener>
-        {
+        fun createAndStartPublishingAblyConnection(): DefaultAbly<DefaultAblySdkChannelStateListener> {
             if (ablyPublishing != null) {
                 return ablyPublishing!!
             }
@@ -423,7 +431,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
             stateChangeExpectation.await(10)
             stateChangeExpectation.assertFulfilled()
 
-            ablyPublishing = defaultAbly;
+            ablyPublishing = defaultAbly
 
             return ablyPublishing!!
         }
@@ -440,8 +448,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
          * If the test has started up a publishing connection to the Ably
          * channel, shut it down.
          */
-        fun shutdownAblyPublishing()
-        {
+        fun shutdownAblyPublishing() {
             runBlocking {
                 ablyPublishing?.close(ablyPublishingPresenceData)
                 ablyPublishing = null
