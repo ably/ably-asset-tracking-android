@@ -47,7 +47,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
             arrayOf(NullTransportFault(BuildConfig.ABLY_API_KEY)),
             arrayOf(NullApplicationLayerFault(BuildConfig.ABLY_API_KEY)),
 /*            arrayOf(TcpConnectionRefused(BuildConfig.ABLY_API_KEY)),
-            /*arrayOf(TcpConnectionUnresponsive(BuildConfig.ABLY_API_KEY)),
+            arrayOf(TcpConnectionUnresponsive(BuildConfig.ABLY_API_KEY)),
             arrayOf(AttachUnresponsive(BuildConfig.ABLY_API_KEY)),
             arrayOf(DetachUnresponsive(BuildConfig.ABLY_API_KEY)),
             arrayOf(DisconnectWithFailedResume(BuildConfig.ABLY_API_KEY)),
