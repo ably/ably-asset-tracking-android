@@ -1,6 +1,7 @@
 package com.ably.tracking.publisher
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Build
 import androidx.annotation.RequiresPermission
@@ -340,7 +341,11 @@ internal class DefaultMapbox(
     /**
      * On Android 24 and below the shared notification is removed when [MapboxNavigation.stopTripSession] is called.
      * This notification should be always visible when the [Publisher] is running so we show it once again manually.
+     *
+     * The permission POST_NOTIFICATIONS cannot be added as a RequiresPermission annotation as it was only added
+     * in API level 33.
      */
+    @SuppressLint("MissingPermission")
     private fun reshowTripNotification() {
         if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.N) {
             NotificationManagerCompat.from(context).notify(notificationId, notificationProvider.getNotification())
