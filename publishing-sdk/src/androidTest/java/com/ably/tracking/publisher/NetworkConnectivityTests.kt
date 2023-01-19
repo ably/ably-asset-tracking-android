@@ -83,7 +83,6 @@ private const val DEFAULT_STATE_TRANSITION_TIMEOUT_SECONDS = 130L
 
 @RunWith(Parameterized::class)
 class NetworkConnectivityTests(private val testFault: FaultSimulation) {
-
     private var testResources: TestResources? = null
 
     companion object {
