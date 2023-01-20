@@ -308,7 +308,7 @@ class Layer7Proxy(
 
     override fun stop() {
         testLogD("$tag: stopping...")
-        server?.stop(5000, 10000)
+        server?.stop(10000, 15000)
         testLogD("$tag: done stopping...")
     }
 
