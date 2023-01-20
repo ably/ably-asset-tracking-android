@@ -968,7 +968,7 @@ constructor(
     private fun AblySdkRealtime.Channel<ChannelStateListenerType>.isDetachedOrFailed(): Boolean =
         state == ChannelState.detached || state == ChannelState.failed
 
-    private fun createMalformedMessageErrorInfo(): ErrorInfo = ErrorInfo("Received a malformed message", 100_001, 400)
+    private fun createMalformedMessageErrorInfo(): ErrorInfo = ErrorInfo("Received a malformed message", 400, 100_001)
 
     override suspend fun startConnection(): Result<Unit> {
         return try {
