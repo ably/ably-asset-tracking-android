@@ -3,6 +3,7 @@ package com.ably.tracking.publisher
 import android.annotation.SuppressLint
 import android.app.Notification
 import android.content.Context
+import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ably.tracking.Accuracy
@@ -24,14 +25,23 @@ import com.ably.tracking.connection.Authentication
 import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.logging.LogHandler
 import com.ably.tracking.logging.LogLevel
+import com.ably.tracking.test.android.common.AttachUnresponsive
 import com.ably.tracking.test.android.common.BooleanExpectation
+import com.ably.tracking.test.android.common.DetachUnresponsive
+import com.ably.tracking.test.android.common.DisconnectAndSuspend
+import com.ably.tracking.test.android.common.DisconnectWithFailedResume
+import com.ably.tracking.test.android.common.EnterFailedWithNonfatalNack
+import com.ably.tracking.test.android.common.EnterUnresponsive
 import com.ably.tracking.test.android.common.FaultSimulation
 import com.ably.tracking.test.android.common.FaultSimulationStage
 import com.ably.tracking.test.android.common.NOTIFICATION_CHANNEL_ID
+import com.ably.tracking.test.android.common.NullApplicationLayerFault
 import com.ably.tracking.test.android.common.NullTransportFault
+import com.ably.tracking.test.android.common.ReenterOnResumeFailed
 import com.ably.tracking.test.android.common.TcpConnectionRefused
 import com.ably.tracking.test.android.common.TcpConnectionUnresponsive
 import com.ably.tracking.test.android.common.TrackableStateReceiver
+import com.ably.tracking.test.android.common.UpdateFailedWithNonfatalNack
 import com.ably.tracking.test.android.common.createNotificationChannel
 import com.ably.tracking.test.android.common.testLogD
 import com.google.gson.Gson
@@ -79,14 +89,28 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
         @Parameterized.Parameters(name = "{0}")
         fun data() = listOf(
             arrayOf(NullTransportFault(BuildConfig.ABLY_API_KEY)),
+            arrayOf(NullApplicationLayerFault(BuildConfig.ABLY_API_KEY)),
             arrayOf(TcpConnectionRefused(BuildConfig.ABLY_API_KEY)),
-            arrayOf(TcpConnectionUnresponsive(BuildConfig.ABLY_API_KEY))
+            arrayOf(TcpConnectionUnresponsive(BuildConfig.ABLY_API_KEY)),
+            arrayOf(AttachUnresponsive(BuildConfig.ABLY_API_KEY)),
+            arrayOf(DetachUnresponsive(BuildConfig.ABLY_API_KEY)),
+            arrayOf(DisconnectWithFailedResume(BuildConfig.ABLY_API_KEY)),
+            arrayOf(EnterFailedWithNonfatalNack(BuildConfig.ABLY_API_KEY)),
+            arrayOf(UpdateFailedWithNonfatalNack(BuildConfig.ABLY_API_KEY)),
+            arrayOf(DisconnectAndSuspend(BuildConfig.ABLY_API_KEY)),
+            arrayOf(ReenterOnResumeFailed(BuildConfig.ABLY_API_KEY)),
+            arrayOf(EnterUnresponsive(BuildConfig.ABLY_API_KEY)),
         )
     }
 
     @Before
     fun setUp() {
         Assume.assumeFalse(testFault.skipTest)
+
+        // We cannot use ktor on API Level 21 (Lollipop) because of:
+        // https://youtrack.jetbrains.com/issue/KTOR-4751/HttpCache-plugin-uses-ConcurrentMap.computeIfAbsent-method-that-is-available-only-since-Android-API-24
+        // We we're only running them if runtime API Level is 24 (N) or above.
+        Assume.assumeTrue(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
 
         testResources = TestResources.setUp(testFault)
         createNotificationChannel(testResources?.context!!)
@@ -113,7 +137,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
             // Add an active trackable while fault active
             waitForStateTransition(
                 actionLabel = "attempt to add active Trackable while fault active",
-                receiver = resources.fault.stateReceiverForStage(FaultSimulationStage.FaultActive)
+                receiver = resources.fault.stateReceiverForStage(FaultSimulationStage.FaultActiveBeforeTracking)
             ) {
                 resources.publisher.track(primaryTrackable).also {
                     resources.locationHelper.sendUpdate(100.0, 100.0)
@@ -123,7 +147,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
             // Add a secondary (not active) trackable too
             waitForStateTransition(
                 actionLabel = "add secondary (inactive) trackable",
-                receiver = resources.fault.stateReceiverForStage(FaultSimulationStage.FaultActive)
+                receiver = resources.fault.stateReceiverForStage(FaultSimulationStage.FaultActiveBeforeTracking)
             ) {
                 resources.publisher.add(secondaryTrackable).also {
                     // apparently another location update is needed for this to go online
@@ -192,7 +216,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
             // Enable the fault, wait for Trackable to move to expected state
             waitForStateTransition(
                 actionLabel = "await active trackable state transition during fault",
-                receiver = resources.fault.stateReceiverForStage(FaultSimulationStage.FaultActive)
+                receiver = resources.fault.stateReceiverForStage(FaultSimulationStage.FaultActiveDuringTracking)
             ) {
                 resources.fault.enable()
                 resources.publisher.getTrackableState(primaryTrackable.id)!!
@@ -201,7 +225,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
             // Ensure secondary trackable is also now in expected fault state
             waitForStateTransition(
                 actionLabel = "await secondary trackable state transition during fault",
-                receiver = resources.fault.stateReceiverForStage(FaultSimulationStage.FaultActive)
+                receiver = resources.fault.stateReceiverForStage(FaultSimulationStage.FaultActiveDuringTracking)
             ) {
                 resources.publisher.getTrackableState(secondaryTrackable.id)!!
             }
@@ -284,7 +308,7 @@ class TestResources(
         fun setUp(faultParam: FaultSimulation): TestResources {
             val context = InstrumentationRegistry.getInstrumentation().targetContext
             val locationHelper = LocationHelper()
-            val publisher = createPublisher(context, faultParam.proxy.clientOptions, locationHelper.channelName)
+            val publisher = createPublisher(context, faultParam.proxy.clientOptions(), locationHelper.channelName)
 
             faultParam.proxy.start()
 
@@ -310,9 +334,9 @@ class TestResources(
             val ablySdkFactory = object : AblySdkFactory<DefaultAblySdkChannelStateListener> {
                 override fun createRealtime(clientOptions: ClientOptions) = DefaultAblySdkRealtime(proxyClientOptions)
 
-                override fun wrapChannelStateListener(underlyingListener: AblySdkFactory.UnderlyingChannelStateListener<DefaultAblySdkChannelStateListener>): DefaultAblySdkChannelStateListener {
-                    return DefaultAblySdkChannelStateListener(underlyingListener)
-                }
+                override fun wrapChannelStateListener(
+                    underlyingListener: AblySdkFactory.UnderlyingChannelStateListener<DefaultAblySdkChannelStateListener>
+                ) = DefaultAblySdkChannelStateListener(underlyingListener)
             }
             val connectionConfiguration = ConnectionConfiguration(
                 Authentication.basic(
