@@ -10,15 +10,18 @@ import com.ably.tracking.test.common.mockDisconnect
 import com.ably.tracking.test.common.mockSubscribeToPresenceError
 import com.ably.tracking.test.common.mockSubscribeToPresenceSuccess
 import com.google.common.truth.Truth.assertThat
+import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
 @ExperimentalCoroutinesApi
 class SubscribeToTrackablePresenceMessagesWorkerTest {
+    private val presenceEnterTimeout = 2_000L
     private val trackable = Trackable("test-trackable")
     private val resultCallbackFunction = mockk<ResultCallbackFunction<StateFlow<TrackableState>>>(relaxed = true)
     private val ably = mockk<Ably>(relaxed = true)
@@ -90,6 +93,11 @@ class SubscribeToTrackablePresenceMessagesWorkerTest {
             // given
             val initialProperties = createPublisherProperties()
             ably.mockSubscribeToPresenceError(trackable.id)
+
+            coEvery { ably.subscribeForPresenceMessages(any(), any()) } coAnswers {
+                delay(presenceEnterTimeout * 2)
+                Result.success(Unit)
+            }
 
             // when
             worker.doWork(
