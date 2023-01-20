@@ -999,7 +999,7 @@ constructor(
      *
      * @throws ConnectionException if something goes wrong.
      */
-    private suspend fun connectSuspending(timeoutInMilliseconds: Long = 60_000L) {
+    private suspend fun connectSuspending(timeoutInMilliseconds: Long = 10_000L) {
         if (ably.connection.state.isConnected()) {
             return
         } else if (ably.connection.state.isFailed()) {
