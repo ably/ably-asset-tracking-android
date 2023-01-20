@@ -26,7 +26,6 @@ jobs:
       - uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: ${{ matrix.api-level }}
-          arch: x86_64
           target: google_apis
           #Github's default -no-snapshot option causes check workflow failing.It is likely because it has to cold boot
           #emulator which might be taking long and causing a timeout issue or a freeze.
