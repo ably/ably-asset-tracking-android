@@ -221,3 +221,21 @@ private fun TokenAuthException.toAblyException(): AblyException =
         is CouldNotFetchTokenException ->
             AblyException.fromErrorInfo(ErrorInfo(message, 401, 100_002))
     }
+
+/**
+ * Indicates whether the exception from Ably is fatal and we should not attempt to retry it.
+ * Fatal errors have codes like 4xx (e.g. 400).
+ */
+fun ConnectionException.isFatal(): Boolean {
+    val firstErrorCodeDigit = errorInformation.code.toString().first()
+    return firstErrorCodeDigit == '4'
+}
+
+/**
+ * Indicates whether the exception from Ably is retriable and we can attempt to retry it.
+ * Non-fatal errors have codes like 5xx (e.g. 500).
+ */
+fun ConnectionException.isRetriable(): Boolean {
+    val firstErrorCodeDigit = errorInformation.code.toString().first()
+    return firstErrorCodeDigit == '5'
+}
