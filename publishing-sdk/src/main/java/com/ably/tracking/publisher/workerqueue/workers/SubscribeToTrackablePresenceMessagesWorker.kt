@@ -73,7 +73,7 @@ internal class SubscribeToTrackablePresenceMessagesWorker(
                     subscribeToPresenceResult.getOrThrow()
                 }
                 postWork(
-                    createConnectionReadyWorkerSpecification(
+                    createFinishAddingTrackableToPublisherWorkerSpecification(
                         isSubscribedToPresence = true
                     )
                 )
@@ -83,7 +83,7 @@ internal class SubscribeToTrackablePresenceMessagesWorker(
                     timeoutCancellationException
                 )
                 postWork(
-                    createConnectionReadyWorkerSpecification(
+                    createFinishAddingTrackableToPublisherWorkerSpecification(
                         isSubscribedToPresence = false
                     )
                 )
@@ -93,7 +93,7 @@ internal class SubscribeToTrackablePresenceMessagesWorker(
                     exception
                 )
                 postWork(
-                    createConnectionReadyWorkerSpecification(
+                    createFinishAddingTrackableToPublisherWorkerSpecification(
                         isSubscribedToPresence = false
                     )
                 )
@@ -103,7 +103,7 @@ internal class SubscribeToTrackablePresenceMessagesWorker(
         return properties
     }
 
-    private fun createConnectionReadyWorkerSpecification(isSubscribedToPresence: Boolean) =
+    private fun createFinishAddingTrackableToPublisherWorkerSpecification(isSubscribedToPresence: Boolean) =
         WorkerSpecification.FinishAddingTrackableToPublisher(
             trackable,
             callbackFunction,
@@ -134,7 +134,7 @@ internal class SubscribeToTrackablePresenceMessagesWorker(
             )
         } else {
             // If the async work fails we carry on as if it failed with a regular exception
-            postWork(createConnectionReadyWorkerSpecification(isSubscribedToPresence = false))
+            postWork(createFinishAddingTrackableToPublisherWorkerSpecification(isSubscribedToPresence = false))
         }
     }
 }
