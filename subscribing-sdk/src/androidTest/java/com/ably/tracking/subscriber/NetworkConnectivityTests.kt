@@ -436,9 +436,11 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
             connectedToAbly.assertSuccess()
 
             // Wait for channel to come online
+            var receivedFirstOnlineStateChange = false
             val stateChangeExpectation = UnitExpectation("Channel state set to online")
             defaultAbly.subscribeForChannelStateChange(trackableId) { connectionStateChange ->
-                if (connectionStateChange.state == ConnectionState.ONLINE) {
+                if (!receivedFirstOnlineStateChange && connectionStateChange.state == ConnectionState.ONLINE) {
+                    receivedFirstOnlineStateChange = true
                     stateChangeExpectation.fulfill()
                 }
             }
@@ -454,8 +456,8 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
             val stopExpectation = shutdownSubscriber()
             stopExpectation.assertSuccess()
             scope.cancel()
-            fault.proxy.stop()
             shutdownAblyPublishing()
+            fault.proxy.stop()
         }
 
         /**
