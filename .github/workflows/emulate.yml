@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        api-level: [ 21, 24, 27, 29, 33 ]
+        api-level: [ 29, 30, 31, 32, 33 ]
         include:
           - api: 21
             excludeModules: true
