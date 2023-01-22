@@ -33,14 +33,13 @@ import com.ably.tracking.test.android.common.DisconnectWithFailedResume
 import com.ably.tracking.test.android.common.EnterFailedWithNonfatalNack
 import com.ably.tracking.test.android.common.EnterUnresponsive
 import com.ably.tracking.test.android.common.FaultSimulation
-import com.ably.tracking.test.android.common.FaultSimulationStage
+import com.ably.tracking.test.android.common.FaultType
 import com.ably.tracking.test.android.common.NOTIFICATION_CHANNEL_ID
 import com.ably.tracking.test.android.common.NullApplicationLayerFault
 import com.ably.tracking.test.android.common.NullTransportFault
 import com.ably.tracking.test.android.common.ReenterOnResumeFailed
 import com.ably.tracking.test.android.common.TcpConnectionRefused
 import com.ably.tracking.test.android.common.TcpConnectionUnresponsive
-import com.ably.tracking.test.android.common.TrackableStateReceiver
 import com.ably.tracking.test.android.common.UpdateFailedWithNonfatalNack
 import com.ably.tracking.test.android.common.createNotificationChannel
 import com.ably.tracking.test.android.common.testLogD
@@ -57,6 +56,8 @@ import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -69,15 +70,9 @@ import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import java.util.Date
 import java.util.UUID
+import kotlin.reflect.KClass
 
 private const val MAPBOX_ACCESS_TOKEN = BuildConfig.MAPBOX_ACCESS_TOKEN
-
-/**
- * Certain state transitions have very long timeouts in ably-java,
- * so we need the option of waiting ~2 minutes for certain state transitions to
- * happen in asset tracking.
- */
-private const val DEFAULT_STATE_TRANSITION_TIMEOUT_MILLISECONDS = 125_000L
 
 @RunWith(Parameterized::class)
 class NetworkConnectivityTests(private val testFault: FaultSimulation) {
@@ -131,46 +126,45 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
         val primaryTrackable = Trackable(UUID.randomUUID().toString())
         val secondaryTrackable = Trackable(UUID.randomUUID().toString())
 
-        withResources { resources ->
-            resources.fault.enable()
+        withResources {
+            fault.enable()
 
             // Add an active trackable while fault active
-            waitForStateTransition(
-                actionLabel = "attempt to add active Trackable while fault active",
-                receiver = resources.fault.stateReceiverForStage(FaultSimulationStage.FaultActiveBeforeTracking)
-            ) {
-                resources.publisher.track(primaryTrackable).also {
-                    resources.locationHelper.sendUpdate(100.0, 100.0)
+            TrackableStateReceiver.forActiveFault(
+                label = "[fault active] publisher.track()",
+                faultType = fault.type
+            ).waitForStateTransition {
+                publisher.track(primaryTrackable).also {
+                    locationHelper.sendUpdate(100.0, 100.0)
                 }
             }
 
             // Add a secondary (not active) trackable too
-            waitForStateTransition(
-                actionLabel = "add secondary (inactive) trackable",
-                receiver = resources.fault.stateReceiverForStage(FaultSimulationStage.FaultActiveBeforeTracking)
-            ) {
-                resources.publisher.add(secondaryTrackable).also {
+            TrackableStateReceiver.forActiveFault(
+                label = "[fault active] publisher.add()",
+                faultType = fault.type
+            ).waitForStateTransition {
+                publisher.add(secondaryTrackable).also {
                     // apparently another location update is needed for this to go online
-                    resources.locationHelper.sendUpdate(101.0, 101.0)
+                    locationHelper.sendUpdate(101.0, 101.0)
                 }
             }
 
             // Remove that second trackable while fault still active
             runBlocking {
-                Assert.assertTrue(resources.publisher.remove(secondaryTrackable))
+                Assert.assertTrue(publisher.remove(secondaryTrackable))
             }
 
             // / Resolve the fault and ensure active trackable reaches intended state
-            resources.fault.resolve()
-            waitForStateTransition(
-                actionLabel = "resolve fault and wait for updated state",
-                receiver = resources.fault.stateReceiverForStage(FaultSimulationStage.FaultResolved)
-            ) {
-                resources.publisher.getTrackableState(primaryTrackable.id)!!
+            TrackableStateReceiver.forResolvedFault(
+                label = "[fault resolved] publisher.getTrackableState()",
+                faultType = fault.type
+            ).waitForStateTransition {
+                publisher.getTrackableState(primaryTrackable.id)!!
             }
 
             Assert.assertNull(
-                resources.publisher.getTrackableState(secondaryTrackable.id)
+                publisher.getTrackableState(secondaryTrackable.id)
             )
         }
     }
@@ -187,105 +181,75 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
         val primaryTrackable = Trackable(UUID.randomUUID().toString())
         val secondaryTrackable = Trackable(UUID.randomUUID().toString())
 
-        withResources { resources ->
+        withResources {
             // Add active trackable, wait for it to reach Online state
-            waitForStateTransition(
-                actionLabel = "add new active Trackable with working connectivity",
-                receiver = TrackableStateReceiver.onlineWithoutFail(
-                    "active trackable reaches online state"
-                )
-            ) {
-                resources.publisher.track(primaryTrackable).also {
-                    resources.locationHelper.sendUpdate(102.0, 102.0)
+            TrackableStateReceiver.onlineWithoutFail(
+                label = "[no fault] publisher.track()",
+                timeout = 10_000L
+            ).waitForStateTransition {
+                publisher.track(primaryTrackable).also {
+                    locationHelper.sendUpdate(102.0, 102.0)
                 }
             }
 
             // Add another (non-active) trackable and wait for it to be online
-            waitForStateTransition(
-                actionLabel = "add secondary (inactive) trackable",
-                receiver = TrackableStateReceiver.onlineWithoutFail(
-                    "secondary trackable reaches online state"
-                )
-            ) {
-                resources.publisher.add(secondaryTrackable).also {
+            TrackableStateReceiver.onlineWithoutFail(
+                label = "[no fault] publisher.add()",
+                timeout = 10_000L
+            ).waitForStateTransition {
+                publisher.add(secondaryTrackable).also {
                     // apparently another location update is needed for this to go online
-                    resources.locationHelper.sendUpdate(103.0, 103.0)
+                    locationHelper.sendUpdate(103.0, 103.0)
                 }
             }
 
             // Enable the fault, wait for Trackable to move to expected state
-            waitForStateTransition(
-                actionLabel = "await active trackable state transition during fault",
-                receiver = resources.fault.stateReceiverForStage(FaultSimulationStage.FaultActiveDuringTracking)
-            ) {
-                resources.fault.enable()
-                resources.publisher.getTrackableState(primaryTrackable.id)!!
+            TrackableStateReceiver.forActiveFault(
+                label = "[fault active] publisher.getTrackableState(primary)",
+                faultType = fault.type
+            ).waitForStateTransition {
+                fault.enable()
+                publisher.getTrackableState(primaryTrackable.id)!!
             }
 
             // Ensure secondary trackable is also now in expected fault state
-            waitForStateTransition(
-                actionLabel = "await secondary trackable state transition during fault",
-                receiver = resources.fault.stateReceiverForStage(FaultSimulationStage.FaultActiveDuringTracking)
-            ) {
-                resources.publisher.getTrackableState(secondaryTrackable.id)!!
+            TrackableStateReceiver.forActiveFault(
+                label = "[fault active] publisher.getTrackableState(secondary)",
+                faultType = fault.type
+            ).waitForStateTransition {
+                publisher.getTrackableState(secondaryTrackable.id)!!
             }
 
             // Remove the secondary trackable while fault is active
             runBlocking {
-                Assert.assertTrue(resources.publisher.remove(secondaryTrackable))
+                Assert.assertTrue(publisher.remove(secondaryTrackable))
             }
 
             // Resolve the fault, wait for Trackable to move to expected state
-            waitForStateTransition(
-                actionLabel = "resolve fault and wait for transition",
-                receiver = resources.fault.stateReceiverForStage(FaultSimulationStage.FaultResolved)
-            ) {
-                resources.fault.resolve()
-                resources.publisher.getTrackableState(primaryTrackable.id)!!
+            TrackableStateReceiver.forResolvedFault(
+                label = "[fault resolved] publisher.getTrackableState(primary)",
+                faultType = fault.type
+            ).waitForStateTransition {
+                fault.resolve()
+                publisher.getTrackableState(primaryTrackable.id)!!
             }
 
             // Ensure that the secondary Trackable is gone
             Assert.assertNull(
-                resources.publisher.getTrackableState(secondaryTrackable.id)
+                publisher.getTrackableState(secondaryTrackable.id)
             )
-        }
-    }
-
-    /**
-     * Performs the given async (suspending) operation in a runBlocking, attaching the
-     * returned StateFlow<TrackableState> to the given receiver, then waits for expectations
-     * to be delivered (or not) before cleaning up.
-     */
-    private fun waitForStateTransition(
-        actionLabel: String,
-        receiver: TrackableStateReceiver,
-        asyncOp: suspend () -> StateFlow<TrackableState>
-    ) {
-        runBlocking {
-            try {
-                withTimeout(DEFAULT_STATE_TRANSITION_TIMEOUT_MILLISECONDS) {
-                    val trackableStateFlow = asyncOp()
-                    testLogD("$actionLabel - success")
-                    receiver.assertStateTransition(trackableStateFlow)
-                }
-            } catch (timeoutCancellationException: TimeoutCancellationException) {
-                testLogD("$actionLabel - timed out")
-                throw AssertionError("$actionLabel timed out.")
-            } catch (exception: Exception) {
-                testLogD("$actionLabel - failed - $exception")
-                throw AssertionError("$actionLabel did not result in success.")
-            }
         }
     }
 
     /**
      * Checks that we have TestResources initialized and executes the test body
      */
-    private fun withResources(testBody: (TestResources) -> Unit) {
-        if (testResources == null) {
+    private fun withResources(testBody: TestResources.() -> Unit) {
+        val resources = testResources
+        if (resources == null) {
             Assert.fail("Test has not been initialized")
         } else {
-            testResources!!.let(testBody)
+            resources.apply(testBody)
         }
     }
 }
@@ -520,4 +484,129 @@ class LocationHelper {
     fun close() {
         ably.close()
     }
+}
+
+/**
+ * Helper to capture an expected set of successful or unsuccessful TrackableState
+ * transitions using the StateFlows provided by publishers.
+ */
+class TrackableStateReceiver(
+    val label: String,
+    private val expectedStates: Set<KClass<out TrackableState>>,
+    private val failureStates: Set<KClass<out TrackableState>>,
+    val timeout: Long,
+) {
+
+    companion object {
+        /**
+         * Construct [TrackableStateReceiver] configured to expect appropriate state transitions
+         * for the given fault type while it is active. [label] will be used for logging captured transitions.
+         */
+        fun forActiveFault(label: String, faultType: FaultType) =
+            TrackableStateReceiver(
+                label = label,
+                expectedStates = when (faultType) {
+                    is FaultType.Fatal -> setOf(TrackableState.Failed::class)
+                    is FaultType.Nonfatal -> setOf(TrackableState.Online::class)
+                    is FaultType.NonfatalWhenResolved -> setOf(TrackableState.Offline::class)
+                },
+                failureStates = when (faultType) {
+                    is FaultType.Fatal -> setOf(TrackableState.Offline::class)
+                    is FaultType.Nonfatal, is FaultType.NonfatalWhenResolved ->
+                        setOf(TrackableState.Failed::class)
+                },
+                timeout = when (faultType) {
+                    is FaultType.Fatal -> faultType.failedWithinMillis
+                    is FaultType.Nonfatal -> faultType.resolvedWithinMillis
+                    is FaultType.NonfatalWhenResolved -> faultType.offlineWithinMillis
+                }
+            )
+
+        /**
+         * Construct a [TrackableStateReceiver] configured to expect appropriate transitions for
+         * the given fault type after it has been resolved. [label] is used for logging.
+         */
+        fun forResolvedFault(label: String, faultType: FaultType) =
+            TrackableStateReceiver(
+                label = label,
+                expectedStates = when (faultType) {
+                    is FaultType.Fatal -> setOf(TrackableState.Failed::class)
+                    is FaultType.Nonfatal, is FaultType.NonfatalWhenResolved ->
+                        setOf(TrackableState.Online::class)
+                },
+                failureStates = when (faultType) {
+                    is FaultType.Fatal -> setOf(
+                        TrackableState.Offline::class,
+                        TrackableState.Online::class
+                    )
+                    is FaultType.Nonfatal, is FaultType.NonfatalWhenResolved ->
+                        setOf(TrackableState.Failed::class)
+                },
+                timeout = when (faultType) {
+                    is FaultType.Fatal -> faultType.failedWithinMillis
+                    is FaultType.Nonfatal -> faultType.resolvedWithinMillis
+                    is FaultType.NonfatalWhenResolved -> faultType.offlineWithinMillis
+                }
+            )
+
+        /**
+         * Construct a [TrackableStateReceiver] configured to expect a Trackable to come
+         * online within a given timeout, and fail if the Failed state is seen at any point.
+         */
+        fun onlineWithoutFail(label: String, timeout: Long) =
+            TrackableStateReceiver(
+                label = label,
+                expectedStates = setOf(TrackableState.Online::class),
+                failureStates = setOf(TrackableState.Failed::class),
+                timeout = timeout
+            )
+    }
+
+    /**
+     * Performs the given async (suspending) operation in a runBlocking, attaching the
+     * returned StateFlow<TrackableState> to the given receiver, then waits for expectations
+     * to be delivered (or not) before cleaning up.
+     */
+    fun waitForStateTransition(
+        asyncOp: suspend () -> StateFlow<TrackableState>
+    ) {
+        runBlocking {
+            try {
+                withTimeout(timeout) {
+                    val trackableStateFlow = asyncOp()
+                    testLogD("$label - success")
+                    assertStateTransition(trackableStateFlow)
+                }
+            } catch (timeoutCancellationException: TimeoutCancellationException) {
+                testLogD("$label - timed out")
+                throw AssertionError("$label timed out.", timeoutCancellationException)
+            } catch (exception: Exception) {
+                testLogD("$label - failed - $exception")
+                throw AssertionError("$label did not result in success.", exception)
+            }
+        }
+    }
+
+    private suspend fun assertStateTransition(stateFlow: StateFlow<TrackableState>) {
+        val result = stateFlow.mapNotNull { receive(it) }.first()
+        if (!result) {
+            throw AssertionError("Expectation '$label' did not result in success.")
+        }
+    }
+
+    private fun receive(state: TrackableState): Boolean? =
+        when {
+            failureStates.contains(state::class) -> {
+                testLogD("TrackableStateReceived (FAIL): $label - $state")
+                false
+            }
+            expectedStates.contains(state::class) -> {
+                testLogD("TrackableStateReceived (SUCCESS): $label - $state")
+                true
+            }
+            else -> {
+                testLogD("TrackableStateReceived (IGNORED): $label - $state")
+                null
+            }
+        }
 }
