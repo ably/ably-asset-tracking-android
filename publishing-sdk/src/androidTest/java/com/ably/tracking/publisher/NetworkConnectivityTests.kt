@@ -492,7 +492,7 @@ class LocationHelper {
  */
 class TrackableStateReceiver(
     val label: String,
-    private val expectedStates: Set<KClass<out TrackableState>>,
+    private val expectedState: KClass<out TrackableState>,
     private val failureStates: Set<KClass<out TrackableState>>,
     val timeout: Long,
 ) {
@@ -505,10 +505,10 @@ class TrackableStateReceiver(
         fun forActiveFault(label: String, faultType: FaultType) =
             TrackableStateReceiver(
                 label = label,
-                expectedStates = when (faultType) {
-                    is FaultType.Fatal -> setOf(TrackableState.Failed::class)
-                    is FaultType.Nonfatal -> setOf(TrackableState.Online::class)
-                    is FaultType.NonfatalWhenResolved -> setOf(TrackableState.Offline::class)
+                expectedState = when (faultType) {
+                    is FaultType.Fatal -> TrackableState.Failed::class
+                    is FaultType.Nonfatal -> TrackableState.Online::class
+                    is FaultType.NonfatalWhenResolved -> TrackableState.Offline::class
                 },
                 failureStates = when (faultType) {
                     is FaultType.Fatal -> setOf(TrackableState.Offline::class)
@@ -529,10 +529,10 @@ class TrackableStateReceiver(
         fun forResolvedFault(label: String, faultType: FaultType) =
             TrackableStateReceiver(
                 label = label,
-                expectedStates = when (faultType) {
-                    is FaultType.Fatal -> setOf(TrackableState.Failed::class)
+                expectedState = when (faultType) {
+                    is FaultType.Fatal -> TrackableState.Failed::class
                     is FaultType.Nonfatal, is FaultType.NonfatalWhenResolved ->
-                        setOf(TrackableState.Online::class)
+                        TrackableState.Online::class
                 },
                 failureStates = when (faultType) {
                     is FaultType.Fatal -> setOf(
@@ -556,7 +556,7 @@ class TrackableStateReceiver(
         fun onlineWithoutFail(label: String, timeout: Long) =
             TrackableStateReceiver(
                 label = label,
-                expectedStates = setOf(TrackableState.Online::class),
+                expectedState = TrackableState.Online::class,
                 failureStates = setOf(TrackableState.Failed::class),
                 timeout = timeout
             )
@@ -600,7 +600,7 @@ class TrackableStateReceiver(
                 testLogD("TrackableStateReceived (FAIL): $label - $state")
                 false
             }
-            expectedStates.contains(state::class) -> {
+            expectedState == state::class -> {
                 testLogD("TrackableStateReceived (SUCCESS): $label - $state")
                 true
             }
