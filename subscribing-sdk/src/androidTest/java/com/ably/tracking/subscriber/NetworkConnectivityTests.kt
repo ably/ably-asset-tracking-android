@@ -306,7 +306,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
     /**
      * Test that Subscriber can handle the given fault occurring whilst tracking,
      *
-     * Check that after resolution, changes to the channels publisher presence
+     * Check that after resolution, changes to the channels publisher resolutions
      * are received by the subscriber.
      */
     @OptIn(Experimental::class)
@@ -361,6 +361,67 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
             updatedResolutionReceived.assertFulfilled()
 
             Assert.assertEquals(newResolution, receivedResolution)
+        }
+    }
+
+    /**
+     * Test that Subscriber sends resolution preference updates to the publisher
+     * after a fault is resolved.
+     */
+    @OptIn(Experimental::class)
+    @Test
+    fun faultWhilstUpdatingResolutionPreferenceUpdatesReceivedByPublisherAfterFaultResolution() {
+        withResources { resources ->
+            // Join the ably channel and listen for presence updates
+            val publishingConnection = resources.createAndStartPublishingAblyConnection()
+
+            val initialResolutionPreferenceExpectation = UnitExpectation("Initial resolution preference received")
+            var initialResolutionPreference: Resolution? = null
+            val receivedResolutionPreferenceExpectation = UnitExpectation("Updated resolution preference received")
+            var receivedResolutionPreference: Resolution? = null
+            runBlocking {
+                publishingConnection.subscribeForPresenceMessages(
+                    resources.trackableId,
+                    emitCurrentMessages = false,
+                    listener = {message ->
+                        if (initialResolutionPreference == null) {
+                            message.data.resolution?.let {
+                                initialResolutionPreference = message.data.resolution
+                                initialResolutionPreferenceExpectation.fulfill()
+                            }
+
+                            return@subscribeForPresenceMessages
+                        }
+
+                        message.data.resolution?.let {
+                            receivedResolutionPreference = message.data.resolution
+                            receivedResolutionPreferenceExpectation.fulfill()
+                        }
+                    }
+                )
+            }
+
+            // Start the subscriber and wait for the initial resolution preference to come through
+            val subscriber = resources.getSubscriber()
+            initialResolutionPreferenceExpectation.await(10)
+            initialResolutionPreferenceExpectation.assertFulfilled()
+            Assert.assertEquals(Resolution(Accuracy.BALANCED, 1L, 0.0), initialResolutionPreference)
+
+            // Start the fault and trigger the subscriber sending a new resolution
+            resources.fault.enable()
+            val newResolutionPreference = Resolution(Accuracy.MAXIMUM, 5L, 2.0)
+            runBlocking {
+                subscriber.resolutionPreference(newResolutionPreference)
+            }
+
+            /**
+             * Resolve the fault and check that we then receive the new resolution preference.
+             * This has to be a long wait because some of the faults take many minutes to resolve.
+             */
+            resources.fault.resolve()
+            receivedResolutionPreferenceExpectation.await(600)
+            receivedResolutionPreferenceExpectation.assertFulfilled()
+            Assert.assertEquals(newResolutionPreference, receivedResolutionPreference)
         }
     }
 
