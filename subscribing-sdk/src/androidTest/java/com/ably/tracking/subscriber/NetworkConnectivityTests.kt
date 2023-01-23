@@ -304,6 +304,67 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
     }
 
     /**
+     * Test that Subscriber can handle the given fault occurring whilst tracking,
+     *
+     * Check that after resolution, changes to the channels publisher presence
+     * are received by the subscriber.
+     */
+    @OptIn(Experimental::class)
+    @Test
+    fun faultWhilstTrackingPublisherResolutionUpdatesReceivedAfterResolution() {
+        withResources { resources ->
+            val subscriber = resources.getSubscriber()
+
+            // Begin listening for publisher state changes - the initial state if offline, so we have to ignore the first one
+            val initialResolutionExpectation = UnitExpectation("Initial resolution received")
+            var initialResolution: Resolution? = null
+            var receivedResolution: Resolution? = null
+            val updatedResolutionReceived = UnitExpectation("Updated resolution received")
+
+            subscriber.resolutions
+                .onEach { resolution ->
+                    if (initialResolution == null) {
+                        initialResolutionExpectation.fulfill()
+                        initialResolution = resolution
+                        return@onEach
+                    }
+
+                    receivedResolution = resolution
+                    updatedResolutionReceived.fulfill()
+                }
+                .launchIn(resources.scope)
+
+            // Join the ably channel to trigger a resolution update
+            val publishingConnection = resources.createAndStartPublishingAblyConnection()
+
+            // Check the initial resolution received
+            initialResolutionExpectation.await(10)
+            initialResolutionExpectation.assertFulfilled()
+            Assert.assertEquals(initialResolution, Resolution(Accuracy.BALANCED, 1L, 0.0))
+
+            // Start the fault and then send a new resolution
+            resources.fault.enable()
+            val newResolution = Resolution(Accuracy.MAXIMUM, 5L, 1.0)
+            runBlocking {
+                publishingConnection.updatePresenceData(
+                    resources.trackableId,
+                    PresenceData(ClientTypes.PUBLISHER, newResolution, false)
+                )
+            }
+
+            /**
+             * Resolve the fault and check that we then receive the new resolution.
+             * This has to be a long wait because some of the faults take many minutes to resolve.
+             */
+            resources.fault.resolve()
+            updatedResolutionReceived.await(600)
+            updatedResolutionReceived.assertFulfilled()
+
+            Assert.assertEquals(newResolution, receivedResolution)
+        }
+    }
+
+    /**
      * Checks that we have TestResources initialized and executes the test body
      */
     private fun withResources(testBody: (TestResources) -> Unit) {
