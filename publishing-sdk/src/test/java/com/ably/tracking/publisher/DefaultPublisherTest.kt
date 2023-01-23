@@ -95,11 +95,11 @@ class DefaultPublisherTest {
     }
 
     @Test()
-    fun `should repeat adding process when adding the first trackable has failed before starting to add the second one`() {
+    fun `should repeat adding process when adding the first trackable has failed with fatal exception before starting to add the second one`() {
         // given
         val trackableId = UUID.randomUUID().toString()
         val trackable = Trackable(trackableId)
-        ably.mockConnectFailureThenSuccess(trackableId)
+        ably.mockConnectFailureThenSuccess(trackableId, isFatal = true)
         ably.mockSubscribeToPresenceSuccess(trackableId)
 
         // when
@@ -141,14 +141,14 @@ class DefaultPublisherTest {
     }
 
     @Test()
-    fun `should fail adding process when adding a trackable that is currently being added and it fails`() {
+    fun `should fail adding process when adding a trackable that is currently being added and it fails with fatal exception`() {
         // given
         val trackableId = UUID.randomUUID().toString()
         val trackable = Trackable(trackableId)
         var didFirstAddFail = false
         var didSecondAddFail = false
         // without the callback delay sometimes the first add() ends before the second one begins
-        ably.mockConnectFailureThenSuccess(trackableId, callbackDelayInMilliseconds = 100L)
+        ably.mockConnectFailureThenSuccess(trackableId, isFatal = true, callbackDelayInMilliseconds = 100L)
         ably.mockSubscribeToPresenceSuccess(trackableId)
 
         // when

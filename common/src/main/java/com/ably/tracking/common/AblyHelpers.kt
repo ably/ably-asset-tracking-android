@@ -223,6 +223,12 @@ private fun TokenAuthException.toAblyException(): AblyException =
     }
 
 /**
+ * Indicates whether the result is a failure that a fatal exception from as a reason and we should not attempt to retry it.
+ */
+fun <T : Any> Result<T>.isFatalAblyFailure() =
+    isFailure && (exceptionOrNull() as ConnectionException?)?.isFatal() == true
+
+/**
  * Indicates whether the exception from Ably is fatal and we should not attempt to retry it.
  * Fatal errors have status codes like 4xx (e.g. 400).
  */

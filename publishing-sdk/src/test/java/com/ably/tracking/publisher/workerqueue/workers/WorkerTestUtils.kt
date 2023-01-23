@@ -7,6 +7,8 @@ import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.RoutingProfile
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.WorkerSpecification
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 fun MutableList<suspend () -> Unit>.appendWork(): (suspend () -> Unit) -> Unit =
     { asyncWork ->
@@ -15,6 +17,12 @@ fun MutableList<suspend () -> Unit>.appendWork(): (suspend () -> Unit) -> Unit =
 
 suspend fun MutableList<suspend () -> Unit>.executeAll() {
     forEach { it.invoke() }
+}
+
+suspend fun MutableList<suspend () -> Unit>.launchAll(scope: CoroutineScope) {
+    forEach {
+        scope.launch { it.invoke() }
+    }
 }
 
 internal fun MutableList<WorkerSpecification>.appendSpecification(): (WorkerSpecification) -> Unit =
