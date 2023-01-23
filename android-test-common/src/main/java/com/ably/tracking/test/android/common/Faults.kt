@@ -34,7 +34,7 @@ abstract class FaultSimulation {
      */
     open val skipPublisherTest: Boolean = false
 
-    // As per skipTest, but only skips on subscriber tests.
+    // Causes the same behaviour as skipPublisherTest for the subscriber NetworkConnectivityTests
     open val skipSubscriberTest: Boolean = false
 
     /**
