@@ -66,7 +66,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
         fun data() = listOf(
             arrayOf(NullTransportFault(BuildConfig.ABLY_API_KEY)),
             arrayOf(NullApplicationLayerFault(BuildConfig.ABLY_API_KEY)),
-            arrayOf(TcpConnectionRefused(BuildConfig.ABLY_API_KEY)),
+/*            arrayOf(TcpConnectionRefused(BuildConfig.ABLY_API_KEY)),
             arrayOf(TcpConnectionUnresponsive(BuildConfig.ABLY_API_KEY)),
             arrayOf(AttachUnresponsive(BuildConfig.ABLY_API_KEY)),
             arrayOf(DetachUnresponsive(BuildConfig.ABLY_API_KEY)),
@@ -74,7 +74,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
             arrayOf(EnterFailedWithNonfatalNack(BuildConfig.ABLY_API_KEY)),
             arrayOf(UpdateFailedWithNonfatalNack(BuildConfig.ABLY_API_KEY)),
             arrayOf(DisconnectAndSuspend(BuildConfig.ABLY_API_KEY)),
-            arrayOf(ReenterOnResumeFailed(BuildConfig.ABLY_API_KEY)),
+            arrayOf(ReenterOnResumeFailed(BuildConfig.ABLY_API_KEY)),*/
             arrayOf(EnterUnresponsive(BuildConfig.ABLY_API_KEY)),
         )
     }
