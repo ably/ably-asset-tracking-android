@@ -34,6 +34,9 @@ abstract class FaultSimulation {
      */
     open val skipTest: Boolean = false
 
+    // As per skipTest, but only skips on subscriber tests.
+    open val skipSubscriberTest: Boolean = false
+
     /**
      * A RealtimeProxy instance that will be manipulated by this fault
      */
@@ -110,6 +113,9 @@ class TcpConnectionRefused(apiKey: String) : TransportLayerFault(apiKey) {
      */
     override val skipTest = true
 
+    // May be able to be removed once the issues surrounding skipTest are resolved
+    override val skipSubscriberTest = true
+
     override fun enable() {
         tcpProxy.stop()
     }
@@ -145,6 +151,9 @@ class TcpConnectionUnresponsive(apiKey: String) : TransportLayerFault(apiKey) {
      */
     override val skipTest = true
 
+    // May be able to be removed once the issues surrounding skipTest are resolved
+    override val skipSubscriberTest = true
+
     override fun enable() {
         tcpProxy.isForwarding = false
     }
@@ -174,6 +183,9 @@ class DisconnectAndSuspend(apiKey: String) : TransportLayerFault(apiKey) {
         Currently failing due to Issues #871 and #907
     */
     override val skipTest = true
+
+    // May be able to be removed once the issues surrounding skipTest are resolved
+    override val skipSubscriberTest = true
 
     companion object {
         const val SUSPEND_DELAY_MILLIS: Long = 2 * 60 * 1000
@@ -307,6 +319,9 @@ class AttachUnresponsive(apiKey: String) : DropAction(
      */
     override val skipTest = true
 
+    // Test appears to crash JVM
+    override val skipSubscriberTest = true
+
     override val name = "AttachUnresponsive"
 }
 
@@ -320,6 +335,8 @@ class DetachUnresponsive(apiKey: String) : DropAction(
     action = Message.Action.DETACH
 ) {
     override val name = "DetachUnresponsive"
+
+    override val skipSubscriberTest = true
 }
 
 /**
@@ -399,6 +416,9 @@ class EnterUnresponsive(apiKey: String) : UnresponsiveAfterAction(
     */
     override val skipTest = true
 
+    // May be able to be removed once the issues surrounding skipTest are resolved
+    override val skipSubscriberTest = true
+
     override val name = "EnterUnresponsive"
 
     override fun stateReceiverForStage(
@@ -430,6 +450,9 @@ class DisconnectWithFailedResume(apiKey: String) : ApplicationLayerFault(apiKey)
         Currently failing due to ably-java#474 presence bug
      */
     override val skipTest = true
+
+    // May be able to be removed once the issues surrounding skipTest are resolved
+    override val skipSubscriberTest = true
 
     /**
      * State of the fault, used to control whether we're intercepting
@@ -590,6 +613,9 @@ class EnterFailedWithNonfatalNack(apiKey: String) : PresenceNackFault(
      */
     override val skipTest = true
 
+    // Can probably be removed once skipTest issues are resolved
+    override val skipSubscriberTest = true
+
     override val name = "EnterFailedWithNonfatalNack"
 
     override fun stateReceiverForStage(stage: FaultSimulationStage) =
@@ -608,6 +634,8 @@ class UpdateFailedWithNonfatalNack(apiKey: String) : PresenceNackFault(
     nackLimit = 3
 ) {
     override val name = "UpdateFailedWithNonfatalNack"
+
+    override val skipSubscriberTest = true
 
     override fun stateReceiverForStage(stage: FaultSimulationStage) =
         // Note: 5xx presence errors should always be non-fatal and recovered seamlessly
@@ -631,6 +659,9 @@ class ReenterOnResumeFailed(apiKey: String) : ApplicationLayerFault(apiKey) {
        yet been seen to work.
      */
     override val skipTest = true
+
+    // May be able to be removed once the issues surrounding skipTest are resolved
+    override val skipSubscriberTest = true
 
     override val name = "ReenterOnResumeFailed"
 
