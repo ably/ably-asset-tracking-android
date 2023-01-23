@@ -383,7 +383,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
                 publishingConnection.subscribeForPresenceMessages(
                     resources.trackableId,
                     emitCurrentMessages = false,
-                    listener = {message ->
+                    listener = { message ->
                         if (initialResolutionPreference == null) {
                             message.data.resolution?.let {
                                 initialResolutionPreference = message.data.resolution

@@ -32,7 +32,7 @@ abstract class FaultSimulation {
      * The advantage of this approach is that the test code remains active and continually compiled as
      * a first class citizen of the codebase, while we work on other things to get it passing.
      */
-    open val skipTest: Boolean = false
+    open val skipPublisherTest: Boolean = false
 
     // As per skipTest, but only skips on subscriber tests.
     open val skipSubscriberTest: Boolean = false
@@ -111,7 +111,7 @@ class TcpConnectionRefused(apiKey: String) : TransportLayerFault(apiKey) {
      * - https://github.com/ably/ably-asset-tracking-android/issues/859
      * - https://github.com/ably/ably-asset-tracking-android/issues/871
      */
-    override val skipTest = true
+    override val skipPublisherTest = true
 
     // May be able to be removed once the issues surrounding skipTest are resolved
     override val skipSubscriberTest = true
@@ -149,7 +149,7 @@ class TcpConnectionUnresponsive(apiKey: String) : TransportLayerFault(apiKey) {
      * - https://github.com/ably/ably-asset-tracking-android/issues/859
      * - https://github.com/ably/ably-asset-tracking-android/issues/871
      */
-    override val skipTest = true
+    override val skipPublisherTest = true
 
     // May be able to be removed once the issues surrounding skipTest are resolved
     override val skipSubscriberTest = true
@@ -182,7 +182,7 @@ class DisconnectAndSuspend(apiKey: String) : TransportLayerFault(apiKey) {
     /*
         Currently failing due to Issues #871 and #907
     */
-    override val skipTest = true
+    override val skipPublisherTest = true
 
     // May be able to be removed once the issues surrounding skipTest are resolved
     override val skipSubscriberTest = true
@@ -317,7 +317,7 @@ class AttachUnresponsive(apiKey: String) : DropAction(
         Currently failing due to Issue #871 -- throwing ConnectionError
         when trying to add new trackables while offline.
      */
-    override val skipTest = true
+    override val skipPublisherTest = true
 
     // Test appears to crash JVM
     override val skipSubscriberTest = true
@@ -414,7 +414,7 @@ class EnterUnresponsive(apiKey: String) : UnresponsiveAfterAction(
         waiting for a presence response if there's there's a reconnection
         before successful completion of enter()
     */
-    override val skipTest = true
+    override val skipPublisherTest = true
 
     // May be able to be removed once the issues surrounding skipTest are resolved
     override val skipSubscriberTest = true
@@ -449,7 +449,7 @@ class DisconnectWithFailedResume(apiKey: String) : ApplicationLayerFault(apiKey)
     /*
         Currently failing due to ably-java#474 presence bug
      */
-    override val skipTest = true
+    override val skipPublisherTest = true
 
     // May be able to be removed once the issues surrounding skipTest are resolved
     override val skipSubscriberTest = true
@@ -611,7 +611,7 @@ class EnterFailedWithNonfatalNack(apiKey: String) : PresenceNackFault(
         Currently failing due to Issue #907 - non-fatal nack triggers
         an exception to be thrown to caller during publisher.track()
      */
-    override val skipTest = true
+    override val skipPublisherTest = true
 
     // Can probably be removed once skipTest issues are resolved
     override val skipSubscriberTest = true
@@ -658,7 +658,7 @@ class ReenterOnResumeFailed(apiKey: String) : ApplicationLayerFault(apiKey) {
        This happens during stage 2 of the test, so steps 3 and 4 have not
        yet been seen to work.
      */
-    override val skipTest = true
+    override val skipPublisherTest = true
 
     // May be able to be removed once the issues surrounding skipTest are resolved
     override val skipSubscriberTest = true
