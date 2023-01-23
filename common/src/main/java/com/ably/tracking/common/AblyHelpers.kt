@@ -221,3 +221,19 @@ private fun TokenAuthException.toAblyException(): AblyException =
         is CouldNotFetchTokenException ->
             AblyException.fromErrorInfo(ErrorInfo(message, 401, 100_002))
     }
+
+/**
+ * Indicates whether the exception from Ably is fatal and we should not attempt to retry it.
+ * Fatal errors have status codes like 4xx (e.g. 400).
+ */
+fun ConnectionException.isFatal(): Boolean {
+    return (400..499).contains(errorInformation.statusCode)
+}
+
+/**
+ * Indicates whether the exception from Ably is retriable and we can attempt to retry it.
+ * Non-fatal errors have status codes in range 500-504.
+ */
+fun ConnectionException.isRetriable(): Boolean {
+    return (500..504).contains(errorInformation.statusCode)
+}

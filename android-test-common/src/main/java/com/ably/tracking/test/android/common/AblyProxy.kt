@@ -34,7 +34,6 @@ import org.slf4j.event.Level
 import java.net.ServerSocket
 import java.net.Socket
 import java.net.SocketException
-import java.util.UUID
 import javax.net.ssl.SSLSocketFactory
 
 private const val AGENT_HEADER_NAME = "ably-asset-tracking-android-publisher-tests"
@@ -43,6 +42,8 @@ private const val PROXY_HOST = "localhost"
 private const val PROXY_PORT = 13579
 private const val REALTIME_HOST = "realtime.ably.io"
 private const val REALTIME_PORT = 443
+
+const val PUBLISHER_CLIENT_ID = "AatNetworkConnectivityTests_Publisher"
 
 /**
  * A local proxy that can be used to intercept Realtime traffic for testing
@@ -87,7 +88,7 @@ abstract class AatProxy(
      * this proxy. Note that TLS is disabled, so that the proxy can act as a man in the middle.
      */
     override fun clientOptions() = ClientOptions().apply {
-        this.clientId = "AatTestProxy_${UUID.randomUUID()}"
+        this.clientId = PUBLISHER_CLIENT_ID
         this.agents = mapOf(AGENT_HEADER_NAME to BuildConfig.VERSION_NAME)
         this.idempotentRestPublishing = true
         this.autoConnect = false
