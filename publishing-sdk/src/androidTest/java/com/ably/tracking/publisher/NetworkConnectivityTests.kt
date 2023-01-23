@@ -16,6 +16,7 @@ import com.ably.tracking.common.DefaultAblySdkChannelStateListener
 import com.ably.tracking.common.DefaultAblySdkRealtime
 import com.ably.tracking.common.EventNames
 import com.ably.tracking.common.message.EnhancedLocationUpdateMessage
+import com.ably.tracking.common.message.GeoJsonTypes
 import com.ably.tracking.common.message.LocationGeometry
 import com.ably.tracking.common.message.LocationMessage
 import com.ably.tracking.common.message.LocationProperties
@@ -133,7 +134,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
             fault.enable()
 
             // Add an active trackable while fault active
-            val locationUpdate = locationHelper.locationUpdate(100.0, 100.0)
+            val locationUpdate = locationHelper.locationUpdate(80.0, 100.0)
             PublisherMonitor.forActiveFault(
                 label = "[fault active] publisher.track()",
                 trackable = primaryTrackable,
@@ -154,7 +155,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
                 publisher.add(secondaryTrackable).also {
                     // apparently another location update is needed for this to go online
                     locationHelper.sendUpdate(
-                        locationHelper.locationUpdate(101.0, 101.0)
+                        locationHelper.locationUpdate(81.0, 101.0)
                     )
                 }
             }.close()
@@ -193,7 +194,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
 
         withResources {
             // Add active trackable, wait for it to reach Online state
-            val locationUpdate = locationHelper.locationUpdate(102.0, 102.0)
+            val locationUpdate = locationHelper.locationUpdate(82.0, 102.0)
             PublisherMonitor.onlineWithoutFail(
                 label = "[no fault] publisher.track()",
                 trackable = primaryTrackable,
@@ -214,7 +215,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
                 publisher.add(secondaryTrackable).also {
                     // apparently another location update is needed for this to go online
                     locationHelper.sendUpdate(
-                        locationHelper.locationUpdate(103.0, 103.0)
+                        locationHelper.locationUpdate(83.0, 103.0)
                     )
                 }
             }.close()
@@ -489,8 +490,8 @@ class LocationHelper {
         LocationMessage(
             type = "Feature",
             geometry = LocationGeometry(
-                type = "Point",
-                coordinates = listOf(lat, long, 0.0)
+                type = GeoJsonTypes.POINT,
+                coordinates = listOf(long, lat, 0.0)
             ),
             properties = LocationProperties(
                 accuracyHorizontal = 5.0f,
