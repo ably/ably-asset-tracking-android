@@ -14,7 +14,7 @@ class ConnectionExceptionTests(
     private val isRetriable: Boolean,
 ) {
 
-    companion object{
+    companion object {
         @JvmStatic
         @Parameterized.Parameters(
             name = "Status code: {0} | Is fatal: {1} | Is retriable: {2}"

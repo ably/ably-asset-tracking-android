@@ -227,7 +227,7 @@ private fun TokenAuthException.toAblyException(): AblyException =
  * Fatal errors have status codes like 4xx (e.g. 400).
  */
 fun ConnectionException.isFatal(): Boolean {
-    return (400 .. 499).contains(errorInformation.statusCode)
+    return (400..499).contains(errorInformation.statusCode)
 }
 
 /**
@@ -235,5 +235,5 @@ fun ConnectionException.isFatal(): Boolean {
  * Non-fatal errors have status codes in range 500-504.
  */
 fun ConnectionException.isRetriable(): Boolean {
-    return (500 .. 504).contains(errorInformation.statusCode)
+    return (500..504).contains(errorInformation.statusCode)
 }
