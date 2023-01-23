@@ -50,6 +50,14 @@ abstract class FaultSimulation {
      */
     abstract fun resolve()
 
+    /**
+     * Called at start of test tearDown function to ensure fault doesn't interefere with test
+     * tearDown of open resources.
+     */
+    open fun cleanUp() {
+        proxy.stop()
+    }
+
     override fun toString() = name
 }
 
@@ -197,7 +205,7 @@ class DisconnectAndSuspend(apiKey: String) : TransportLayerFault(apiKey) {
     override val name = "DisconnectAndSuspend"
 
     override val type = FaultType.Nonfatal(
-        resolvedWithinMillis = 150_000L
+        resolvedWithinMillis = 180_000L
     )
 
     override fun enable() {
@@ -213,6 +221,11 @@ class DisconnectAndSuspend(apiKey: String) : TransportLayerFault(apiKey) {
     override fun resolve() {
         timer.cancel()
         tcpProxy.start()
+    }
+
+    override fun cleanUp() {
+        timer.cancel()
+        super.cleanUp()
     }
 }
 
