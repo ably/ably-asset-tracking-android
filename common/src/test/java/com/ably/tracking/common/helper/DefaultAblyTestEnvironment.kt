@@ -75,6 +75,20 @@ class DefaultAblyTestEnvironment private constructor(
         val presenceMock: AblySdkRealtime.Presence
     ) {
         /**
+         * Contains the [AblySdkChannelStateListener.ChannelStateChange] MockK mocks created by [mockOnToEmitStateChange].
+         */
+        private var stateChangeMocks =
+            mutableListOf<AblySdkChannelStateListener.ChannelStateChange>()
+
+        /**
+         * A list of all of the MockK mock objects that this object has created.
+         */
+        val allMocks: List<Any>
+            get() {
+                return listOf(channelMock, presenceMock) + stateChangeMocks
+            }
+
+        /**
          * Mocks [channelMock]’s [AblySdkRealtime.Channel.name] property to return [channelName].
          */
         fun mockName() {
@@ -133,6 +147,51 @@ class DefaultAblyTestEnvironment private constructor(
          */
         fun mockFailedPresenceEnter(errorInfo: ErrorInfo) {
             mockPresenceEnterResult { it.onError(errorInfo) }
+        }
+
+        /**
+         * Mocks [presenceMock]’s [AblySdkRealtime.Presence.enter] method to never call any methods on its received completion listener.
+         */
+        fun mockNonCompletingPresenceEnter() {
+            mockPresenceEnterResult { }
+        }
+
+        /**
+         * Mocks [presenceMock]’s [AblySdkRealtime.Presence.update] method to immediately pass its received completion listener to [handler].
+         *
+         * @param handler The function that should receive the completion listener passed to [presenceMock]’s [AblySdkRealtime.Presence.update] method.
+         */
+        private fun mockPresenceUpdateResult(handler: (CompletionListener) -> Unit) {
+            val completionListenerSlot = slot<CompletionListener>()
+            every {
+                presenceMock.update(
+                    any(),
+                    capture(completionListenerSlot)
+                )
+            } answers { handler(completionListenerSlot.captured) }
+        }
+
+        /**
+         * Mocks [presenceMock]’s [AblySdkRealtime.Presence.update] method to immediately call its received completion listener’s [CompletionListener.onSuccess] method.
+         */
+        fun mockSuccessfulPresenceUpdate() {
+            mockPresenceUpdateResult { it.onSuccess() }
+        }
+
+        /**
+         * Mocks [presenceMock]’s [AblySdkRealtime.Presence.update] method to immediately call its received completion listener’s [CompletionListener.onError] method.
+         *
+         * @param errorInfo The error that should be passed to the completion listener’s [CompletionListener.onError] method.
+         */
+        fun mockFailedPresenceUpdate(errorInfo: ErrorInfo) {
+            mockPresenceUpdateResult { it.onError(errorInfo) }
+        }
+
+        /**
+         * Mocks [presenceMock]’s [AblySdkRealtime.Presence.update] method to never call any methods on its received completion listener.
+         */
+        fun mockNonCompletingPresenceUpdate() {
+            mockPresenceUpdateResult { }
         }
 
         /**
@@ -203,6 +262,82 @@ class DefaultAblyTestEnvironment private constructor(
          */
         fun mockFailedAttach(errorInfo: ErrorInfo) {
             mockAttachResult { it.onError(errorInfo) }
+        }
+
+        /**
+         * Mocks [channelMock]’s [AblySdkRealtime.Channel.attach] method to never call any methods on its received completion listener.
+         */
+        fun mockNonCompletingAttach() {
+            mockAttachResult { }
+        }
+
+        /**
+         * Mocks [channelMock]’s [AblySdkRealtime.Channel.Publish] method to immediately pass its received completion listener to [handler].
+         *
+         * @param handler The function that should receive the completion listener passed to [channelMock]’s [AblySdkRealtime.Channel.publish] method.
+         */
+        private fun mockPublishResult(handler: (CompletionListener) -> Unit) {
+            val completionListenerSlot = slot<CompletionListener>()
+            every {
+                channelMock.publish(any(), capture(completionListenerSlot))
+            } answers { handler(completionListenerSlot.captured) }
+        }
+
+        /**
+         * Mocks [channelMock]’s [AblySdkRealtime.Channel.publish] method to immediately call its received completion listener’s [CompletionListener.onSuccess] method.
+         */
+        fun mockSuccessfulPublish() {
+            mockPublishResult { it.onSuccess() }
+        }
+
+        /**
+         * Mocks [channelMock]’s [AblySdkRealtime.Channel.publish] method to immediately call its received completion listener’s [CompletionListener.onError] method.
+         *
+         * @param errorInfo The error that should be passed to the completion listener’s [CompletionListener.onError] method.
+         */
+        fun mockFailedPublish(errorInfo: ErrorInfo) {
+            mockPublishResult { it.onError(errorInfo) }
+        }
+
+        /**
+         * Mocks [channelMock]’s [AblySdkRealtime.Channel.publish] method to never call any methods on its received completion listener.
+         */
+        fun mockNonCompletingPublish() {
+            mockPublishResult { }
+        }
+
+        /**
+         * Stubs [channelMock]’s [AblySdkRealtime.Channel.on] method.
+         */
+        fun stubOn() {
+            every { channelMock.on(any()) } returns Unit
+        }
+
+        /**
+         * Stubs [channelMock]’s [AblySdkRealtime.Channel.off] method (the overload which accepts an [AblySdkChannelStateListener] object).
+         */
+        fun stubOff() {
+            every { channelMock.off(any()) } returns Unit
+        }
+
+        /**
+         * Mocks [channelMock]’s [AblySdkRealtime.Channel.on] method to capture the received [AblySdkChannelStateListener], and to then immediately call this listener with a [AblySdkChannelStateListener.ChannelStateChange] MockK mock constructed from the [current] argument.
+         *
+         * @param current The value that the state change’s [ConnectionStateListener.ConnectionStateChange.current] property will return.
+         * @return The [AblySdkChannelStateListener.ChannelStateChange] MockK mock that will be passed to the listener.
+         */
+        fun mockOnToEmitStateChange(current: ChannelState): AblySdkChannelStateListener.ChannelStateChange {
+            val listenerSlot = slot<AblySdkChannelStateListener>()
+
+            val stateChangeMock = mockk<AblySdkChannelStateListener.ChannelStateChange>()
+            stateChangeMocks.add(stateChangeMock)
+            every { stateChangeMock.current } returns current
+
+            every { channelMock.on(capture(listenerSlot)) } answers {
+                listenerSlot.captured.onChannelStateChanged(stateChangeMock)
+            }
+
+            return stateChangeMock
         }
     }
 
@@ -277,12 +412,8 @@ class DefaultAblyTestEnvironment private constructor(
                 realtimeMock,
                 connectionMock,
                 channelsMock
-            ) + configuredChannels.flatMap {
-                listOf(
-                    it.channelMock,
-                    it.presenceMock
-                )
-            }
+            ) + configuredChannels.flatMap { it.allMocks }
+
             return list.toTypedArray()
         }
 
@@ -317,6 +448,10 @@ class DefaultAblyTestEnvironment private constructor(
         every { connectionMock.state } returns state
     }
 
+    fun mockConnectionReason(reason: ErrorInfo?) {
+        every { connectionMock.reason } returns reason
+    }
+
     /**
      * Mocks [connectionMock]’s [AblySdkRealtime.Connection.on] method to capture the received [ConnectionStateListener], and mocks [realtimeMock]’s [AblySdkRealtime.close] method to immediately call this listener with a [ConnectionStateListener.ConnectionStateChange] object constructed from the [previous], [current], [retryIn] and [reason] arguments.
      *
@@ -343,10 +478,56 @@ class DefaultAblyTestEnvironment private constructor(
     }
 
     /**
+     * Mocks [connectionMock]’s [AblySdkRealtime.Connection.on] method to capture the received [ConnectionStateListener], and mocks [realtimeMock]’s [AblySdkRealtime.connect] method to immediately call this listener with a [ConnectionStateListener.ConnectionStateChange] object constructed from the [previous], [current], [retryIn] and [reason] arguments.
+     *
+     * @param previous The value to be used as the `previous` parameter of [ConnectionStateListener.ConnectionStateChange]’s constructor.
+     * @param current The value to be used as the `current` parameter of [ConnectionStateListener.ConnectionStateChange]’s constructor.
+     * @param retryIn The value to be used as the `retryIn` parameter of [ConnectionStateListener.ConnectionStateChange]’s constructor.
+     * @param reason The value to be used as the `reason` parameter of [ConnectionStateListener.ConnectionStateChange]’s constructor.
+     */
+    fun mockConnectToEmitStateChange(
+        previous: ConnectionState,
+        current: ConnectionState,
+        retryIn: Long,
+        reason: ErrorInfo?
+    ) {
+        val connectionStateListenerSlot = slot<ConnectionStateListener>()
+        every { connectionMock.on(capture(connectionStateListenerSlot)) } returns Unit
+
+        every { realtimeMock.connect() } answers {
+            val connectionStateChange = ConnectionStateListener.ConnectionStateChange(
+                previous, current, retryIn, reason
+            )
+            connectionStateListenerSlot.captured.onConnectionStateChanged(connectionStateChange)
+        }
+    }
+
+    /**
+     * Stubs [connectionMock]’s [AblySdkRealtime.Connection.on] method.
+     */
+    fun stubConnectionOn() {
+        every { connectionMock.on(any()) } returns Unit
+    }
+
+    /**
      * Stubs [connectionMock]’s [AblySdkRealtime.Connection.off] method.
      */
     fun stubConnectionOff() {
         every { connectionMock.off(any()) } returns Unit
+    }
+
+    /**
+     * Stubs [realtimeMock]’s [AblySdkRealtime.connect] method.
+     */
+    fun stubConnect() {
+        every { realtimeMock.connect() } returns Unit
+    }
+
+    /**
+     * Stubs [realtimeMock]’s [AblySdkRealtime.close] method.
+     */
+    fun stubClose() {
+        every { realtimeMock.close() } returns Unit
     }
 
     companion object {
@@ -392,6 +573,20 @@ class DefaultAblyTestEnvironment private constructor(
 
             val factory = mockk<AblySdkFactory<AblySdkChannelStateListener>>()
             every { factory.createRealtime(any()) } returns realtimeMock
+
+            // We provide an implementation of wrapChannelStateListener whose return value just calls the underlying listener.
+            every { factory.wrapChannelStateListener(any()) } answers {
+                val underlyingListener =
+                    arg(0) as AblySdkFactory.UnderlyingChannelStateListener<AblySdkChannelStateListener>
+                val wrapper = mockk<AblySdkChannelStateListener>()
+
+                every { wrapper.onChannelStateChanged(any()) } answers {
+                    val stateChange = arg(0) as AblySdkChannelStateListener.ChannelStateChange
+                    underlyingListener.onChannelStateChanged(wrapper, stateChange)
+                }
+
+                wrapper
+            }
 
             val connectionConfiguration =
                 ConnectionConfiguration(Authentication.basic("", "")) // arbitrarily chosen

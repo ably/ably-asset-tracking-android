@@ -36,6 +36,7 @@ object S3Helper {
         }
     }
 
+    @Suppress("DiscouragedApi")
     private fun isConfigFileProvided(context: Context) =
         context.resources.getIdentifier("amplifyconfiguration", "raw", context.packageName) != 0
 

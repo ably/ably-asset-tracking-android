@@ -1,11 +1,9 @@
 package com.ably.tracking.test.android.common
 
-import com.ably.tracking.TrackableState
 import io.ktor.websocket.Frame
 import io.ktor.websocket.FrameType
 import java.util.Timer
 import kotlin.concurrent.timerTask
-import kotlin.reflect.KClass
 
 /**
  * Abstract interface definition for specific instances of connectivity
@@ -21,6 +19,12 @@ abstract class FaultSimulation {
      * A human-readable name for this type of fault
      */
     abstract val name: String
+
+    /**
+     * The type of fault this simulates - used to validate the state of trackables
+     * and channel activity during and after the fault.
+     */
+    abstract val type: FaultType
 
     /**
      * Subclasses can override this value to `true` in order to skip test that use this fault.
@@ -47,29 +51,52 @@ abstract class FaultSimulation {
     abstract fun resolve()
 
     /**
-     * Provide a TrackableStateReceiver describing the acceptable state transitions
-     * during the given fault stage.
+     * Called at start of test tearDown function to ensure fault doesn't interefere with test
+     * tearDown of open resources.
      */
-    abstract fun stateReceiverForStage(
-        stage: FaultSimulationStage
-    ): TrackableStateReceiver
+    open fun cleanUp() {
+        proxy.stop()
+    }
 
     override fun toString() = name
 }
 
 /**
- * Steps during a fault simulation test:
- *   - FaultActiveBeforeTracking - fault.enable() has been called but trackables
- *     have not yet been tracked, so attempts to track will follow
- *   - FaultActiveDuringTracking - fault.enable() has been called while trackables
- *     were already online
- *   - FaultResolved - fault.enable() was called earlier, now fault.resolve()
- *     has also been called.
+ * Describes the nature of a given fault simulation, and specifically the impact that it
+ * should have on any Trackables or channel activity during and after resolution.
  */
-enum class FaultSimulationStage {
-    FaultActiveBeforeTracking,
-    FaultActiveDuringTracking,
-    FaultResolved
+sealed class FaultType {
+    /**
+     * AAT and/or Ably Java should handle this fault seamlessly Trackable state should be
+     * online and publisher should be present within [resolvedWithinMillis]. It's possible
+     * the fault will cause a brief Offline blip, but tests should expect to see Trackables
+     * Online again before [resolvedWithinMillis] expires regardless.
+     */
+    data class Nonfatal(
+        val resolvedWithinMillis: Long,
+    ) : FaultType()
+
+    /**
+     * This is a non-fatal error, but will persist until the [FaultSimulation.resolve]
+     * method has been called. Trackable states should be offline during the fault within
+     * [offlineWithinMillis] maximum. When the fault is resolved, Trackables should return
+     * online within [onlineWithinMillis] maximum.
+     *
+     */
+    data class NonfatalWhenResolved(
+        val offlineWithinMillis: Long,
+        val onlineWithinMillis: Long,
+    ) : FaultType()
+
+    /**
+     * This is a fatal error and should permanently move Trackables to the Failed state.
+     * The publisher should not be present in the corresponding channel any more and no
+     * further location updates will be published. Tests should check that Trackables reach
+     * the Failed state within [failedWithinMillis]
+     */
+    data class Fatal(
+        val failedWithinMillis: Long,
+    ) : FaultType()
 }
 
 /**
@@ -85,11 +112,18 @@ abstract class TransportLayerFault(apiKey: String) : FaultSimulation() {
  * test code works under normal proxy functionality.
  */
 class NullTransportFault(apiKey: String) : TransportLayerFault(apiKey) {
+
     override val name = "NullTransportFault"
-    override fun enable() {}
-    override fun resolve() {}
-    override fun stateReceiverForStage(stage: FaultSimulationStage) =
-        TrackableStateReceiver.onlineWithoutFail("$name: $stage")
+
+    override val type = FaultType.Nonfatal(
+        resolvedWithinMillis = 10_000L
+    )
+
+    override fun enable() {
+    }
+
+    override fun resolve() {
+    }
 }
 
 /**
@@ -98,6 +132,11 @@ class NullTransportFault(apiKey: String) : TransportLayerFault(apiKey) {
 class TcpConnectionRefused(apiKey: String) : TransportLayerFault(apiKey) {
 
     override val name = "TcpConnectionRefused"
+
+    override val type = FaultType.NonfatalWhenResolved(
+        offlineWithinMillis = 30_000,
+        onlineWithinMillis = 60_000
+    )
 
     /**
      * This fault type is temporarily disabled at runtime. It can be re-enabled by removing this override.
@@ -114,16 +153,6 @@ class TcpConnectionRefused(apiKey: String) : TransportLayerFault(apiKey) {
     override fun resolve() {
         tcpProxy.start()
     }
-
-    override fun stateReceiverForStage(
-        stage: FaultSimulationStage
-    ) = when (stage) {
-        FaultSimulationStage.FaultActiveBeforeTracking,
-        FaultSimulationStage.FaultActiveDuringTracking ->
-            TrackableStateReceiver.offlineWithoutFail("$name: $stage")
-        FaultSimulationStage.FaultResolved ->
-            TrackableStateReceiver.onlineWithoutFail("$name: $stage")
-    }
 }
 
 /**
@@ -133,6 +162,11 @@ class TcpConnectionRefused(apiKey: String) : TransportLayerFault(apiKey) {
 class TcpConnectionUnresponsive(apiKey: String) : TransportLayerFault(apiKey) {
 
     override val name = "TcpConnectionUnresponsive"
+
+    override val type = FaultType.NonfatalWhenResolved(
+        offlineWithinMillis = 120_000,
+        onlineWithinMillis = 60_000
+    )
 
     /**
      * This fault type is temporarily disabled at runtime. It can be re-enabled by removing this override.
@@ -148,16 +182,6 @@ class TcpConnectionUnresponsive(apiKey: String) : TransportLayerFault(apiKey) {
 
     override fun resolve() {
         tcpProxy.isForwarding = true
-    }
-
-    override fun stateReceiverForStage(
-        stage: FaultSimulationStage
-    ) = when (stage) {
-        FaultSimulationStage.FaultActiveBeforeTracking,
-        FaultSimulationStage.FaultActiveDuringTracking ->
-            TrackableStateReceiver.offlineWithoutFail("$name: $stage")
-        FaultSimulationStage.FaultResolved ->
-            TrackableStateReceiver.onlineWithoutFail("$name: $stage")
     }
 }
 
@@ -180,6 +204,10 @@ class DisconnectAndSuspend(apiKey: String) : TransportLayerFault(apiKey) {
 
     override val name = "DisconnectAndSuspend"
 
+    override val type = FaultType.Nonfatal(
+        resolvedWithinMillis = 180_000L
+    )
+
     override fun enable() {
         tcpProxy.stop()
         timer.schedule(
@@ -195,10 +223,10 @@ class DisconnectAndSuspend(apiKey: String) : TransportLayerFault(apiKey) {
         tcpProxy.start()
     }
 
-    override fun stateReceiverForStage(stage: FaultSimulationStage) =
-        // After two minutes, trackables should always return to online state
-        // with no fatal error
-        TrackableStateReceiver.onlineWithoutFail("$name: $stage")
+    override fun cleanUp() {
+        timer.cancel()
+        super.cleanUp()
+    }
 }
 
 /**
@@ -215,11 +243,18 @@ abstract class ApplicationLayerFault(apiKey: String) : FaultSimulation() {
  * functionality is working with no interventions
  */
 class NullApplicationLayerFault(apiKey: String) : ApplicationLayerFault(apiKey) {
+
     override val name = "NullApplicationLayerFault"
-    override fun enable() { }
-    override fun resolve() { }
-    override fun stateReceiverForStage(stage: FaultSimulationStage) =
-        TrackableStateReceiver.onlineWithoutFail("$name: $stage")
+
+    override val type = FaultType.Nonfatal(
+        resolvedWithinMillis = 10_000L
+    )
+
+    override fun enable() {
+    }
+
+    override fun resolve() {
+    }
 }
 
 /**
@@ -232,11 +267,17 @@ abstract class DropAction(
     private val action: Message.Action
 ) : ApplicationLayerFault(apiKey) {
 
+    // TODO: This fault needs a limit!
+
     companion object {
         private const val tag = "DropAction"
     }
 
     private var initialConnection = true
+
+    override val type = FaultType.Nonfatal(
+        resolvedWithinMillis = 120_000L
+    )
 
     override fun enable() {
         applicationProxy.interceptor = object : Layer7Interceptor {
@@ -266,17 +307,6 @@ abstract class DropAction(
     override fun resolve() {
         applicationProxy.interceptor = PassThroughInterceptor()
         initialConnection = true
-    }
-
-    override fun stateReceiverForStage(
-        stage: FaultSimulationStage
-    ) = when (stage) {
-        FaultSimulationStage.FaultActiveDuringTracking ->
-            TrackableStateReceiver.onlineWithoutFail("$name: $stage")
-        FaultSimulationStage.FaultActiveBeforeTracking ->
-            TrackableStateReceiver.offlineWithoutFail("$name: $stage")
-        FaultSimulationStage.FaultResolved ->
-            TrackableStateReceiver.onlineWithoutFail("$name: $stage")
     }
 
     /**
@@ -338,6 +368,10 @@ abstract class UnresponsiveAfterAction(
     private var nConnections = 0
     private var isTriggered = false
 
+    override val type = FaultType.Nonfatal(
+        resolvedWithinMillis = 120_000L
+    )
+
     override fun enable() {
         applicationProxy.interceptor = object : Layer7Interceptor {
 
@@ -380,8 +414,8 @@ abstract class UnresponsiveAfterAction(
 }
 
 /**
- * A DropAction fault implementation to drop PRESENCE messages,
- * simulating a presence enter failure
+ * A fault implementation makling the connection unresponsive
+ * after observing an out-going Presence message
  */
 class EnterUnresponsive(apiKey: String) : UnresponsiveAfterAction(
     apiKey = apiKey,
@@ -397,20 +431,6 @@ class EnterUnresponsive(apiKey: String) : UnresponsiveAfterAction(
     override val skipTest = false
 
     override val name = "EnterUnresponsive"
-
-    override fun stateReceiverForStage(
-        stage: FaultSimulationStage
-    ) = when (stage) {
-        FaultSimulationStage.FaultActiveDuringTracking ->
-            // There won't be a presence.enter() during tracking
-            TrackableStateReceiver.onlineWithoutFail("$name: $stage")
-        FaultSimulationStage.FaultActiveBeforeTracking ->
-            // presence.enter() when trackable added will trigger fault
-            TrackableStateReceiver.offlineWithoutFail("$name: $stage")
-        FaultSimulationStage.FaultResolved ->
-            // always return to online state when there's no fault
-            TrackableStateReceiver.onlineWithoutFail("$name: $stage")
-    }
 }
 
 /**
@@ -440,6 +460,10 @@ class DisconnectWithFailedResume(apiKey: String) : ApplicationLayerFault(apiKey)
     private var state = State.AwaitingInitialConnection
 
     override val name = "DisconnectWithFailedResume"
+
+    override val type = FaultType.Nonfatal(
+        resolvedWithinMillis = 30_000
+    )
 
     override fun enable() {
         applicationProxy.interceptor = object : Layer7Interceptor {
@@ -483,17 +507,6 @@ class DisconnectWithFailedResume(apiKey: String) : ApplicationLayerFault(apiKey)
     override fun resolve() {
         state = State.AwaitingInitialConnection
         applicationProxy.interceptor = PassThroughInterceptor()
-    }
-
-    override fun stateReceiverForStage(
-        stage: FaultSimulationStage
-    ) = when (stage) {
-        // This fault is entirely non-fatal. AAT should recover to online
-        // state eventually without failure at any stage in test
-        FaultSimulationStage.FaultActiveDuringTracking,
-        FaultSimulationStage.FaultActiveBeforeTracking,
-        FaultSimulationStage.FaultResolved ->
-            TrackableStateReceiver.onlineWithoutFail("$name: $stage")
     }
 
     /**
@@ -589,9 +602,9 @@ class EnterFailedWithNonfatalNack(apiKey: String) : PresenceNackFault(
 
     override val name = "EnterFailedWithNonfatalNack"
 
-    override fun stateReceiverForStage(stage: FaultSimulationStage) =
-        // Note: 5xx presence errors should always be non-fatal and recovered seamlessly
-        TrackableStateReceiver.onlineWithoutFail("$name: $stage")
+    override val type = FaultType.Nonfatal(
+        resolvedWithinMillis = 60_000L
+    )
 }
 
 /**
@@ -606,9 +619,9 @@ class UpdateFailedWithNonfatalNack(apiKey: String) : PresenceNackFault(
 ) {
     override val name = "UpdateFailedWithNonfatalNack"
 
-    override fun stateReceiverForStage(stage: FaultSimulationStage) =
-        // Note: 5xx presence errors should always be non-fatal and recovered seamlessly
-        TrackableStateReceiver.onlineWithoutFail("$name: $stage")
+    override val type = FaultType.Nonfatal(
+        resolvedWithinMillis = 60_000L
+    )
 }
 
 /**
@@ -629,8 +642,6 @@ class ReenterOnResumeFailed(apiKey: String) : ApplicationLayerFault(apiKey) {
      */
     override val skipTest = false
 
-    override val name = "ReenterOnResumeFailed"
-
     private var state = State.DisconnectAfterPresence
     private var presenceEnterSerial: Int? = null
 
@@ -650,6 +661,12 @@ class ReenterOnResumeFailed(apiKey: String) : ApplicationLayerFault(apiKey) {
         // Finished - return to normal pass-through
         WorkingNormally
     }
+
+    override val name = "ReenterOnResumeFailed"
+
+    override val type = FaultType.Nonfatal(
+        resolvedWithinMillis = 60_000L
+    )
 
     override fun enable() {
         applicationProxy.interceptor = object : Layer7Interceptor {
@@ -678,11 +695,6 @@ class ReenterOnResumeFailed(apiKey: String) : ApplicationLayerFault(apiKey) {
         state = State.DisconnectAfterPresence
         applicationProxy.interceptor = PassThroughInterceptor()
     }
-
-    override fun stateReceiverForStage(stage: FaultSimulationStage) =
-        // This fault should not be non-fatal, Trackables should
-        // return to online state before resolve() is called
-        TrackableStateReceiver.onlineWithoutFail("$name: $stage")
 
     /**
      * Step 1: disconnect the client to cause it to attempt a resume,
@@ -810,41 +822,3 @@ internal fun nonFatalNack(msgSerial: Int) =
         errorStatusCode = 500,
         errorMessage = "injected by proxy"
     )
-
-/**
- * Helper to capture an expected set of successful or unsuccessful TrackableState
- * transitions using the StateFlows provided by publishers.
- */
-class TrackableStateReceiver(
-    private val label: String,
-    private val expectedStates: Set<KClass<out TrackableState>>,
-    private val failureStates: Set<KClass<out TrackableState>>
-) {
-    val outcome = BooleanExpectation(label)
-
-    companion object {
-        fun onlineWithoutFail(label: String) = TrackableStateReceiver(
-            label,
-            setOf(TrackableState.Online::class),
-            setOf(TrackableState.Failed::class)
-        )
-
-        fun offlineWithoutFail(label: String) = TrackableStateReceiver(
-            label,
-            setOf(TrackableState.Offline::class),
-            setOf(TrackableState.Failed::class)
-        )
-    }
-
-    fun receive(state: TrackableState) {
-        if (failureStates.contains((state::class))) {
-            testLogD("TrackableStateReceived (FAIL): $label - $state")
-            outcome.fulfill(false)
-        } else if (expectedStates.contains(state::class)) {
-            testLogD("TrackableStateReceived (SUCCESS): $label - $state")
-            outcome.fulfill(true)
-        } else {
-            testLogD("TrackableStateReceived (IGNORED): $label - $state")
-        }
-    }
-}
