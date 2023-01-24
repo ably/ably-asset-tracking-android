@@ -1,5 +1,6 @@
 package com.ably.tracking.subscriber
 
+import android.util.Log
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState

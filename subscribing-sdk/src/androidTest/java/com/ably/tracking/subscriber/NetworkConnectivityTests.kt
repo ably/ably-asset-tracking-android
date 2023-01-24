@@ -6,7 +6,6 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.ably.tracking.Accuracy
 import com.ably.tracking.EnhancedLocationUpdate
 import com.ably.tracking.Location
-import com.ably.tracking.LocationUpdate
 import com.ably.tracking.LocationUpdateType
 import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
@@ -32,21 +31,29 @@ import com.ably.tracking.test.android.common.DisconnectWithFailedResume
 import com.ably.tracking.test.android.common.EnterFailedWithNonfatalNack
 import com.ably.tracking.test.android.common.EnterUnresponsive
 import com.ably.tracking.test.android.common.FaultSimulation
+import com.ably.tracking.test.android.common.FaultType
 import com.ably.tracking.test.android.common.NullApplicationLayerFault
 import com.ably.tracking.test.android.common.NullTransportFault
+import com.ably.tracking.test.android.common.PUBLISHER_CLIENT_ID
 import com.ably.tracking.test.android.common.ReenterOnResumeFailed
+import com.ably.tracking.test.android.common.SUBSCRIBER_CLIENT_ID
 import com.ably.tracking.test.android.common.TcpConnectionRefused
 import com.ably.tracking.test.android.common.TcpConnectionUnresponsive
 import com.ably.tracking.test.android.common.testLogD
 import com.ably.tracking.test.android.common.UnitExpectation
 import com.ably.tracking.test.android.common.UpdateFailedWithNonfatalNack
+import io.ably.lib.realtime.AblyRealtime
 import io.ably.lib.types.ClientOptions
+import io.ably.lib.types.PresenceMessage
+import io.ably.lib.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Assert
 import org.junit.Assume
@@ -55,6 +62,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import java.util.UUID
+import kotlin.reflect.KClass
 
 @RunWith(Parameterized::class)
 class NetworkConnectivityTests(private val testFault: FaultSimulation) {
@@ -133,234 +141,142 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
      * the meantime will be received by the subscriber.
      */
     @Test
-    fun faultWhilstTrackingLocationUpdatesArriveAfterResolution() {
-        withResources { resources ->
-            val subscriber = resources.getSubscriber()
-            resources.fault.enable()
-
-            // Send an enhanced location update on the channel
-            val defaultAbly = resources.createAndStartPublishingAblyConnection()
-            val locationSent = BooleanExpectation("Location sent successfully on Ably channel")
-            val location = Location(
-                1.0,
-                2.0,
-                3000.9,
-                1f,
-                341f,
-                1.5f,
-                1234,
-            )
-            defaultAbly.sendEnhancedLocation(
-                resources.trackableId,
-                EnhancedLocationUpdate(
-                    location,
-                    arrayListOf(),
-                    arrayListOf(),
-                    LocationUpdateType.ACTUAL
-                )
-            ) { result ->
-                locationSent.fulfill(result.isSuccess)
-            }
-
-            locationSent.await(10)
-            locationSent.assertSuccess()
-
-            // Resolve the fault and check that we then receive the position update
-            val locationReceived = UnitExpectation("Position received by subscriber")
-            var receivedLocationUpdate: LocationUpdate? = null
-
-            subscriber.locations
-                .onEach { locationUpdate ->
-                    receivedLocationUpdate = locationUpdate
-                    locationReceived.fulfill()
-                }
-                .launchIn(resources.scope)
-
-            // This has to be a long wait because some of the faults take many minutes to resolve
-            resources.fault.resolve()
-            locationReceived.await(600)
-            locationReceived.assertFulfilled()
-
-            Assert.assertEquals(location, receivedLocationUpdate!!.location)
-        }
-    }
-
-    /**
-     * Test that Subscriber can handle the given fault occurring whilst tracking.
-     *
-     * Check that after resolution, trackable states (via channel presence)
-     * are updated.
-     */
-    @Test
-    fun faultWhilstTrackingTrackableStatesArriveAfterResolution() {
-        withResources { resources ->
-            val subscriber = resources.getSubscriber()
-            resources.fault.enable()
-
-            // Begin listening for trackable state changes - the initial state is offline, so we have to ignore the first one
-            val initialTrackableStateReceived = UnitExpectation("Initial trackable offline state received")
-            var initialTrackableOfflineStateReceived = false
-            val trackableOnlineReceived = UnitExpectation("Trackable online state received")
-            val trackableOfflineReceived = UnitExpectation("Trackable offline state received")
-
-            subscriber.trackableStates
-                .onEach { state ->
-                    if (state == TrackableState.Online) {
-                        trackableOnlineReceived.fulfill()
-                    }
-
-                    if (state == TrackableState.Offline()) {
-                        if (!initialTrackableOfflineStateReceived) {
-                            initialTrackableOfflineStateReceived = true
-                            initialTrackableStateReceived.fulfill()
-                            return@onEach
-                        }
-
-                        trackableOfflineReceived.fulfill()
-                    }
-                }
-                .launchIn(resources.scope)
-
-            initialTrackableStateReceived.await(10)
-            initialTrackableStateReceived.assertFulfilled()
-
-            // Join the ably channel as a publisher to trigger a trackable online state
-            resources.createAndStartPublishingAblyConnection()
-
-            /**
-             * Resolve the fault and check that we then receive the trackable online state.
-             * This has to be a long wait because some of the faults take many minutes to resolve.
-             */
-            resources.fault.resolve()
-            trackableOnlineReceived.await(600)
-            trackableOnlineReceived.assertFulfilled()
-
-            // Re-enable the fault and shutdown the publisher to trigger a trackable offline state
-            resources.fault.enable()
-            resources.shutdownAblyPublishing()
-
-            // Resolve the fault again and make sure we receive the trackable offline state
-            resources.fault.resolve()
-            trackableOfflineReceived.await(600)
-            trackableOfflineReceived.assertFulfilled()
-        }
-    }
-
-    /**
-     * Test that Subscriber can handle the given fault occurring whilst tracking,
-     *
-     * Check that after resolution, changes to the channels publisher presence
-     * are received by the subscriber.
-     */
-    @OptIn(Experimental::class)
-    @Test
-    fun faultWhilstTrackingPublisherPresenceUpdatesReceivedAfterResolution() {
-        withResources { resources ->
-            val subscriber = resources.getSubscriber()
-            resources.fault.enable()
-
-            // Begin listening for publisher state changes - the initial state if offline, so we have to ignore the first one
-            val initialPublisherOfflineStateReceived = UnitExpectation("Initial trackable offline state received")
-            var initialNoPresenceReceived = false
-            val publisherOnlineReceived = UnitExpectation("Publisher online state received")
-            val publisherOfflineReceived = UnitExpectation("Publisher offline state received")
-
-            subscriber.publisherPresence
-                .onEach { presence ->
-                    if (presence) {
-                        publisherOnlineReceived.fulfill()
-                    } else if (!initialNoPresenceReceived) {
-                        initialNoPresenceReceived = true
-                        initialPublisherOfflineStateReceived.fulfill()
-                    } else {
-                        publisherOfflineReceived.fulfill()
-                    }
-                }
-                .launchIn(resources.scope)
-
-            initialPublisherOfflineStateReceived.await(10)
-            initialPublisherOfflineStateReceived.assertFulfilled()
-
-            // Join the ably channel to trigger a publisher online state change
-            resources.createAndStartPublishingAblyConnection()
-
-            /**
-             * Resolve the fault and check that we then receive the publisher state updates.
-             * This has to be a long wait because some of the faults take many minutes to resolve.
-             */
-            resources.fault.resolve()
-            publisherOnlineReceived.await(600)
-            publisherOnlineReceived.assertFulfilled()
-
-            // Restart and disconnect the publisher
-            resources.fault.enable()
-            resources.shutdownAblyPublishing()
-
-            // Re-resolve the fault and check we see the publisher go offline again
-            resources.fault.resolve()
-            publisherOfflineReceived.await(600)
-            publisherOfflineReceived.assertFulfilled()
-        }
-    }
-
-    /**
-     * Test that Subscriber can handle the given fault occurring whilst tracking,
-     *
-     * Check that after resolution, changes to the channels publisher resolutions
-     * are received by the subscriber.
-     */
-    @OptIn(Experimental::class)
-    @Test
-    fun faultWhilstTrackingPublisherResolutionUpdatesReceivedAfterResolution() {
+    fun faultWhilstTracking() {
         withResources { resources ->
             val subscriber = resources.getSubscriber()
 
-            // Begin listening for publisher state changes - the initial state if offline, so we have to ignore the first one
-            val initialResolutionExpectation = UnitExpectation("Initial resolution received")
-            var initialResolution: Resolution? = null
-            var receivedResolution: Resolution? = null
-            val updatedResolutionReceived = UnitExpectation("Updated resolution received")
+            // Bring a publisher online and send a location update
+            var defaultAbly = resources.createAndStartPublishingAblyConnection()
+            val locationUpdate = Location(1.0, 2.0, 4000.1, 351.2f, 331.1f, 22.5f, 1234)
+            val publisherResolution = Resolution(Accuracy.BALANCED, 1L, 0.0)
 
-            subscriber.resolutions
-                .onEach { resolution ->
-                    if (initialResolution == null) {
-                        initialResolutionExpectation.fulfill()
-                        initialResolution = resolution
-                        return@onEach
-                    }
-
-                    receivedResolution = resolution
-                    updatedResolutionReceived.fulfill()
-                }
-                .launchIn(resources.scope)
-
-            // Join the ably channel to trigger a resolution update
-            val publishingConnection = resources.createAndStartPublishingAblyConnection()
-
-            // Check the initial resolution received
-            initialResolutionExpectation.await(10)
-            initialResolutionExpectation.assertFulfilled()
-            Assert.assertEquals(initialResolution, Resolution(Accuracy.BALANCED, 1L, 0.0))
-
-            // Start the fault and then send a new resolution
-            resources.fault.enable()
-            val newResolution = Resolution(Accuracy.MAXIMUM, 5L, 1.0)
-            runBlocking {
-                publishingConnection.updatePresenceData(
+            SubscriberMonitor.onlineWithoutFail(
+                subscriber = subscriber,
+                label = "[no fault] subscriber online",
+                trackableId = resources.trackableId,
+                locationUpdate = locationUpdate,
+                timeout = 10_000L,
+                publisherResolution = publisherResolution
+            ).waitForStateTransition {
+                val locationSent = BooleanExpectation("Location sent successfully on Ably channel")
+                defaultAbly.sendEnhancedLocation(
                     resources.trackableId,
-                    PresenceData(ClientTypes.PUBLISHER, newResolution, false)
-                )
+                    EnhancedLocationUpdate(
+                        locationUpdate,
+                        arrayListOf(),
+                        arrayListOf(),
+                        LocationUpdateType.ACTUAL
+                    )
+                ) { result ->
+                    locationSent.fulfill(result.isSuccess)
+                }
+
+                locationSent.await(10)
+                locationSent.assertSuccess()
             }
 
-            /**
-             * Resolve the fault and check that we then receive the new resolution.
-             * This has to be a long wait because some of the faults take many minutes to resolve.
-             */
-            resources.fault.resolve()
-            updatedResolutionReceived.await(600)
-            updatedResolutionReceived.assertFulfilled()
+            // Add an active trackable while fault active
+            val secondLocationUpdate = Location(2.0, 2.0, 4000.1, 351.2f, 331.1f, 22.5f, 1234)
+            val secondPublisherResolution = Resolution(Accuracy.MINIMUM, 100L, 0.0)
+            SubscriberMonitor.forActiveFault(
+                subscriber = subscriber,
+                label = "[fault active] subscriber",
+                trackableId = resources.trackableId,
+                faultType = resources.fault.type,
+                locationUpdate = when (resources.fault.type) {
+                    is FaultType.Nonfatal -> secondLocationUpdate
+                    else -> locationUpdate
+                },
+                publisherResolution = when (resources.fault.type) {
+                    is FaultType.Nonfatal -> secondPublisherResolution
+                    else -> publisherResolution
+                }
+            ).waitForStateTransition {
+                // Start the fault
+                resources.fault.enable()
 
-            Assert.assertEquals(newResolution, receivedResolution)
+                // Connect up a publisher to do publisher things
+                defaultAbly.updatePresenceData(resources.trackableId, PresenceData(ClientTypes.PUBLISHER, secondPublisherResolution, false))
+
+                val locationSent = BooleanExpectation("Location sent successfully on Ably channel")
+                defaultAbly.sendEnhancedLocation(
+                    resources.trackableId,
+                    EnhancedLocationUpdate(
+                        secondLocationUpdate,
+                        arrayListOf(),
+                        arrayListOf(),
+                        LocationUpdateType.ACTUAL
+                    )
+                ) { result ->
+                    locationSent.fulfill(result.isSuccess)
+                }
+
+                locationSent.await(10)
+                locationSent.assertSuccess()
+            }.close()
+
+            // Resolve the fault, wait for Trackable to move to expected state
+            val thirdLocationUpdate = Location(3.0, 2.0, 4000.1, 351.2f, 331.1f, 22.5f, 1234)
+            val thirdPublisherResolution = Resolution(Accuracy.MAXIMUM, 3L, 0.0)
+            SubscriberMonitor.forResolvedFault(
+                subscriber = subscriber,
+                label = "[fault resolved] subscriber",
+                trackableId = resources.trackableId,
+                faultType = resources.fault.type,
+                locationUpdate = thirdLocationUpdate,
+                publisherResolution = thirdPublisherResolution
+            ).waitForStateTransition {
+                defaultAbly.updatePresenceData(resources.trackableId, PresenceData(ClientTypes.PUBLISHER, thirdPublisherResolution, false))
+
+                val locationSent = BooleanExpectation("Location sent successfully on Ably channel")
+                defaultAbly.sendEnhancedLocation(
+                    resources.trackableId,
+                    EnhancedLocationUpdate(
+                        thirdLocationUpdate,
+                        arrayListOf(),
+                        arrayListOf(),
+                        LocationUpdateType.ACTUAL
+                    )
+                ) { result ->
+                    locationSent.fulfill(result.isSuccess)
+                }
+
+                locationSent.await(10)
+                locationSent.assertSuccess()
+
+                // Resolve the problem
+                resources.fault.resolve()
+            }.close()
+
+            // Restart the fault to simulate the publisher going away whilst we're offline
+            SubscriberMonitor.forActiveFault(
+                subscriber = subscriber,
+                label = "[fault active] publisher shutdown for disconnect test",
+                trackableId = resources.trackableId,
+                faultType = resources.fault.type,
+                locationUpdate = thirdLocationUpdate,
+                publisherResolution = thirdPublisherResolution,
+                publisherDisconnected = true
+            ).waitForStateTransition {
+                // Start the fault
+                resources.fault.enable()
+
+                // Disconnect the publisher
+                resources.shutdownAblyPublishing()
+            }.close()
+
+            // Resolve the fault one last time and check that the publisher is offline
+            SubscriberMonitor.forResolvedFault(
+                subscriber = subscriber,
+                label = "[fault resolved] subscriber publisher disconnect test",
+                trackableId = resources.trackableId,
+                faultType = resources.fault.type,
+                locationUpdate = thirdLocationUpdate,
+                expectedPublisherPresence = false
+            ).waitForStateTransition {
+                // Resolve the problem
+                resources.fault.resolve()
+            }.close()
         }
     }
 
@@ -488,7 +404,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
 
             val ablySdkFactory = object : AblySdkFactory<DefaultAblySdkChannelStateListener> {
                 override fun createRealtime(clientOptions: ClientOptions) =
-                    DefaultAblySdkRealtime(fault.proxy.clientOptions())
+                    DefaultAblySdkRealtime(fault.proxy.clientOptions().apply { clientId = SUBSCRIBER_CLIENT_ID })
 
                 override fun wrapChannelStateListener(
                     underlyingListener: AblySdkFactory.UnderlyingChannelStateListener<DefaultAblySdkChannelStateListener>
@@ -496,7 +412,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
             }
             val connectionConfiguration = ConnectionConfiguration(
                 Authentication.basic(
-                    fault.proxy.clientOptions().clientId,
+                    SUBSCRIBER_CLIENT_ID,
                     fault.proxy.clientOptions().key
                 )
             )
@@ -529,7 +445,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
             // Configure connection options
             val connectionConfiguration = ConnectionConfiguration(
                 Authentication.basic(
-                    "SubscriberNetworkConnectivityTestsDummyPublisher",
+                    PUBLISHER_CLIENT_ID,
                     fault.proxy.clientOptions().key
                 )
             )
@@ -588,7 +504,11 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
          */
         fun shutdownAblyPublishing() {
             runBlocking {
-                ablyPublishing?.close(ablyPublishingPresenceData)
+                ablyPublishing?.let {
+                    testLogD("Shutting down Ably publishing connection")
+                    it.close(ablyPublishingPresenceData)
+                    testLogD("Ably publishing connection shutdown")
+                }
                 ablyPublishing = null
             }
         }
@@ -615,19 +535,361 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
             return stopExpectation
         }
     }
+}
+
+/**
+ * ClientOptions that will *not* go through a proxy, used to inject location data.
+ */
+private val CLIENT_OPTS_NO_PROXY = ClientOptions().apply {
+    this.clientId = "IntegTests_NoProxy"
+    this.key = BuildConfig.ABLY_API_KEY
+    this.logHandler = Logging.ablyJavaDebugLogger
+}
+
+/**
+ * Monitors Subscriber activity so that we can make assertions about any trackable state
+ * transitions expected and ensure side-effects occur.
+ */
+class SubscriberMonitor(
+    private val subscriber: Subscriber,
+    val label: String,
+    val trackableId: String,
+    private val expectedState: KClass<out TrackableState>,
+    private val failureStates: Set<KClass<out TrackableState>>,
+    private val expectedSubscriberPresence: Boolean?,
+    private val expectedPublisherPresence: Boolean?,
+    private val expectedLocation: Location? = null,
+    private val expectedPublisherResolution: Resolution?,
+    val timeout: Long,
+) {
+
+    private val ably = AblyRealtime(CLIENT_OPTS_NO_PROXY)
+
+    companion object {
+        /**
+         * Construct [PublisherMonitor] configured to expect appropriate state transitions
+         * for the given fault type while it is active. [label] will be used for logging captured transitions.
+         */
+        fun forActiveFault(
+            subscriber: Subscriber,
+            label: String,
+            trackableId: String,
+            faultType: FaultType,
+            locationUpdate: Location? = null,
+            publisherResolution: Resolution? = null,
+            publisherDisconnected: Boolean = false
+        ) = SubscriberMonitor(
+            subscriber = subscriber,
+            label = label,
+            trackableId = trackableId,
+            expectedState = when {
+                faultType is FaultType.Fatal -> TrackableState.Failed::class
+                publisherDisconnected && faultType is FaultType.Nonfatal -> TrackableState.Offline::class
+                faultType is FaultType.NonfatalWhenResolved -> TrackableState.Offline::class
+                else -> TrackableState.Online::class
+            },
+            failureStates = when (faultType) {
+                is FaultType.Fatal -> setOf(TrackableState.Offline::class)
+                is FaultType.Nonfatal, is FaultType.NonfatalWhenResolved ->
+                    setOf(TrackableState.Failed::class)
+            },
+            expectedSubscriberPresence = when (faultType) {
+                is FaultType.Nonfatal -> true
+                is FaultType.NonfatalWhenResolved -> null
+                is FaultType.Fatal -> false
+            },
+            expectedPublisherPresence = when (faultType) {
+                is FaultType.Nonfatal -> !publisherDisconnected
+                is FaultType.NonfatalWhenResolved -> false
+                is FaultType.Fatal -> false
+            } ,
+            expectedLocation = locationUpdate,
+            timeout = when (faultType) {
+                is FaultType.Fatal -> faultType.failedWithinMillis
+                is FaultType.Nonfatal -> faultType.resolvedWithinMillis
+                is FaultType.NonfatalWhenResolved -> faultType.offlineWithinMillis
+            },
+            expectedPublisherResolution = publisherResolution
+        )
+
+        /**
+         * Construct a [PublisherMonitor] configured to expect appropriate transitions for
+         * the given fault type after it has been resolved. [label] is used for logging.
+         */
+        fun forResolvedFault(
+            subscriber: Subscriber,
+            label: String,
+            trackableId: String,
+            faultType: FaultType,
+            locationUpdate: Location? = null,
+            publisherResolution: Resolution? = null,
+            expectedPublisherPresence: Boolean = true
+        ) = SubscriberMonitor(
+            subscriber = subscriber,
+            label = label,
+            trackableId = trackableId,
+            expectedState = when {
+                !expectedPublisherPresence -> TrackableState.Offline::class
+                faultType is FaultType.Fatal -> TrackableState.Failed::class
+                faultType is FaultType.Nonfatal || faultType is FaultType.NonfatalWhenResolved ->
+                    TrackableState.Online::class
+                else -> TrackableState.Offline::class
+            },
+            failureStates = when (faultType) {
+                is FaultType.Fatal -> setOf(
+                    TrackableState.Offline::class,
+                    TrackableState.Online::class
+                )
+                is FaultType.Nonfatal, is FaultType.NonfatalWhenResolved ->
+                    setOf(TrackableState.Failed::class)
+            },
+            expectedSubscriberPresence = when (faultType) {
+                is FaultType.Fatal -> false
+                else -> true
+            },
+            expectedPublisherPresence = expectedPublisherPresence,
+            expectedLocation = locationUpdate,
+            timeout = when (faultType) {
+                is FaultType.Fatal -> faultType.failedWithinMillis
+                is FaultType.Nonfatal -> faultType.resolvedWithinMillis
+                is FaultType.NonfatalWhenResolved -> faultType.offlineWithinMillis
+            },
+            expectedPublisherResolution = publisherResolution
+        )
+
+        /**
+         * Construct a [PublisherMonitor] configured to expect a Trackable to come
+         * online within a given timeout, and fail if the Failed state is seen at any point.
+         */
+        fun onlineWithoutFail(
+            subscriber: Subscriber,
+            label: String,
+            trackableId: String,
+            timeout: Long,
+            locationUpdate: Location? = null,
+            publisherResolution: Resolution? = null,
+        ) = SubscriberMonitor(
+            subscriber,
+            label = label,
+            trackableId = trackableId,
+            expectedState = TrackableState.Online::class,
+            failureStates = setOf(TrackableState.Failed::class),
+            expectedSubscriberPresence = true,
+            expectedPublisherPresence = true,
+            expectedLocation = locationUpdate,
+            timeout = timeout,
+            expectedPublisherResolution = publisherResolution
+        )
+    }
 
     /**
-     * Redirect Ably and AAT logging to Log.d
+     * Performs the given async (suspending) operation in a runBlocking, attaching the
+     * returned StateFlow<TrackableState> to the given receiver, then waits for expectations
+     * to be delivered (or not) before cleaning up.
      */
-    object Logging {
-        val aatDebugLogger = object : LogHandler {
-            override fun logMessage(level: LogLevel, message: String, throwable: Throwable?) {
-                if (throwable != null) {
-                    testLogD("$message $throwable")
-                } else {
-                    testLogD(message)
+    fun waitForStateTransition(
+        asyncOp: suspend () -> Unit
+    ): SubscriberMonitor {
+        runBlocking {
+            try {
+                withTimeout(timeout) {
+                    asyncOp()
+                    testLogD("$label - async op success")
+
+                    assertStateTransition()
+                    assertSubscriberPresence()
+                    assertPublisherPresence()
+                    assertLocationUpdated()
+                    assertPublisherResolution()
                 }
+            } catch (timeoutCancellationException: TimeoutCancellationException) {
+                testLogD("$label - timed out")
+                throw AssertionError("$label timed out.", timeoutCancellationException)
+            } catch (exception: Exception) {
+                testLogD("$label - failed - $exception")
+                throw AssertionError("$label did not result in success.", exception)
             }
         }
+
+        return this
+    }
+
+    private fun assertPublisherResolution()
+    {
+        if (expectedPublisherResolution == null) {
+            testLogD("SubscriberMonitor: $label - (SKIP) expectedPublisherResolution = null")
+            return
+        }
+
+        testLogD("SubscriberMonitor: $label - (WAITING) expectedPublisherResolution = $expectedPublisherResolution")
+        val lastPublisherResolution = listenForExpectedPublisherResolution()
+        if (lastPublisherResolution != expectedPublisherResolution) {
+            testLogD("SubscriberMonitor: $label - (FAIL) lastPublisherResolution = $lastPublisherResolution")
+            throw AssertionError(
+                "Expected resolution update $expectedPublisherResolution but last was $lastPublisherResolution"
+            )
+        } else {
+            testLogD("SubscriberMonitor: $label - (PASS) lastPublisherResolution = $lastPublisherResolution")
+        }
+    }
+
+    /**
+     * Uses the subscribers publisher presence state flow to listen for the expected
+     * publisher resolution change.
+     *
+     * This can happen at any time after the initial trackable state transition,
+     * and so we cannot rely on the first state we collect being the "newest" one.
+     */
+    private fun listenForExpectedPublisherResolution(): Resolution
+    {
+        val lastResolution = runBlocking {
+            subscriber.resolutions.first{resolution -> resolution == expectedPublisherResolution}
+        }
+
+        testLogD("lastPublisherResolution: $lastResolution")
+        return lastResolution;
+    }
+
+    /**
+     * Throw an assertion error of the expected [TrackableState] transition hasn't happened.
+     */
+    private suspend fun assertStateTransition() {
+        testLogD("$label Awaiting state transition to $expectedState")
+        val result = subscriber.trackableStates.mapNotNull { receive(it) }.first()
+        if (!result) {
+            throw AssertionError("Expectation '$label' publisher presence did not result in success.")
+        }
+    }
+
+    /**
+     * Maps received [TrackableState] to a success/fail/ignore outcome for this test.
+     */
+    private fun receive(state: TrackableState): Boolean? =
+        when {
+            failureStates.contains(state::class) -> {
+                testLogD("SubscriberMonitor (FAIL): $label - $state")
+                false
+            }
+            expectedState == state::class -> {
+                testLogD("SubscriberMonitor (SUCCESS): $label - $state")
+                true
+            }
+            else -> {
+                testLogD("SubscriberMonitor (IGNORED): $label - $state")
+                null
+            }
+        }
+
+    /**
+     * Assert that we eventually receive the expected publisher presence.
+     *
+     * This can happen at any time after the initial trackable state transition,
+     * and so we cannot rely on the first state we collect being the "new" one.
+     */
+    @OptIn(Experimental::class)
+    private fun assertPublisherPresence() = runBlocking {
+        testLogD("SubscriberMonitor (WAITING): $label - publisher presence -> $expectedPublisherPresence")
+        val presence = subscriber.publisherPresence.first{presence -> presence == expectedPublisherPresence}
+        testLogD("SubscriberMonitor (PASS): $label - publisher presence was $presence")
+    }
+
+    /**
+     * Throw an assertion error if the subscriber's presence does not meet expectations for this test.
+     */
+    private fun assertSubscriberPresence() {
+        if (expectedSubscriberPresence == null) {
+            // not checking for publisher presence in this test
+            testLogD("SubscriberMonitor: $label - (SKIP) expectedSubscriberPresence = null")
+            return
+        }
+
+        val publisherPresent = subscriberIsPresent()
+        if (publisherPresent != expectedSubscriberPresence) {
+            testLogD("SubscriberMonitor: $label - (FAIL) subscriberPresent = $publisherPresent")
+            throw AssertionError(
+                "Expected subscriberPresence: $expectedSubscriberPresence but got $publisherPresent"
+            )
+        } else {
+            testLogD("SubscriberMonitor: $label - (PASS) subscriberPresent = $publisherPresent")
+        }
+    }
+
+    /**
+     * Perform a request to the Ably API to get a snapshot of the current presence for the channel,
+     * and check to see if the Subscriber's clientId is present in that snapshot.
+     */
+    private fun subscriberIsPresent() =
+        ably.channels
+            .get("tracking:${trackableId}")
+            ?.presence
+            ?.get(true)
+            ?.find {
+                it.clientId == SUBSCRIBER_CLIENT_ID &&
+                    it.action == PresenceMessage.Action.present
+            } != null
+
+    /**
+     * Throw an assertion error if expectations about published location updates have not
+     * been meet in this test.
+     */
+    private fun assertLocationUpdated() {
+        if (expectedLocation == null) {
+            // no expected location set - skip assertion
+            testLogD("SubscriberMonitor: $label - (SKIP) expectedLocationUpdate = null")
+            return
+        }
+
+        testLogD("SubscriberMonitor: $label - (WAITING) expectedLocationUpdate = $expectedLocation")
+        val lastPublishedLocation = listenForExpectedLocationUpdate()
+        if (lastPublishedLocation != expectedLocation) {
+            testLogD("SubscriberMonitor: $label - (FAIL) lastPublishedLocation = $lastPublishedLocation")
+            throw AssertionError(
+                "Expected location update $expectedLocation but last was $lastPublishedLocation"
+            )
+        } else {
+            testLogD("SubscriberMonitor: $label - (PASS) lastPublishedLocation = $lastPublishedLocation")
+        }
+    }
+
+    /**
+     * Use the subscriber location flow to listen for a location update matching the one we're expecting.
+     *
+     * These location updates may arrive at any time after the trackable transitions to online, so we therefore
+     * cannot rely on the first thing we find being the "newest" state and therefore must wait for a bit.
+     */
+    private fun listenForExpectedLocationUpdate(): Location {
+        val lastLocation: Location = runBlocking {
+            subscriber.locations.first{locationUpdate -> locationUpdate.location == expectedLocation}.location
+        }
+
+        testLogD("lastLocation: $lastLocation")
+        return lastLocation;
+    }
+
+    /**
+     * Close any open resources used by this monitor.
+     */
+    fun close() {
+        ably.close()
+    }
+}
+
+
+/**
+ * Redirect Ably and AAT logging to Log.d
+ */
+object Logging {
+    val aatDebugLogger = object : LogHandler {
+        override fun logMessage(level: LogLevel, message: String, throwable: Throwable?) {
+            if (throwable != null) {
+                testLogD("$message $throwable")
+            } else {
+                testLogD(message)
+            }
+        }
+    }
+
+    val ablyJavaDebugLogger = Log.LogHandler { _, _, msg, tr ->
+        aatDebugLogger.logMessage(LogLevel.DEBUG, msg!!, tr)
     }
 }

@@ -44,6 +44,7 @@ private const val REALTIME_HOST = "realtime.ably.io"
 private const val REALTIME_PORT = 443
 
 const val PUBLISHER_CLIENT_ID = "AatNetworkConnectivityTests_Publisher"
+const val SUBSCRIBER_CLIENT_ID = "AatNetworkConnectivityTests_Subscriber"
 
 /**
  * A local proxy that can be used to intercept Realtime traffic for testing
@@ -309,7 +310,7 @@ class Layer7Proxy(
 
     override fun stop() {
         testLogD("$tag: stopping...")
-        server?.stop(10000, 15000)
+        server?.stop()
         testLogD("$tag: done stopping...")
     }
 
