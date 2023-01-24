@@ -20,8 +20,8 @@ jobs:
       # Gradle 7 requires Java 11 to run
       - uses: actions/setup-java@v3
         with:
-          distribution: 'zulu'
-          java-version: '11'
+          distribution: zulu
+          java-version: '19'
 
       - uses: reactivecircus/android-emulator-runner@v2
         with:
