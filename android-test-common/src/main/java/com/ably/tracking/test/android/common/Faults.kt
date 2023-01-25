@@ -106,7 +106,7 @@ class TcpConnectionRefused(apiKey: String) : TransportLayerFault(apiKey) {
      * This fault type is temporarily disabled at runtime. It can be re-enabled by removing this override.
      * We will re-enable this test when the following have been addressed:
      * - https://github.com/ably/ably-asset-tracking-android/issues/859
-     * - https://github.com/ably/ably-asset-tracking-android/issues/871
+     * - https://github.com/ably/ably-asset-tracking-android/issues/905
      */
     override val skipTest = true
 
@@ -141,7 +141,7 @@ class TcpConnectionUnresponsive(apiKey: String) : TransportLayerFault(apiKey) {
      * This fault type is temporarily disabled at runtime. It can be re-enabled by removing this override.
      * We will re-enable this test when the following have been addressed:
      * - https://github.com/ably/ably-asset-tracking-android/issues/859
-     * - https://github.com/ably/ably-asset-tracking-android/issues/871
+     * - https://github.com/ably/ably-asset-tracking-android/issues/905
      */
     override val skipTest = true
 
@@ -171,7 +171,7 @@ class TcpConnectionUnresponsive(apiKey: String) : TransportLayerFault(apiKey) {
 class DisconnectAndSuspend(apiKey: String) : TransportLayerFault(apiKey) {
 
     /*
-        Currently failing due to Issues #871 and #907
+        Currently failing due to Issue #906
     */
     override val skipTest = true
 
@@ -302,7 +302,7 @@ class AttachUnresponsive(apiKey: String) : DropAction(
 ) {
 
     /*
-        Currently failing due to Issue #871 -- throwing ConnectionError
+        Currently failing due to Issue #905 -- throwing ConnectionError
         when trying to add new trackables while offline.
      */
     override val skipTest = true
@@ -583,12 +583,6 @@ class EnterFailedWithNonfatalNack(apiKey: String) : PresenceNackFault(
     response = ::nonFatalNack,
     nackLimit = 3
 ) {
-
-    /*
-        Currently failing due to Issue #907 - non-fatal nack triggers
-        an exception to be thrown to caller during publisher.track()
-     */
-    override val skipTest = true
 
     override val name = "EnterFailedWithNonfatalNack"
 
