@@ -443,6 +443,9 @@ private val CLIENT_OPTS_NO_PROXY = ClientOptions().apply {
     this.clientId = "IntegTests_NoProxy"
     this.key = BuildConfig.ABLY_API_KEY
     this.logHandler = Logging.ablyJavaDebugLogger
+    // Setting log level only to prevent overwriting it in the AblyRealtime instance that we care about
+    // can be removed once underlying ably-java issue is fixed - https://github.com/ably/ably-java/issues/901
+    this.logLevel = Log.VERBOSE
 }
 
 /**

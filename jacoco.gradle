@@ -1,8 +1,9 @@
 apply plugin: 'jacoco'
 
 jacoco {
-    // Gradle 6.7.1 ships with JaCoCo 0.8.5 (October 2019) but we would like to use the more recent version.
-    toolVersion = '0.8.7' // May 2021
+    // Gradle 6.7.1 ships with JaCoCo 0.8.5 (October 2019) but we wanted to use the more recent version.
+    // We've since upgraded to Gradle 7, but still manually pinning this.
+    toolVersion = '0.8.8' // April 2022
 }
 
 tasks.withType(Test) {
