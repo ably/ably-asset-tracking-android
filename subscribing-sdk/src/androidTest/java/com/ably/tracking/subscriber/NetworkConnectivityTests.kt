@@ -47,12 +47,17 @@ import io.ably.lib.types.ClientOptions
 import io.ably.lib.types.PresenceMessage
 import io.ably.lib.util.Log
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Assert
@@ -140,15 +145,17 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
      * We expect that upon the resolution of the fault, location updates sent in
      * the meantime will be received by the subscriber.
      */
+    @OptIn(DelicateCoroutinesApi::class)
     @Test
     fun faultWhilstTracking() {
         withResources { resources ->
             val subscriber = resources.getSubscriber()
 
             // Bring a publisher online and send a location update
-            var defaultAbly = resources.createAndStartPublishingAblyConnection()
+            val defaultAbly = resources.createAndStartPublishingAblyConnection()
             val locationUpdate = Location(1.0, 2.0, 4000.1, 351.2f, 331.1f, 22.5f, 1234)
             val publisherResolution = Resolution(Accuracy.BALANCED, 1L, 0.0)
+            val subscriberResolution = Resolution(Accuracy.BALANCED, 1L, 0.0)
 
             SubscriberMonitor.onlineWithoutFail(
                 subscriber = subscriber,
@@ -156,7 +163,9 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
                 trackableId = resources.trackableId,
                 locationUpdate = locationUpdate,
                 timeout = 10_000L,
-                publisherResolution = publisherResolution
+                publisherResolution = publisherResolution,
+                subscriberResolution = subscriberResolution,
+                subscriberResolutionPreferenceFlow = resources.subscriberResolutions
             ).waitForStateTransition {
                 val locationSent = BooleanExpectation("Location sent successfully on Ably channel")
                 defaultAbly.sendEnhancedLocation(
@@ -178,6 +187,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
             // Add an active trackable while fault active
             val secondLocationUpdate = Location(2.0, 2.0, 4000.1, 351.2f, 331.1f, 22.5f, 1234)
             val secondPublisherResolution = Resolution(Accuracy.MINIMUM, 100L, 0.0)
+            val secondSubscriberResolution = Resolution(Accuracy.MAXIMUM, 2L, 0.0)
             SubscriberMonitor.forActiveFault(
                 subscriber = subscriber,
                 label = "[fault active] subscriber",
@@ -190,7 +200,12 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
                 publisherResolution = when (resources.fault.type) {
                     is FaultType.Nonfatal -> secondPublisherResolution
                     else -> publisherResolution
-                }
+                },
+                subscriberResolution = when (resources.fault.type) {
+                    is FaultType.Nonfatal -> secondSubscriberResolution
+                    else -> subscriberResolution
+                },
+                subscriberResolutionPreferenceFlow = resources.subscriberResolutions
             ).waitForStateTransition {
                 // Start the fault
                 resources.fault.enable()
@@ -213,6 +228,11 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
 
                 locationSent.await(10)
                 locationSent.assertSuccess()
+
+                // While we're offline-ish, change the subscribers preferred resolution
+                GlobalScope.launch {
+                    subscriber.resolutionPreference(secondSubscriberResolution)
+                }
             }.close()
 
             // Resolve the fault, wait for Trackable to move to expected state
@@ -224,7 +244,9 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
                 trackableId = resources.trackableId,
                 faultType = resources.fault.type,
                 locationUpdate = thirdLocationUpdate,
-                publisherResolution = thirdPublisherResolution
+                publisherResolution = thirdPublisherResolution,
+                subscriberResolution = secondSubscriberResolution,
+                subscriberResolutionPreferenceFlow = resources.subscriberResolutions
             ).waitForStateTransition {
                 defaultAbly.updatePresenceData(resources.trackableId, PresenceData(ClientTypes.PUBLISHER, thirdPublisherResolution, false))
 
@@ -256,7 +278,9 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
                 faultType = resources.fault.type,
                 locationUpdate = thirdLocationUpdate,
                 publisherResolution = thirdPublisherResolution,
-                publisherDisconnected = true
+                publisherDisconnected = true,
+                subscriberResolution = secondSubscriberResolution,
+                subscriberResolutionPreferenceFlow = resources.subscriberResolutions
             ).waitForStateTransition {
                 // Start the fault
                 resources.fault.enable()
@@ -272,72 +296,13 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
                 trackableId = resources.trackableId,
                 faultType = resources.fault.type,
                 locationUpdate = thirdLocationUpdate,
-                expectedPublisherPresence = false
+                expectedPublisherPresence = false,
+                subscriberResolution = secondSubscriberResolution,
+                subscriberResolutionPreferenceFlow = resources.subscriberResolutions
             ).waitForStateTransition {
                 // Resolve the problem
                 resources.fault.resolve()
             }.close()
-        }
-    }
-
-    /**
-     * Test that Subscriber sends resolution preference updates to the publisher
-     * after a fault is resolved.
-     */
-    @OptIn(Experimental::class)
-    @Test
-    fun faultWhilstUpdatingResolutionPreferenceUpdatesReceivedByPublisherAfterFaultResolution() {
-        withResources { resources ->
-            // Join the ably channel and listen for presence updates
-            val publishingConnection = resources.createAndStartPublishingAblyConnection()
-
-            val initialResolutionPreferenceExpectation = UnitExpectation("Initial resolution preference received")
-            var initialResolutionPreference: Resolution? = null
-            val receivedResolutionPreferenceExpectation = UnitExpectation("Updated resolution preference received")
-            var receivedResolutionPreference: Resolution? = null
-            runBlocking {
-                publishingConnection.subscribeForPresenceMessages(
-                    resources.trackableId,
-                    emitCurrentMessages = false,
-                    listener = { message ->
-                        if (initialResolutionPreference == null) {
-                            message.data.resolution?.let {
-                                initialResolutionPreference = message.data.resolution
-                                initialResolutionPreferenceExpectation.fulfill()
-                            }
-
-                            return@subscribeForPresenceMessages
-                        }
-
-                        message.data.resolution?.let {
-                            receivedResolutionPreference = message.data.resolution
-                            receivedResolutionPreferenceExpectation.fulfill()
-                        }
-                    }
-                )
-            }
-
-            // Start the subscriber and wait for the initial resolution preference to come through
-            val subscriber = resources.getSubscriber()
-            initialResolutionPreferenceExpectation.await(10)
-            initialResolutionPreferenceExpectation.assertFulfilled()
-            Assert.assertEquals(Resolution(Accuracy.BALANCED, 1L, 0.0), initialResolutionPreference)
-
-            // Start the fault and trigger the subscriber sending a new resolution
-            resources.fault.enable()
-            val newResolutionPreference = Resolution(Accuracy.MAXIMUM, 5L, 2.0)
-            runBlocking {
-                subscriber.resolutionPreference(newResolutionPreference)
-            }
-
-            /**
-             * Resolve the fault and check that we then receive the new resolution preference.
-             * This has to be a long wait because some of the faults take many minutes to resolve.
-             */
-            resources.fault.resolve()
-            receivedResolutionPreferenceExpectation.await(600)
-            receivedResolutionPreferenceExpectation.assertFulfilled()
-            Assert.assertEquals(newResolutionPreference, receivedResolutionPreference)
         }
     }
 
@@ -367,6 +332,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
         private var subscriber: Subscriber? = null
         private var ablyPublishing: DefaultAbly<DefaultAblySdkChannelStateListener>? = null
         private val ablyPublishingPresenceData = PresenceData(ClientTypes.PUBLISHER, Resolution(Accuracy.BALANCED, 1L, 0.0))
+        val subscriberResolutions = MutableSharedFlow<Resolution>(replay = 1)
 
         companion object {
 
@@ -485,6 +451,19 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
             stateChangeExpectation.await(10)
             stateChangeExpectation.assertFulfilled()
 
+            // Listen for presence and resolution updates
+            runBlocking {
+                defaultAbly.subscribeForPresenceMessages(trackableId, listener = { message ->
+                    if (message.data.type == ClientTypes.SUBSCRIBER) {
+                        message.data.resolution?.let {
+                            runBlocking {
+                                subscriberResolutions.emit(message.data.resolution!!)
+                            }
+                        }
+                    }
+                })
+            }
+
             ablyPublishing = defaultAbly
 
             return ablyPublishing!!
@@ -560,6 +539,8 @@ class SubscriberMonitor(
     private val expectedPublisherPresence: Boolean?,
     private val expectedLocation: Location? = null,
     private val expectedPublisherResolution: Resolution?,
+    private val subscriberResolutionPreferenceFlow: SharedFlow<Resolution>,
+    private val expectedSubscriberResolution: Resolution,
     val timeout: Long,
 ) {
 
@@ -577,7 +558,9 @@ class SubscriberMonitor(
             faultType: FaultType,
             locationUpdate: Location? = null,
             publisherResolution: Resolution? = null,
-            publisherDisconnected: Boolean = false
+            publisherDisconnected: Boolean = false,
+            subscriberResolution: Resolution,
+            subscriberResolutionPreferenceFlow: SharedFlow<Resolution>
         ) = SubscriberMonitor(
             subscriber = subscriber,
             label = label,
@@ -609,7 +592,9 @@ class SubscriberMonitor(
                 is FaultType.Nonfatal -> faultType.resolvedWithinMillis
                 is FaultType.NonfatalWhenResolved -> faultType.offlineWithinMillis
             },
-            expectedPublisherResolution = publisherResolution
+            expectedPublisherResolution = publisherResolution,
+            expectedSubscriberResolution = subscriberResolution,
+            subscriberResolutionPreferenceFlow = subscriberResolutionPreferenceFlow
         )
 
         /**
@@ -623,7 +608,9 @@ class SubscriberMonitor(
             faultType: FaultType,
             locationUpdate: Location? = null,
             publisherResolution: Resolution? = null,
-            expectedPublisherPresence: Boolean = true
+            expectedPublisherPresence: Boolean = true,
+            subscriberResolution: Resolution,
+            subscriberResolutionPreferenceFlow: SharedFlow<Resolution>
         ) = SubscriberMonitor(
             subscriber = subscriber,
             label = label,
@@ -654,7 +641,9 @@ class SubscriberMonitor(
                 is FaultType.Nonfatal -> faultType.resolvedWithinMillis
                 is FaultType.NonfatalWhenResolved -> faultType.offlineWithinMillis
             },
-            expectedPublisherResolution = publisherResolution
+            expectedPublisherResolution = publisherResolution,
+            expectedSubscriberResolution = subscriberResolution,
+            subscriberResolutionPreferenceFlow = subscriberResolutionPreferenceFlow
         )
 
         /**
@@ -666,8 +655,10 @@ class SubscriberMonitor(
             label: String,
             trackableId: String,
             timeout: Long,
+            subscriberResolution: Resolution,
             locationUpdate: Location? = null,
             publisherResolution: Resolution? = null,
+            subscriberResolutionPreferenceFlow: SharedFlow<Resolution>
         ) = SubscriberMonitor(
             subscriber,
             label = label,
@@ -678,7 +669,9 @@ class SubscriberMonitor(
             expectedPublisherPresence = true,
             expectedLocation = locationUpdate,
             timeout = timeout,
-            expectedPublisherResolution = publisherResolution
+            expectedPublisherResolution = publisherResolution,
+            expectedSubscriberResolution = subscriberResolution,
+            subscriberResolutionPreferenceFlow = subscriberResolutionPreferenceFlow
         )
     }
 
@@ -701,6 +694,7 @@ class SubscriberMonitor(
                     assertPublisherPresence()
                     assertLocationUpdated()
                     assertPublisherResolution()
+                    assertSubscriberPreferredResolution()
                 }
             } catch (timeoutCancellationException: TimeoutCancellationException) {
                 testLogD("$label - timed out")
@@ -712,6 +706,27 @@ class SubscriberMonitor(
         }
 
         return this
+    }
+
+    /**
+     * Assert that we receive the expected subscriber resolution.
+     */
+    private fun assertSubscriberPreferredResolution()
+    {
+        testLogD("SubscriberMonitor: $label - (WAITING) preferredSubscriberResolution = $expectedSubscriberResolution")
+        val preferredSubscriberResolution = runBlocking {
+            subscriberResolutionPreferenceFlow.first{resolution ->
+                testLogD("Checking subscriber resolution $resolution")
+                resolution == expectedSubscriberResolution}
+        }
+        if (preferredSubscriberResolution != expectedSubscriberResolution) {
+            testLogD("SubscriberMonitor: $label - (FAIL) preferredSubscriberResolution = $preferredSubscriberResolution")
+            throw AssertionError(
+                "Expected resolution update $expectedSubscriberResolution but last was $preferredSubscriberResolution"
+            )
+        } else {
+            testLogD("SubscriberMonitor: $label - (PASS) preferredSubscriberResolution = $preferredSubscriberResolution")
+        }
     }
 
     private fun assertPublisherResolution()
