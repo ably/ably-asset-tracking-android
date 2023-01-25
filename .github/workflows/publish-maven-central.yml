@@ -24,8 +24,8 @@ jobs:
     # Gradle 7 requires Java 11 to run
     - uses: actions/setup-java@v3
       with:
-        distribution: 'zulu'
-        java-version: '11'
+        distribution: zulu
+        java-version: '19'
 
     - name: Publish to Repositories
       env:
@@ -37,4 +37,4 @@ jobs:
         ORG_GRADLE_PROJECT_SIGNING_KEY_BASE64: ${{ secrets.MAVEN_SIGNING_KEY_RING_FILE_BASE64 }}
       run: |
         echo "Publishing version ${{ github.event.inputs.version }} to MavenCentral..."
-        ./gradlew -PpublishTarget=MavenCentral -PruntimeSecrets=USE_DUMMY_EMPTY_STRING_VALUES publishToSonatype closeAndReleaseSonatypeStagingRepository
+        ./gradlew --stacktrace -PpublishTarget=MavenCentral -PruntimeSecrets=USE_DUMMY_EMPTY_STRING_VALUES publishToSonatype closeAndReleaseSonatypeStagingRepository
