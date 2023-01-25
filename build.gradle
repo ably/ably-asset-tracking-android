@@ -40,6 +40,8 @@ tasks.dokkaHtmlMultiModule.configure {
     )
 }
 
+logger.lifecycle("Gradle JVM: ${org.gradle.internal.jvm.Jvm.current()}")
+
 allprojects {
     // group and version properties are configured here as they're inherited by the maven-publish plugin.
     group = 'com.ably.tracking'
