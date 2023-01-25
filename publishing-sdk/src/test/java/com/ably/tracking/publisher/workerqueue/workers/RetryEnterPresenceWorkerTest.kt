@@ -5,7 +5,7 @@ import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 import com.ably.tracking.test.common.mockConnectFailure
 import com.ably.tracking.test.common.mockConnectSuccess
-import com.google.common.truth.Truth
+import com.google.common.truth.Truth.assertThat
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -29,10 +29,11 @@ class RetryEnterPresenceWorkerTest {
     private val postedWorks = mutableListOf<WorkerSpecification>()
 
     @Test
-    fun `should not post any work when connection succeeded`() {
+    fun `should post RetryEnterPresenceSuccess work when connection succeeded`() {
         runTest {
             // given
             val initialProperties = createPublisherProperties()
+            initialProperties.trackables.add(trackable)
             initialProperties.duplicateTrackableGuard.clear(trackable)
             ably.mockConnectSuccess(trackable.id)
 
@@ -46,7 +47,8 @@ class RetryEnterPresenceWorkerTest {
             // then
             asyncWorks.executeAll()
 
-            Truth.assertThat(postedWorks).isEmpty()
+            val postedWork = postedWorks[0] as WorkerSpecification.RetryEnterPresenceSuccess
+            assertThat(postedWork.trackable).isEqualTo(trackable)
         }
     }
 
@@ -116,11 +118,11 @@ class RetryEnterPresenceWorkerTest {
             // then
             asyncWorks.launchAll(this)
 
-            Truth.assertThat(postedWorks).isEmpty()
+            assertThat(postedWorks).isEmpty()
 
             advanceUntilIdle()
 
-            Truth.assertThat(postedWorks)
+            assertThat(postedWorks)
                 .contains(WorkerSpecification.RetryEnterPresence(trackable))
         }
     }

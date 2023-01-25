@@ -436,13 +436,14 @@ constructor(
         val hasSentAtLeastOneLocation: Boolean = properties.lastSentEnhancedLocations[trackableId] != null
         val lastChannelConnectionStateChange = getLastChannelConnectionStateChange(properties, trackableId)
         val isSubscribedToPresence = properties.trackableSubscribedToPresenceFlags[trackableId] == true
+        val hasEnteredPresence = properties.trackableEnteredPresenceFlags[trackableId] == true
         val newTrackableState = when (properties.lastConnectionStateChange.state) {
             ConnectionState.ONLINE -> {
                 when (lastChannelConnectionStateChange.state) {
                     ConnectionState.ONLINE ->
                         when {
-                            hasSentAtLeastOneLocation && isSubscribedToPresence -> TrackableState.Online
-                            hasSentAtLeastOneLocation && !isSubscribedToPresence -> TrackableState.Publishing
+                            hasSentAtLeastOneLocation && hasEnteredPresence && isSubscribedToPresence -> TrackableState.Online
+                            hasSentAtLeastOneLocation && hasEnteredPresence && !isSubscribedToPresence -> TrackableState.Publishing
                             else -> TrackableState.Offline()
                         }
                     ConnectionState.OFFLINE -> TrackableState.Offline()

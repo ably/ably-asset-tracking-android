@@ -34,6 +34,7 @@ import com.ably.tracking.publisher.workerqueue.workers.PresenceMessageWorker
 import com.ably.tracking.publisher.workerqueue.workers.RawLocationChangedWorker
 import com.ably.tracking.publisher.workerqueue.workers.RefreshResolutionPolicyWorker
 import com.ably.tracking.publisher.workerqueue.workers.RemoveTrackableWorker
+import com.ably.tracking.publisher.workerqueue.workers.RetryEnterPresenceSuccessWorker
 import com.ably.tracking.publisher.workerqueue.workers.RetryEnterPresenceWorker
 import com.ably.tracking.publisher.workerqueue.workers.RetrySubscribeToPresenceSuccessWorker
 import com.ably.tracking.publisher.workerqueue.workers.RetrySubscribeToPresenceWorker
@@ -93,6 +94,10 @@ internal class WorkerFactory(
             is WorkerSpecification.RetryEnterPresence -> RetryEnterPresenceWorker(
                 workerSpecification.trackable,
                 ably
+            )
+            is WorkerSpecification.RetryEnterPresenceSuccess -> RetryEnterPresenceSuccessWorker(
+                workerSpecification.trackable,
+                publisherInteractor
             )
             is WorkerSpecification.ConnectionReady -> ConnectionReadyWorker(
                 workerSpecification.trackable,
@@ -254,6 +259,10 @@ internal sealed class WorkerSpecification {
     ) : WorkerSpecification()
 
     data class RetryEnterPresence(
+        val trackable: Trackable
+    ) : WorkerSpecification()
+
+    data class RetryEnterPresenceSuccess(
         val trackable: Trackable
     ) : WorkerSpecification()
 

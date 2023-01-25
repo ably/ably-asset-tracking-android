@@ -48,6 +48,11 @@ internal class RetryEnterPresenceWorker(
         )
 
         when {
+            connectResult.isSuccess -> postWork(
+                WorkerSpecification.RetryEnterPresenceSuccess(
+                    trackable
+                )
+            )
             connectResult.isFatalAblyFailure() -> throw NotImplementedError() // TODO How to handle this case?
             connectResult.isFailure -> {
                 delay(WORK_DELAY_IN_MILLISECONDS)
