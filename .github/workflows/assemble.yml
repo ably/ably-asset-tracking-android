@@ -10,11 +10,10 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      # Gradle 7 requires Java 11 to run
       - uses: actions/setup-java@v3
         with:
-          distribution: 'zulu'
-          java-version: '11'
+          distribution: zulu
+          java-version: '19'
 
       - name: Populate AWS Amplify Configuration file from Secrets
         run: |
@@ -23,7 +22,7 @@ jobs:
         env:
           AMPLIFY_CONFIGURATION: ${{ secrets.AMPLIFY_CONFIGURATION }}
 
-      - run: ./gradlew assemble
+      - run: ./gradlew assemble --stacktrace
         env:
           ORG_GRADLE_PROJECT_MAPBOX_DOWNLOADS_TOKEN: ${{ secrets.MAPBOX_DOWNLOADS_TOKEN }}
           ORG_GRADLE_PROJECT_MAPBOX_ACCESS_TOKEN: ${{ secrets.MAPBOX_ACCESS_TOKEN }}
