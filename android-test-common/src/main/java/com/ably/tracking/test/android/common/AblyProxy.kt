@@ -3,7 +3,6 @@ package com.ably.tracking.test.android.common
 import io.ably.lib.types.ClientOptions
 import io.ably.lib.util.Log
 import io.ktor.client.HttpClient
-import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
@@ -13,9 +12,8 @@ import io.ktor.http.Parameters
 import io.ktor.http.ParametersBuilder
 import io.ktor.http.Url
 import io.ktor.server.application.install
+import io.ktor.server.engine.ApplicationEngine
 import io.ktor.server.engine.embeddedServer
-import io.ktor.server.netty.Netty
-import io.ktor.server.netty.NettyApplicationEngine
 import io.ktor.server.plugins.callloging.CallLogging
 import io.ktor.server.request.httpMethod
 import io.ktor.server.request.path
@@ -35,6 +33,8 @@ import java.net.ServerSocket
 import java.net.Socket
 import java.net.SocketException
 import javax.net.ssl.SSLSocketFactory
+import io.ktor.client.engine.cio.CIO as ClientCIO
+import io.ktor.server.cio.CIO as ServerCIO
 
 private const val AGENT_HEADER_NAME = "ably-asset-tracking-android-publisher-tests"
 
@@ -284,13 +284,13 @@ class Layer7Proxy(
         const val tag = "Layer7Proxy"
     }
 
-    private var server: NettyApplicationEngine? = null
+    private var server: ApplicationEngine? = null
     var interceptor: Layer7Interceptor = PassThroughInterceptor()
 
     override fun start() {
         testLogD("$tag: starting...")
         server = embeddedServer(
-            Netty,
+            ServerCIO,
             port = listenPort,
             host = listenHost
         ) {
@@ -414,7 +414,7 @@ fun Route.wsProxy(path: String, target: Url, parent: Layer7Proxy) {
  * we can see in logcat
  */
 fun configureWsClient() =
-    HttpClient(CIO).config {
+    HttpClient(ClientCIO).config {
         install(io.ktor.client.plugins.websocket.WebSockets) {
         }
         install(Logging) {
