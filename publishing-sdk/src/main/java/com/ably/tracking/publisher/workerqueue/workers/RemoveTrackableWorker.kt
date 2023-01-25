@@ -21,6 +21,8 @@ internal class RemoveTrackableWorker(
         when {
             properties.trackables.contains(trackable) -> {
                 doAsyncWork {
+                    // Immediately notify the caller as disconnecting should happen in the background
+                    callbackFunction(Result.success(true))
                     // Leave Ably channel.
                     ably.disconnect(trackable.id, properties.presenceData)
                     postWork(buildDisconnectSuccessWorkerSpecification(postWork))
@@ -41,13 +43,7 @@ internal class RemoveTrackableWorker(
     private fun buildDisconnectSuccessWorkerSpecification(postWork: (WorkerSpecification) -> Unit) =
         WorkerSpecification.DisconnectSuccess(
             trackable = trackable,
-            callbackFunction = {
-                if (it.isSuccess) {
-                    callbackFunction(Result.success(true))
-                } else {
-                    callbackFunction(Result.failure(it.exceptionOrNull()!!))
-                }
-            },
+            callbackFunction = {}, // no-op as we've already notified the caller
             shouldRecalculateResolutionCallback = {
                 postWork(WorkerSpecification.ChangeLocationEngineResolution)
             }
