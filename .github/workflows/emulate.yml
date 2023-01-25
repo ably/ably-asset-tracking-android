@@ -35,8 +35,8 @@ jobs:
           script: |
             ${{
               matrix.excludeModules
-                && './gradlew connectedCheck -x :publishing-java-testing:connectedCheck -x :subscribing-java-testing:connectedCheck -x :publishing-example-app:connectedCheck -x :subscribing-example-app:connectedCheck -PruntimeSecrets=FOR_ALL_PROJECTS_BECAUSE_WE_ARE_RUNNING_INTEGRATION_TESTS'
-                || './gradlew connectedCheck -PruntimeSecrets=FOR_ALL_PROJECTS_BECAUSE_WE_ARE_RUNNING_INTEGRATION_TESTS'
+                && './gradlew connectedCheck --stacktrace -x :publishing-java-testing:connectedCheck -x :subscribing-java-testing:connectedCheck -x :publishing-example-app:connectedCheck -x :subscribing-example-app:connectedCheck -PruntimeSecrets=FOR_ALL_PROJECTS_BECAUSE_WE_ARE_RUNNING_INTEGRATION_TESTS'
+                || './gradlew connectedCheck --stacktrace -PruntimeSecrets=FOR_ALL_PROJECTS_BECAUSE_WE_ARE_RUNNING_INTEGRATION_TESTS'
             }}
         env:
           ORG_GRADLE_PROJECT_MAPBOX_DOWNLOADS_TOKEN: ${{ secrets.MAPBOX_DOWNLOADS_TOKEN }}

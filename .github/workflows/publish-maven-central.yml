@@ -37,4 +37,4 @@ jobs:
         ORG_GRADLE_PROJECT_SIGNING_KEY_BASE64: ${{ secrets.MAVEN_SIGNING_KEY_RING_FILE_BASE64 }}
       run: |
         echo "Publishing version ${{ github.event.inputs.version }} to MavenCentral..."
-        ./gradlew -PpublishTarget=MavenCentral -PruntimeSecrets=USE_DUMMY_EMPTY_STRING_VALUES publishToSonatype closeAndReleaseSonatypeStagingRepository
+        ./gradlew --stacktrace -PpublishTarget=MavenCentral -PruntimeSecrets=USE_DUMMY_EMPTY_STRING_VALUES publishToSonatype closeAndReleaseSonatypeStagingRepository

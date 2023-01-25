@@ -26,7 +26,7 @@ jobs:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
 
-      - run: ./gradlew check testDebugUnitTestCoverage testReleaseUnitTestCoverage --profile -PruntimeSecrets=USE_DUMMY_EMPTY_STRING_VALUES
+      - run: ./gradlew check testDebugUnitTestCoverage testReleaseUnitTestCoverage --stacktrace --profile -PruntimeSecrets=USE_DUMMY_EMPTY_STRING_VALUES
         env:
           ORG_GRADLE_PROJECT_MAPBOX_DOWNLOADS_TOKEN: ${{ secrets.MAPBOX_DOWNLOADS_TOKEN }}
 
