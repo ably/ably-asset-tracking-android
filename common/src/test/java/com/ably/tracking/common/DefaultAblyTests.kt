@@ -177,7 +177,7 @@ class DefaultAblyTests {
          *
          * ...that calling `containsKey` on the Channels instance returns false...
          * ...and that calling `get` (the overload that accepts a ChannelOptions object) on the Channels instance returns a channel in the DETACHING state...
-         * ...which, when told to enter presence, fails to do so with an arbitrarily-chosen error `presenceError`...
+         * ...which, when told to enter presence, fails to do so with an arbitrarily-chosen fatal error `presenceError`...
          *
          * When...
          *
@@ -191,7 +191,7 @@ class DefaultAblyTests {
          * ...and checks the channel’s state 2 times...
          * ...and tells the channel to enter presence...
          * ...and releases the channel...
-         * ...and the call to `connect` (on the object under test) fails with a ConnectionException whose errorInformation has the same `code` and `message` as `presenceError`.
+         * ...and the call to `connect` (on the object under test) fails with a ConnectionException whose errorInformation has the same `code`, `statusCode`, and `message` as `presenceError`.
          */
 
         /* A note on this test:
@@ -201,6 +201,7 @@ class DefaultAblyTests {
 
         val presenceError = ErrorInfo(
             "example of an error message", /* arbitrarily chosen */
+            400, /* fatal error code */
             123 /* arbitrarily chosen */
         )
 
@@ -225,9 +226,9 @@ class DefaultAblyTests {
                         expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.FailureWithConnectionException(
                             ErrorInformation(
                                 presenceError.code,
-                                0,
+                                presenceError.statusCode,
                                 presenceError.message,
-                                null,
+                                presenceError.code.toHref(),
                                 null
                             )
                         )
@@ -238,12 +239,12 @@ class DefaultAblyTests {
     }
 
     @Test
-    fun `connect - when presence enter fails`() {
+    fun `connect - when presence enter fails with a fatal error`() {
         /* Given...
          *
          * ...that calling `containsKey` on the Channels instance returns false...
          * ...and that calling `get` (the overload that accepts a ChannelOptions object) on the Channels instance returns a channel in the (arbitrarily-chosen) INITIALIZED state...
-         * ...which, when told to enter presence, fails to do so with an arbitrarily-chosen error `presenceError`...
+         * ...which, when told to enter presence, fails to do so with an arbitrarily-chosen fatal error `presenceError`...
          *
          * When...
          *
@@ -257,11 +258,12 @@ class DefaultAblyTests {
          * ...and checks the channel’s state 2 times...
          * ...and tells the channel to enter presence...
          * ...and releases the channel...
-         * ...and the call to `connect` (on the object under test) fails with a ConnectionException whose errorInformation has the same `code` and `message` as `presenceError`.
+         * ...and the call to `connect` (on the object under test) fails with a ConnectionException whose errorInformation has the same `code`, `statusCode`, and `message` as `presenceError`.
          */
 
         val presenceError = ErrorInfo(
             "example of an error message", /* arbitrarily chosen */
+            400, /* fatal error code */
             123 /* arbitrarily chosen */
         )
 
@@ -286,9 +288,71 @@ class DefaultAblyTests {
                         expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.FailureWithConnectionException(
                             ErrorInformation(
                                 presenceError.code,
-                                0,
+                                presenceError.statusCode,
                                 presenceError.message,
-                                null,
+                                presenceError.code.toHref(),
+                                null
+                            )
+                        )
+                    )
+                )
+            )
+        }
+    }
+
+    @Test
+    fun `connect - when presence enter fails with a non-fatal error`() {
+        /* Given...
+         *
+         * ...that calling `containsKey` on the Channels instance returns false...
+         * ...and that calling `get` (the overload that accepts a ChannelOptions object) on the Channels instance returns a channel in the (arbitrarily-chosen) INITIALIZED state...
+         * ...which, when told to enter presence, fails to do so with an arbitrarily-chosen non-fatal error `presenceError`...
+         *
+         * When...
+         *
+         * ...we call `connect` on the object under test,
+         *
+         * Then...
+         * ...in the following order, precisely the following things happen...
+         *
+         * ...it calls `containsKey` on the Channels instance...
+         * ...and calls `get` (the overload that accepts a ChannelOptions object) on the Channels instance...
+         * ...and checks the channel’s state 2 times...
+         * ...and tells the channel to enter presence...
+         * ...and releases the channel...
+         * ...and the call to `connect` (on the object under test) fails with a ConnectionException whose errorInformation has the same `code`, `statusCode`, and `message` as `presenceError`.
+         */
+
+        val presenceError = ErrorInfo(
+            "example of an error message", /* arbitrarily chosen */
+            500, /* fatal error code */
+            123 /* arbitrarily chosen */
+        )
+
+        runBlocking {
+            DefaultAblyTestScenarios.Connect.test(
+                DefaultAblyTestScenarios.Connect.GivenConfig(
+                    channelsContainsKey = false,
+                    channelsGetOverload = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
+                    channelState = ChannelState.initialized, /* arbitrarily chosen */
+                    channelAttachBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.NotMocked,
+                    presenceEnterBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Failure(
+                        presenceError
+                    ),
+                ),
+                DefaultAblyTestScenarios.Connect.ThenConfig(
+                    overloadOfChannelsGetToVerify = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
+                    numberOfChannelStateFetchesToVerify = 2,
+                    verifyPresenceEnter = true,
+                    verifyChannelAttach = false,
+                    verifyChannelRelease = false,
+                    resultOfConnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
+                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.FailureWithConnectionException(
+                            ErrorInformation(
+                                presenceError.code,
+                                presenceError.statusCode,
+                                presenceError.message,
+                                presenceError.code.toHref(),
                                 null
                             )
                         )
@@ -396,7 +460,7 @@ class DefaultAblyTests {
          *
          * ...that calling `containsKey` on the Channels instance returns false...
          * ...and that calling `get` (the overload that accepts a ChannelOptions object) on the Channels instance returns a channel in the FAILED state...
-         * ...which, when told to attach, fails to do so with an arbitrarily-chosen error `attachError`...
+         * ...which, when told to attach, fails to do so with an arbitrarily-chosen fatal error `attachError`...
          *
          * When...
          *
@@ -410,11 +474,12 @@ class DefaultAblyTests {
          * ...and checks the channel’s state 2 times...
          * ...and tells the channel to attach...
          * ...and releases the channel...
-         * ...and the call to `connect` (on the object under test) fails with a ConnectionException whose errorInformation has the same `code` and `message` as `attachError`.
+         * ...and the call to `connect` (on the object under test) fails with a ConnectionException whose errorInformation has the same `code`, `statusCode`, and `message` as `attachError`.
          */
 
         val attachError = ErrorInfo(
             "example of an error message", /* arbitrarily chosen */
+            400, /* fatal error code */
             123 /* arbitrarily chosen */
         )
 
@@ -437,7 +502,13 @@ class DefaultAblyTests {
                     verifyChannelRelease = true,
                     resultOfConnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
                         expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.FailureWithConnectionException(
-                            ErrorInformation(attachError.code, 0, attachError.message, null, null)
+                            ErrorInformation(
+                                attachError.code,
+                                attachError.statusCode,
+                                attachError.message,
+                                attachError.code.toHref(),
+                                null
+                            )
                         )
                     ),
                 )
@@ -498,7 +569,7 @@ class DefaultAblyTests {
          *
          * ...that calling `containsKey` on the Channels instance returns false...
          * ...and that calling `get` (the overload that accepts a ChannelOptions object) on the Channels instance returns a channel in the DETACHED state...
-         * ... which, when told to attach, fails to do so with an arbitrarily-chosen error...
+         * ... which, when told to attach, fails to do so with an fatal arbitrarily-chosen error...
          *
          * When...
          *
@@ -512,11 +583,12 @@ class DefaultAblyTests {
          * ...and checks the channel’s state once...
          * ...and tells the channel to attach...
          * ...and releases the channel...
-         * ...and the call to `connect` (on the object under test) fails with a ConnectionException whose errorInformation has the same `code` and `message` as `attachError`.
+         * ...and the call to `connect` (on the object under test) fails with a ConnectionException whose errorInformation has the same `code`, `statusCode`, and `message` as `attachError`.
          */
 
         val attachError = ErrorInfo(
             "example of an error message", /* arbitrarily chosen */
+            400, /* fatal error code */
             123 /* arbitrarily chosen */
         )
 
@@ -539,7 +611,13 @@ class DefaultAblyTests {
                     verifyChannelRelease = true,
                     resultOfConnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
                         expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.FailureWithConnectionException(
-                            ErrorInformation(attachError.code, 0, attachError.message, null, null)
+                            ErrorInformation(
+                                attachError.code,
+                                attachError.statusCode,
+                                attachError.message,
+                                attachError.code.toHref(),
+                                null
+                            )
                         )
                     )
                 )
@@ -553,7 +631,7 @@ class DefaultAblyTests {
          *
          * ...that calling `containsKey` on the Channels instance returns false...
          * ...and that calling `get` (the overload that accepts a ChannelOptions object) on the Channels instance returns a channel in the SUSPENDED state...
-         * ...which, when told to enter presence, fails to do so with an arbitrarily-chosen error `presenceError`...
+         * ...which, when told to enter presence, fails to do so with an arbitrarily-chosen fatal error `presenceError`...
          *
          * When...
          *
@@ -567,7 +645,7 @@ class DefaultAblyTests {
          * ...and checks the channel’s state 2 times...
          * ...and tells the channel to enter presence...
          * ...and releases the channel...
-         * ...and the call to `connect` (on the object under test) fails with a ConnectionException whose errorInformation has the same `code` and `message` as `presenceError`.
+         * ...and the call to `connect` (on the object under test) fails with a ConnectionException whose errorInformation has the same `code`, `statusCode`, and `message` as `presenceError`.
          */
 
         /* A note on this test:
@@ -577,6 +655,7 @@ class DefaultAblyTests {
 
         val presenceError = ErrorInfo(
             "example of an error message", /* arbitrarily chosen */
+            400, /* fatal error code */
             123 /* arbitrarily chosen */
         )
 
@@ -601,9 +680,9 @@ class DefaultAblyTests {
                         expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.FailureWithConnectionException(
                             ErrorInformation(
                                 presenceError.code,
-                                0,
+                                presenceError.statusCode,
                                 presenceError.message,
-                                null,
+                                presenceError.code.toHref(),
                                 null
                             )
                         )
@@ -612,6 +691,7 @@ class DefaultAblyTests {
             )
         }
     }
+    private fun Int.toHref() = "https://help.ably.io/error/$this"
 
     @Test
     fun `connect - when channel attach does not complete`() {

@@ -375,7 +375,9 @@ constructor(
                         callback(Result.success(Unit))
                     } catch (connectionException: ConnectionException) {
                         logHandler?.w("$TAG Failed to connect for channel ${channel.name}", connectionException)
-                        ably.channels.release(channelName)
+                        if (connectionException.isFatal()) {
+                            ably.channels.release(channelName)
+                        }
                         callback(Result.failure(connectionException))
                     }
                 }
