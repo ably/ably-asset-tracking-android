@@ -7,6 +7,7 @@ import com.ably.tracking.test.common.mockConnectFailure
 import com.ably.tracking.test.common.mockConnectSuccess
 import com.google.common.truth.Truth
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -50,11 +51,59 @@ class RetryEnterPresenceWorkerTest {
     }
 
     @Test
+    fun `should not attempt to enter presence when trackable is no longer present`() {
+        runTest {
+            // given
+            val initialProperties = createPublisherProperties()
+            initialProperties.duplicateTrackableGuard.clear(trackable)
+
+            // when
+            worker.doWork(
+                initialProperties,
+                asyncWorks.appendWork(),
+                postedWorks.appendSpecification()
+            )
+
+            // then
+            asyncWorks.executeAll()
+
+            coVerify(exactly = 0) {
+                ably.connect(any(), any(), any(), any(), any())
+            }
+        }
+    }
+
+    @Test
+    fun `should not attempt to enter presence when trackable is marked for removal`() {
+        runTest {
+            // given
+            val initialProperties = createPublisherProperties()
+            initialProperties.duplicateTrackableGuard.clear(trackable)
+            initialProperties.trackableRemovalGuard.markForRemoval(trackable) {}
+
+            // when
+            worker.doWork(
+                initialProperties,
+                asyncWorks.appendWork(),
+                postedWorks.appendSpecification()
+            )
+
+            // then
+            asyncWorks.executeAll()
+
+            coVerify(exactly = 0) {
+                ably.connect(any(), any(), any(), any(), any())
+            }
+        }
+    }
+
+    @Test
     fun `should post RetryEnterPresence work after delay when connection failed with a non-fatal error`() {
         runTest(context = UnconfinedTestDispatcher()) {
             // given
             val initialProperties = createPublisherProperties()
             initialProperties.duplicateTrackableGuard.clear(trackable)
+            initialProperties.trackables.add(trackable)
             ably.mockConnectFailure(trackable.id, isFatal = false)
 
             // when
