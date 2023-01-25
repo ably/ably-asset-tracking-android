@@ -1,8 +1,10 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
+import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.common.workerqueue.Worker
+import com.ably.tracking.publisher.PublisherInteractor
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.WorkerSpecification
@@ -10,6 +12,7 @@ import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 internal class RemoveTrackableWorker(
     private val trackable: Trackable,
     private val ably: Ably,
+    private val publisherInteractor: PublisherInteractor,
     private val callbackFunction: ResultCallbackFunction<Boolean>
 ) : Worker<PublisherProperties, WorkerSpecification> {
 
@@ -20,6 +23,8 @@ internal class RemoveTrackableWorker(
     ): PublisherProperties {
         when {
             properties.trackables.contains(trackable) -> {
+                // Immediately change trackable state to "Offline"
+                setTrackableStateToOffline(properties)
                 doAsyncWork {
                     // Immediately notify the caller as disconnecting should happen in the background
                     callbackFunction(Result.success(true))
@@ -38,6 +43,14 @@ internal class RemoveTrackableWorker(
             }
         }
         return properties
+    }
+
+    private fun setTrackableStateToOffline(properties: PublisherProperties) {
+        // set trackable state
+        publisherInteractor.setFinalTrackableState(properties, trackable.id, TrackableState.Offline())
+        // remove trackable state flow
+        properties.trackableStateFlows.remove(trackable.id)
+        publisherInteractor.updateTrackableStateFlows(properties)
     }
 
     private fun buildDisconnectSuccessWorkerSpecification(postWork: (WorkerSpecification) -> Unit) =
