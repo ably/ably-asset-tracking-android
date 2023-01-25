@@ -4,8 +4,8 @@ import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.WorkerSpecification
+import com.ably.tracking.test.common.mockDisconnect
 import com.google.common.truth.Truth.assertThat
-import io.mockk.coEvery
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -67,12 +67,12 @@ class RemoveTrackableWorkerTest {
         }
 
     @Test
-    fun `when removing trackable that is present succeeded should invoke callback with exception`() =
+    fun `when removing trackable that is present should post disconnect success worker`() =
         runTest {
             // given
             val initialProperties = createPublisherProperties()
             initialProperties.trackables.add(trackable)
-            coEvery { ably.disconnect(trackable.id, any()) } returns Result.success(Unit)
+            ably.mockDisconnect(trackable.id)
 
             // when
             worker.doWork(
@@ -87,30 +87,5 @@ class RemoveTrackableWorkerTest {
             assertThat(postedWorks.size).isEqualTo(1)
             assertThat(postedWorks[0])
                 .isInstanceOf(WorkerSpecification.DisconnectSuccess::class.java)
-        }
-
-    @Test
-    fun `when removing trackable that is present fails should invoke callback with exception`() =
-        runTest {
-            // given
-            val initialProperties = createPublisherProperties()
-            initialProperties.trackables.add(trackable)
-            coEvery { ably.disconnect(trackable.id, any()) } returns Result.failure(RuntimeException("testException"))
-
-            // when
-            worker.doWork(
-                initialProperties,
-                asyncWorks.appendWork(),
-                postedWorks.appendSpecification()
-            )
-            asyncWorks.executeAll()
-
-            // then
-            assertThat(asyncWorks.size).isEqualTo(1)
-            assertThat(postedWorks).isEmpty()
-
-            verify {
-                callbackFunction(match { it.exceptionOrNull() is RuntimeException })
-            }
         }
 }

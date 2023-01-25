@@ -22,12 +22,8 @@ internal class RemoveTrackableWorker(
             properties.trackables.contains(trackable) -> {
                 doAsyncWork {
                     // Leave Ably channel.
-                    val result = ably.disconnect(trackable.id, properties.presenceData)
-                    if (result.isSuccess) {
-                        postWork(buildDisconnectSuccessWorkerSpecification(postWork))
-                    } else {
-                        callbackFunction(Result.failure(result.exceptionOrNull()!!))
-                    }
+                    ably.disconnect(trackable.id, properties.presenceData)
+                    postWork(buildDisconnectSuccessWorkerSpecification(postWork))
                 }
             }
             properties.duplicateTrackableGuard.isCurrentlyAddingTrackable(trackable) -> {
