@@ -1,6 +1,5 @@
 package com.ably.tracking.subscriber.workerqueue.workers
 
-import com.ably.tracking.ConnectionException
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.common.workerqueue.CallbackWorker
@@ -21,14 +20,10 @@ internal class StopConnectionWorker(
     ): SubscriberProperties {
         // We're using [runBlocking] on purpose as we want to block the whole subscriber when it's stopping.
         runBlocking {
-            try {
-                ably.close(properties.presenceData)
-                properties.isStopped = true
-                subscriberInteractor.notifyAssetIsOffline()
-                callbackFunction(Result.success(Unit))
-            } catch (exception: ConnectionException) {
-                callbackFunction(Result.failure(exception))
-            }
+            ably.close(properties.presenceData)
+            properties.isStopped = true
+            subscriberInteractor.notifyAssetIsOffline()
+            callbackFunction(Result.success(Unit))
         }
         return properties
     }
