@@ -474,12 +474,6 @@ class EnterUnresponsive(apiKey: String) : UnresponsiveAfterAction(
         }
     }
 
-    /*
-        This test currently fails because the ably-java hangs the client
-        waiting for a presence response if there's there's a reconnection
-        before successful completion of enter()
-    */
-    override val skipTest = true
 }
 
 /**
