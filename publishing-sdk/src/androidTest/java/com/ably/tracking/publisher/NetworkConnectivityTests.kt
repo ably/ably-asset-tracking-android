@@ -297,6 +297,11 @@ class NetworkConnectivityTests(private val testFault: Fault) {
                     locationHelper.sendUpdate(location)
                 }
             }.close()
+
+            // Stop the new publisher. This is required otherwise we won't be able to dispose of our mapbox instances.
+            runBlocking {
+                newPublisher.stop()
+            }
         }
     }
 
