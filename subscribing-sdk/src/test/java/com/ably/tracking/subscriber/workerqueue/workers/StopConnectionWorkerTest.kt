@@ -8,7 +8,6 @@ import com.ably.tracking.subscriber.SubscriberInteractor
 import com.ably.tracking.subscriber.SubscriberProperties
 import com.ably.tracking.subscriber.SubscriberStoppedException
 import com.ably.tracking.subscriber.workerqueue.WorkerSpecification
-import com.ably.tracking.test.common.mockCloseFailure
 import com.ably.tracking.test.common.mockCloseSuccess
 import io.mockk.every
 import io.mockk.just
@@ -47,19 +46,6 @@ internal class StopConnectionWorkerTest {
         Assert.assertTrue(updatedProperties.isStopped)
         verify { callbackFunction.invoke(match { it.isSuccess }) }
         verify { subscriberInteractor.notifyAssetIsOffline() }
-    }
-
-    @Test
-    fun `should call ably close and notify callback with failure when it fails`() = runTest {
-        // given
-        val initialProperties = SubscriberProperties(Resolution(Accuracy.BALANCED, 100, 100.0), mockk())
-        ably.mockCloseFailure()
-
-        // when
-        stopConnectionWorker.doWork(initialProperties, asyncWorks.appendWork(), postedWorks.appendSpecification())
-
-        // then
-        verify { callbackFunction.invoke(match { it.isFailure }) }
     }
 
     @Test

@@ -116,8 +116,6 @@ interface Publisher {
     /**
      * Stops this publisher from publishing locations. Once a publisher has been stopped, it cannot be restarted.
      * Please note that calling this method will remove the notification provided by [Builder.backgroundTrackingNotificationProvider].
-     *
-     * @throws ConnectionException If something goes wrong during connection closing
      */
     suspend fun stop()
 
@@ -126,8 +124,6 @@ interface Publisher {
      * Please note that calling this method will remove the notification provided by [Builder.backgroundTrackingNotificationProvider].
      *
      * @param timeoutInMilliseconds This parameter will be ignored.
-     *
-     * @throws ConnectionException If something goes wrong during connection closing
      */
     @JvmSynthetic
     @Deprecated(

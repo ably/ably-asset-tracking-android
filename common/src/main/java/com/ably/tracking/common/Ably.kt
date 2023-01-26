@@ -217,8 +217,6 @@ interface Ably {
      * Cleanups and closes all the connected channels and their presence. In the end closes Ably connection.
      *
      * @param presenceData The data that will be send via the presence channels.
-     *
-     * @throws ConnectionException if something goes wrong.
      */
     suspend fun close(presenceData: PresenceData)
 
