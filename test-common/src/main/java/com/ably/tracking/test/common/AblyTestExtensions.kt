@@ -109,18 +109,8 @@ fun Ably.mockGetCurrentPresenceError(trackableId: String) {
     coEvery { getCurrentPresence(trackableId) } returns Result.failure(anyConnectionException())
 }
 
-fun Ably.mockDisconnect(trackableId: String, result: Result<Unit>) {
-    val callbackSlot = slot<(Result<Unit>) -> Unit>()
-    every {
-        disconnect(trackableId, any(), capture(callbackSlot))
-    } answers {
-        callbackSlot.captured(result)
-    }
-    coEvery { disconnect(trackableId, any()) } returns result
-}
-
-fun Ably.mockDisconnectSuccess(trackableId: String) {
-    mockDisconnect(trackableId, Result.success(Unit))
+fun Ably.mockDisconnect(trackableId: String) {
+    coEvery { disconnect(trackableId, any()) } just runs
 }
 
 fun Ably.mockSendEnhancedLocationSuccess(trackableId: String) {

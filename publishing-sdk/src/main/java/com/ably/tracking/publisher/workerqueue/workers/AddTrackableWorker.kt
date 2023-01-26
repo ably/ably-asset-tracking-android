@@ -24,6 +24,11 @@ internal typealias AddTrackableCallbackFunction = ResultCallbackFunction<AddTrac
  */
 private const val WORK_DELAY_IN_MILLISECONDS = 200L
 
+/**
+ * How long should we wait before queueing enter retry presence work if enter presence fails.
+ */
+private const val PRESENCE_ENTER_DELAY_IN_MILLISECONDS = 15_000L
+
 internal class AddTrackableWorker(
     private val trackable: Trackable,
     private val callbackFunction: AddTrackableCallbackFunction,
@@ -116,8 +121,7 @@ internal class AddTrackableWorker(
         } else {
             postWork(createConnectionCreatedWorker())
             if (connectResult.isFailure) {
-                isDelayingWork = true
-                delay(WORK_DELAY_IN_MILLISECONDS)
+                delay(PRESENCE_ENTER_DELAY_IN_MILLISECONDS)
                 postWork(WorkerSpecification.RetryEnterPresence(trackable))
             }
         }

@@ -25,6 +25,7 @@ internal class RemoveTrackableWorker(
             properties.trackables.contains(trackable) -> {
                 // Immediately change trackable state to "Offline"
                 setTrackableStateToOffline(properties)
+                properties.trackableRemovalGuard.markForRemoval(trackable, callbackFunction)
                 doAsyncWork {
                     // Immediately notify the caller as disconnecting should happen in the background
                     callbackFunction(Result.success(true))

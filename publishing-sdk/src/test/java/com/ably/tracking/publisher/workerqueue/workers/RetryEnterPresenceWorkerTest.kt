@@ -126,4 +126,28 @@ class RetryEnterPresenceWorkerTest {
                 .contains(WorkerSpecification.RetryEnterPresence(trackable))
         }
     }
+
+    @Test
+    fun `should post RetryEnterPresence work when connection failed with a fatal error`() {
+        runTest {
+            // given
+            val initialProperties = createPublisherProperties()
+            initialProperties.duplicateTrackableGuard.clear(trackable)
+            initialProperties.trackables.add(trackable)
+            ably.mockEnterPresenceFailure(trackable.id, isFatal = true)
+
+            // when
+            worker.doWork(
+                initialProperties,
+                asyncWorks.appendWork(),
+                postedWorks.appendSpecification()
+            )
+
+            // then
+            asyncWorks.executeAll()
+
+            val postedWork = postedWorks[0] as WorkerSpecification.FailTrackable
+            assertThat(postedWork.trackable).isEqualTo(trackable)
+        }
+    }
 }

@@ -1,6 +1,7 @@
 package com.ably.tracking.publisher.workerqueue
 
 import com.ably.tracking.EnhancedLocationUpdate
+import com.ably.tracking.ErrorInformation
 import com.ably.tracking.Location
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.LocationUpdateType
@@ -22,6 +23,7 @@ import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.workers.AblyConnectionStateChangeWorker
 import com.ably.tracking.publisher.workerqueue.workers.AddTrackableFailedWorker
 import com.ably.tracking.publisher.workerqueue.workers.AddTrackableWorker
+import com.ably.tracking.publisher.workerqueue.workers.FailTrackableWorker
 import com.ably.tracking.publisher.workerqueue.workers.ChangeLocationEngineResolutionWorker
 import com.ably.tracking.publisher.workerqueue.workers.ChangeRoutingProfileWorker
 import com.ably.tracking.publisher.workerqueue.workers.ChannelConnectionStateChangeWorker
@@ -97,6 +99,12 @@ internal class WorkerFactory(
             )
             is WorkerSpecification.RetryEnterPresenceSuccess -> RetryEnterPresenceSuccessWorker(
                 workerSpecification.trackable,
+                publisherInteractor
+            )
+            is WorkerSpecification.FailTrackable -> FailTrackableWorker(
+                workerSpecification.trackable,
+                workerSpecification.errorInformation,
+                ably,
                 publisherInteractor
             )
             is WorkerSpecification.ConnectionReady -> ConnectionReadyWorker(
@@ -265,6 +273,11 @@ internal sealed class WorkerSpecification {
 
     data class RetryEnterPresenceSuccess(
         val trackable: Trackable
+    ) : WorkerSpecification()
+
+    data class FailTrackable(
+        val trackable: Trackable,
+        val errorInformation: ErrorInformation
     ) : WorkerSpecification()
 
     data class ConnectionReady(

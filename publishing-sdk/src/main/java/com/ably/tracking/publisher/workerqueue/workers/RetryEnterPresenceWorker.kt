@@ -1,5 +1,6 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
+import com.ably.tracking.ConnectionException
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.PresenceData
 import com.ably.tracking.common.isFatalAblyFailure
@@ -10,10 +11,9 @@ import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 import kotlinx.coroutines.delay
 
 /**
- * How long should we wait before re-queueing the work if starting or stopping Ably connection is in progress.
- * If after the delay the Ably connection process is still in progress the work will be re-queued again.
+ * How long should we wait before queueing enter retry presence work if enter presence fails.
  */
-private const val WORK_DELAY_IN_MILLISECONDS = 200L
+private const val PRESENCE_ENTER_DELAY_IN_MILLISECONDS = 15_000L
 
 internal class RetryEnterPresenceWorker(
     private val trackable: Trackable,
@@ -25,17 +25,13 @@ internal class RetryEnterPresenceWorker(
         doAsyncWork: (suspend () -> Unit) -> Unit,
         postWork: (WorkerSpecification) -> Unit
     ): PublisherProperties {
-        if (shouldRetryPresenceEnter(properties)) {
+        if (properties.trackables.contains(trackable)) {
             doAsyncWork {
                 enterPresence(postWork, properties.presenceData)
             }
         }
         return properties
     }
-
-    private fun shouldRetryPresenceEnter(properties: PublisherProperties) =
-        properties.trackables.contains(trackable) &&
-            !properties.trackableRemovalGuard.isMarkedForRemoval(trackable)
 
     private suspend fun enterPresence(
         postWork: (WorkerSpecification) -> Unit,
@@ -52,12 +48,23 @@ internal class RetryEnterPresenceWorker(
                     trackable
                 )
             )
-            enterPresenceResult.isFatalAblyFailure() -> throw NotImplementedError() // TODO How to handle this case?
-            enterPresenceResult.isFailure -> {
-                delay(WORK_DELAY_IN_MILLISECONDS)
+            enterPresenceResult.isFatalAblyFailure() -> postFailTrackableWork(
+                postWork,
+                enterPresenceResult
+            )
+            else -> {
+                delay(PRESENCE_ENTER_DELAY_IN_MILLISECONDS)
                 postWork(WorkerSpecification.RetryEnterPresence(trackable))
             }
         }
+    }
+
+    private fun postFailTrackableWork(
+        postWork: (WorkerSpecification) -> Unit,
+        result: Result<Unit>
+    ) {
+        val errorInformation = (result.exceptionOrNull() as ConnectionException).errorInformation
+        postWork(WorkerSpecification.FailTrackable(trackable, errorInformation))
     }
 
     override fun onUnexpectedAsyncError(
