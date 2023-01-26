@@ -473,7 +473,6 @@ class EnterUnresponsive(apiKey: String) : UnresponsiveAfterAction(
             override val name = "EnterUnresponsive"
         }
     }
-
 }
 
 /**
