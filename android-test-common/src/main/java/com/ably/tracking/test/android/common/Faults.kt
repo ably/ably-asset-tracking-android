@@ -162,14 +162,6 @@ class TcpConnectionRefused(apiKey: String) : TransportLayerFault(apiKey) {
         onlineWithinMillis = 60_000
     )
 
-    /**
-     * This fault type is temporarily disabled at runtime. It can be re-enabled by removing this override.
-     * We will re-enable this test when the following have been addressed:
-     * - https://github.com/ably/ably-asset-tracking-android/issues/859
-     * - https://github.com/ably/ably-asset-tracking-android/issues/905
-     */
-    override val skipTest = true
-
     override fun enable() {
         tcpProxy.stop()
     }
@@ -196,14 +188,6 @@ class TcpConnectionUnresponsive(apiKey: String) : TransportLayerFault(apiKey) {
         offlineWithinMillis = 120_000,
         onlineWithinMillis = 60_000
     )
-
-    /**
-     * This fault type is temporarily disabled at runtime. It can be re-enabled by removing this override.
-     * We will re-enable this test when the following have been addressed:
-     * - https://github.com/ably/ably-asset-tracking-android/issues/859
-     * - https://github.com/ably/ably-asset-tracking-android/issues/905
-     */
-    override val skipTest = true
 
     override fun enable() {
         tcpProxy.isForwarding = false
@@ -369,12 +353,6 @@ class AttachUnresponsive(apiKey: String) : DropAction(
             override val name = "AttachUnresponsive"
         }
     }
-
-    /*
-        Currently failing due to Issue #905 -- throwing ConnectionError
-        when trying to add new trackables while offline.
-     */
-    override val skipTest = true
 }
 
 /**
