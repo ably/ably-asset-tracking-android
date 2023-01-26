@@ -119,17 +119,19 @@ internal class AddTrackableWorker(
                 )
             )
         } else {
-            postWork(createConnectionCreatedWorker())
-            if (connectResult.isFailure) {
+            val enteredPresence = connectResult.isSuccess
+            postWork(createConnectionCreatedWorker(enteredPresence))
+            if (!enteredPresence) {
                 delay(PRESENCE_ENTER_DELAY_IN_MILLISECONDS)
                 postWork(WorkerSpecification.RetryEnterPresence(trackable))
             }
         }
     }
 
-    private fun createConnectionCreatedWorker() =
+    private fun createConnectionCreatedWorker(enteredPresence: Boolean) =
         WorkerSpecification.ConnectionCreated(
             trackable,
+            enteredPresence,
             callbackFunction,
             presenceUpdateListener,
             channelStateChangeListener

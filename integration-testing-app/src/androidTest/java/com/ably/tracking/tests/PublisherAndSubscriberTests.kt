@@ -23,7 +23,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.junit.Assert
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -265,7 +264,6 @@ class PublisherAndSubscriberTests {
 
     @OptIn(Experimental::class)
     @Test
-    @Ignore("temporary ignored, fix before merging")
     fun shouldNotEmitPublisherPresenceFalseIfPublisherIsPresentFromTheStart() {
         // given
         val publisherViewsTrackableAsOnline = UnitExpectation("publisher views trackable as online")
