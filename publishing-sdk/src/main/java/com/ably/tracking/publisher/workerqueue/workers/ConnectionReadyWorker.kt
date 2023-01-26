@@ -64,8 +64,8 @@ internal class ConnectionReadyWorker(
         properties: PublisherProperties,
         postWork: (WorkerSpecification) -> Unit
     ) {
-        val result = ably.disconnect(trackable.id, properties.presenceData)
-        postWork(WorkerSpecification.TrackableRemovalRequested(trackable, callbackFunction, result))
+        ably.disconnect(trackable.id, properties.presenceData)
+        postWork(WorkerSpecification.TrackableRemovalRequested(trackable, callbackFunction, Result.success(Unit)))
     }
 
     private fun subscribeForChannelStateChanges() {

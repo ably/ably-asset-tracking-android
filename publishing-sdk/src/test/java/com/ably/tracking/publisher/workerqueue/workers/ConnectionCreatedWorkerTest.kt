@@ -90,8 +90,7 @@ class ConnectionCreatedWorkerTest {
         val initialProperties = createPublisherProperties()
         initialProperties.trackableRemovalGuard.markForRemoval(trackable) {}
 
-        val disconnectResult = Result.success(Unit)
-        ably.mockDisconnect(trackable.id, disconnectResult)
+        ably.mockDisconnect(trackable.id)
 
         // when
         worker.doWork(
@@ -108,7 +107,6 @@ class ConnectionCreatedWorkerTest {
         val postedWork = postedWorks.first() as WorkerSpecification.TrackableRemovalRequested
         assertThat(postedWork.trackable).isEqualTo(trackable)
         assertThat(postedWork.callbackFunction).isEqualTo(resultCallbackFunction)
-        assertThat(postedWork.result).isEqualTo(disconnectResult)
     }
 
     @Test
@@ -117,8 +115,7 @@ class ConnectionCreatedWorkerTest {
         val initialProperties = createPublisherProperties()
         initialProperties.trackableRemovalGuard.markForRemoval(trackable) {}
 
-        val disconnectResult = Result.success(Unit)
-        ably.mockDisconnect(trackable.id, disconnectResult)
+        ably.mockDisconnect(trackable.id)
 
         // when
         worker.doWork(
