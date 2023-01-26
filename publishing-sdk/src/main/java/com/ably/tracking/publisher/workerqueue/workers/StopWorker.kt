@@ -1,6 +1,5 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
-import com.ably.tracking.ConnectionException
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.common.workerqueue.CallbackWorker
@@ -25,17 +24,13 @@ internal class StopWorker(
         publisherInteractor
         // We're using [runBlocking] on purpose as we want to block the whole publisher when it's stopping.
         runBlocking {
-            try {
-                if (properties.isTracking) {
-                    publisherInteractor.stopLocationUpdates(properties)
-                }
-                publisherInteractor.closeMapbox()
-                ably.close(properties.presenceData)
-                properties.dispose()
-                callbackFunction(Result.success(Unit))
-            } catch (exception: ConnectionException) {
-                callbackFunction(Result.failure(exception))
+            if (properties.isTracking) {
+                publisherInteractor.stopLocationUpdates(properties)
             }
+            publisherInteractor.closeMapbox()
+            ably.close(properties.presenceData)
+            properties.dispose()
+            callbackFunction(Result.success(Unit))
         }
         // We should mark the publisher as stopped no matter if the whole stopping process completed successfully.
         properties.state = PublisherState.STOPPED

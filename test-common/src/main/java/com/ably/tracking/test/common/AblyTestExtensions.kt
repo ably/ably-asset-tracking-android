@@ -153,10 +153,6 @@ fun Ably.mockSendRawLocationSuccess(trackableId: String) {
     }
 }
 
-fun Ably.mockCloseFailure(exception: ConnectionException = anyConnectionException()) {
-    coEvery { close(any()) } throws exception
-}
-
 fun Ably.mockCloseSuccess() {
     coEvery { close(any()) } returns Unit
 }
