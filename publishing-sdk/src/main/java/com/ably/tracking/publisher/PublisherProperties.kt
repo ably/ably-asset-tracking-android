@@ -131,6 +131,8 @@ private constructor(
         }
     val hasNoTrackablesAddingOrAdded: Boolean
         get() = trackables.isEmpty() && !duplicateTrackableGuard.isCurrentlyAddingAnyTrackable()
+    val trackablesWithFinalStateSet: MutableSet<String> = mutableSetOf()
+        get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
 
     override val isStopped: Boolean
         get() = state == PublisherState.STOPPED
@@ -174,6 +176,8 @@ private constructor(
                 it.state = state
             }
 
+    fun hasSetFinalTrackableState(trackableId: String): Boolean = trackablesWithFinalStateSet.contains(trackableId)
+
     fun dispose() {
         trackables.clear()
         trackableStates.clear()
@@ -197,6 +201,7 @@ private constructor(
         rawLocationsPublishingState.clearAll()
         duplicateTrackableGuard.clearAll()
         trackableRemovalGuard.clearAll()
+        trackablesWithFinalStateSet.clear()
         isDisposed = true
     }
 }

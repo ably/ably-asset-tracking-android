@@ -5,7 +5,6 @@ import com.ably.tracking.ConnectionException
 import com.ably.tracking.common.Ably
 import com.ably.tracking.test.common.mockConnectFailureThenSuccess
 import com.ably.tracking.test.common.mockConnectSuccess
-import com.ably.tracking.test.common.mockDisconnectSuccess
 import com.ably.tracking.test.common.mockSubscribeToPresenceError
 import com.ably.tracking.test.common.mockSubscribeToPresenceSuccess
 import io.mockk.coEvery
@@ -40,7 +39,6 @@ class DefaultPublisherTest {
         // given
         val trackableId = UUID.randomUUID().toString()
         ably.mockConnectSuccess(trackableId)
-        ably.mockDisconnectSuccess(trackableId)
         ably.mockSubscribeToPresenceError(trackableId)
 
         // when
@@ -56,7 +54,6 @@ class DefaultPublisherTest {
         // given
         val trackableId = UUID.randomUUID().toString()
         ably.mockConnectSuccess(trackableId)
-        ably.mockDisconnectSuccess(trackableId)
         ably.mockSubscribeToPresenceError(trackableId)
 
         // when

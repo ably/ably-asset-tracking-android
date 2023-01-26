@@ -178,6 +178,7 @@ internal class WorkerFactory(
             is WorkerSpecification.RemoveTrackable -> RemoveTrackableWorker(
                 workerSpecification.trackable,
                 ably,
+                publisherInteractor,
                 workerSpecification.callbackFunction,
             )
             is WorkerSpecification.SendEnhancedLocationFailure -> SendEnhancedLocationFailureWorker(

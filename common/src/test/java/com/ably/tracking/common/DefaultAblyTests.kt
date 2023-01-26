@@ -1626,11 +1626,11 @@ class DefaultAblyTests {
      */
 
     @Test
-    fun `disconnect - when channel is in INITIALIZED state`() {
+    fun `disconnect - when presence leave succeeds`() {
         /* Given...
          *
          * ...that calling containsKey on the Channels instance returns true...
-         * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel in state INITIALIZED...
+         * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel...
          * ...which, when told to leave presence, does so successfully...
          *
          * When...
@@ -1642,7 +1642,6 @@ class DefaultAblyTests {
          *
          * ...it calls `containsKey` on the Channels instance...
          * ...and calls `get` on the Channels instance...
-         * ...and fetches the channel’s state once...
          * ...and tells the channel to leave presence...
          * ...and calls `unsubscribe` on the channel and on its Presence instance...
          * ...and fetches the channel’s name and calls `release` on the Channels instance...
@@ -1654,545 +1653,12 @@ class DefaultAblyTests {
                 DefaultAblyTestScenarios.Disconnect.GivenConfig(
                     channelsContainsKey = true,
                     mockChannelsGet = true,
-                    initialChannelState = ChannelState.initialized,
-                    channelStateChangeBehaviour = DefaultAblyTestScenarios.GivenTypes.ChannelStateChangeBehaviour.NoBehaviour,
                     presenceLeaveBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Success
                 ),
                 DefaultAblyTestScenarios.Disconnect.ThenConfig(
                     verifyChannelsGet = true,
-                    numberOfChannelStateFetchesToVerify = 1,
-                    verifyChannelOn = false,
-                    verifyChannelStateChangeCurrent = false,
-                    verifyChannelOff = false,
                     verifyPresenceLeave = true,
                     verifyChannelUnsubscribeAndRelease = true,
-                    resultOfDisconnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
-                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
-                    )
-                )
-            )
-        }
-    }
-
-    @Test
-    fun `disconnect - when channel is in ATTACHING state`() {
-        /* Given...
-         *
-         * ...that calling containsKey on the Channels instance returns true...
-         * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel in state ATTACHING...
-         * ...which, when told to leave presence, does so successfully...
-         *
-         * When...
-         *
-         * ...we call `disconnect` on the object under test,
-         *
-         * Then...
-         * ...in the following order, precisely the following things happen...
-         *
-         * ...it calls `containsKey` on the Channels instance...
-         * ...and calls `get` on the Channels instance...
-         * ...and fetches the channel’s state once...
-         * ...and tells the channel to leave presence...
-         * ...and calls `unsubscribe` on the channel and on its Presence instance...
-         * ...and fetches the channel’s name and calls `release` on the Channels instance...
-         * ...and the call to `disconnect` (on the object under test) succeeds.
-         */
-
-        runBlocking {
-            DefaultAblyTestScenarios.Disconnect.test(
-                DefaultAblyTestScenarios.Disconnect.GivenConfig(
-                    channelsContainsKey = true,
-                    mockChannelsGet = true,
-                    initialChannelState = ChannelState.attaching,
-                    channelStateChangeBehaviour = DefaultAblyTestScenarios.GivenTypes.ChannelStateChangeBehaviour.NoBehaviour,
-                    presenceLeaveBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Success
-                ),
-                DefaultAblyTestScenarios.Disconnect.ThenConfig(
-                    verifyChannelsGet = true,
-                    numberOfChannelStateFetchesToVerify = 1,
-                    verifyChannelOn = false,
-                    verifyChannelStateChangeCurrent = false,
-                    verifyChannelOff = false,
-                    verifyPresenceLeave = true,
-                    verifyChannelUnsubscribeAndRelease = true,
-                    resultOfDisconnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
-                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
-                    )
-                )
-            )
-        }
-    }
-
-    @Test
-    fun `disconnect - when channel is in ATTACHED state`() {
-        /* Given...
-         *
-         * ...that calling containsKey on the Channels instance returns true...
-         * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel in state ATTACHED...
-         * ...which, when told to leave presence, does so successfully...
-         *
-         * When...
-         *
-         * ...we call `disconnect` on the object under test,
-         *
-         * Then...
-         * ...in the following order, precisely the following things happen...
-         *
-         * ...it calls `containsKey` on the Channels instance...
-         * ...and calls `get` on the Channels instance...
-         * ...and fetches the channel’s state once...
-         * ...and tells the channel to leave presence...
-         * ...and calls `unsubscribe` on the channel and on its Presence instance...
-         * ...and fetches the channel’s name and calls `release` on the Channels instance...
-         * ...and the call to `disconnect` (on the object under test) succeeds.
-         */
-
-        runBlocking {
-            DefaultAblyTestScenarios.Disconnect.test(
-                DefaultAblyTestScenarios.Disconnect.GivenConfig(
-                    channelsContainsKey = true,
-                    mockChannelsGet = true,
-                    initialChannelState = ChannelState.attached,
-                    channelStateChangeBehaviour = DefaultAblyTestScenarios.GivenTypes.ChannelStateChangeBehaviour.NoBehaviour,
-                    presenceLeaveBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Success
-                ),
-                DefaultAblyTestScenarios.Disconnect.ThenConfig(
-                    verifyChannelsGet = true,
-                    numberOfChannelStateFetchesToVerify = 1,
-                    verifyChannelOn = false,
-                    verifyChannelStateChangeCurrent = false,
-                    verifyChannelOff = false,
-                    verifyPresenceLeave = true,
-                    verifyChannelUnsubscribeAndRelease = true,
-                    resultOfDisconnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
-                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
-                    )
-                )
-            )
-        }
-    }
-
-    @Test
-    fun `disconnect - when channel is in DETACHING state`() {
-        /* Given...
-         *
-         * ...that calling containsKey on the Channels instance returns true...
-         * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel in state DETACHING...
-         * ...which, when told to enter presence, fails to do so with an arbitrarily-chosen error `presenceError`...
-         *
-         * When...
-         *
-         * ...we call `disconnect` on the object under test,
-         *
-         * Then...
-         * ...in the following order, precisely the following things happen...
-         *
-         * ...it calls `containsKey` on the Channels instance...
-         * ...and calls `get` on the Channels instance...
-         * ...and fetches the channel’s state once...
-         * ...and tells the channel to leave presence...
-         * ...and the call to `disconnect` (on the object under test) fails with a `ConnectionException` whose errorInformation has the same `code` and `message` as `presenceError`.
-         */
-
-        /* A note on this test:
-         *
-         * RTP16c tells us that a presence operation on a channel in the DETACHING state will fail.
-         */
-
-        val presenceError = ErrorInfo(
-            "example of an error message", /* arbitrarily chosen */
-            123 /* arbitrarily chosen */
-        )
-
-        runBlocking {
-            DefaultAblyTestScenarios.Disconnect.test(
-                DefaultAblyTestScenarios.Disconnect.GivenConfig(
-                    channelsContainsKey = true,
-                    mockChannelsGet = true,
-                    initialChannelState = ChannelState.detaching,
-                    channelStateChangeBehaviour = DefaultAblyTestScenarios.GivenTypes.ChannelStateChangeBehaviour.NoBehaviour,
-                    presenceLeaveBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Failure(
-                        presenceError
-                    )
-                ),
-                DefaultAblyTestScenarios.Disconnect.ThenConfig(
-                    verifyChannelsGet = true,
-                    numberOfChannelStateFetchesToVerify = 1,
-                    verifyChannelOn = false,
-                    verifyChannelStateChangeCurrent = false,
-                    verifyChannelOff = false,
-                    verifyPresenceLeave = true,
-                    verifyChannelUnsubscribeAndRelease = false,
-                    resultOfDisconnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
-                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.FailureWithConnectionException(
-                            ErrorInformation(
-                                presenceError.code,
-                                0,
-                                presenceError.message,
-                                null,
-                                null
-                            )
-                        )
-                    )
-                )
-            )
-        }
-    }
-
-    @Test
-    fun `disconnect - when channel is in DETACHED state`() {
-        /* Given...
-         *
-         * ...that calling containsKey on the Channels instance returns true...
-         * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel in state DETACHED...
-         * ...which, when told to enter presence, fails to do so with an arbitrarily-chosen error `presenceError`...
-         *
-         * When...
-         *
-         * ...we call `disconnect` on the object under test,
-         *
-         * Then...
-         * ...in the following order, precisely the following things happen...
-         *
-         * ...it calls `containsKey` on the Channels instance...
-         * ...and calls `get` on the Channels instance...
-         * ...and fetches the channel’s state once...
-         * ...and tells the channel to leave presence...
-         * ...and the call to `disconnect` (on the object under test) fails with a `ConnectionException` whose errorInformation has the same `code` and `message` as `presenceError`.
-         */
-
-        /* A note on this test:
-         *
-         * RTP16c tells us that a presence operation on a channel in the DETACHED state will fail.
-         */
-
-        val presenceError = ErrorInfo(
-            "example of an error message", /* arbitrarily chosen */
-            123 /* arbitrarily chosen */
-        )
-
-        runBlocking {
-            DefaultAblyTestScenarios.Disconnect.test(
-                DefaultAblyTestScenarios.Disconnect.GivenConfig(
-                    channelsContainsKey = true,
-                    mockChannelsGet = true,
-                    initialChannelState = ChannelState.detached,
-                    channelStateChangeBehaviour = DefaultAblyTestScenarios.GivenTypes.ChannelStateChangeBehaviour.NoBehaviour,
-                    presenceLeaveBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Failure(
-                        presenceError
-                    )
-                ),
-                DefaultAblyTestScenarios.Disconnect.ThenConfig(
-                    verifyChannelsGet = true,
-                    numberOfChannelStateFetchesToVerify = 1,
-                    verifyChannelOn = false,
-                    verifyChannelStateChangeCurrent = false,
-                    verifyChannelOff = false,
-                    verifyPresenceLeave = true,
-                    verifyChannelUnsubscribeAndRelease = false,
-                    resultOfDisconnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
-                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.FailureWithConnectionException(
-                            ErrorInformation(
-                                presenceError.code,
-                                0,
-                                presenceError.message,
-                                null,
-                                null
-                            )
-                        )
-                    )
-                )
-            )
-        }
-    }
-
-    @Test
-    fun `disconnect - when channel is in FAILED state`() {
-        /* Given...
-         *
-         * ...that calling containsKey on the Channels instance returns true...
-         * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel in state FAILED...
-         * ...which, when told to enter presence, fails to do so with an arbitrarily-chosen error `presenceError`...
-         *
-         * When...
-         *
-         * ...we call `disconnect` on the object under test,
-         *
-         * Then...
-         * ...in the following order, precisely the following things happen...
-         *
-         * ...it calls `containsKey` on the Channels instance...
-         * ...and calls `get` on the Channels instance...
-         * ...and fetches the channel’s state once...
-         * ...and tells the channel to leave presence...
-         * ...and the call to `disconnect` (on the object under test) fails with a ConnectionException whose errorInformation has the same `code` and `message` as `presenceError`.
-         */
-
-        /* A note on this test:
-         *
-         * RTP16c tells us that a presence operation on a channel in the FAILED state will fail.
-         */
-
-        val presenceError = ErrorInfo(
-            "example of an error message", /* arbitrarily chosen */
-            123 /* arbitrarily chosen */
-        )
-
-        runBlocking {
-            DefaultAblyTestScenarios.Disconnect.test(
-                DefaultAblyTestScenarios.Disconnect.GivenConfig(
-                    channelsContainsKey = true,
-                    mockChannelsGet = true,
-                    initialChannelState = ChannelState.failed,
-                    channelStateChangeBehaviour = DefaultAblyTestScenarios.GivenTypes.ChannelStateChangeBehaviour.NoBehaviour,
-                    presenceLeaveBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Failure(
-                        presenceError
-                    )
-                ),
-                DefaultAblyTestScenarios.Disconnect.ThenConfig(
-                    verifyChannelsGet = true,
-                    numberOfChannelStateFetchesToVerify = 1,
-                    verifyChannelOn = false,
-                    verifyChannelStateChangeCurrent = false,
-                    verifyChannelOff = false,
-                    verifyPresenceLeave = true,
-                    verifyChannelUnsubscribeAndRelease = false,
-                    resultOfDisconnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
-                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.FailureWithConnectionException(
-                            ErrorInformation(
-                                presenceError.code,
-                                0,
-                                presenceError.message,
-                                null,
-                                null
-                            )
-                        )
-                    )
-                )
-            )
-        }
-    }
-
-    @Test
-    fun `disconnect - when channel is in SUSPENDED state with no subsequent state change`() {
-        /* Given...
-         *
-         * ...that calling containsKey on the Channels instance returns true...
-         * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel in state SUSPENDED...
-         *
-         * When...
-         *
-         * ...we call `disconnect` on the object under test,
-         *
-         * Then...
-         * ...in the following order, precisely the following things happen...
-         *
-         * ...it calls `containsKey` on the Channels instance...
-         * ...and calls `get` on the Channels instance...
-         * ...and fetches the channel’s state twice...
-         * ...and calls `on` on the channel...
-         * ...and the call to `disconnect` (on the object under test) fails with a ConnectionException whose errorInformation has `code` 100000 and `message` "Timeout was thrown when waiting for channel to attach".
-         */
-
-        runBlocking {
-            DefaultAblyTestScenarios.Disconnect.test(
-                DefaultAblyTestScenarios.Disconnect.GivenConfig(
-                    channelsContainsKey = true,
-                    mockChannelsGet = true,
-                    initialChannelState = ChannelState.suspended,
-                    channelStateChangeBehaviour = DefaultAblyTestScenarios.GivenTypes.ChannelStateChangeBehaviour.NoBehaviour,
-                    presenceLeaveBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.NotMocked
-                ),
-                DefaultAblyTestScenarios.Disconnect.ThenConfig(
-                    verifyChannelsGet = true,
-                    numberOfChannelStateFetchesToVerify = 2,
-                    verifyChannelOn = true,
-                    verifyChannelStateChangeCurrent = false,
-                    verifyChannelOff = false,
-                    verifyPresenceLeave = false,
-                    verifyChannelUnsubscribeAndRelease = false,
-                    resultOfDisconnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
-                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.FailureWithConnectionException(
-                            ErrorInformation(
-                                code = 100000,
-                                statusCode = 0,
-                                message = "Timeout was thrown when waiting for channel to attach",
-                                href = null,
-                                cause = null
-                            )
-                        )
-                    )
-                )
-            )
-        }
-    }
-
-    @Test
-    fun `disconnect - when channel is in SUSPENDED state and subsequently transitions to ATTACHED`() {
-        /* Given...
-         *
-         * ...that calling containsKey on the Channels instance returns true...
-         * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel in state SUSPENDED...
-         * ...which, when its `on` method is called, immediately calls the received listener with a channel state change whose `current` property is ATTACHED...
-         * ...and which, when told to leave presence, does so successfully...
-         *
-         * When...
-         *
-         * ...we call `disconnect` on the object under test,
-         *
-         * Then...
-         * ...in the following order, precisely the following things happen...
-         *
-         * ...it calls `containsKey` on the Channels instance...
-         * ...and calls `get` on the Channels instance...
-         * ...and fetches the channel’s state twice...
-         * ...and calls `on` on the channel...
-         * ...and checks the `current` property of the emitted channel state change...
-         * ...and calls `off` on the channel...
-         * ...and tells the channel to leave presence...
-         * ...and calls `unsubscribe` on the channel and on its Presence instance...
-         * ...and fetches the channel’s name and calls `release` on the Channels instance...
-         * ...and the call to `disconnect` (on the object under test) succeeds.
-         */
-
-        runBlocking {
-            DefaultAblyTestScenarios.Disconnect.test(
-                DefaultAblyTestScenarios.Disconnect.GivenConfig(
-                    channelsContainsKey = true,
-                    mockChannelsGet = true,
-                    initialChannelState = ChannelState.suspended,
-                    channelStateChangeBehaviour = DefaultAblyTestScenarios.GivenTypes.ChannelStateChangeBehaviour.EmitStateChange(
-                        current = ChannelState.attached
-                    ),
-                    presenceLeaveBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Success
-                ),
-                DefaultAblyTestScenarios.Disconnect.ThenConfig(
-                    verifyChannelsGet = true,
-                    numberOfChannelStateFetchesToVerify = 2,
-                    verifyChannelOn = true,
-                    verifyChannelStateChangeCurrent = true,
-                    verifyChannelOff = true,
-                    verifyPresenceLeave = true,
-                    verifyChannelUnsubscribeAndRelease = true,
-                    resultOfDisconnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
-                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
-                    )
-                )
-            )
-        }
-    }
-
-    @Test
-    fun `disconnect - when channel is in SUSPENDED state and subsequently transitions to FAILED`() {
-        /* Given...
-         *
-         * ...that calling containsKey on the Channels instance returns true...
-         * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel in state SUSPENDED...
-         * ...which, when its `on` method is called, immediately calls the received listener with a channel state change whose `current` property is FAILED...
-         *
-         * When...
-         *
-         * ...we call `disconnect` on the object under test,
-         *
-         * Then...
-         * ...in the following order, precisely the following things happen...
-         *
-         * ...it calls `containsKey` on the Channels instance...
-         * ...and calls `get` on the Channels instance...
-         * ...and fetches the channel’s state twice...
-         * ...and calls `on` on the channel...
-         * ...and checks the `current` property of the emitted channel state change...
-         * ...and the call to `disconnect` (on the object under test) fails with a ConnectionException whose errorInformation has `code` 100000 and `message` "Timeout was thrown when waiting for channel to attach".
-         */
-
-        runBlocking {
-            DefaultAblyTestScenarios.Disconnect.test(
-                DefaultAblyTestScenarios.Disconnect.GivenConfig(
-                    channelsContainsKey = true,
-                    mockChannelsGet = true,
-                    initialChannelState = ChannelState.suspended,
-                    channelStateChangeBehaviour = DefaultAblyTestScenarios.GivenTypes.ChannelStateChangeBehaviour.EmitStateChange(
-                        current = ChannelState.failed
-                    ),
-                    presenceLeaveBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.NotMocked
-                ),
-                DefaultAblyTestScenarios.Disconnect.ThenConfig(
-                    verifyChannelsGet = true,
-                    numberOfChannelStateFetchesToVerify = 2,
-                    verifyChannelOn = true,
-                    verifyChannelStateChangeCurrent = true,
-                    verifyChannelOff = false,
-                    verifyPresenceLeave = false,
-                    verifyChannelUnsubscribeAndRelease = false,
-                    resultOfDisconnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
-                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.FailureWithConnectionException(
-                            ErrorInformation(
-                                code = 100000,
-                                statusCode = 0,
-                                message = "Timeout was thrown when waiting for channel to attach",
-                                href = null,
-                                cause = null
-                            )
-                        )
-                    )
-                )
-            )
-        }
-    }
-
-    @Test
-    fun `disconnect - when channel is in SUSPENDED state and subsequently transitions to DETACHED`() {
-        /* Given...
-         *
-         * ...that calling containsKey on the Channels instance returns true...
-         * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel in state SUSPENDED...
-         * ...which, when its `on` method is called, immediately calls the received listener with a channel state change whose `current` property is DETACHED...
-         *
-         * When...
-         *
-         * ...we call `disconnect` on the object under test,
-         *
-         * Then...
-         * ...in the following order, precisely the following things happen...
-         *
-         * ...it calls `containsKey` on the Channels instance...
-         * ...and calls `get` on the Channels instance...
-         * ...and fetches the channel’s state twice...
-         * ...and calls `on` on the channel...
-         * ...and checks the `current` property of the emitted channel state change...
-         * ...and the call to `disconnect` (on the object under test) fails with a ConnectionException whose errorInformation has `code` 100000 and `message` "Timeout was thrown when waiting for channel to attach".
-         */
-
-        runBlocking {
-            DefaultAblyTestScenarios.Disconnect.test(
-                DefaultAblyTestScenarios.Disconnect.GivenConfig(
-                    channelsContainsKey = true,
-                    mockChannelsGet = true,
-                    initialChannelState = ChannelState.suspended,
-                    channelStateChangeBehaviour = DefaultAblyTestScenarios.GivenTypes.ChannelStateChangeBehaviour.EmitStateChange(
-                        current = ChannelState.detached
-                    ),
-                    presenceLeaveBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.NotMocked
-                ),
-                DefaultAblyTestScenarios.Disconnect.ThenConfig(
-                    verifyChannelsGet = true,
-                    numberOfChannelStateFetchesToVerify = 2,
-                    verifyChannelOn = true,
-                    verifyChannelStateChangeCurrent = true,
-                    verifyChannelOff = false,
-                    verifyPresenceLeave = false,
-                    verifyChannelUnsubscribeAndRelease = false,
-                    resultOfDisconnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
-                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.FailureWithConnectionException(
-                            ErrorInformation(
-                                code = 100000,
-                                statusCode = 0,
-                                message = "Timeout was thrown when waiting for channel to attach",
-                                href = null,
-                                cause = null
-                            )
-                        )
-                    )
                 )
             )
         }
@@ -2203,7 +1669,7 @@ class DefaultAblyTests {
         /* Given...
          *
          * ...that calling containsKey on the Channels instance returns true...
-         * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel in the arbitrarily-chosen ATTACHED state...
+         * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel...
          * ...which, when told to leave presence, fails to do so with an arbitrarily-chosen error `presenceError`...
          *
          * When...
@@ -2215,9 +1681,10 @@ class DefaultAblyTests {
          *
          * ...it calls `containsKey` on the Channels instance...
          * ...and calls `get` on the Channels instance...
-         * ...and fetches the channel’s state once...
          * ...and tells the channel to leave presence...
-         * ...and the call to `disconnect` (on the object under test) fails with a ConnectionException whose errorInformation has the same `code` and `message` as `presenceError`.
+         * ...and calls `unsubscribe` on the channel and on its Presence instance...
+         * ...and fetches the channel’s name and calls `release` on the Channels instance...
+         * ...and the call to `disconnect` (on the object under test) succeeds.
          */
 
         val presenceError = ErrorInfo(
@@ -2230,31 +1697,14 @@ class DefaultAblyTests {
                 DefaultAblyTestScenarios.Disconnect.GivenConfig(
                     channelsContainsKey = true,
                     mockChannelsGet = true,
-                    initialChannelState = ChannelState.attached, // arbitrarily chosen
-                    channelStateChangeBehaviour = DefaultAblyTestScenarios.GivenTypes.ChannelStateChangeBehaviour.NoBehaviour,
                     presenceLeaveBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Failure(
                         presenceError
                     )
                 ),
                 DefaultAblyTestScenarios.Disconnect.ThenConfig(
                     verifyChannelsGet = true,
-                    numberOfChannelStateFetchesToVerify = 1,
-                    verifyChannelOn = false,
-                    verifyChannelStateChangeCurrent = false,
-                    verifyChannelOff = false,
                     verifyPresenceLeave = true,
-                    verifyChannelUnsubscribeAndRelease = false,
-                    resultOfDisconnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
-                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.FailureWithConnectionException(
-                            ErrorInformation(
-                                presenceError.code,
-                                0,
-                                presenceError.message,
-                                null,
-                                null
-                            )
-                        )
-                    )
+                    verifyChannelUnsubscribeAndRelease = true,
                 )
             )
         }
@@ -2266,7 +1716,7 @@ class DefaultAblyTests {
          * Given...
          *
          * ...that calling containsKey on the Channels instance returns true...
-         * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel in (arbitrarily chosen) state ATTACHED...
+         * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel...
          * ...which, when told to leave presence, never finishes doing so...
          *
          * When...
@@ -2278,9 +1728,10 @@ class DefaultAblyTests {
          *
          * ...it calls `containsKey` on the Channels instance...
          * ...and calls `get` on the Channels instance...
-         * ...and fetches the channel’s state once...
          * ...and tells the channel to leave presence...
-         * ...and the call to `disconnect` (on the object under test) does not complete (see “Documenting the absence of built-in timeout” above).
+         * ...and calls `unsubscribe` on the channel and on its Presence instance...
+         * ...and fetches the channel’s name and calls `release` on the Channels instance...
+         * ...and the call to `disconnect` (on the object under test) succeeds after presence leave is timed out.
          */
 
         runBlocking {
@@ -2288,21 +1739,12 @@ class DefaultAblyTests {
                 DefaultAblyTestScenarios.Disconnect.GivenConfig(
                     channelsContainsKey = true,
                     mockChannelsGet = true,
-                    initialChannelState = ChannelState.attached, // arbitrarily chosen
-                    channelStateChangeBehaviour = DefaultAblyTestScenarios.GivenTypes.ChannelStateChangeBehaviour.NoBehaviour,
                     presenceLeaveBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.DoesNotComplete
                 ),
                 DefaultAblyTestScenarios.Disconnect.ThenConfig(
                     verifyChannelsGet = true,
-                    numberOfChannelStateFetchesToVerify = 1,
-                    verifyChannelOn = false,
-                    verifyChannelStateChangeCurrent = false,
-                    verifyChannelOff = false,
                     verifyPresenceLeave = true,
-                    verifyChannelUnsubscribeAndRelease = false,
-                    resultOfDisconnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.DoesNotTerminate(
-                        timeoutInMilliseconds = noTimeoutDemonstrationWaitingTimeInMilliseconds
-                    )
+                    verifyChannelUnsubscribeAndRelease = true,
                 )
             )
         }
@@ -2329,21 +1771,12 @@ class DefaultAblyTests {
                 DefaultAblyTestScenarios.Disconnect.GivenConfig(
                     channelsContainsKey = false,
                     mockChannelsGet = false,
-                    initialChannelState = null,
-                    channelStateChangeBehaviour = DefaultAblyTestScenarios.GivenTypes.ChannelStateChangeBehaviour.NoBehaviour,
                     presenceLeaveBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.NotMocked
                 ),
                 DefaultAblyTestScenarios.Disconnect.ThenConfig(
                     verifyChannelsGet = false,
-                    numberOfChannelStateFetchesToVerify = 0,
-                    verifyChannelOn = false,
-                    verifyChannelStateChangeCurrent = false,
-                    verifyChannelOff = false,
                     verifyPresenceLeave = false,
                     verifyChannelUnsubscribeAndRelease = false,
-                    resultOfDisconnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
-                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
-                    )
                 )
             )
         }

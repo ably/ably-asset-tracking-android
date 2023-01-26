@@ -7,6 +7,8 @@ import com.ably.tracking.common.PresenceMessage
 import io.mockk.CapturingSlot
 import io.mockk.coEvery
 import io.mockk.every
+import io.mockk.just
+import io.mockk.runs
 import io.mockk.slot
 import kotlinx.coroutines.delay
 

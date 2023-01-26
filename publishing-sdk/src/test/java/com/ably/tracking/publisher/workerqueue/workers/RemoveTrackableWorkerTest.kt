@@ -1,12 +1,17 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
+import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ResultCallbackFunction
+import com.ably.tracking.publisher.PublisherInteractor
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.WorkerSpecification
+import com.ably.tracking.test.common.mockDisconnect
 import com.google.common.truth.Truth.assertThat
-import io.mockk.coEvery
+import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.runs
 import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
@@ -16,9 +21,10 @@ import org.junit.Test
 class RemoveTrackableWorkerTest {
     private val trackable = Trackable("testtrackable")
     private val ably: Ably = mockk()
+    private val publisherInteractor: PublisherInteractor = mockk()
     private val callbackFunction: ResultCallbackFunction<Boolean> = mockk(relaxed = true)
 
-    private val worker = RemoveTrackableWorker(trackable, ably, callbackFunction)
+    private val worker = RemoveTrackableWorker(trackable, ably, publisherInteractor, callbackFunction)
 
     private val asyncWorks = mutableListOf<suspend () -> Unit>()
     private val postedWorks = mutableListOf<WorkerSpecification>()
@@ -67,12 +73,14 @@ class RemoveTrackableWorkerTest {
         }
 
     @Test
-    fun `when removing trackable that is present succeeded should invoke callback with exception`() =
+    fun `when removing trackable that is present should post disconnect success worker`() =
         runTest {
             // given
             val initialProperties = createPublisherProperties()
             initialProperties.trackables.add(trackable)
-            coEvery { ably.disconnect(trackable.id, any()) } returns Result.success(Unit)
+            ably.mockDisconnect(trackable.id)
+            every { publisherInteractor.setFinalTrackableState(any(), trackable.id, any()) } just runs
+            every { publisherInteractor.updateTrackableStateFlows(any()) } just runs
 
             // when
             worker.doWork(
@@ -90,12 +98,14 @@ class RemoveTrackableWorkerTest {
         }
 
     @Test
-    fun `when removing trackable that is present fails should invoke callback with exception`() =
+    fun `when removing trackable that is present should immediately call the callback with a success`() =
         runTest {
             // given
             val initialProperties = createPublisherProperties()
             initialProperties.trackables.add(trackable)
-            coEvery { ably.disconnect(trackable.id, any()) } returns Result.failure(RuntimeException("testException"))
+            ably.mockDisconnect(trackable.id)
+            every { publisherInteractor.setFinalTrackableState(any(), trackable.id, any()) } just runs
+            every { publisherInteractor.updateTrackableStateFlows(any()) } just runs
 
             // when
             worker.doWork(
@@ -106,11 +116,32 @@ class RemoveTrackableWorkerTest {
             asyncWorks.executeAll()
 
             // then
-            assertThat(asyncWorks.size).isEqualTo(1)
-            assertThat(postedWorks).isEmpty()
-
             verify {
-                callbackFunction(match { it.exceptionOrNull() is RuntimeException })
+                callbackFunction(match { it.getOrNull() == true })
+            }
+        }
+
+    @Test
+    fun `when removing trackable that is present should immediately change trackable state to offline`() =
+        runTest {
+            // given
+            val initialProperties = createPublisherProperties()
+            initialProperties.trackables.add(trackable)
+            ably.mockDisconnect(trackable.id)
+            every { publisherInteractor.setFinalTrackableState(any(), trackable.id, any()) } just runs
+            every { publisherInteractor.updateTrackableStateFlows(any()) } just runs
+
+            // when
+            worker.doWork(
+                initialProperties,
+                asyncWorks.appendWork(),
+                postedWorks.appendSpecification()
+            )
+
+            // then
+            verify(exactly = 1) {
+                publisherInteractor.setFinalTrackableState(any(), trackable.id, match { it is TrackableState.Offline })
+                publisherInteractor.updateTrackableStateFlows(any())
             }
         }
 }
