@@ -499,11 +499,6 @@ class DisconnectWithFailedResume(apiKey: String) : ApplicationLayerFault(apiKey)
         }
     }
 
-    /*
-        Currently failing due to ably-java#474 presence bug
-     */
-    override val skipTest = false
-
     /**
      * State of the fault, used to control whether we're intercepting
      * the connection or looking to inject a WebSocket CLOSE at an appropriate time
