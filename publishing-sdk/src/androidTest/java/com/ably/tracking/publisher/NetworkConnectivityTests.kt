@@ -57,6 +57,7 @@ import io.ably.lib.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -74,6 +75,7 @@ import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import java.util.Date
 import java.util.UUID
+import java.util.concurrent.TimeoutException
 import kotlin.reflect.KClass
 
 private const val MAPBOX_ACCESS_TOKEN = BuildConfig.MAPBOX_ACCESS_TOKEN
@@ -728,36 +730,39 @@ class PublisherMonitor(
             return
         }
 
-        val lastPublishedLocation = lastLocationUpdate()
-        if (!expectedLocationUpdate.equalGeometry(lastPublishedLocation)) {
-            testLogD("PublisherMonitor: $label - (FAIL) lastPublishedLocation = $lastPublishedLocation")
-            throw AssertionError(
-                "Expected location update $expectedLocationUpdate but last was $lastPublishedLocation"
-            )
-        } else {
-            testLogD("PublisherMonitor: $label - (PASS) lastPublishedLocation = $lastPublishedLocation")
-        }
-    }
+        try {
+            runBlocking {
+                // The location update may be published some time after arriving on the mapbox source channel
+                withTimeout(10000) {
+                    while (true) {
+                        val latestMsg = ably.channels
+                            .get("tracking:${trackable.id}")
+                            ?.history(null)
+                            ?.items()
+                            ?.get(0)
 
-    /**
-     * Use Ably's history API to retrieve the latest messages published, and return the [LocationMessage] component
-     * of the most-recently published [EnhancedLocationUpdateMessage] update.
-     */
-    private fun lastLocationUpdate(): LocationMessage? {
-        val latestMsg = ably.channels
-            .get("tracking:${trackable.id}")
-            ?.history(null)
-            ?.items()
-            ?.get(0)
-        testLogD("lastMessage: $latestMsg")
-        return if (latestMsg != null) {
-            gson.fromJson(
-                latestMsg.data as String,
-                EnhancedLocationUpdateMessage::class.java
-            ).location
-        } else {
-            testLogD("PublisherMonitor: $label - no location updates found")
-            null
+                        // Check the trackable channel for the expected update
+                        if (latestMsg != null) {
+                            val latestLocation = gson.fromJson(
+                                latestMsg.data as String,
+                                EnhancedLocationUpdateMessage::class.java
+                            ).location;
+
+                            if (latestLocation.equalGeometry(expectedLocationUpdate)) {
+                                testLogD("PublisherMonitor: $label - (PASS) lastPublishedLocation = $latestLocation")
+                                return@withTimeout
+                            }
+                        }
+
+                        delay(500)
+                    }
+                }
+            }
+        } catch (timeout: TimeoutException) {
+            testLogD("PublisherMonitor: $label - (FAIL) did not receive expected location update")
+            throw AssertionError(
+                "Expected location update not received"
+            )
         }
     }
 
