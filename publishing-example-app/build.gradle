@@ -61,7 +61,7 @@ dependencies {
     // Add application runtime implementation dependencies required for Crashlytics.
     if (hasGoogleServices) {
         // The BoM for the Firebase platform (it specifies the versions for Firebase dependencies).
-        implementation platform('com.google.firebase:firebase-bom:26.8.0')
+        implementation platform('com.google.firebase:firebase-bom:31.2.0')
 
         // Firebase dependencies, which should not specifies versions as those are provided
         // for us because we're including the BoM above.
