@@ -457,7 +457,7 @@ class LocationHelper {
     private val opts = CLIENT_OPTS_NO_PROXY
     private val ably = AblyRealtime(opts)
 
-    val channelName = "testLocations"
+    val channelName = "publisherIntergrationTestLocations-" + UUID.randomUUID()
     private val channel = ably.channels.get(channelName)
 
     private val gson = Gson()
