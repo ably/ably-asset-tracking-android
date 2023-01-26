@@ -1,0 +1,49 @@
+# This is a manually triggered workflow (hence on: workflow_dispatch).
+# See: https://docs.github.com/en/actions/reference/events-that-trigger-workflows#manual-events
+
+name: Publish Example Apps
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version, without v prefix, appended to v to locate tag'
+        required: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: v${{ github.event.inputs.version }}
+
+      - uses: actions/setup-java@v3
+        with:
+          distribution: zulu
+          java-version: '19'
+
+      # Hydrating this file before we build (assemble) the app apk(s) in order to ensure Crashlytics support is included.
+      - name: Populate Google Services file from Secrets
+        env:
+          PUBLISHING_EXAMPLE_APP_GOOGLE_SERVICES_JSON: ${{ secrets.PUBLISHING_EXAMPLE_APP_GOOGLE_SERVICES_JSON }}
+        run: echo "$PUBLISHING_EXAMPLE_APP_GOOGLE_SERVICES_JSON" > publishing-example-app/google-services.json
+
+      - name: Build Publishing Example App
+        env:
+          ORG_GRADLE_PROJECT_SIGNING_KEY_ID: ${{ secrets.MAVEN_SIGNING_KEY_ID }}
+          ORG_GRADLE_PROJECT_SIGNING_PASSWORD: ${{ secrets.MAVEN_SIGNING_KEY_PASSWORD }}
+          ORG_GRADLE_PROJECT_SIGNING_KEY_BASE64: ${{ secrets.MAVEN_SIGNING_KEY_RING_FILE_BASE64 }}
+          ORG_GRADLE_PROJECT_MAPBOX_DOWNLOADS_TOKEN: ${{ secrets.MAPBOX_DOWNLOADS_TOKEN }}
+          ORG_GRADLE_PROJECT_MAPBOX_ACCESS_TOKEN: ${{ secrets.MAPBOX_ACCESS_TOKEN }}
+          ORG_GRADLE_PROJECT_ABLY_API_KEY: ${{ secrets.ABLY_API_KEY }}
+          ORG_GRADLE_PROJECT_GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
+        run: ./gradlew :publishing-example-app:assembleRelease --stacktrace
+
+      - name: Populate Google Service Account private key file from Secrets
+        env:
+          ASSET_TRACKING_SDKS_GSERVICEACCOUNT_PRIVATE_KEY_JSON: ${{ secrets.ASSET_TRACKING_SDKS_GSERVICEACCOUNT_PRIVATE_KEY_JSON }}
+        run: echo "$ASSET_TRACKING_SDKS_GSERVICEACCOUNT_PRIVATE_KEY_JSON" > publishing-example-app/firebase-app-distribution-private-key.json
+
+      - name: Upload to Firebase App Distribution
+        run: ./gradlew :publishing-example-app:appDistributionUploadRelease --stacktrace
