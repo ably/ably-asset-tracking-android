@@ -6,6 +6,26 @@ import java.util.Timer
 import kotlin.concurrent.timerTask
 
 /**
+ * A simple factory interface to build new instances of a specific [FaultSimulation]
+ * This is needed because JUnit parameterized tests won't construct fresh instances
+ * of data parameters for each test - they wouldn't know how, without a factory.
+ */
+abstract class Fault {
+
+    /**
+     * Create a fresh simulation of this fault type, using provided Ably credentials
+     */
+    abstract fun simulate(apiKey: String): FaultSimulation
+
+    /**
+     * A human-readable name for this type of fault
+     */
+    abstract val name: String
+
+    override fun toString() = name
+}
+
+/**
  * Abstract interface definition for specific instances of connectivity
  * faults that can occur. Implementations should provide a proxy that they
  * are able to break and resolve according to their own fault criteria.
@@ -15,10 +35,6 @@ import kotlin.concurrent.timerTask
  * common use-cases.
  */
 abstract class FaultSimulation {
-    /**
-     * A human-readable name for this type of fault
-     */
-    abstract val name: String
 
     /**
      * The type of fault this simulates - used to validate the state of trackables
@@ -57,8 +73,6 @@ abstract class FaultSimulation {
     open fun cleanUp() {
         proxy.stop()
     }
-
-    override fun toString() = name
 }
 
 /**
@@ -113,7 +127,12 @@ abstract class TransportLayerFault(apiKey: String) : FaultSimulation() {
  */
 class NullTransportFault(apiKey: String) : TransportLayerFault(apiKey) {
 
-    override val name = "NullTransportFault"
+    companion object {
+        val fault = object : Fault() {
+            override fun simulate(apiKey: String) = NullTransportFault(apiKey)
+            override val name = "NullTransportFault"
+        }
+    }
 
     override val type = FaultType.Nonfatal(
         resolvedWithinMillis = 10_000L
@@ -131,7 +150,12 @@ class NullTransportFault(apiKey: String) : TransportLayerFault(apiKey) {
  */
 class TcpConnectionRefused(apiKey: String) : TransportLayerFault(apiKey) {
 
-    override val name = "TcpConnectionRefused"
+    companion object {
+        val fault = object : Fault() {
+            override fun simulate(apiKey: String) = TcpConnectionRefused(apiKey)
+            override val name = "TcpConnectionRefused"
+        }
+    }
 
     override val type = FaultType.NonfatalWhenResolved(
         offlineWithinMillis = 30_000,
@@ -161,7 +185,12 @@ class TcpConnectionRefused(apiKey: String) : TransportLayerFault(apiKey) {
  */
 class TcpConnectionUnresponsive(apiKey: String) : TransportLayerFault(apiKey) {
 
-    override val name = "TcpConnectionUnresponsive"
+    companion object {
+        val fault = object : Fault() {
+            override fun simulate(apiKey: String) = TcpConnectionUnresponsive(apiKey)
+            override val name = "TcpConnectionUnresponsive"
+        }
+    }
 
     override val type = FaultType.NonfatalWhenResolved(
         offlineWithinMillis = 120_000,
@@ -191,18 +220,20 @@ class TcpConnectionUnresponsive(apiKey: String) : TransportLayerFault(apiKey) {
  */
 class DisconnectAndSuspend(apiKey: String) : TransportLayerFault(apiKey) {
 
+    companion object {
+        const val SUSPEND_DELAY_MILLIS: Long = 2 * 60 * 1000
+        val fault = object : Fault() {
+            override fun simulate(apiKey: String) = DisconnectAndSuspend(apiKey)
+            override val name = "DisconnectAndSuspend"
+        }
+    }
+
     /*
         Currently failing due to Issues #871 and #907
     */
     override val skipTest = true
 
-    companion object {
-        const val SUSPEND_DELAY_MILLIS: Long = 2 * 60 * 1000
-    }
-
     private val timer = Timer()
-
-    override val name = "DisconnectAndSuspend"
 
     override val type = FaultType.Nonfatal(
         resolvedWithinMillis = 180_000L
@@ -244,7 +275,12 @@ abstract class ApplicationLayerFault(apiKey: String) : FaultSimulation() {
  */
 class NullApplicationLayerFault(apiKey: String) : ApplicationLayerFault(apiKey) {
 
-    override val name = "NullApplicationLayerFault"
+    companion object {
+        val fault = object : Fault() {
+            override fun simulate(apiKey: String) = NullApplicationLayerFault(apiKey)
+            override val name = "NullApplicationLayerFault"
+        }
+    }
 
     override val type = FaultType.Nonfatal(
         resolvedWithinMillis = 10_000L
@@ -327,14 +363,18 @@ class AttachUnresponsive(apiKey: String) : DropAction(
     direction = FrameDirection.ClientToServer,
     action = Message.Action.ATTACH
 ) {
+    companion object {
+        val fault = object : Fault() {
+            override fun simulate(apiKey: String) = AttachUnresponsive(apiKey)
+            override val name = "AttachUnresponsive"
+        }
+    }
 
     /*
         Currently failing due to Issue #871 -- throwing ConnectionError
         when trying to add new trackables while offline.
      */
     override val skipTest = true
-
-    override val name = "AttachUnresponsive"
 }
 
 /**
@@ -346,7 +386,12 @@ class DetachUnresponsive(apiKey: String) : DropAction(
     direction = FrameDirection.ClientToServer,
     action = Message.Action.DETACH
 ) {
-    override val name = "DetachUnresponsive"
+    companion object {
+        val fault = object : Fault() {
+            override fun simulate(apiKey: String) = DetachUnresponsive(apiKey)
+            override val name = "DetachUnresponsive"
+        }
+    }
 }
 
 /**
@@ -369,7 +414,7 @@ abstract class UnresponsiveAfterAction(
     private var isTriggered = false
 
     override val type = FaultType.Nonfatal(
-        resolvedWithinMillis = 120_000L
+        resolvedWithinMillis = 150_000L
     )
 
     override fun enable() {
@@ -387,12 +432,12 @@ abstract class UnresponsiveAfterAction(
 
             override fun interceptFrame(direction: FrameDirection, frame: Frame): List<Action> {
                 if (shouldActivate(direction, frame)) {
-                    testLogD("$tag: $name - connection going unresponsive")
+                    testLogD("$tag/$action: - connection going unresponsive")
                     isTriggered = true
                 }
 
                 return if (isTriggered) {
-                    testLogD("$tag: $name unresponsive: dropping ${logFrame(frame)}")
+                    testLogD("$tag/$action: unresponsive: dropping ${logFrame(frame)}")
                     listOf()
                 } else {
                     listOf(Action(direction, frame))
@@ -422,6 +467,12 @@ class EnterUnresponsive(apiKey: String) : UnresponsiveAfterAction(
     direction = FrameDirection.ClientToServer,
     action = Message.Action.PRESENCE
 ) {
+    companion object {
+        val fault = object : Fault() {
+            override fun simulate(apiKey: String) = EnterUnresponsive(apiKey)
+            override val name = "EnterUnresponsive"
+        }
+    }
 
     /*
         This test currently fails because the ably-java hangs the client
@@ -429,8 +480,6 @@ class EnterUnresponsive(apiKey: String) : UnresponsiveAfterAction(
         before successful completion of enter()
     */
     override val skipTest = true
-
-    override val name = "EnterUnresponsive"
 }
 
 /**
@@ -442,6 +491,13 @@ class EnterUnresponsive(apiKey: String) : UnresponsiveAfterAction(
  * Publisher should continue regardless.
  */
 class DisconnectWithFailedResume(apiKey: String) : ApplicationLayerFault(apiKey) {
+
+    companion object {
+        val fault = object : Fault() {
+            override fun simulate(apiKey: String) = DisconnectWithFailedResume(apiKey)
+            override val name = "DisconnectWithFailedResume"
+        }
+    }
 
     /*
         Currently failing due to ably-java#474 presence bug
@@ -459,8 +515,6 @@ class DisconnectWithFailedResume(apiKey: String) : ApplicationLayerFault(apiKey)
     }
     private var state = State.AwaitingInitialConnection
 
-    override val name = "DisconnectWithFailedResume"
-
     override val type = FaultType.Nonfatal(
         resolvedWithinMillis = 30_000
     )
@@ -472,13 +526,13 @@ class DisconnectWithFailedResume(apiKey: String) : ApplicationLayerFault(apiKey)
                 return when (state) {
                     State.AwaitingInitialConnection -> {
                         state = State.AwaitingDisconnect
-                        testLogD("$name: transitioning to $state, connection params: $params")
+                        testLogD("${fault.name}: transitioning to $state, connection params: $params")
                         params
                     }
                     State.AwaitingDisconnect -> {
                         state = State.Reconnected
                         params.copy(resume = modifyResumeParam(params.resume)).also {
-                            testLogD("$name: transitioning to $state, connection params: $it")
+                            testLogD("${fault.name}: transitioning to $state, connection params: $it")
                         }
                     }
                     State.Reconnected -> params
@@ -547,11 +601,11 @@ abstract class PresenceNackFault(
             override fun interceptFrame(direction: FrameDirection, frame: Frame): List<Action> {
                 return if (shouldNack(direction, frame)) {
                     val msg = frame.data.unpack()
-                    testLogD("$name: will nack ($nacksSent): $msg")
+                    testLogD("PresenceNackFault: will nack ($nacksSent): $msg")
 
                     val msgSerial = msg["msgSerial"] as Int
                     val nackFrame = Frame.Binary(true, response(msgSerial).pack())
-                    testLogD("$name: sending nack: ${nackFrame.data.unpack()}")
+                    testLogD("PresenceNackFault: sending nack: ${nackFrame.data.unpack()}")
                     nacksSent += 1
 
                     listOf(
@@ -593,14 +647,18 @@ class EnterFailedWithNonfatalNack(apiKey: String) : PresenceNackFault(
     response = ::nonFatalNack,
     nackLimit = 3
 ) {
+    companion object {
+        val fault = object : Fault() {
+            override fun simulate(apiKey: String) = EnterFailedWithNonfatalNack(apiKey)
+            override val name = "EnterFailedWithNonfatalNack"
+        }
+    }
 
     /*
         Currently failing due to Issue #907 - non-fatal nack triggers
         an exception to be thrown to caller during publisher.track()
      */
     override val skipTest = true
-
-    override val name = "EnterFailedWithNonfatalNack"
 
     override val type = FaultType.Nonfatal(
         resolvedWithinMillis = 60_000L
@@ -617,7 +675,12 @@ class UpdateFailedWithNonfatalNack(apiKey: String) : PresenceNackFault(
     response = ::nonFatalNack,
     nackLimit = 3
 ) {
-    override val name = "UpdateFailedWithNonfatalNack"
+    companion object {
+        val fault = object : Fault() {
+            override fun simulate(apiKey: String) = UpdateFailedWithNonfatalNack(apiKey)
+            override val name = "UpdateFailedWithNonfatalNack"
+        }
+    }
 
     override val type = FaultType.Nonfatal(
         resolvedWithinMillis = 60_000L
@@ -631,6 +694,13 @@ class UpdateFailedWithNonfatalNack(apiKey: String) : PresenceNackFault(
  * it sees that re-enter has failed.
  */
 class ReenterOnResumeFailed(apiKey: String) : ApplicationLayerFault(apiKey) {
+
+    companion object {
+        val fault = object : Fault() {
+            override fun simulate(apiKey: String) = ReenterOnResumeFailed(apiKey)
+            override val name = "ReenterOnResumeFailed"
+        }
+    }
 
     /*
        This test currently fails because the ably-java hangs the client
@@ -662,8 +732,6 @@ class ReenterOnResumeFailed(apiKey: String) : ApplicationLayerFault(apiKey) {
         WorkingNormally
     }
 
-    override val name = "ReenterOnResumeFailed"
-
     override val type = FaultType.Nonfatal(
         resolvedWithinMillis = 60_000L
     )
@@ -672,7 +740,7 @@ class ReenterOnResumeFailed(apiKey: String) : ApplicationLayerFault(apiKey) {
         applicationProxy.interceptor = object : Layer7Interceptor {
 
             override fun interceptConnection(params: ConnectionParams): ConnectionParams {
-                testLogD("$name: [$state] new connection: $params")
+                testLogD("${fault.name}: [$state] new connection: $params")
                 if (state == State.DisconnectAfterPresence) {
                     state = State.InterceptingServerSync
                 }
@@ -710,7 +778,7 @@ class ReenterOnResumeFailed(apiKey: String) : ApplicationLayerFault(apiKey) {
             frame.frameType == FrameType.BINARY &&
             frame.data.unpack().isAction(Message.Action.PRESENCE)
         ) {
-            testLogD("$name: [$state] forcing disconnect")
+            testLogD("${fault.name}: [$state] forcing disconnect")
             // Note: state will advance in interceptConnection
             listOf(
                 Action(direction, frame),
@@ -735,7 +803,7 @@ class ReenterOnResumeFailed(apiKey: String) : ApplicationLayerFault(apiKey) {
             frame.frameType == FrameType.BINARY &&
             frame.data.unpack().isAction(Message.Action.SYNC)
         ) {
-            testLogD("$name: [$state] intercepting sync")
+            testLogD("${fault.name}: [$state] intercepting sync")
             state = State.InterceptingClientEnter
             listOf(
                 Action(direction, removePresenceFromSync(frame))
@@ -762,7 +830,7 @@ class ReenterOnResumeFailed(apiKey: String) : ApplicationLayerFault(apiKey) {
                 msg.isPresenceAction(Message.PresenceAction.ENTER)
             ) {
                 presenceEnterSerial = msg["msgSerial"] as Int
-                testLogD("$name: [$state] presence enter serial: $presenceEnterSerial")
+                testLogD("${fault.name}: [$state] presence enter serial: $presenceEnterSerial")
                 state = State.InterceptingServerAck
             }
         }
@@ -792,7 +860,7 @@ class ReenterOnResumeFailed(apiKey: String) : ApplicationLayerFault(apiKey) {
                 errorStatusCode = 500,
                 errorMessage = "injected by proxy"
             )
-            testLogD("$name: [$state] sending nack: $nack")
+            testLogD("${fault.name}: [$state] sending nack: $nack")
             state = State.WorkingNormally
             listOf(Action(direction, Frame.Binary(true, nack.pack())))
         } else {
