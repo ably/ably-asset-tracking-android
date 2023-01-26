@@ -1,3 +1,4 @@
 # Secrets which should never be committed
 /src/main/res/raw/amplifyconfiguration.json
 /google-services.json
+/firebase-app-distribution-private-key.json
