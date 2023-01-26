@@ -56,6 +56,7 @@ internal interface PublisherInteractor {
     fun resolveResolution(trackable: Trackable, properties: PublisherProperties)
     fun updateTrackableStateFlows(properties: PublisherProperties)
     fun updateTrackableState(properties: PublisherProperties, trackableId: String)
+    fun setFinalTrackableState(properties: PublisherProperties, trackableId: String, finalState: TrackableState)
     fun notifyResolutionPolicyThatTrackableWasRemoved(trackable: Trackable)
     fun removeCurrentDestination(properties: PublisherProperties)
     fun notifyResolutionPolicyThatActiveTrackableHasChanged(trackable: Trackable?)
@@ -432,7 +433,26 @@ constructor(
         mapbox.startTrip()
     }
 
+    override fun setFinalTrackableState(
+        properties: PublisherProperties,
+        trackableId: String,
+        finalState: TrackableState
+    ) {
+        if (properties.hasSetFinalTrackableState(trackableId)) {
+            logHandler?.w("Trying to set the final state of trackable $trackableId multiple times")
+        } else {
+            properties.trackablesWithFinalStateSet.add(trackableId)
+            publishNewTrackableState(properties, trackableId, finalState)
+            logHandler?.v("Set the final state (${finalState.javaClass.simpleName}) of trackable $trackableId")
+        }
+    }
+
     override fun updateTrackableState(properties: PublisherProperties, trackableId: String) {
+        // Dynamic trackable state updates are only active if the final trackable state was not set
+        if (properties.hasSetFinalTrackableState(trackableId)) {
+            logHandler?.w("Ignoring a state update of trackable $trackableId after its final state was set")
+            return
+        }
         val hasSentAtLeastOneLocation: Boolean = properties.lastSentEnhancedLocations[trackableId] != null
         val lastChannelConnectionStateChange = getLastChannelConnectionStateChange(properties, trackableId)
         val isSubscribedToPresence = properties.trackableSubscribedToPresenceFlags[trackableId] == true
@@ -453,11 +473,19 @@ constructor(
             ConnectionState.FAILED -> TrackableState.Failed(properties.lastConnectionStateChange.errorInformation!!) // are we sure error information will always be present?
         }
         if (newTrackableState != properties.trackableStates[trackableId]) {
-            properties.trackableStates[trackableId] = newTrackableState
-            scope.launch {
-                if (properties.state != PublisherState.STOPPED) {
-                    properties.trackableStateFlows[trackableId]?.emit(newTrackableState)
-                }
+            publishNewTrackableState(properties, trackableId, newTrackableState)
+        }
+    }
+
+    private fun publishNewTrackableState(
+        properties: PublisherProperties,
+        trackableId: String,
+        newTrackableState: TrackableState
+    ) {
+        properties.trackableStates[trackableId] = newTrackableState
+        scope.launch {
+            if (properties.state != PublisherState.STOPPED) {
+                properties.trackableStateFlows[trackableId]?.emit(newTrackableState)
             }
         }
     }

@@ -37,6 +37,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -205,18 +206,12 @@ interface Ably {
 
     /**
      * Removes the [trackableId] channel from the connected channels and leaves the presence of that channel.
-     * If a channel for the given [trackableId] doesn't exist then it just calls [callback] with success.
+     * If a channel for the given [trackableId] doesn't exist then it just completes.
      *
      * @param trackableId The ID of the trackable channel.
      * @param presenceData The data that will be send via the presence channel.
-     * @param callback The function that will be called when disconnecting completes. If something goes wrong it will be called with [ConnectionException].
      */
-    fun disconnect(trackableId: String, presenceData: PresenceData, callback: (Result<Unit>) -> Unit)
-
-    /**
-     * A suspending version of [disconnect]
-     * */
-    suspend fun disconnect(trackableId: String, presenceData: PresenceData): Result<Unit>
+    suspend fun disconnect(trackableId: String, presenceData: PresenceData)
 
     /**
      * Cleanups and closes all the connected channels and their presence. In the end closes Ably connection.
@@ -241,6 +236,8 @@ interface Ably {
 private const val CHANNEL_NAME_PREFIX = "tracking:"
 private const val AGENT_HEADER_NAME = "ably-asset-tracking-android"
 private const val AUTH_TOKEN_CAPABILITY_ERROR_CODE = 40160
+private const val PRESENCE_LEAVE_MAXIMUM_DURATION_IN_MILLISECONDS = 30_000L
+private const val PRESENCE_LEAVE_RETRY_DELAY_IN_MILLISECONDS = 15_000L
 
 class DefaultAbly<ChannelStateListenerType : AblySdkChannelStateListener>
 /**
@@ -425,38 +422,12 @@ constructor(
         }
     }
 
-    override fun disconnect(trackableId: String, presenceData: PresenceData, callback: (Result<Unit>) -> Unit) {
-        scope.launch {
-            val channelToRemove = getChannelIfExists(trackableId)
-            if (channelToRemove != null) {
-                try {
-                    disconnectChannel(channelToRemove, presenceData)
-                    callback(Result.success(Unit))
-                } catch (exception: ConnectionException) {
-                    logHandler?.w("$TAG Failed to disconnect for trackable $trackableId", exception)
-                    callback(Result.failure(exception))
-                }
-            } else {
-                callback(Result.success(Unit))
-            }
-        }
-    }
-
     private suspend fun tryDisconnectChannel(channelToRemove: AblySdkRealtime.Channel<ChannelStateListenerType>, presenceData: PresenceData) =
         try {
             disconnectChannel(channelToRemove, presenceData)
         } catch (exception: Exception) {
             // no-op
         }
-
-    private suspend fun disconnectChannel(channelToRemove: AblySdkRealtime.Channel<ChannelStateListenerType>, presenceData: PresenceData) {
-        retryChannelOperationIfConnectionResumeFails(channelToRemove) { channel ->
-            leavePresence(channel, presenceData)
-            channel.unsubscribe()
-            channel.presence.unsubscribe()
-            ably.channels.release(channel.name)
-        }
-    }
 
     private suspend fun failChannel(channel: AblySdkRealtime.Channel<ChannelStateListenerType>, presenceData: PresenceData, errorInfo: ErrorInfo) {
         leavePresence(channel, presenceData)
@@ -493,20 +464,46 @@ constructor(
         }
     }
 
-    /**
-     * A suspend version of the [DefaultAbly.disconnect] method. It waits until disconnection is completed.
-     */
-    override suspend fun disconnect(trackableId: String, presenceData: PresenceData): Result<Unit> {
-        return suspendCancellableCoroutine { continuation ->
-            disconnect(trackableId, presenceData) {
-                try {
-                    it.getOrThrow()
-                    continuation.resume(Result.success(Unit))
-                } catch (exception: ConnectionException) {
-                    logHandler?.w("$TAG Failed to disconnect for trackable $trackableId", exception)
-                    continuation.resume(Result.failure(exception))
-                }
+    override suspend fun disconnect(trackableId: String, presenceData: PresenceData) {
+        logHandler?.v("$TAG Disconnect started for trackable $trackableId")
+        val channelToRemove = getChannelIfExists(trackableId)
+        if (channelToRemove != null) {
+            disconnectChannel(channelToRemove, presenceData)
+        }
+        logHandler?.v("$TAG Disconnect finished for trackable $trackableId")
+    }
+
+    private suspend fun disconnectChannel(channelToRemove: AblySdkRealtime.Channel<ChannelStateListenerType>, presenceData: PresenceData) {
+        try {
+            logHandler?.v("$TAG Starting to disconnect channel ${channelToRemove.name}")
+            withTimeout(PRESENCE_LEAVE_MAXIMUM_DURATION_IN_MILLISECONDS) {
+                leavePresenceRepeating(channelToRemove, presenceData)
             }
+        } catch (connectionException: ConnectionException) {
+            logHandler?.w("$TAG Leave presence failed but will continue disconnecting channel ${channelToRemove.name}")
+        } catch (timeoutException: TimeoutCancellationException) {
+            logHandler?.w("$TAG Leave presence timed out but will continue disconnecting channel ${channelToRemove.name}")
+        }
+        channelToRemove.unsubscribe()
+        channelToRemove.presence.unsubscribe()
+        ably.channels.release(channelToRemove.name)
+    }
+
+    /**
+     * Try to leave the presence of the [channel] and if it fails due to a retriable error repeat the operation
+     * after a delay. If the operation fails due to a non-retriable error then re-throw the [ConnectionException].
+     */
+    private suspend fun leavePresenceRepeating(channel: AblySdkRealtime.Channel<ChannelStateListenerType>, presenceData: PresenceData) {
+        try {
+            leavePresence(channel, presenceData)
+        } catch (connectionException: ConnectionException) {
+            if (!connectionException.isRetriable()) {
+                logHandler?.w("$TAG Failed to leave presence for channel ${channel.name} due to a non-retriable exception", connectionException)
+                throw connectionException
+            }
+            logHandler?.w("$TAG Failed to leave presence for channel ${channel.name} due to a retriable exception, the operation will be retried in $PRESENCE_LEAVE_RETRY_DELAY_IN_MILLISECONDS ms", connectionException)
+            delay(PRESENCE_LEAVE_RETRY_DELAY_IN_MILLISECONDS)
+            leavePresenceRepeating(channel, presenceData)
         }
     }
 
