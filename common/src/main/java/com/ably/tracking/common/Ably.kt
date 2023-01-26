@@ -497,14 +497,13 @@ constructor(
         try {
             leavePresence(channel, presenceData)
         } catch (connectionException: ConnectionException) {
-            if (connectionException.isRetriable()) {
-                logHandler?.w("$TAG Failed to leave presence for channel ${channel.name} due to a retriable exception, the operation will be retried in $PRESENCE_LEAVE_RETRY_DELAY_IN_MILLISECONDS ms", connectionException)
-                delay(PRESENCE_LEAVE_RETRY_DELAY_IN_MILLISECONDS)
-                leavePresenceRepeating(channel, presenceData)
-            } else {
+            if (!connectionException.isRetriable()) {
                 logHandler?.w("$TAG Failed to leave presence for channel ${channel.name} due to a non-retriable exception", connectionException)
                 throw connectionException
             }
+            logHandler?.w("$TAG Failed to leave presence for channel ${channel.name} due to a retriable exception, the operation will be retried in $PRESENCE_LEAVE_RETRY_DELAY_IN_MILLISECONDS ms", connectionException)
+            delay(PRESENCE_LEAVE_RETRY_DELAY_IN_MILLISECONDS)
+            leavePresenceRepeating(channel, presenceData)
         }
     }
 
