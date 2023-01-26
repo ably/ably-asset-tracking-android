@@ -585,7 +585,7 @@ class SubscriberMonitor(
                 is FaultType.Nonfatal -> !publisherDisconnected
                 is FaultType.NonfatalWhenResolved -> false
                 is FaultType.Fatal -> false
-            } ,
+            },
             expectedLocation = locationUpdate,
             timeout = when (faultType) {
                 is FaultType.Fatal -> faultType.failedWithinMillis
@@ -711,13 +711,13 @@ class SubscriberMonitor(
     /**
      * Assert that we receive the expected subscriber resolution.
      */
-    private fun assertSubscriberPreferredResolution()
-    {
+    private fun assertSubscriberPreferredResolution() {
         testLogD("SubscriberMonitor: $label - (WAITING) preferredSubscriberResolution = $expectedSubscriberResolution")
         val preferredSubscriberResolution = runBlocking {
-            subscriberResolutionPreferenceFlow.first{resolution ->
+            subscriberResolutionPreferenceFlow.first { resolution ->
                 testLogD("Checking subscriber resolution $resolution")
-                resolution == expectedSubscriberResolution}
+                resolution == expectedSubscriberResolution
+            }
         }
         if (preferredSubscriberResolution != expectedSubscriberResolution) {
             testLogD("SubscriberMonitor: $label - (FAIL) preferredSubscriberResolution = $preferredSubscriberResolution")
@@ -729,8 +729,7 @@ class SubscriberMonitor(
         }
     }
 
-    private fun assertPublisherResolution()
-    {
+    private fun assertPublisherResolution() {
         if (expectedPublisherResolution == null) {
             testLogD("SubscriberMonitor: $label - (SKIP) expectedPublisherResolution = null")
             return
@@ -755,14 +754,13 @@ class SubscriberMonitor(
      * This can happen at any time after the initial trackable state transition,
      * and so we cannot rely on the first state we collect being the "newest" one.
      */
-    private fun listenForExpectedPublisherResolution(): Resolution
-    {
+    private fun listenForExpectedPublisherResolution(): Resolution {
         val lastResolution = runBlocking {
-            subscriber.resolutions.first{resolution -> resolution == expectedPublisherResolution}
+            subscriber.resolutions.first { resolution -> resolution == expectedPublisherResolution }
         }
 
         testLogD("lastPublisherResolution: $lastResolution")
-        return lastResolution;
+        return lastResolution
     }
 
     /**
@@ -804,7 +802,7 @@ class SubscriberMonitor(
     @OptIn(Experimental::class)
     private fun assertPublisherPresence() = runBlocking {
         testLogD("SubscriberMonitor (WAITING): $label - publisher presence -> $expectedPublisherPresence")
-        val presence = subscriber.publisherPresence.first{presence -> presence == expectedPublisherPresence}
+        val presence = subscriber.publisherPresence.first { presence -> presence == expectedPublisherPresence }
         testLogD("SubscriberMonitor (PASS): $label - publisher presence was $presence")
     }
 
@@ -835,7 +833,7 @@ class SubscriberMonitor(
      */
     private fun subscriberIsPresent() =
         ably.channels
-            .get("tracking:${trackableId}")
+            .get("tracking:$trackableId")
             ?.presence
             ?.get(true)
             ?.find {
@@ -874,11 +872,11 @@ class SubscriberMonitor(
      */
     private fun listenForExpectedLocationUpdate(): Location {
         val lastLocation: Location = runBlocking {
-            subscriber.locations.first{locationUpdate -> locationUpdate.location == expectedLocation}.location
+            subscriber.locations.first { locationUpdate -> locationUpdate.location == expectedLocation }.location
         }
 
         testLogD("lastLocation: $lastLocation")
-        return lastLocation;
+        return lastLocation
     }
 
     /**
@@ -888,7 +886,6 @@ class SubscriberMonitor(
         ably.close()
     }
 }
-
 
 /**
  * Redirect Ably and AAT logging to Log.d
