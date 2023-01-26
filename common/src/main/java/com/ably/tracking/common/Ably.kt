@@ -806,7 +806,7 @@ constructor(
      * @throws ConnectionException if the [AblySdkRealtime] state changes to [ConnectionState.failed].
      */
     private suspend fun closeSuspending() {
-        if (ably.connection.state.isClosed() || ably.connection.state.isFailed()) {
+        if (ably.connection.state.isClosed() || ably.connection.state.isFailed() || ably.connection.state.isInitialized()) {
             return
         }
         suspendCancellableCoroutine<Unit> { continuation ->
@@ -900,6 +900,8 @@ constructor(
     private fun ConnectionState.isClosed(): Boolean = this == ConnectionState.closed
 
     private fun ConnectionState.isFailed(): Boolean = this == ConnectionState.failed
+
+    private fun ConnectionState.isInitialized(): Boolean = this == ConnectionState.initialized
 
     private fun ConnectionException.isConnectionResumeException(): Boolean =
         errorInformation.let { it.message == "Connection resume failed" && it.code == 50000 && it.statusCode == 500 }
