@@ -236,6 +236,7 @@ private const val AGENT_HEADER_NAME = "ably-asset-tracking-android"
 private const val AUTH_TOKEN_CAPABILITY_ERROR_CODE = 40160
 private const val PRESENCE_LEAVE_MAXIMUM_DURATION_IN_MILLISECONDS = 30_000L
 private const val PRESENCE_LEAVE_RETRY_DELAY_IN_MILLISECONDS = 15_000L
+private const val STOP_CONNECTION_MAXIMUM_DURATION_IN_MILLISECONDS = 30_000L
 
 class DefaultAbly<ChannelStateListenerType : AblySdkChannelStateListener>
 /**
@@ -977,11 +978,16 @@ constructor(
 
     override suspend fun stopConnection(): Result<Unit> {
         return try {
-            closeSuspending()
+            withTimeout(STOP_CONNECTION_MAXIMUM_DURATION_IN_MILLISECONDS) {
+                closeSuspending()
+            }
             Result.success(Unit)
         } catch (connectionException: ConnectionException) {
             logHandler?.w("$TAG Failed to stop Ably connection", connectionException)
             Result.failure(connectionException)
+        } catch (exception: TimeoutCancellationException) {
+            logHandler?.w("$TAG Stop Ably connection timed out", exception)
+            Result.failure(exception)
         }
     }
 
