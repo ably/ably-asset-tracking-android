@@ -123,7 +123,6 @@ class NetworkConnectivityTests(private val testFault: Fault) {
     fun tearDown() {
         testResources?.tearDown()
     }
-
     /**
      * Test that Publisher can handle the given fault occurring before a user
      * adds a new trackable, and moves Trackables to the expected state once
@@ -266,6 +265,53 @@ class NetworkConnectivityTests(private val testFault: Fault) {
     }
 
     /**
+     * Try stopping the publisher during a fault, and then creating a new instance.
+     * Resolve the fault and ensure that the new instance is operating normally.
+     */
+    @Test
+    fun faultDuringPublisherRestart() {
+        withResources {
+            // Enable the fault and restart the publisher
+            fault.enable()
+            runBlocking {
+                publisher.stop()
+            }
+
+            val newPublisher = TestResources.createPublisher(
+                context = context,
+                proxyClientOptions = fault.proxy.clientOptions(),
+                locationChannelName = locationHelper.channelName
+            )
+
+            // Resolve the fault and ensure the new publisher works
+            fault.resolve()
+            val trackable = Trackable(UUID.randomUUID().toString())
+            val location = locationHelper.locationUpdate(84.0, 104.0)
+            PublisherMonitor.forResolvedFault(
+                "[fault resolved] ensure publisher working",
+                trackable = trackable,
+                faultType = fault.type,
+                locationUpdate = location
+            ).waitForStateTransition {
+                newPublisher.track(trackable).also {
+                    locationHelper.sendUpdate(location)
+                }
+            }.close()
+
+            /*
+             * Stop the new publisher.
+             * This is required because Mapbox instances are kept as a singleton and not reducing the reference
+             * count to zero will result in a stale instance leaking into other tests that run subsequently if
+             * garbage collection doesn't clean things up fast enough (which can lead to other tests seeing incorrect
+             * location updates).
+             */
+            runBlocking {
+                newPublisher.stop()
+            }
+        }
+    }
+
+    /**
      * Checks that we have TestResources initialized and executes the test body
      */
     private fun withResources(testBody: TestResources.() -> Unit) {
@@ -312,7 +358,7 @@ class TestResources(
          * and all dependencies by hand, side-stepping the builders, which block this.
          */
         @SuppressLint("MissingPermission")
-        private fun createPublisher(
+        fun createPublisher(
             context: Context,
             proxyClientOptions: ClientOptions,
             locationChannelName: String
@@ -755,7 +801,7 @@ class PublisherMonitor(
                             }
                         }
 
-                        delay(50)
+                        delay(200)
                     }
                 }
             }
