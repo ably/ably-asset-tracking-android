@@ -68,8 +68,7 @@ interface Publisher {
      *
      * @param trackable The object to be removed from this publisher's tracked set, it it's there.
      *
-     * @return `true` if the object was known to this publisher, otherise `false`.
-     * @throws ConnectionException when something goes wrong with the Ably connection
+     * @return `true` if the object was known to this publisher, otherwise `false`.
      */
     @JvmSynthetic
     suspend fun remove(trackable: Trackable): Boolean
