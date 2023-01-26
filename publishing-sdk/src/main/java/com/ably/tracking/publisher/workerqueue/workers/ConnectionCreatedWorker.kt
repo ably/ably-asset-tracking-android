@@ -41,8 +41,8 @@ internal class ConnectionCreatedWorker(
             // Leave Ably channel.
             doAsyncWork {
                 isBeingRemoved = true
-                val result = ably.disconnect(trackable.id, properties.presenceData)
-                postWork(WorkerSpecification.TrackableRemovalRequested(trackable, callbackFunction, result))
+                ably.disconnect(trackable.id, properties.presenceData)
+                postWork(WorkerSpecification.TrackableRemovalRequested(trackable, callbackFunction, Result.success(Unit)))
             }
             return properties
         }

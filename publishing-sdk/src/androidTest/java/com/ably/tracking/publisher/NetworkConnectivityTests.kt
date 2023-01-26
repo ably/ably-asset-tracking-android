@@ -34,6 +34,7 @@ import com.ably.tracking.test.android.common.DisconnectAndSuspend
 import com.ably.tracking.test.android.common.DisconnectWithFailedResume
 import com.ably.tracking.test.android.common.EnterFailedWithNonfatalNack
 import com.ably.tracking.test.android.common.EnterUnresponsive
+import com.ably.tracking.test.android.common.Fault
 import com.ably.tracking.test.android.common.FaultSimulation
 import com.ably.tracking.test.android.common.FaultType
 import com.ably.tracking.test.android.common.NOTIFICATION_CHANNEL_ID
@@ -57,6 +58,7 @@ import io.ably.lib.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -74,12 +76,13 @@ import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import java.util.Date
 import java.util.UUID
+import java.util.concurrent.TimeoutException
 import kotlin.reflect.KClass
 
 private const val MAPBOX_ACCESS_TOKEN = BuildConfig.MAPBOX_ACCESS_TOKEN
 
 @RunWith(Parameterized::class)
-class NetworkConnectivityTests(private val testFault: FaultSimulation) {
+class NetworkConnectivityTests(private val testFault: Fault) {
 
     private var testResources: TestResources? = null
 
@@ -87,31 +90,32 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
         fun data() = listOf(
-            arrayOf(NullTransportFault(BuildConfig.ABLY_API_KEY)),
-            arrayOf(NullApplicationLayerFault(BuildConfig.ABLY_API_KEY)),
-            arrayOf(TcpConnectionRefused(BuildConfig.ABLY_API_KEY)),
-            arrayOf(TcpConnectionUnresponsive(BuildConfig.ABLY_API_KEY)),
-            arrayOf(AttachUnresponsive(BuildConfig.ABLY_API_KEY)),
-            arrayOf(DetachUnresponsive(BuildConfig.ABLY_API_KEY)),
-            arrayOf(DisconnectWithFailedResume(BuildConfig.ABLY_API_KEY)),
-            arrayOf(EnterFailedWithNonfatalNack(BuildConfig.ABLY_API_KEY)),
-            arrayOf(UpdateFailedWithNonfatalNack(BuildConfig.ABLY_API_KEY)),
-            arrayOf(DisconnectAndSuspend(BuildConfig.ABLY_API_KEY)),
-            arrayOf(ReenterOnResumeFailed(BuildConfig.ABLY_API_KEY)),
-            arrayOf(EnterUnresponsive(BuildConfig.ABLY_API_KEY)),
+            arrayOf(NullTransportFault.fault),
+            arrayOf(NullApplicationLayerFault.fault),
+            arrayOf(TcpConnectionRefused.fault),
+            arrayOf(TcpConnectionUnresponsive.fault),
+            arrayOf(AttachUnresponsive.fault),
+            arrayOf(DetachUnresponsive.fault),
+            arrayOf(DisconnectWithFailedResume.fault),
+            arrayOf(EnterFailedWithNonfatalNack.fault),
+            arrayOf(UpdateFailedWithNonfatalNack.fault),
+            arrayOf(DisconnectAndSuspend.fault),
+            arrayOf(ReenterOnResumeFailed.fault),
+            arrayOf(EnterUnresponsive.fault),
         )
     }
 
     @Before
     fun setUp() {
-        Assume.assumeFalse(testFault.skipPublisherTest)
+        val simulation = testFault.simulate(BuildConfig.ABLY_API_KEY)
+        Assume.assumeFalse(simulation.skipPublisherTest)
 
         // We cannot use ktor on API Level 21 (Lollipop) because of:
         // https://youtrack.jetbrains.com/issue/KTOR-4751/HttpCache-plugin-uses-ConcurrentMap.computeIfAbsent-method-that-is-available-only-since-Android-API-24
         // We we're only running them if runtime API Level is 24 (N) or above.
         Assume.assumeTrue(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
 
-        testResources = TestResources.setUp(testFault)
+        testResources = TestResources.setUp(simulation)
         createNotificationChannel(testResources?.context!!)
     }
 
@@ -292,9 +296,8 @@ class TestResources(
         fun setUp(faultParam: FaultSimulation): TestResources {
             val context = InstrumentationRegistry.getInstrumentation().targetContext
             val locationHelper = LocationHelper()
-            val publisher = createPublisher(context, faultParam.proxy.clientOptions(), locationHelper.channelName)
-
             faultParam.proxy.start()
+            val publisher = createPublisher(context, faultParam.proxy.clientOptions(), locationHelper.channelName)
 
             return TestResources(
                 context = context,
@@ -455,7 +458,7 @@ class LocationHelper {
     private val opts = CLIENT_OPTS_NO_PROXY
     private val ably = AblyRealtime(opts)
 
-    val channelName = "testLocations"
+    val channelName = "publisherIntergrationTestLocations-" + UUID.randomUUID()
     private val channel = ably.channels.get(channelName)
 
     private val gson = Gson()
@@ -728,36 +731,39 @@ class PublisherMonitor(
             return
         }
 
-        val lastPublishedLocation = lastLocationUpdate()
-        if (!expectedLocationUpdate.equalGeometry(lastPublishedLocation)) {
-            testLogD("PublisherMonitor: $label - (FAIL) lastPublishedLocation = $lastPublishedLocation")
-            throw AssertionError(
-                "Expected location update $expectedLocationUpdate but last was $lastPublishedLocation"
-            )
-        } else {
-            testLogD("PublisherMonitor: $label - (PASS) lastPublishedLocation = $lastPublishedLocation")
-        }
-    }
+        try {
+            runBlocking {
+                // The location update may be published some time after arriving on the mapbox source channel
+                withTimeout(10000) {
+                    while (true) {
+                        val latestMsg = ably.channels
+                            .get("tracking:${trackable.id}")
+                            ?.history(null)
+                            ?.items()
+                            ?.get(0)
 
-    /**
-     * Use Ably's history API to retrieve the latest messages published, and return the [LocationMessage] component
-     * of the most-recently published [EnhancedLocationUpdateMessage] update.
-     */
-    private fun lastLocationUpdate(): LocationMessage? {
-        val latestMsg = ably.channels
-            .get("tracking:${trackable.id}")
-            ?.history(null)
-            ?.items()
-            ?.get(0)
-        testLogD("lastMessage: $latestMsg")
-        return if (latestMsg != null) {
-            gson.fromJson(
-                latestMsg.data as String,
-                EnhancedLocationUpdateMessage::class.java
-            ).location
-        } else {
-            testLogD("PublisherMonitor: $label - no location updates found")
-            null
+                        // Check the trackable channel for the expected update
+                        if (latestMsg != null) {
+                            val latestLocation = gson.fromJson(
+                                latestMsg.data as String,
+                                EnhancedLocationUpdateMessage::class.java
+                            ).location
+
+                            if (latestLocation.equalGeometry(expectedLocationUpdate)) {
+                                testLogD("PublisherMonitor: $label - (PASS) lastPublishedLocation = $latestLocation")
+                                return@withTimeout
+                            }
+                        }
+
+                        delay(50)
+                    }
+                }
+            }
+        } catch (timeout: TimeoutException) {
+            testLogD("PublisherMonitor: $label - (FAIL) did not receive expected location update")
+            throw AssertionError(
+                "Expected location update not received"
+            )
         }
     }
 

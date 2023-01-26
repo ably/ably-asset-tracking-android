@@ -65,6 +65,7 @@ internal class DisconnectSuccessWorker(
         properties.trackableStates.remove(trackable.id)
         properties.lastChannelConnectionStateChanges.remove(trackable.id)
         properties.trackableSubscribedToPresenceFlags.remove(trackable.id)
+        properties.trackablesWithFinalStateSet.remove(trackable.id)
     }
 
     private fun updateResolutions(properties: PublisherProperties) {

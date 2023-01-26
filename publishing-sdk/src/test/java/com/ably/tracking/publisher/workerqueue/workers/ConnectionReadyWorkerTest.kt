@@ -11,7 +11,6 @@ import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 import com.ably.tracking.test.common.mockDisconnect
 import com.google.common.truth.Truth.assertThat
-import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.just
@@ -336,8 +335,7 @@ class ConnectionReadyWorkerTest {
         val initialProperties = createPublisherProperties()
         initialProperties.trackableRemovalGuard.markForRemoval(trackable) {}
 
-        val disconnectResult = Result.success(Unit)
-        ably.mockDisconnect(trackable.id, disconnectResult)
+        ably.mockDisconnect(trackable.id)
 
         // when
         worker.doWork(
@@ -356,7 +354,6 @@ class ConnectionReadyWorkerTest {
 
         assertThat(postedWork.trackable).isEqualTo(trackable)
         assertThat(postedWork.callbackFunction).isEqualTo(resultCallbackFunction)
-        assertThat(postedWork.result).isEqualTo(disconnectResult)
     }
 
     @Test
@@ -365,7 +362,7 @@ class ConnectionReadyWorkerTest {
         val initialProperties = createPublisherProperties()
         initialProperties.trackableRemovalGuard.markForRemoval(trackable) {}
 
-        coEvery { ably.disconnect(trackable.id, any()) } returns Result.success(Unit)
+        ably.mockDisconnect(trackable.id)
 
         // when
         worker.doWork(
@@ -389,7 +386,7 @@ class ConnectionReadyWorkerTest {
         initialProperties.trackableRemovalGuard.markForRemoval(trackable) {}
         initialProperties.duplicateTrackableGuard.startAddingTrackable(trackable)
 
-        coEvery { ably.disconnect(trackable.id, any()) } returns Result.success(Unit)
+        ably.mockDisconnect(trackable.id)
 
         // when
         val updatedProperties = worker.doWork(
