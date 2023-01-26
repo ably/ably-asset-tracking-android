@@ -298,7 +298,13 @@ class NetworkConnectivityTests(private val testFault: Fault) {
                 }
             }.close()
 
-            // Stop the new publisher. This is required otherwise we won't be able to dispose of our mapbox instances.
+            /*
+             * Stop the new publisher.
+             * This is required because Mapbox instances are kept as a singleton and not reducing the reference
+             * count to zero will result in a stale instance leaking into other tests that run subsequently if
+             * garbage collection doesn't clean things up fast enough (which can lead to other tests seeing incorrect
+             * location updates).
+             */
             runBlocking {
                 newPublisher.stop()
             }
