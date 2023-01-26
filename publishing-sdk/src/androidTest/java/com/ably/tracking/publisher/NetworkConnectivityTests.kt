@@ -649,7 +649,7 @@ class PublisherMonitor(
                 throw AssertionError("$label timed out.", timeoutCancellationException)
             } catch (exception: Exception) {
                 testLogD("$label - failed - $exception")
-                throw AssertionError("$label did not result in success.", exception)
+                throw AssertionError("$label did not result in success: $exception", exception)
             }
         }
 
