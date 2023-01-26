@@ -61,6 +61,18 @@ fun Ably.mockConnectFailureThenSuccess(trackableId: String, isFatal: Boolean = f
     }
 }
 
+fun Ably.mockEnterPresenceSuccess(trackableId: String) {
+    coEvery {
+        enterChannelPresence(trackableId, any())
+    } returns Result.success(Unit)
+}
+
+fun Ably.mockEnterPresenceFailure(trackableId: String, isFatal: Boolean = false) {
+    coEvery {
+        enterChannelPresence(trackableId, any())
+    } returns Result.failure(anyConnectionException(isFatal))
+}
+
 fun Ably.mockSubscribeToPresenceSuccess(
     trackableId: String,
     listenerSlot: CapturingSlot<(PresenceMessage) -> Unit> = slot()

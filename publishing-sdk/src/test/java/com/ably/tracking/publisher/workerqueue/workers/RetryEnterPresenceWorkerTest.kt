@@ -3,8 +3,8 @@ package com.ably.tracking.publisher.workerqueue.workers
 import com.ably.tracking.common.Ably
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.WorkerSpecification
-import com.ably.tracking.test.common.mockConnectFailure
-import com.ably.tracking.test.common.mockConnectSuccess
+import com.ably.tracking.test.common.mockEnterPresenceFailure
+import com.ably.tracking.test.common.mockEnterPresenceSuccess
 import com.google.common.truth.Truth.assertThat
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -35,7 +35,7 @@ class RetryEnterPresenceWorkerTest {
             val initialProperties = createPublisherProperties()
             initialProperties.trackables.add(trackable)
             initialProperties.duplicateTrackableGuard.clear(trackable)
-            ably.mockConnectSuccess(trackable.id)
+            ably.mockEnterPresenceSuccess(trackable.id)
 
             // when
             worker.doWork(
@@ -106,7 +106,7 @@ class RetryEnterPresenceWorkerTest {
             val initialProperties = createPublisherProperties()
             initialProperties.duplicateTrackableGuard.clear(trackable)
             initialProperties.trackables.add(trackable)
-            ably.mockConnectFailure(trackable.id, isFatal = false)
+            ably.mockEnterPresenceFailure(trackable.id, isFatal = false)
 
             // when
             worker.doWork(

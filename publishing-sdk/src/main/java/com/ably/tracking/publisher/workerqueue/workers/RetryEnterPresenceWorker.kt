@@ -41,20 +41,19 @@ internal class RetryEnterPresenceWorker(
         postWork: (WorkerSpecification) -> Unit,
         presenceData: PresenceData
     ) {
-        val connectResult = ably.connect(
+        val enterPresenceResult = ably.enterChannelPresence(
             trackableId = trackable.id,
-            presenceData = presenceData,
-            willPublish = true,
+            presenceData = presenceData
         )
 
         when {
-            connectResult.isSuccess -> postWork(
+            enterPresenceResult.isSuccess -> postWork(
                 WorkerSpecification.RetryEnterPresenceSuccess(
                     trackable
                 )
             )
-            connectResult.isFatalAblyFailure() -> throw NotImplementedError() // TODO How to handle this case?
-            connectResult.isFailure -> {
+            enterPresenceResult.isFatalAblyFailure() -> throw NotImplementedError() // TODO How to handle this case?
+            enterPresenceResult.isFailure -> {
                 delay(WORK_DELAY_IN_MILLISECONDS)
                 postWork(WorkerSpecification.RetryEnterPresence(trackable))
             }

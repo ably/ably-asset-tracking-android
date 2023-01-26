@@ -691,6 +691,7 @@ class DefaultAblyTests {
             )
         }
     }
+
     private fun Int.toHref() = "https://help.ably.io/error/$this"
 
     @Test
@@ -774,6 +775,135 @@ class DefaultAblyTests {
                     verifyChannelAttach = false,
                     verifyChannelRelease = false,
                     resultOfConnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
+                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
+                    )
+                )
+            )
+        }
+    }
+
+    @Test
+    fun `enterChannelPresence - when channel exists`() {
+        /* Given...
+         *
+         * ...that calling `containsKey` on the Channels instance returns true...
+         * ...and that calling `get` on the Channels instance returns a channel...
+         * ...which, when told to enter presence, does so successfully...
+         *
+         * When...
+         *
+         * ...we call `enterChannelPresence` on the object under test,
+         *
+         * Then...
+         * ...in the following order, precisely the following things happen...
+         *
+         * ...it calls `containsKey` on the Channels instance...
+         * ...and calls `get` on the Channels instance...
+         * ...and calls `get` on the Channels instance...
+         * ...and tells the channel to enter presence...
+         *
+         * ...and the call to `enterChannelPresence` (on the object under test) succeeds.
+         */
+        runBlocking {
+            DefaultAblyTestScenarios.EnterChannelPresence.test(
+                DefaultAblyTestScenarios.EnterChannelPresence.GivenConfig(
+                    channelsContainsKey = true,
+                    presenceEnterBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Success,
+                ),
+                DefaultAblyTestScenarios.EnterChannelPresence.ThenConfig(
+                    verifyChannelsGet = true,
+                    verifyPresenceEnter = true,
+                    resultOfEnterChannelPresenceCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
+                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
+                    )
+                )
+            )
+        }
+    }
+
+    @Test
+    fun `enterChannelPresence - exception when channel exists`() {
+        /* Given...
+         *
+         * ...that calling `containsKey` on the Channels instance returns true...
+         * ...and that calling `get` on the Channels instance returns a channel...
+         * ...which, when told to enter presence, fails with an arbitrary chosen error info...
+         *
+         * When...
+         *
+         * ...we call `enterChannelPresence` on the object under test,
+         *
+         * Then...
+         * ...in the following order, precisely the following things happen...
+         *
+         * ...it calls `containsKey` on the Channels instance...
+         * ...and calls `get` on the Channels instance...
+         * ...and calls `get` on the Channels instance...
+         * ...and tells the channel to enter presence...
+         *
+         * ...and the call to `enterChannelPresence` (on the object under test) succeeds.
+         */
+
+        val presenceError = ErrorInfo(
+            "example of an error message", /* arbitrarily chosen */
+            400, /* fatal error code */
+            123 /* arbitrarily chosen */
+        )
+        runBlocking {
+            DefaultAblyTestScenarios.EnterChannelPresence.test(
+                DefaultAblyTestScenarios.EnterChannelPresence.GivenConfig(
+                    channelsContainsKey = true,
+                    presenceEnterBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Failure(
+                        presenceError
+                    ),
+                ),
+                DefaultAblyTestScenarios.EnterChannelPresence.ThenConfig(
+                    verifyChannelsGet = true,
+                    verifyPresenceEnter = true,
+                    resultOfEnterChannelPresenceCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
+                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.FailureWithConnectionException(
+                            errorInformation =
+                            ErrorInformation(
+                                code = presenceError.code,
+                                statusCode = presenceError.statusCode,
+                                message = presenceError.message,
+                                href = presenceError.code.toHref(),
+                                cause = null
+                            )
+                        )
+                    )
+                )
+            )
+        }
+    }
+
+    @Test
+    fun `enterChannelPresence - when channel does not exist`() {
+        /* Given...
+         *
+         * ...that calling `containsKey` on the Channels instance returns false...
+         *
+         * When...
+         *
+         * ...we call `enterChannelPresence` on the object under test,
+         *
+         * Then...
+         * ...in the following order, precisely the following things happen...
+         *
+         * ...it calls `containsKey` on the Channels instance...
+         *
+         * ...and the call to `enterChannelPresence` (on the object under test) succeeds.
+         */
+        runBlocking {
+            DefaultAblyTestScenarios.EnterChannelPresence.test(
+                DefaultAblyTestScenarios.EnterChannelPresence.GivenConfig(
+                    channelsContainsKey = false,
+                    presenceEnterBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.NotMocked,
+                ),
+                DefaultAblyTestScenarios.EnterChannelPresence.ThenConfig(
+                    verifyChannelsGet = false,
+                    verifyPresenceEnter = false,
+                    resultOfEnterChannelPresenceCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
                         expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
                     )
                 )
