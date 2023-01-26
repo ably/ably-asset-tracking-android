@@ -746,7 +746,7 @@ class PublisherMonitor(
                             val latestLocation = gson.fromJson(
                                 latestMsg.data as String,
                                 EnhancedLocationUpdateMessage::class.java
-                            ).location;
+                            ).location
 
                             if (latestLocation.equalGeometry(expectedLocationUpdate)) {
                                 testLogD("PublisherMonitor: $label - (PASS) lastPublishedLocation = $latestLocation")
