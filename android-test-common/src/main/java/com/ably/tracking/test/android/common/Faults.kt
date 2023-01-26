@@ -451,13 +451,6 @@ class EnterUnresponsive(apiKey: String) : UnresponsiveAfterAction(
             override val name = "EnterUnresponsive"
         }
     }
-
-    /*
-        This test currently fails because the ably-java hangs the client
-        waiting for a presence response if there's there's a reconnection
-        before successful completion of enter()
-    */
-    override val skipTest = true
 }
 
 /**
@@ -476,11 +469,6 @@ class DisconnectWithFailedResume(apiKey: String) : ApplicationLayerFault(apiKey)
             override val name = "DisconnectWithFailedResume"
         }
     }
-
-    /*
-        Currently failing due to ably-java#474 presence bug
-     */
-    override val skipTest = true
 
     /**
      * State of the fault, used to control whether we're intercepting
