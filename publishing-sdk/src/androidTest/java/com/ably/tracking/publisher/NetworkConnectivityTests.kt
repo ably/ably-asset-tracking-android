@@ -755,7 +755,7 @@ class PublisherMonitor(
                             }
                         }
 
-                        delay(50)
+                        delay(200)
                     }
                 }
             }
