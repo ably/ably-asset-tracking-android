@@ -174,6 +174,7 @@ class NetworkConnectivityTests(private val testFault: Fault) {
                 trackable = primaryTrackable,
                 faultType = fault.type
             ).waitForStateTransition {
+                fault.resolve()
                 publisher.getTrackableState(primaryTrackable.id)!!
             }.close()
 
@@ -607,7 +608,10 @@ class PublisherMonitor(
                 is FaultType.NonfatalWhenResolved -> null
                 is FaultType.Fatal -> false
             },
-            expectedLocationUpdate = locationUpdate,
+            expectedLocationUpdate = when (faultType) {
+                is FaultType.Nonfatal -> locationUpdate
+                else -> null
+            },
             timeout = when (faultType) {
                 is FaultType.Fatal -> faultType.failedWithinMillis
                 is FaultType.Nonfatal -> faultType.resolvedWithinMillis
