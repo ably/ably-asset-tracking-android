@@ -17,7 +17,6 @@ The current, non-pre-release SDKs for production use are at version [1.5.1](#151
 - `Publisher.remove\(\)` fails during several connectivity faults [\#905](https://github.com/ably/ably-asset-tracking-android/issues/905)
 - Adding a trackable stalls forever if presence.enter\(\) is interrupted by a disconnection [\#896](https://github.com/ably/ably-asset-tracking-android/issues/896)
 - Publisher crashes when location data has NaN value [\#861](https://github.com/ably/ably-asset-tracking-android/issues/861)
-- Subscriber, upon losing connectivity, continues to show the Publisher as online [\#835](https://github.com/ably/ably-asset-tracking-android/issues/835)
 - Subscriber, upon losing connectivity, continues to show the Publisher as online [\#833](https://github.com/ably/ably-asset-tracking-android/issues/833)
 - Unexpected exceptions fail the worker queue and silently break the SDK [\#830](https://github.com/ably/ably-asset-tracking-android/issues/830)
 - Fix the logic responsible for deciding if an enhanced location update is predicted [\#828](https://github.com/ably/ably-asset-tracking-android/issues/828)
