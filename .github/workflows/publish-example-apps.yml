@@ -52,4 +52,4 @@ jobs:
       - name: Upload to Firebase App Distribution
         env:
           ORG_GRADLE_PROJECT_MAPBOX_DOWNLOADS_TOKEN: ${{ secrets.MAPBOX_DOWNLOADS_TOKEN }}
-        run: ./gradlew :publishing-example-app:appDistributionUploadRelease --stacktrace
+        run: ./gradlew :publishing-example-app:appDistributionUploadRelease --stacktrace -PruntimeSecrets=USE_DUMMY_EMPTY_STRING_VALUES
