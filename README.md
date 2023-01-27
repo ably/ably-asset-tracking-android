@@ -50,6 +50,10 @@ MAPBOX_ACCESS_TOKEN=create_token_with_all_public_scopes
 GOOGLE_MAPS_API_KEY=create_api_key_with_geolocation_maps_sdk
 ```
 
+Our Gradle build configuration also has support for uploading example apps to Firebase App Distribution with Crashlytics support - see
+[`CONTRIBUTING.md`: Secrets Required to Distribute the Example Apps](CONTRIBUTING.md#secrets-required-to-distribute-the-example-apps)
+for more detail on this.
+
 ## Usage
 
 Please see our [Upgrade / Migration Guide](UPDATING.md) for notes on changes you need to make to your code to update the Ably Asset Tracking SDKs.
