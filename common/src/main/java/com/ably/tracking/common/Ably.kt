@@ -740,13 +740,37 @@ constructor(
     override suspend fun updatePresenceData(trackableId: String, presenceData: PresenceData): Result<Unit> {
         val trackableChannel = getChannelIfExists(trackableId) ?: return Result.success(Unit)
         return try {
-            retryChannelOperationIfConnectionResumeFails(trackableChannel) {
-                updatePresenceData(it, presenceData)
+            // This simple retry mechanism should be removed while fixing https://github.com/ably/ably-asset-tracking-android/issues/962
+            withTimeout(30_000L) {
+                updatePresenceDataRepeating(trackableChannel, presenceData)
+                Result.success(Unit)
             }
-            Result.success(Unit)
         } catch (exception: ConnectionException) {
             logHandler?.w("$TAG Failed to update presence data for trackable $trackableId", exception)
             Result.failure(exception)
+        } catch (exception: TimeoutCancellationException) {
+            logHandler?.w("$TAG Failed to update presence data due to a timeout for trackable $trackableId", exception)
+            Result.failure(ConnectionException(ErrorInformation("Timeout was thrown when updating presence of channel ${trackableChannel.name}")))
+        }
+    }
+
+    /**
+     * Try to update the presence data of the [channel] and if it fails due to a retriable error repeat the operation
+     * after a delay. If the operation fails due to a non-retriable error then re-throw the [ConnectionException].
+     *
+     * Note: this is a temporary solution that should be removed while fixing https://github.com/ably/ably-asset-tracking-android/issues/962
+     */
+    private suspend fun updatePresenceDataRepeating(channel: AblySdkRealtime.Channel<ChannelStateListenerType>, presenceData: PresenceData) {
+        try {
+            updatePresenceData(channel, presenceData)
+        } catch (connectionException: ConnectionException) {
+            if (!connectionException.isRetriable()) {
+                logHandler?.w("$TAG Failed to update presence for channel ${channel.name} due to a non-retriable exception", connectionException)
+                throw connectionException
+            }
+            logHandler?.w("$TAG Failed to update presence for channel ${channel.name} due to a retriable exception, the operation will be retried", connectionException)
+            delay(15_000L)
+            updatePresenceDataRepeating(channel, presenceData)
         }
     }
 
