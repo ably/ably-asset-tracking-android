@@ -50,4 +50,6 @@ jobs:
         run: echo "$ASSET_TRACKING_SDKS_GSERVICEACCOUNT_PRIVATE_KEY_JSON" > publishing-example-app/firebase-app-distribution-private-key.json
 
       - name: Upload to Firebase App Distribution
+        env:
+          ORG_GRADLE_PROJECT_MAPBOX_DOWNLOADS_TOKEN: ${{ secrets.MAPBOX_DOWNLOADS_TOKEN }}
         run: ./gradlew :publishing-example-app:appDistributionUploadRelease --stacktrace
