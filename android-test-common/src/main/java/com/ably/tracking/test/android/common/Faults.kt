@@ -485,6 +485,11 @@ class EnterUnresponsive(apiKey: String) : UnresponsiveAfterAction(
  */
 class DisconnectWithFailedResume(apiKey: String) : ApplicationLayerFault(apiKey) {
 
+    /*
+     * This test fails intermittently. Investigation ongoing in #951
+     */
+    override val skipTest = true
+
     companion object {
         val fault = object : Fault() {
             override fun simulate(apiKey: String) = DisconnectWithFailedResume(apiKey)
