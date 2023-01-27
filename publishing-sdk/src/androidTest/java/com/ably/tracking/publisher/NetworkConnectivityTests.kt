@@ -740,7 +740,7 @@ class PublisherMonitor(
                             .get("tracking:${trackable.id}")
                             ?.history(null)
                             ?.items()
-                            ?.get(0)
+                            ?.firstOrNull()
 
                         // Check the trackable channel for the expected update
                         if (latestMsg != null) {

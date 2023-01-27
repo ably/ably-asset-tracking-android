@@ -158,7 +158,7 @@ class TcpConnectionRefused(apiKey: String) : TransportLayerFault(apiKey) {
     }
 
     override val type = FaultType.NonfatalWhenResolved(
-        offlineWithinMillis = 30_000,
+        offlineWithinMillis = 60_000,
         onlineWithinMillis = 60_000
     )
 
