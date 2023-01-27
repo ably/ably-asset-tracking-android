@@ -17,10 +17,13 @@ buildscript {
         classpath 'com.android.tools.build:gradle:7.4.0'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
 
-        // Firebase Crashlytics
-        // see: https://firebase.google.com/docs/crashlytics/get-started?platform=android
-        classpath 'com.google.gms:google-services:4.3.14'
-        classpath 'com.google.firebase:firebase-crashlytics-gradle:2.9.2'
+        // Firebase Crashlytics and App Distribution
+        // see:
+        // - https://firebase.google.com/docs/crashlytics/get-started?platform=android
+        // - https://firebase.google.com/docs/app-distribution/android/distribute-gradle
+        classpath 'com.google.gms:google-services:4.3.15' // 19 January 2023
+        classpath 'com.google.firebase:firebase-crashlytics-gradle:2.9.2' // 15 September 2022
+        classpath 'com.google.firebase:firebase-appdistribution-gradle:3.2.0' // 19 January 2023
 
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
