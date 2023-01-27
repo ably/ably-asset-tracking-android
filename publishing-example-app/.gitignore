@@ -2,3 +2,7 @@
 /src/main/res/raw/amplifyconfiguration.json
 /google-services.json
 /firebase-app-distribution-private-key.json
+/signing.jks
+
+# Intermediary or transient folders created when assembling the app.
+/release/
