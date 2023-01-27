@@ -39,6 +39,14 @@ jobs:
           ASSET_TRACKING_SDKS_GSERVICEACCOUNT_PRIVATE_KEY_JSON: ${{ secrets.ASSET_TRACKING_SDKS_GSERVICEACCOUNT_PRIVATE_KEY_JSON }}
         run: echo "$ASSET_TRACKING_SDKS_GSERVICEACCOUNT_PRIVATE_KEY_JSON" > publishing-example-app/firebase-app-distribution-private-key.json
 
+      # for S3 uploads from the app
+      - name: Populate AWS Amplify Configuration file from Secrets
+        run: |
+          mkdir publishing-example-app/src/main/res/raw
+          echo "$AMPLIFY_CONFIGURATION" > publishing-example-app/src/main/res/raw/amplifyconfiguration.json
+        env:
+          AMPLIFY_CONFIGURATION: ${{ secrets.AMPLIFY_CONFIGURATION }}
+
       - name: Build and Upload Publishing Example App
         env:
           ORG_GRADLE_PROJECT_ANDROID_SIGNING_KEY_ALIAS: ${{ secrets.AAT_SDK_EXAMPLE_APPS_ANDROID_SIGNING_KEY_ALIAS }}
