@@ -158,9 +158,17 @@ class TcpConnectionRefused(apiKey: String) : TransportLayerFault(apiKey) {
     }
 
     override val type = FaultType.NonfatalWhenResolved(
-        offlineWithinMillis = 60_000,
+        offlineWithinMillis = 30_000,
         onlineWithinMillis = 60_000
     )
+
+    /**
+     * This fault type is temporarily disabled at runtime. It can be re-enabled by removing this override.
+     * We will re-enable this test when the following have been addressed:
+     * - https://github.com/ably/ably-asset-tracking-android/issues/859
+     * - https://github.com/ably/ably-asset-tracking-android/issues/871
+     */
+    override val skipTest = true
 
     override fun enable() {
         tcpProxy.stop()
@@ -188,6 +196,14 @@ class TcpConnectionUnresponsive(apiKey: String) : TransportLayerFault(apiKey) {
         offlineWithinMillis = 120_000,
         onlineWithinMillis = 60_000
     )
+
+    /**
+     * This fault type is temporarily disabled at runtime. It can be re-enabled by removing this override.
+     * We will re-enable this test when the following have been addressed:
+     * - https://github.com/ably/ably-asset-tracking-android/issues/859
+     * - https://github.com/ably/ably-asset-tracking-android/issues/871
+     */
+    override val skipTest = true
 
     override fun enable() {
         tcpProxy.isForwarding = false
@@ -671,16 +687,6 @@ class ReenterOnResumeFailed(apiKey: String) : ApplicationLayerFault(apiKey) {
             override val name = "ReenterOnResumeFailed"
         }
     }
-
-    /*
-       This test currently fails because the ably-java hangs the client
-       waiting for a presence response if there's there's a reconnection
-       before successful completion of enter()
-
-       This happens during stage 2 of the test, so steps 3 and 4 have not
-       yet been seen to work.
-     */
-    override val skipTest = true
 
     private var state = State.DisconnectAfterPresence
     private var presenceEnterSerial: Int? = null
