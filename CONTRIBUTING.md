@@ -134,6 +134,17 @@ We have only configured this for the Publishing Example project so far.
 We will add it to the Subscribing Example App project when we work on
 https://github.com/ably/ably-asset-tracking-android/issues/957.
 
+### Android App Signing Key
+
+The secrets used to configure the Android app signing configuration are called:
+
+| Secret Name | Gradle Build Input Mechanism | Description |
+| ----------- | ---------------------------- | ----------- |
+| `AAT_SDK_EXAMPLE_APPS_ANDROID_SIGNING_JKS_FILE_BASE64` | Hydrated (decoded from base64) to file at `publishing-example-app/signing.jks` | This is a Java KeyStore file and can be created using Android Studio using the instructions [here](https://developer.android.com/studio/publish/app-signing#generate-key). Configures [the `storeFile` property](https://developer.android.com/reference/tools/gradle-api/4.2/com/android/build/api/dsl/SigningConfig#storeFile:java.io.File). |
+| `AAT_SDK_EXAMPLE_APPS_ANDROID_SIGNING_KEY_ALIAS` | Property with the same name. | Configures [the `keyAlias` property](https://developer.android.com/reference/tools/gradle-api/4.2/com/android/build/api/dsl/SigningConfig#keyAlias:kotlin.String). |
+| `AAT_SDK_EXAMPLE_APPS_ANDROID_SIGNING_KEY_PASSWORD` | Property with the same name. | Configures [the `keyPassword` property](https://developer.android.com/reference/tools/gradle-api/4.2/com/android/build/api/dsl/SigningConfig#keyPassword:kotlin.String). |
+| `AAT_SDK_EXAMPLE_APPS_ANDROID_SIGNING_STORE_PASSWORD` | Property with the same name. | Configures [the `storePassword` property](https://developer.android.com/reference/tools/gradle-api/4.2/com/android/build/api/dsl/SigningConfig#storePassword:kotlin.String). |
+
 ### Google Services
 
 This file is required by the
