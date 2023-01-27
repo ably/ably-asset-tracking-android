@@ -168,7 +168,7 @@ class TcpConnectionRefused(apiKey: String) : TransportLayerFault(apiKey) {
      * - https://github.com/ably/ably-asset-tracking-android/issues/859
      * - https://github.com/ably/ably-asset-tracking-android/issues/871
      */
-    override val skipTest = true
+    override val skipTest = false
 
     override fun enable() {
         tcpProxy.stop()
@@ -203,7 +203,7 @@ class TcpConnectionUnresponsive(apiKey: String) : TransportLayerFault(apiKey) {
      * - https://github.com/ably/ably-asset-tracking-android/issues/859
      * - https://github.com/ably/ably-asset-tracking-android/issues/871
      */
-    override val skipTest = true
+    override val skipTest = false
 
     override fun enable() {
         tcpProxy.isForwarding = false
@@ -231,7 +231,7 @@ class DisconnectAndSuspend(apiKey: String) : TransportLayerFault(apiKey) {
     /*
         Currently failing due to Issues #871 and #907
     */
-    override val skipTest = true
+    override val skipTest = false
 
     private val timer = Timer()
 
@@ -374,7 +374,7 @@ class AttachUnresponsive(apiKey: String) : DropAction(
         Currently failing due to Issue #871 -- throwing ConnectionError
         when trying to add new trackables while offline.
      */
-    override val skipTest = true
+    override val skipTest = false
 }
 
 /**
@@ -646,7 +646,7 @@ class EnterFailedWithNonfatalNack(apiKey: String) : PresenceNackFault(
         Currently failing due to Issue #907 - non-fatal nack triggers
         an exception to be thrown to caller during publisher.track()
      */
-    override val skipTest = true
+    override val skipTest = false
 
     override val type = FaultType.Nonfatal(
         resolvedWithinMillis = 60_000L
@@ -698,7 +698,7 @@ class ReenterOnResumeFailed(apiKey: String) : ApplicationLayerFault(apiKey) {
        This happens during stage 2 of the test, so steps 3 and 4 have not
        yet been seen to work.
      */
-    override val skipTest = true
+    override val skipTest = false
 
     private var state = State.DisconnectAfterPresence
     private var presenceEnterSerial: Int? = null
