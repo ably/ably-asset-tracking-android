@@ -295,7 +295,7 @@ abstract class DropAction(
 
     private var initialConnection = true
 
-    override val type = FaultType.Nonfatal(
+    override val type: FaultType = FaultType.Nonfatal(
         resolvedWithinMillis = 120_000L
     )
 
@@ -353,6 +353,11 @@ class AttachUnresponsive(apiKey: String) : DropAction(
             override val name = "AttachUnresponsive"
         }
     }
+
+    override val type = FaultType.NonfatalWhenResolved(
+        offlineWithinMillis = 60_000,
+        onlineWithinMillis = 60_000
+    )
 }
 
 /**
