@@ -14,7 +14,7 @@ The current, non-pre-release SDKs for production use are at version [1.5.1](#151
 **Fixed bugs:**
 
 - Retry behaviour improvements for Ably API calls [\#927](https://github.com/ably/ably-asset-tracking-android/issues/927)
-- `Publisher.remove\(\)` fails during several connectivity faults [\#905](https://github.com/ably/ably-asset-tracking-android/issues/905)
+- `Publisher.remove()` fails during several connectivity faults [\#905](https://github.com/ably/ably-asset-tracking-android/issues/905)
 - Adding a trackable stalls forever if presence.enter\(\) is interrupted by a disconnection [\#896](https://github.com/ably/ably-asset-tracking-android/issues/896)
 - Publisher crashes when location data has NaN value [\#861](https://github.com/ably/ably-asset-tracking-android/issues/861)
 - Subscriber, upon losing connectivity, continues to show the Publisher as online [\#833](https://github.com/ably/ably-asset-tracking-android/issues/833)
@@ -49,7 +49,7 @@ The current, non-pre-release SDKs for production use are at version [1.5.1](#151
 
 **Merged pull requests:**
 
-- Fix `publish.stop\(\)` hang when no trackables added [\#952](https://github.com/ably/ably-asset-tracking-android/pull/952) ([jaley](https://github.com/jaley))
+- Fix `publish.stop()` hang when no trackables added [\#952](https://github.com/ably/ably-asset-tracking-android/pull/952) ([jaley](https://github.com/jaley))
 - Increase back-off when querying history in test [\#949](https://github.com/ably/ably-asset-tracking-android/pull/949) ([AndyTWF](https://github.com/AndyTWF))
 - Reenable disconnect failed resume faults [\#947](https://github.com/ably/ably-asset-tracking-android/pull/947) ([ikbalkaya](https://github.com/ikbalkaya))
 - Change publisher and subscriber stop operation to always succeed [\#945](https://github.com/ably/ably-asset-tracking-android/pull/945) ([KacperKluka](https://github.com/KacperKluka))
