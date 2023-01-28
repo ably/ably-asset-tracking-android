@@ -2,6 +2,7 @@ package com.ably.tracking.publisher.workerqueue.workers
 
 import com.ably.tracking.ConnectionException
 import com.ably.tracking.common.Ably
+import com.ably.tracking.common.ConnectionState
 import com.ably.tracking.common.PresenceData
 import com.ably.tracking.common.isFatalAblyFailure
 import com.ably.tracking.common.workerqueue.DefaultWorker
@@ -9,6 +10,8 @@ import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 import kotlinx.coroutines.delay
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 
 /**
  * How long should we wait before queueing enter retry presence work if enter presence fails.
@@ -30,6 +33,7 @@ internal class RetryEnterPresenceWorker(
                 enterPresence(postWork, properties.presenceData)
             }
         }
+
         return properties
     }
 
@@ -37,6 +41,15 @@ internal class RetryEnterPresenceWorker(
         postWork: (WorkerSpecification) -> Unit,
         presenceData: PresenceData
     ) {
+        val waitForChannelToBeConnectedResult = waitForChannelToBeConnected(trackable)
+        if (waitForChannelToBeConnectedResult.isFailure) {
+            postFailTrackableWork(
+                postWork,
+                waitForChannelToBeConnectedResult
+            )
+            return
+        }
+
         val enterPresenceResult = ably.enterChannelPresence(
             trackableId = trackable.id,
             presenceData = presenceData
@@ -55,6 +68,19 @@ internal class RetryEnterPresenceWorker(
             else -> {
                 delay(PRESENCE_ENTER_DELAY_IN_MILLISECONDS)
                 postWork(WorkerSpecification.RetryEnterPresence(trackable))
+            }
+        }
+    }
+
+    private suspend fun waitForChannelToBeConnected(trackable: Trackable): Result<Unit> {
+        return suspendCoroutine { continuation ->
+            ably.subscribeForChannelStateChange(trackable.id) {
+                if (it.state == ConnectionState.ONLINE) {
+                    continuation.resume(Result.success(Unit))
+                }
+                if (it.state == ConnectionState.FAILED) {
+                    continuation.resume(Result.failure(ConnectionException(it.errorInformation!!)))
+                }
             }
         }
     }

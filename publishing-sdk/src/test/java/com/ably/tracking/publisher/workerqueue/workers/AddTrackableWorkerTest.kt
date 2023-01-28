@@ -163,33 +163,6 @@ class AddTrackableWorkerTest {
     }
 
     @Test
-    fun `should post RetryEnterPresence work after delay when connection failed with a non-fatal error`() {
-        runTest(context = UnconfinedTestDispatcher()) {
-            // given
-            val initialProperties = createPublisherProperties()
-            initialProperties.duplicateTrackableGuard.clear(trackable)
-            ably.mockConnectFailure(trackable.id, isFatal = false)
-
-            // when
-            worker.doWork(
-                initialProperties,
-                asyncWorks.appendWork(),
-                postedWorks.appendSpecification()
-            )
-
-            // then
-            asyncWorks.launchAll(this)
-
-            assertThat(postedWorks).isNotEmpty()
-            assertThat(postedWorks).doesNotContain(WorkerSpecification.RetryEnterPresence(trackable))
-
-            advanceUntilIdle()
-
-            assertThat(postedWorks).contains(WorkerSpecification.RetryEnterPresence(trackable))
-        }
-    }
-
-    @Test
     fun `should fail to add a trackable when connection failed with fatal error`() {
         runTest {
             // given

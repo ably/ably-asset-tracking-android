@@ -118,14 +118,11 @@ internal class AddTrackableWorker(
                     isConnectedToAbly = true
                 )
             )
-        } else {
-            val enteredPresence = connectResult.isSuccess
-            postWork(createConnectionCreatedWorker(enteredPresence))
-            if (!enteredPresence) {
-                delay(PRESENCE_ENTER_DELAY_IN_MILLISECONDS)
-                postWork(WorkerSpecification.RetryEnterPresence(trackable))
-            }
+            return
         }
+
+        // If the connection result is successful, then we've entered presence
+        postWork(createConnectionCreatedWorker(connectResult.isSuccess))
     }
 
     private fun createConnectionCreatedWorker(enteredPresence: Boolean) =
