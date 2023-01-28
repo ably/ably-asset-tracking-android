@@ -28,7 +28,10 @@ internal class RetryEnterPresenceWorker(
         doAsyncWork: (suspend () -> Unit) -> Unit,
         postWork: (WorkerSpecification) -> Unit
     ): PublisherProperties {
-        if (properties.trackables.contains(trackable)) {
+        if (
+            properties.trackables.contains(trackable) &&
+            !properties.trackableRemovalGuard.isMarkedForRemoval(trackable)
+        ) {
             doAsyncWork {
                 enterPresence(postWork, properties.presenceData)
             }

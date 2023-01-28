@@ -86,6 +86,7 @@ class RetryEnterPresenceWorkerTest {
         runTest {
             // given
             val initialProperties = createPublisherProperties()
+            initialProperties.trackables.add(trackable)
             initialProperties.duplicateTrackableGuard.clear(trackable)
             initialProperties.trackableRemovalGuard.markForRemoval(trackable) {}
 
