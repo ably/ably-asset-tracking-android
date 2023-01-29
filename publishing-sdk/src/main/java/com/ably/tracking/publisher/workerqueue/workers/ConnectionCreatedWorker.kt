@@ -11,8 +11,10 @@ import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.PublisherState
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.WorkerSpecification
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withTimeout
+import java.util.concurrent.TimeoutException
 import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
 
 internal class ConnectionCreatedWorker(
     private val trackable: Trackable,
@@ -53,8 +55,8 @@ internal class ConnectionCreatedWorker(
         }
 
         doAsyncWork {
-            val subscribeToPresenceResult = subscribeToPresenceMessages()
             try {
+                val subscribeToPresenceResult = subscribeToPresenceMessages()
                 subscribeToPresenceResult.getOrThrow()
                 postWork(
                     createConnectionReadyWorkerSpecification(
@@ -68,6 +70,13 @@ internal class ConnectionCreatedWorker(
                         isSubscribedToPresence = false
                     )
                 )
+            } catch (exception: TimeoutException) {
+                logHandler?.w("Timeout subscribing to presence for trackable ${trackable.id}")
+                postWork(
+                    createConnectionReadyWorkerSpecification(
+                        isSubscribedToPresence = false
+                    )
+                )
             }
         }
 
@@ -75,9 +84,11 @@ internal class ConnectionCreatedWorker(
     }
 
     private suspend fun subscribeToPresenceMessages(): Result<Unit> {
-        return suspendCoroutine { continuation ->
-            ably.subscribeForPresenceMessages(trackable.id, presenceUpdateListener) { result ->
-                continuation.resume(result)
+        return withTimeout(5000) {
+            suspendCancellableCoroutine { continuation ->
+                ably.subscribeForPresenceMessages(trackable.id, presenceUpdateListener) { result ->
+                    continuation.resume(result)
+                }
             }
         }
     }
