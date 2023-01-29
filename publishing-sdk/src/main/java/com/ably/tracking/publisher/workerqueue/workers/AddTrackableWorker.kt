@@ -6,6 +6,7 @@ import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.PresenceData
 import com.ably.tracking.common.PresenceMessage
 import com.ably.tracking.common.ResultCallbackFunction
+import com.ably.tracking.common.isFatalAblyFailure
 import com.ably.tracking.common.workerqueue.Worker
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.PublisherState
@@ -22,6 +23,11 @@ internal typealias AddTrackableCallbackFunction = ResultCallbackFunction<AddTrac
  * If after the delay the Ably connection process is still in progress the work will be re-queued again.
  */
 private const val WORK_DELAY_IN_MILLISECONDS = 200L
+
+/**
+ * How long should we wait before queueing enter retry presence work if enter presence fails.
+ */
+private const val PRESENCE_ENTER_DELAY_IN_MILLISECONDS = 15_000L
 
 internal class AddTrackableWorker(
     private val trackable: Trackable,
@@ -49,7 +55,10 @@ internal class AddTrackableWorker(
     ): PublisherProperties {
         when {
             properties.duplicateTrackableGuard.isCurrentlyAddingTrackable(trackable) -> {
-                properties.duplicateTrackableGuard.saveDuplicateAddHandler(trackable, callbackFunction)
+                properties.duplicateTrackableGuard.saveDuplicateAddHandler(
+                    trackable,
+                    callbackFunction
+                )
             }
             properties.trackables.contains(trackable) -> {
                 val trackableFlow = properties.trackableStateFlows[trackable.id]!!
@@ -85,7 +94,8 @@ internal class AddTrackableWorker(
         if (isAddingTheFirstTrackable) {
             isConnectedToAbly = false
             val startAblyConnectionResult = ably.startConnection()
-            if (startAblyConnectionResult.isFailure) {
+
+            if (startAblyConnectionResult.isFatalAblyFailure()) {
                 val workerSpecification = createAddTrackableFailedWorker(
                     startAblyConnectionResult.exceptionOrNull(),
                     isConnectedToAbly = false
@@ -100,17 +110,25 @@ internal class AddTrackableWorker(
             presenceData = presenceData,
             willPublish = true,
         )
-        val workerSpecification = if (connectResult.isSuccess) {
-            createConnectionCreatedWorker()
-        } else {
-            createAddTrackableFailedWorker(connectResult.exceptionOrNull(), isConnectedToAbly = true)
+
+        if (connectResult.isFatalAblyFailure()) {
+            postWork(
+                createAddTrackableFailedWorker(
+                    connectResult.exceptionOrNull(),
+                    isConnectedToAbly = true
+                )
+            )
+            return
         }
-        postWork(workerSpecification)
+
+        // If the connection result is successful, then we've entered presence
+        postWork(createConnectionCreatedWorker(connectResult.isSuccess))
     }
 
-    private fun createConnectionCreatedWorker() =
+    private fun createConnectionCreatedWorker(enteredPresence: Boolean) =
         WorkerSpecification.ConnectionCreated(
             trackable,
+            enteredPresence,
             callbackFunction,
             presenceUpdateListener,
             channelStateChangeListener
@@ -142,7 +160,10 @@ internal class AddTrackableWorker(
         callbackFunction(Result.failure(exception))
     }
 
-    override fun onUnexpectedAsyncError(exception: Exception, postWork: (WorkerSpecification) -> Unit) {
+    override fun onUnexpectedAsyncError(
+        exception: Exception,
+        postWork: (WorkerSpecification) -> Unit
+    ) {
         if (isDelayingWork) {
             postWork(createWorkerSpecificationToDelay())
         } else {

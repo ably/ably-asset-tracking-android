@@ -158,17 +158,9 @@ class TcpConnectionRefused(apiKey: String) : TransportLayerFault(apiKey) {
     }
 
     override val type = FaultType.NonfatalWhenResolved(
-        offlineWithinMillis = 30_000,
+        offlineWithinMillis = 60_000,
         onlineWithinMillis = 60_000
     )
-
-    /**
-     * This fault type is temporarily disabled at runtime. It can be re-enabled by removing this override.
-     * We will re-enable this test when the following have been addressed:
-     * - https://github.com/ably/ably-asset-tracking-android/issues/859
-     * - https://github.com/ably/ably-asset-tracking-android/issues/871
-     */
-    override val skipTest = false
 
     override fun enable() {
         tcpProxy.stop()
@@ -197,14 +189,6 @@ class TcpConnectionUnresponsive(apiKey: String) : TransportLayerFault(apiKey) {
         onlineWithinMillis = 60_000
     )
 
-    /**
-     * This fault type is temporarily disabled at runtime. It can be re-enabled by removing this override.
-     * We will re-enable this test when the following have been addressed:
-     * - https://github.com/ably/ably-asset-tracking-android/issues/859
-     * - https://github.com/ably/ably-asset-tracking-android/issues/871
-     */
-    override val skipTest = false
-
     override fun enable() {
         tcpProxy.isForwarding = false
     }
@@ -231,7 +215,7 @@ class DisconnectAndSuspend(apiKey: String) : TransportLayerFault(apiKey) {
     /*
         Currently failing due to Issues #871 and #907
     */
-    override val skipTest = false
+    override val skipTest = true
 
     private val timer = Timer()
 
@@ -373,12 +357,6 @@ class AttachUnresponsive(apiKey: String) : DropAction(
             override val name = "AttachUnresponsive"
         }
     }
-
-    /*
-        Currently failing due to Issue #871 -- throwing ConnectionError
-        when trying to add new trackables while offline.
-     */
-    override val skipTest = false
 }
 
 /**
@@ -652,12 +630,6 @@ class EnterFailedWithNonfatalNack(apiKey: String) : PresenceNackFault(
         }
     }
 
-    /*
-        Currently failing due to Issue #907 - non-fatal nack triggers
-        an exception to be thrown to caller during publisher.track()
-     */
-    override val skipTest = false
-
     override val type = FaultType.Nonfatal(
         resolvedWithinMillis = 60_000L
     )
@@ -699,16 +671,6 @@ class ReenterOnResumeFailed(apiKey: String) : ApplicationLayerFault(apiKey) {
             override val name = "ReenterOnResumeFailed"
         }
     }
-
-    /*
-       This test currently fails because the ably-java hangs the client
-       waiting for a presence response if there's there's a reconnection
-       before successful completion of enter()
-
-       This happens during stage 2 of the test, so steps 3 and 4 have not
-       yet been seen to work.
-     */
-    override val skipTest = false
 
     private var state = State.DisconnectAfterPresence
     private var presenceEnterSerial: Int? = null

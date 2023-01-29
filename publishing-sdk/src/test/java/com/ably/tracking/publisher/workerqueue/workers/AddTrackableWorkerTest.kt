@@ -11,14 +11,17 @@ import com.google.common.truth.Truth.assertThat
 import io.mockk.coEvery
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class AddTrackableWorkerTest {
 
-    private val resultCallbackFunction: ResultCallbackFunction<StateFlow<TrackableState>> = mockk(relaxed = true)
+    private val resultCallbackFunction: ResultCallbackFunction<StateFlow<TrackableState>> =
+        mockk(relaxed = true)
     private val ably: Ably = mockk {
         coEvery { startConnection() } returns Result.success(Unit)
     }
@@ -64,7 +67,10 @@ class AddTrackableWorkerTest {
             postedWorks.appendSpecification()
         )
 
-        updatedProperties.duplicateTrackableGuard.finishAddingTrackable(trackable, addTrackableResult)
+        updatedProperties.duplicateTrackableGuard.finishAddingTrackable(
+            trackable,
+            addTrackableResult
+        )
 
         // then
         assertThat(asyncWorks).isEmpty()
@@ -80,7 +86,8 @@ class AddTrackableWorkerTest {
         // given
         val initialProperties = createPublisherProperties()
         initialProperties.trackables.add(trackable)
-        initialProperties.trackableStateFlows[trackable.id] = MutableStateFlow(TrackableState.Offline())
+        initialProperties.trackableStateFlows[trackable.id] =
+            MutableStateFlow(TrackableState.Offline())
 
         // when
         val updatedProperties = worker.doWork(
@@ -105,7 +112,7 @@ class AddTrackableWorkerTest {
     // async work tests
     @Test
     fun `should post ConnectionCreated work when connection was successful`() {
-        runBlocking {
+        runTest {
             // given
             val initialProperties = createPublisherProperties()
             initialProperties.duplicateTrackableGuard.clear(trackable)
@@ -129,12 +136,37 @@ class AddTrackableWorkerTest {
     }
 
     @Test
-    fun `should fail to add a trackable when connection failed`() {
-        runBlocking {
+    fun `should post ConnectionCreated work when connection failed with a non-fatal error`() {
+        runTest {
             // given
             val initialProperties = createPublisherProperties()
             initialProperties.duplicateTrackableGuard.clear(trackable)
-            ably.mockConnectFailure(trackable.id)
+            ably.mockConnectFailure(trackable.id, isFatal = false)
+
+            // when
+            worker.doWork(
+                initialProperties,
+                asyncWorks.appendWork(),
+                postedWorks.appendSpecification()
+            )
+
+            // then
+            asyncWorks.executeAll()
+            assertThat(asyncWorks).isNotEmpty()
+
+            val postedWorkerSpecification = postedWorks[0] as WorkerSpecification.ConnectionCreated
+            assertThat(postedWorkerSpecification.trackable).isEqualTo(trackable)
+            assertThat(postedWorkerSpecification.callbackFunction).isEqualTo(resultCallbackFunction)
+        }
+    }
+
+    @Test
+    fun `should fail to add a trackable when connection failed with fatal error`() {
+        runTest {
+            // given
+            val initialProperties = createPublisherProperties()
+            initialProperties.duplicateTrackableGuard.clear(trackable)
+            ably.mockConnectFailure(trackable.id, isFatal = true)
 
             // when
             worker.doWork(

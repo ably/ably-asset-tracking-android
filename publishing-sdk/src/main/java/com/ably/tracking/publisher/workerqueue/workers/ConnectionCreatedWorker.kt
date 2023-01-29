@@ -16,6 +16,7 @@ import kotlin.coroutines.suspendCoroutine
 
 internal class ConnectionCreatedWorker(
     private val trackable: Trackable,
+    private val enteredPresence: Boolean,
     private val callbackFunction: AddTrackableCallbackFunction,
     private val ably: Ably,
     private val logHandler: LogHandler?,
@@ -45,6 +46,10 @@ internal class ConnectionCreatedWorker(
                 postWork(WorkerSpecification.TrackableRemovalRequested(trackable, callbackFunction, Result.success(Unit)))
             }
             return properties
+        }
+
+        if (enteredPresence) {
+            properties.trackableEnteredPresenceFlags[trackable.id] = true
         }
 
         doAsyncWork {

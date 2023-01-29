@@ -189,6 +189,18 @@ interface Ably {
     ): Result<Unit>
 
     /**
+     * Joins the presence of the channel for the given [trackableId].
+     * If a channel for the [trackableId] doesn't exist then does nothing and returns success.
+     *
+     * @param trackableId The ID of the trackable channel.
+     * @param presenceData The data that will be send via the presence channel.
+     */
+    suspend fun enterChannelPresence(
+        trackableId: String,
+        presenceData: PresenceData
+    ): Result<Unit>
+
+    /**
      * Updates presence data in the [trackableId] channel's presence.
      * Should be called only when there's an existing channel for the [trackableId].
      * If a channel for the [trackableId] doesn't exist then nothing happens.
@@ -308,6 +320,21 @@ constructor(
         }
     }
 
+    override suspend fun enterChannelPresence(
+        trackableId: String,
+        presenceData: PresenceData
+    ): Result<Unit> {
+        val channel = getChannelIfExists(trackableId) ?: return Result.success(Unit)
+
+        return try {
+            enterChannelPresence(channel, presenceData)
+            Result.success(Unit)
+        } catch (connectionException: ConnectionException) {
+            logHandler?.w("$TAG Failed to connect for trackable $trackableId", connectionException)
+            Result.failure(connectionException)
+        }
+    }
+
     /**
      * Enters the presence of a channel. If it can't enter because of the auth token capabilities,
      * a new auth token is requested and the operation is retried once more.
@@ -371,7 +398,9 @@ constructor(
                         callback(Result.success(Unit))
                     } catch (connectionException: ConnectionException) {
                         logHandler?.w("$TAG Failed to connect for channel ${channel.name}", connectionException)
-                        ably.channels.release(channelName)
+                        if (connectionException.isFatal()) {
+                            ably.channels.release(channelName)
+                        }
                         callback(Result.failure(connectionException))
                     }
                 }
