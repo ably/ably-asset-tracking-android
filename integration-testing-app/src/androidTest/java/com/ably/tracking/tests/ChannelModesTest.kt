@@ -49,7 +49,7 @@ class ChannelModesTest {
             .build()
         val response = httpClient.newCall(request).execute()
         if (!response.isSuccessful) {
-            throw AssertionError("Response from ably not successful, code ${response.code} message ${response.body}")
+            throw AssertionError("Response from ably not successful, code ${response.code} message ${response.body?.string()}")
         }
         val responseBodyJson = Gson().fromJson(response.body!!.string(), JsonObject::class.java)
         return responseBodyJson.getAsJsonObject("status")
