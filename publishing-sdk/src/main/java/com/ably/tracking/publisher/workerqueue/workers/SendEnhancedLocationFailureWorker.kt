@@ -1,6 +1,8 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
+import com.ably.tracking.ConnectionException
 import com.ably.tracking.EnhancedLocationUpdate
+import com.ably.tracking.common.isFatal
 import com.ably.tracking.common.logging.createLoggingTag
 import com.ably.tracking.common.logging.w
 import com.ably.tracking.common.workerqueue.DefaultWorker
@@ -27,7 +29,9 @@ internal class SendEnhancedLocationFailureWorker(
             "$TAG Trackable $trackableId failed to send enhanced location ${locationUpdate.location}",
             exception
         )
-        val shouldRetryPublishing = properties.enhancedLocationsPublishingState.shouldRetryPublishing(trackableId)
+        val isFatalConnectionException = (exception as? ConnectionException)?.isFatal() ?: false
+        val shouldRetryPublishing =
+            properties.enhancedLocationsPublishingState.shouldRetryPublishing(trackableId) && !isFatalConnectionException
         if (shouldRetryPublishing) {
             publisherInteractor.retrySendingEnhancedLocation(properties, trackableId, locationUpdate)
         } else {

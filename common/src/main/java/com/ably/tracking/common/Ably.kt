@@ -551,9 +551,7 @@ constructor(
     private fun sendMessage(channel: AblySdkRealtime.Channel<ChannelStateListenerType>, message: Message?, callback: (Result<Unit>) -> Unit) {
         scope.launch {
             try {
-                retryChannelOperationIfConnectionResumeFails(channel) {
-                    sendMessage(it, message)
-                }
+                sendMessage(channel, message)
                 callback(Result.success(Unit))
             } catch (exception: ConnectionException) {
                 logHandler?.w("$TAG Failed to send message for channel ${channel.name}", exception)
