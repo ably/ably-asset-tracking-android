@@ -922,7 +922,9 @@ constructor(
                 }
                 if (it.state == com.ably.tracking.common.ConnectionState.FAILED) {
                     resumed = true
-                    continuation.resume(Result.failure(Exception("Channel failed")))
+                    val errorMessage = "Channel failed whilst waiting for attach: ${it.errorInformation?.message}"
+                    logHandler?.w(errorMessage)
+                    continuation.resume(Result.failure(ConnectionException(ErrorInformation(errorMessage))))
                 }
             }
         }
