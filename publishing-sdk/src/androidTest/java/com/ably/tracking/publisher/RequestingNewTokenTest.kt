@@ -20,6 +20,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.util.UUID
 
 private const val MAPBOX_ACCESS_TOKEN = BuildConfig.MAPBOX_ACCESS_TOKEN
 private const val CLIENT_ID = "RequestingNewTokenTestClient"
@@ -33,7 +34,7 @@ class RequestingNewTokenTest {
     fun shouldAddTrackableWhenRenewedTokenHasCapabilityForTrackableId() {
         // given
         val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val trackableId = "abc"
+        val trackableId = UUID.randomUUID().toString()
         val authentication = createTokenAuthenticationConfiguration(
             initialEnabledTrackableIds = listOf("xyz"),
             newEnabledTrackableIds = listOf("xyz", trackableId)
@@ -51,7 +52,7 @@ class RequestingNewTokenTest {
     fun shouldNotAddTrackableWhenRenewedTokenDoesNotHaveCapabilityForTrackableId() {
         // given
         val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val trackableId = "abc"
+        val trackableId = UUID.randomUUID().toString()
         val authentication = createTokenAuthenticationConfiguration(
             initialEnabledTrackableIds = listOf("xyz"),
             newEnabledTrackableIds = listOf("xyz")
