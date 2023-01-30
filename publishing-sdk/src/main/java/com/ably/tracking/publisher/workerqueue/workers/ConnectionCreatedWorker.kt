@@ -16,6 +16,8 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeout
 import kotlin.coroutines.resume
 
+private const val SUBSCRIBE_TO_PRESENCE_TIMEOUT = 5000L
+
 internal class ConnectionCreatedWorker(
     private val trackable: Trackable,
     private val enteredPresence: Boolean,
@@ -84,7 +86,7 @@ internal class ConnectionCreatedWorker(
     }
 
     private suspend fun subscribeToPresenceMessages(): Result<Unit> {
-        return withTimeout(5000) {
+        return withTimeout(SUBSCRIBE_TO_PRESENCE_TIMEOUT) {
             suspendCancellableCoroutine { continuation ->
                 ably.subscribeForPresenceMessages(trackable.id, presenceUpdateListener) { result ->
                     continuation.resume(result)
