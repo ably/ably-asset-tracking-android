@@ -909,7 +909,7 @@ constructor(
      */
     override suspend fun waitForChannelToAttach(trackableId: String): Result<Unit> {
 
-        return suspendCoroutine { continuation ->
+        return suspendCancellableCoroutine { continuation ->
             var resumed = false
             subscribeForChannelStateChange(trackableId) {
                 if (resumed) {
