@@ -904,9 +904,11 @@ constructor(
      *
      * TODO: At the moment, due to how listeners are wrapped in AAT we're not able to do this the elegant way
      * without rewriting a lot of code. Not ignoring subsequent updates breaks continuations. To get around this for
-     * now - ignore any future event updates.
+     * now - ignore any future event updates. We should change this in the future. There shouldn't be a risk of overflows
+     * as this is at a channel level - and the channels are retired after a trackable is done with.
      */
     override suspend fun waitForChannelToAttach(trackableId: String): Result<Unit> {
+
         return suspendCoroutine { continuation ->
             var resumed = false
             subscribeForChannelStateChange(trackableId) {
