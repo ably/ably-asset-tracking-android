@@ -66,6 +66,12 @@ interface Ably {
     fun subscribeForChannelStateChange(trackableId: String, listener: (ConnectionStateChange) -> Unit)
 
     /**
+     * Given a trackable id, wait for the channel to enter the attached state before returning
+     * control to the caller.
+     */
+    suspend fun waitForChannelToAttach(trackableId: String): Result<Unit>
+
+    /**
      * Adds a listener for the presence messages that are received from the channel's presence.
      * After adding a listener it will emit [PresenceMessage] for each client that's currently in the presence.
      * Should be called only when there's an existing channel for the [trackableId].
@@ -888,6 +894,34 @@ constructor(
                 }
             } else {
                 throw exception
+            }
+        }
+    }
+
+    /**
+     * For a given trackable, listen for channel state until it enters a state of ONLINE (which in
+     * Ably channel-terms means ATTACHED).
+     *
+     * TODO: At the moment, due to how listeners are wrapped in AAT we're not able to do this the elegant way
+     * without rewriting a lot of code. Not ignoring subsequent updates breaks continuations. To get around this for
+     * now - ignore any future event updates.
+     */
+    override suspend fun waitForChannelToAttach(trackableId: String): Result<Unit> {
+        return suspendCoroutine { continuation ->
+            var resumed = false
+            subscribeForChannelStateChange(trackableId) {
+                if (resumed) {
+                    return@subscribeForChannelStateChange
+                }
+
+                if (it.state == com.ably.tracking.common.ConnectionState.ONLINE) {
+                    resumed = true
+                    continuation.resume(Result.success(Unit))
+                }
+                if (it.state == com.ably.tracking.common.ConnectionState.FAILED) {
+                    resumed = true
+                    continuation.resume(Result.failure(Exception("Channel failed")))
+                }
             }
         }
     }

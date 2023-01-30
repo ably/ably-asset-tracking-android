@@ -1,7 +1,6 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
 import com.ably.tracking.common.Ably
-import com.ably.tracking.common.ConnectionState
 import com.ably.tracking.common.PresenceMessage
 import com.ably.tracking.common.logging.w
 import com.ably.tracking.common.workerqueue.DefaultWorker
@@ -28,8 +27,8 @@ internal class RetrySubscribeToPresenceWorker(
         }
 
         doAsyncWork {
-            val waitForChannelToBeConnectedResult = waitForChannelToBeConnected(trackable)
-            if (waitForChannelToBeConnectedResult.isFailure) {
+            val waitForChannelToAttachResult = ably.waitForChannelToAttach(trackable.id)
+            if (waitForChannelToAttachResult.isFailure) {
                 return@doAsyncWork
             }
 
@@ -52,26 +51,6 @@ internal class RetrySubscribeToPresenceWorker(
         return suspendCoroutine { continuation ->
             ably.subscribeForPresenceMessages(trackable.id, presenceUpdateListener) { result ->
                 continuation.resume(result)
-            }
-        }
-    }
-
-    private suspend fun waitForChannelToBeConnected(trackable: Trackable): Result<Unit> {
-        return suspendCoroutine { continuation ->
-            var resumed = false
-            ably.subscribeForChannelStateChange(trackable.id) {
-                if (resumed) {
-                    return@subscribeForChannelStateChange
-                }
-
-                if (it.state == ConnectionState.ONLINE) {
-                    resumed = true
-                    continuation.resume(Result.success(Unit))
-                }
-                if (it.state == ConnectionState.FAILED) {
-                    resumed = true
-                    continuation.resume(Result.failure(Exception("Channel failed")))
-                }
             }
         }
     }
