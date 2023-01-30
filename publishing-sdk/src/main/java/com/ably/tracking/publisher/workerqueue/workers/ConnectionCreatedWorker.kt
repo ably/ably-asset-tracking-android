@@ -11,9 +11,9 @@ import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.PublisherState
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.WorkerSpecification
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeout
-import java.util.concurrent.TimeoutException
 import kotlin.coroutines.resume
 
 internal class ConnectionCreatedWorker(
@@ -70,7 +70,7 @@ internal class ConnectionCreatedWorker(
                         isSubscribedToPresence = false
                     )
                 )
-            } catch (exception: TimeoutException) {
+            } catch (exception: TimeoutCancellationException) {
                 logHandler?.w("Timeout subscribing to presence for trackable ${trackable.id}")
                 postWork(
                     createConnectionReadyWorkerSpecification(
