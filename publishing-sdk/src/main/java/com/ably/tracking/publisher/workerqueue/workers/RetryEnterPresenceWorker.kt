@@ -77,11 +77,19 @@ internal class RetryEnterPresenceWorker(
 
     private suspend fun waitForChannelToBeConnected(trackable: Trackable): Result<Unit> {
         return suspendCoroutine { continuation ->
+
+            var resumed = false
             ably.subscribeForChannelStateChange(trackable.id) {
+                if (resumed) {
+                    return@subscribeForChannelStateChange
+                }
+
                 if (it.state == ConnectionState.ONLINE) {
+                    resumed = true
                     continuation.resume(Result.success(Unit))
                 }
                 if (it.state == ConnectionState.FAILED) {
+                    resumed = true
                     continuation.resume(Result.failure(ConnectionException(it.errorInformation!!)))
                 }
             }
