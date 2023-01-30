@@ -47,9 +47,10 @@ class ConnectionReadyWorkerTest {
     private val postedWorks = mutableListOf<WorkerSpecification>()
 
     @Test
-    fun `should post no other work when is subscribed to presence`() {
+    fun `should post no other work when is subscribed to and entered presence`() {
         // given
-        val initialProperties = createPublisherProperties()
+        val initialProperties = createDefaultPublisherProperties(trackable)
+        initialProperties.trackableEnteredPresenceFlags[trackable.id] = true
 
         // when
         worker.doWork(
@@ -66,7 +67,8 @@ class ConnectionReadyWorkerTest {
     @Test
     fun `should post RetrySubscribeToPresence work when is not subscribed to presence`() {
         // given
-        val initialProperties = createPublisherProperties()
+        val initialProperties = createDefaultPublisherProperties(trackable)
+        initialProperties.trackableEnteredPresenceFlags[trackable.id] = true
         val worker = createWorker(isSubscribedToPresence = false)
 
         // when
@@ -86,9 +88,31 @@ class ConnectionReadyWorkerTest {
     }
 
     @Test
+    fun `should post RetryEnterPresence work when is not entered presence`() {
+        // given
+        val initialProperties = createDefaultPublisherProperties(trackable)
+        initialProperties.trackableEnteredPresenceFlags.remove(trackable.id)
+        val worker = createWorker(isSubscribedToPresence = true)
+
+        // when
+        worker.doWork(
+            initialProperties,
+            asyncWorks.appendWork(),
+            postedWorks.appendSpecification()
+        )
+
+        // then
+        assertThat(asyncWorks).isEmpty()
+        assertThat(postedWorks).hasSize(1)
+
+        val postedWork = postedWorks.first() as WorkerSpecification.RetryEnterPresence
+        assertThat(postedWork.trackable).isEqualTo(trackable)
+    }
+
+    @Test
     fun `should subscribe to Ably channel state updates when executing normally`() {
         // given
-        val initialProperties = createPublisherProperties()
+        val initialProperties = createDefaultPublisherProperties(trackable)
 
         // when
         worker.doWork(
@@ -110,7 +134,7 @@ class ConnectionReadyWorkerTest {
     @Test
     fun `should start location updates if is not already tracking when executing normally`() {
         // given
-        val initialProperties = createPublisherProperties()
+        val initialProperties = createDefaultPublisherProperties(trackable)
         initialProperties.isTracking = false
 
         // when
@@ -132,7 +156,7 @@ class ConnectionReadyWorkerTest {
     @Test
     fun `should not start location updates if is already tracking when executing normally`() {
         // given
-        val initialProperties = createPublisherProperties()
+        val initialProperties = createDefaultPublisherProperties(trackable)
         initialProperties.isTracking = true
 
         // when
@@ -154,7 +178,7 @@ class ConnectionReadyWorkerTest {
     @Test
     fun `should add the trackable to the tracked trackables when executing normally`() {
         // given
-        val initialProperties = createPublisherProperties()
+        val initialProperties = createDefaultPublisherProperties(trackable)
 
         // when
         val updatedProperties = worker.doWork(
@@ -173,7 +197,7 @@ class ConnectionReadyWorkerTest {
     @Test
     fun `should update the tracked trackables when executing normally`() {
         // given
-        val initialProperties = createPublisherProperties()
+        val initialProperties = createDefaultPublisherProperties(trackable)
 
         // when
         worker.doWork(
@@ -194,7 +218,7 @@ class ConnectionReadyWorkerTest {
     @Test
     fun `should calculate a resolution for the added trackable when executing normally`() {
         // given
-        val initialProperties = createPublisherProperties()
+        val initialProperties = createDefaultPublisherProperties(trackable)
 
         // when
         worker.doWork(
@@ -215,7 +239,7 @@ class ConnectionReadyWorkerTest {
     @Test
     fun `should set a state flow for the trackable when executing normally`() {
         // given
-        val initialProperties = createPublisherProperties()
+        val initialProperties = createDefaultPublisherProperties(trackable)
 
         // when
         val updatedProperties = worker.doWork(
@@ -234,7 +258,7 @@ class ConnectionReadyWorkerTest {
     @Test
     fun `should update state flows when executing normally`() {
         // given
-        val initialProperties = createPublisherProperties()
+        val initialProperties = createDefaultPublisherProperties(trackable)
 
         // when
         worker.doWork(
@@ -255,7 +279,7 @@ class ConnectionReadyWorkerTest {
     @Test
     fun `should set the initial trackable state to offline when executing normally`() {
         // given
-        val initialProperties = createPublisherProperties()
+        val initialProperties = createDefaultPublisherProperties(trackable)
 
         // when
         val updatedProperties = worker.doWork(
@@ -274,7 +298,7 @@ class ConnectionReadyWorkerTest {
     @Test
     fun `should call the adding trackable callback with a success when executing normally`() {
         // given
-        val initialProperties = createPublisherProperties()
+        val initialProperties = createDefaultPublisherProperties(trackable)
 
         // when
         worker.doWork(
@@ -293,7 +317,7 @@ class ConnectionReadyWorkerTest {
     @Test
     fun `should finish adding the trackable with a success when executing normally`() {
         // given
-        val initialProperties = createPublisherProperties()
+        val initialProperties = createDefaultPublisherProperties(trackable)
         val addTrackableCallbackFunction: AddTrackableCallbackFunction = mockk(relaxed = true)
         initialProperties.duplicateTrackableGuard.saveDuplicateAddHandler(trackable, addTrackableCallbackFunction)
 
@@ -314,7 +338,7 @@ class ConnectionReadyWorkerTest {
     @Test
     fun `should return only async result when trackable removal was requested`() {
         // given
-        val initialProperties = createPublisherProperties()
+        val initialProperties = createDefaultPublisherProperties(trackable)
         initialProperties.trackableRemovalGuard.markForRemoval(trackable) {}
 
         // when
@@ -332,7 +356,7 @@ class ConnectionReadyWorkerTest {
     @Test
     fun `should return trackable removal work result when trackable removal was requested`() = runTest {
         // given
-        val initialProperties = createPublisherProperties()
+        val initialProperties = createDefaultPublisherProperties(trackable)
         initialProperties.trackableRemovalGuard.markForRemoval(trackable) {}
 
         ably.mockDisconnect(trackable.id)
@@ -359,7 +383,7 @@ class ConnectionReadyWorkerTest {
     @Test
     fun `should disconnect from Ably when trackable removal was requested`() = runTest {
         // given
-        val initialProperties = createPublisherProperties()
+        val initialProperties = createDefaultPublisherProperties(trackable)
         initialProperties.trackableRemovalGuard.markForRemoval(trackable) {}
 
         ably.mockDisconnect(trackable.id)
@@ -382,7 +406,7 @@ class ConnectionReadyWorkerTest {
     @Test
     fun `should not perform any of the normal operations when trackable removal was requested`() = runTest {
         // given
-        val initialProperties = createPublisherProperties()
+        val initialProperties = createDefaultPublisherProperties(trackable)
         initialProperties.trackableRemovalGuard.markForRemoval(trackable) {}
         initialProperties.duplicateTrackableGuard.startAddingTrackable(trackable)
 
@@ -411,6 +435,10 @@ class ConnectionReadyWorkerTest {
             publisherInteractor.updateTrackableStateFlows(any())
             resultCallbackFunction.invoke(any())
         }
+    }
+
+    private fun createDefaultPublisherProperties(trackable: Trackable) = createPublisherProperties().also {
+        it.trackableEnteredPresenceFlags[trackable.id] = true
     }
 
     private fun createWorker(isSubscribedToPresence: Boolean) =

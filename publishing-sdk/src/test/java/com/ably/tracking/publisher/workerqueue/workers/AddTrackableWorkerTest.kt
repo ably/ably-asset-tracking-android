@@ -14,8 +14,6 @@ import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
-import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
@@ -159,33 +157,6 @@ class AddTrackableWorkerTest {
             val postedWorkerSpecification = postedWorks[0] as WorkerSpecification.ConnectionCreated
             assertThat(postedWorkerSpecification.trackable).isEqualTo(trackable)
             assertThat(postedWorkerSpecification.callbackFunction).isEqualTo(resultCallbackFunction)
-        }
-    }
-
-    @Test
-    fun `should post RetryEnterPresence work after delay when connection failed with a non-fatal error`() {
-        runTest(context = UnconfinedTestDispatcher()) {
-            // given
-            val initialProperties = createPublisherProperties()
-            initialProperties.duplicateTrackableGuard.clear(trackable)
-            ably.mockConnectFailure(trackable.id, isFatal = false)
-
-            // when
-            worker.doWork(
-                initialProperties,
-                asyncWorks.appendWork(),
-                postedWorks.appendSpecification()
-            )
-
-            // then
-            asyncWorks.launchAll(this)
-
-            assertThat(postedWorks).isNotEmpty()
-            assertThat(postedWorks).doesNotContain(WorkerSpecification.RetryEnterPresence(trackable))
-
-            advanceUntilIdle()
-
-            assertThat(postedWorks).contains(WorkerSpecification.RetryEnterPresence(trackable))
         }
     }
 

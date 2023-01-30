@@ -25,11 +25,15 @@ internal class RetryEnterPresenceWorker(
         doAsyncWork: (suspend () -> Unit) -> Unit,
         postWork: (WorkerSpecification) -> Unit
     ): PublisherProperties {
-        if (properties.trackables.contains(trackable)) {
+        if (
+            properties.trackables.contains(trackable) &&
+            !properties.trackableRemovalGuard.isMarkedForRemoval(trackable)
+        ) {
             doAsyncWork {
                 enterPresence(postWork, properties.presenceData)
             }
         }
+
         return properties
     }
 
@@ -37,6 +41,15 @@ internal class RetryEnterPresenceWorker(
         postWork: (WorkerSpecification) -> Unit,
         presenceData: PresenceData
     ) {
+        val waitForChannelToAttachResult = ably.waitForChannelToAttach(trackable.id)
+        if (waitForChannelToAttachResult.isFailure) {
+            postFailTrackableWork(
+                postWork,
+                waitForChannelToAttachResult
+            )
+            return
+        }
+
         val enterPresenceResult = ably.enterChannelPresence(
             trackableId = trackable.id,
             presenceData = presenceData
