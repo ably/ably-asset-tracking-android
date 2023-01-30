@@ -950,43 +950,34 @@ constructor(
     /**
      * A suspending version of the [AblySdkRealtime.connect] method. It will begin connecting [ably] and wait until it's connected.
      * If the connection enters the "failed" state it will throw a [ConnectionException].
-     * If the operation doesn't complete in [timeoutInMilliseconds] it will throw a [ConnectionException].
      * If the instance is already connected it will finish immediately.
      * If the connection is already failed it throws a [ConnectionException].
      *
      * @throws ConnectionException if something goes wrong.
      */
-    private suspend fun connectSuspending(timeoutInMilliseconds: Long = 10_000L) {
+    private suspend fun connectSuspending() {
         if (ably.connection.state.isConnected()) {
             return
         } else if (ably.connection.state.isFailed()) {
             // We expect connection.reason to be non-null if the connection is in a failed state
             throw ably.connection.reason!!.toTrackingException()
         }
-        try {
-            withTimeout(timeoutInMilliseconds) {
-                suspendCancellableCoroutine<Unit> { continuation ->
-                    ably.connection.on(object : ConnectionStateListener {
-                        override fun onConnectionStateChanged(connectionStateChange: ConnectionStateListener.ConnectionStateChange) {
-                            when {
-                                connectionStateChange.current.isConnected() -> {
-                                    ably.connection.off(this)
-                                    continuation.resume(Unit)
-                                }
-                                connectionStateChange.current.isFailed() -> {
-                                    ably.connection.off(this)
-                                    continuation.resumeWithException(connectionStateChange.reason.toTrackingException())
-                                }
-                            }
+        suspendCancellableCoroutine { continuation ->
+            ably.connection.on(object : ConnectionStateListener {
+                override fun onConnectionStateChanged(connectionStateChange: ConnectionStateListener.ConnectionStateChange) {
+                    when {
+                        connectionStateChange.current.isConnected() -> {
+                            ably.connection.off(this)
+                            continuation.resume(Unit)
                         }
-                    })
-                    ably.connect()
+                        connectionStateChange.current.isFailed() -> {
+                            ably.connection.off(this)
+                            continuation.resumeWithException(connectionStateChange.reason.toTrackingException())
+                        }
+                    }
                 }
-            }
-        } catch (exception: TimeoutCancellationException) {
-            throw ConnectionException(ErrorInformation("Timeout was thrown when waiting for Ably to connect")).also {
-                logHandler?.w("$TAG Timeout while waiting for Ably to connect", it)
-            }
+            })
+            ably.connect()
         }
     }
 
