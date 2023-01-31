@@ -201,7 +201,7 @@ class DefaultAblyTests {
 
         val presenceError = ErrorInfo(
             "example of an error message", /* arbitrarily chosen */
-            400, /* fatal error code */
+            400, /* fatal status code */
             123 /* arbitrarily chosen */
         )
 
@@ -263,7 +263,7 @@ class DefaultAblyTests {
 
         val presenceError = ErrorInfo(
             "example of an error message", /* arbitrarily chosen */
-            400, /* fatal error code */
+            400, /* fatal status code */
             123 /* arbitrarily chosen */
         )
 
@@ -325,7 +325,7 @@ class DefaultAblyTests {
 
         val presenceError = ErrorInfo(
             "example of an error message", /* arbitrarily chosen */
-            500, /* fatal error code */
+            500, /* fatal status code */
             123 /* arbitrarily chosen */
         )
 
@@ -479,7 +479,7 @@ class DefaultAblyTests {
 
         val attachError = ErrorInfo(
             "example of an error message", /* arbitrarily chosen */
-            400, /* fatal error code */
+            400, /* fatal status code */
             123 /* arbitrarily chosen */
         )
 
@@ -588,7 +588,7 @@ class DefaultAblyTests {
 
         val attachError = ErrorInfo(
             "example of an error message", /* arbitrarily chosen */
-            400, /* fatal error code */
+            400, /* fatal status code */
             123 /* arbitrarily chosen */
         )
 
@@ -655,7 +655,7 @@ class DefaultAblyTests {
 
         val presenceError = ErrorInfo(
             "example of an error message", /* arbitrarily chosen */
-            400, /* fatal error code */
+            400, /* fatal status code */
             123 /* arbitrarily chosen */
         )
 
@@ -846,7 +846,7 @@ class DefaultAblyTests {
 
         val presenceError = ErrorInfo(
             "example of an error message", /* arbitrarily chosen */
-            400, /* fatal error code */
+            400, /* fatal status code */
             123 /* arbitrarily chosen */
         )
         runBlocking {
