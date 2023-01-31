@@ -325,7 +325,7 @@ class DefaultAblyTests {
 
         val presenceError = ErrorInfo(
             "example of an error message", /* arbitrarily chosen */
-            500, /* fatal status code */
+            500, /* non-fatal status code */
             123 /* arbitrarily chosen */
         )
 
