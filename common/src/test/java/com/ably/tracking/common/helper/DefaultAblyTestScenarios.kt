@@ -485,14 +485,6 @@ class DefaultAblyTestScenarios {
             val channelsContainsKey: Boolean,
             val mockChannelsGet: Boolean,
             /**
-             * This must be `null` if and only if [mockChannelsGet] is `false`.
-             */
-            val initialChannelState: ChannelState?,
-            /**
-             * If [mockChannelsGet] is `false` then this must be [GivenTypes.ChannelStateChangeBehaviour.NoBehaviour].
-             */
-            val channelStateChangeBehaviour: GivenTypes.ChannelStateChangeBehaviour,
-            /**
              * If [mockChannelsGet] is `false` then this must be [GivenTypes.CompletionListenerMockBehaviour.NotMocked].
              */
             val presenceUpdateBehaviour: GivenTypes.CompletionListenerMockBehaviour
@@ -503,17 +495,7 @@ class DefaultAblyTestScenarios {
              * @throws InvalidTestConfigurationException If this object does not represent a valid test configuration.
              */
             init {
-                if (mockChannelsGet) {
-                    if (initialChannelState == null) {
-                        throw InvalidTestConfigurationException("initialChannelState must be non-null when mockChannelsGet is true")
-                    }
-                } else {
-                    if (initialChannelState != null) {
-                        throw InvalidTestConfigurationException("initialChannelState must be null when mockChannelsGet is false")
-                    }
-                    if (channelStateChangeBehaviour !is GivenTypes.ChannelStateChangeBehaviour.NoBehaviour) {
-                        throw InvalidTestConfigurationException("channelStateChangeBehaviour must be NoBehaviour when mockChannelsGet is false")
-                    }
+                if (!mockChannelsGet) {
                     if (presenceUpdateBehaviour !is GivenTypes.CompletionListenerMockBehaviour.NotMocked) {
                         throw InvalidTestConfigurationException("presenceUpdateBehaviour must be NotMocked when mockChannelsGet is false")
                     }
@@ -526,22 +508,6 @@ class DefaultAblyTestScenarios {
          */
         class ThenConfig(
             val verifyChannelsGet: Boolean,
-            /**
-             * If [GivenConfig.mockChannelsGet] is `false` then this must be zero.
-             */
-            val numberOfChannelStateFetchesToVerify: Int,
-            /**
-             * If [GivenConfig.mockChannelsGet] is `false` then this must be `false`.
-             */
-            val verifyChannelOn: Boolean,
-            /**
-             * If [GivenConfig.channelStateChangeBehaviour] is not [GivenTypes.ChannelStateChangeBehaviour.EmitStateChange] then this must be `false`.
-             */
-            val verifyChannelStateChangeCurrent: Boolean,
-            /**
-             * If [GivenConfig.mockChannelsGet] is `false` then this must be `false`.
-             */
-            val verifyChannelOff: Boolean,
             /**
              * If [GivenConfig.mockChannelsGet] is `false` then this must be `false`.
              */
@@ -556,22 +522,8 @@ class DefaultAblyTestScenarios {
              */
             fun validate(givenConfig: GivenConfig) {
                 if (!givenConfig.mockChannelsGet) {
-                    if (numberOfChannelStateFetchesToVerify != 0) {
-                        throw InvalidTestConfigurationException("numberOfChannelStateFetchesToVerify must be zero when mockChannelsGet is false")
-                    }
-                    if (verifyChannelOn) {
-                        throw InvalidTestConfigurationException("verifyChannelOn must be false when mockChannelsGet is false")
-                    }
-                    if (verifyChannelOff) {
-                        throw InvalidTestConfigurationException("verifyChannelOn must be false when mockChannelsGet is false")
-                    }
                     if (verifyPresenceUpdate) {
                         throw InvalidTestConfigurationException("verifyPresenceUpdate must be false when mockChannelsGet is false")
-                    }
-                }
-                if (givenConfig.channelStateChangeBehaviour !is GivenTypes.ChannelStateChangeBehaviour.EmitStateChange) {
-                    if (verifyChannelStateChangeCurrent) {
-                        throw InvalidTestConfigurationException("verifyChannelStateChangeCurrent must be false when channelStateChangeBehaviour is not EmitStateChange")
                     }
                 }
             }
@@ -587,11 +539,7 @@ class DefaultAblyTestScenarios {
              * ...that calling `containsKey` on the Channels instance returns ${givenConfig.channelsContainsKey}...
              *
              * if ${givenConfig.mockChannelsGet} {
-             * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel in state ${givenConfig.initialChannelState}...
-             * }
-             *
-             * when ${givenConfig.channelStateChangeBehaviour} is EmitStateChange {
-             * ...which, when its `on` method is called, immediately calls the received listener with a channel state change whose `current` property is ${givenConfig.channelStateChangeBehaviour.current}...
+             * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel...
              * }
              *
              * when ${givenConfig.presenceUpdateBehaviour} is Success {
@@ -618,20 +566,6 @@ class DefaultAblyTestScenarios {
              *
              * if ${thenConfig.verifyChannelsGet} {
              * ...and calls `get` (the overload that does not accept a ChannelOptions object) on the Channels instance...
-             * }
-             *
-             * ...and checks the channel’s state ${thenConfig.numberOfChannelStateFetchesToVerify} times...
-             *
-             * if ${thenConfig.verifyChannelOn} {
-             * ...and calls `on` on the channel...
-             * }
-             *
-             * if ${thenConfig.verifyChannelStateChangeCurrent}
-             * ...and checks the state change’s `current` property...
-             * }
-             *
-             * if ${thenConfig.verifyChannelOff} {
-             * ...and calls `off` on the channel...
              * }
              *
              * if ${thenConfig.verifyPresenceUpdate} {
@@ -667,31 +601,10 @@ class DefaultAblyTestScenarios {
 
                 if (givenConfig.mockChannelsGet) {
                     /* if ${givenConfig.mockChannelsGet} {
-                     * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel in state ${givenConfig.initialChannelState}...
+                     * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel...
                      * }
                      */
                     testEnvironment.mockChannelsGet(DefaultAblyTestEnvironment.ChannelsGetOverload.WITHOUT_CHANNEL_OPTIONS)
-                    configuredChannel.mockState(givenConfig.initialChannelState!!)
-                }
-
-                val channelStateChangeMock: AblySdkChannelStateListener.ChannelStateChange?
-                when (
-                    val givenChannelStateChangeBehaviour =
-                        givenConfig.channelStateChangeBehaviour
-                ) {
-                    is GivenTypes.ChannelStateChangeBehaviour.NoBehaviour -> {
-                        configuredChannel.stubOn()
-                        channelStateChangeMock = null
-                    }
-                    is GivenTypes.ChannelStateChangeBehaviour.EmitStateChange -> {
-                        /* when ${givenConfig.channelStateChangeBehaviour} is EmitStateChange {
-                         * ...which, when its `on` method is called, immediately calls the received listener with a channel state change whose `current` property is ${givenConfig.channelStateChangeBehaviour.current}...
-                         * }
-                         */
-                        channelStateChangeMock =
-                            configuredChannel.mockOnToEmitStateChange(current = givenChannelStateChangeBehaviour.current)
-                        configuredChannel.stubOff()
-                    }
                 }
 
                 when (val givenPresenceUpdateBehaviour = givenConfig.presenceUpdateBehaviour) {
@@ -741,34 +654,6 @@ class DefaultAblyTestScenarios {
                          * }
                          */
                         testEnvironment.channelsMock.get(configuredChannel.channelName)
-                    }
-
-                    repeat(thenConfig.numberOfChannelStateFetchesToVerify) {
-                        // ...and checks the channel’s state ${thenConfig.numberOfChannelStateFetchesToVerify} times...
-                        configuredChannel.channelMock.state
-                    }
-
-                    if (thenConfig.verifyChannelOn) {
-                        /* if ${thenConfig.verifyChannelOn} {
-                         * ...and calls `on` on the channel...
-                         */
-                        configuredChannel.channelMock.on(any())
-                    }
-
-                    if (thenConfig.verifyChannelStateChangeCurrent) {
-                        /* if ${thenConfig.verifyChannelStateChangeCurrent}
-                         * ...and checks the state change’s `current` property...
-                         * }
-                         */
-                        channelStateChangeMock!!.current
-                    }
-
-                    if (thenConfig.verifyChannelOff) {
-                        /* if ${thenConfig.verifyChannelOff} {
-                         * ...and calls `off` on the channel...
-                         * }
-                         */
-                        configuredChannel.channelMock.off(any())
                     }
 
                     if (thenConfig.verifyPresenceUpdate) {
@@ -1386,14 +1271,6 @@ class DefaultAblyTestScenarios {
             val channelsContainsKey: Boolean,
             val mockChannelsGet: Boolean,
             /**
-             * This must be `null` if and only if [mockChannelsGet] is `false`.
-             */
-            val initialChannelState: ChannelState?,
-            /**
-             * If [mockChannelsGet] is `false` then this must be [GivenTypes.ChannelStateChangeBehaviour.NoBehaviour].
-             */
-            val channelStateChangeBehaviour: GivenTypes.ChannelStateChangeBehaviour,
-            /**
              * If [mockChannelsGet] is `false` then this must be [GivenTypes.CompletionListenerMockBehaviour.NotMocked].
              */
             val publishBehaviour: GivenTypes.CompletionListenerMockBehaviour
@@ -1404,17 +1281,7 @@ class DefaultAblyTestScenarios {
              * @throws InvalidTestConfigurationException If this object does not represent a valid test configuration.
              */
             init {
-                if (mockChannelsGet) {
-                    if (initialChannelState == null) {
-                        throw InvalidTestConfigurationException("initialChannelState must be non-null when mockChannelsGet is true")
-                    }
-                } else {
-                    if (initialChannelState != null) {
-                        throw InvalidTestConfigurationException("initialChannelState must be null when mockChannelsGet is false")
-                    }
-                    if (channelStateChangeBehaviour !is GivenTypes.ChannelStateChangeBehaviour.NoBehaviour) {
-                        throw InvalidTestConfigurationException("channelStateChangeBehaviour must be NoBehaviour when mockChannelsGet is false")
-                    }
+                if (!mockChannelsGet) {
                     if (publishBehaviour !is GivenTypes.CompletionListenerMockBehaviour.NotMocked) {
                         throw InvalidTestConfigurationException("publishBehaviour must be NotMocked when mockChannelsGet is false")
                     }
@@ -1427,22 +1294,6 @@ class DefaultAblyTestScenarios {
          */
         class ThenConfig(
             val verifyChannelsGet: Boolean,
-            /**
-             * If [GivenConfig.mockChannelsGet] is `false` then this must be zero.
-             */
-            val numberOfChannelStateFetchesToVerify: Int,
-            /**
-             * If [GivenConfig.mockChannelsGet] is `false` then this must be `false`.
-             */
-            val verifyChannelOn: Boolean,
-            /**
-             * If [GivenConfig.channelStateChangeBehaviour] is not [GivenTypes.ChannelStateChangeBehaviour.EmitStateChange] then this must be `false`.
-             */
-            val verifyChannelStateChangeCurrent: Boolean,
-            /**
-             * If [GivenConfig.mockChannelsGet] is `false` then this must be `false`.
-             */
-            val verifyChannelOff: Boolean,
             /**
              * If [GivenConfig.mockChannelsGet] is `false` then this must be `false`.
              */
@@ -1457,22 +1308,8 @@ class DefaultAblyTestScenarios {
              */
             fun validate(givenConfig: GivenConfig) {
                 if (!givenConfig.mockChannelsGet) {
-                    if (numberOfChannelStateFetchesToVerify != 0) {
-                        throw InvalidTestConfigurationException("numberOfChannelStateFetchesToVerify must be zero when mockChannelsGet is false")
-                    }
-                    if (verifyChannelOn) {
-                        throw InvalidTestConfigurationException("verifyChannelOn must be false when mockChannelsGet is false")
-                    }
-                    if (verifyChannelOff) {
-                        throw InvalidTestConfigurationException("verifyChannelOff must be false when mockChannelsGet is false")
-                    }
                     if (verifyPublish) {
                         throw InvalidTestConfigurationException("verifyPublish must be false when mockChannelsGet is false")
-                    }
-                }
-                if (givenConfig.channelStateChangeBehaviour !is GivenTypes.ChannelStateChangeBehaviour.EmitStateChange) {
-                    if (verifyChannelStateChangeCurrent) {
-                        throw InvalidTestConfigurationException("verifyChannelStateChangeCurrent must be false when channelStateChangeBehaviour is not EmitStateChange")
                     }
                 }
             }
@@ -1488,11 +1325,7 @@ class DefaultAblyTestScenarios {
              * ...that the Channels instance’s `containsKey` method returns ${givenConfig.channelsContainsKey}...
              *
              * if ${givenConfig.mockChannelsGet} {
-             * ...and that the Channels instance’s `get` method (the overload that does not accept a ChannelOptions object) returns a channel in the ${givenConfig.initialChannelState} state...
-             * }
-             *
-             * when ${givenConfig.channelStateChangeBehaviour} is EmitStateChange {
-             * ...which, when its `on` method is called, immediately calls the received listener with a channel state change whose `current` property is ${givenConfig.channelStateChangeBehaviour.current}...
+             * ...and that the Channels instance’s `get` method (the overload that does not accept a ChannelOptions object) returns a channel...
              * }
              *
              * when ${givenConfig.publishBehaviour} is Success {
@@ -1518,20 +1351,6 @@ class DefaultAblyTestScenarios {
              *
              * if ${thenConfig.verifyChannelsGet} {
              * ...and calls `get` (the overload that does not accept a ChannelOptions object) on the Channels instance...
-             * }
-             *
-             * ...and checks the channel’s state ${thenConfig.numberOfChannelStateFetchesToVerify} times...
-             *
-             * if ${thenConfig.verifyChannelOn} {
-             * ...and calls `on` on the channel...
-             * }
-             *
-             * if ${thenConfig.verifyChannelStateChangeCurrent} {
-             * ...and checks the `current` property of the emitted channel state change...
-             * }
-             *
-             * if ${thenConfig.verifyChannelOff} {
-             * ...and calls `off` on the channel...
              * }
              *
              * if ${thenConfig.verifyPublish} {
@@ -1570,28 +1389,10 @@ class DefaultAblyTestScenarios {
 
                 if (givenConfig.mockChannelsGet) {
                     /* if ${givenConfig.mockChannelsGet} {
-                     * ...and that the Channels instance’s `get` method (the overload that does not accept a ChannelOptions object) returns a channel in the ${givenConfig.initialChannelState} state...
+                     * ...and that the Channels instance’s `get` method (the overload that does not accept a ChannelOptions object) returns a channel...
                      * }
                      */
                     testEnvironment.mockChannelsGet(DefaultAblyTestEnvironment.ChannelsGetOverload.WITHOUT_CHANNEL_OPTIONS)
-                    configuredChannel.mockState(givenConfig.initialChannelState!!)
-                }
-
-                val channelStateChangeMock: AblySdkChannelStateListener.ChannelStateChange?
-                when (val givenChannelStateBehaviour = givenConfig.channelStateChangeBehaviour) {
-                    is GivenTypes.ChannelStateChangeBehaviour.NoBehaviour -> {
-                        configuredChannel.stubOn()
-                        channelStateChangeMock = null
-                    }
-                    is GivenTypes.ChannelStateChangeBehaviour.EmitStateChange -> {
-                        /* when ${givenConfig.channelStateChangeBehaviour} is EmitStateChange {
-                         * ...which, when its `on` method is called, immediately calls the received listener with a channel state change whose `current` property is ${givenConfig.channelStateChangeBehaviour.current}...
-                         * }
-                         */
-                        channelStateChangeMock =
-                            configuredChannel.mockOnToEmitStateChange(current = givenChannelStateBehaviour.current)
-                        configuredChannel.stubOff()
-                    }
                 }
 
                 when (val givenPublishBehaviour = givenConfig.publishBehaviour) {
@@ -1649,35 +1450,6 @@ class DefaultAblyTestScenarios {
                          * }
                          */
                         testEnvironment.channelsMock.get(configuredChannel.channelName)
-                    }
-
-                    repeat(thenConfig.numberOfChannelStateFetchesToVerify) {
-                        // ...and checks the channel’s state ${thenConfig.numberOfChannelStateFetchesToVerify} times...
-                        configuredChannel.channelMock.state
-                    }
-
-                    if (thenConfig.verifyChannelOn) {
-                        /* if ${thenConfig.verifyChannelOn} {
-                         * ...and calls `on` on the channel...
-                         * }
-                         */
-                        configuredChannel.channelMock.on(any())
-                    }
-
-                    if (thenConfig.verifyChannelStateChangeCurrent) {
-                        /* if ${thenConfig.verifyChannelStateChangeCurrent} {
-                         * ...and checks the `current` property of the emitted channel state change...
-                         * }
-                         */
-                        channelStateChangeMock!!.current
-                    }
-
-                    if (thenConfig.verifyChannelOff) {
-                        /* if ${thenConfig.verifyChannelOff} {
-                         * ...and calls `off` on the channel...
-                         * }
-                         */
-                        configuredChannel.channelMock.off(any())
                     }
 
                     if (thenConfig.verifyPublish) {
