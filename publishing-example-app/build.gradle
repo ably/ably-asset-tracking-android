@@ -28,6 +28,15 @@ if (canDistribute) {
     apply plugin: 'com.google.firebase.appdistribution'
 }
 
+// By design, these properties are only injected by our adhoc-publish-example-apps workflow, not by other workflows (for example, publish-example-apps).
+// This means that when not adhoc-publishing example app builds they will all have a value of `null` (org.codehaus.groovy.runtime.NullObject).
+final githubTitle = findProperty("ORG_GRADLE_PROJECT_ABLY_BUILD_CONTEXT_TITLE")
+final includeIndividualRiders = findProperty("APP_DISTRIBUTION_INCLUDE_INDIVIDUAL_RIDERS")
+final additionalReleaseNotes = findProperty("APP_DISTRIBUTION_RELEASE_NOTES")
+logger.lifecycle("githubTitle [${githubTitle.getClass()}]: $githubTitle")
+logger.lifecycle("includeIndividualRiders [${includeIndividualRiders.getClass()}]: $includeIndividualRiders")
+logger.lifecycle("additionalReleaseNotes [${additionalReleaseNotes.getClass()}]: $additionalReleaseNotes")
+
 android {
     defaultConfig {
         vectorDrawables.useSupportLibrary = true
@@ -56,8 +65,18 @@ android {
     buildTypes {
         release {
             if (canDistribute) {
+                // https://firebase.google.com/docs/app-distribution/android/distribute-gradle#step_3_configure_your_distribution_properties
                 firebaseAppDistribution {
                     serviceCredentialsFile = firebaseAppDistributionPrivateKeyFile.getAbsolutePath()
+
+                    if (includeIndividualRiders == "true") {
+                        groups = "individual-riders"
+                    }
+
+                    if (githubTitle || additionalReleaseNotes) {
+                        releaseNotes = additionalReleaseNotes ? "$additionalReleaseNotes\n\n" : ""
+                        releaseNotes += githubTitle ? githubTitle : ""
+                    }
                 }
                 signingConfig signingConfigs.release
             }
