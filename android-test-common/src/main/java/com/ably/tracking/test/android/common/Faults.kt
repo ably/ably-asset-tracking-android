@@ -165,14 +165,6 @@ class TcpConnectionRefused(apiKey: String) : TransportLayerFault(apiKey) {
         onlineWithinMillis = 60_000
     )
 
-    /**
-     * This fault type is temporarily disabled at runtime. It can be re-enabled by removing this override.
-     * We will re-enable this test when the following have been addressed:
-     * - https://github.com/ably/ably-asset-tracking-android/issues/859
-     * - https://github.com/ably/ably-asset-tracking-android/issues/871
-     */
-    override val skipPublisherTest = true
-
     // May be able to be removed once the issues surrounding skipTest are resolved
     override val skipSubscriberTest = true
 
@@ -191,6 +183,13 @@ class TcpConnectionRefused(apiKey: String) : TransportLayerFault(apiKey) {
  */
 class TcpConnectionUnresponsive(apiKey: String) : TransportLayerFault(apiKey) {
 
+    /**
+     * This fault type is temporarily disabled at runtime. It can be re-enabled by removing this override.
+     * We will re-enable this test when the following have been addressed:
+     * - https://github.com/ably/ably-asset-tracking-android/issues/948
+     */
+    override val skipTest = true
+
     companion object {
         val fault = object : Fault() {
             override fun simulate(apiKey: String) = TcpConnectionUnresponsive(apiKey)
@@ -202,14 +201,6 @@ class TcpConnectionUnresponsive(apiKey: String) : TransportLayerFault(apiKey) {
         offlineWithinMillis = 120_000,
         onlineWithinMillis = 60_000
     )
-
-    /**
-     * This fault type is temporarily disabled at runtime. It can be re-enabled by removing this override.
-     * We will re-enable this test when the following have been addressed:
-     * - https://github.com/ably/ably-asset-tracking-android/issues/859
-     * - https://github.com/ably/ably-asset-tracking-android/issues/871
-     */
-    override val skipPublisherTest = true
 
     // May be able to be removed once the issues surrounding skipTest are resolved
     override val skipSubscriberTest = true
@@ -385,12 +376,6 @@ class AttachUnresponsive(apiKey: String) : DropAction(
             override val name = "AttachUnresponsive"
         }
     }
-
-    /*
-        Currently failing due to Issue #871 -- throwing ConnectionError
-        when trying to add new trackables while offline.
-     */
-    override val skipPublisherTest = true
 
     // Test appears to crash JVM
     override val skipSubscriberTest = true
@@ -671,11 +656,6 @@ class EnterFailedWithNonfatalNack(apiKey: String) : PresenceNackFault(
         }
     }
 
-    /*
-        Currently failing due to Issue #907 - non-fatal nack triggers
-        an exception to be thrown to caller during publisher.track()
-     */
-    override val skipPublisherTest = true
 
     // Can probably be removed once skipTest issues are resolved
     override val skipSubscriberTest = true
@@ -723,16 +703,6 @@ class ReenterOnResumeFailed(apiKey: String) : ApplicationLayerFault(apiKey) {
             override val name = "ReenterOnResumeFailed"
         }
     }
-
-    /*
-       This test currently fails because the ably-java hangs the client
-       waiting for a presence response if there's there's a reconnection
-       before successful completion of enter()
-
-       This happens during stage 2 of the test, so steps 3 and 4 have not
-       yet been seen to work.
-     */
-    override val skipPublisherTest = true
 
     // May be able to be removed once the issues surrounding skipTest are resolved
     override val skipSubscriberTest = true

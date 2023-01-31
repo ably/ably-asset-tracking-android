@@ -53,6 +53,10 @@ internal class ConnectionReadyWorker(
             postWork(WorkerSpecification.RetrySubscribeToPresence(trackable, presenceUpdateListener))
         }
 
+        if (properties.trackableEnteredPresenceFlags[trackable.id] != true) {
+            postWork(WorkerSpecification.RetryEnterPresence(trackable))
+        }
+
         return properties
     }
 
