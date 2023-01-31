@@ -1091,7 +1091,7 @@ class DefaultAblyTestScenarios {
 
                 if (givenConfig.mockChannelsGet) {
                     /* if ${givenConfig.mockChannelsGet} {
-                     * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel in state ${givenConfig.initialChannelState}...
+                     * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel...
                      * }
                      */
                     testEnvironment.mockChannelsGet(DefaultAblyTestEnvironment.ChannelsGetOverload.WITHOUT_CHANNEL_OPTIONS)
