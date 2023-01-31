@@ -64,6 +64,8 @@ private constructor(
         get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
     val trackableSubscribedToPresenceFlags: MutableMap<String, Boolean> = mutableMapOf()
         get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
+    val trackableEnteredPresenceFlags: MutableMap<String, Boolean> = mutableMapOf()
+        get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
     val trackableStateFlows: MutableMap<String, MutableStateFlow<TrackableState>> = mutableMapOf()
         get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
     val lastChannelConnectionStateChanges: MutableMap<String, ConnectionStateChange> = mutableMapOf()
@@ -154,6 +156,7 @@ private constructor(
                 it.trackables.addAll(trackables)
                 it.trackableStates.putAll(trackableStates)
                 it.trackableSubscribedToPresenceFlags.putAll(trackableSubscribedToPresenceFlags)
+                it.trackableEnteredPresenceFlags.putAll(trackableEnteredPresenceFlags)
                 it.trackableStateFlows.putAll(trackableStateFlows)
                 it.lastChannelConnectionStateChanges.putAll(lastChannelConnectionStateChanges)
                 it.lastConnectionStateChange = lastConnectionStateChange
@@ -180,6 +183,7 @@ private constructor(
         trackableStates.clear()
         trackableStateFlows.clear()
         trackableSubscribedToPresenceFlags.clear()
+        trackableEnteredPresenceFlags.clear()
         lastChannelConnectionStateChanges.clear()
         resolutions.clear()
         lastSentEnhancedLocations.clear()
