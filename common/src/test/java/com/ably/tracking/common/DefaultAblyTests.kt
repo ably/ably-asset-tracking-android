@@ -1618,12 +1618,6 @@ class DefaultAblyTests {
         }
     }
 
-    /*
-    Observations from writing black-box tests for `disconnect`:
-
-    - When given a channel in certain states, it seems to fetch the channel’s state more than once. I have not tested what happens if a different state is returned on the second call.
-     */
-
     @Test
     fun `disconnect - when presence leave succeeds`() {
         /* Given...
