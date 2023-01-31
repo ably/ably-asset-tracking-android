@@ -1,5 +1,6 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
+import android.util.Log
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ConnectionStateChange
@@ -33,6 +34,7 @@ internal class ConnectionReadyWorker(
         doAsyncWork: (suspend () -> Unit) -> Unit,
         postWork: (WorkerSpecification) -> Unit
     ): PublisherProperties {
+        Log.e("WORKER", "CRW - ${trackable.id}")
         if (properties.trackableRemovalGuard.isMarkedForRemoval(trackable)) {
             doAsyncWork {
                 isBeingRemoved = true
@@ -43,19 +45,23 @@ internal class ConnectionReadyWorker(
 
         subscribeForChannelStateChanges()
         startLocationUpdates(properties)
-        addTrackableToPublisher(properties)
+/*        addTrackableToPublisher(properties)
         val trackableState = properties.trackableStates[trackable.id] ?: TrackableState.Offline()
         val trackableStateFlow = properties.trackableStateFlows[trackable.id] ?: MutableStateFlow(trackableState)
         updateTrackableState(properties, trackableState, trackableStateFlow, isSubscribedToPresence)
-        notifyAddOperationFinished(properties, trackableStateFlow)
+        notifyAddOperationFinished(properties, trackableStateFlow)*/
 
         if (!isSubscribedToPresence) {
             postWork(WorkerSpecification.RetrySubscribeToPresence(trackable, presenceUpdateListener))
+        } else {
+            properties.trackableSubscribedToPresenceFlags[trackable.id] = true
         }
 
         if (properties.trackableEnteredPresenceFlags[trackable.id] != true) {
             postWork(WorkerSpecification.RetryEnterPresence(trackable))
         }
+
+        publisherInteractor.updateTrackableState(properties, trackable.id)
 
         return properties
     }
@@ -80,6 +86,7 @@ internal class ConnectionReadyWorker(
 
     private fun startLocationUpdates(properties: PublisherProperties) {
         if (!properties.isTracking) {
+            Log.e("WORKER", "CRW - LOCATION UPDATES START")
             publisherInteractor.startLocationUpdates(properties)
         }
     }

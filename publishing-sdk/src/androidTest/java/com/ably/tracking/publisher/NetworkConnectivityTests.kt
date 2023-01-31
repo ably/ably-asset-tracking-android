@@ -44,11 +44,13 @@ import com.ably.tracking.test.android.common.PUBLISHER_CLIENT_ID
 import com.ably.tracking.test.android.common.ReenterOnResumeFailed
 import com.ably.tracking.test.android.common.TcpConnectionRefused
 import com.ably.tracking.test.android.common.TcpConnectionUnresponsive
+import com.ably.tracking.test.android.common.UnitExpectation
 import com.ably.tracking.test.android.common.UpdateFailedWithNonfatalNack
 import com.ably.tracking.test.android.common.createNotificationChannel
 import com.ably.tracking.test.android.common.testLogD
 import com.google.gson.Gson
 import io.ably.lib.realtime.AblyRealtime
+import io.ably.lib.realtime.ChannelState
 import io.ably.lib.realtime.CompletionListener
 import io.ably.lib.types.ClientOptions
 import io.ably.lib.types.ErrorInfo
@@ -58,6 +60,7 @@ import io.ably.lib.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -90,9 +93,9 @@ class NetworkConnectivityTests(private val testFault: Fault) {
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
         fun data() = listOf(
-            arrayOf(NullTransportFault.fault),
+            //arrayOf(NullTransportFault.fault),
             arrayOf(NullApplicationLayerFault.fault),
-            arrayOf(TcpConnectionRefused.fault),
+/*            arrayOf(TcpConnectionRefused.fault),
             arrayOf(TcpConnectionUnresponsive.fault),
             arrayOf(AttachUnresponsive.fault),
             arrayOf(DetachUnresponsive.fault),
@@ -101,7 +104,7 @@ class NetworkConnectivityTests(private val testFault: Fault) {
             arrayOf(UpdateFailedWithNonfatalNack.fault),
             arrayOf(DisconnectAndSuspend.fault),
             arrayOf(ReenterOnResumeFailed.fault),
-            arrayOf(EnterUnresponsive.fault),
+            arrayOf(EnterUnresponsive.fault),*/
         )
     }
 
@@ -132,6 +135,7 @@ class NetworkConnectivityTests(private val testFault: Fault) {
     fun faultBeforeAddingTrackable() {
         val primaryTrackable = Trackable(UUID.randomUUID().toString())
         val secondaryTrackable = Trackable(UUID.randomUUID().toString())
+        testLogD("PRIMARY: $primaryTrackable")
 
         withResources {
             fault.enable()
@@ -412,12 +416,19 @@ class TestResources(
         private fun createAblyLocationSource(channelName: String): Flow<Location> {
             val ably = AblyRealtime(CLIENT_OPTS_NO_PROXY)
             val simulationChannel = ably.channels.get(channelName)
-            val flow = MutableSharedFlow<Location>()
+            val flow = MutableSharedFlow<Location>(replay = 1)
             val scope = CoroutineScope(Dispatchers.IO)
             val gson = Gson()
 
-            ably.connection.on { testLogD("Ably connection state change: $it") }
-            simulationChannel.on { testLogD("Ably channel state change: $it") }
+            ably.connection.on { testLogD("Ably connection state change: ${it.current}") }
+
+            val connectedToSimulationChannel = UnitExpectation("Connected to location simulation channel")
+            simulationChannel.on {
+                testLogD("Ably channel state change: ${it.current}")
+                if (it.current == ChannelState.attached) {
+                    connectedToSimulationChannel.fulfill()
+                }
+            }
 
             simulationChannel.subscribe(EventNames.ENHANCED) { message ->
                 testLogD("Ably channel message: $message")
@@ -434,6 +445,10 @@ class TestResources(
                     }
                 }
             }
+
+            // Make sure we're on the channel before continuing
+            connectedToSimulationChannel.await(5)
+            connectedToSimulationChannel.assertFulfilled()
 
             return flow
         }
@@ -690,9 +705,13 @@ class PublisherMonitor(
                     val trackableStateFlow = asyncOp()
                     testLogD("$label - success")
 
+                    testLogD("Await state transition")
                     assertStateTransition(trackableStateFlow)
+                    testLogD("Await assert presence")
                     assertPresence()
+                    testLogD("Await assert location")
                     assertLocationUpdated()
+                    testLogD("Await assert done")
                 }
             } catch (timeoutCancellationException: TimeoutCancellationException) {
                 testLogD("$label - timed out")

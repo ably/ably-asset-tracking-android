@@ -1,5 +1,6 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
+import android.util.Log
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.PresenceMessage
 import com.ably.tracking.common.logging.w
@@ -22,6 +23,7 @@ internal class RetrySubscribeToPresenceWorker(
         doAsyncWork: (suspend () -> Unit) -> Unit,
         postWork: (WorkerSpecification) -> Unit
     ): PublisherProperties {
+        Log.e("RSTP", "Start ${trackable.id}")
         if (!properties.trackables.contains(trackable)) {
             return properties
         }

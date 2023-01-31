@@ -1,5 +1,6 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
+import android.util.Log
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ConnectionStateChange
@@ -8,12 +9,16 @@ import com.ably.tracking.common.PresenceMessage
 import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.common.isFatalAblyFailure
 import com.ably.tracking.common.workerqueue.Worker
+import com.ably.tracking.publisher.DefaultCorePublisher
+import com.ably.tracking.publisher.PublisherInteractor
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.PublisherState
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 internal typealias AddTrackableResult = StateFlow<TrackableState>
 internal typealias AddTrackableCallbackFunction = ResultCallbackFunction<AddTrackableResult>
@@ -29,7 +34,9 @@ internal class AddTrackableWorker(
     private val callbackFunction: AddTrackableCallbackFunction,
     private val presenceUpdateListener: ((presenceMessage: PresenceMessage) -> Unit),
     private val channelStateChangeListener: ((connectionStateChange: ConnectionStateChange) -> Unit),
-    private val ably: Ably
+    private val ably: Ably,
+    private val publisherInteractor: PublisherInteractor,
+    private val hooks: DefaultCorePublisher.Hooks
 ) : Worker<PublisherProperties, WorkerSpecification> {
     /**
      * Whether the worker is delaying its work.
@@ -73,7 +80,13 @@ internal class AddTrackableWorker(
                     properties.state = PublisherState.CONNECTING
                 }
                 properties.duplicateTrackableGuard.startAddingTrackable(trackable)
+
+                // Add the trackable to the publisher and return success immediately
+                addTrackableToPublisherAndNotifySuccess(properties)
+
+                // Create the ably connection as required
                 doAsyncWork {
+                    Log.e("WORKER", "ADD TRACKABLE - Async ${trackable.id}")
                     createConnection(postWork, isAddingTheFirstTrackable, properties.presenceData)
                 }
             }
@@ -81,13 +94,42 @@ internal class AddTrackableWorker(
         return properties
     }
 
+    /**
+     * Add the trackable to the publisher and notify the caller of its success immediately.
+     *
+     * This prevents us from blocking the caller whilst we wait for Ably to connect.
+     */
+    private fun addTrackableToPublisherAndNotifySuccess(properties: PublisherProperties)  {
+        // Add the trackable and resolve resolutions
+        properties.trackables.add(trackable)
+        publisherInteractor.updateTrackables(properties)
+        publisherInteractor.resolveResolution(trackable, properties)
+        hooks.trackables?.onTrackableAdded(trackable)
+
+        // Create the trackable state flow to return to the caller
+        val trackableState = properties.trackableStates[trackable.id] ?: TrackableState.Offline()
+        val trackableStateFlow = properties.trackableStateFlows[trackable.id] ?: MutableStateFlow(trackableState)
+
+        properties.trackableStateFlows[trackable.id] = trackableStateFlow
+        publisherInteractor.updateTrackableStateFlows(properties)
+        properties.trackableStates[trackable.id] = trackableState
+        properties.trackableSubscribedToPresenceFlags[trackable.id] = false
+
+        // Notify the caller
+        val successResult = Result.success(trackableStateFlow.asStateFlow())
+        callbackFunction(successResult)
+        properties.duplicateTrackableGuard.finishAddingTrackable(trackable, successResult)
+    }
+
     private suspend fun createConnection(
         postWork: (WorkerSpecification) -> Unit,
         isAddingTheFirstTrackable: Boolean,
         presenceData: PresenceData
     ) {
+        Log.e("WORKER", "ADD TRACKABLE - Create Connection ${trackable.id}")
         if (isAddingTheFirstTrackable) {
             isConnectedToAbly = false
+            Log.e("WORKER", "ADD TRACKABLE - Start Connection ${trackable.id}")
             val startAblyConnectionResult = ably.startConnection()
 
             if (startAblyConnectionResult.isFatalAblyFailure()) {
@@ -105,6 +147,8 @@ internal class AddTrackableWorker(
             presenceData = presenceData,
             willPublish = true,
         )
+
+        Log.e("WORKER", "ADD TRACKABLE - Create Connection ${trackable.id} connectResult $connectResult")
 
         if (connectResult.isFatalAblyFailure()) {
             postWork(

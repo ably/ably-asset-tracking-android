@@ -77,6 +77,8 @@ internal class WorkerFactory(
                 workerSpecification.presenceUpdateListener,
                 workerSpecification.channelStateChangeListener,
                 ably,
+                publisherInteractor,
+                hooks
             )
             is WorkerSpecification.AddTrackableFailed -> AddTrackableFailedWorker(
                 workerSpecification.trackable,

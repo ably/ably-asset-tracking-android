@@ -978,12 +978,14 @@ constructor(
      * If something goes wrong then it throws a [ConnectionException].
      */
     private suspend fun enterPresenceSuspending(channel: AblySdkRealtime.Channel<ChannelStateListenerType>, presenceData: PresenceData) {
+        logHandler?.i("Enter presence suspending ${channel.name}")
         suspendCancellableCoroutine<Unit> { continuation ->
             try {
                 channel.presence.enter(
                     gson.toJson(presenceData.toMessage()),
                     object : CompletionListener {
                         override fun onSuccess() {
+                            logHandler?.i("Entered presence on ${channel.name}")
                             continuation.resume(Unit)
                         }
 
