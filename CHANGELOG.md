@@ -16,6 +16,7 @@ Please see:
 
 **Fixed bugs:**
 
+- Exceptions thrown for new publishing requests when offline [\#871](https://github.com/ably/ably-asset-tracking-android/issues/871)
 - Retry behaviour improvements for Ably API calls [\#927](https://github.com/ably/ably-asset-tracking-android/issues/927)
 - `Publisher.remove\(\)` fails during several connectivity faults [\#905](https://github.com/ably/ably-asset-tracking-android/issues/905)
 - Adding a trackable stalls forever if presence.enter\(\) is interrupted by a disconnection [\#896](https://github.com/ably/ably-asset-tracking-android/issues/896)
@@ -54,6 +55,7 @@ Please see:
 
 **Merged pull requests:**
 
+- 871 add exceptions [\#938](https://github.com/ably/ably-asset-tracking-android/pull/938) ([davyskiba](https://github.com/davyskiba))
 - Use random trackable ids in integration tests [\#968](https://github.com/ably/ably-asset-tracking-android/pull/968) ([AndyTWF](https://github.com/AndyTWF))
 - `NetworkingConnectivityTest` fixes [\#960](https://github.com/ably/ably-asset-tracking-android/pull/960) ([jaley](https://github.com/jaley))
 - Example App Distribution documentation [\#959](https://github.com/ably/ably-asset-tracking-android/pull/959) ([QuintinWillison](https://github.com/QuintinWillison))
