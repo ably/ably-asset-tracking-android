@@ -312,10 +312,11 @@ class NullApplicationLayerFault(apiKey: String) : ApplicationLayerFault(apiKey) 
 abstract class DropAction(
     apiKey: String,
     private val direction: FrameDirection,
-    private val action: Message.Action
+    private val action: Message.Action,
+    private val dropLimit: Int,
 ) : ApplicationLayerFault(apiKey) {
 
-    // TODO: This fault needs a limit!
+    private var nDropped = 0
 
     companion object {
         private const val tag = "DropAction"
@@ -344,6 +345,7 @@ abstract class DropAction(
             override fun interceptFrame(direction: FrameDirection, frame: Frame) =
                 if (shouldFilter(direction, frame)) {
                     testLogD("$tag: dropping: $direction - ${logFrame(frame)}")
+                    nDropped += 1
                     listOf()
                 } else {
                     testLogD("$tag: keeping: $direction - ${logFrame(frame)}")
@@ -361,7 +363,8 @@ abstract class DropAction(
      * Check whether this frame and direction messages the fault specification
      */
     private fun shouldFilter(direction: FrameDirection, frame: Frame) =
-        frame.frameType == FrameType.BINARY &&
+        nDropped < dropLimit &&
+            frame.frameType == FrameType.BINARY &&
             direction == this.direction &&
             frame.data.unpack().isAction(action)
 }
@@ -373,7 +376,8 @@ abstract class DropAction(
 class AttachUnresponsive(apiKey: String) : DropAction(
     apiKey = apiKey,
     direction = FrameDirection.ClientToServer,
-    action = Message.Action.ATTACH
+    action = Message.Action.ATTACH,
+    dropLimit = 1,
 ) {
     companion object {
         val fault = object : Fault() {
@@ -399,7 +403,8 @@ class AttachUnresponsive(apiKey: String) : DropAction(
 class DetachUnresponsive(apiKey: String) : DropAction(
     apiKey = apiKey,
     direction = FrameDirection.ClientToServer,
-    action = Message.Action.DETACH
+    action = Message.Action.DETACH,
+    dropLimit = 1,
 ) {
     override val skipSubscriberTest = true
 
@@ -504,6 +509,9 @@ class EnterUnresponsive(apiKey: String) : UnresponsiveAfterAction(
  */
 class DisconnectWithFailedResume(apiKey: String) : ApplicationLayerFault(apiKey) {
 
+    /*
+     * This test fails intermittently. Investigation ongoing in #951
+     */
     override val skipSubscriberTest = true
 
     companion object {
