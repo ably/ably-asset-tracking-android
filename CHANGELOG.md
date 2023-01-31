@@ -1,10 +1,13 @@
 # Change log
 
-The current, non-pre-release SDKs for production use are at version [1.5.1](#151).
+## [1.6.0](https://github.com/ably/ably-asset-tracking-android/tree/v1.6.0)
 
-## [1.6.0, Beta 1](https://github.com/ably/ably-asset-tracking-android/tree/v1.6.0-beta.1)
+This release enhances operational stability, for publishers in particular, when running on a devices with unreliable network connectivity.
 
-[Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.5.1...v1.6.0-beta.1)
+Please see:
+[Upgrade / Migration Guide from v.1.5.1](https://github.com/ably/ably-asset-tracking-android/blob/main/UPDATING.md#version-151-to-160)
+
+[Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.5.1...v1.6.0)
 
 **Implemented enhancements:**
 
@@ -13,10 +16,12 @@ The current, non-pre-release SDKs for production use are at version [1.5.1](#151
 
 **Fixed bugs:**
 
+- Exceptions thrown for new publishing requests when offline [\#871](https://github.com/ably/ably-asset-tracking-android/issues/871)
 - Retry behaviour improvements for Ably API calls [\#927](https://github.com/ably/ably-asset-tracking-android/issues/927)
-- `Publisher.remove()` fails during several connectivity faults [\#905](https://github.com/ably/ably-asset-tracking-android/issues/905)
+- `Publisher.remove\(\)` fails during several connectivity faults [\#905](https://github.com/ably/ably-asset-tracking-android/issues/905)
 - Adding a trackable stalls forever if presence.enter\(\) is interrupted by a disconnection [\#896](https://github.com/ably/ably-asset-tracking-android/issues/896)
 - Publisher crashes when location data has NaN value [\#861](https://github.com/ably/ably-asset-tracking-android/issues/861)
+- Subscriber, upon losing connectivity, continues to show the Publisher as online [\#835](https://github.com/ably/ably-asset-tracking-android/issues/835)
 - Subscriber, upon losing connectivity, continues to show the Publisher as online [\#833](https://github.com/ably/ably-asset-tracking-android/issues/833)
 - Unexpected exceptions fail the worker queue and silently break the SDK [\#830](https://github.com/ably/ably-asset-tracking-android/issues/830)
 - Fix the logic responsible for deciding if an enhanced location update is predicted [\#828](https://github.com/ably/ably-asset-tracking-android/issues/828)
@@ -25,6 +30,7 @@ The current, non-pre-release SDKs for production use are at version [1.5.1](#151
 
 **Closed issues:**
 
+- Investigate TODO comment in `DropAction` fault regarding "limit" [\#934](https://github.com/ably/ably-asset-tracking-android/issues/934)
 - Reduce publisher location check polling interval [\#946](https://github.com/ably/ably-asset-tracking-android/issues/946)
 - Flakey test: com.ably.tracking.publisher.NetworkConnectivityTests \> faultDuringTracking\[NullTransportFault\] [\#943](https://github.com/ably/ably-asset-tracking-android/issues/943)
 - Make `NetworkConnectivityTests` verify expected side-effects of operations publisher SDK claims was successful [\#925](https://github.com/ably/ably-asset-tracking-android/issues/925)
@@ -49,7 +55,13 @@ The current, non-pre-release SDKs for production use are at version [1.5.1](#151
 
 **Merged pull requests:**
 
-- Fix `publish.stop()` hang when no trackables added [\#952](https://github.com/ably/ably-asset-tracking-android/pull/952) ([jaley](https://github.com/jaley))
+- 871 add exceptions [\#938](https://github.com/ably/ably-asset-tracking-android/pull/938) ([davyskiba](https://github.com/davyskiba))
+- Use random trackable ids in integration tests [\#968](https://github.com/ably/ably-asset-tracking-android/pull/968) ([AndyTWF](https://github.com/AndyTWF))
+- `NetworkingConnectivityTest` fixes [\#960](https://github.com/ably/ably-asset-tracking-android/pull/960) ([jaley](https://github.com/jaley))
+- Example App Distribution documentation [\#959](https://github.com/ably/ably-asset-tracking-android/pull/959) ([QuintinWillison](https://github.com/QuintinWillison))
+- Release/1.6.0 beta.1 [\#956](https://github.com/ably/ably-asset-tracking-android/pull/956) ([QuintinWillison](https://github.com/QuintinWillison))
+- Upload Publishing Example App to Firebase for Distribution to Testers [\#955](https://github.com/ably/ably-asset-tracking-android/pull/955) ([QuintinWillison](https://github.com/QuintinWillison))
+- Fix `publish.stop\(\)` hang when no trackables added [\#952](https://github.com/ably/ably-asset-tracking-android/pull/952) ([jaley](https://github.com/jaley))
 - Increase back-off when querying history in test [\#949](https://github.com/ably/ably-asset-tracking-android/pull/949) ([AndyTWF](https://github.com/AndyTWF))
 - Reenable disconnect failed resume faults [\#947](https://github.com/ably/ably-asset-tracking-android/pull/947) ([ikbalkaya](https://github.com/ikbalkaya))
 - Change publisher and subscriber stop operation to always succeed [\#945](https://github.com/ably/ably-asset-tracking-android/pull/945) ([KacperKluka](https://github.com/KacperKluka))
@@ -85,7 +97,6 @@ The current, non-pre-release SDKs for production use are at version [1.5.1](#151
 - Remove `TimeoutCancellationException` from `Publisher.stop` [\#874](https://github.com/ably/ably-asset-tracking-android/pull/874) ([lawrence-forooghian](https://github.com/lawrence-forooghian))
 - Handle unexpected exceptions in the worker queue [\#872](https://github.com/ably/ably-asset-tracking-android/pull/872) ([KacperKluka](https://github.com/KacperKluka))
 - Networking connectivity integration test using local proxy [\#866](https://github.com/ably/ably-asset-tracking-android/pull/866) ([jaley](https://github.com/jaley))
-- location: sanitize locations from mapbox [\#864](https://github.com/ably/ably-asset-tracking-android/pull/864) ([mschristensen](https://github.com/mschristensen))
 
 ## [1.5.1](https://github.com/ably/ably-asset-tracking-android/tree/v1.5.1)
 

@@ -19,6 +19,7 @@ import com.google.gson.Gson
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.util.UUID
 
 private const val MAPBOX_ACCESS_TOKEN = BuildConfig.MAPBOX_ACCESS_TOKEN
 private const val CLIENT_ID = "IntegrationTestsClient"
@@ -52,7 +53,7 @@ class PublisherIntegrationTests {
         )
         runBlocking {
             try {
-                publisher.track(Trackable("ID"))
+                publisher.track(Trackable(UUID.randomUUID().toString()))
                 testLogD("track success")
                 trackExpectation.fulfill(true)
             } catch (e: Exception) {
