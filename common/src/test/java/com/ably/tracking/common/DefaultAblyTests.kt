@@ -782,12 +782,11 @@ class DefaultAblyTests {
     }
 
     @Test
-    fun `enterChannelPresence - when channel exists`() {
+    fun `enterChannelPresence - when presence enter succeeds`() {
         /* Given...
          *
          * ...that calling `containsKey` on the Channels instance returns true...
-         * ...and that calling `get` on the Channels instance returns a channel...
-         * ...which, when told to enter presence, does so successfully...
+         * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel which, when told to enter presence, does so successfully...
          *
          * When...
          *
@@ -797,12 +796,11 @@ class DefaultAblyTests {
          * ...in the following order, precisely the following things happen...
          *
          * ...it calls `containsKey` on the Channels instance...
-         * ...and calls `get` on the Channels instance...
-         * ...and calls `get` on the Channels instance...
+         * ...and calls `get` (the overload that does not accept a ChannelOptions object) on the Channels instance...
          * ...and tells the channel to enter presence...
-         *
          * ...and the call to `enterChannelPresence` (on the object under test) succeeds.
          */
+
         runBlocking {
             DefaultAblyTestScenarios.EnterChannelPresence.test(
                 DefaultAblyTestScenarios.EnterChannelPresence.GivenConfig(
@@ -821,12 +819,11 @@ class DefaultAblyTests {
     }
 
     @Test
-    fun `enterChannelPresence - exception when channel exists`() {
+    fun `enterChannelPresence - when presence enter fails`() {
         /* Given...
          *
          * ...that calling `containsKey` on the Channels instance returns true...
-         * ...and that calling `get` on the Channels instance returns a channel...
-         * ...which, when told to enter presence, fails with an arbitrary chosen error info...
+         * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel which, when told to enter presence, fails to do so with arbitrarily-chosen error `presenceError`...
          *
          * When...
          *
@@ -837,17 +834,15 @@ class DefaultAblyTests {
          *
          * ...it calls `containsKey` on the Channels instance...
          * ...and calls `get` on the Channels instance...
-         * ...and calls `get` on the Channels instance...
          * ...and tells the channel to enter presence...
-         *
-         * ...and the call to `enterChannelPresence` (on the object under test) succeeds.
+         * ...and the call to `enterChannelPresence` (on the object under test) fails with a `ConnectionException` whose errorInformation has the same `code` and `message` as `presenceError`.
          */
 
         val presenceError = ErrorInfo(
             "example of an error message", /* arbitrarily chosen */
-            400, /* fatal status code */
             123 /* arbitrarily chosen */
         )
+
         runBlocking {
             DefaultAblyTestScenarios.EnterChannelPresence.test(
                 DefaultAblyTestScenarios.EnterChannelPresence.GivenConfig(
@@ -864,9 +859,9 @@ class DefaultAblyTests {
                             errorInformation =
                             ErrorInformation(
                                 code = presenceError.code,
-                                statusCode = presenceError.statusCode,
+                                statusCode = 0,
                                 message = presenceError.message,
-                                href = presenceError.code.toHref(),
+                                href = null,
                                 cause = null
                             )
                         )
@@ -890,9 +885,9 @@ class DefaultAblyTests {
          * ...in the following order, precisely the following things happen...
          *
          * ...it calls `containsKey` on the Channels instance...
-         *
          * ...and the call to `enterChannelPresence` (on the object under test) succeeds.
          */
+
         runBlocking {
             DefaultAblyTestScenarios.EnterChannelPresence.test(
                 DefaultAblyTestScenarios.EnterChannelPresence.GivenConfig(
