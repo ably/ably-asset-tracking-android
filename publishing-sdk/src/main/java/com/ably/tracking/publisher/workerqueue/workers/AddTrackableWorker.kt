@@ -97,7 +97,7 @@ internal class AddTrackableWorker(
      *
      * This prevents us from blocking the caller whilst we wait for Ably to connect.
      */
-    private fun addTrackableToPublisherAndNotifySuccess(properties: PublisherProperties)  {
+    private fun addTrackableToPublisherAndNotifySuccess(properties: PublisherProperties) {
         // Add the trackable and resolve resolutions
         properties.trackables.add(trackable)
         publisherInteractor.updateTrackables(properties)
@@ -162,7 +162,6 @@ internal class AddTrackableWorker(
         WorkerSpecification.ConnectionCreated(
             trackable,
             enteredPresence,
-            callbackFunction,
             presenceUpdateListener,
             channelStateChangeListener
         )

@@ -1,6 +1,5 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
-import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.publisher.PublisherProperties
@@ -9,17 +8,11 @@ import com.ably.tracking.publisher.RemoveTrackableRequestedException
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 import com.google.common.truth.Truth.assertThat
-import io.mockk.CapturingSlot
 import io.mockk.coEvery
 import io.mockk.coVerify
-import io.mockk.every
-import io.mockk.just
 import io.mockk.mockk
-import io.mockk.runs
-import io.mockk.slot
 import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
@@ -28,36 +21,14 @@ class TrackableRemovalRequestedWorkerTest {
 
     private val trackable = Trackable("test-trackable")
     private val otherTrackable = Trackable("other-trackable")
-    private val resultCallbackFunction = mockk<ResultCallbackFunction<StateFlow<TrackableState>>>(relaxed = true)
     private val ably: Ably = mockk {
         coEvery { stopConnection() } returns Result.success(Unit)
     }
 
-    private val worker = TrackableRemovalRequestedWorker(trackable, resultCallbackFunction, ably, Result.success(Unit))
+    private val worker = TrackableRemovalRequestedWorker(trackable, ably, Result.success(Unit))
 
     private val asyncWorks = mutableListOf<suspend () -> Unit>()
     private val postedWorks = mutableListOf<WorkerSpecification>()
-
-    @Test
-    fun `should always call the add trackable callback with a trackable removal requested exception`() {
-        // given
-        val initialProperties = createPublisherPropertiesWithMultipleTrackables()
-        val addTrackableResultSlot = captureResultCallbackFunctionResult()
-
-        // when
-        worker.doWork(
-            initialProperties,
-            asyncWorks.appendWork(),
-            postedWorks.appendSpecification()
-        )
-
-        // then
-        assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).isEmpty()
-
-        val addTrackableResult = addTrackableResultSlot.captured
-        assertThat(addTrackableResult.exceptionOrNull()).isInstanceOf(RemoveTrackableRequestedException::class.java)
-    }
 
     @Test
     fun `should always finish adding the trackable with a trackable removal requested exception`() {
@@ -167,13 +138,7 @@ class TrackableRemovalRequestedWorkerTest {
     }
 
     private fun prepareWorkerWithResult(result: Result<Unit>) =
-        TrackableRemovalRequestedWorker(trackable, resultCallbackFunction, ably, result)
-
-    private fun captureResultCallbackFunctionResult(): CapturingSlot<Result<StateFlow<TrackableState>>> {
-        val resultCallbackFunctionResult = slot<Result<StateFlow<TrackableState>>>()
-        every { resultCallbackFunction.invoke(capture(resultCallbackFunctionResult)) } just runs
-        return resultCallbackFunctionResult
-    }
+        TrackableRemovalRequestedWorker(trackable, ably, result)
 
     private fun createPublisherPropertiesWithMultipleTrackables(): PublisherProperties {
         val properties = createPublisherProperties()

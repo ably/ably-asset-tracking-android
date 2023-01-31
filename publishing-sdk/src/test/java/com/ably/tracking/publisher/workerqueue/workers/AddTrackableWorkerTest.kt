@@ -145,7 +145,6 @@ class AddTrackableWorkerTest {
 
             val postedWorkerSpecification = postedWorks[0] as WorkerSpecification.ConnectionCreated
             assertThat(postedWorkerSpecification.trackable).isEqualTo(trackable)
-            assertThat(postedWorkerSpecification.callbackFunction).isEqualTo(resultCallbackFunction)
         }
     }
 
@@ -170,7 +169,6 @@ class AddTrackableWorkerTest {
 
             val postedWorkerSpecification = postedWorks[0] as WorkerSpecification.ConnectionCreated
             assertThat(postedWorkerSpecification.trackable).isEqualTo(trackable)
-            assertThat(postedWorkerSpecification.callbackFunction).isEqualTo(resultCallbackFunction)
         }
     }
 

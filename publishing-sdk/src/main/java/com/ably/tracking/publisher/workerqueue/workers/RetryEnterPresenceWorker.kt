@@ -1,6 +1,5 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
-import android.util.Log
 import com.ably.tracking.ConnectionException
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.PresenceData

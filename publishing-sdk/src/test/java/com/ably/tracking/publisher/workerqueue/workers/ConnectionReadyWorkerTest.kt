@@ -1,11 +1,8 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
-import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.PresenceMessage
-import com.ably.tracking.common.ResultCallbackFunction
-import com.ably.tracking.publisher.DefaultCorePublisher
 import com.ably.tracking.publisher.PublisherInteractor
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.WorkerSpecification
@@ -18,19 +15,14 @@ import io.mockk.mockk
 import io.mockk.runs
 import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
 @ExperimentalCoroutinesApi
 class ConnectionReadyWorkerTest {
     private val trackable = Trackable("test-trackable")
-    private val resultCallbackFunction: ResultCallbackFunction<StateFlow<TrackableState>> = mockk(relaxed = true)
     private val ably: Ably = mockk {
         every { subscribeForChannelStateChange(trackable.id, any()) } just runs
-    }
-    private val hooks: DefaultCorePublisher.Hooks = mockk {
-        every { trackables } returns null
     }
     private val publisherInteractor = mockk<PublisherInteractor> {
         every { startLocationUpdates(any()) } just runs
@@ -248,7 +240,6 @@ class ConnectionReadyWorkerTest {
         val postedWork = postedWorks.first() as WorkerSpecification.TrackableRemovalRequested
 
         assertThat(postedWork.trackable).isEqualTo(trackable)
-        assertThat(postedWork.callbackFunction).isEqualTo(resultCallbackFunction)
     }
 
     @Test
@@ -299,6 +290,81 @@ class ConnectionReadyWorkerTest {
         }
     }
 
+    @Test
+    fun `should fail trackable on unexpected error`() = runTest {
+        // when
+        worker.onUnexpectedError(
+            Exception("Foo"),
+            postedWorks.appendSpecification()
+        )
+        asyncWorks.executeAll()
+
+        // then
+        assertThat(asyncWorks).hasSize(0)
+        assertThat(postedWorks).hasSize(1)
+
+        val postedWork = postedWorks.first() as WorkerSpecification.FailTrackable
+        assertThat(postedWork.trackable).isEqualTo(trackable)
+        assertThat(postedWork.errorInformation.message).isEqualTo("Unexpected error on connection ready: java.lang.Exception: Foo")
+    }
+
+    @Test
+    fun `should post trackable removal requested on unexpected async error if marked for removal`() = runTest {
+        // Given
+        val initialProperties = createPublisherProperties()
+        initialProperties.trackableRemovalGuard.markForRemoval(trackable) {}
+
+        ably.mockDisconnect(trackable.id)
+
+        worker.doWork(
+            initialProperties,
+            asyncWorks.appendWork(),
+            postedWorks.appendSpecification()
+        )
+        asyncWorks.executeAll()
+
+        // when
+        worker.onUnexpectedAsyncError(
+            Exception("Foo"),
+            postedWorks.appendSpecification()
+        )
+
+        // then
+        assertThat(asyncWorks).hasSize(1)
+        assertThat(postedWorks).hasSize(2)
+
+        val postedWork = postedWorks.first() as WorkerSpecification.TrackableRemovalRequested
+        assertThat(postedWork.trackable).isEqualTo(trackable)
+        val postedWork2 = postedWorks.get(1) as WorkerSpecification.TrackableRemovalRequested
+        assertThat(postedWork2.trackable).isEqualTo(trackable)
+    }
+
+    @Test
+    fun `should post failed trackable if async error and not removal requested`() = runTest {
+        // Given
+        val initialProperties = createPublisherProperties()
+
+        worker.doWork(
+            initialProperties,
+            asyncWorks.appendWork(),
+            postedWorks.appendSpecification()
+        )
+        asyncWorks.executeAll()
+
+        // when
+        worker.onUnexpectedAsyncError(
+            Exception("Foo"),
+            postedWorks.appendSpecification()
+        )
+
+        // then
+        assertThat(asyncWorks).hasSize(0)
+        assertThat(postedWorks).hasSize(2)
+
+        val postedWork = postedWorks[1] as WorkerSpecification.FailTrackable
+        assertThat(postedWork.trackable).isEqualTo(trackable)
+    }
+
     private fun createDefaultPublisherProperties(trackable: Trackable) = createPublisherProperties().also {
         it.trackableEnteredPresenceFlags[trackable.id] = true
         it.trackables.add(trackable)
@@ -307,9 +373,7 @@ class ConnectionReadyWorkerTest {
     private fun createWorker(isSubscribedToPresence: Boolean) =
         ConnectionReadyWorker(
             trackable,
-            resultCallbackFunction,
             ably,
-            hooks,
             publisherInteractor,
             connectionStateChangeListener,
             isSubscribedToPresence,

@@ -1,9 +1,9 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
+import com.ably.tracking.ErrorInformation
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.workerqueue.Worker
-import com.ably.tracking.publisher.DefaultCorePublisher
 import com.ably.tracking.publisher.PublisherInteractor
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.Trackable
@@ -11,9 +11,7 @@ import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 
 internal class ConnectionReadyWorker(
     private val trackable: Trackable,
-    private val callbackFunction: AddTrackableCallbackFunction,
     private val ably: Ably,
-    private val hooks: DefaultCorePublisher.Hooks,
     private val publisherInteractor: PublisherInteractor,
     private val channelStateChangeListener: ((connectionStateChange: ConnectionStateChange) -> Unit),
     private val isSubscribedToPresence: Boolean,
@@ -56,16 +54,12 @@ internal class ConnectionReadyWorker(
         return properties
     }
 
-    override fun doWhenStopped(exception: Exception) {
-        callbackFunction(Result.failure(exception))
-    }
-
     private suspend fun onTrackableRemovalRequested(
         properties: PublisherProperties,
         postWork: (WorkerSpecification) -> Unit
     ) {
         ably.disconnect(trackable.id, properties.presenceData)
-        postWork(WorkerSpecification.TrackableRemovalRequested(trackable, callbackFunction, Result.success(Unit)))
+        postWork(WorkerSpecification.TrackableRemovalRequested(trackable, Result.success(Unit)))
     }
 
     private fun subscribeForChannelStateChanges() {
@@ -80,17 +74,32 @@ internal class ConnectionReadyWorker(
         }
     }
 
-    override fun onUnexpectedError(exception: Exception, postWork: (WorkerSpecification) -> Unit) {
-        callbackFunction(Result.failure(exception))
-    }
-
     override fun onUnexpectedAsyncError(exception: Exception, postWork: (WorkerSpecification) -> Unit) {
         if (isBeingRemoved) {
             postWork(
-                WorkerSpecification.TrackableRemovalRequested(trackable, callbackFunction, Result.failure(exception))
+                WorkerSpecification.TrackableRemovalRequested(trackable, Result.failure(exception))
             )
-        } else {
-            callbackFunction(Result.failure(exception))
+            return
         }
+
+        postWork(
+            WorkerSpecification.FailTrackable(
+                trackable,
+                ErrorInformation("Unexpected async error on connection ready: $exception")
+            )
+        )
+    }
+
+    override fun doWhenStopped(exception: Exception) {
+        // No op
+    }
+
+    override fun onUnexpectedError(exception: Exception, postWork: (WorkerSpecification) -> Unit) {
+        postWork(
+            WorkerSpecification.FailTrackable(
+                trackable,
+                ErrorInformation("Unexpected error on connection ready: $exception")
+            )
+        )
     }
 }

@@ -90,7 +90,6 @@ internal class WorkerFactory(
             is WorkerSpecification.ConnectionCreated -> ConnectionCreatedWorker(
                 workerSpecification.trackable,
                 workerSpecification.enteredPresence,
-                workerSpecification.callbackFunction,
                 ably,
                 logHandler,
                 workerSpecification.presenceUpdateListener,
@@ -112,9 +111,7 @@ internal class WorkerFactory(
             )
             is WorkerSpecification.ConnectionReady -> ConnectionReadyWorker(
                 workerSpecification.trackable,
-                workerSpecification.callbackFunction,
                 ably,
-                hooks,
                 publisherInteractor,
                 workerSpecification.channelStateChangeListener,
                 workerSpecification.isSubscribedToPresence,
@@ -139,7 +136,6 @@ internal class WorkerFactory(
             )
             is WorkerSpecification.TrackableRemovalRequested -> TrackableRemovalRequestedWorker(
                 workerSpecification.trackable,
-                workerSpecification.callbackFunction,
                 ably,
                 workerSpecification.result,
             )
@@ -266,7 +262,6 @@ internal sealed class WorkerSpecification {
     data class ConnectionCreated(
         val trackable: Trackable,
         val enteredPresence: Boolean,
-        val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>,
         val presenceUpdateListener: ((presenceMessage: com.ably.tracking.common.PresenceMessage) -> Unit),
         val channelStateChangeListener: ((connectionStateChange: ConnectionStateChange) -> Unit),
     ) : WorkerSpecification()
@@ -286,7 +281,6 @@ internal sealed class WorkerSpecification {
 
     data class ConnectionReady(
         val trackable: Trackable,
-        val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>,
         val channelStateChangeListener: ((connectionStateChange: ConnectionStateChange) -> Unit),
         val presenceUpdateListener: ((presenceMessage: com.ably.tracking.common.PresenceMessage) -> Unit),
         val isSubscribedToPresence: Boolean,
@@ -366,7 +360,6 @@ internal sealed class WorkerSpecification {
 
     data class TrackableRemovalRequested(
         val trackable: Trackable,
-        val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>,
         val result: Result<Unit>,
     ) : WorkerSpecification()
 
