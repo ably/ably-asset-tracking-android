@@ -1649,9 +1649,7 @@ class DefaultAblyTests {
                     presenceLeaveBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Success
                 ),
                 DefaultAblyTestScenarios.Disconnect.ThenConfig(
-                    verifyChannelsGet = true,
-                    verifyPresenceLeave = true,
-                    verifyChannelUnsubscribeAndRelease = true,
+                    verifyChannelTeardown = true
                 )
             )
         }
@@ -1695,9 +1693,7 @@ class DefaultAblyTests {
                     )
                 ),
                 DefaultAblyTestScenarios.Disconnect.ThenConfig(
-                    verifyChannelsGet = true,
-                    verifyPresenceLeave = true,
-                    verifyChannelUnsubscribeAndRelease = true,
+                    verifyChannelTeardown = true
                 )
             )
         }
@@ -1735,9 +1731,7 @@ class DefaultAblyTests {
                     presenceLeaveBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.DoesNotComplete
                 ),
                 DefaultAblyTestScenarios.Disconnect.ThenConfig(
-                    verifyChannelsGet = true,
-                    verifyPresenceLeave = true,
-                    verifyChannelUnsubscribeAndRelease = true,
+                    verifyChannelTeardown = true,
                 )
             )
         }
@@ -1767,9 +1761,7 @@ class DefaultAblyTests {
                     presenceLeaveBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.NotMocked
                 ),
                 DefaultAblyTestScenarios.Disconnect.ThenConfig(
-                    verifyChannelsGet = false,
-                    verifyPresenceLeave = false,
-                    verifyChannelUnsubscribeAndRelease = false,
+                    verifyChannelTeardown = false,
                 )
             )
         }

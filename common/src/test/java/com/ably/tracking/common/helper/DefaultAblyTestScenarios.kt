@@ -992,15 +992,10 @@ class DefaultAblyTestScenarios {
          * This class provides properties for configuring the "Then..." part of the parameterised test case described by [Companion.test]. See that method’s documentation for information about the effect of this class’s properties.
          */
         class ThenConfig(
-            val verifyChannelsGet: Boolean,
             /**
              * If [GivenConfig.mockChannelsGet] is `false` then this must be `false`.
              */
-            val verifyPresenceLeave: Boolean,
-            /**
-             * If [GivenConfig.mockChannelsGet] is `false` then this must be `false`.
-             */
-            val verifyChannelUnsubscribeAndRelease: Boolean,
+            val verifyChannelTeardown: Boolean,
         ) {
             /**
              * The disconnect should always be successful.
@@ -1015,11 +1010,8 @@ class DefaultAblyTestScenarios {
              */
             fun validate(givenConfig: GivenConfig) {
                 if (!givenConfig.mockChannelsGet) {
-                    if (verifyPresenceLeave) {
-                        throw InvalidTestConfigurationException("verifyPresenceLeave must be false when mockChannelsGet is false")
-                    }
-                    if (verifyChannelUnsubscribeAndRelease) {
-                        throw InvalidTestConfigurationException("verifyChannelUnsubscribeAndRelease must be false when mockChannelsGet is false")
+                    if (verifyChannelTeardown) {
+                        throw InvalidTestConfigurationException("verifyChannelTeardown must be false when mockChannelsGet is false")
                     }
                 }
             }
@@ -1058,15 +1050,9 @@ class DefaultAblyTestScenarios {
          *
          * ...it calls `containsKey` on the Channels instance...
          *
-         * if ${thenConfig.verifyChannelsGet} {
+         * if ${thenConfig.verifyChannelTeardown} {
          * ...and calls `get` on the Channels instance...
-         * }
-         *
-         * if ${thenConfig.verifyPresenceLeave} {
          * ...and tells the channel to leave presence...
-         * }
-         *
-         * if ${thenConfig.verifyChannelUnsubscribeAndRelease} {
          * ...and calls `unsubscribe` on the channel and on its Presence instance...
          * ...and fetches the channel’s name and calls `release` on the Channels instance...
          * }
@@ -1144,28 +1130,18 @@ class DefaultAblyTestScenarios {
                     // ...it calls `containsKey` on the Channels instance...
                     testEnvironment.channelsMock.containsKey(configuredChannel.channelName)
 
-                    if (thenConfig.verifyChannelsGet) {
-                        /* if ${thenConfig.verifyChannelsGet} {
+                    if (thenConfig.verifyChannelTeardown) {
+                        /* if ${thenConfig.verifyChannelTeardown} {
                          * ...and calls `get` on the Channels instance...
-                         * }
-                         */
-                        testEnvironment.channelsMock.get(configuredChannel.channelName)
-                    }
-
-                    if (thenConfig.verifyPresenceLeave) {
-                        /* if ${thenConfig.verifyPresenceLeave} {
                          * ...and tells the channel to leave presence...
-                         * }
-                         */
-                        configuredChannel.presenceMock.leave(any(), any())
-                    }
-
-                    if (thenConfig.verifyChannelUnsubscribeAndRelease) {
-                        /* if ${thenConfig.verifyChannelUnsubscribeAndRelease} {
                          * ...and calls `unsubscribe` on the channel and on its Presence instance...
                          * ...and fetches the channel’s name and calls `release` on the Channels instance...
                          * }
                          */
+                        testEnvironment.channelsMock.get(configuredChannel.channelName)
+
+                        configuredChannel.presenceMock.leave(any(), any())
+
                         configuredChannel.channelMock.unsubscribe()
                         configuredChannel.presenceMock.unsubscribe()
                         configuredChannel.channelMock.name
