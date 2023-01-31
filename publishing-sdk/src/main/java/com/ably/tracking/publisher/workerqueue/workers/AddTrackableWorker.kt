@@ -1,6 +1,5 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
-import android.util.Log
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ConnectionStateChange
@@ -86,7 +85,6 @@ internal class AddTrackableWorker(
 
                 // Create the ably connection as required
                 doAsyncWork {
-                    Log.e("WORKER", "ADD TRACKABLE - Async ${trackable.id}")
                     createConnection(postWork, isAddingTheFirstTrackable, properties.presenceData)
                 }
             }
@@ -126,10 +124,8 @@ internal class AddTrackableWorker(
         isAddingTheFirstTrackable: Boolean,
         presenceData: PresenceData
     ) {
-        Log.e("WORKER", "ADD TRACKABLE - Create Connection ${trackable.id}")
         if (isAddingTheFirstTrackable) {
             isConnectedToAbly = false
-            Log.e("WORKER", "ADD TRACKABLE - Start Connection ${trackable.id}")
             val startAblyConnectionResult = ably.startConnection()
 
             if (startAblyConnectionResult.isFatalAblyFailure()) {
@@ -147,8 +143,6 @@ internal class AddTrackableWorker(
             presenceData = presenceData,
             willPublish = true,
         )
-
-        Log.e("WORKER", "ADD TRACKABLE - Create Connection ${trackable.id} connectResult $connectResult")
 
         if (connectResult.isFatalAblyFailure()) {
             postWork(

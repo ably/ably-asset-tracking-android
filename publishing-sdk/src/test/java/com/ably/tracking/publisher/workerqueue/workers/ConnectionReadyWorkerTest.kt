@@ -34,9 +34,7 @@ class ConnectionReadyWorkerTest {
     }
     private val publisherInteractor = mockk<PublisherInteractor> {
         every { startLocationUpdates(any()) } just runs
-        every { updateTrackables(any()) } just runs
-        every { updateTrackableStateFlows(any()) } just runs
-        every { resolveResolution(any(), any()) } just runs
+        every { updateTrackableState(any(), trackable.id) } just runs
     }
     private val connectionStateChangeListener: (ConnectionStateChange) -> Unit = {}
     private val presenceUpdateListener: (PresenceMessage) -> Unit = {}
@@ -62,6 +60,10 @@ class ConnectionReadyWorkerTest {
         // then
         assertThat(asyncWorks).isEmpty()
         assertThat(postedWorks).isEmpty()
+
+        verify(exactly = 1) {
+            publisherInteractor.updateTrackableState(initialProperties, trackable.id)
+        }
     }
 
     @Test
@@ -81,6 +83,10 @@ class ConnectionReadyWorkerTest {
         // then
         assertThat(asyncWorks).isEmpty()
         assertThat(postedWorks).hasSize(1)
+
+        verify(exactly = 1) {
+            publisherInteractor.updateTrackableState(initialProperties, trackable.id)
+        }
 
         val postedWork = postedWorks.first() as WorkerSpecification.RetrySubscribeToPresence
         assertThat(postedWork.trackable).isEqualTo(trackable)
@@ -105,6 +111,10 @@ class ConnectionReadyWorkerTest {
         assertThat(asyncWorks).isEmpty()
         assertThat(postedWorks).hasSize(1)
 
+        verify(exactly = 1) {
+            publisherInteractor.updateTrackableState(initialProperties, trackable.id)
+        }
+
         val postedWork = postedWorks.first() as WorkerSpecification.RetryEnterPresence
         assertThat(postedWork.trackable).isEqualTo(trackable)
     }
@@ -124,6 +134,10 @@ class ConnectionReadyWorkerTest {
         // then
         assertThat(asyncWorks).isEmpty()
         assertThat(postedWorks).isEmpty()
+
+        verify(exactly = 1) {
+            publisherInteractor.updateTrackableState(initialProperties, trackable.id)
+        }
 
         // then
         verify(exactly = 1) {
@@ -149,6 +163,11 @@ class ConnectionReadyWorkerTest {
         assertThat(postedWorks).isEmpty()
 
         verify(exactly = 1) {
+            publisherInteractor.updateTrackableState(initialProperties, trackable.id)
+        }
+
+        verify(exactly = 1) {
+            publisherInteractor.updateTrackableState(initialProperties, trackable.id)
             publisherInteractor.startLocationUpdates(any())
         }
     }
@@ -170,169 +189,13 @@ class ConnectionReadyWorkerTest {
         assertThat(asyncWorks).isEmpty()
         assertThat(postedWorks).isEmpty()
 
+        verify(exactly = 1) {
+            publisherInteractor.updateTrackableState(initialProperties, trackable.id)
+        }
+
         verify(exactly = 0) {
             publisherInteractor.startLocationUpdates(any())
         }
-    }
-
-    @Test
-    fun `should add the trackable to the tracked trackables when executing normally`() {
-        // given
-        val initialProperties = createDefaultPublisherProperties(trackable)
-
-        // when
-        val updatedProperties = worker.doWork(
-            initialProperties,
-            asyncWorks.appendWork(),
-            postedWorks.appendSpecification()
-        )
-
-        // then
-        assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).isEmpty()
-
-        assertThat(updatedProperties.trackables).contains(trackable)
-    }
-
-    @Test
-    fun `should update the tracked trackables when executing normally`() {
-        // given
-        val initialProperties = createDefaultPublisherProperties(trackable)
-
-        // when
-        worker.doWork(
-            initialProperties,
-            asyncWorks.appendWork(),
-            postedWorks.appendSpecification()
-        )
-
-        // then
-        assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).isEmpty()
-
-        verify(exactly = 1) {
-            publisherInteractor.updateTrackables(any())
-        }
-    }
-
-    @Test
-    fun `should calculate a resolution for the added trackable when executing normally`() {
-        // given
-        val initialProperties = createDefaultPublisherProperties(trackable)
-
-        // when
-        worker.doWork(
-            initialProperties,
-            asyncWorks.appendWork(),
-            postedWorks.appendSpecification()
-        )
-
-        // then
-        assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).isEmpty()
-
-        verify(exactly = 1) {
-            publisherInteractor.resolveResolution(trackable, any())
-        }
-    }
-
-    @Test
-    fun `should set a state flow for the trackable when executing normally`() {
-        // given
-        val initialProperties = createDefaultPublisherProperties(trackable)
-
-        // when
-        val updatedProperties = worker.doWork(
-            initialProperties,
-            asyncWorks.appendWork(),
-            postedWorks.appendSpecification()
-        )
-
-        // then
-        assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).isEmpty()
-
-        assertThat(updatedProperties.trackableStateFlows[trackable.id]).isNotNull()
-    }
-
-    @Test
-    fun `should update state flows when executing normally`() {
-        // given
-        val initialProperties = createDefaultPublisherProperties(trackable)
-
-        // when
-        worker.doWork(
-            initialProperties,
-            asyncWorks.appendWork(),
-            postedWorks.appendSpecification()
-        )
-
-        // then
-        assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).isEmpty()
-
-        verify(exactly = 1) {
-            publisherInteractor.updateTrackableStateFlows(any())
-        }
-    }
-
-    @Test
-    fun `should set the initial trackable state to offline when executing normally`() {
-        // given
-        val initialProperties = createDefaultPublisherProperties(trackable)
-
-        // when
-        val updatedProperties = worker.doWork(
-            initialProperties,
-            asyncWorks.appendWork(),
-            postedWorks.appendSpecification()
-        )
-
-        // then
-        assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).isEmpty()
-
-        assertThat(updatedProperties.trackableStates[trackable.id]).isInstanceOf(TrackableState.Offline::class.java)
-    }
-
-    @Test
-    fun `should call the adding trackable callback with a success when executing normally`() {
-        // given
-        val initialProperties = createDefaultPublisherProperties(trackable)
-
-        // when
-        worker.doWork(
-            initialProperties,
-            asyncWorks.appendWork(),
-            postedWorks.appendSpecification()
-        )
-
-        // then
-        assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).isEmpty()
-
-        verify { resultCallbackFunction.invoke(match { it.isSuccess }) }
-    }
-
-    @Test
-    fun `should finish adding the trackable with a success when executing normally`() {
-        // given
-        val initialProperties = createDefaultPublisherProperties(trackable)
-        val addTrackableCallbackFunction: AddTrackableCallbackFunction = mockk(relaxed = true)
-        initialProperties.duplicateTrackableGuard.saveDuplicateAddHandler(trackable, addTrackableCallbackFunction)
-
-        // when
-        worker.doWork(
-            initialProperties,
-            asyncWorks.appendWork(),
-            postedWorks.appendSpecification()
-        )
-
-        // then
-        assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).isEmpty()
-
-        verify { addTrackableCallbackFunction.invoke(match { it.isSuccess }) }
     }
 
     @Test
@@ -351,6 +214,10 @@ class ConnectionReadyWorkerTest {
         // then
         assertThat(asyncWorks).hasSize(1)
         assertThat(postedWorks).isEmpty()
+
+        verify(exactly = 0) {
+            publisherInteractor.updateTrackableState(initialProperties, trackable.id)
+        }
     }
 
     @Test
@@ -373,6 +240,10 @@ class ConnectionReadyWorkerTest {
         // then
         assertThat(asyncWorks).hasSize(1)
         assertThat(postedWorks).hasSize(1)
+
+        verify(exactly = 0) {
+            publisherInteractor.updateTrackableState(initialProperties, trackable.id)
+        }
 
         val postedWork = postedWorks.first() as WorkerSpecification.TrackableRemovalRequested
 
@@ -413,7 +284,7 @@ class ConnectionReadyWorkerTest {
         ably.mockDisconnect(trackable.id)
 
         // when
-        val updatedProperties = worker.doWork(
+        worker.doWork(
             initialProperties,
             asyncWorks.appendWork(),
             postedWorks.appendSpecification()
@@ -422,23 +293,15 @@ class ConnectionReadyWorkerTest {
         asyncWorks.executeAll()
 
         // then
-        assertThat(updatedProperties.trackables).doesNotContain(trackable)
-        assertThat(updatedProperties.trackableStates[trackable.id]).isNull()
-        assertThat(updatedProperties.trackableStateFlows[trackable.id]).isNull()
-        assertThat(updatedProperties.duplicateTrackableGuard.isCurrentlyAddingTrackable(trackable)).isTrue()
-
         verify(exactly = 0) {
-            ably.subscribeForChannelStateChange(trackable.id, any())
             publisherInteractor.startLocationUpdates(any())
-            publisherInteractor.updateTrackables(any())
-            publisherInteractor.resolveResolution(trackable, any())
-            publisherInteractor.updateTrackableStateFlows(any())
-            resultCallbackFunction.invoke(any())
+            publisherInteractor.updateTrackableState(initialProperties, trackable.id)
         }
     }
 
     private fun createDefaultPublisherProperties(trackable: Trackable) = createPublisherProperties().also {
         it.trackableEnteredPresenceFlags[trackable.id] = true
+        it.trackables.add(trackable)
     }
 
     private fun createWorker(isSubscribedToPresence: Boolean) =

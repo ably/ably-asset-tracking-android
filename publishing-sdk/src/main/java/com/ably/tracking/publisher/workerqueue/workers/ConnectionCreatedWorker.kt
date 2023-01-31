@@ -1,6 +1,5 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
-import android.util.Log
 import com.ably.tracking.ConnectionException
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ConnectionStateChange
@@ -39,7 +38,6 @@ internal class ConnectionCreatedWorker(
         doAsyncWork: (suspend () -> Unit) -> Unit,
         postWork: (WorkerSpecification) -> Unit
     ): PublisherProperties {
-        Log.e("WORKER", "CONNECTION CREATED ${trackable.id}")
         if (properties.state == PublisherState.CONNECTING) {
             // If we've made up this far it means the [AddTrackableWorker] succeeded and there's a working Ably connection
             properties.state = PublisherState.CONNECTED
@@ -59,10 +57,8 @@ internal class ConnectionCreatedWorker(
         }
 
         doAsyncWork {
-            Log.e("WORKER", "CONNECTION CREATED Async ${trackable.id}")
             try {
                 val subscribeToPresenceResult = subscribeToPresenceMessages()
-                Log.e("WORKER", "CONNECTION CREATED Subscribed To Presence ${trackable.id}")
                 subscribeToPresenceResult.getOrThrow()
                 postWork(
                     createConnectionReadyWorkerSpecification(

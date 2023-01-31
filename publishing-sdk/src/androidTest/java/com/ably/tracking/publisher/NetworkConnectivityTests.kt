@@ -93,9 +93,9 @@ class NetworkConnectivityTests(private val testFault: Fault) {
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
         fun data() = listOf(
-            //arrayOf(NullTransportFault.fault),
+            arrayOf(NullTransportFault.fault),
             arrayOf(NullApplicationLayerFault.fault),
-/*            arrayOf(TcpConnectionRefused.fault),
+            arrayOf(TcpConnectionRefused.fault),
             arrayOf(TcpConnectionUnresponsive.fault),
             arrayOf(AttachUnresponsive.fault),
             arrayOf(DetachUnresponsive.fault),
@@ -104,7 +104,7 @@ class NetworkConnectivityTests(private val testFault: Fault) {
             arrayOf(UpdateFailedWithNonfatalNack.fault),
             arrayOf(DisconnectAndSuspend.fault),
             arrayOf(ReenterOnResumeFailed.fault),
-            arrayOf(EnterUnresponsive.fault),*/
+            arrayOf(EnterUnresponsive.fault),
         )
     }
 
