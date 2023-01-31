@@ -51,7 +51,7 @@ allprojects {
 
     // version MUST conform to the Semantic Versioning Specification (https://semver.org/) version 2.0.0
     // on incrementing this value, ensure to also increment versionCode in android defaultConfig (also in this file)
-    version = '1.6.0-beta.1'
+    version = '1.6.0'
 
     // Values used to publish the SDK to maven repositories.
     ext {
@@ -143,7 +143,7 @@ subprojects {
                 // projects in this repository. Therefore, this same version number is used for SDK and
                 // example app projects alike.
                 // - versionCode MUST be incremented by 1 for each release from the main branch
-                versionCode 36
+                versionCode 37
                 versionName version
 
                 testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
