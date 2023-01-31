@@ -651,7 +651,6 @@ class EnterFailedWithNonfatalNack(apiKey: String) : PresenceNackFault(
         }
     }
 
-
     // Can probably be removed once skipTest issues are resolved
     override val skipSubscriberTest = true
 
