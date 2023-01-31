@@ -188,7 +188,7 @@ class TcpConnectionUnresponsive(apiKey: String) : TransportLayerFault(apiKey) {
      * We will re-enable this test when the following have been addressed:
      * - https://github.com/ably/ably-asset-tracking-android/issues/948
      */
-    override val skipTest = true
+    override val skipSubscriberTest = true
 
     companion object {
         val fault = object : Fault() {
@@ -201,9 +201,6 @@ class TcpConnectionUnresponsive(apiKey: String) : TransportLayerFault(apiKey) {
         offlineWithinMillis = 120_000,
         onlineWithinMillis = 60_000
     )
-
-    // May be able to be removed once the issues surrounding skipTest are resolved
-    override val skipSubscriberTest = true
 
     override fun enable() {
         tcpProxy.isForwarding = false
@@ -391,8 +388,6 @@ class DetachUnresponsive(apiKey: String) : DropAction(
     action = Message.Action.DETACH,
     dropLimit = 1,
 ) {
-    override val skipSubscriberTest = true
-
     companion object {
         val fault = object : Fault() {
             override fun simulate(apiKey: String) = DetachUnresponsive(apiKey)
@@ -703,9 +698,6 @@ class ReenterOnResumeFailed(apiKey: String) : ApplicationLayerFault(apiKey) {
             override val name = "ReenterOnResumeFailed"
         }
     }
-
-    // May be able to be removed once the issues surrounding skipTest are resolved
-    override val skipSubscriberTest = true
 
     private var state = State.DisconnectAfterPresence
     private var presenceEnterSerial: Int? = null
