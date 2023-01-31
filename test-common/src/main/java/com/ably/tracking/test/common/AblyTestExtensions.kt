@@ -38,17 +38,17 @@ fun Ably.mockConnectSuccess(trackableId: String) {
     } returns Result.success(Unit)
 }
 
-fun Ably.mockConnectFailure(trackableId: String) {
+fun Ably.mockConnectFailure(trackableId: String, isFatal: Boolean = false) {
     val callbackSlot = slot<(Result<Unit>) -> Unit>()
     every { connect(trackableId, any(), any(), any(), any(), capture(callbackSlot)) } answers {
-        callbackSlot.captured(Result.failure(anyConnectionException()))
+        callbackSlot.captured(Result.failure(anyConnectionException(isFatal)))
     }
     coEvery {
         connect(trackableId, any(), any(), any(), any())
-    } returns Result.failure(anyConnectionException())
+    } returns Result.failure(anyConnectionException(isFatal))
 }
 
-fun Ably.mockConnectFailureThenSuccess(trackableId: String, callbackDelayInMilliseconds: Long? = null) {
+fun Ably.mockConnectFailureThenSuccess(trackableId: String, isFatal: Boolean = false, callbackDelayInMilliseconds: Long? = null) {
     var failed = false
     coEvery {
         connect(trackableId, any(), any(), any(), any())
@@ -56,11 +56,23 @@ fun Ably.mockConnectFailureThenSuccess(trackableId: String, callbackDelayInMilli
         callbackDelayInMilliseconds?.let { delay(it) }
         if (!failed) {
             failed = true
-            Result.failure(anyConnectionException())
+            Result.failure(anyConnectionException(isFatal = isFatal))
         } else {
             Result.success(Unit)
         }
     }
+}
+
+fun Ably.mockEnterPresenceSuccess(trackableId: String) {
+    coEvery {
+        enterChannelPresence(trackableId, any())
+    } returns Result.success(Unit)
+}
+
+fun Ably.mockEnterPresenceFailure(trackableId: String, isFatal: Boolean = false) {
+    coEvery {
+        enterChannelPresence(trackableId, any())
+    } returns Result.failure(anyConnectionException(isFatal))
 }
 
 fun Ably.mockSubscribeToPresenceSuccess(
@@ -157,4 +169,18 @@ fun Ably.mockCloseSuccess() {
     coEvery { close(any()) } returns Unit
 }
 
-private fun anyConnectionException() = ConnectionException(ErrorInformation("Test"))
+private fun anyConnectionException(isFatal: Boolean = false) = ConnectionException(
+    ErrorInformation(
+        code = 0,
+        statusCode = getStatusCode(isFatal),
+        message = "Test",
+        href = null,
+        cause = null
+    )
+)
+private fun getStatusCode(isFatal: Boolean) =
+    if (isFatal) {
+        400
+    } else {
+        0
+    }

@@ -475,6 +475,166 @@ class DefaultAblyTestScenarios {
     }
 
     /**
+     * Provides test scenarios for [DefaultAbly.enterChannelPresence]. See the [Companion.test] method.
+     */
+    class EnterChannelPresence {
+        /**
+         * This class provides properties for configuring the "Given..." part of the parameterised test case described by [Companion.test]. See that method’s documentation for information about the effect of this class’s properties.
+         */
+        class GivenConfig(
+            val channelsContainsKey: Boolean,
+            val presenceEnterBehaviour: GivenTypes.CompletionListenerMockBehaviour
+        )
+
+        /**
+         * This class provides properties for configuring the "Then..." part of the parameterised test case described by [Companion.test]. See that method’s documentation for information about the effect of this class’s properties.
+         */
+        class ThenConfig(
+            val verifyChannelsGet: Boolean,
+            val verifyPresenceEnter: Boolean,
+            val resultOfEnterChannelPresenceCallOnObjectUnderTest: ThenTypes.ExpectedAsyncResult
+        )
+
+        companion object {
+            /**
+             * Implements the following parameterised test case for [DefaultAbly.enterChannelPresence]:
+             *
+             * ```text
+             * Given...
+             *
+             * ...that calling `containsKey` on the Channels instance returns ${givenConfig.channelsContainsKey}...
+             * ...and that calling `get` on the Channels instance returns a channel...
+             *
+             * when ${givenConfig.presenceEnterBehaviour} is Success {
+             * ...[and] which, when told to enter presence, does so successfully...
+             * }
+             *
+             * when ${givenConfig.presenceEnterBehaviour} is Failure {
+             * ...[and] which, when told to enter presence, fails to do so with error ${givenConfig.presenceEnterBehaviour.errorInfo}...
+             * }
+             *
+             * when ${givenConfig.presenceEnterBehaviour} is DoesNotComplete {
+             * ...[and] which, when told to enter presence, never finishes doing so...
+             * }
+             *
+             * When...
+             *
+             * ...we call `enterChannelPresence` on the object under test,
+             *
+             * Then...
+             * ...in the following order, precisely the following things happen...
+             *
+             * ...it calls `containsKey` on the Channels instance...
+             * ...and calls `get` (the overload described by ${givenConfig.channelsGetOverload}) on the Channels instance...
+             *
+             *  if ${thenConfig.verifyChannelsGet} {
+             * ...and calls `get` on the Channels instance...
+             * }
+             *
+             * if ${thenConfig.verifyPresenceEnter} {
+             * ...and tells the channel to enter presence...
+             * }
+             *
+             * when ${thenConfig.resultOfConnectCallOnObjectUnderTest} is Terminates and ${thenConfig.resultOfConnectCallOnObjectUnderTest.expectedResult} is Success {
+             * ...and the call to `enterChannelPresence` (on the object under test) succeeds.
+             * }
+             *
+             * when ${thenConfig.resultOfConnectCallOnObjectUnderTest} is Terminates and ${thenConfig.resultOfConnectCallOnObjectUnderTest.expectedResult} is FailureWithConnectionException {
+             * ...and the call to `enterChannelPresence` (on the object under test) fails with a ConnectionException whose errorInformation is equal to ${thenConfig.resultOfConnectCallOnObjectUnderTest.errorInformation}.
+             * }
+             * ```
+             *
+             * @param givenConfig Parameters for the "Given..." part of the test case.
+             * @param thenConfig Parameters for the "Then..." part of the test case.
+             */
+            suspend fun test(
+                givenConfig: GivenConfig,
+                thenConfig: ThenConfig
+            ) {
+                // Given...
+                // ...that calling `containsKey` on the Channels instance returns ${givenConfig.channelsContainsKey}...
+                // ...and that calling `get` (the overload described by ${givenConfig.channelsGetOverload}) on the Channels instance returns a channel in the ${givenConfig.channelState} state...
+                val testEnvironment = DefaultAblyTestEnvironment.create(numberOfTrackables = 1)
+                val configuredChannel = testEnvironment.configuredChannels[0]
+                testEnvironment.mockChannelsContainsKey(
+                    key = configuredChannel.channelName,
+                    result = givenConfig.channelsContainsKey
+                )
+                testEnvironment.mockChannelsGet(DefaultAblyTestEnvironment.ChannelsGetOverload.WITHOUT_CHANNEL_OPTIONS)
+
+                when (val givenPresenceEnterBehaviour = givenConfig.presenceEnterBehaviour) {
+                    is GivenTypes.CompletionListenerMockBehaviour.NotMocked -> {}
+                    /* when ${givenConfig.presenceEnterBehaviour} is Success {
+                     * ...[and] which, when told to enter presence, does so successfully...
+                     * }
+                     */
+                    is GivenTypes.CompletionListenerMockBehaviour.Success -> {
+                        configuredChannel.mockSuccessfulPresenceEnter()
+                    }
+                    /* when ${givenConfig.presenceEnterBehaviour} is Failure {
+                     * ...[and] which, when told to enter presence, fails to do so with error ${givenConfig.presenceEnterBehaviour.errorInfo}...
+                     * }
+                     */
+                    is GivenTypes.CompletionListenerMockBehaviour.Failure -> {
+                        configuredChannel.mockFailedPresenceEnter(givenPresenceEnterBehaviour.errorInfo)
+                    }
+                    /* when ${givenConfig.presenceEnterBehaviour} is DoesNotComplete {
+                     * ...[and] which, when told to enter presence, never finishes doing so...
+                     * }
+                     */
+                    is GivenTypes.CompletionListenerMockBehaviour.DoesNotComplete -> {
+                        configuredChannel.mockNonCompletingPresenceEnter()
+                    }
+                }
+
+                // When...
+
+                val result = executeForVerifying(thenConfig.resultOfEnterChannelPresenceCallOnObjectUnderTest) {
+                    // ...we call `connect` on the object under test,
+                    testEnvironment.objectUnderTest.enterChannelPresence(
+                        configuredChannel.trackableId,
+                        PresenceData("")
+                    )
+                }
+
+                // Then...
+                // ...in the following order, precisely the following things happen...
+                verifyOrder {
+                    // ...it calls `containsKey` on the Channels instance...
+                    testEnvironment.channelsMock.containsKey(configuredChannel.channelName)
+
+                    if (thenConfig.verifyChannelsGet) {
+                        /* if ${thenConfig.verifyChannelsGet} {
+                         * ...and calls `get` on the Channels instance...
+                         * }
+                         */
+                        testEnvironment.channelsMock.get(configuredChannel.channelName)
+                    }
+
+                    if (thenConfig.verifyPresenceEnter) {
+                        /* if ${thenConfig.verifyPresenceEnter} {
+                         * ...and tells the channel to enter presence...
+                         * }
+                         */
+                        configuredChannel.presenceMock.enter(any(), any())
+                    }
+                }
+
+                /* when ${thenConfig.resultOfEnterChannelPresenceCallOnObjectUnderTest} is Terminates and ${thenConfig.resultOfConnectCallOnObjectUnderTest.expectedResult} is Success {
+                 * ...and the call to `enterChannelPresence` (on the object under test) succeeds.
+                 * }
+                 *
+                 * when ${thenConfig.resultOfEnterChannelPresenceCallOnObjectUnderTest} is Terminates and ${thenConfig.resultOfConnectCallOnObjectUnderTest.expectedResult} is FailureWithConnectionException {
+                 * ...and the call to `enterChannelPresence` (on the object under test) fails with a ConnectionException whose errorInformation is equal to ${thenConfig.resultOfConnectCallOnObjectUnderTest.errorInformation}.
+                 * }
+                 */
+                thenConfig.resultOfEnterChannelPresenceCallOnObjectUnderTest.verify(result)
+
+                confirmVerified(*testEnvironment.allMocks)
+            }
+        }
+    }
+    /**
      * Provides test scenarios for [DefaultAbly.updatePresenceData]. See the [Companion.test] method.
      */
     class UpdatePresenceData {
