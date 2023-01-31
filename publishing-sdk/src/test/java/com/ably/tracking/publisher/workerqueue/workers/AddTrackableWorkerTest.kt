@@ -61,8 +61,6 @@ class AddTrackableWorkerTest {
         // then
         assertThat(asyncWorks).isNotEmpty()
         assertThat(postedWorks).isEmpty()
-
-        
     }
 
     @Test
@@ -137,6 +135,54 @@ class AddTrackableWorkerTest {
 
             val postedWorkerSpecification = postedWorks[0] as WorkerSpecification.ConnectionCreated
             assertThat(postedWorkerSpecification.trackable).isEqualTo(trackable)
+        }
+    }
+
+    @Test
+    fun `should post EnterPresence work when connection was successful`() {
+        runTest {
+            // given
+            val initialProperties = createPublisherProperties()
+            ably.mockConnectSuccess(trackable.id)
+
+            // when
+            worker.doWork(
+                initialProperties,
+                asyncWorks.appendWork(),
+                postedWorks.appendSpecification()
+            )
+
+            // then
+            asyncWorks.executeAll()
+            assertThat(asyncWorks).isNotEmpty()
+
+            val postedWorkerSpecification = postedWorks[1] as WorkerSpecification.EnterPresence
+            assertThat(postedWorkerSpecification.trackable).isEqualTo(trackable)
+            assertThat(postedWorkerSpecification.enteredPresenceOnAblyConnect).isTrue()
+        }
+    }
+
+    @Test
+    fun `should post EnterPresence work when connection failed with a non-fatal error`() {
+        runTest {
+            // given
+            val initialProperties = createPublisherProperties()
+            ably.mockConnectFailure(trackable.id, isFatal = false)
+
+            // when
+            worker.doWork(
+                initialProperties,
+                asyncWorks.appendWork(),
+                postedWorks.appendSpecification()
+            )
+
+            // then
+            asyncWorks.executeAll()
+            assertThat(asyncWorks).isNotEmpty()
+
+            val postedWorkerSpecification = postedWorks[1] as WorkerSpecification.EnterPresence
+            assertThat(postedWorkerSpecification.trackable).isEqualTo(trackable)
+            assertThat(postedWorkerSpecification.enteredPresenceOnAblyConnect).isFalse()
         }
     }
 

@@ -21,7 +21,7 @@ class ConnectionCreatedWorkerTest {
     private val presenceUpdateListener: (PresenceMessage) -> Unit = {}
 
     private val worker =
-        ConnectionCreatedWorker(trackable, true, ably, null, presenceUpdateListener) {}
+        ConnectionCreatedWorker(trackable, ably, null, presenceUpdateListener) {}
 
     private val asyncWorks = mutableListOf<suspend () -> Unit>()
     private val postedWorks = mutableListOf<WorkerSpecification>()
@@ -50,41 +50,6 @@ class ConnectionCreatedWorkerTest {
             assertThat(postedWork.trackable).isEqualTo(trackable)
             assertThat(postedWork.presenceUpdateListener).isEqualTo(presenceUpdateListener)
             assertThat(postedWork.isSubscribedToPresence).isTrue()
-        }
-
-    @Test
-    fun `should mark entered trackable presence as true`() =
-        runTest {
-            // given
-            val initialProperties = createPublisherProperties()
-
-            // when
-            val updatedProperties = worker.doWork(
-                initialProperties,
-                asyncWorks.appendWork(),
-                postedWorks.appendSpecification()
-            )
-
-            // then
-            assertThat(updatedProperties.trackableEnteredPresenceFlags[trackable.id]).isTrue()
-        }
-
-    @Test
-    fun `should not mark entered trackable presence if enteredPresence is false`() =
-        runTest {
-            // given
-            val initialProperties = createPublisherProperties()
-            val worker = ConnectionCreatedWorker(trackable, false, ably, null, presenceUpdateListener) {}
-
-            // when
-            val updatedProperties = worker.doWork(
-                initialProperties,
-                asyncWorks.appendWork(),
-                postedWorks.appendSpecification()
-            )
-
-            // then
-            assertThat(updatedProperties.trackableEnteredPresenceFlags[trackable.id]).isNull()
         }
 
     @Test

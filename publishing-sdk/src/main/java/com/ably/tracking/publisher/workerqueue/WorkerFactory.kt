@@ -32,11 +32,12 @@ import com.ably.tracking.publisher.workerqueue.workers.ConnectionReadyWorker
 import com.ably.tracking.publisher.workerqueue.workers.DestinationSetWorker
 import com.ably.tracking.publisher.workerqueue.workers.DisconnectSuccessWorker
 import com.ably.tracking.publisher.workerqueue.workers.EnhancedLocationChangedWorker
+import com.ably.tracking.publisher.workerqueue.workers.EnterPresenceSuccessWorker
+import com.ably.tracking.publisher.workerqueue.workers.EnterPresenceWorker
 import com.ably.tracking.publisher.workerqueue.workers.PresenceMessageWorker
 import com.ably.tracking.publisher.workerqueue.workers.RawLocationChangedWorker
 import com.ably.tracking.publisher.workerqueue.workers.RefreshResolutionPolicyWorker
 import com.ably.tracking.publisher.workerqueue.workers.RemoveTrackableWorker
-import com.ably.tracking.publisher.workerqueue.workers.RetryEnterPresenceSuccessWorker
 import com.ably.tracking.publisher.workerqueue.workers.RetryEnterPresenceWorker
 import com.ably.tracking.publisher.workerqueue.workers.RetrySubscribeToPresenceSuccessWorker
 import com.ably.tracking.publisher.workerqueue.workers.RetrySubscribeToPresenceWorker
@@ -89,17 +90,20 @@ internal class WorkerFactory(
             )
             is WorkerSpecification.ConnectionCreated -> ConnectionCreatedWorker(
                 workerSpecification.trackable,
-                workerSpecification.enteredPresence,
                 ably,
                 logHandler,
                 workerSpecification.presenceUpdateListener,
                 workerSpecification.channelStateChangeListener,
             )
+            is WorkerSpecification.EnterPresence -> EnterPresenceWorker(
+                workerSpecification.trackable,
+                workerSpecification.enteredPresenceOnAblyConnect
+            )
             is WorkerSpecification.RetryEnterPresence -> RetryEnterPresenceWorker(
                 workerSpecification.trackable,
                 ably
             )
-            is WorkerSpecification.RetryEnterPresenceSuccess -> RetryEnterPresenceSuccessWorker(
+            is WorkerSpecification.EnterPresenceSuccess -> EnterPresenceSuccessWorker(
                 workerSpecification.trackable,
                 publisherInteractor
             )
@@ -261,16 +265,21 @@ internal sealed class WorkerSpecification {
 
     data class ConnectionCreated(
         val trackable: Trackable,
-        val enteredPresence: Boolean,
         val presenceUpdateListener: ((presenceMessage: com.ably.tracking.common.PresenceMessage) -> Unit),
         val channelStateChangeListener: ((connectionStateChange: ConnectionStateChange) -> Unit),
+    ) : WorkerSpecification()
+
+    data class EnterPresence(
+        val trackable: Trackable,
+        // Whether or not the ably.connect call was successful and we therefore entered presence
+        val enteredPresenceOnAblyConnect: Boolean
     ) : WorkerSpecification()
 
     data class RetryEnterPresence(
         val trackable: Trackable
     ) : WorkerSpecification()
 
-    data class RetryEnterPresenceSuccess(
+    data class EnterPresenceSuccess(
         val trackable: Trackable
     ) : WorkerSpecification()
 
