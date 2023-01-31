@@ -55,12 +55,6 @@ internal class AddTrackableWorker(
         postWork: (WorkerSpecification) -> Unit
     ): PublisherProperties {
         when {
-            properties.duplicateTrackableGuard.isCurrentlyAddingTrackable(trackable) -> {
-                properties.duplicateTrackableGuard.saveDuplicateAddHandler(
-                    trackable,
-                    callbackFunction
-                )
-            }
             properties.trackables.contains(trackable) -> {
                 val trackableFlow = properties.trackableStateFlows[trackable.id]!!
                 callbackFunction(Result.success(trackableFlow))
@@ -74,16 +68,14 @@ internal class AddTrackableWorker(
                 }
             }
             else -> {
-                val isAddingTheFirstTrackable = properties.hasNoTrackablesAddingOrAdded
+                val isAddingTheFirstTrackable = properties.hasNoTrackablesAdded
                 if (isAddingTheFirstTrackable) {
                     properties.state = PublisherState.CONNECTING
                 }
-                properties.duplicateTrackableGuard.startAddingTrackable(trackable)
 
                 // Add the trackable to the publisher and return success immediately
                 addTrackableToPublisherAndResolveResolution(properties)
-                val trackableStateFlow = createTrackableStateFlows(properties)
-                notifyTrackableAddSuccess(properties, trackableStateFlow)
+                notifyTrackableAddSuccess(createTrackableStateFlows(properties))
 
                 // Create the ably connection as required
                 doAsyncWork {
@@ -94,16 +86,14 @@ internal class AddTrackableWorker(
         return properties
     }
 
-    private fun addTrackableToPublisherAndResolveResolution(properties: PublisherProperties)
-    {
+    private fun addTrackableToPublisherAndResolveResolution(properties: PublisherProperties) {
         properties.trackables.add(trackable)
         publisherInteractor.updateTrackables(properties)
         publisherInteractor.resolveResolution(trackable, properties)
         hooks.trackables?.onTrackableAdded(trackable)
     }
 
-    private fun createTrackableStateFlows(properties: PublisherProperties): MutableStateFlow<TrackableState>
-    {
+    private fun createTrackableStateFlows(properties: PublisherProperties): MutableStateFlow<TrackableState> {
         val trackableState = properties.trackableStates[trackable.id] ?: TrackableState.Offline()
         val trackableStateFlow = properties.trackableStateFlows[trackable.id] ?: MutableStateFlow(trackableState)
 
@@ -114,11 +104,9 @@ internal class AddTrackableWorker(
         return trackableStateFlow
     }
 
-    private fun notifyTrackableAddSuccess(properties: PublisherProperties, stateFlow: MutableStateFlow<TrackableState>)
-    {
+    private fun notifyTrackableAddSuccess(stateFlow: MutableStateFlow<TrackableState>) {
         val successResult = Result.success(stateFlow.asStateFlow())
         callbackFunction(successResult)
-        properties.duplicateTrackableGuard.finishAddingTrackable(trackable, successResult)
     }
 
     private suspend fun createConnection(

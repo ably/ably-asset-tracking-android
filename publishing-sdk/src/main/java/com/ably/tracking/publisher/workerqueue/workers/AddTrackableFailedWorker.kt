@@ -31,10 +31,9 @@ internal class AddTrackableFailedWorker(
 
         val failureResult = Result.failure<AddTrackableResult>(exception)
         callbackFunction(failureResult)
-        properties.duplicateTrackableGuard.finishAddingTrackable(trackable, failureResult)
         properties.trackableRemovalGuard.removeMarked(trackable, Result.success(true))
 
-        if (properties.hasNoTrackablesAddingOrAdded) {
+        if (properties.hasNoTrackablesAdded) {
             properties.state = PublisherState.DISCONNECTING
             doAsyncWork {
                 isDisconnecting = true

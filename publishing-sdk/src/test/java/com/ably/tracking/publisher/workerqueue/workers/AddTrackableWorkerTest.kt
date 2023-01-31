@@ -47,13 +47,12 @@ class AddTrackableWorkerTest {
     private val postedWorks = mutableListOf<WorkerSpecification>()
 
     @Test
-    fun `should start adding a trackable when adding a trackable that is not added and not being added`() {
+    fun `should start adding a trackable when adding a trackable that is not added`() {
         // given
         val initialProperties = createPublisherProperties()
-        initialProperties.duplicateTrackableGuard.clear(trackable)
 
         // when
-        val updatedProperties = worker.doWork(
+        worker.doWork(
             initialProperties,
             asyncWorks.appendWork(),
             postedWorks.appendSpecification()
@@ -63,36 +62,7 @@ class AddTrackableWorkerTest {
         assertThat(asyncWorks).isNotEmpty()
         assertThat(postedWorks).isEmpty()
 
-        assertThat(updatedProperties.duplicateTrackableGuard.isCurrentlyAddingTrackable(trackable))
-            .isFalse()
-    }
-
-    @Test
-    fun `should save the trackable callback function when adding a trackable that is being added`() {
-        // given
-        val initialProperties = createPublisherProperties()
-        initialProperties.duplicateTrackableGuard.startAddingTrackable(trackable)
-        val addTrackableResult = Result.success(MutableStateFlow(TrackableState.Offline()))
-
-        // when
-        val updatedProperties = worker.doWork(
-            initialProperties,
-            asyncWorks.appendWork(),
-            postedWorks.appendSpecification()
-        )
-
-        updatedProperties.duplicateTrackableGuard.finishAddingTrackable(
-            trackable,
-            addTrackableResult
-        )
-
-        // then
-        assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).isEmpty()
-
-        verify(exactly = 1) {
-            resultCallbackFunction.invoke(addTrackableResult)
-        }
+        
     }
 
     @Test
@@ -129,7 +99,6 @@ class AddTrackableWorkerTest {
         runTest {
             // given
             val initialProperties = createPublisherProperties()
-            initialProperties.duplicateTrackableGuard.clear(trackable)
             ably.mockConnectSuccess(trackable.id)
 
             // when
@@ -153,7 +122,6 @@ class AddTrackableWorkerTest {
         runTest {
             // given
             val initialProperties = createPublisherProperties()
-            initialProperties.duplicateTrackableGuard.clear(trackable)
             ably.mockConnectFailure(trackable.id, isFatal = false)
 
             // when
@@ -177,7 +145,6 @@ class AddTrackableWorkerTest {
         runTest {
             // given
             val initialProperties = createPublisherProperties()
-            initialProperties.duplicateTrackableGuard.clear(trackable)
             ably.mockConnectFailure(trackable.id, isFatal = true)
 
             // when
@@ -202,7 +169,6 @@ class AddTrackableWorkerTest {
         runTest {
             // given
             val initialProperties = createPublisherProperties()
-            initialProperties.duplicateTrackableGuard.clear(trackable)
             ably.mockConnectSuccess(trackable.id)
 
             // when
@@ -225,7 +191,6 @@ class AddTrackableWorkerTest {
         runTest {
             // given
             val initialProperties = createPublisherProperties()
-            initialProperties.duplicateTrackableGuard.clear(trackable)
             ably.mockConnectSuccess(trackable.id)
 
             // when
@@ -250,7 +215,6 @@ class AddTrackableWorkerTest {
         runTest {
             // given
             val initialProperties = createPublisherProperties()
-            initialProperties.duplicateTrackableGuard.clear(trackable)
             ably.mockConnectSuccess(trackable.id)
 
             // when
@@ -275,7 +239,6 @@ class AddTrackableWorkerTest {
         runTest {
             // given
             val initialProperties = createPublisherProperties()
-            initialProperties.duplicateTrackableGuard.clear(trackable)
             ably.mockConnectSuccess(trackable.id)
 
             // when
@@ -298,7 +261,6 @@ class AddTrackableWorkerTest {
         runTest {
             // given
             val initialProperties = createPublisherProperties()
-            initialProperties.duplicateTrackableGuard.clear(trackable)
             ably.mockConnectSuccess(trackable.id)
 
             // when
@@ -323,7 +285,6 @@ class AddTrackableWorkerTest {
         runTest {
             // given
             val initialProperties = createPublisherProperties()
-            initialProperties.duplicateTrackableGuard.clear(trackable)
             ably.mockConnectSuccess(trackable.id)
 
             // when
@@ -346,7 +307,6 @@ class AddTrackableWorkerTest {
         runTest {
             // given
             val initialProperties = createPublisherProperties()
-            initialProperties.duplicateTrackableGuard.clear(trackable)
             ably.mockConnectSuccess(trackable.id)
 
             // when

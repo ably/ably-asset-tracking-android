@@ -39,7 +39,6 @@ class RetryEnterPresenceWorkerTest {
             // given
             val initialProperties = createPublisherProperties()
             initialProperties.trackables.add(trackable)
-            initialProperties.duplicateTrackableGuard.clear(trackable)
             mockChannelStateChange(ConnectionState.ONLINE)
             ably.mockEnterPresenceSuccess(trackable.id)
 
@@ -63,7 +62,6 @@ class RetryEnterPresenceWorkerTest {
         runTest {
             // given
             val initialProperties = createPublisherProperties()
-            initialProperties.duplicateTrackableGuard.clear(trackable)
 
             // when
             worker.doWork(
@@ -87,7 +85,6 @@ class RetryEnterPresenceWorkerTest {
             // given
             val initialProperties = createPublisherProperties()
             initialProperties.trackables.add(trackable)
-            initialProperties.duplicateTrackableGuard.clear(trackable)
             initialProperties.trackableRemovalGuard.markForRemoval(trackable) {}
 
             // when
@@ -111,7 +108,6 @@ class RetryEnterPresenceWorkerTest {
         runTest(context = UnconfinedTestDispatcher()) {
             // given
             val initialProperties = createPublisherProperties()
-            initialProperties.duplicateTrackableGuard.clear(trackable)
             initialProperties.trackables.add(trackable)
             mockChannelStateChange(ConnectionState.ONLINE)
             ably.mockEnterPresenceFailure(trackable.id, isFatal = false)
@@ -140,7 +136,6 @@ class RetryEnterPresenceWorkerTest {
         runTest {
             // given
             val initialProperties = createPublisherProperties()
-            initialProperties.duplicateTrackableGuard.clear(trackable)
             initialProperties.trackables.add(trackable)
             mockChannelStateChange(ConnectionState.ONLINE)
             ably.mockEnterPresenceFailure(trackable.id, isFatal = true)
@@ -165,7 +160,6 @@ class RetryEnterPresenceWorkerTest {
         runTest {
             // given
             val initialProperties = createPublisherProperties()
-            initialProperties.duplicateTrackableGuard.clear(trackable)
             initialProperties.trackables.add(trackable)
             mockChannelStateChange(ConnectionState.FAILED)
 

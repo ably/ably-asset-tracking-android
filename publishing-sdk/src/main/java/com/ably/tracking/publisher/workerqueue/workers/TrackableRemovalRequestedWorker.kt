@@ -4,7 +4,6 @@ import com.ably.tracking.common.Ably
 import com.ably.tracking.common.workerqueue.Worker
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.PublisherState
-import com.ably.tracking.publisher.RemoveTrackableRequestedException
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 
@@ -29,11 +28,7 @@ internal class TrackableRemovalRequestedWorker(
         } else {
             properties.trackableRemovalGuard.removeMarked(trackable, Result.failure(result.exceptionOrNull()!!))
         }
-        properties.duplicateTrackableGuard.finishAddingTrackable(
-            trackable,
-            Result.failure(RemoveTrackableRequestedException())
-        )
-        val removedTheLastTrackable = properties.hasNoTrackablesAddingOrAdded
+        val removedTheLastTrackable = properties.hasNoTrackablesAdded
         if (removedTheLastTrackable) {
             properties.state = PublisherState.DISCONNECTING
             doAsyncWork {

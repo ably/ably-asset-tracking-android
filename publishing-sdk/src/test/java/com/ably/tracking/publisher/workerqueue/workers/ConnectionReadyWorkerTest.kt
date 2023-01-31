@@ -270,7 +270,6 @@ class ConnectionReadyWorkerTest {
         // given
         val initialProperties = createDefaultPublisherProperties(trackable)
         initialProperties.trackableRemovalGuard.markForRemoval(trackable) {}
-        initialProperties.duplicateTrackableGuard.startAddingTrackable(trackable)
 
         ably.mockDisconnect(trackable.id)
 

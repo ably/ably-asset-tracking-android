@@ -10,9 +10,7 @@ import com.ably.tracking.common.ConnectionState
 import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.PresenceData
 import com.ably.tracking.common.workerqueue.Properties
-import com.ably.tracking.publisher.guards.DefaultDuplicateTrackableGuard
 import com.ably.tracking.publisher.guards.DefaultTrackableRemovalGuard
-import com.ably.tracking.publisher.guards.DuplicateTrackableGuard
 import com.ably.tracking.publisher.guards.TrackableRemovalGuard
 import kotlinx.coroutines.flow.MutableStateFlow
 
@@ -24,7 +22,6 @@ private constructor(
     areRawLocationsEnabled: Boolean?,
     enhancedLocationsPublishingState: LocationsPublishingState<EnhancedLocationUpdate>,
     rawLocationsPublishingState: LocationsPublishingState<LocationUpdate>,
-    duplicateTrackableGuard: DuplicateTrackableGuard,
     trackableRemovalGuard: TrackableRemovalGuard,
     private val onActiveTrackableUpdated: (Trackable?) -> Unit,
     private val onRoutingProfileUpdated: (RoutingProfile) -> Unit
@@ -44,7 +41,6 @@ private constructor(
         areRawLocationsEnabled,
         LocationsPublishingState(),
         LocationsPublishingState(),
-        DefaultDuplicateTrackableGuard(),
         DefaultTrackableRemovalGuard(),
         onActiveTrackableUpdated,
         onRoutingProfileUpdated
@@ -116,8 +112,6 @@ private constructor(
         get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
     val rawLocationsPublishingState: LocationsPublishingState<LocationUpdate> = rawLocationsPublishingState
         get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-    val duplicateTrackableGuard: DuplicateTrackableGuard = duplicateTrackableGuard
-        get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
     val trackableRemovalGuard: TrackableRemovalGuard = trackableRemovalGuard
         get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
     val areRawLocationsEnabled: Boolean = areRawLocationsEnabled ?: false
@@ -129,8 +123,8 @@ private constructor(
             }
             field = value
         }
-    val hasNoTrackablesAddingOrAdded: Boolean
-        get() = trackables.isEmpty() && !duplicateTrackableGuard.isCurrentlyAddingAnyTrackable()
+    val hasNoTrackablesAdded: Boolean
+        get() = trackables.isEmpty()
     val trackablesWithFinalStateSet: MutableSet<String> = mutableSetOf()
         get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
 
@@ -145,7 +139,6 @@ private constructor(
             areRawLocationsEnabled,
             enhancedLocationsPublishingState,
             rawLocationsPublishingState,
-            duplicateTrackableGuard,
             trackableRemovalGuard,
             onActiveTrackableUpdated,
             onRoutingProfileUpdated
@@ -199,7 +192,6 @@ private constructor(
         rawLocationChangedCommands.clear()
         enhancedLocationsPublishingState.clearAll()
         rawLocationsPublishingState.clearAll()
-        duplicateTrackableGuard.clearAll()
         trackableRemovalGuard.clearAll()
         trackablesWithFinalStateSet.clear()
         isDisposed = true
