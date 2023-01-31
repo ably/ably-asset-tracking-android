@@ -1071,7 +1071,7 @@ class DefaultAblyTestScenarios {
          * ...and fetches the channel’s name and calls `release` on the Channels instance...
          * }
          *
-         * ...and the call to `disconnect` (on the object under test) always succeeds.
+         * ...and the call to `disconnect` (on the object under test) succeeds.
          * ```
          */
         companion object {
@@ -1173,9 +1173,8 @@ class DefaultAblyTestScenarios {
                     }
                 }
 
-                /* and always {
+                /*
                  * ...and the call to `disconnect` (on the object under test) succeeds.
-                 * }
                  */
                 Assert.assertNotNull(result)
 
