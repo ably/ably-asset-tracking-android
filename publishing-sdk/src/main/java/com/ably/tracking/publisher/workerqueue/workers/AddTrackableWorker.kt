@@ -81,7 +81,9 @@ internal class AddTrackableWorker(
                 properties.duplicateTrackableGuard.startAddingTrackable(trackable)
 
                 // Add the trackable to the publisher and return success immediately
-                addTrackableToPublisherAndNotifySuccess(properties)
+                addTrackableToPublisherAndResolveResolution(properties)
+                val trackableStateFlow = createTrackableStateFlows(properties)
+                notifyTrackableAddSuccess(properties, trackableStateFlow)
 
                 // Create the ably connection as required
                 doAsyncWork {
@@ -92,19 +94,16 @@ internal class AddTrackableWorker(
         return properties
     }
 
-    /**
-     * Add the trackable to the publisher and notify the caller of its success immediately.
-     *
-     * This prevents us from blocking the caller whilst we wait for Ably to connect.
-     */
-    private fun addTrackableToPublisherAndNotifySuccess(properties: PublisherProperties) {
-        // Add the trackable and resolve resolutions
+    private fun addTrackableToPublisherAndResolveResolution(properties: PublisherProperties)
+    {
         properties.trackables.add(trackable)
         publisherInteractor.updateTrackables(properties)
         publisherInteractor.resolveResolution(trackable, properties)
         hooks.trackables?.onTrackableAdded(trackable)
+    }
 
-        // Create the trackable state flow to return to the caller
+    private fun createTrackableStateFlows(properties: PublisherProperties): MutableStateFlow<TrackableState>
+    {
         val trackableState = properties.trackableStates[trackable.id] ?: TrackableState.Offline()
         val trackableStateFlow = properties.trackableStateFlows[trackable.id] ?: MutableStateFlow(trackableState)
 
@@ -112,9 +111,12 @@ internal class AddTrackableWorker(
         publisherInteractor.updateTrackableStateFlows(properties)
         properties.trackableStates[trackable.id] = trackableState
         properties.trackableSubscribedToPresenceFlags[trackable.id] = false
+        return trackableStateFlow
+    }
 
-        // Notify the caller
-        val successResult = Result.success(trackableStateFlow.asStateFlow())
+    private fun notifyTrackableAddSuccess(properties: PublisherProperties, stateFlow: MutableStateFlow<TrackableState>)
+    {
+        val successResult = Result.success(stateFlow.asStateFlow())
         callbackFunction(successResult)
         properties.duplicateTrackableGuard.finishAddingTrackable(trackable, successResult)
     }
