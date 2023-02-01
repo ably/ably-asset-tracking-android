@@ -16,11 +16,6 @@ internal class ConnectionReadyWorker(
     private val publisherInteractor: PublisherInteractor,
     private val channelStateChangeListener: ((connectionStateChange: ConnectionStateChange) -> Unit),
 ) : Worker<PublisherProperties, WorkerSpecification> {
-    /**
-     * Whether the trackable is being removed.
-     * Used to properly handle unexpected exceptions in [onUnexpectedAsyncError].
-     */
-    private var isBeingRemoved = false
 
     override fun doWork(
         properties: PublisherProperties,
@@ -29,7 +24,6 @@ internal class ConnectionReadyWorker(
     ): PublisherProperties {
         if (properties.trackableRemovalGuard.isMarkedForRemoval(trackable)) {
             doAsyncWork {
-                isBeingRemoved = true
                 onTrackableRemovalRequested(properties, postWork)
             }
             return properties
@@ -38,7 +32,6 @@ internal class ConnectionReadyWorker(
         setPublisherState(properties)
         subscribeForChannelStateChanges()
         startLocationUpdates(properties)
-        publisherInteractor.updateTrackableState(properties, trackable.id)
 
         return properties
     }
@@ -76,18 +69,8 @@ internal class ConnectionReadyWorker(
     }
 
     override fun onUnexpectedAsyncError(exception: Exception, postWork: (WorkerSpecification) -> Unit) {
-        if (isBeingRemoved) {
-            postWork(
-                WorkerSpecification.TrackableRemovalRequested(trackable, Result.failure(exception))
-            )
-            return
-        }
-
         postWork(
-            WorkerSpecification.FailTrackable(
-                trackable,
-                ErrorInformation("Unexpected async error on connection ready: $exception")
-            )
+            WorkerSpecification.TrackableRemovalRequested(trackable, Result.failure(exception))
         )
     }
 

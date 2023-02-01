@@ -27,7 +27,6 @@ class ConnectionReadyWorkerTest {
     }
     private val publisherInteractor = mockk<PublisherInteractor> {
         every { startLocationUpdates(any()) } just runs
-        every { updateTrackableState(any(), trackable.id) } just runs
     }
     private val connectionStateChangeListener: (ConnectionStateChange) -> Unit = {}
 
@@ -54,10 +53,6 @@ class ConnectionReadyWorkerTest {
         assertThat(postedWorks).isEmpty()
 
         assertThat(updatedProperties.state).isEqualTo(PublisherState.CONNECTED)
-
-        verify(exactly = 1) {
-            publisherInteractor.updateTrackableState(initialProperties, trackable.id)
-        }
     }
 
     @Test
@@ -78,10 +73,6 @@ class ConnectionReadyWorkerTest {
         assertThat(postedWorks).isEmpty()
 
         assertThat(updatedProperties.state).isEqualTo(PublisherState.IDLE)
-
-        verify(exactly = 1) {
-            publisherInteractor.updateTrackableState(initialProperties, trackable.id)
-        }
     }
 
     @Test
@@ -99,10 +90,6 @@ class ConnectionReadyWorkerTest {
         // then
         assertThat(asyncWorks).isEmpty()
         assertThat(postedWorks).isEmpty()
-
-        verify(exactly = 1) {
-            publisherInteractor.updateTrackableState(initialProperties, trackable.id)
-        }
 
         // then
         verify(exactly = 1) {
@@ -128,11 +115,6 @@ class ConnectionReadyWorkerTest {
         assertThat(postedWorks).isEmpty()
 
         verify(exactly = 1) {
-            publisherInteractor.updateTrackableState(initialProperties, trackable.id)
-        }
-
-        verify(exactly = 1) {
-            publisherInteractor.updateTrackableState(initialProperties, trackable.id)
             publisherInteractor.startLocationUpdates(any())
         }
     }
@@ -153,10 +135,6 @@ class ConnectionReadyWorkerTest {
         // then
         assertThat(asyncWorks).isEmpty()
         assertThat(postedWorks).isEmpty()
-
-        verify(exactly = 1) {
-            publisherInteractor.updateTrackableState(initialProperties, trackable.id)
-        }
 
         verify(exactly = 0) {
             publisherInteractor.startLocationUpdates(any())
@@ -179,10 +157,6 @@ class ConnectionReadyWorkerTest {
         // then
         assertThat(asyncWorks).hasSize(1)
         assertThat(postedWorks).isEmpty()
-
-        verify(exactly = 0) {
-            publisherInteractor.updateTrackableState(initialProperties, trackable.id)
-        }
     }
 
     @Test
@@ -206,12 +180,7 @@ class ConnectionReadyWorkerTest {
         assertThat(asyncWorks).hasSize(1)
         assertThat(postedWorks).hasSize(1)
 
-        verify(exactly = 0) {
-            publisherInteractor.updateTrackableState(initialProperties, trackable.id)
-        }
-
         val postedWork = postedWorks.first() as WorkerSpecification.TrackableRemovalRequested
-
         assertThat(postedWork.trackable).isEqualTo(trackable)
     }
 
@@ -258,7 +227,6 @@ class ConnectionReadyWorkerTest {
         // then
         verify(exactly = 0) {
             publisherInteractor.startLocationUpdates(any())
-            publisherInteractor.updateTrackableState(initialProperties, trackable.id)
         }
     }
 
@@ -281,47 +249,12 @@ class ConnectionReadyWorkerTest {
     }
 
     @Test
-    fun `should post trackable removal requested on unexpected async error if marked for removal`() = runTest {
+    fun `should post trackable removal requested on unexpected async error`() = runTest {
         // Given
         val initialProperties = createPublisherProperties()
         initialProperties.trackableRemovalGuard.markForRemoval(trackable) {}
 
         ably.mockDisconnect(trackable.id)
-
-        worker.doWork(
-            initialProperties,
-            asyncWorks.appendWork(),
-            postedWorks.appendSpecification()
-        )
-        asyncWorks.executeAll()
-
-        // when
-        worker.onUnexpectedAsyncError(
-            Exception("Foo"),
-            postedWorks.appendSpecification()
-        )
-
-        // then
-        assertThat(asyncWorks).hasSize(1)
-        assertThat(postedWorks).hasSize(2)
-
-        val postedWork = postedWorks.first() as WorkerSpecification.TrackableRemovalRequested
-        assertThat(postedWork.trackable).isEqualTo(trackable)
-        val postedWork2 = postedWorks.get(1) as WorkerSpecification.TrackableRemovalRequested
-        assertThat(postedWork2.trackable).isEqualTo(trackable)
-    }
-
-    @Test
-    fun `should post failed trackable if async error and not removal requested`() = runTest {
-        // Given
-        val initialProperties = createPublisherProperties()
-
-        worker.doWork(
-            initialProperties,
-            asyncWorks.appendWork(),
-            postedWorks.appendSpecification()
-        )
-        asyncWorks.executeAll()
 
         // when
         worker.onUnexpectedAsyncError(
@@ -333,7 +266,7 @@ class ConnectionReadyWorkerTest {
         assertThat(asyncWorks).hasSize(0)
         assertThat(postedWorks).hasSize(1)
 
-        val postedWork = postedWorks[0] as WorkerSpecification.FailTrackable
+        val postedWork = postedWorks.first() as WorkerSpecification.TrackableRemovalRequested
         assertThat(postedWork.trackable).isEqualTo(trackable)
     }
 
