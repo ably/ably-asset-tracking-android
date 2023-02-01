@@ -30,7 +30,7 @@ if (canDistribute) {
 
 // By design, these properties are only injected by our adhoc-publish-example-apps workflow, not by other workflows (for example, publish-example-apps).
 // This means that when not adhoc-publishing example app builds they will all have a value of `null` (org.codehaus.groovy.runtime.NullObject).
-final githubTitle = findProperty("ORG_GRADLE_PROJECT_ABLY_BUILD_CONTEXT_TITLE")
+final githubTitle = findProperty("ABLY_BUILD_CONTEXT_TITLE")
 final includeIndividualRiders = findProperty("APP_DISTRIBUTION_INCLUDE_INDIVIDUAL_RIDERS")
 final additionalReleaseNotes = findProperty("APP_DISTRIBUTION_RELEASE_NOTES")
 logger.lifecycle("githubTitle [${githubTitle.getClass()}]: $githubTitle")
