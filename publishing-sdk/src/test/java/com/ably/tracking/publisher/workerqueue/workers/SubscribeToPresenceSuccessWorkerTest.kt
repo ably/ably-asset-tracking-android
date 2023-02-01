@@ -8,10 +8,10 @@ import io.mockk.mockk
 import io.mockk.verify
 import org.junit.Test
 
-internal class RetrySubscribeToPresenceSuccessWorkerTest {
+internal class SubscribeToPresenceSuccessWorkerTest {
     private val trackable = Trackable("test-trackable")
     private val publisherInteractor = mockk<PublisherInteractor>(relaxed = true)
-    private val worker = RetrySubscribeToPresenceSuccessWorker(trackable, publisherInteractor)
+    private val worker = SubscribeToPresenceSuccessWorker(trackable, publisherInteractor)
 
     private val asyncWorks = mutableListOf<suspend () -> Unit>()
     private val postedWorks = mutableListOf<WorkerSpecification>()

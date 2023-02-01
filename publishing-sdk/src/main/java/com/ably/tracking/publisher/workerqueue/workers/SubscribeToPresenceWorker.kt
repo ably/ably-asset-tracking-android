@@ -1,6 +1,5 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
-import android.util.Log
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.PresenceMessage
 import com.ably.tracking.common.logging.w
@@ -12,7 +11,7 @@ import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
-internal class RetrySubscribeToPresenceWorker(
+internal class SubscribeToPresenceWorker(
     private val trackable: Trackable,
     private val ably: Ably,
     private val logHandler: LogHandler?,
@@ -23,8 +22,11 @@ internal class RetrySubscribeToPresenceWorker(
         doAsyncWork: (suspend () -> Unit) -> Unit,
         postWork: (WorkerSpecification) -> Unit
     ): PublisherProperties {
-        Log.e("RSTP", "Start ${trackable.id}")
-        if (!properties.trackables.contains(trackable)) {
+        // If the trackable is gone, or marked for removal, stop
+        if (
+            !properties.trackables.contains(trackable) ||
+            properties.trackableRemovalGuard.isMarkedForRemoval(trackable)
+        ) {
             return properties
         }
 
@@ -36,13 +38,13 @@ internal class RetrySubscribeToPresenceWorker(
 
             val subscribeToPresenceResult = subscribeToPresenceMessages()
             if (subscribeToPresenceResult.isSuccess) {
-                postWork(WorkerSpecification.RetrySubscribeToPresenceSuccess(trackable))
+                postWork(WorkerSpecification.SubscribeToPresenceSuccess(trackable))
             } else {
                 logHandler?.w(
                     "Failed to resubscribe to presence for trackable ${trackable.id}",
                     subscribeToPresenceResult.exceptionOrNull()
                 )
-                postWork(WorkerSpecification.RetrySubscribeToPresence(trackable, presenceUpdateListener))
+                postWork(WorkerSpecification.SubscribeToPresence(trackable, presenceUpdateListener))
             }
         }
 

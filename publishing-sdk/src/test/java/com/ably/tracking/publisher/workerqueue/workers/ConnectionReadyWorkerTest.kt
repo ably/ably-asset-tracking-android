@@ -4,6 +4,7 @@ import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.PresenceMessage
 import com.ably.tracking.publisher.PublisherInteractor
+import com.ably.tracking.publisher.PublisherState
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 import com.ably.tracking.test.common.mockDisconnect
@@ -29,21 +30,20 @@ class ConnectionReadyWorkerTest {
         every { updateTrackableState(any(), trackable.id) } just runs
     }
     private val connectionStateChangeListener: (ConnectionStateChange) -> Unit = {}
-    private val presenceUpdateListener: (PresenceMessage) -> Unit = {}
 
-    private val worker = createWorker(isSubscribedToPresence = true)
+    private val worker = createWorker()
 
     private val asyncWorks = mutableListOf<suspend () -> Unit>()
     private val postedWorks = mutableListOf<WorkerSpecification>()
 
     @Test
-    fun `should post no other work when is subscribed to and entered presence`() {
+    fun `should set publisher state to connected if currently connecting`() {
         // given
         val initialProperties = createDefaultPublisherProperties(trackable)
-        initialProperties.trackableEnteredPresenceFlags[trackable.id] = true
+        initialProperties.state = PublisherState.CONNECTING
 
         // when
-        worker.doWork(
+        val updatedProperties = worker.doWork(
             initialProperties,
             asyncWorks.appendWork(),
             postedWorks.appendSpecification()
@@ -53,20 +53,21 @@ class ConnectionReadyWorkerTest {
         assertThat(asyncWorks).isEmpty()
         assertThat(postedWorks).isEmpty()
 
+        assertThat(updatedProperties.state).isEqualTo(PublisherState.CONNECTED)
+
         verify(exactly = 1) {
             publisherInteractor.updateTrackableState(initialProperties, trackable.id)
         }
     }
 
     @Test
-    fun `should post RetrySubscribeToPresence work when is not subscribed to presence`() {
+    fun `should not set publisher state to connected if not currently connecting`() {
         // given
         val initialProperties = createDefaultPublisherProperties(trackable)
-        initialProperties.trackableEnteredPresenceFlags[trackable.id] = true
-        val worker = createWorker(isSubscribedToPresence = false)
+        initialProperties.state = PublisherState.IDLE
 
         // when
-        worker.doWork(
+        val updatedProperties = worker.doWork(
             initialProperties,
             asyncWorks.appendWork(),
             postedWorks.appendSpecification()
@@ -74,41 +75,13 @@ class ConnectionReadyWorkerTest {
 
         // then
         assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).hasSize(1)
+        assertThat(postedWorks).isEmpty()
+
+        assertThat(updatedProperties.state).isEqualTo(PublisherState.IDLE)
 
         verify(exactly = 1) {
             publisherInteractor.updateTrackableState(initialProperties, trackable.id)
         }
-
-        val postedWork = postedWorks.first() as WorkerSpecification.RetrySubscribeToPresence
-        assertThat(postedWork.trackable).isEqualTo(trackable)
-        assertThat(postedWork.presenceUpdateListener).isEqualTo(presenceUpdateListener)
-    }
-
-    @Test
-    fun `should post RetryEnterPresence work when is not entered presence`() {
-        // given
-        val initialProperties = createDefaultPublisherProperties(trackable)
-        initialProperties.trackableEnteredPresenceFlags.remove(trackable.id)
-        val worker = createWorker(isSubscribedToPresence = true)
-
-        // when
-        worker.doWork(
-            initialProperties,
-            asyncWorks.appendWork(),
-            postedWorks.appendSpecification()
-        )
-
-        // then
-        assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).hasSize(1)
-
-        verify(exactly = 1) {
-            publisherInteractor.updateTrackableState(initialProperties, trackable.id)
-        }
-
-        val postedWork = postedWorks.first() as WorkerSpecification.RetryEnterPresence
-        assertThat(postedWork.trackable).isEqualTo(trackable)
     }
 
     @Test
@@ -358,9 +331,9 @@ class ConnectionReadyWorkerTest {
 
         // then
         assertThat(asyncWorks).hasSize(0)
-        assertThat(postedWorks).hasSize(2)
+        assertThat(postedWorks).hasSize(1)
 
-        val postedWork = postedWorks[1] as WorkerSpecification.FailTrackable
+        val postedWork = postedWorks[0] as WorkerSpecification.FailTrackable
         assertThat(postedWork.trackable).isEqualTo(trackable)
     }
 
@@ -369,13 +342,11 @@ class ConnectionReadyWorkerTest {
         it.trackables.add(trackable)
     }
 
-    private fun createWorker(isSubscribedToPresence: Boolean) =
+    private fun createWorker() =
         ConnectionReadyWorker(
             trackable,
             ably,
             publisherInteractor,
             connectionStateChangeListener,
-            isSubscribedToPresence,
-            presenceUpdateListener,
         )
 }

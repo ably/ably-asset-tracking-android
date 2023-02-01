@@ -93,7 +93,7 @@ class AddTrackableWorkerTest {
 
     // async work tests
     @Test
-    fun `should post ConnectionCreated work when connection was successful`() {
+    fun `should post ConnectionReady work when connection was successful`() {
         runTest {
             // given
             val initialProperties = createPublisherProperties()
@@ -110,13 +110,13 @@ class AddTrackableWorkerTest {
             asyncWorks.executeAll()
             assertThat(asyncWorks).isNotEmpty()
 
-            val postedWorkerSpecification = postedWorks[0] as WorkerSpecification.ConnectionCreated
+            val postedWorkerSpecification = postedWorks[0] as WorkerSpecification.ConnectionReady
             assertThat(postedWorkerSpecification.trackable).isEqualTo(trackable)
         }
     }
 
     @Test
-    fun `should post ConnectionCreated work when connection failed with a non-fatal error`() {
+    fun `should post ConnectionReady work when connection failed with a non-fatal error`() {
         runTest {
             // given
             val initialProperties = createPublisherProperties()
@@ -133,7 +133,7 @@ class AddTrackableWorkerTest {
             asyncWorks.executeAll()
             assertThat(asyncWorks).isNotEmpty()
 
-            val postedWorkerSpecification = postedWorks[0] as WorkerSpecification.ConnectionCreated
+            val postedWorkerSpecification = postedWorks[0] as WorkerSpecification.ConnectionReady
             assertThat(postedWorkerSpecification.trackable).isEqualTo(trackable)
         }
     }

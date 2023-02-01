@@ -6,6 +6,7 @@ import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.workerqueue.Worker
 import com.ably.tracking.publisher.PublisherInteractor
 import com.ably.tracking.publisher.PublisherProperties
+import com.ably.tracking.publisher.PublisherState
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 
@@ -14,8 +15,6 @@ internal class ConnectionReadyWorker(
     private val ably: Ably,
     private val publisherInteractor: PublisherInteractor,
     private val channelStateChangeListener: ((connectionStateChange: ConnectionStateChange) -> Unit),
-    private val isSubscribedToPresence: Boolean,
-    private val presenceUpdateListener: ((presenceMessage: com.ably.tracking.common.PresenceMessage) -> Unit),
 ) : Worker<PublisherProperties, WorkerSpecification> {
     /**
      * Whether the trackable is being removed.
@@ -36,22 +35,24 @@ internal class ConnectionReadyWorker(
             return properties
         }
 
+        setPublisherState(properties)
         subscribeForChannelStateChanges()
         startLocationUpdates(properties)
-
-        if (!isSubscribedToPresence) {
-            postWork(WorkerSpecification.RetrySubscribeToPresence(trackable, presenceUpdateListener))
-        } else {
-            properties.trackableSubscribedToPresenceFlags[trackable.id] = true
-        }
-
-        if (properties.trackableEnteredPresenceFlags[trackable.id] != true) {
-            postWork(WorkerSpecification.RetryEnterPresence(trackable))
-        }
-
         publisherInteractor.updateTrackableState(properties, trackable.id)
 
         return properties
+    }
+
+    /**
+     * Set the publisher state to CONNECTED if we were previously CONNECTING.
+     *
+     * This indicates that we've done everything connection-wise for this trackable, so the next
+     * trackable may now start adding in AddTrackableWorker.
+     */
+    private fun setPublisherState(properties: PublisherProperties) {
+        if (properties.state == PublisherState.CONNECTING) {
+            properties.state = PublisherState.CONNECTED
+        }
     }
 
     private suspend fun onTrackableRemovalRequested(
