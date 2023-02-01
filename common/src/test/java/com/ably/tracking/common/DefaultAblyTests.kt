@@ -201,7 +201,7 @@ class DefaultAblyTests {
 
         val presenceError = ErrorInfo(
             "example of an error message", /* arbitrarily chosen */
-            400, /* fatal error code */
+            400, /* fatal status code */
             123 /* arbitrarily chosen */
         )
 
@@ -263,7 +263,7 @@ class DefaultAblyTests {
 
         val presenceError = ErrorInfo(
             "example of an error message", /* arbitrarily chosen */
-            400, /* fatal error code */
+            400, /* fatal status code */
             123 /* arbitrarily chosen */
         )
 
@@ -319,13 +319,12 @@ class DefaultAblyTests {
          * ...and calls `get` (the overload that accepts a ChannelOptions object) on the Channels instance...
          * ...and checks the channel’s state 2 times...
          * ...and tells the channel to enter presence...
-         * ...and releases the channel...
          * ...and the call to `connect` (on the object under test) fails with a ConnectionException whose errorInformation has the same `code`, `statusCode`, and `message` as `presenceError`.
          */
 
         val presenceError = ErrorInfo(
             "example of an error message", /* arbitrarily chosen */
-            500, /* fatal error code */
+            500, /* non-fatal status code */
             123 /* arbitrarily chosen */
         )
 
@@ -479,7 +478,7 @@ class DefaultAblyTests {
 
         val attachError = ErrorInfo(
             "example of an error message", /* arbitrarily chosen */
-            400, /* fatal error code */
+            400, /* fatal status code */
             123 /* arbitrarily chosen */
         )
 
@@ -588,7 +587,7 @@ class DefaultAblyTests {
 
         val attachError = ErrorInfo(
             "example of an error message", /* arbitrarily chosen */
-            400, /* fatal error code */
+            400, /* fatal status code */
             123 /* arbitrarily chosen */
         )
 
@@ -655,7 +654,7 @@ class DefaultAblyTests {
 
         val presenceError = ErrorInfo(
             "example of an error message", /* arbitrarily chosen */
-            400, /* fatal error code */
+            400, /* fatal status code */
             123 /* arbitrarily chosen */
         )
 
@@ -783,12 +782,11 @@ class DefaultAblyTests {
     }
 
     @Test
-    fun `enterChannelPresence - when channel exists`() {
+    fun `enterChannelPresence - when presence enter succeeds`() {
         /* Given...
          *
          * ...that calling `containsKey` on the Channels instance returns true...
-         * ...and that calling `get` on the Channels instance returns a channel...
-         * ...which, when told to enter presence, does so successfully...
+         * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel which, when told to enter presence, does so successfully...
          *
          * When...
          *
@@ -798,12 +796,11 @@ class DefaultAblyTests {
          * ...in the following order, precisely the following things happen...
          *
          * ...it calls `containsKey` on the Channels instance...
-         * ...and calls `get` on the Channels instance...
-         * ...and calls `get` on the Channels instance...
+         * ...and calls `get` (the overload that does not accept a ChannelOptions object) on the Channels instance...
          * ...and tells the channel to enter presence...
-         *
          * ...and the call to `enterChannelPresence` (on the object under test) succeeds.
          */
+
         runBlocking {
             DefaultAblyTestScenarios.EnterChannelPresence.test(
                 DefaultAblyTestScenarios.EnterChannelPresence.GivenConfig(
@@ -822,12 +819,11 @@ class DefaultAblyTests {
     }
 
     @Test
-    fun `enterChannelPresence - exception when channel exists`() {
+    fun `enterChannelPresence - when presence enter fails`() {
         /* Given...
          *
          * ...that calling `containsKey` on the Channels instance returns true...
-         * ...and that calling `get` on the Channels instance returns a channel...
-         * ...which, when told to enter presence, fails with an arbitrary chosen error info...
+         * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel which, when told to enter presence, fails to do so with arbitrarily-chosen error `presenceError`...
          *
          * When...
          *
@@ -838,17 +834,15 @@ class DefaultAblyTests {
          *
          * ...it calls `containsKey` on the Channels instance...
          * ...and calls `get` on the Channels instance...
-         * ...and calls `get` on the Channels instance...
          * ...and tells the channel to enter presence...
-         *
-         * ...and the call to `enterChannelPresence` (on the object under test) succeeds.
+         * ...and the call to `enterChannelPresence` (on the object under test) fails with a `ConnectionException` whose errorInformation has the same `code` and `message` as `presenceError`.
          */
 
         val presenceError = ErrorInfo(
             "example of an error message", /* arbitrarily chosen */
-            400, /* fatal error code */
             123 /* arbitrarily chosen */
         )
+
         runBlocking {
             DefaultAblyTestScenarios.EnterChannelPresence.test(
                 DefaultAblyTestScenarios.EnterChannelPresence.GivenConfig(
@@ -865,9 +859,9 @@ class DefaultAblyTests {
                             errorInformation =
                             ErrorInformation(
                                 code = presenceError.code,
-                                statusCode = presenceError.statusCode,
+                                statusCode = 0,
                                 message = presenceError.message,
-                                href = presenceError.code.toHref(),
+                                href = null,
                                 cause = null
                             )
                         )
@@ -891,9 +885,9 @@ class DefaultAblyTests {
          * ...in the following order, precisely the following things happen...
          *
          * ...it calls `containsKey` on the Channels instance...
-         *
          * ...and the call to `enterChannelPresence` (on the object under test) succeeds.
          */
+
         runBlocking {
             DefaultAblyTestScenarios.EnterChannelPresence.test(
                 DefaultAblyTestScenarios.EnterChannelPresence.GivenConfig(
@@ -1619,19 +1613,12 @@ class DefaultAblyTests {
         }
     }
 
-    /*
-    Observations from writing black-box tests for `disconnect`:
-
-    - When given a channel in certain states, it seems to fetch the channel’s state more than once. I have not tested what happens if a different state is returned on the second call.
-     */
-
     @Test
     fun `disconnect - when presence leave succeeds`() {
         /* Given...
          *
          * ...that calling containsKey on the Channels instance returns true...
-         * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel...
-         * ...which, when told to leave presence, does so successfully...
+         * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel which, when told to leave presence, does so successfully...
          *
          * When...
          *
@@ -1652,13 +1639,10 @@ class DefaultAblyTests {
             DefaultAblyTestScenarios.Disconnect.test(
                 DefaultAblyTestScenarios.Disconnect.GivenConfig(
                     channelsContainsKey = true,
-                    mockChannelsGet = true,
                     presenceLeaveBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Success
                 ),
                 DefaultAblyTestScenarios.Disconnect.ThenConfig(
-                    verifyChannelsGet = true,
-                    verifyPresenceLeave = true,
-                    verifyChannelUnsubscribeAndRelease = true,
+                    verifyChannelTeardown = true
                 )
             )
         }
@@ -1669,8 +1653,7 @@ class DefaultAblyTests {
         /* Given...
          *
          * ...that calling containsKey on the Channels instance returns true...
-         * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel...
-         * ...which, when told to leave presence, fails to do so with an arbitrarily-chosen error `presenceError`...
+         * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel which, when told to leave presence, fails to do so with an arbitrarily-chosen error `presenceError`...
          *
          * When...
          *
@@ -1696,15 +1679,12 @@ class DefaultAblyTests {
             DefaultAblyTestScenarios.Disconnect.test(
                 DefaultAblyTestScenarios.Disconnect.GivenConfig(
                     channelsContainsKey = true,
-                    mockChannelsGet = true,
                     presenceLeaveBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Failure(
                         presenceError
                     )
                 ),
                 DefaultAblyTestScenarios.Disconnect.ThenConfig(
-                    verifyChannelsGet = true,
-                    verifyPresenceLeave = true,
-                    verifyChannelUnsubscribeAndRelease = true,
+                    verifyChannelTeardown = true
                 )
             )
         }
@@ -1716,8 +1696,7 @@ class DefaultAblyTests {
          * Given...
          *
          * ...that calling containsKey on the Channels instance returns true...
-         * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel...
-         * ...which, when told to leave presence, never finishes doing so...
+         * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel which, when told to leave presence, never finishes doing so...
          *
          * When...
          *
@@ -1731,20 +1710,17 @@ class DefaultAblyTests {
          * ...and tells the channel to leave presence...
          * ...and calls `unsubscribe` on the channel and on its Presence instance...
          * ...and fetches the channel’s name and calls `release` on the Channels instance...
-         * ...and the call to `disconnect` (on the object under test) succeeds after presence leave is timed out.
+         * ...and the call to `disconnect` (on the object under test) succeeds.
          */
 
         runBlocking {
             DefaultAblyTestScenarios.Disconnect.test(
                 DefaultAblyTestScenarios.Disconnect.GivenConfig(
                     channelsContainsKey = true,
-                    mockChannelsGet = true,
                     presenceLeaveBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.DoesNotComplete
                 ),
                 DefaultAblyTestScenarios.Disconnect.ThenConfig(
-                    verifyChannelsGet = true,
-                    verifyPresenceLeave = true,
-                    verifyChannelUnsubscribeAndRelease = true,
+                    verifyChannelTeardown = true,
                 )
             )
         }
@@ -1770,13 +1746,10 @@ class DefaultAblyTests {
             DefaultAblyTestScenarios.Disconnect.test(
                 DefaultAblyTestScenarios.Disconnect.GivenConfig(
                     channelsContainsKey = false,
-                    mockChannelsGet = false,
                     presenceLeaveBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.NotMocked
                 ),
                 DefaultAblyTestScenarios.Disconnect.ThenConfig(
-                    verifyChannelsGet = false,
-                    verifyPresenceLeave = false,
-                    verifyChannelUnsubscribeAndRelease = false,
+                    verifyChannelTeardown = false,
                 )
             )
         }
@@ -2258,7 +2231,7 @@ class DefaultAblyTests {
     */
 
     @Test
-    fun `stopConnection - when connection is in INITIALIZED state and, after close called, changes to CLOSED`() {
+    fun `stopConnection - when connection is in INITIALIZED state`() {
         /* Given...
          *
          * ...that the connection’s `state` property returns INITIALIZED...
@@ -2272,9 +2245,6 @@ class DefaultAblyTests {
          * ...in the following order, precisely the following things happen...
          *
          * ...it fetches the connection’s state 3 times...
-         * ...and adds a listener to the connection using `on`...
-         * ...and tells the Realtime instance to close...
-         * ...and removes a listener from the connection using `off`...
          * ...and the call to `stopConnection` (on the object under test) succeeds.
          */
 
