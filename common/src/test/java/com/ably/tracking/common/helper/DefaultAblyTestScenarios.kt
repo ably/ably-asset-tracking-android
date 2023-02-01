@@ -998,11 +998,6 @@ class DefaultAblyTestScenarios {
             val verifyChannelTeardown: Boolean,
         ) {
             /**
-             * The disconnect should always be successful.
-             */
-            val resultOfDisconnectCallOnObjectUnderTest: ThenTypes.ExpectedAsyncResult =
-                ThenTypes.ExpectedAsyncResult.Terminates(ThenTypes.ExpectedResult.Success)
-            /**
              * Checks that this object represents a valid test configuration to be used with [givenConfig].
              *
              * @param givenConfig The configuration that `this` is intended to be used with.
@@ -1115,13 +1110,11 @@ class DefaultAblyTestScenarios {
 
                 // When...
 
-                val result = executeForVerifying(thenConfig.resultOfDisconnectCallOnObjectUnderTest) {
-                    // ...we call `disconnect` on the object under test,
-                    testEnvironment.objectUnderTest.disconnect(
-                        configuredChannel.trackableId,
-                        PresenceData("")
-                    )
-                }
+                // ...we call `disconnect` on the object under test,
+                testEnvironment.objectUnderTest.disconnect(
+                    configuredChannel.trackableId,
+                    PresenceData("")
+                )
 
                 // Then...
                 // ...in the following order, precisely the following things happen...
@@ -1149,10 +1142,8 @@ class DefaultAblyTestScenarios {
                     }
                 }
 
-                /*
-                 * ...and the call to `disconnect` (on the object under test) succeeds.
-                 */
-                Assert.assertNotNull(result)
+                // (Note: this is implicit from the When.)
+                // ...and the call to `disconnect` (on the object under test) succeeds.
 
                 confirmVerified(*testEnvironment.allMocks)
             }
