@@ -163,12 +163,11 @@ interface Ably {
     fun subscribeForRawEvents(trackableId: String, presenceData: PresenceData, listener: (LocationUpdate) -> Unit)
 
     /**
-     * Joins the presence of the channel for the given [trackableId] and add it to the connected channels.
-     * If successfully joined the presence then the channel is added to the connected channels.
+     * Creates a channel for the given [trackableId], attempts to attach it, and adds it to the connected channels.
+     * The channel is added to the connected channels unless attach fails with a fatal exception.
      * If a channel for the given [trackableId] exists then it just calls [callback] with success.
      *
      * @param trackableId The ID of the trackable channel.
-     * @param presenceData The data that will be send via the presence channel.
      * @param useRewind If set to true then after connecting the channel will replay the last event that was sent in it.
      * @param willPublish If set to true then the connection will allow sending data.
      * @param willSubscribe If set to true then the connection will allow listening for data.
@@ -176,7 +175,6 @@ interface Ably {
      */
     fun connect(
         trackableId: String,
-        presenceData: PresenceData,
         useRewind: Boolean = false,
         willPublish: Boolean = false,
         willSubscribe: Boolean = false,
@@ -188,7 +186,6 @@ interface Ably {
      * */
     suspend fun connect(
         trackableId: String,
-        presenceData: PresenceData,
         useRewind: Boolean = false,
         willPublish: Boolean = false,
         willSubscribe: Boolean = false
@@ -384,7 +381,6 @@ constructor(
 
     override fun connect(
         trackableId: String,
-        presenceData: PresenceData,
         useRewind: Boolean,
         willPublish: Boolean,
         willSubscribe: Boolean,
@@ -397,13 +393,13 @@ constructor(
                 val channel = ably.channels.get(channelName, channelOptions)
                 scope.launch {
                     try {
-                        if (channel.isDetachedOrFailed()) {
-                            attachSuspending(channel)
-                        }
-                        enterChannelPresence(channel, presenceData)
+                        attachSuspending(channel)
                         callback(Result.success(Unit))
                     } catch (connectionException: ConnectionException) {
-                        logHandler?.w("$TAG Failed to connect for channel ${channel.name}", connectionException)
+                        logHandler?.w(
+                            "$TAG Failed to connect for channel ${channel.name}",
+                            connectionException
+                        )
                         if (connectionException.isFatal()) {
                             ably.channels.release(channelName)
                         }
@@ -412,7 +408,10 @@ constructor(
                 }
             } catch (ablyException: AblyException) {
                 val trackingException = ablyException.errorInfo.toTrackingException()
-                logHandler?.w("$TAG Failed to connect for trackable $trackableId", trackingException)
+                logHandler?.w(
+                    "$TAG Failed to connect for trackable $trackableId",
+                    trackingException
+                )
                 callback(Result.failure(trackingException))
             }
         } else {
@@ -438,13 +437,12 @@ constructor(
 
     override suspend fun connect(
         trackableId: String,
-        presenceData: PresenceData,
         useRewind: Boolean,
         willPublish: Boolean,
         willSubscribe: Boolean
     ): Result<Unit> {
         return suspendCoroutine { continuation ->
-            connect(trackableId, presenceData, useRewind, willPublish, willSubscribe) { result ->
+            connect(trackableId, useRewind, willPublish, willSubscribe) { result ->
                 try {
                     result.getOrThrow()
                     continuation.resume(Result.success(Unit))

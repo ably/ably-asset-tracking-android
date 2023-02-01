@@ -15,6 +15,7 @@ import kotlinx.coroutines.delay
  */
 private const val PRESENCE_ENTER_DELAY_IN_MILLISECONDS = 15_000L
 
+// TODO rename this to EnterPresenceWorker - probably already done by Andy
 internal class RetryEnterPresenceWorker(
     private val trackable: Trackable,
     private val ably: Ably

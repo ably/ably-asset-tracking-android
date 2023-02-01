@@ -87,7 +87,6 @@ internal class WorkerFactory(
             )
             is WorkerSpecification.ConnectionCreated -> ConnectionCreatedWorker(
                 workerSpecification.trackable,
-                workerSpecification.enteredPresence,
                 workerSpecification.callbackFunction,
                 ably,
                 logHandler,
@@ -263,7 +262,6 @@ internal sealed class WorkerSpecification {
 
     data class ConnectionCreated(
         val trackable: Trackable,
-        val enteredPresence: Boolean,
         val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>,
         val presenceUpdateListener: ((presenceMessage: com.ably.tracking.common.PresenceMessage) -> Unit),
         val channelStateChangeListener: ((connectionStateChange: ConnectionStateChange) -> Unit),

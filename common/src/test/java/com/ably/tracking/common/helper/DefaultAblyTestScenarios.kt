@@ -241,9 +241,7 @@ class DefaultAblyTestScenarios {
         class GivenConfig(
             val channelsContainsKey: Boolean,
             val channelsGetOverload: DefaultAblyTestEnvironment.ChannelsGetOverload,
-            val channelState: ChannelState,
-            val channelAttachBehaviour: GivenTypes.CompletionListenerMockBehaviour,
-            val presenceEnterBehaviour: GivenTypes.CompletionListenerMockBehaviour
+            val channelAttachBehaviour: GivenTypes.CompletionListenerMockBehaviour
         )
 
         /**
@@ -251,8 +249,6 @@ class DefaultAblyTestScenarios {
          */
         class ThenConfig(
             val overloadOfChannelsGetToVerify: DefaultAblyTestEnvironment.ChannelsGetOverload,
-            val numberOfChannelStateFetchesToVerify: Int,
-            val verifyPresenceEnter: Boolean,
             val verifyChannelAttach: Boolean,
             val verifyChannelRelease: Boolean,
             val resultOfConnectCallOnObjectUnderTest: ThenTypes.ExpectedAsyncResult
@@ -284,10 +280,6 @@ class DefaultAblyTestScenarios {
              * ...[and] which, when told to enter presence, does so successfully...
              * }
              *
-             * when ${givenConfig.presenceEnterBehaviour} is Failure {
-             * ...[and] which, when told to enter presence, fails to do so with error ${givenConfig.presenceEnterBehaviour.errorInfo}...
-             * }
-             *
              * when ${givenConfig.presenceEnterBehaviour} is DoesNotComplete {
              * ...[and] which, when told to enter presence, never finishes doing so...
              * }
@@ -301,14 +293,9 @@ class DefaultAblyTestScenarios {
              *
              * ...it calls `containsKey` on the Channels instance...
              * ...and calls `get` (the overload described by ${givenConfig.channelsGetOverload}) on the Channels instance...
-             * ...and checks the channel’s state ${thenConfig.numberOfChannelStateFetchesToVerify} times...
              *
              * if ${thenConfig.verifyChannelAttach} {
              * ...and tells the channel to attach...
-             * }
-             *
-             * if ${thenConfig.verifyPresenceEnter} {
-             * ...and tells the channel to enter presence...
              * }
              *
              * if ${thenConfig.verifyChannelRelease} {
@@ -345,7 +332,7 @@ class DefaultAblyTestScenarios {
                     result = givenConfig.channelsContainsKey
                 )
                 testEnvironment.mockChannelsGet(givenConfig.channelsGetOverload)
-                configuredChannel.mockState(givenConfig.channelState)
+                configuredChannel.mockState(ChannelState.initialized)
 
                 testEnvironment.stubRelease(configuredChannel)
 
@@ -374,38 +361,12 @@ class DefaultAblyTestScenarios {
                     }
                 }
 
-                when (val givenPresenceEnterBehaviour = givenConfig.presenceEnterBehaviour) {
-                    is GivenTypes.CompletionListenerMockBehaviour.NotMocked -> {}
-                    /* when ${givenConfig.presenceEnterBehaviour} is Success {
-                     * ...[and] which, when told to enter presence, does so successfully...
-                     * }
-                     */
-                    is GivenTypes.CompletionListenerMockBehaviour.Success -> {
-                        configuredChannel.mockSuccessfulPresenceEnter()
-                    }
-                    /* when ${givenConfig.presenceEnterBehaviour} is Failure {
-                     * ...[and] which, when told to enter presence, fails to do so with error ${givenConfig.presenceEnterBehaviour.errorInfo}...
-                     * }
-                     */
-                    is GivenTypes.CompletionListenerMockBehaviour.Failure -> {
-                        configuredChannel.mockFailedPresenceEnter(givenPresenceEnterBehaviour.errorInfo)
-                    }
-                    /* when ${givenConfig.presenceEnterBehaviour} is DoesNotComplete {
-                     * ...[and] which, when told to enter presence, never finishes doing so...
-                     * }
-                     */
-                    is GivenTypes.CompletionListenerMockBehaviour.DoesNotComplete -> {
-                        configuredChannel.mockNonCompletingPresenceEnter()
-                    }
-                }
-
                 // When...
 
                 val result = executeForVerifying(thenConfig.resultOfConnectCallOnObjectUnderTest) {
                     // ...we call `connect` on the object under test,
                     testEnvironment.objectUnderTest.connect(
-                        configuredChannel.trackableId,
-                        PresenceData("")
+                        configuredChannel.trackableId
                     )
                 }
 
@@ -425,25 +386,12 @@ class DefaultAblyTestScenarios {
                         }
                     }
 
-                    // ...and checks the channel’s state ${thenConfig.numberOfChannelStateFetchesToVerify} times...
-                    repeat(thenConfig.numberOfChannelStateFetchesToVerify) {
-                        configuredChannel.channelMock.state
-                    }
-
                     if (thenConfig.verifyChannelAttach) {
                         /* if ${thenConfig.verifyChannelAttach} {
                          * ...and tells the channel to attach...
                          * }
                          */
                         configuredChannel.channelMock.attach(any())
-                    }
-
-                    if (thenConfig.verifyPresenceEnter) {
-                        /* if ${thenConfig.verifyPresenceEnter} {
-                         * ...and tells the channel to enter presence...
-                         * }
-                         */
-                        configuredChannel.presenceMock.enter(any(), any())
                     }
 
                     if (thenConfig.verifyChannelRelease) {

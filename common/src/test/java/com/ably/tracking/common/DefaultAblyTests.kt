@@ -37,384 +37,12 @@ class DefaultAblyTests {
      */
 
     @Test
-    fun `connect - when channel fetched is in INITIALIZED state`() {
+    fun `connect - when channel is not created and attach succeeds`() {
         /* Given...
          *
          * ...that calling `containsKey` on the Channels instance returns false...
-         * ...and that calling `get` (the overload that accepts a ChannelOptions object) on the Channels instance returns a channel in the INITIALIZED state...
-         * ...which, when told to enter presence, does so successfully,
-         *
-         * When...
-         *
-         * ...we call `connect` on the object under test,
-         *
-         * Then...
-         * ...in the following order, precisely the following things happen...
-         *
-         * ...it calls `containsKey` on the Channels instance...
-         * ...and calls `get` (the overload that accepts a ChannelOptions object) on the Channels instance...
-         * ...and checks the channel’s state 2 times...
-         * ...and tells the channel to enter presence...
-         * ...and the call to `connect` (on the object under test) succeeds.
-         */
-
-        runBlocking {
-            DefaultAblyTestScenarios.Connect.test(
-                DefaultAblyTestScenarios.Connect.GivenConfig(
-                    channelsContainsKey = false,
-                    channelsGetOverload = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
-                    channelState = ChannelState.initialized,
-                    channelAttachBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.NotMocked,
-                    presenceEnterBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Success,
-                ),
-                DefaultAblyTestScenarios.Connect.ThenConfig(
-                    overloadOfChannelsGetToVerify = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
-                    numberOfChannelStateFetchesToVerify = 2,
-                    verifyPresenceEnter = true,
-                    verifyChannelAttach = false,
-                    verifyChannelRelease = false,
-                    resultOfConnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
-                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
-                    )
-                )
-            )
-        }
-    }
-
-    @Test
-    fun `connect - when channel fetched is in ATTACHED state`() {
-        /* Given...
-         *
-         * ...that calling `containsKey` on the Channels instance returns false...
-         * ...and that calling `get` (the overload that accepts a ChannelOptions object) on the Channels instance returns a channel in the ATTACHED state...
-         * ...which, when told to enter presence, does so successfully,
-         *
-         * When...
-         *
-         * ...we call `connect` on the object under test,
-         *
-         * Then...
-         * ...in the following order, precisely the following things happen...
-         *
-         * ...it calls `containsKey` on the Channels instance...
-         * ...and calls `get` (the overload that accepts a ChannelOptions object) on the Channels instance...
-         * ...and checks the channel’s state 2 times...
-         * ...and tells the channel to enter presence...
-         * ...and the call to `connect` (on the object under test) succeeds.
-         */
-
-        runBlocking {
-            DefaultAblyTestScenarios.Connect.test(
-                DefaultAblyTestScenarios.Connect.GivenConfig(
-                    channelsContainsKey = false,
-                    channelsGetOverload = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
-                    channelState = ChannelState.attached,
-                    channelAttachBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.NotMocked,
-                    presenceEnterBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Success,
-                ),
-                DefaultAblyTestScenarios.Connect.ThenConfig(
-                    overloadOfChannelsGetToVerify = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
-                    numberOfChannelStateFetchesToVerify = 2,
-                    verifyPresenceEnter = true,
-                    verifyChannelAttach = false,
-                    verifyChannelRelease = false,
-                    resultOfConnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
-                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
-                    )
-                )
-            )
-        }
-    }
-
-    @Test
-    fun `connect - when channel fetched is in ATTACHING state`() {
-        /* Given...
-         *
-         * ...that calling `containsKey` on the Channels instance returns false...
-         * ...and that calling `get` (the overload that accepts a ChannelOptions object) on the Channels instance returns a channel in the ATTACHING state...
-         * ...which, when told to enter presence, does so successfully...
-         *
-         * When...
-         *
-         * ...we call `connect` on the object under test,
-         *
-         * Then...
-         * ...in the following order, precisely the following things happen...
-         *
-         * ...it calls `containsKey` on the Channels instance...
-         * ...and calls `get` (the overload that accepts a ChannelOptions object) on the Channels instance...
-         * ...and checks the channel’s state 2 times...
-         * ...and tells the channel to enter presence...
-         * ...and the call to `connect` (on the object under test) succeeds.
-         */
-
-        runBlocking {
-            DefaultAblyTestScenarios.Connect.test(
-                DefaultAblyTestScenarios.Connect.GivenConfig(
-                    channelsContainsKey = false,
-                    channelsGetOverload = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
-                    channelState = ChannelState.attaching,
-                    channelAttachBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.NotMocked,
-                    presenceEnterBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Success,
-                ),
-                DefaultAblyTestScenarios.Connect.ThenConfig(
-                    overloadOfChannelsGetToVerify = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
-                    numberOfChannelStateFetchesToVerify = 2,
-                    verifyPresenceEnter = true,
-                    verifyChannelAttach = false,
-                    verifyChannelRelease = false,
-                    resultOfConnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
-                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
-                    )
-                )
-            )
-        }
-    }
-
-    @Test
-    fun `connect - when channel fetched is in DETACHING state`() {
-        /* Given...
-         *
-         * ...that calling `containsKey` on the Channels instance returns false...
-         * ...and that calling `get` (the overload that accepts a ChannelOptions object) on the Channels instance returns a channel in the DETACHING state...
-         * ...which, when told to enter presence, fails to do so with an arbitrarily-chosen fatal error `presenceError`...
-         *
-         * When...
-         *
-         * ...we call `connect` on the object under test,
-         *
-         * Then...
-         * ...in the following order, precisely the following things happen...
-         *
-         * ...it calls `containsKey` on the Channels instance...
-         * ...and calls `get` (the overload that accepts a ChannelOptions object) on the Channels instance...
-         * ...and checks the channel’s state 2 times...
-         * ...and tells the channel to enter presence...
-         * ...and releases the channel...
-         * ...and the call to `connect` (on the object under test) fails with a ConnectionException whose errorInformation has the same `code`, `statusCode`, and `message` as `presenceError`.
-         */
-
-        /* A note on this test:
-         *
-         * RTP16c tells us that a presence operation on a channel in the DETACHING state will fail.
-         */
-
-        val presenceError = ErrorInfo(
-            "example of an error message", /* arbitrarily chosen */
-            400, /* fatal error code */
-            123 /* arbitrarily chosen */
-        )
-
-        runBlocking {
-            DefaultAblyTestScenarios.Connect.test(
-                DefaultAblyTestScenarios.Connect.GivenConfig(
-                    channelsContainsKey = false,
-                    channelsGetOverload = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
-                    channelState = ChannelState.detaching,
-                    channelAttachBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.NotMocked,
-                    presenceEnterBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Failure(
-                        presenceError
-                    ),
-                ),
-                DefaultAblyTestScenarios.Connect.ThenConfig(
-                    overloadOfChannelsGetToVerify = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
-                    numberOfChannelStateFetchesToVerify = 2,
-                    verifyPresenceEnter = true,
-                    verifyChannelAttach = false,
-                    verifyChannelRelease = true,
-                    resultOfConnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
-                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.FailureWithConnectionException(
-                            ErrorInformation(
-                                presenceError.code,
-                                presenceError.statusCode,
-                                presenceError.message,
-                                presenceError.code.toHref(),
-                                null
-                            )
-                        )
-                    )
-                )
-            )
-        }
-    }
-
-    @Test
-    fun `connect - when presence enter fails with a fatal error`() {
-        /* Given...
-         *
-         * ...that calling `containsKey` on the Channels instance returns false...
-         * ...and that calling `get` (the overload that accepts a ChannelOptions object) on the Channels instance returns a channel in the (arbitrarily-chosen) INITIALIZED state...
-         * ...which, when told to enter presence, fails to do so with an arbitrarily-chosen fatal error `presenceError`...
-         *
-         * When...
-         *
-         * ...we call `connect` on the object under test,
-         *
-         * Then...
-         * ...in the following order, precisely the following things happen...
-         *
-         * ...it calls `containsKey` on the Channels instance...
-         * ...and calls `get` (the overload that accepts a ChannelOptions object) on the Channels instance...
-         * ...and checks the channel’s state 2 times...
-         * ...and tells the channel to enter presence...
-         * ...and releases the channel...
-         * ...and the call to `connect` (on the object under test) fails with a ConnectionException whose errorInformation has the same `code`, `statusCode`, and `message` as `presenceError`.
-         */
-
-        val presenceError = ErrorInfo(
-            "example of an error message", /* arbitrarily chosen */
-            400, /* fatal error code */
-            123 /* arbitrarily chosen */
-        )
-
-        runBlocking {
-            DefaultAblyTestScenarios.Connect.test(
-                DefaultAblyTestScenarios.Connect.GivenConfig(
-                    channelsContainsKey = false,
-                    channelsGetOverload = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
-                    channelState = ChannelState.initialized, /* arbitrarily chosen */
-                    channelAttachBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.NotMocked,
-                    presenceEnterBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Failure(
-                        presenceError
-                    ),
-                ),
-                DefaultAblyTestScenarios.Connect.ThenConfig(
-                    overloadOfChannelsGetToVerify = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
-                    numberOfChannelStateFetchesToVerify = 2,
-                    verifyPresenceEnter = true,
-                    verifyChannelAttach = false,
-                    verifyChannelRelease = true,
-                    resultOfConnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
-                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.FailureWithConnectionException(
-                            ErrorInformation(
-                                presenceError.code,
-                                presenceError.statusCode,
-                                presenceError.message,
-                                presenceError.code.toHref(),
-                                null
-                            )
-                        )
-                    )
-                )
-            )
-        }
-    }
-
-    @Test
-    fun `connect - when presence enter fails with a non-fatal error`() {
-        /* Given...
-         *
-         * ...that calling `containsKey` on the Channels instance returns false...
-         * ...and that calling `get` (the overload that accepts a ChannelOptions object) on the Channels instance returns a channel in the (arbitrarily-chosen) INITIALIZED state...
-         * ...which, when told to enter presence, fails to do so with an arbitrarily-chosen non-fatal error `presenceError`...
-         *
-         * When...
-         *
-         * ...we call `connect` on the object under test,
-         *
-         * Then...
-         * ...in the following order, precisely the following things happen...
-         *
-         * ...it calls `containsKey` on the Channels instance...
-         * ...and calls `get` (the overload that accepts a ChannelOptions object) on the Channels instance...
-         * ...and checks the channel’s state 2 times...
-         * ...and tells the channel to enter presence...
-         * ...and releases the channel...
-         * ...and the call to `connect` (on the object under test) fails with a ConnectionException whose errorInformation has the same `code`, `statusCode`, and `message` as `presenceError`.
-         */
-
-        val presenceError = ErrorInfo(
-            "example of an error message", /* arbitrarily chosen */
-            500, /* fatal error code */
-            123 /* arbitrarily chosen */
-        )
-
-        runBlocking {
-            DefaultAblyTestScenarios.Connect.test(
-                DefaultAblyTestScenarios.Connect.GivenConfig(
-                    channelsContainsKey = false,
-                    channelsGetOverload = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
-                    channelState = ChannelState.initialized, /* arbitrarily chosen */
-                    channelAttachBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.NotMocked,
-                    presenceEnterBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Failure(
-                        presenceError
-                    ),
-                ),
-                DefaultAblyTestScenarios.Connect.ThenConfig(
-                    overloadOfChannelsGetToVerify = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
-                    numberOfChannelStateFetchesToVerify = 2,
-                    verifyPresenceEnter = true,
-                    verifyChannelAttach = false,
-                    verifyChannelRelease = false,
-                    resultOfConnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
-                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.FailureWithConnectionException(
-                            ErrorInformation(
-                                presenceError.code,
-                                presenceError.statusCode,
-                                presenceError.message,
-                                presenceError.code.toHref(),
-                                null
-                            )
-                        )
-                    )
-                )
-            )
-        }
-    }
-
-    @Test
-    fun `connect - when presence enter does not complete`() {
-        /* Given...
-         *
-         * ...that calling `containsKey` on the Channels instance returns false...
-         * ...and that calling `get` (the overload that accepts a ChannelOptions object) on the Channels instance returns a channel in the (arbitrarily chosen) INITIALIZED state...
-         * ...which, when told to enter presence, never finishes doing so...
-         *
-         * When...
-         *
-         * ...we call `connect` on the object under test,
-         *
-         * Then...
-         * ...in the following order, precisely the following things happen...
-         *
-         * ...it calls `containsKey` on the Channels instance...
-         * ...and calls `get` (the overload that accepts a ChannelOptions object) on the Channels instance...
-         * ...and checks the channel’s state twice...
-         * ...and tells the channel to enter presence...
-         * ...and the call to `connect` (on the object under test) does not complete (see “Documenting the absence of built-in timeout” above).
-         */
-
-        runBlocking {
-            DefaultAblyTestScenarios.Connect.test(
-                DefaultAblyTestScenarios.Connect.GivenConfig(
-                    channelsContainsKey = false,
-                    channelsGetOverload = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
-                    channelState = ChannelState.initialized, /* arbitrarily chosen */
-                    channelAttachBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.NotMocked,
-                    presenceEnterBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.DoesNotComplete,
-                ),
-                DefaultAblyTestScenarios.Connect.ThenConfig(
-                    overloadOfChannelsGetToVerify = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
-                    numberOfChannelStateFetchesToVerify = 2,
-                    verifyPresenceEnter = true,
-                    verifyChannelAttach = false,
-                    verifyChannelRelease = false,
-                    resultOfConnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.DoesNotTerminate(
-                        timeoutInMilliseconds = noTimeoutDemonstrationWaitingTimeInMilliseconds
-                    )
-                )
-            )
-        }
-    }
-
-    @Test
-    fun `connect - when channel fetched is in FAILED state and attach succeeds`() {
-        /* Given...
-         *
-         * ...that calling `containsKey` on the Channels instance returns false...
-         * ...and that calling `get` (the overload that accepts a ChannelOptions object) on the Channels instance returns a channel in the FAILED state...
+         * ...and that calling `get` (the overload that accepts a ChannelOptions object) on the Channels instance returns a channel...
          * ...which, when told to attach, does so successfully...
-         * ...and which, when told to enter presence, does so successfully...
          *
          * When...
          *
@@ -425,9 +53,7 @@ class DefaultAblyTests {
          *
          * ...it calls `containsKey` on the Channels instance...
          * ...and calls `get` (the overload that accepts a ChannelOptions object) on the Channels instance...
-         * ...and checks the channel’s state 2 times...
          * ...and tells the channel to attach...
-         * ...and tells the channel to enter presence...
          * ...and the call to `connect` (on the object under test) succeeds.
          */
 
@@ -436,15 +62,11 @@ class DefaultAblyTests {
                 DefaultAblyTestScenarios.Connect.GivenConfig(
                     channelsContainsKey = false,
                     channelsGetOverload = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
-                    channelState = ChannelState.failed,
-                    channelAttachBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Success,
-                    presenceEnterBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Success,
+                    channelAttachBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Success
                 ),
                 DefaultAblyTestScenarios.Connect.ThenConfig(
                     verifyChannelAttach = true,
                     overloadOfChannelsGetToVerify = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
-                    numberOfChannelStateFetchesToVerify = 2,
-                    verifyPresenceEnter = true,
                     verifyChannelRelease = false,
                     resultOfConnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
                         expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
@@ -455,11 +77,11 @@ class DefaultAblyTests {
     }
 
     @Test
-    fun `connect - when channel fetched is in FAILED state and attach fails`() {
+    fun `connect - when channel is not created and attach fails`() {
         /* Given...
          *
          * ...that calling `containsKey` on the Channels instance returns false...
-         * ...and that calling `get` (the overload that accepts a ChannelOptions object) on the Channels instance returns a channel in the FAILED state...
+         * ...and that calling `get` (the overload that accepts a ChannelOptions object) on the Channels instance returns a channel...
          * ...which, when told to attach, fails to do so with an arbitrarily-chosen fatal error `attachError`...
          *
          * When...
@@ -471,7 +93,6 @@ class DefaultAblyTests {
          *
          * ...it calls `containsKey` on the Channels instance...
          * ...and calls `get` (the overload that accepts a ChannelOptions object) on the Channels instance...
-         * ...and checks the channel’s state 2 times...
          * ...and tells the channel to attach...
          * ...and releases the channel...
          * ...and the call to `connect` (on the object under test) fails with a ConnectionException whose errorInformation has the same `code`, `statusCode`, and `message` as `attachError`.
@@ -488,16 +109,12 @@ class DefaultAblyTests {
                 DefaultAblyTestScenarios.Connect.GivenConfig(
                     channelsContainsKey = false,
                     channelsGetOverload = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
-                    channelState = ChannelState.failed,
                     channelAttachBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Failure(
                         attachError
-                    ),
-                    presenceEnterBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.NotMocked,
+                    )
                 ),
                 DefaultAblyTestScenarios.Connect.ThenConfig(
                     overloadOfChannelsGetToVerify = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
-                    numberOfChannelStateFetchesToVerify = 2,
-                    verifyPresenceEnter = false,
                     verifyChannelAttach = true,
                     verifyChannelRelease = true,
                     resultOfConnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
@@ -511,182 +128,6 @@ class DefaultAblyTests {
                             )
                         )
                     ),
-                )
-            )
-        }
-    }
-
-    @Test
-    fun `connect - when channel fetched is in DETACHED state and attach succeeds`() {
-        /* Given...
-         *
-         * ...that calling `containsKey` on the Channels instance returns false...
-         * ...and that calling `get` (the overload that accepts a ChannelOptions object) on the Channels instance returns a channel in the DETACHED state...
-         * ...which, when told to attach, does so successfully...
-         * ...and which, when told to enter presence, does so successfully...
-         *
-         * When...
-         *
-         * ...we call `connect` on the object under test,
-         *
-         * Then...
-         * ...in the following order, precisely the following things happen...
-         *
-         * ...it calls `containsKey` on the Channels instance...
-         * ...and calls `get` (the overload that accepts a ChannelOptions object) on the Channels instance...
-         * ...and checks the channel’s state once...
-         * ...and tells the channel to attach...
-         * ...and tells the channel to enter presence...
-         * ...and the call to `connect` (on the object under test) succeeds.
-         */
-
-        runBlocking {
-            DefaultAblyTestScenarios.Connect.test(
-                DefaultAblyTestScenarios.Connect.GivenConfig(
-                    channelsContainsKey = false,
-                    channelsGetOverload = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
-                    channelState = ChannelState.detached,
-                    channelAttachBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Success,
-                    presenceEnterBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Success,
-                ),
-                DefaultAblyTestScenarios.Connect.ThenConfig(
-                    overloadOfChannelsGetToVerify = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
-                    numberOfChannelStateFetchesToVerify = 1,
-                    verifyChannelAttach = true,
-                    verifyPresenceEnter = true,
-                    verifyChannelRelease = false,
-                    resultOfConnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
-                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
-                    )
-                )
-            )
-        }
-    }
-
-    @Test
-    fun `connect - when channel fetched is in DETACHED state and attach fails`() {
-        /* Given...
-         *
-         * ...that calling `containsKey` on the Channels instance returns false...
-         * ...and that calling `get` (the overload that accepts a ChannelOptions object) on the Channels instance returns a channel in the DETACHED state...
-         * ... which, when told to attach, fails to do so with an fatal arbitrarily-chosen error...
-         *
-         * When...
-         *
-         * ...we call `connect` on the object under test,
-         *
-         * Then...
-         * ...in the following order, precisely the following things happen...
-         *
-         * ...it calls `containsKey` on the Channels instance...
-         * ...and calls `get` (the overload that accepts a ChannelOptions object) on the Channels instance...
-         * ...and checks the channel’s state once...
-         * ...and tells the channel to attach...
-         * ...and releases the channel...
-         * ...and the call to `connect` (on the object under test) fails with a ConnectionException whose errorInformation has the same `code`, `statusCode`, and `message` as `attachError`.
-         */
-
-        val attachError = ErrorInfo(
-            "example of an error message", /* arbitrarily chosen */
-            400, /* fatal error code */
-            123 /* arbitrarily chosen */
-        )
-
-        runBlocking {
-            DefaultAblyTestScenarios.Connect.test(
-                DefaultAblyTestScenarios.Connect.GivenConfig(
-                    channelsContainsKey = false,
-                    channelsGetOverload = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
-                    channelState = ChannelState.detached,
-                    channelAttachBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Failure(
-                        attachError
-                    ),
-                    presenceEnterBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.NotMocked,
-                ),
-                DefaultAblyTestScenarios.Connect.ThenConfig(
-                    overloadOfChannelsGetToVerify = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
-                    numberOfChannelStateFetchesToVerify = 1,
-                    verifyChannelAttach = true,
-                    verifyPresenceEnter = false,
-                    verifyChannelRelease = true,
-                    resultOfConnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
-                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.FailureWithConnectionException(
-                            ErrorInformation(
-                                attachError.code,
-                                attachError.statusCode,
-                                attachError.message,
-                                attachError.code.toHref(),
-                                null
-                            )
-                        )
-                    )
-                )
-            )
-        }
-    }
-
-    @Test
-    fun `connect - when channel fetched is in SUSPENDED state`() {
-        /* Given...
-         *
-         * ...that calling `containsKey` on the Channels instance returns false...
-         * ...and that calling `get` (the overload that accepts a ChannelOptions object) on the Channels instance returns a channel in the SUSPENDED state...
-         * ...which, when told to enter presence, fails to do so with an arbitrarily-chosen fatal error `presenceError`...
-         *
-         * When...
-         *
-         * ...we call `connect` on the object under test,
-         *
-         * Then...
-         * ...in the following order, precisely the following things happen...
-         *
-         * ...it calls `containsKey` on the Channels instance...
-         * ...and calls `get` (the overload that accepts a ChannelOptions object) on the Channels instance...
-         * ...and checks the channel’s state 2 times...
-         * ...and tells the channel to enter presence...
-         * ...and releases the channel...
-         * ...and the call to `connect` (on the object under test) fails with a ConnectionException whose errorInformation has the same `code`, `statusCode`, and `message` as `presenceError`.
-         */
-
-        /* A note on this test:
-         *
-         * RTP16c tells us that a presence operation on a channel in the SUSPENDED state will fail.
-         */
-
-        val presenceError = ErrorInfo(
-            "example of an error message", /* arbitrarily chosen */
-            400, /* fatal error code */
-            123 /* arbitrarily chosen */
-        )
-
-        runBlocking {
-            DefaultAblyTestScenarios.Connect.test(
-                DefaultAblyTestScenarios.Connect.GivenConfig(
-                    channelsContainsKey = false,
-                    channelsGetOverload = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
-                    channelState = ChannelState.suspended,
-                    channelAttachBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.NotMocked,
-                    presenceEnterBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Failure(
-                        presenceError
-                    ),
-                ),
-                DefaultAblyTestScenarios.Connect.ThenConfig(
-                    overloadOfChannelsGetToVerify = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
-                    numberOfChannelStateFetchesToVerify = 2,
-                    verifyPresenceEnter = true,
-                    verifyChannelAttach = false,
-                    verifyChannelRelease = true,
-                    resultOfConnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
-                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.FailureWithConnectionException(
-                            ErrorInformation(
-                                presenceError.code,
-                                presenceError.statusCode,
-                                presenceError.message,
-                                presenceError.code.toHref(),
-                                null
-                            )
-                        )
-                    )
                 )
             )
         }
@@ -699,7 +140,7 @@ class DefaultAblyTests {
         /* Given...
          *
          * ...that calling `containsKey` on the Channels instance returns false...
-         * ...and that calling `get` (the overload that accepts a ChannelOptions object) on the Channels instance returns a channel in the (arbitrarily-chosen) DETACHED state...
+         * ...and that calling `get` (the overload that accepts a ChannelOptions object) on the Channels instance returns a channel...
          * ...which, when told to attach, never finishes doing so...
          *
          * When...
@@ -711,7 +152,6 @@ class DefaultAblyTests {
          *
          * ...it calls `containsKey` on the Channels instance...
          * ...and calls `get` (the overload that accepts a ChannelOptions object) on the Channels instance...
-         * ...and checks the channel’s state once...
          * ...and tells the channel to attach...
          * ...and the call to `connect` (on the object under test) does not complete (see “Documenting the absence of built-in timeout” above).
          */
@@ -721,14 +161,10 @@ class DefaultAblyTests {
                 DefaultAblyTestScenarios.Connect.GivenConfig(
                     channelsContainsKey = false,
                     channelsGetOverload = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
-                    channelState = ChannelState.detached, /* arbitrarily chosen */
-                    channelAttachBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.DoesNotComplete,
-                    presenceEnterBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.NotMocked,
+                    channelAttachBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.DoesNotComplete
                 ),
                 DefaultAblyTestScenarios.Connect.ThenConfig(
                     overloadOfChannelsGetToVerify = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
-                    numberOfChannelStateFetchesToVerify = 1,
-                    verifyPresenceEnter = false,
                     verifyChannelAttach = true,
                     verifyChannelRelease = false,
                     resultOfConnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.DoesNotTerminate(
@@ -744,8 +180,7 @@ class DefaultAblyTests {
         /* Given...
          *
          * ...that calling `containsKey` on the Channels instance returns true...
-         * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel in the (arbitrarily-chosen) INITIALIZED state...
-         * ...which, when told to enter presence, does so successfully,
+         * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel...
          *
          * When...
          *
@@ -764,14 +199,10 @@ class DefaultAblyTests {
                 DefaultAblyTestScenarios.Connect.GivenConfig(
                     channelsContainsKey = true,
                     channelsGetOverload = DefaultAblyTestEnvironment.ChannelsGetOverload.WITHOUT_CHANNEL_OPTIONS,
-                    channelState = ChannelState.initialized, /* arbitrarily chosen */
-                    channelAttachBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.NotMocked,
-                    presenceEnterBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Success,
+                    channelAttachBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.NotMocked
                 ),
                 DefaultAblyTestScenarios.Connect.ThenConfig(
                     overloadOfChannelsGetToVerify = DefaultAblyTestEnvironment.ChannelsGetOverload.WITHOUT_CHANNEL_OPTIONS,
-                    numberOfChannelStateFetchesToVerify = 0,
-                    verifyPresenceEnter = false,
                     verifyChannelAttach = false,
                     verifyChannelRelease = false,
                     resultOfConnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(

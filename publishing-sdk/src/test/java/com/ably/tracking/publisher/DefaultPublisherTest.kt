@@ -87,7 +87,7 @@ class DefaultPublisherTest {
 
         // then
         coVerify(exactly = 1) {
-            ably.connect(trackableId, any(), any(), any(), any())
+            ably.connect(trackableId, any(), any(), any())
         }
     }
 
@@ -111,7 +111,7 @@ class DefaultPublisherTest {
 
         // then
         coVerify(exactly = 2) {
-            ably.connect(trackableId, any(), any(), any(), any())
+            ably.connect(trackableId, any(), any(), any())
         }
     }
 
@@ -133,7 +133,7 @@ class DefaultPublisherTest {
 
         // then
         coVerify(exactly = 1) {
-            ably.connect(trackableId, any(), any(), any(), any())
+            ably.connect(trackableId, any(), any(), any())
         }
     }
 
@@ -172,7 +172,7 @@ class DefaultPublisherTest {
         Assert.assertTrue("First add should fail", didFirstAddFail)
         Assert.assertTrue("Second add should fail", didSecondAddFail)
         coVerify(exactly = 1) {
-            ably.connect(trackableId, any(), any(), any(), any())
+            ably.connect(trackableId, any(), any(), any())
         }
     }
 

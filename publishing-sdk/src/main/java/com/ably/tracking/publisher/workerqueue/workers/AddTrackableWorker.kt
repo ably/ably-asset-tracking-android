@@ -3,7 +3,6 @@ package com.ably.tracking.publisher.workerqueue.workers
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ConnectionStateChange
-import com.ably.tracking.common.PresenceData
 import com.ably.tracking.common.PresenceMessage
 import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.common.isFatalAblyFailure
@@ -74,7 +73,7 @@ internal class AddTrackableWorker(
                 }
                 properties.duplicateTrackableGuard.startAddingTrackable(trackable)
                 doAsyncWork {
-                    createConnection(postWork, isAddingTheFirstTrackable, properties.presenceData)
+                    createConnection(postWork, isAddingTheFirstTrackable)
                 }
             }
         }
@@ -83,8 +82,7 @@ internal class AddTrackableWorker(
 
     private suspend fun createConnection(
         postWork: (WorkerSpecification) -> Unit,
-        isAddingTheFirstTrackable: Boolean,
-        presenceData: PresenceData
+        isAddingTheFirstTrackable: Boolean
     ) {
         if (isAddingTheFirstTrackable) {
             isConnectedToAbly = false
@@ -102,7 +100,6 @@ internal class AddTrackableWorker(
         }
         val connectResult = ably.connect(
             trackableId = trackable.id,
-            presenceData = presenceData,
             willPublish = true,
         )
 
@@ -116,14 +113,12 @@ internal class AddTrackableWorker(
             return
         }
 
-        // If the connection result is successful, then we've entered presence
-        postWork(createConnectionCreatedWorker(connectResult.isSuccess))
+        postWork(createConnectionCreatedWorker())
     }
 
-    private fun createConnectionCreatedWorker(enteredPresence: Boolean) =
+    private fun createConnectionCreatedWorker() =
         WorkerSpecification.ConnectionCreated(
             trackable,
-            enteredPresence,
             callbackFunction,
             presenceUpdateListener,
             channelStateChangeListener
