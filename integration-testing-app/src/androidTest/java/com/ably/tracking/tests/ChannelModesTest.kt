@@ -49,7 +49,6 @@ class ChannelModesTest {
             .build()
         val response = httpClient.newCall(request).execute()
 
-        
         val responseBodyJson = Gson().fromJson(response.body!!.string(), JsonObject::class.java)
         return responseBodyJson.getAsJsonObject("status")
             .getAsJsonObject("occupancy")

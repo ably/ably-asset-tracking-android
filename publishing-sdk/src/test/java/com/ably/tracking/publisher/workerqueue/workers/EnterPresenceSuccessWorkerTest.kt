@@ -23,13 +23,13 @@ class EnterPresenceSuccessWorkerTest {
     private lateinit var worker: EnterPresenceSuccessWorker
 
     @Test
-    fun `it returns properties untouched if no trackable is set` () {
+    fun `it returns properties untouched if no trackable is set`() {
         // Given
         worker = EnterPresenceSuccessWorker(trackable, publisherInteractor)
         val initialProperties = createPublisherProperties()
 
         // When
-        val updatedProperties = worker.doWork(initialProperties, asyncWorks.appendWork(), postedWorks.appendSpecification() )
+        val updatedProperties = worker.doWork(initialProperties, asyncWorks.appendWork(), postedWorks.appendSpecification())
 
         // Then
         assertThat(asyncWorks).isEmpty()
@@ -39,32 +39,32 @@ class EnterPresenceSuccessWorkerTest {
     }
 
     @Test
-    fun `it does not update trackable states in publisher if no trackable is set` () {
+    fun `it does not update trackable states in publisher if no trackable is set`() {
         // Given
         worker = EnterPresenceSuccessWorker(trackable, publisherInteractor)
         val initialProperties = createPublisherProperties()
 
         // When
-        worker.doWork(initialProperties, asyncWorks.appendWork(), postedWorks.appendSpecification() )
+        worker.doWork(initialProperties, asyncWorks.appendWork(), postedWorks.appendSpecification())
 
         // Then
         assertThat(asyncWorks).isEmpty()
         assertThat(postedWorks).isEmpty()
 
-        verify (exactly = 0) {
+        verify(exactly = 0) {
             publisherInteractor.updateTrackableState(initialProperties, trackable.id)
         }
     }
 
     @Test
-    fun `it sets trackable presence flag if trackable set` () {
+    fun `it sets trackable presence flag if trackable set`() {
         // Given
         worker = EnterPresenceSuccessWorker(trackable, publisherInteractor)
         val initialProperties = createPublisherProperties()
         initialProperties.trackables.add(trackable)
 
         // When
-        val updatedProperties = worker.doWork(initialProperties, asyncWorks.appendWork(), postedWorks.appendSpecification() )
+        val updatedProperties = worker.doWork(initialProperties, asyncWorks.appendWork(), postedWorks.appendSpecification())
 
         // Then
         assertThat(asyncWorks).isEmpty()
@@ -74,20 +74,20 @@ class EnterPresenceSuccessWorkerTest {
     }
 
     @Test
-    fun `it updates trackable states in publisher if trackable set` () {
+    fun `it updates trackable states in publisher if trackable set`() {
         // Given
         worker = EnterPresenceSuccessWorker(trackable, publisherInteractor)
         val initialProperties = createPublisherProperties()
         initialProperties.trackables.add(trackable)
 
         // When
-        worker.doWork(initialProperties, asyncWorks.appendWork(), postedWorks.appendSpecification() )
+        worker.doWork(initialProperties, asyncWorks.appendWork(), postedWorks.appendSpecification())
 
         // Then
         assertThat(asyncWorks).isEmpty()
         assertThat(postedWorks).isEmpty()
 
-        verify (exactly = 1) {
+        verify(exactly = 1) {
             publisherInteractor.updateTrackableState(initialProperties, trackable.id)
         }
     }
