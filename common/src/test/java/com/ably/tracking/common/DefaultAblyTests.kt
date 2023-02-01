@@ -1623,8 +1623,7 @@ class DefaultAblyTests {
         /* Given...
          *
          * ...that calling containsKey on the Channels instance returns true...
-         * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel...
-         * ...which, when told to leave presence, does so successfully...
+         * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel which, when told to leave presence, does so successfully...
          *
          * When...
          *
@@ -1645,7 +1644,6 @@ class DefaultAblyTests {
             DefaultAblyTestScenarios.Disconnect.test(
                 DefaultAblyTestScenarios.Disconnect.GivenConfig(
                     channelsContainsKey = true,
-                    mockChannelsGet = true,
                     presenceLeaveBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Success
                 ),
                 DefaultAblyTestScenarios.Disconnect.ThenConfig(
@@ -1660,8 +1658,7 @@ class DefaultAblyTests {
         /* Given...
          *
          * ...that calling containsKey on the Channels instance returns true...
-         * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel...
-         * ...which, when told to leave presence, fails to do so with an arbitrarily-chosen error `presenceError`...
+         * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel which, when told to leave presence, fails to do so with an arbitrarily-chosen error `presenceError`...
          *
          * When...
          *
@@ -1687,7 +1684,6 @@ class DefaultAblyTests {
             DefaultAblyTestScenarios.Disconnect.test(
                 DefaultAblyTestScenarios.Disconnect.GivenConfig(
                     channelsContainsKey = true,
-                    mockChannelsGet = true,
                     presenceLeaveBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Failure(
                         presenceError
                     )
@@ -1705,8 +1701,7 @@ class DefaultAblyTests {
          * Given...
          *
          * ...that calling containsKey on the Channels instance returns true...
-         * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel...
-         * ...which, when told to leave presence, never finishes doing so...
+         * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel which, when told to leave presence, never finishes doing so...
          *
          * When...
          *
@@ -1727,7 +1722,6 @@ class DefaultAblyTests {
             DefaultAblyTestScenarios.Disconnect.test(
                 DefaultAblyTestScenarios.Disconnect.GivenConfig(
                     channelsContainsKey = true,
-                    mockChannelsGet = true,
                     presenceLeaveBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.DoesNotComplete
                 ),
                 DefaultAblyTestScenarios.Disconnect.ThenConfig(
@@ -1757,7 +1751,6 @@ class DefaultAblyTests {
             DefaultAblyTestScenarios.Disconnect.test(
                 DefaultAblyTestScenarios.Disconnect.GivenConfig(
                     channelsContainsKey = false,
-                    mockChannelsGet = false,
                     presenceLeaveBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.NotMocked
                 ),
                 DefaultAblyTestScenarios.Disconnect.ThenConfig(
