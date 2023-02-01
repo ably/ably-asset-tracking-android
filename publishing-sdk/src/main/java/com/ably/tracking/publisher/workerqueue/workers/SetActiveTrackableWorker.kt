@@ -21,9 +21,7 @@ internal class SetActiveTrackableWorker(
         doAsyncWork: (suspend () -> Unit) -> Unit,
         postWork: (WorkerSpecification) -> Unit
     ): PublisherProperties {
-        Log.e("WORKER", "ACTIVE TRACKABLE")
         if (properties.active != trackable) {
-            Log.e("WORKER", "ACTIVE TRACKABLE - BLOCK")
             properties.active = trackable
 
             // In the future consider moving following lines to handler
