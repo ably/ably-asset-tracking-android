@@ -1,6 +1,7 @@
 package com.ably.tracking.publisher
 
 import android.Manifest
+import android.util.Log
 import androidx.annotation.RequiresPermission
 import com.ably.tracking.EnhancedLocationUpdate
 import com.ably.tracking.Location
@@ -473,7 +474,11 @@ constructor(
             ConnectionState.OFFLINE -> TrackableState.Offline()
             ConnectionState.FAILED -> TrackableState.Failed(properties.lastConnectionStateChange.errorInformation!!) // are we sure error information will always be present?
         }
+
+        Log.e("PUBLISHER", "Latest determined trackable state for $trackableId = $newTrackableState ... Sent location $hasSentAtLeastOneLocation. Subscribed to presence $isSubscribedToPresence. Entered presence $hasEnteredPresence")
+
         if (newTrackableState != properties.trackableStates[trackableId]) {
+            Log.e("PUBLISHER", "Publishing trackable state $newTrackableState for $trackableId")
             publishNewTrackableState(properties, trackableId, newTrackableState)
         }
     }

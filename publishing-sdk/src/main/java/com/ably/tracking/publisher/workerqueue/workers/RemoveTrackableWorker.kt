@@ -34,9 +34,6 @@ internal class RemoveTrackableWorker(
                     postWork(buildDisconnectSuccessWorkerSpecification(postWork))
                 }
             }
-            properties.duplicateTrackableGuard.isCurrentlyAddingTrackable(trackable) -> {
-                properties.trackableRemovalGuard.markForRemoval(trackable, callbackFunction)
-            }
             else -> {
                 doAsyncWork {
                     callbackFunction(Result.success(false))

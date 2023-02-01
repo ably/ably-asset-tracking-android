@@ -52,27 +52,6 @@ class RemoveTrackableWorkerTest {
     }
 
     @Test
-    fun `when removing trackable that is currently added should add it to trackableRemovalGuard`() =
-        runTest {
-            // given
-            val initialProperties = createPublisherProperties()
-            initialProperties.duplicateTrackableGuard.startAddingTrackable(trackable)
-
-            // when
-            worker.doWork(
-                initialProperties,
-                asyncWorks.appendWork(),
-                postedWorks.appendSpecification()
-            )
-
-            // then
-            assertThat(asyncWorks).isEmpty()
-            assertThat(postedWorks).isEmpty()
-            assertThat(initialProperties.trackableRemovalGuard.isMarkedForRemoval(trackable))
-                .isEqualTo(true)
-        }
-
-    @Test
     fun `when removing trackable that is present should post disconnect success worker`() =
         runTest {
             // given
@@ -95,6 +74,8 @@ class RemoveTrackableWorkerTest {
             assertThat(postedWorks.size).isEqualTo(1)
             assertThat(postedWorks[0])
                 .isInstanceOf(WorkerSpecification.DisconnectSuccess::class.java)
+            assertThat(initialProperties.trackableRemovalGuard.isMarkedForRemoval(trackable))
+                .isEqualTo(true)
         }
 
     @Test

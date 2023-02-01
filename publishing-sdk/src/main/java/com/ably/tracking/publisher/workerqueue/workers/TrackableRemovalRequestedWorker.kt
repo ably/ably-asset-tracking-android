@@ -1,19 +1,14 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
-import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
-import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.common.workerqueue.Worker
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.PublisherState
-import com.ably.tracking.publisher.RemoveTrackableRequestedException
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.WorkerSpecification
-import kotlinx.coroutines.flow.StateFlow
 
 internal class TrackableRemovalRequestedWorker(
     private val trackable: Trackable,
-    private val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>,
     private val ably: Ably,
     private val result: Result<Unit>
 ) : Worker<PublisherProperties, WorkerSpecification> {
@@ -33,12 +28,7 @@ internal class TrackableRemovalRequestedWorker(
         } else {
             properties.trackableRemovalGuard.removeMarked(trackable, Result.failure(result.exceptionOrNull()!!))
         }
-        callbackFunction(Result.failure(RemoveTrackableRequestedException()))
-        properties.duplicateTrackableGuard.finishAddingTrackable(
-            trackable,
-            Result.failure(RemoveTrackableRequestedException())
-        )
-        val removedTheLastTrackable = properties.hasNoTrackablesAddingOrAdded
+        val removedTheLastTrackable = properties.hasNoTrackablesAdded
         if (removedTheLastTrackable) {
             properties.state = PublisherState.DISCONNECTING
             doAsyncWork {
@@ -51,11 +41,11 @@ internal class TrackableRemovalRequestedWorker(
     }
 
     override fun doWhenStopped(exception: Exception) {
-        callbackFunction(Result.failure(exception))
+        // No op
     }
 
     override fun onUnexpectedError(exception: Exception, postWork: (WorkerSpecification) -> Unit) {
-        callbackFunction(Result.failure(exception))
+        // No op
     }
 
     override fun onUnexpectedAsyncError(exception: Exception, postWork: (WorkerSpecification) -> Unit) {
