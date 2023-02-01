@@ -503,18 +503,17 @@ class DefaultAblyTestScenarios {
              * Given...
              *
              * ...that calling `containsKey` on the Channels instance returns ${givenConfig.channelsContainsKey}...
-             * ...and that calling `get` on the Channels instance returns a channel...
              *
              * when ${givenConfig.presenceEnterBehaviour} is Success {
-             * ...[and] which, when told to enter presence, does so successfully...
+             * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel which, when told to enter presence, does so successfully...
              * }
              *
              * when ${givenConfig.presenceEnterBehaviour} is Failure {
-             * ...[and] which, when told to enter presence, fails to do so with error ${givenConfig.presenceEnterBehaviour.errorInfo}...
+             * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel which, when told to enter presence, fails to do so with error ${givenConfig.presenceEnterBehaviour.errorInfo}...
              * }
              *
              * when ${givenConfig.presenceEnterBehaviour} is DoesNotComplete {
-             * ...[and] which, when told to enter presence, never finishes doing so...
+             * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel which, when told to enter presence, never finishes doing so...
              * }
              *
              * When...
@@ -525,10 +524,9 @@ class DefaultAblyTestScenarios {
              * ...in the following order, precisely the following things happen...
              *
              * ...it calls `containsKey` on the Channels instance...
-             * ...and calls `get` (the overload described by ${givenConfig.channelsGetOverload}) on the Channels instance...
              *
              *  if ${thenConfig.verifyChannelsGet} {
-             * ...and calls `get` on the Channels instance...
+             * ...and calls `get` (the overload that does not accept a ChannelOptions object) on the Channels instance...
              * }
              *
              * if ${thenConfig.verifyPresenceEnter} {
@@ -552,34 +550,35 @@ class DefaultAblyTestScenarios {
                 thenConfig: ThenConfig
             ) {
                 // Given...
-                // ...that calling `containsKey` on the Channels instance returns ${givenConfig.channelsContainsKey}...
-                // ...and that calling `get` (the overload described by ${givenConfig.channelsGetOverload}) on the Channels instance returns a channel in the ${givenConfig.channelState} state...
                 val testEnvironment = DefaultAblyTestEnvironment.create(numberOfTrackables = 1)
                 val configuredChannel = testEnvironment.configuredChannels[0]
+
+                // ...that calling `containsKey` on the Channels instance returns ${givenConfig.channelsContainsKey}...
                 testEnvironment.mockChannelsContainsKey(
                     key = configuredChannel.channelName,
                     result = givenConfig.channelsContainsKey
                 )
+
                 testEnvironment.mockChannelsGet(DefaultAblyTestEnvironment.ChannelsGetOverload.WITHOUT_CHANNEL_OPTIONS)
 
                 when (val givenPresenceEnterBehaviour = givenConfig.presenceEnterBehaviour) {
                     is GivenTypes.CompletionListenerMockBehaviour.NotMocked -> {}
                     /* when ${givenConfig.presenceEnterBehaviour} is Success {
-                     * ...[and] which, when told to enter presence, does so successfully...
+                     * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel which, when told to enter presence, does so successfully...
                      * }
                      */
                     is GivenTypes.CompletionListenerMockBehaviour.Success -> {
                         configuredChannel.mockSuccessfulPresenceEnter()
                     }
                     /* when ${givenConfig.presenceEnterBehaviour} is Failure {
-                     * ...[and] which, when told to enter presence, fails to do so with error ${givenConfig.presenceEnterBehaviour.errorInfo}...
+                     * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel which, when told to enter presence, fails to do so with error ${givenConfig.presenceEnterBehaviour.errorInfo}...
                      * }
                      */
                     is GivenTypes.CompletionListenerMockBehaviour.Failure -> {
                         configuredChannel.mockFailedPresenceEnter(givenPresenceEnterBehaviour.errorInfo)
                     }
                     /* when ${givenConfig.presenceEnterBehaviour} is DoesNotComplete {
-                     * ...[and] which, when told to enter presence, never finishes doing so...
+                     * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel which, when told to enter presence, never finishes doing so...
                      * }
                      */
                     is GivenTypes.CompletionListenerMockBehaviour.DoesNotComplete -> {
@@ -605,7 +604,7 @@ class DefaultAblyTestScenarios {
 
                     if (thenConfig.verifyChannelsGet) {
                         /* if ${thenConfig.verifyChannelsGet} {
-                         * ...and calls `get` on the Channels instance...
+                         * ...and calls `get` (the overload that does not accept a ChannelOptions object) on the Channels instance...
                          * }
                          */
                         testEnvironment.channelsMock.get(configuredChannel.channelName)
@@ -853,45 +852,18 @@ class DefaultAblyTestScenarios {
          */
         class GivenConfig(
             val channelsContainsKey: Boolean,
-            val mockChannelsGet: Boolean,
-            /**
-             * If [mockChannelsGet] is `false` then this must be [GivenTypes.CompletionListenerMockBehaviour.NotMocked].
-             */
             val presenceLeaveBehaviour: GivenTypes.CompletionListenerMockBehaviour
-        ) {
-            /**
-             * Checks that this object represents a valid test configuration.
-             *
-             * @throws InvalidTestConfigurationException If this object does not represent a valid test configuration.
-             */
-            init {
-                if (!mockChannelsGet) {
-                    if (presenceLeaveBehaviour !is GivenTypes.CompletionListenerMockBehaviour.NotMocked) {
-                        throw InvalidTestConfigurationException("presenceLeaveBehaviour must be NotMocked when mockChannelsGet is false")
-                    }
-                }
-            }
-        }
+        )
 
         /**
          * This class provides properties for configuring the "Then..." part of the parameterised test case described by [Companion.test]. See that method’s documentation for information about the effect of this class’s properties.
          */
         class ThenConfig(
-            val verifyChannelsGet: Boolean,
             /**
-             * If [GivenConfig.mockChannelsGet] is `false` then this must be `false`.
+             * If [GivenConfig.presenceLeaveBehaviour] is [GivenTypes.CompletionListenerMockBehaviour.NotMocked] then this must be `false`.
              */
-            val verifyPresenceLeave: Boolean,
-            /**
-             * If [GivenConfig.mockChannelsGet] is `false` then this must be `false`.
-             */
-            val verifyChannelUnsubscribeAndRelease: Boolean,
+            val verifyChannelTeardown: Boolean,
         ) {
-            /**
-             * The disconnect should always be successful.
-             */
-            val resultOfDisconnectCallOnObjectUnderTest: ThenTypes.ExpectedAsyncResult =
-                ThenTypes.ExpectedAsyncResult.Terminates(ThenTypes.ExpectedResult.Success)
             /**
              * Checks that this object represents a valid test configuration to be used with [givenConfig].
              *
@@ -899,12 +871,9 @@ class DefaultAblyTestScenarios {
              * @throws InvalidTestConfigurationException If this object does not represent a valid test configuration.
              */
             fun validate(givenConfig: GivenConfig) {
-                if (!givenConfig.mockChannelsGet) {
-                    if (verifyPresenceLeave) {
-                        throw InvalidTestConfigurationException("verifyPresenceLeave must be false when mockChannelsGet is false")
-                    }
-                    if (verifyChannelUnsubscribeAndRelease) {
-                        throw InvalidTestConfigurationException("verifyChannelUnsubscribeAndRelease must be false when mockChannelsGet is false")
+                if (givenConfig.presenceLeaveBehaviour is GivenTypes.CompletionListenerMockBehaviour.NotMocked) {
+                    if (verifyChannelTeardown) {
+                        throw InvalidTestConfigurationException("verifyChannelTeardown must be false when presenceLeaveBehaviour is NotMocked")
                     }
                 }
             }
@@ -918,20 +887,16 @@ class DefaultAblyTestScenarios {
          *
          * ...that calling containsKey on the Channels instance returns ${givenConfig.channelsContainsKey}...
          *
-         * if ${givenConfig.mockChannelsGet} {
-         * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel...
-         * }
-         *
          * when ${givenConfig.presenceLeaveBehaviour} is Success {
-         * ...[and] which, when told to leave presence, does so successfully...
+         * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel which, when told to leave presence, does so successfully...
          * }
          *
          * when ${givenConfig.presenceLeaveBehaviour} is Failure {
-         * ...[and] which, when told to leave presence, fails to do so with error ${givenConfig.presenceLeaveBehaviour.errorInfo}...
+         * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel which, when told to leave presence, fails to do so with error ${givenConfig.presenceLeaveBehaviour.errorInfo}...
          * }
          *
          * when ${givenConfig.presenceLeaveBehaviour} is DoesNotComplete {
-         * ...[and] which, when told to leave presence, never finishes doing so...
+         * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel which, when told to leave presence, never finishes doing so...
          * }
          *
          * When...
@@ -943,20 +908,14 @@ class DefaultAblyTestScenarios {
          *
          * ...it calls `containsKey` on the Channels instance...
          *
-         * if ${thenConfig.verifyChannelsGet} {
+         * if ${thenConfig.verifyChannelTeardown} {
          * ...and calls `get` on the Channels instance...
-         * }
-         *
-         * if ${thenConfig.verifyPresenceLeave} {
          * ...and tells the channel to leave presence...
-         * }
-         *
-         * if ${thenConfig.verifyChannelUnsubscribeAndRelease} {
          * ...and calls `unsubscribe` on the channel and on its Presence instance...
          * ...and fetches the channel’s name and calls `release` on the Channels instance...
          * }
          *
-         * ...and the call to `disconnect` (on the object under test) always succeeds.
+         * ...and the call to `disconnect` (on the object under test) succeeds.
          * ```
          */
         companion object {
@@ -974,32 +933,26 @@ class DefaultAblyTestScenarios {
                     givenConfig.channelsContainsKey
                 )
 
-                if (givenConfig.mockChannelsGet) {
-                    /* if ${givenConfig.mockChannelsGet} {
-                     * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel in state ${givenConfig.initialChannelState}...
-                     * }
-                     */
-                    testEnvironment.mockChannelsGet(DefaultAblyTestEnvironment.ChannelsGetOverload.WITHOUT_CHANNEL_OPTIONS)
-                }
+                testEnvironment.mockChannelsGet(DefaultAblyTestEnvironment.ChannelsGetOverload.WITHOUT_CHANNEL_OPTIONS)
 
                 when (val givenPresenceLeaveBehaviour = givenConfig.presenceLeaveBehaviour) {
                     is GivenTypes.CompletionListenerMockBehaviour.NotMocked -> {}
                     /* when ${givenConfig.presenceLeaveBehaviour} is Success {
-                     * ...[and] which, when told to leave presence, does so successfully...
+                     * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel which, when told to leave presence, does so successfully...
                      * }
                      */
                     is GivenTypes.CompletionListenerMockBehaviour.Success -> {
                         configuredChannel.mockSuccessfulPresenceLeave()
                     }
                     /* when ${givenConfig.presenceLeaveBehaviour} is Failure {
-                     * ...[and] which, when told to leave presence, fails to do so with error ${givenConfig.presenceLeaveBehaviour.errorInfo}...
+                     * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel which, when told to leave presence, fails to do so with error ${givenConfig.presenceLeaveBehaviour.errorInfo}...
                      * }
                      */
                     is GivenTypes.CompletionListenerMockBehaviour.Failure -> {
                         configuredChannel.mockFailedPresenceLeave(givenPresenceLeaveBehaviour.errorInfo)
                     }
                     /* when ${givenConfig.presenceLeaveBehaviour} is DoesNotComplete {
-                     * ...[and] which, when told to leave presence, never finishes doing so...
+                     * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel which, when told to leave presence, never finishes doing so...
                      * }
                      */
                     is GivenTypes.CompletionListenerMockBehaviour.DoesNotComplete -> {
@@ -1014,13 +967,11 @@ class DefaultAblyTestScenarios {
 
                 // When...
 
-                val result = executeForVerifying(thenConfig.resultOfDisconnectCallOnObjectUnderTest) {
-                    // ...we call `disconnect` on the object under test,
-                    testEnvironment.objectUnderTest.disconnect(
-                        configuredChannel.trackableId,
-                        PresenceData("")
-                    )
-                }
+                // ...we call `disconnect` on the object under test,
+                testEnvironment.objectUnderTest.disconnect(
+                    configuredChannel.trackableId,
+                    PresenceData("")
+                )
 
                 // Then...
                 // ...in the following order, precisely the following things happen...
@@ -1029,28 +980,18 @@ class DefaultAblyTestScenarios {
                     // ...it calls `containsKey` on the Channels instance...
                     testEnvironment.channelsMock.containsKey(configuredChannel.channelName)
 
-                    if (thenConfig.verifyChannelsGet) {
-                        /* if ${thenConfig.verifyChannelsGet} {
+                    if (thenConfig.verifyChannelTeardown) {
+                        /* if ${thenConfig.verifyChannelTeardown} {
                          * ...and calls `get` on the Channels instance...
-                         * }
-                         */
-                        testEnvironment.channelsMock.get(configuredChannel.channelName)
-                    }
-
-                    if (thenConfig.verifyPresenceLeave) {
-                        /* if ${thenConfig.verifyPresenceLeave} {
                          * ...and tells the channel to leave presence...
-                         * }
-                         */
-                        configuredChannel.presenceMock.leave(any(), any())
-                    }
-
-                    if (thenConfig.verifyChannelUnsubscribeAndRelease) {
-                        /* if ${thenConfig.verifyChannelUnsubscribeAndRelease} {
                          * ...and calls `unsubscribe` on the channel and on its Presence instance...
                          * ...and fetches the channel’s name and calls `release` on the Channels instance...
                          * }
                          */
+                        testEnvironment.channelsMock.get(configuredChannel.channelName)
+
+                        configuredChannel.presenceMock.leave(any(), any())
+
                         configuredChannel.channelMock.unsubscribe()
                         configuredChannel.presenceMock.unsubscribe()
                         configuredChannel.channelMock.name
@@ -1058,11 +999,8 @@ class DefaultAblyTestScenarios {
                     }
                 }
 
-                /* and always {
-                 * ...and the call to `disconnect` (on the object under test) succeeds.
-                 * }
-                 */
-                Assert.assertNotNull(result)
+                // (Note: this is implicit from the When.)
+                // ...and the call to `disconnect` (on the object under test) succeeds.
 
                 confirmVerified(*testEnvironment.allMocks)
             }
