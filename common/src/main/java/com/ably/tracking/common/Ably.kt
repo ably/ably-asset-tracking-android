@@ -72,6 +72,11 @@ interface Ably {
     suspend fun waitForChannelToAttach(trackableId: String): Result<Unit>
 
     /**
+     * Given a trackable id, get the channel state or null if channel does not exist.
+     */
+    fun getChannelState(trackableId: String): ChannelState?
+
+    /**
      * Adds a listener for the presence messages that are received from the channel's presence.
      * After adding a listener it will emit [PresenceMessage] for each client that's currently in the presence.
      * Should be called only when there's an existing channel for the [trackableId].
@@ -928,6 +933,9 @@ constructor(
         }
     }
 
+    override fun getChannelState(trackableId: String): ChannelState? =
+        getChannelIfExists(trackableId)?.state
+
     /**
      * Waits for the [channel] to change to the [ChannelState.attached] state.
      * If the [channel] state already is the [ChannelState.attached] state it does not wait and returns immediately.
@@ -1027,9 +1035,6 @@ constructor(
             }
         }
     }
-
-    private fun AblySdkRealtime.Channel<ChannelStateListenerType>.isDetachedOrFailed(): Boolean =
-        state == ChannelState.detached || state == ChannelState.failed
 
     private fun createMalformedMessageErrorInfo(): ErrorInfo = ErrorInfo("Received a malformed message", 400, 100_001)
 
