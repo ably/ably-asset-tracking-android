@@ -156,6 +156,24 @@ fun Ably.mockUpdatePresenceDataSuccess(trackableId: String) {
     coEvery { updatePresenceData(trackableId, any()) } returns Result.success(Unit)
 }
 
+fun Ably.mockUpdatePresenceDataFailure(trackableId: String) {
+    val callbackSlot = slot<(Result<Unit>) -> Unit>()
+    every {
+        updatePresenceData(trackableId, any(), capture(callbackSlot))
+    } answers {
+        callbackSlot.captured(Result.failure(anyConnectionException()))
+    }
+    coEvery { updatePresenceData(trackableId, any()) } returns Result.failure(anyConnectionException())
+}
+
+fun Ably.mockWaitForChannelToAttachSuccess(trackableId: String) {
+    coEvery { waitForChannelToAttach(trackableId) } returns Result.success(Unit)
+}
+
+fun Ably.mockWaitForChannelToAttachFailure(trackableId: String) {
+    coEvery { waitForChannelToAttach(trackableId) } returns Result.failure(anyConnectionException())
+}
+
 fun Ably.mockSendRawLocationSuccess(trackableId: String) {
     val callbackSlot = slot<(Result<Unit>) -> Unit>()
     every {

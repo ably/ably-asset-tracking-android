@@ -24,6 +24,7 @@ import org.junit.Test
 
 @ExperimentalCoroutinesApi
 class ConnectionReadyWorkerTest {
+    private val postedWorksExpectedSize = 1
     private val trackable = Trackable("test-trackable")
     private val resultCallbackFunction: ResultCallbackFunction<StateFlow<TrackableState>> = mockk(relaxed = true)
     private val ably: Ably = mockk {
@@ -84,7 +85,7 @@ class ConnectionReadyWorkerTest {
 
         // then
         assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).hasSize(1)
+        assertThat(postedWorks).hasSize(postedWorksExpectedSize)
 
         val postedWork = postedWorks.filterIsInstance<WorkerSpecification.RetryEnterPresence>().first()
         assertThat(postedWork.trackable).isEqualTo(trackable)
@@ -104,7 +105,7 @@ class ConnectionReadyWorkerTest {
 
         // then
         assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).hasSize(1)
+        assertThat(postedWorks).hasSize(postedWorksExpectedSize)
 
         // then
         verify(exactly = 1) {
@@ -127,7 +128,7 @@ class ConnectionReadyWorkerTest {
 
         // then
         assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).hasSize(1)
+        assertThat(postedWorks).hasSize(postedWorksExpectedSize)
 
         verify(exactly = 1) {
             publisherInteractor.startLocationUpdates(any())
@@ -149,7 +150,7 @@ class ConnectionReadyWorkerTest {
 
         // then
         assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).hasSize(1)
+        assertThat(postedWorks).hasSize(postedWorksExpectedSize)
 
         verify(exactly = 0) {
             publisherInteractor.startLocationUpdates(any())
@@ -170,7 +171,7 @@ class ConnectionReadyWorkerTest {
 
         // then
         assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).hasSize(1)
+        assertThat(postedWorks).hasSize(postedWorksExpectedSize)
 
         assertThat(updatedProperties.trackables).contains(trackable)
     }
@@ -189,7 +190,7 @@ class ConnectionReadyWorkerTest {
 
         // then
         assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).hasSize(1)
+        assertThat(postedWorks).hasSize(postedWorksExpectedSize)
 
         verify(exactly = 1) {
             publisherInteractor.updateTrackables(any())
@@ -210,7 +211,7 @@ class ConnectionReadyWorkerTest {
 
         // then
         assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).hasSize(1)
+        assertThat(postedWorks).hasSize(postedWorksExpectedSize)
 
         verify(exactly = 1) {
             publisherInteractor.resolveResolution(trackable, any())
@@ -231,7 +232,7 @@ class ConnectionReadyWorkerTest {
 
         // then
         assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).hasSize(1)
+        assertThat(postedWorks).hasSize(postedWorksExpectedSize)
 
         assertThat(updatedProperties.trackableStateFlows[trackable.id]).isNotNull()
     }
@@ -250,7 +251,7 @@ class ConnectionReadyWorkerTest {
 
         // then
         assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).hasSize(1)
+        assertThat(postedWorks).hasSize(postedWorksExpectedSize)
 
         verify(exactly = 1) {
             publisherInteractor.updateTrackableStateFlows(any())
@@ -271,7 +272,7 @@ class ConnectionReadyWorkerTest {
 
         // then
         assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).hasSize(1)
+        assertThat(postedWorks).hasSize(postedWorksExpectedSize)
 
         assertThat(updatedProperties.trackableStates[trackable.id]).isInstanceOf(TrackableState.Offline::class.java)
     }
@@ -290,7 +291,7 @@ class ConnectionReadyWorkerTest {
 
         // then
         assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).hasSize(1)
+        assertThat(postedWorks).hasSize(postedWorksExpectedSize)
 
         verify { resultCallbackFunction.invoke(match { it.isSuccess }) }
     }
@@ -311,7 +312,7 @@ class ConnectionReadyWorkerTest {
 
         // then
         assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).hasSize(1)
+        assertThat(postedWorks).hasSize(postedWorksExpectedSize)
 
         verify { addTrackableCallbackFunction.invoke(match { it.isSuccess }) }
     }
@@ -353,7 +354,7 @@ class ConnectionReadyWorkerTest {
 
         // then
         assertThat(asyncWorks).hasSize(1)
-        assertThat(postedWorks).hasSize(1)
+        assertThat(postedWorks).hasSize(postedWorksExpectedSize)
 
         val postedWork = postedWorks.first() as WorkerSpecification.TrackableRemovalRequested
 

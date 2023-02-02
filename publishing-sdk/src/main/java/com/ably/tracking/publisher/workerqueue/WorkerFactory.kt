@@ -8,6 +8,7 @@ import com.ably.tracking.LocationUpdateType
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ConnectionStateChange
+import com.ably.tracking.common.PresenceData
 import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.common.TimeProvider
 import com.ably.tracking.common.workerqueue.Worker
@@ -44,6 +45,7 @@ import com.ably.tracking.publisher.workerqueue.workers.SendEnhancedLocationFailu
 import com.ably.tracking.publisher.workerqueue.workers.SendEnhancedLocationSuccessWorker
 import com.ably.tracking.publisher.workerqueue.workers.SendRawLocationFailureWorker
 import com.ably.tracking.publisher.workerqueue.workers.SendRawLocationSuccessWorker
+import com.ably.tracking.publisher.workerqueue.workers.UpdatePresenceDataWorker
 import com.ably.tracking.publisher.workerqueue.workers.SetActiveTrackableWorker
 import com.ably.tracking.publisher.workerqueue.workers.StopWorker
 import com.ably.tracking.publisher.workerqueue.workers.StoppingConnectionFinishedWorker
@@ -149,6 +151,11 @@ internal class WorkerFactory(
                 resolutionPolicy,
                 mapbox,
             )
+            is WorkerSpecification.UpdatePresenceData -> UpdatePresenceDataWorker(
+                workerSpecification.trackableId,
+                workerSpecification.presenceData,
+                ably
+            )
             is WorkerSpecification.ChangeRoutingProfile -> ChangeRoutingProfileWorker(
                 workerSpecification.routingProfile,
                 publisherInteractor,
@@ -250,6 +257,11 @@ internal sealed class WorkerSpecification {
     ) : WorkerSpecification()
 
     object ChangeLocationEngineResolution : WorkerSpecification()
+
+    data class UpdatePresenceData(
+        val trackableId: String,
+        val presenceData: PresenceData,
+    ) : WorkerSpecification()
 
     data class ChangeRoutingProfile(
         val routingProfile: RoutingProfile,

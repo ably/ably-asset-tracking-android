@@ -579,8 +579,8 @@ constructor(
                 properties.resolutions[trackable.id] = resolution
                 enqueue(WorkerSpecification.ChangeLocationEngineResolution)
                 if (sendResolutionEnabled) {
-                    // For now we ignore the result of this operation but perhaps we should retry it if it fails
-                    ably.updatePresenceData(trackable.id, properties.presenceData.copy(resolution = resolution)) {}
+                    val presenceData = properties.presenceData.copy(resolution = resolution)
+                    enqueue(WorkerSpecification.UpdatePresenceData(trackable.id, presenceData))
                 }
             }
         }
