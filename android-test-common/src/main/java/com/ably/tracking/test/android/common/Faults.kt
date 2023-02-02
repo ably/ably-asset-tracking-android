@@ -543,7 +543,7 @@ class DisconnectWithFailedResume(apiKey: String) : ApplicationLayerFault(apiKey)
     private fun shouldDisconnect(direction: FrameDirection, frame: Frame) =
         direction == FrameDirection.ServerToClient &&
             frame.frameType == FrameType.BINARY &&
-            frame.data.unpack().isAction(Message.Action.CONNECTED)
+            frame.data.unpack().isAction(Message.Action.ATTACHED)
 }
 
 /**

@@ -17,9 +17,10 @@ object Message {
         ACK(1),
         CONNECTED(4),
         ATTACH(10),
+        ATTACHED(11),
         DETACH(12),
         PRESENCE(14),
-        SYNC(16)
+        SYNC(16),
     }
 
     /**
