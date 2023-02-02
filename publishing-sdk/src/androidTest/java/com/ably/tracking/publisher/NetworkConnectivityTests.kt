@@ -762,6 +762,16 @@ class PublisherMonitor(
             return
         }
 
+        /**
+         * Wait for 10s for the publisher to re-enter presence.
+         *
+         * This is required because in some tests where the channel suspends (e.g. TcpConnectionRefused),
+         * the re-entry of presence happens under the hood in ably-java, without us knowing that it has happened
+         * but after the channel has re-attached (and the trackable goes back online).
+         *
+         * This can lead to flakey tests if the re-enter doesn't happen in time, so a grace period here gives
+         * sufficient time for things to happen.
+         */
         runBlocking {
             try {
                 withTimeout(10000) {
@@ -778,7 +788,7 @@ class PublisherMonitor(
             } catch (exception: TimeoutCancellationException) {
                 testLogD("PublisherMonitor: $label - (FAIL) publisherPresent timed out before becoming $expectedPublisherPresence")
                 throw AssertionError(
-                    "Expected publisherPresent: $expectedPublisherPresence to be $expectedPublisherPresence but timed out"
+                    "Expected publisherPresent to be $expectedPublisherPresence but timed out"
                 )
             }
         }
