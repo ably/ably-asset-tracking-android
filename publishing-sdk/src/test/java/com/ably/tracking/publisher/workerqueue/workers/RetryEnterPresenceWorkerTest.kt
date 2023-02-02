@@ -9,6 +9,7 @@ import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 import com.ably.tracking.test.common.mockEnterPresenceFailure
 import com.ably.tracking.test.common.mockEnterPresenceSuccess
 import com.google.common.truth.Truth.assertThat
+import io.ably.lib.realtime.ChannelState
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -23,10 +24,12 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class RetryEnterPresenceWorkerTest {
 
+    private val trackable = Trackable("testtrackable")
+
     private val ably: Ably = mockk {
         coEvery { startConnection() } returns Result.success(Unit)
+        coEvery { getChannelState(trackable.id) } returns ChannelState.attached
     }
-    private val trackable = Trackable("testtrackable")
 
     private val worker = RetryEnterPresenceWorker(trackable, ably)
 
@@ -132,7 +135,7 @@ class RetryEnterPresenceWorkerTest {
     }
 
     @Test
-    fun `should post FailTrackable work when connection failed with a fatal error`() {
+    fun `should post FailTrackable work when connection failed with a fatal error on a non-suspended channel`() {
         runTest {
             // given
             val initialProperties = createPublisherProperties()
@@ -152,6 +155,36 @@ class RetryEnterPresenceWorkerTest {
 
             val postedWork = postedWorks[0] as WorkerSpecification.FailTrackable
             assertThat(postedWork.trackable).isEqualTo(trackable)
+        }
+    }
+
+    @Test
+    fun `should post RetryEnterPresence work when connection failed with a fatal error on a suspended channel`() {
+        runTest {
+            // given
+            val initialProperties = createPublisherProperties()
+            initialProperties.duplicateTrackableGuard.clear(trackable)
+            initialProperties.trackables.add(trackable)
+            mockChannelStateChange(ConnectionState.ONLINE)
+            ably.mockEnterPresenceFailure(trackable.id, isFatal = true)
+            every { ably.getChannelState(trackable.id) } returns ChannelState.suspended
+
+            // when
+            worker.doWork(
+                initialProperties,
+                asyncWorks.appendWork(),
+                postedWorks.appendSpecification()
+            )
+
+            // then
+            asyncWorks.launchAll(this)
+
+            assertThat(postedWorks).isEmpty()
+
+            advanceUntilIdle()
+
+            assertThat(postedWorks)
+                .contains(WorkerSpecification.RetryEnterPresence(trackable))
         }
     }
 

@@ -8,6 +8,7 @@ import com.ably.tracking.common.workerqueue.DefaultWorker
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.WorkerSpecification
+import io.ably.lib.realtime.ChannelState
 import kotlinx.coroutines.delay
 
 /**
@@ -62,7 +63,7 @@ internal class RetryEnterPresenceWorker(
                     trackable
                 )
             )
-            enterPresenceResult.isFatalAblyFailure() -> postFailTrackableWork(
+            enterPresenceResult.isFatalAblyFailure() && !isChannelSuspended() -> postFailTrackableWork(
                 postWork,
                 enterPresenceResult
             )
@@ -72,6 +73,9 @@ internal class RetryEnterPresenceWorker(
             }
         }
     }
+
+    private fun isChannelSuspended() =
+        ably.getChannelState(trackable.id) == ChannelState.suspended
 
     private fun postFailTrackableWork(
         postWork: (WorkerSpecification) -> Unit,
