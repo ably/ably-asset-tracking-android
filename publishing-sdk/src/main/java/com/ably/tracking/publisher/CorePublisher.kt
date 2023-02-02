@@ -1,7 +1,6 @@
 package com.ably.tracking.publisher
 
 import android.Manifest
-import android.util.Log
 import androidx.annotation.RequiresPermission
 import com.ably.tracking.EnhancedLocationUpdate
 import com.ably.tracking.Location
