@@ -4,3 +4,7 @@ local.properties
 .idea/
 .DS_Store
 build/
+
+# Secrets which should never be committed
+/firebase-app-distribution-private-key.json
+/signing.jks
