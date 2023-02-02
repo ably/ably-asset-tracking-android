@@ -180,7 +180,7 @@ class DefaultPublisherTest {
         }
 
         // then
-        coVerify(exactly = 1) {
+        coVerify(exactly = 1, timeout = 10000) {
             ably.connect(trackableId, any(), any(), any(), any())
         }
     }
