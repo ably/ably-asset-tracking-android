@@ -164,7 +164,7 @@ class RetryEnterPresenceWorkerTest {
     }
 
     @Test
-    fun `should post FailTrackable work when connection failed with a fatal error on a suspended channel`() {
+    fun `should post RetryEnterPresence work when connection failed with a fatal error on a suspended channel`() {
         runTest {
             // given
             val initialProperties = createPublisherProperties()
