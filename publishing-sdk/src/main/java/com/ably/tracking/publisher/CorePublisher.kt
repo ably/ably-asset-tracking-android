@@ -2,7 +2,7 @@ package com.ably.tracking.publisher
 
 import android.Manifest
 import androidx.annotation.RequiresPermission
- import com.ably.tracking.ConnectionException
+import com.ably.tracking.ConnectionException
 import com.ably.tracking.EnhancedLocationUpdate
 import com.ably.tracking.ErrorInformation
 import com.ably.tracking.Location
