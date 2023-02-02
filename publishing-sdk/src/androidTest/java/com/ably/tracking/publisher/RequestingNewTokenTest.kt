@@ -8,16 +8,22 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ably.tracking.Accuracy
 import com.ably.tracking.Resolution
+import com.ably.tracking.TrackableState
 import com.ably.tracking.connection.Authentication
 import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.connection.TokenRequest
 import com.ably.tracking.test.android.common.NOTIFICATION_CHANNEL_ID
+import com.ably.tracking.test.android.common.UnitExpectation
 import com.google.gson.Gson
 import io.ably.lib.realtime.AblyRealtime
 import io.ably.lib.rest.Auth
 import io.ably.lib.types.ClientOptions
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.runBlocking
-import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.UUID
@@ -31,7 +37,7 @@ class RequestingNewTokenTest {
     private val ably = AblyRealtime(ClientOptions(ABLY_API_KEY).apply { autoConnect = false })
 
     @Test
-    fun shouldAddTrackableWhenRenewedTokenHasCapabilityForTrackableId() {
+    fun shouldAddTrackableEnteringTheOnlineStateWhenRenewedTokenHasCapabilityForTrackableId() {
         // given
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val trackableId = UUID.randomUUID().toString()
@@ -39,17 +45,29 @@ class RequestingNewTokenTest {
             initialEnabledTrackableIds = listOf("xyz"),
             newEnabledTrackableIds = listOf("xyz", trackableId)
         )
+        val scope = CoroutineScope(Dispatchers.Default)
 
         // when
         val publisher = createAndStartPublisher(context, authentication)
-        val isOperationSuccessful = addTrackableAndStopPublisher(publisher, trackableId)
+        var trackableStateFlow: StateFlow<TrackableState>
+        runBlocking {
+            trackableStateFlow = publisher.add(Trackable(trackableId))
+        }
 
-        // then
-        Assert.assertTrue(isOperationSuccessful)
+        // Then
+        val trackableHasEnteredOnlineState = UnitExpectation("Trackable should enter the online state")
+        trackableStateFlow.onEach {
+            if (it is TrackableState.Online) {
+                trackableHasEnteredOnlineState.fulfill()
+            }
+        }.launchIn(scope)
+
+        trackableHasEnteredOnlineState.await()
+        trackableHasEnteredOnlineState.assertFulfilled()
     }
 
     @Test
-    fun shouldNotAddTrackableWhenRenewedTokenDoesNotHaveCapabilityForTrackableId() {
+    fun shouldAddTrackableEnteringTheFailedStateWhenRenewedTokenDoesNotHaveCapabilityForTrackableId() {
         // given
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val trackableId = UUID.randomUUID().toString()
@@ -57,30 +75,27 @@ class RequestingNewTokenTest {
             initialEnabledTrackableIds = listOf("xyz"),
             newEnabledTrackableIds = listOf("xyz")
         )
+        val scope = CoroutineScope(Dispatchers.Default)
 
         // when
         val publisher = createAndStartPublisher(context, authentication)
-        val isOperationSuccessful = addTrackableAndStopPublisher(publisher, trackableId)
-
-        // then
-        Assert.assertFalse(isOperationSuccessful)
-    }
-
-    /**
-     * Adds a trackable with the [trackableId] and stops the [publisher].
-     * @return true if adding trackable was sucessfull, false otherwise
-     */
-    private fun addTrackableAndStopPublisher(publisher: Publisher, trackableId: String): Boolean =
+        var trackableStateFlow: StateFlow<TrackableState>
         runBlocking {
-            try {
-                publisher.add(Trackable(trackableId))
-                true
-            } catch (exception: Exception) {
-                false
-            } finally {
-                publisher.stop()
-            }
+            trackableStateFlow = publisher.add(Trackable(trackableId))
         }
+
+        // Then
+        val trackableHasEnteredFailedState = UnitExpectation("Trackable should enter failed state")
+        trackableStateFlow.onEach {
+            if (it is TrackableState.Failed) {
+                trackableHasEnteredFailedState.fulfill()
+            }
+        }.launchIn(scope)
+
+        trackableHasEnteredFailedState.await()
+        trackableHasEnteredFailedState.assertFulfilled()
+        stopPublisher(publisher)
+    }
 
     private fun createTokenAuthenticationConfiguration(
         initialEnabledTrackableIds: List<String>,
@@ -148,4 +163,10 @@ class RequestingNewTokenTest {
 
     private fun List<String>.asTokenCapabilities(): String =
         "{${joinToString(separator = ",") { """"tracking:$it":["*"]""" }}}"
+
+    private fun stopPublisher(publisher: Publisher) {
+        runBlocking {
+            publisher.stop()
+        }
+    }
 }
