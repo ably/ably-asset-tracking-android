@@ -8,6 +8,7 @@ import com.ably.tracking.LocationUpdateType
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ConnectionStateChange
+import com.ably.tracking.common.PresenceData
 import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.common.TimeProvider
 import com.ably.tracking.common.workerqueue.Worker
@@ -31,12 +32,11 @@ import com.ably.tracking.publisher.workerqueue.workers.DestinationSetWorker
 import com.ably.tracking.publisher.workerqueue.workers.DisconnectSuccessWorker
 import com.ably.tracking.publisher.workerqueue.workers.EnhancedLocationChangedWorker
 import com.ably.tracking.publisher.workerqueue.workers.EnterPresenceSuccessWorker
-import com.ably.tracking.publisher.workerqueue.workers.EnterPresenceWorker
 import com.ably.tracking.publisher.workerqueue.workers.PresenceMessageWorker
 import com.ably.tracking.publisher.workerqueue.workers.RawLocationChangedWorker
 import com.ably.tracking.publisher.workerqueue.workers.RefreshResolutionPolicyWorker
 import com.ably.tracking.publisher.workerqueue.workers.RemoveTrackableWorker
-import com.ably.tracking.publisher.workerqueue.workers.RetryEnterPresenceWorker
+import com.ably.tracking.publisher.workerqueue.workers.EnterPresenceWorker
 import com.ably.tracking.publisher.workerqueue.workers.SubscribeToPresenceSuccessWorker
 import com.ably.tracking.publisher.workerqueue.workers.SubscribeToPresenceWorker
 import com.ably.tracking.publisher.workerqueue.workers.SendEnhancedLocationFailureWorker
@@ -47,6 +47,7 @@ import com.ably.tracking.publisher.workerqueue.workers.SetActiveTrackableWorker
 import com.ably.tracking.publisher.workerqueue.workers.StopWorker
 import com.ably.tracking.publisher.workerqueue.workers.StoppingConnectionFinishedWorker
 import com.ably.tracking.publisher.workerqueue.workers.TrackableRemovalRequestedWorker
+import com.ably.tracking.publisher.workerqueue.workers.UpdatePresenceDataWorker
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -81,9 +82,9 @@ internal class WorkerFactory(
             )
             is WorkerSpecification.EnterPresence -> EnterPresenceWorker(
                 workerSpecification.trackable,
-                workerSpecification.enteredPresenceOnAblyConnect
+                ably,
             )
-            is WorkerSpecification.RetryEnterPresence -> RetryEnterPresenceWorker(
+            is WorkerSpecification.RetryEnterPresence -> EnterPresenceWorker(
                 workerSpecification.trackable,
                 ably
             )
@@ -133,6 +134,11 @@ internal class WorkerFactory(
             is WorkerSpecification.ChangeLocationEngineResolution -> ChangeLocationEngineResolutionWorker(
                 resolutionPolicy,
                 mapbox,
+            )
+            is WorkerSpecification.UpdatePresenceData -> UpdatePresenceDataWorker(
+                workerSpecification.trackableId,
+                workerSpecification.presenceData,
+                ably
             )
             is WorkerSpecification.ChangeRoutingProfile -> ChangeRoutingProfileWorker(
                 workerSpecification.routingProfile,
@@ -229,6 +235,11 @@ internal sealed class WorkerSpecification {
 
     object ChangeLocationEngineResolution : WorkerSpecification()
 
+    data class UpdatePresenceData(
+        val trackableId: String,
+        val presenceData: PresenceData,
+    ) : WorkerSpecification()
+
     data class ChangeRoutingProfile(
         val routingProfile: RoutingProfile,
     ) : WorkerSpecification()
@@ -240,8 +251,6 @@ internal sealed class WorkerSpecification {
 
     data class EnterPresence(
         val trackable: Trackable,
-        // Whether or not the ably.connect call was successful and we therefore entered presence
-        val enteredPresenceOnAblyConnect: Boolean
     ) : WorkerSpecification()
 
     data class RetryEnterPresence(

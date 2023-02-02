@@ -1,17 +1,29 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
+import com.ably.tracking.ConnectionException
+import com.ably.tracking.common.Ably
+import com.ably.tracking.common.PresenceData
+import com.ably.tracking.common.isFatal
 import com.ably.tracking.common.workerqueue.DefaultWorker
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.WorkerSpecification
+import kotlinx.coroutines.delay
 
 /**
- * A worker called to either confirm that presence has been entered,
- * or retry entering presence if not.
+ * Error code specific to enter presence on a suspended channel error
  */
+private const val ENTER_PRESENCE_ON_SUSPENDED_CHANNEL_ERROR_CODE = 91_001
+
+/**
+ * How long should we wait before queueing enter retry presence work if enter presence fails.
+ */
+private const val PRESENCE_ENTER_DELAY_IN_MILLISECONDS = 15_000L
+
+// TODO rename this to EnterPresenceWorker - probably already done by Andy
 internal class EnterPresenceWorker(
     private val trackable: Trackable,
-    private val enteredPresenceOnConnect: Boolean,
+    private val ably: Ably
 ) : DefaultWorker<PublisherProperties, WorkerSpecification>() {
 
     override fun doWork(
@@ -23,19 +35,67 @@ internal class EnterPresenceWorker(
             properties.trackables.contains(trackable) &&
             !properties.trackableRemovalGuard.isMarkedForRemoval(trackable)
         ) {
-            /**
-             * If ably.connect resulted in success, then presence has already
-             * been entered, so we can succeed and stop here.
-             */
-            if (enteredPresenceOnConnect) {
-                postWork(WorkerSpecification.EnterPresenceSuccess(trackable))
-                return properties
+            doAsyncWork {
+                enterPresence(postWork, properties.presenceData)
             }
-
-            // Otherwise, we'll do retries until we have succeeded
-            postWork(WorkerSpecification.RetryEnterPresence(trackable))
         }
 
         return properties
+    }
+
+    private suspend fun enterPresence(
+        postWork: (WorkerSpecification) -> Unit,
+        presenceData: PresenceData
+    ) {
+        val waitForChannelToAttachResult = ably.waitForChannelToAttach(trackable.id)
+        if (waitForChannelToAttachResult.isFailure) {
+            postFailTrackableWork(
+                postWork,
+                waitForChannelToAttachResult
+            )
+            return
+        }
+
+        val enterPresenceResult = ably.enterChannelPresence(
+            trackableId = trackable.id,
+            presenceData = presenceData
+        )
+
+        when {
+            enterPresenceResult.isSuccess -> postWork(
+                WorkerSpecification.EnterPresenceSuccess(
+                    trackable
+                )
+            )
+            isFatalFailure(enterPresenceResult) -> postFailTrackableWork(
+                postWork,
+                enterPresenceResult
+            )
+            else -> {
+                delay(PRESENCE_ENTER_DELAY_IN_MILLISECONDS)
+                postWork(WorkerSpecification.RetryEnterPresence(trackable))
+            }
+        }
+    }
+
+    private fun isFatalFailure(result: Result<Unit>): Boolean {
+        val connectionException = result.exceptionOrNull() as? ConnectionException
+        return connectionException != null && connectionException.isFatal() &&
+            connectionException.errorInformation.code != ENTER_PRESENCE_ON_SUSPENDED_CHANNEL_ERROR_CODE
+    }
+
+    private fun postFailTrackableWork(
+        postWork: (WorkerSpecification) -> Unit,
+        result: Result<Unit>
+    ) {
+        val errorInformation = (result.exceptionOrNull() as ConnectionException).errorInformation
+        postWork(WorkerSpecification.FailTrackable(trackable, errorInformation))
+    }
+
+    override fun onUnexpectedAsyncError(
+        exception: Exception,
+        postWork: (WorkerSpecification) -> Unit
+    ) {
+        postWork(WorkerSpecification.RetryEnterPresence(trackable))
     }
 }

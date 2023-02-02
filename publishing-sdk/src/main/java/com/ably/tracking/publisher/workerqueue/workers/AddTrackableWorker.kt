@@ -125,14 +125,13 @@ internal class AddTrackableWorker(
             return
         }
 
-        // If the connection result is successful, then we've entered presence
-        postWork(createEnterPresenceWorker(connectResult.isSuccess))
+        postWork(createEnterPresenceWorker())
         postWork(createSubscribeToPresenceWorker())
         postWork(createConnectionReadyWorker())
     }
 
-    private fun createEnterPresenceWorker(enteredPresence: Boolean) =
-        WorkerSpecification.EnterPresence(trackable, enteredPresence)
+    private fun createEnterPresenceWorker() =
+        WorkerSpecification.EnterPresence(trackable)
 
     private fun createSubscribeToPresenceWorker() =
         WorkerSpecification.SubscribeToPresence(trackable, presenceUpdateListener)

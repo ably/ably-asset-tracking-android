@@ -159,7 +159,6 @@ class AddTrackableWorkerTest {
 
             val postedWorkerSpecification = postedWorks[0] as WorkerSpecification.EnterPresence
             assertThat(postedWorkerSpecification.trackable).isEqualTo(trackable)
-            assertThat(postedWorkerSpecification.enteredPresenceOnAblyConnect).isTrue()
         }
     }
 
@@ -183,7 +182,6 @@ class AddTrackableWorkerTest {
 
             val postedWorkerSpecification = postedWorks[0] as WorkerSpecification.EnterPresence
             assertThat(postedWorkerSpecification.trackable).isEqualTo(trackable)
-            assertThat(postedWorkerSpecification.enteredPresenceOnAblyConnect).isFalse()
         }
     }
 
