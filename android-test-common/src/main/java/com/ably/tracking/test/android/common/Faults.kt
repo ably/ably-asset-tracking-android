@@ -177,13 +177,6 @@ class TcpConnectionRefused(apiKey: String) : TransportLayerFault(apiKey) {
  */
 class TcpConnectionUnresponsive(apiKey: String) : TransportLayerFault(apiKey) {
 
-    /**
-     * This fault type is temporarily disabled at runtime. It can be re-enabled by removing this override.
-     * We will re-enable this test when the following have been addressed:
-     * - https://github.com/ably/ably-asset-tracking-android/issues/948
-     */
-    override val skipTest = true
-
     companion object {
         val fault = object : Fault() {
             override fun simulate(apiKey: String) = TcpConnectionUnresponsive(apiKey)

@@ -762,14 +762,25 @@ class PublisherMonitor(
             return
         }
 
-        val publisherPresent = publisherIsPresent()
-        if (publisherPresent != expectedPublisherPresence) {
-            testLogD("PublisherMonitor: $label - (FAIL) publisherPresent = $publisherPresent")
-            throw AssertionError(
-                "Expected publisherPresent: $expectedPublisherPresence but got $publisherPresent"
-            )
-        } else {
-            testLogD("PublisherMonitor: $label - (PASS) publisherPresent = $publisherPresent")
+        runBlocking {
+            try {
+                withTimeout(10000) {
+                    while (true) {
+                        val publisherPresent = publisherIsPresent()
+                        if (publisherPresent == expectedPublisherPresence) {
+                            testLogD("PublisherMonitor: $label - (PASS) publisherPresent = $publisherPresent")
+                            break
+                        }
+
+                        delay(500)
+                    }
+                }
+            } catch (exception: TimeoutCancellationException) {
+                testLogD("PublisherMonitor: $label - (FAIL) publisherPresent timed out before becoming $expectedPublisherPresence")
+                throw AssertionError(
+                    "Expected publisherPresent: $expectedPublisherPresence to be $expectedPublisherPresence but timed out"
+                )
+            }
         }
     }
 
