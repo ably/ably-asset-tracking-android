@@ -59,10 +59,10 @@ internal class AddTrackableWorker(
                 val trackableFlow = properties.trackableStateFlows[trackable.id]!!
                 callbackFunction(Result.success(trackableFlow))
             }
-            properties.state == PublisherState.CONNECTING || properties.state == PublisherState.DISCONNECTING -> {
+            properties.state == PublisherState.DISCONNECTING -> {
                 doAsyncWork {
                     isDelayingWork = true
-                    // delay work until Ably connection manipulation ends
+                    // delay work until Ably disconnection ends
                     delay(WORK_DELAY_IN_MILLISECONDS)
                     postWork(createWorkerSpecificationToDelay())
                 }

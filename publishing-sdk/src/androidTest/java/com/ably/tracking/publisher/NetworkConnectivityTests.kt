@@ -134,7 +134,6 @@ class NetworkConnectivityTests(private val testFault: Fault) {
     fun faultBeforeAddingTrackable() {
         val primaryTrackable = Trackable(UUID.randomUUID().toString())
         val secondaryTrackable = Trackable(UUID.randomUUID().toString())
-        testLogD("PRIMARY: $primaryTrackable")
 
         withResources {
             fault.enable()
