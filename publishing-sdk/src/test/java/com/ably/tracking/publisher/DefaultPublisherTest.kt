@@ -93,7 +93,7 @@ class DefaultPublisherTest {
 
         // then
         coVerify(exactly = 1) {
-            ably.connect(trackableId, any(), any(), any(), any())
+            ably.connect(trackableId, any(), any(), any())
         }
     }
 
@@ -159,7 +159,7 @@ class DefaultPublisherTest {
 
         // then
         coVerify(exactly = 2, timeout = 10000) {
-            ably.connect(trackableId, any(), any(), any(), any())
+            ably.connect(trackableId, any(), any(), any())
         }
     }
 
@@ -181,7 +181,7 @@ class DefaultPublisherTest {
 
         // then
         coVerify(exactly = 1, timeout = 10000) {
-            ably.connect(trackableId, any(), any(), any(), any())
+            ably.connect(trackableId, any(), any(), any())
         }
     }
 
@@ -243,7 +243,7 @@ class DefaultPublisherTest {
 
         // then
         coVerify(exactly = 1, timeout = 10000) {
-            ably.connect(trackableId, any(), any(), any(), any())
+            ably.connect(trackableId, any(), any(), any())
         }
     }
 
