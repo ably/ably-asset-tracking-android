@@ -212,3 +212,13 @@ We tend to use [github_changelog_generator](https://github.com/skywinder/Github-
 Your mileage may vary, but it seems the most reliable method to invoke the generator is something like:
 `github_changelog_generator -u ably -p ably-asset-tracking-android --since-tag v1.0.0 --output delta.md`
 and then manually merge the delta contents in to the main change log (where `v1.0.0` in this case is the tag for the previous release).
+
+### Checking that the release reached Maven Central
+
+There is always a slight delay after our publish workflow has completed until the release appears at Maven Central, measuring in minutes.
+
+The following sites will get updated once the release is available:
+
+- [central.sonatype.com](https://central.sonatype.com/search?sort=name&namespace=com.ably.tracking) - their newest Web UI (at the time of writing this, at least) so is likely to be the quickest to get updated
+- [search.maven.org](https://search.maven.org/search?q=g:com.ably.tracking)
+- [mvnrepository.com](https://mvnrepository.com/artifact/com.ably.tracking)
