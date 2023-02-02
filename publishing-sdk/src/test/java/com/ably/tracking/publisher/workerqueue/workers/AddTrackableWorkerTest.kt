@@ -2,6 +2,7 @@ package com.ably.tracking.publisher.workerqueue.workers
 
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
+import com.ably.tracking.common.PresenceMessage
 import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.publisher.DefaultCorePublisher
 import com.ably.tracking.publisher.PublisherInteractor
@@ -37,11 +38,11 @@ class AddTrackableWorkerTest {
         every { startLocationUpdates(any()) } just runs
         every { updateTrackables(any()) } just runs
         every { updateTrackableStateFlows(any()) } just runs
-        every { resolveResolution(any(), any()) } just runs
     }
     private val trackable = Trackable("testtrackable")
 
-    private val worker = AddTrackableWorker(trackable, resultCallbackFunction, {}, {}, ably, publisherInteractor, hooks)
+    private val presenceUpdateListener = { _: PresenceMessage -> Unit}
+    private val worker = AddTrackableWorker(trackable, resultCallbackFunction, presenceUpdateListener, {}, ably, publisherInteractor, hooks)
 
     private val asyncWorks = mutableListOf<suspend () -> Unit>()
     private val postedWorks = mutableListOf<WorkerSpecification>()
@@ -110,7 +111,7 @@ class AddTrackableWorkerTest {
             asyncWorks.executeAll()
             assertThat(asyncWorks).isNotEmpty()
 
-            val postedWorkerSpecification = postedWorks[0] as WorkerSpecification.ConnectionReady
+            val postedWorkerSpecification = postedWorks[2] as WorkerSpecification.ConnectionReady
             assertThat(postedWorkerSpecification.trackable).isEqualTo(trackable)
         }
     }
@@ -133,7 +134,7 @@ class AddTrackableWorkerTest {
             asyncWorks.executeAll()
             assertThat(asyncWorks).isNotEmpty()
 
-            val postedWorkerSpecification = postedWorks[0] as WorkerSpecification.ConnectionReady
+            val postedWorkerSpecification = postedWorks[2] as WorkerSpecification.ConnectionReady
             assertThat(postedWorkerSpecification.trackable).isEqualTo(trackable)
         }
     }
@@ -156,7 +157,7 @@ class AddTrackableWorkerTest {
             asyncWorks.executeAll()
             assertThat(asyncWorks).isNotEmpty()
 
-            val postedWorkerSpecification = postedWorks[1] as WorkerSpecification.EnterPresence
+            val postedWorkerSpecification = postedWorks[0] as WorkerSpecification.EnterPresence
             assertThat(postedWorkerSpecification.trackable).isEqualTo(trackable)
             assertThat(postedWorkerSpecification.enteredPresenceOnAblyConnect).isTrue()
         }
@@ -180,9 +181,56 @@ class AddTrackableWorkerTest {
             asyncWorks.executeAll()
             assertThat(asyncWorks).isNotEmpty()
 
-            val postedWorkerSpecification = postedWorks[1] as WorkerSpecification.EnterPresence
+            val postedWorkerSpecification = postedWorks[0] as WorkerSpecification.EnterPresence
             assertThat(postedWorkerSpecification.trackable).isEqualTo(trackable)
             assertThat(postedWorkerSpecification.enteredPresenceOnAblyConnect).isFalse()
+        }
+    }
+
+    fun `should post SubscribeToPresence work when connection was successful`() {
+        runTest {
+            // given
+            val initialProperties = createPublisherProperties()
+            ably.mockConnectSuccess(trackable.id)
+
+            // when
+            worker.doWork(
+                initialProperties,
+                asyncWorks.appendWork(),
+                postedWorks.appendSpecification()
+            )
+
+            // then
+            asyncWorks.executeAll()
+            assertThat(asyncWorks).isNotEmpty()
+
+            val postedWorkerSpecification = postedWorks[1] as WorkerSpecification.SubscribeToPresence
+            assertThat(postedWorkerSpecification.trackable).isEqualTo(trackable)
+            assertThat(postedWorkerSpecification.presenceUpdateListener).isEqualTo(presenceUpdateListener)
+        }
+    }
+
+    @Test
+    fun `should post SubscribeToPresence work when connection failed with a non-fatal error`() {
+        runTest {
+            // given
+            val initialProperties = createPublisherProperties()
+            ably.mockConnectFailure(trackable.id, isFatal = false)
+
+            // when
+            worker.doWork(
+                initialProperties,
+                asyncWorks.appendWork(),
+                postedWorks.appendSpecification()
+            )
+
+            // then
+            asyncWorks.executeAll()
+            assertThat(asyncWorks).isNotEmpty()
+
+            val postedWorkerSpecification = postedWorks[1] as WorkerSpecification.SubscribeToPresence
+            assertThat(postedWorkerSpecification.trackable).isEqualTo(trackable)
+            assertThat(postedWorkerSpecification.presenceUpdateListener).isEqualTo(presenceUpdateListener)
         }
     }
 
@@ -202,7 +250,7 @@ class AddTrackableWorkerTest {
 
             // then
             asyncWorks.executeAll()
-            assertThat(asyncWorks).isNotEmpty()
+            assertThat(asyncWorks).hasSize(1)
 
             val postedWorkerSpecification = postedWorks[0] as WorkerSpecification.AddTrackableFailed
             assertThat(postedWorkerSpecification.trackable).isEqualTo(trackable)
@@ -252,30 +300,6 @@ class AddTrackableWorkerTest {
 
             verify(exactly = 1) {
                 publisherInteractor.updateTrackables(any())
-            }
-        }
-    }
-
-    @Test
-    fun `should calculate a resolution for the added trackable when executing normally`() {
-        runTest {
-            // given
-            val initialProperties = createPublisherProperties()
-            ably.mockConnectSuccess(trackable.id)
-
-            // when
-            worker.doWork(
-                initialProperties,
-                asyncWorks.appendWork(),
-                postedWorks.appendSpecification()
-            )
-
-            // then
-            assertThat(asyncWorks).isNotEmpty()
-            assertThat(postedWorks).isEmpty()
-
-            verify(exactly = 1) {
-                publisherInteractor.resolveResolution(trackable, any())
             }
         }
     }

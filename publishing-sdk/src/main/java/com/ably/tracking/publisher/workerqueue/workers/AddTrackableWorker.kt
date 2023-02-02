@@ -89,7 +89,6 @@ internal class AddTrackableWorker(
     private fun addTrackableToPublisherAndResolveResolution(properties: PublisherProperties) {
         properties.trackables.add(trackable)
         publisherInteractor.updateTrackables(properties)
-        publisherInteractor.resolveResolution(trackable, properties)
         hooks.trackables?.onTrackableAdded(trackable)
     }
 

@@ -25,6 +25,7 @@ internal class EnterPresenceSuccessWorker(
         }
 
         properties.trackableEnteredPresenceFlags[trackable.id] = true
+        publisherInteractor.resolveResolution(trackable, properties)
         publisherInteractor.updateTrackableState(properties, trackable.id)
         return properties
     }
