@@ -12,10 +12,15 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
 import java.util.UUID
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -99,19 +104,61 @@ class DefaultPublisherTest {
         val trackable = Trackable(trackableId)
         ably.mockConnectFailureThenSuccess(trackableId, isFatal = true)
         ably.mockSubscribeToPresenceSuccess(trackableId)
+        val scope = CoroutineScope(Dispatchers.Default)
 
         // when
+        val trackableStateFlow: StateFlow<TrackableState>
         runBlocking {
-            try {
-                publisher.add(trackable)
-            } catch (exception: Exception) {
-                // ignoring exception in this test
+            trackableStateFlow = publisher.add(trackable)
+        }
+
+        var enteredFailedState = false
+        trackableStateFlow.onEach {
+            if (it is TrackableState.Failed) {
+                enteredFailedState = true
             }
+        }.launchIn(scope)
+
+        runBlocking {
+            withTimeout(5000) {
+                while (true) {
+                    if (enteredFailedState) {
+                        break
+                    }
+
+                    delay(5)
+                }
+            }
+
+            // Have to remove the previous one before re-adding
+            publisher.remove(trackable)
+        }
+
+        // We need to wait for the trackable to have fully left the publisher before continuing
+        // See: https://github.com/ably/ably-asset-tracking-android/issues/984
+        var trackableRemovedFromPublisher = false
+        publisher.trackables.onEach {
+            if (!it.contains(trackable)) {
+                trackableRemovedFromPublisher = true
+            }
+        }.launchIn(scope)
+
+        runBlocking {
+            withTimeout(5000) {
+                while (true) {
+                    if (trackableRemovedFromPublisher) {
+                        break
+                    }
+
+                    delay(5)
+                }
+            }
+
             publisher.add(trackable)
         }
 
         // then
-        coVerify(exactly = 2) {
+        coVerify(exactly = 2, timeout = 10000) {
             ably.connect(trackableId, any(), any(), any(), any())
         }
     }
@@ -139,40 +186,63 @@ class DefaultPublisherTest {
     }
 
     @Test()
-    fun `should fail adding process when adding a trackable that is currently being added and it fails with fatal exception`() {
+    fun `should not fail adding process when adding a trackable that is currently being added and it fails with fatal exception`() {
         // given
         val trackableId = UUID.randomUUID().toString()
         val trackable = Trackable(trackableId)
-        var didFirstAddFail = false
-        var didSecondAddFail = false
         // without the callback delay sometimes the first add() ends before the second one begins
         ably.mockConnectFailureThenSuccess(trackableId, isFatal = true, callbackDelayInMilliseconds = 100L)
         ably.mockSubscribeToPresenceSuccess(trackableId)
+        val scope = CoroutineScope(Dispatchers.Default)
 
         // when
+        val trackableStateFlow: StateFlow<TrackableState>
         runBlocking {
-            coroutineScope {
-                launch {
-                    try {
-                        publisher.add(trackable)
-                    } catch (exception: Exception) {
-                        didFirstAddFail = true
+            trackableStateFlow = publisher.add(trackable)
+        }
+
+        var enteredFailedState = false
+        trackableStateFlow.onEach {
+            if (it is TrackableState.Failed) {
+                enteredFailedState = true
+            }
+        }.launchIn(scope)
+
+        runBlocking {
+            withTimeout(5000) {
+                while (true) {
+                    if (enteredFailedState) {
+                        break
                     }
-                }
-                launch {
-                    try {
-                        publisher.add(trackable)
-                    } catch (exception: Exception) {
-                        didSecondAddFail = true
-                    }
+
+                    delay(5)
                 }
             }
         }
 
+        var secondAttemptEnteredFailedState = false
+        trackableStateFlow.onEach {
+            if (it is TrackableState.Failed) {
+                secondAttemptEnteredFailedState = true
+            }
+        }.launchIn(scope)
+
+        runBlocking {
+            withTimeout(5000) {
+                while (true) {
+                    if (secondAttemptEnteredFailedState) {
+                        break
+                    }
+
+                    delay(5)
+                }
+            }
+
+            publisher.add(trackable)
+        }
+
         // then
-        Assert.assertTrue("First add should fail", didFirstAddFail)
-        Assert.assertTrue("Second add should fail", didSecondAddFail)
-        coVerify(exactly = 1) {
+        coVerify(exactly = 1, timeout = 10000) {
             ably.connect(trackableId, any(), any(), any(), any())
         }
     }
