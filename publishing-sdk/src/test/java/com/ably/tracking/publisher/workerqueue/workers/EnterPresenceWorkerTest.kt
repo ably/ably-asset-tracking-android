@@ -1,11 +1,8 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
-import com.ably.tracking.common.Ably
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 import com.google.common.truth.Truth.assertThat
-import io.mockk.coEvery
-import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
@@ -13,9 +10,6 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class EnterPresenceWorkerTest {
 
-    private val ably: Ably = mockk {
-        coEvery { startConnection() } returns Result.success(Unit)
-    }
     private val trackable = Trackable("testtrackable")
 
     private lateinit var worker: EnterPresenceWorker
@@ -28,7 +22,7 @@ class EnterPresenceWorkerTest {
         runTest {
             // given
             val initialProperties = createPublisherProperties()
-            worker = EnterPresenceWorker(trackable, true)
+            worker = EnterPresenceWorker(trackable)
 
             // when
             worker.doWork(
@@ -49,7 +43,7 @@ class EnterPresenceWorkerTest {
         runTest {
             // given
             val initialProperties = createPublisherProperties()
-            worker = EnterPresenceWorker(trackable, false)
+            worker = EnterPresenceWorker(trackable)
 
             // when
             worker.doWork(
@@ -65,13 +59,14 @@ class EnterPresenceWorkerTest {
         }
     }
 
+    @Test
     fun `should not post enter presence success if trackable marked for removal`() {
         runTest {
             // given
             val initialProperties = createPublisherProperties()
             initialProperties.trackables.add(trackable)
             initialProperties.trackableRemovalGuard.markForRemoval(trackable) {}
-            worker = EnterPresenceWorker(trackable, true)
+            worker = EnterPresenceWorker(trackable)
 
             // when
             worker.doWork(
@@ -94,7 +89,7 @@ class EnterPresenceWorkerTest {
             val initialProperties = createPublisherProperties()
             initialProperties.trackables.add(trackable)
             initialProperties.trackableRemovalGuard.markForRemoval(trackable) {}
-            worker = EnterPresenceWorker(trackable, false)
+            worker = EnterPresenceWorker(trackable)
 
             // when
             worker.doWork(
@@ -110,12 +105,13 @@ class EnterPresenceWorkerTest {
         }
     }
 
+    @Test
     fun `should post enter presence success if presence enter on ably connect succeeded`() {
         runTest {
             // given
             val initialProperties = createPublisherProperties()
             initialProperties.trackables.add(trackable)
-            worker = EnterPresenceWorker(trackable, true)
+            worker = EnterPresenceWorker(trackable)
 
             // when
             worker.doWork(
@@ -139,7 +135,7 @@ class EnterPresenceWorkerTest {
             // given
             val initialProperties = createPublisherProperties()
             initialProperties.trackables.add(trackable)
-            worker = EnterPresenceWorker(trackable, false)
+            worker = EnterPresenceWorker(trackable)
 
             // when
             worker.doWork(

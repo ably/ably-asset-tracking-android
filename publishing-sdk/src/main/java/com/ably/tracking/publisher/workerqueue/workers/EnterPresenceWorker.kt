@@ -11,7 +11,6 @@ import com.ably.tracking.publisher.workerqueue.WorkerSpecification
  */
 internal class EnterPresenceWorker(
     private val trackable: Trackable,
-    private val enteredPresenceOnConnect: Boolean,
 ) : DefaultWorker<PublisherProperties, WorkerSpecification>() {
 
     override fun doWork(
@@ -23,16 +22,6 @@ internal class EnterPresenceWorker(
             properties.trackables.contains(trackable) &&
             !properties.trackableRemovalGuard.isMarkedForRemoval(trackable)
         ) {
-            /**
-             * If ably.connect resulted in success, then presence has already
-             * been entered, so we can succeed and stop here.
-             */
-            if (enteredPresenceOnConnect) {
-                postWork(WorkerSpecification.EnterPresenceSuccess(trackable))
-                return properties
-            }
-
-            // Otherwise, we'll do retries until we have succeeded
             postWork(WorkerSpecification.RetryEnterPresence(trackable))
         }
 

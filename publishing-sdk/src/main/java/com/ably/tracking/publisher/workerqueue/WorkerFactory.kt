@@ -90,8 +90,7 @@ internal class WorkerFactory(
                 ably,
             )
             is WorkerSpecification.EnterPresence -> EnterPresenceWorker(
-                workerSpecification.trackable,
-                workerSpecification.enteredPresenceOnAblyConnect
+                workerSpecification.trackable
             )
             is WorkerSpecification.RetryEnterPresence -> RetryEnterPresenceWorker(
                 workerSpecification.trackable,
@@ -266,9 +265,7 @@ internal sealed class WorkerSpecification {
     ) : WorkerSpecification()
 
     data class EnterPresence(
-        val trackable: Trackable,
-        // Whether or not the ably.connect call was successful and we therefore entered presence
-        val enteredPresenceOnAblyConnect: Boolean
+        val trackable: Trackable
     ) : WorkerSpecification()
 
     data class RetryEnterPresence(
