@@ -1,6 +1,7 @@
 package com.ably.tracking.publisher
 
 import android.Manifest
+import android.util.Log
 import androidx.annotation.RequiresPermission
 import com.ably.tracking.ConnectionException
 import com.ably.tracking.EnhancedLocationUpdate
@@ -512,6 +513,7 @@ constructor(
             ConnectionState.OFFLINE -> TrackableState.Offline()
             ConnectionState.FAILED -> TrackableState.Failed(properties.lastConnectionStateChange.errorInformation!!) // are we sure error information will always be present?
         }
+
         if (newTrackableState != properties.trackableStates[trackableId]) {
             publishNewTrackableState(properties, trackableId, newTrackableState)
         }

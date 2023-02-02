@@ -58,7 +58,7 @@ internal class RetryEnterPresenceWorker(
 
         when {
             enterPresenceResult.isSuccess -> postWork(
-                WorkerSpecification.RetryEnterPresenceSuccess(
+                WorkerSpecification.EnterPresenceSuccess(
                     trackable
                 )
             )

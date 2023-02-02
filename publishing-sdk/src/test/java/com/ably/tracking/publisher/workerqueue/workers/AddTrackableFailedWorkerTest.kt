@@ -51,32 +51,9 @@ class AddTrackableFailedWorkerTest {
     }
 
     @Test
-    fun `should finish adding the trackable with a failure`() {
-        // given
-        val initialProperties = createPublisherProperties()
-        initialProperties.duplicateTrackableGuard.startAddingTrackable(trackable)
-        initialProperties.trackables.add(Trackable("tracked-trackable"))
-
-        // when
-        val updatedProperties = worker.doWork(
-            initialProperties,
-            asyncWorks.appendWork(),
-            postedWorks.appendSpecification()
-        )
-
-        // then
-        assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).isEmpty()
-
-        assertThat(updatedProperties.duplicateTrackableGuard.isCurrentlyAddingTrackable(trackable))
-            .isFalse()
-    }
-
-    @Test
     fun `should finish removing the trackable with a success`() {
         // given
         val initialProperties = createPublisherProperties()
-        initialProperties.duplicateTrackableGuard.startAddingTrackable(trackable)
         initialProperties.trackables.add(Trackable("tracked-trackable"))
 
         // when

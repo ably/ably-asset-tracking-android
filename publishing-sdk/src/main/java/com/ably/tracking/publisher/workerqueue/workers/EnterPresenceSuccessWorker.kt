@@ -6,7 +6,11 @@ import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 
-internal class RetryEnterPresenceSuccessWorker(
+/**
+ * A worker that is called when entering presence results
+ * in success.
+ */
+internal class EnterPresenceSuccessWorker(
     private val trackable: Trackable,
     private val publisherInteractor: PublisherInteractor,
 ) : DefaultWorker<PublisherProperties, WorkerSpecification>() {
@@ -19,7 +23,9 @@ internal class RetryEnterPresenceSuccessWorker(
         if (!properties.trackables.contains(trackable)) {
             return properties
         }
+
         properties.trackableEnteredPresenceFlags[trackable.id] = true
+        publisherInteractor.resolveResolution(trackable, properties)
         publisherInteractor.updateTrackableState(properties, trackable.id)
         return properties
     }
