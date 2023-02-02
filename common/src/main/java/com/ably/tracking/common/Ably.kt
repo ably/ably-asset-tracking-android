@@ -335,52 +335,11 @@ constructor(
         val channel = getChannelIfExists(trackableId) ?: return Result.success(Unit)
 
         return try {
-            enterChannelPresence(channel, presenceData)
+            enterPresenceSuspending(channel, presenceData)
             Result.success(Unit)
         } catch (connectionException: ConnectionException) {
             logHandler?.w("$TAG Failed to connect for trackable $trackableId", connectionException)
             Result.failure(connectionException)
-        }
-    }
-
-    /**
-     * Enters the presence of a channel. If it can't enter because of the auth token capabilities,
-     * a new auth token is requested and the operation is retried once more.
-     * @throws ConnectionException if something goes wrong or the retry fails
-     */
-    private suspend fun enterChannelPresence(channel: AblySdkRealtime.Channel<ChannelStateListenerType>, presenceData: PresenceData) {
-        try {
-            enterPresenceSuspending(channel, presenceData)
-        } catch (connectionException: ConnectionException) {
-            if (connectionException.errorInformation.code == AUTH_TOKEN_CAPABILITY_ERROR_CODE) {
-                val renewAuthResult = renewAuthSuspending()
-
-                renewAuthResult.errorInfo?.let {
-                    logHandler?.w("$TAG Failed to renew auth while entering the presence of channel ${channel.name}", it.toTrackingException())
-                    throw it.toTrackingException()
-                }
-                attachSuspending(channel)
-                enterPresenceSuspending(channel, presenceData)
-            } else {
-                logHandler?.w("$TAG Failed to enter the presence of channel ${channel.name}", connectionException)
-                throw connectionException
-            }
-        }
-    }
-
-    data class RenewAuthResult(val success: Boolean, val tokenDetails: Auth.TokenDetails?, val errorInfo: ErrorInfo?)
-
-    private suspend fun renewAuthSuspending(): RenewAuthResult {
-        return suspendCoroutine { continuation ->
-            try {
-                ably.auth.renewAuth { success, tokenDetails, errorInfo ->
-                    continuation.resume(RenewAuthResult(success, tokenDetails, errorInfo))
-                }
-            } catch (e: Exception) {
-                logHandler?.w("$TAG Failed to renew Ably auth", e)
-                e.printStackTrace()
-                continuation.resumeWithException(e)
-            }
         }
     }
 
@@ -398,7 +357,7 @@ constructor(
                 val channel = ably.channels.get(channelName, channelOptions)
                 scope.launch {
                     try {
-                        attachSuspending(channel)
+                        connect(channel)
                         callback(Result.success(Unit))
                     } catch (connectionException: ConnectionException) {
                         logHandler?.w(
@@ -421,6 +380,56 @@ constructor(
             }
         } else {
             callback(Result.success(Unit))
+        }
+    }
+
+    /**
+     * Attaches a channel. If it can't because of the auth token capabilities,
+     * a new auth token is requested and the operation is retried once more.
+     * @throws ConnectionException if something goes wrong or the retry fails
+     */
+    private suspend fun connect(channel: AblySdkRealtime.Channel<ChannelStateListenerType>) {
+        try {
+            attachSuspending(channel)
+        } catch (connectionException: ConnectionException) {
+            if (connectionException.errorInformation.code == AUTH_TOKEN_CAPABILITY_ERROR_CODE) {
+                val renewAuthResult = renewAuthSuspending()
+
+                renewAuthResult.errorInfo?.let {
+                    logHandler?.w(
+                        "$TAG Failed to renew auth while entering the presence of channel ${channel.name}",
+                        it.toTrackingException()
+                    )
+                    throw it.toTrackingException()
+                }
+                attachSuspending(channel)
+            } else {
+                logHandler?.w(
+                    "$TAG Failed to enter the presence of channel ${channel.name}",
+                    connectionException
+                )
+                throw connectionException
+            }
+        }
+    }
+
+    data class RenewAuthResult(
+        val success: Boolean,
+        val tokenDetails: Auth.TokenDetails?,
+        val errorInfo: ErrorInfo?
+    )
+
+    private suspend fun renewAuthSuspending(): RenewAuthResult {
+        return suspendCoroutine { continuation ->
+            try {
+                ably.auth.renewAuth { success, tokenDetails, errorInfo ->
+                    continuation.resume(RenewAuthResult(success, tokenDetails, errorInfo))
+                }
+            } catch (e: Exception) {
+                logHandler?.w("$TAG Failed to renew Ably auth", e)
+                e.printStackTrace()
+                continuation.resumeWithException(e)
+            }
         }
     }
 
