@@ -1,12 +1,12 @@
 # Change log
 
-This release adds additional enhancements to operational stability, for publishers in particular, when running on a devices with unreliable network connectivity.
+## [1.6.1](https://github.com/ably/ably-asset-tracking-android/tree/v1.6.1)
 
-## [1.6.1](https://github.com/ably/ably-asset-tracking-android/tree/HEAD)
+This release adds additional enhancements to operational stability, for publishers in particular, when running on a devices with unreliable network connectivity.
 
 Please see:
 
-[Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.6.0...HEAD)
+[Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.6.0...v1.6.1)
 
 **Implemented enhancements:**
 
