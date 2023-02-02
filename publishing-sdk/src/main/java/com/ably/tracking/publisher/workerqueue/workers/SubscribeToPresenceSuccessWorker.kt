@@ -6,7 +6,7 @@ import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 
-internal class RetrySubscribeToPresenceSuccessWorker(
+internal class SubscribeToPresenceSuccessWorker(
     private val trackable: Trackable,
     private val publisherInteractor: PublisherInteractor,
 ) : DefaultWorker<PublisherProperties, WorkerSpecification>() {
