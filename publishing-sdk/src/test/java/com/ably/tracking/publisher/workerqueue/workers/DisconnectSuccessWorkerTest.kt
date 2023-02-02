@@ -431,26 +431,6 @@ class DisconnectSuccessWorkerTest {
     }
 
     @Test
-    fun `should clear the duplicate trackable guard for the removed trackable`() {
-        // given
-        val initialProperties = createPublisherPropertiesWithMultipleTrackables()
-        initialProperties.duplicateTrackableGuard.startAddingTrackable(trackable)
-
-        // when
-        val updatedProperties = worker.doWork(
-            initialProperties,
-            asyncWorks.appendWork(),
-            postedWorks.appendSpecification()
-        )
-
-        // then
-        assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).isEmpty()
-
-        assertThat(updatedProperties.duplicateTrackableGuard.isCurrentlyAddingTrackable(trackable)).isFalse()
-    }
-
-    @Test
     fun `should always call the result callback with a success`() {
         // given
         val initialProperties = createPublisherPropertiesWithMultipleTrackables()

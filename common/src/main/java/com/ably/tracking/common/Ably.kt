@@ -586,9 +586,7 @@ constructor(
     private fun sendMessage(channel: AblySdkRealtime.Channel<ChannelStateListenerType>, message: Message?, callback: (Result<Unit>) -> Unit) {
         scope.launch {
             try {
-                retryChannelOperationIfConnectionResumeFails(channel) {
-                    sendMessage(it, message)
-                }
+                sendMessage(channel, message)
                 callback(Result.success(Unit))
             } catch (exception: ConnectionException) {
                 logHandler?.w("$TAG Failed to send message for channel ${channel.name}", exception)
@@ -775,13 +773,37 @@ constructor(
     override suspend fun updatePresenceData(trackableId: String, presenceData: PresenceData): Result<Unit> {
         val trackableChannel = getChannelIfExists(trackableId) ?: return Result.success(Unit)
         return try {
-            retryChannelOperationIfConnectionResumeFails(trackableChannel) {
-                updatePresenceData(it, presenceData)
+            // This simple retry mechanism should be removed while fixing https://github.com/ably/ably-asset-tracking-android/issues/962
+            withTimeout(30_000L) {
+                updatePresenceDataRepeating(trackableChannel, presenceData)
+                Result.success(Unit)
             }
-            Result.success(Unit)
         } catch (exception: ConnectionException) {
             logHandler?.w("$TAG Failed to update presence data for trackable $trackableId", exception)
             Result.failure(exception)
+        } catch (exception: TimeoutCancellationException) {
+            logHandler?.w("$TAG Failed to update presence data due to a timeout for trackable $trackableId", exception)
+            Result.failure(ConnectionException(ErrorInformation("Timeout was thrown when updating presence of channel ${trackableChannel.name}")))
+        }
+    }
+
+    /**
+     * Try to update the presence data of the [channel] and if it fails due to a retriable error repeat the operation
+     * after a delay. If the operation fails due to a non-retriable error then re-throw the [ConnectionException].
+     *
+     * Note: this is a temporary solution that should be removed while fixing https://github.com/ably/ably-asset-tracking-android/issues/962
+     */
+    private suspend fun updatePresenceDataRepeating(channel: AblySdkRealtime.Channel<ChannelStateListenerType>, presenceData: PresenceData) {
+        try {
+            updatePresenceData(channel, presenceData)
+        } catch (connectionException: ConnectionException) {
+            if (!connectionException.isRetriable()) {
+                logHandler?.w("$TAG Failed to update presence for channel ${channel.name} due to a non-retriable exception", connectionException)
+                throw connectionException
+            }
+            logHandler?.w("$TAG Failed to update presence for channel ${channel.name} due to a retriable exception, the operation will be retried", connectionException)
+            delay(15_000L)
+            updatePresenceDataRepeating(channel, presenceData)
         }
     }
 
@@ -861,44 +883,6 @@ constructor(
     }
 
     /**
-     * Performs the [operation], waiting for the connection to resume if it's in the "suspended" state,
-     * and if a "connection resume" exception is thrown it waits for the [channel] to
-     * reconnect and retries the [operation], otherwise it rethrows the exception. If the [operation] fails for
-     * the second time the exception is rethrown no matter if it was the "connection resume" exception or not.
-     */
-    private suspend fun retryChannelOperationIfConnectionResumeFails(
-        channel: AblySdkRealtime.Channel<ChannelStateListenerType>,
-        operation: suspend (AblySdkRealtime.Channel<ChannelStateListenerType>) -> Unit
-    ) {
-        try {
-            if (channel.state == ChannelState.suspended) {
-                logHandler?.w("$TAG Trying to perform an operation on a suspended channel ${channel.name}, waiting for the channel to be reconnected")
-                waitForChannelReconnection(channel)
-            }
-            operation(channel)
-        } catch (exception: ConnectionException) {
-            if (exception.isConnectionResumeException()) {
-                logHandler?.w(
-                    "$TAG Connection resume failed for channel ${channel.name}, waiting for the channel to be reconnected",
-                    exception
-                )
-                try {
-                    waitForChannelReconnection(channel)
-                    operation(channel)
-                } catch (secondException: ConnectionException) {
-                    logHandler?.w(
-                        "$TAG Retrying the operation on channel ${channel.name} has failed for the second time",
-                        secondException
-                    )
-                    throw secondException
-                }
-            } else {
-                throw exception
-            }
-        }
-    }
-
-    /**
      * For a given trackable, listen for channel state until it enters a state of ONLINE (which in
      * Ably channel-terms means ATTACHED).
      *
@@ -930,36 +914,6 @@ constructor(
         }
     }
 
-    /**
-     * Waits for the [channel] to change to the [ChannelState.attached] state.
-     * If the [channel] state already is the [ChannelState.attached] state it does not wait and returns immediately.
-     * If this doesn't happen during the next [timeoutInMilliseconds] milliseconds, then an exception is thrown.
-     */
-    private suspend fun waitForChannelReconnection(channel: AblySdkRealtime.Channel<ChannelStateListenerType>, timeoutInMilliseconds: Long = 10_000L) {
-        if (channel.state.isConnected()) {
-            return
-        }
-        try {
-            withTimeout(timeoutInMilliseconds) {
-                suspendCancellableCoroutine<Unit> { continuation ->
-                    val wrappedChannelStateListener = ablySdkFactory.wrapChannelStateListener(object : AblySdkFactory.UnderlyingChannelStateListener<ChannelStateListenerType> {
-                        override fun onChannelStateChanged(wrapper: ChannelStateListenerType, stateChange: AblySdkChannelStateListener.ChannelStateChange) {
-                            if (stateChange.current.isConnected()) {
-                                channel.off(wrapper)
-                                continuation.resume(Unit)
-                            }
-                        }
-                    })
-                    channel.on(wrappedChannelStateListener)
-                }
-            }
-        } catch (exception: TimeoutCancellationException) {
-            throw ConnectionException(ErrorInformation("Timeout was thrown when waiting for channel to attach")).also {
-                logHandler?.w("$TAG Timeout while waiting for channel reconnection ${channel.name}", it)
-            }
-        }
-    }
-
     private fun ChannelState.isConnected(): Boolean = this == ChannelState.attached
 
     private fun ConnectionState.isConnected(): Boolean = this == ConnectionState.connected
@@ -978,12 +932,14 @@ constructor(
      * If something goes wrong then it throws a [ConnectionException].
      */
     private suspend fun enterPresenceSuspending(channel: AblySdkRealtime.Channel<ChannelStateListenerType>, presenceData: PresenceData) {
+        logHandler?.i("Enter presence suspending ${channel.name}")
         suspendCancellableCoroutine<Unit> { continuation ->
             try {
                 channel.presence.enter(
                     gson.toJson(presenceData.toMessage()),
                     object : CompletionListener {
                         override fun onSuccess() {
+                            logHandler?.i("Entered presence on ${channel.name}")
                             continuation.resume(Unit)
                         }
 
@@ -1062,44 +1018,41 @@ constructor(
 
     /**
      * A suspending version of the [AblySdkRealtime.connect] method. It will begin connecting [ably] and wait until it's connected.
-     * If the connection enters the "failed" state it will throw a [ConnectionException].
-     * If the operation doesn't complete in [timeoutInMilliseconds] it will throw a [ConnectionException].
+     * If the connection enters the "failed" or "closed" state it will throw a [ConnectionException].
      * If the instance is already connected it will finish immediately.
      * If the connection is already failed it throws a [ConnectionException].
      *
      * @throws ConnectionException if something goes wrong.
      */
-    private suspend fun connectSuspending(timeoutInMilliseconds: Long = 10_000L) {
+    private suspend fun connectSuspending() {
         if (ably.connection.state.isConnected()) {
             return
         } else if (ably.connection.state.isFailed()) {
             // We expect connection.reason to be non-null if the connection is in a failed state
             throw ably.connection.reason!!.toTrackingException()
         }
-        try {
-            withTimeout(timeoutInMilliseconds) {
-                suspendCancellableCoroutine<Unit> { continuation ->
-                    ably.connection.on(object : ConnectionStateListener {
-                        override fun onConnectionStateChanged(connectionStateChange: ConnectionStateListener.ConnectionStateChange) {
-                            when {
-                                connectionStateChange.current.isConnected() -> {
-                                    ably.connection.off(this)
-                                    continuation.resume(Unit)
-                                }
-                                connectionStateChange.current.isFailed() -> {
-                                    ably.connection.off(this)
-                                    continuation.resumeWithException(connectionStateChange.reason.toTrackingException())
-                                }
-                            }
+        suspendCancellableCoroutine { continuation ->
+            ably.connection.on(object : ConnectionStateListener {
+                override fun onConnectionStateChanged(connectionStateChange: ConnectionStateListener.ConnectionStateChange) {
+                    when {
+                        connectionStateChange.current.isConnected() -> {
+                            ably.connection.off(this)
+                            continuation.resume(Unit)
                         }
-                    })
-                    ably.connect()
+                        connectionStateChange.current.isFailed() -> {
+                            ably.connection.off(this)
+                            continuation.resumeWithException(connectionStateChange.reason.toTrackingException())
+                        }
+                        connectionStateChange.current.isClosed() -> {
+                            ably.connection.off(this)
+                            val exception =
+                                ConnectionException(ErrorInformation("Connection entered closed state whilst waiting for it to connect"))
+                            continuation.resumeWithException(exception)
+                        }
+                    }
                 }
-            }
-        } catch (exception: TimeoutCancellationException) {
-            throw ConnectionException(ErrorInformation("Timeout was thrown when waiting for Ably to connect")).also {
-                logHandler?.w("$TAG Timeout while waiting for Ably to connect", it)
-            }
+            })
+            ably.connect()
         }
     }
 

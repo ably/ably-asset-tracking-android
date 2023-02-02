@@ -473,6 +473,7 @@ constructor(
             ConnectionState.OFFLINE -> TrackableState.Offline()
             ConnectionState.FAILED -> TrackableState.Failed(properties.lastConnectionStateChange.errorInformation!!) // are we sure error information will always be present?
         }
+
         if (newTrackableState != properties.trackableStates[trackableId]) {
             publishNewTrackableState(properties, trackableId, newTrackableState)
         }
