@@ -252,9 +252,8 @@ class AddTrackableWorkerTest {
             asyncWorks.executeAll()
             assertThat(asyncWorks).hasSize(1)
 
-            val postedWorkerSpecification = postedWorks[0] as WorkerSpecification.AddTrackableFailed
+            val postedWorkerSpecification = postedWorks[0] as WorkerSpecification.FailTrackable
             assertThat(postedWorkerSpecification.trackable).isEqualTo(trackable)
-            assertThat(postedWorkerSpecification.callbackFunction).isEqualTo(resultCallbackFunction)
         }
     }
 

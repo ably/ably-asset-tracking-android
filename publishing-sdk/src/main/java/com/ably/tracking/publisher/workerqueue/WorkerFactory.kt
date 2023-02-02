@@ -21,7 +21,6 @@ import com.ably.tracking.publisher.ResolutionPolicy
 import com.ably.tracking.publisher.RoutingProfile
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.workers.AblyConnectionStateChangeWorker
-import com.ably.tracking.publisher.workerqueue.workers.AddTrackableFailedWorker
 import com.ably.tracking.publisher.workerqueue.workers.AddTrackableWorker
 import com.ably.tracking.publisher.workerqueue.workers.FailTrackableWorker
 import com.ably.tracking.publisher.workerqueue.workers.ChangeLocationEngineResolutionWorker
@@ -79,13 +78,6 @@ internal class WorkerFactory(
                 ably,
                 publisherInteractor,
                 hooks
-            )
-            is WorkerSpecification.AddTrackableFailed -> AddTrackableFailedWorker(
-                workerSpecification.trackable,
-                workerSpecification.callbackFunction,
-                workerSpecification.exception,
-                workerSpecification.isConnectedToAbly,
-                ably,
             )
             is WorkerSpecification.EnterPresence -> EnterPresenceWorker(
                 workerSpecification.trackable,
@@ -233,13 +225,6 @@ internal sealed class WorkerSpecification {
         val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>,
         val presenceUpdateListener: ((presenceMessage: com.ably.tracking.common.PresenceMessage) -> Unit),
         val channelStateChangeListener: ((connectionStateChange: ConnectionStateChange) -> Unit),
-    ) : WorkerSpecification()
-
-    data class AddTrackableFailed(
-        val trackable: Trackable,
-        val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>,
-        val exception: Exception,
-        val isConnectedToAbly: Boolean,
     ) : WorkerSpecification()
 
     object ChangeLocationEngineResolution : WorkerSpecification()

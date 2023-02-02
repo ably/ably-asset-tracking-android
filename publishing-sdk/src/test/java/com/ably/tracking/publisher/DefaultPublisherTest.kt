@@ -2,6 +2,7 @@ package com.ably.tracking.publisher
 
 import android.annotation.SuppressLint
 import com.ably.tracking.ConnectionException
+import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
 import com.ably.tracking.test.common.mockConnectFailureThenSuccess
 import com.ably.tracking.test.common.mockConnectSuccess
