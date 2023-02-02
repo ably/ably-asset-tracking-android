@@ -445,7 +445,7 @@ class TestResources(
             }
 
             // Make sure we're on the channel before continuing
-            connectedToSimulationChannel.await(5)
+            connectedToSimulationChannel.await(15)
             connectedToSimulationChannel.assertFulfilled()
 
             return flow
