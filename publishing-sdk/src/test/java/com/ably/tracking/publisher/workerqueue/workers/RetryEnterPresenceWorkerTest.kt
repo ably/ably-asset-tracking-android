@@ -9,7 +9,6 @@ import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 import com.ably.tracking.test.common.mockEnterPresenceFailure
 import com.ably.tracking.test.common.mockEnterPresenceSuccess
 import com.google.common.truth.Truth.assertThat
-import io.ably.lib.realtime.ChannelState
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -28,7 +27,6 @@ class RetryEnterPresenceWorkerTest {
 
     private val ably: Ably = mockk {
         coEvery { startConnection() } returns Result.success(Unit)
-        coEvery { getChannelState(trackable.id) } returns ChannelState.attached
     }
 
     private val worker = RetryEnterPresenceWorker(trackable, ably)
@@ -139,7 +137,7 @@ class RetryEnterPresenceWorkerTest {
     }
 
     @Test
-    fun `should post FailTrackable work when connection failed with a fatal error on a non-suspended channel`() {
+    fun `should post FailTrackable work when connection failed with a fatal error`() {
         runTest {
             // given
             val initialProperties = createPublisherProperties()
@@ -164,15 +162,14 @@ class RetryEnterPresenceWorkerTest {
     }
 
     @Test
-    fun `should post RetryEnterPresence work when connection failed with a fatal error on a suspended channel`() {
+    fun `should post RetryEnterPresence work when connection failed with a fatal error with 91001 error code`() {
         runTest {
             // given
             val initialProperties = createPublisherProperties()
             initialProperties.duplicateTrackableGuard.clear(trackable)
             initialProperties.trackables.add(trackable)
             mockChannelStateChange(ConnectionState.ONLINE)
-            ably.mockEnterPresenceFailure(trackable.id, isFatal = true)
-            every { ably.getChannelState(trackable.id) } returns ChannelState.suspended
+            ably.mockEnterPresenceChannelSuspendedException(trackable.id)
 
             // when
             worker.doWork(
@@ -192,6 +189,23 @@ class RetryEnterPresenceWorkerTest {
                 .contains(WorkerSpecification.RetryEnterPresence(trackable))
         }
     }
+
+    private fun Ably.mockEnterPresenceChannelSuspendedException(trackableId: String) {
+        coEvery {
+            enterChannelPresence(trackableId, any())
+        } returns Result.failure(channelSuspendedException())
+    }
+
+    // returns connection exception specific to enter presence on a suspended channel
+    private fun channelSuspendedException() = ConnectionException(
+        ErrorInformation(
+            code = 91001,
+            statusCode = 400,
+            message = "Test",
+            href = null,
+            cause = null
+        )
+    )
 
     @Test
     fun `should post FailTrackable work when connection when channel transitions to failed`() {
