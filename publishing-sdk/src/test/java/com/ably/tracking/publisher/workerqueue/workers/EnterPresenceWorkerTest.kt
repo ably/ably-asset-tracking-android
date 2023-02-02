@@ -12,7 +12,7 @@ class EnterPresenceWorkerTest {
 
     private val trackable = Trackable("testtrackable")
 
-    private lateinit var worker: EnterPresenceWorker
+    private val worker = EnterPresenceWorker(trackable)
 
     private val asyncWorks = mutableListOf<suspend () -> Unit>()
     private val postedWorks = mutableListOf<WorkerSpecification>()
@@ -22,7 +22,6 @@ class EnterPresenceWorkerTest {
         runTest {
             // given
             val initialProperties = createPublisherProperties()
-            worker = EnterPresenceWorker(trackable)
 
             // when
             worker.doWork(
@@ -43,7 +42,6 @@ class EnterPresenceWorkerTest {
         runTest {
             // given
             val initialProperties = createPublisherProperties()
-            worker = EnterPresenceWorker(trackable)
 
             // when
             worker.doWork(
@@ -66,7 +64,6 @@ class EnterPresenceWorkerTest {
             val initialProperties = createPublisherProperties()
             initialProperties.trackables.add(trackable)
             initialProperties.trackableRemovalGuard.markForRemoval(trackable) {}
-            worker = EnterPresenceWorker(trackable)
 
             // when
             worker.doWork(
@@ -89,7 +86,6 @@ class EnterPresenceWorkerTest {
             val initialProperties = createPublisherProperties()
             initialProperties.trackables.add(trackable)
             initialProperties.trackableRemovalGuard.markForRemoval(trackable) {}
-            worker = EnterPresenceWorker(trackable)
 
             // when
             worker.doWork(
@@ -106,36 +102,11 @@ class EnterPresenceWorkerTest {
     }
 
     @Test
-    fun `should post enter presence success if presence enter on ably connect succeeded`() {
-        runTest {
-            // given
-            val initialProperties = createPublisherProperties()
-            initialProperties.trackables.add(trackable)
-            worker = EnterPresenceWorker(trackable)
-
-            // when
-            worker.doWork(
-                initialProperties,
-                asyncWorks.appendWork(),
-                postedWorks.appendSpecification()
-            )
-
-            // then
-            assertThat(asyncWorks).isEmpty()
-
-            assertThat(postedWorks).hasSize(1)
-            val postedWork = postedWorks[0] as WorkerSpecification.EnterPresenceSuccess
-            assertThat(postedWork.trackable).isEqualTo(trackable)
-        }
-    }
-
-    @Test
     fun `should post retry enter presence if presence enter on ably connect failed`() {
         runTest {
             // given
             val initialProperties = createPublisherProperties()
             initialProperties.trackables.add(trackable)
-            worker = EnterPresenceWorker(trackable)
 
             // when
             worker.doWork(
