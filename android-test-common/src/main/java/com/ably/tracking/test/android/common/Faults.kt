@@ -219,11 +219,6 @@ class DisconnectAndSuspend(apiKey: String) : TransportLayerFault(apiKey) {
         }
     }
 
-    /*
-        Currently failing due to Issues #871 and #907
-    */
-    override val skipTest = true
-
     private val timer = Timer()
 
     override val type = FaultType.Nonfatal(
