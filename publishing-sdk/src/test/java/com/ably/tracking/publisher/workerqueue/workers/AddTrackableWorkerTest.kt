@@ -41,7 +41,7 @@ class AddTrackableWorkerTest {
     }
     private val trackable = Trackable("testtrackable")
 
-    private val presenceUpdateListener = { _: PresenceMessage -> Unit}
+    private val presenceUpdateListener = { _: PresenceMessage -> }
     private val worker = AddTrackableWorker(trackable, resultCallbackFunction, presenceUpdateListener, {}, ably, publisherInteractor, hooks)
 
     private val asyncWorks = mutableListOf<suspend () -> Unit>()
