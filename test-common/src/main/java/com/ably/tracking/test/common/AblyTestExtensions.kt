@@ -28,30 +28,30 @@ fun Ably.mockStartConnectionFailure() {
 fun Ably.mockConnectSuccess(trackableId: String) {
     val callbackSlot = slot<(Result<Unit>) -> Unit>()
     every {
-        connect(trackableId, any(), any(), any(), any(), capture(callbackSlot))
+        connect(trackableId, any(), any(), any(), capture(callbackSlot))
     } answers {
         callbackSlot.captured(Result.success(Unit))
     }
 
     coEvery {
-        connect(trackableId, any(), any(), any(), any())
+        connect(trackableId, any(), any(), any())
     } returns Result.success(Unit)
 }
 
 fun Ably.mockConnectFailure(trackableId: String, isFatal: Boolean = false) {
     val callbackSlot = slot<(Result<Unit>) -> Unit>()
-    every { connect(trackableId, any(), any(), any(), any(), capture(callbackSlot)) } answers {
+    every { connect(trackableId, any(), any(), any(), capture(callbackSlot)) } answers {
         callbackSlot.captured(Result.failure(anyConnectionException(isFatal)))
     }
     coEvery {
-        connect(trackableId, any(), any(), any(), any())
+        connect(trackableId, any(), any(), any())
     } returns Result.failure(anyConnectionException(isFatal))
 }
 
 fun Ably.mockConnectFailureThenSuccess(trackableId: String, isFatal: Boolean = false, callbackDelayInMilliseconds: Long? = null) {
     var failed = false
     coEvery {
-        connect(trackableId, any(), any(), any(), any())
+        connect(trackableId, any(), any(), any())
     }.coAnswers {
         callbackDelayInMilliseconds?.let { delay(it) }
         if (!failed) {
@@ -154,6 +154,24 @@ fun Ably.mockUpdatePresenceDataSuccess(trackableId: String) {
         callbackSlot.captured(Result.success(Unit))
     }
     coEvery { updatePresenceData(trackableId, any()) } returns Result.success(Unit)
+}
+
+fun Ably.mockUpdatePresenceDataFailure(trackableId: String) {
+    val callbackSlot = slot<(Result<Unit>) -> Unit>()
+    every {
+        updatePresenceData(trackableId, any(), capture(callbackSlot))
+    } answers {
+        callbackSlot.captured(Result.failure(anyConnectionException()))
+    }
+    coEvery { updatePresenceData(trackableId, any()) } returns Result.failure(anyConnectionException())
+}
+
+fun Ably.mockWaitForChannelToAttachSuccess(trackableId: String) {
+    coEvery { waitForChannelToAttach(trackableId) } returns Result.success(Unit)
+}
+
+fun Ably.mockWaitForChannelToAttachFailure(trackableId: String) {
+    coEvery { waitForChannelToAttach(trackableId) } returns Result.failure(anyConnectionException())
 }
 
 fun Ably.mockSendRawLocationSuccess(trackableId: String) {

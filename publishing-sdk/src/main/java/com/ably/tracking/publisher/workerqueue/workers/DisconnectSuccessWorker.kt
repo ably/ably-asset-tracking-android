@@ -40,7 +40,7 @@ internal class DisconnectSuccessWorker(
         }
         notifyRemoveOperationFinished()
 
-        val removedTheLastTrackable = properties.hasNoTrackablesAddingOrAdded
+        val removedTheLastTrackable = properties.hasNoTrackablesAdded
         if (removedTheLastTrackable) {
             properties.state = PublisherState.DISCONNECTING
             doAsyncWork {
@@ -56,7 +56,6 @@ internal class DisconnectSuccessWorker(
     private fun removeTrackable(properties: PublisherProperties) {
         properties.trackables.remove(trackable)
         publisherInteractor.updateTrackables(properties)
-        properties.duplicateTrackableGuard.clear(trackable)
     }
 
     private fun removeTrackableState(properties: PublisherProperties) {

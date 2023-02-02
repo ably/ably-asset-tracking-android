@@ -177,13 +177,6 @@ class TcpConnectionRefused(apiKey: String) : TransportLayerFault(apiKey) {
  */
 class TcpConnectionUnresponsive(apiKey: String) : TransportLayerFault(apiKey) {
 
-    /**
-     * This fault type is temporarily disabled at runtime. It can be re-enabled by removing this override.
-     * We will re-enable this test when the following have been addressed:
-     * - https://github.com/ably/ably-asset-tracking-android/issues/948
-     */
-    override val skipTest = true
-
     companion object {
         val fault = object : Fault() {
             override fun simulate(apiKey: String) = TcpConnectionUnresponsive(apiKey)
@@ -218,11 +211,6 @@ class DisconnectAndSuspend(apiKey: String) : TransportLayerFault(apiKey) {
             override val name = "DisconnectAndSuspend"
         }
     }
-
-    /*
-        Currently failing due to Issues #871 and #907
-    */
-    override val skipTest = true
 
     private val timer = Timer()
 
@@ -475,11 +463,6 @@ class EnterUnresponsive(apiKey: String) : UnresponsiveAfterAction(
  */
 class DisconnectWithFailedResume(apiKey: String) : ApplicationLayerFault(apiKey) {
 
-    /*
-     * This test fails intermittently. Investigation ongoing in #951
-     */
-    override val skipTest = true
-
     companion object {
         val fault = object : Fault() {
             override fun simulate(apiKey: String) = DisconnectWithFailedResume(apiKey)
@@ -560,7 +543,7 @@ class DisconnectWithFailedResume(apiKey: String) : ApplicationLayerFault(apiKey)
     private fun shouldDisconnect(direction: FrameDirection, frame: Frame) =
         direction == FrameDirection.ServerToClient &&
             frame.frameType == FrameType.BINARY &&
-            frame.data.unpack().isAction(Message.Action.CONNECTED)
+            frame.data.unpack().isAction(Message.Action.ATTACHED)
 }
 
 /**

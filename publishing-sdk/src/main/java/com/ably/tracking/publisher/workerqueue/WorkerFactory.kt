@@ -8,6 +8,7 @@ import com.ably.tracking.LocationUpdateType
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ConnectionStateChange
+import com.ably.tracking.common.PresenceData
 import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.common.TimeProvider
 import com.ably.tracking.common.workerqueue.Worker
@@ -21,25 +22,23 @@ import com.ably.tracking.publisher.ResolutionPolicy
 import com.ably.tracking.publisher.RoutingProfile
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.workers.AblyConnectionStateChangeWorker
-import com.ably.tracking.publisher.workerqueue.workers.AddTrackableFailedWorker
 import com.ably.tracking.publisher.workerqueue.workers.AddTrackableWorker
 import com.ably.tracking.publisher.workerqueue.workers.FailTrackableWorker
 import com.ably.tracking.publisher.workerqueue.workers.ChangeLocationEngineResolutionWorker
 import com.ably.tracking.publisher.workerqueue.workers.ChangeRoutingProfileWorker
 import com.ably.tracking.publisher.workerqueue.workers.ChannelConnectionStateChangeWorker
-import com.ably.tracking.publisher.workerqueue.workers.ConnectionCreatedWorker
 import com.ably.tracking.publisher.workerqueue.workers.ConnectionReadyWorker
 import com.ably.tracking.publisher.workerqueue.workers.DestinationSetWorker
 import com.ably.tracking.publisher.workerqueue.workers.DisconnectSuccessWorker
 import com.ably.tracking.publisher.workerqueue.workers.EnhancedLocationChangedWorker
+import com.ably.tracking.publisher.workerqueue.workers.EnterPresenceSuccessWorker
 import com.ably.tracking.publisher.workerqueue.workers.PresenceMessageWorker
 import com.ably.tracking.publisher.workerqueue.workers.RawLocationChangedWorker
 import com.ably.tracking.publisher.workerqueue.workers.RefreshResolutionPolicyWorker
 import com.ably.tracking.publisher.workerqueue.workers.RemoveTrackableWorker
-import com.ably.tracking.publisher.workerqueue.workers.RetryEnterPresenceSuccessWorker
-import com.ably.tracking.publisher.workerqueue.workers.RetryEnterPresenceWorker
-import com.ably.tracking.publisher.workerqueue.workers.RetrySubscribeToPresenceSuccessWorker
-import com.ably.tracking.publisher.workerqueue.workers.RetrySubscribeToPresenceWorker
+import com.ably.tracking.publisher.workerqueue.workers.EnterPresenceWorker
+import com.ably.tracking.publisher.workerqueue.workers.SubscribeToPresenceSuccessWorker
+import com.ably.tracking.publisher.workerqueue.workers.SubscribeToPresenceWorker
 import com.ably.tracking.publisher.workerqueue.workers.SendEnhancedLocationFailureWorker
 import com.ably.tracking.publisher.workerqueue.workers.SendEnhancedLocationSuccessWorker
 import com.ably.tracking.publisher.workerqueue.workers.SendRawLocationFailureWorker
@@ -48,6 +47,7 @@ import com.ably.tracking.publisher.workerqueue.workers.SetActiveTrackableWorker
 import com.ably.tracking.publisher.workerqueue.workers.StopWorker
 import com.ably.tracking.publisher.workerqueue.workers.StoppingConnectionFinishedWorker
 import com.ably.tracking.publisher.workerqueue.workers.TrackableRemovalRequestedWorker
+import com.ably.tracking.publisher.workerqueue.workers.UpdatePresenceDataWorker
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -77,28 +77,18 @@ internal class WorkerFactory(
                 workerSpecification.presenceUpdateListener,
                 workerSpecification.channelStateChangeListener,
                 ably,
+                publisherInteractor,
+                hooks
             )
-            is WorkerSpecification.AddTrackableFailed -> AddTrackableFailedWorker(
+            is WorkerSpecification.EnterPresence -> EnterPresenceWorker(
                 workerSpecification.trackable,
-                workerSpecification.callbackFunction,
-                workerSpecification.exception,
-                workerSpecification.isConnectedToAbly,
                 ably,
             )
-            is WorkerSpecification.ConnectionCreated -> ConnectionCreatedWorker(
-                workerSpecification.trackable,
-                workerSpecification.enteredPresence,
-                workerSpecification.callbackFunction,
-                ably,
-                logHandler,
-                workerSpecification.presenceUpdateListener,
-                workerSpecification.channelStateChangeListener,
-            )
-            is WorkerSpecification.RetryEnterPresence -> RetryEnterPresenceWorker(
+            is WorkerSpecification.RetryEnterPresence -> EnterPresenceWorker(
                 workerSpecification.trackable,
                 ably
             )
-            is WorkerSpecification.RetryEnterPresenceSuccess -> RetryEnterPresenceSuccessWorker(
+            is WorkerSpecification.EnterPresenceSuccess -> EnterPresenceSuccessWorker(
                 workerSpecification.trackable,
                 publisherInteractor
             )
@@ -110,21 +100,17 @@ internal class WorkerFactory(
             )
             is WorkerSpecification.ConnectionReady -> ConnectionReadyWorker(
                 workerSpecification.trackable,
-                workerSpecification.callbackFunction,
                 ably,
-                hooks,
                 publisherInteractor,
                 workerSpecification.channelStateChangeListener,
-                workerSpecification.isSubscribedToPresence,
-                workerSpecification.presenceUpdateListener,
             )
-            is WorkerSpecification.RetrySubscribeToPresence -> RetrySubscribeToPresenceWorker(
+            is WorkerSpecification.SubscribeToPresence -> SubscribeToPresenceWorker(
                 workerSpecification.trackable,
                 ably,
                 logHandler,
                 workerSpecification.presenceUpdateListener,
             )
-            is WorkerSpecification.RetrySubscribeToPresenceSuccess -> RetrySubscribeToPresenceSuccessWorker(
+            is WorkerSpecification.SubscribeToPresenceSuccess -> SubscribeToPresenceSuccessWorker(
                 workerSpecification.trackable,
                 publisherInteractor,
             )
@@ -137,7 +123,6 @@ internal class WorkerFactory(
             )
             is WorkerSpecification.TrackableRemovalRequested -> TrackableRemovalRequestedWorker(
                 workerSpecification.trackable,
-                workerSpecification.callbackFunction,
                 ably,
                 workerSpecification.result,
             )
@@ -149,6 +134,11 @@ internal class WorkerFactory(
             is WorkerSpecification.ChangeLocationEngineResolution -> ChangeLocationEngineResolutionWorker(
                 resolutionPolicy,
                 mapbox,
+            )
+            is WorkerSpecification.UpdatePresenceData -> UpdatePresenceDataWorker(
+                workerSpecification.trackableId,
+                workerSpecification.presenceData,
+                ably
             )
             is WorkerSpecification.ChangeRoutingProfile -> ChangeRoutingProfileWorker(
                 workerSpecification.routingProfile,
@@ -243,14 +233,12 @@ internal sealed class WorkerSpecification {
         val channelStateChangeListener: ((connectionStateChange: ConnectionStateChange) -> Unit),
     ) : WorkerSpecification()
 
-    data class AddTrackableFailed(
-        val trackable: Trackable,
-        val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>,
-        val exception: Exception,
-        val isConnectedToAbly: Boolean,
-    ) : WorkerSpecification()
-
     object ChangeLocationEngineResolution : WorkerSpecification()
+
+    data class UpdatePresenceData(
+        val trackableId: String,
+        val presenceData: PresenceData,
+    ) : WorkerSpecification()
 
     data class ChangeRoutingProfile(
         val routingProfile: RoutingProfile,
@@ -261,19 +249,15 @@ internal sealed class WorkerSpecification {
         val connectionStateChange: ConnectionStateChange,
     ) : WorkerSpecification()
 
-    data class ConnectionCreated(
+    data class EnterPresence(
         val trackable: Trackable,
-        val enteredPresence: Boolean,
-        val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>,
-        val presenceUpdateListener: ((presenceMessage: com.ably.tracking.common.PresenceMessage) -> Unit),
-        val channelStateChangeListener: ((connectionStateChange: ConnectionStateChange) -> Unit),
     ) : WorkerSpecification()
 
     data class RetryEnterPresence(
         val trackable: Trackable
     ) : WorkerSpecification()
 
-    data class RetryEnterPresenceSuccess(
+    data class EnterPresenceSuccess(
         val trackable: Trackable
     ) : WorkerSpecification()
 
@@ -284,18 +268,15 @@ internal sealed class WorkerSpecification {
 
     data class ConnectionReady(
         val trackable: Trackable,
-        val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>,
         val channelStateChangeListener: ((connectionStateChange: ConnectionStateChange) -> Unit),
-        val presenceUpdateListener: ((presenceMessage: com.ably.tracking.common.PresenceMessage) -> Unit),
-        val isSubscribedToPresence: Boolean,
     ) : WorkerSpecification()
 
-    data class RetrySubscribeToPresence(
+    data class SubscribeToPresence(
         val trackable: Trackable,
         val presenceUpdateListener: ((presenceMessage: com.ably.tracking.common.PresenceMessage) -> Unit),
     ) : WorkerSpecification()
 
-    data class RetrySubscribeToPresenceSuccess(
+    data class SubscribeToPresenceSuccess(
         val trackable: Trackable,
     ) : WorkerSpecification()
 
@@ -364,7 +345,6 @@ internal sealed class WorkerSpecification {
 
     data class TrackableRemovalRequested(
         val trackable: Trackable,
-        val callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>,
         val result: Result<Unit>,
     ) : WorkerSpecification()
 

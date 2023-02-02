@@ -12,6 +12,7 @@ import com.ably.tracking.test.common.mockSendEnhancedLocationFailureThenSuccess
 import com.ably.tracking.test.common.mockSendEnhancedLocationSuccess
 import com.ably.tracking.test.common.mockSendRawLocationSuccess
 import com.ably.tracking.test.common.mockSubscribeToPresenceSuccess
+import com.ably.tracking.test.common.waitForCapture
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -167,6 +168,8 @@ class CorePublisherLocationUpdatesPublishingTest {
         runBlocking(Dispatchers.IO) {
             addTrackableToCorePublisher(trackable, corePublisher)
         }
+
+        locationUpdatesObserverSlot.waitForCapture(5000)
         locationUpdatesObserver = locationUpdatesObserverSlot.captured
     }
 
