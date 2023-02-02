@@ -1644,6 +1644,59 @@ class DefaultAblyTests {
         }
     }
 
+    @Test
+    fun `startConnection - when, after connect called, connection changes to CLOSED state`() {
+        /* Given...
+         *
+         * ...that the connection’s `state` property returns (arbitrarily chosen) INITIALIZED...
+         * ...and that when the Realtime instance’s `connect` method is called, its connection’s `on` method immediately emits a connection state change whose `previous` is INITIALIZED, `current` is CLOSED, `retryIn` is (arbitrarily-chosen) 0 and `reason` is (arbitrarily-chosen) null...
+         *
+         * When...
+         *
+         * ...the `startConnection` method is called on the object under test...
+         *
+         * Then...
+         * ...in the following order, precisely the following things happen...
+         *
+         * ...it fetches the connection’s state 2 times...
+         * ...and adds a listener to the connection using `on`...
+         * ...and tells the Realtime instance to connect...
+         * ...and removes a listener from the connection using `off`...
+         * ...and the call to `startConnection` (on the object under test) fails with a ConnectionException with `code` 100_000, `statusCode` 0, and `message` "Connection entered closed state whilst waiting for it to connect".
+         */
+
+        runBlocking {
+            DefaultAblyTestScenarios.StartConnection.test(
+                DefaultAblyTestScenarios.StartConnection.GivenConfig(
+                    initialConnectionState = ConnectionState.initialized, /* arbitrarily-chosen */
+                    connectionReasonBehaviour = DefaultAblyTestScenarios.GivenTypes.ConnectionReasonMockBehaviour.NotMocked,
+                    connectBehaviour = DefaultAblyTestScenarios.GivenTypes.ConnectionStateChangeBehaviour.EmitStateChange(
+                        previous = ConnectionState.initialized,
+                        current = ConnectionState.closed,
+                        retryIn = 0,
+                        reason = null
+                    ),
+                ),
+                DefaultAblyTestScenarios.StartConnection.ThenConfig(
+                    numberOfConnectionStateFetchesToVerify = 2,
+                    verifyConnectionReasonFetch = false,
+                    verifyConnectionOn = true,
+                    verifyConnect = true,
+                    verifyConnectionOff = true,
+                    resultOfStartConnectionCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.FailureWithConnectionException(
+                        ErrorInformation(
+                            100_000,
+                            0,
+                            "Connection entered closed state whilst waiting for it to connect",
+                            null,
+                            null
+                        )
+                    )
+                )
+            )
+        }
+    }
+
     /*
     Observations from writing black-box tests for `stopConnection`:
 
