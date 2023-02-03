@@ -62,6 +62,7 @@ class GoogleLocationEngine(context: Context) : ResolutionLocationEngine {
     private fun getListenerForCallback(callback: LocationEngineCallback<LocationEngineResult>): LocationCallback =
         listeners[callback] ?: LocationCallbackWrapper(callback).apply { listeners[callback] = this }
 
+    @SuppressLint("VisibleForTests")
     private fun toGMSLocationRequest(request: LocationEngineRequest): LocationRequest =
         LocationRequest().apply {
             interval = request.interval
