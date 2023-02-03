@@ -10,7 +10,6 @@ import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
-import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.OnFailureListener
 import com.google.android.gms.tasks.OnSuccessListener
 import com.mapbox.android.core.location.LocationEngineCallback
@@ -49,8 +48,11 @@ class GoogleLocationEngine(context: Context) : ResolutionLocationEngine {
 
     @SuppressLint("MissingPermission")
     override fun requestLocationUpdates(request: LocationEngineRequest, pendingIntent: PendingIntent?) {
-        pendingIntent?.let {
-            fusedLocationProviderClient.requestLocationUpdates(toGMSLocationRequest(request), it)
+        if (pendingIntent != null) {
+            fusedLocationProviderClient.requestLocationUpdates(
+                toGMSLocationRequest(request),
+                pendingIntent
+            )
         }
     }
 
@@ -65,19 +67,22 @@ class GoogleLocationEngine(context: Context) : ResolutionLocationEngine {
     private fun getListenerForCallback(callback: LocationEngineCallback<LocationEngineResult>): LocationCallback =
         listeners[callback] ?: LocationCallbackWrapper(callback).apply { listeners[callback] = this }
 
+    @SuppressLint("VisibleForTests")
     private fun toGMSLocationRequest(request: LocationEngineRequest): LocationRequest =
-        LocationRequest.Builder(toGMSLocationPriority(request.priority), request.interval).apply {
-            setMinUpdateIntervalMillis(request.fastestInterval)
-            setMinUpdateDistanceMeters(request.displacement)
-            setMaxUpdateDelayMillis(request.maxWaitTime)
-        }.build()
+        LocationRequest().apply {
+            interval = request.interval
+            fastestInterval = request.fastestInterval
+            smallestDisplacement = request.displacement
+            maxWaitTime = request.maxWaitTime
+            priority = toGMSLocationPriority(request.priority)
+        }
 
     private fun toGMSLocationPriority(enginePriority: Int): Int =
         when (enginePriority) {
-            LocationEngineRequest.PRIORITY_HIGH_ACCURACY -> Priority.PRIORITY_HIGH_ACCURACY
-            LocationEngineRequest.PRIORITY_BALANCED_POWER_ACCURACY -> Priority.PRIORITY_BALANCED_POWER_ACCURACY
-            LocationEngineRequest.PRIORITY_LOW_POWER -> Priority.PRIORITY_LOW_POWER
-            else -> Priority.PRIORITY_PASSIVE
+            LocationEngineRequest.PRIORITY_HIGH_ACCURACY -> LocationRequest.PRIORITY_HIGH_ACCURACY
+            LocationEngineRequest.PRIORITY_BALANCED_POWER_ACCURACY -> LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY
+            LocationEngineRequest.PRIORITY_LOW_POWER -> LocationRequest.PRIORITY_LOW_POWER
+            else -> LocationRequest.PRIORITY_NO_POWER
         }
 
     private class LocationCallbackWrapper(private val callback: LocationEngineCallback<LocationEngineResult>) :
