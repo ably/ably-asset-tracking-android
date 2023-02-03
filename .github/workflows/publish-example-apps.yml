@@ -8,6 +8,11 @@ on:
       version:
         description: 'Version, without v prefix, appended to v to locate tag'
         required: true
+      include-individual-riders:
+        type: boolean
+        description: Include the `individual-riders` testers' group, immediately adding them to and notifying them of the new release.
+        default: true
+        required: true
 
 jobs:
   publish:
@@ -58,6 +63,7 @@ jobs:
           ORG_GRADLE_PROJECT_MAPBOX_DOWNLOADS_TOKEN: ${{ secrets.MAPBOX_DOWNLOADS_TOKEN }}
           ORG_GRADLE_PROJECT_MAPBOX_ACCESS_TOKEN: ${{ secrets.MAPBOX_ACCESS_TOKEN }}
           ORG_GRADLE_PROJECT_ABLY_API_KEY: ${{ secrets.ABLY_API_KEY }}
+          ORG_GRADLE_PROJECT_APP_DISTRIBUTION_INCLUDE_INDIVIDUAL_RIDERS: ${{ github.event.inputs.include-individual-riders }}
         run: |
           ./gradlew \
             :publishing-example-app:assembleRelease \
