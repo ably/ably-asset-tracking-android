@@ -23,6 +23,10 @@ jobs:
         with:
           ref: v${{ github.event.inputs.version }}
 
+      # TODO replace branch ref (underlying https://github.com/ably/github-event-context-action/pull/2) with `v1` tag
+      - uses: ably/github-event-context-action@add-build-metadata-output-and-release
+        id: context
+
       - uses: actions/setup-java@v3
         with:
           distribution: zulu
@@ -64,6 +68,7 @@ jobs:
           ORG_GRADLE_PROJECT_MAPBOX_ACCESS_TOKEN: ${{ secrets.MAPBOX_ACCESS_TOKEN }}
           ORG_GRADLE_PROJECT_ABLY_API_KEY: ${{ secrets.ABLY_API_KEY }}
           ORG_GRADLE_PROJECT_APP_DISTRIBUTION_INCLUDE_INDIVIDUAL_RIDERS: ${{ github.event.inputs.include-individual-riders }}
+          ORG_GRADLE_PROJECT_APP_DISTRIBUTION_RELEASE_NOTES: "${{ steps.context.outputs.title }} [${{ steps.context.outputs.build-metadata }}]"
         run: |
           ./gradlew \
             :publishing-example-app:assembleRelease \
