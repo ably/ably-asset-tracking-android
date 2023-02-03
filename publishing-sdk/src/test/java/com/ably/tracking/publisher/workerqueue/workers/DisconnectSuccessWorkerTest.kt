@@ -430,6 +430,25 @@ class DisconnectSuccessWorkerTest {
         assertThat(updatedProperties.rawLocationsPublishingState.shouldRetryPublishing(trackable.id)).isTrue()
     }
 
+    fun `should remove the trackable from the trackable removal guard`() {
+        // given
+        val initialProperties = createPublisherPropertiesWithMultipleTrackables()
+        initialProperties.trackableStateFlows[trackable.id] = MutableStateFlow(TrackableState.Offline())
+        initialProperties.trackableRemovalGuard.markForRemoval(trackable) {}
+
+        // when
+        val updatedProperties = worker.doWork(
+            initialProperties,
+            asyncWorks.appendWork(),
+            postedWorks.appendSpecification()
+        )
+
+        // then
+        assertThat(asyncWorks).isEmpty()
+        assertThat(postedWorks).isEmpty()
+        assertThat(updatedProperties.trackableRemovalGuard.isMarkedForRemoval(trackable)).isFalse()
+    }
+
     @Test
     fun `should always call the result callback with a success`() {
         // given
