@@ -50,11 +50,11 @@ internal class AddTrackableWorker(
         postWork: (WorkerSpecification) -> Unit
     ): PublisherProperties {
         when {
-            properties.trackables.contains(trackable) -> {
+            properties.trackables.contains(trackable) && !properties.trackableRemovalGuard.isMarkedForRemoval(trackable) -> {
                 val trackableFlow = properties.trackableStateFlows[trackable.id]!!
                 callbackFunction(Result.success(trackableFlow))
             }
-            properties.state == PublisherState.DISCONNECTING -> {
+            properties.state == PublisherState.DISCONNECTING || properties.trackableRemovalGuard.isMarkedForRemoval(trackable) -> {
                 doAsyncWork {
                     isDelayingWork = true
                     // delay work until Ably disconnection ends
