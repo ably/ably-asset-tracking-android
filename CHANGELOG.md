@@ -1,5 +1,13 @@
 # Change log
 
+## [1.6.2](https://github.com/ably/ably-asset-tracking-android/tree/v1.6.2)
+
+[Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.6.1...v1.6.2)
+
+**Merged pull requests:**
+
+- Downgrade google-play-services-location version to 17.1.0 [\#991](https://github.com/ably/ably-asset-tracking-android/pull/991) ([davyskiba](https://github.com/davyskiba))
+
 ## [1.6.1](https://github.com/ably/ably-asset-tracking-android/tree/v1.6.1)
 
 This release adds additional enhancements to operational stability, for publishers in particular, when running on a devices with unreliable network connectivity.
