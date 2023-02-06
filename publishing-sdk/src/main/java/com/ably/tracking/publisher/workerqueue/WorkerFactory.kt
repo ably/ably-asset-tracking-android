@@ -116,7 +116,6 @@ internal class WorkerFactory(
             )
             is WorkerSpecification.DisconnectSuccess -> DisconnectSuccessWorker(
                 workerSpecification.trackable,
-                workerSpecification.callbackFunction,
                 publisherInteractor,
                 workerSpecification.shouldRecalculateResolutionCallback,
                 ably,
@@ -286,7 +285,6 @@ internal sealed class WorkerSpecification {
 
     data class DisconnectSuccess(
         val trackable: Trackable,
-        val callbackFunction: ResultCallbackFunction<Unit>,
         val shouldRecalculateResolutionCallback: () -> Unit,
     ) : WorkerSpecification()
 

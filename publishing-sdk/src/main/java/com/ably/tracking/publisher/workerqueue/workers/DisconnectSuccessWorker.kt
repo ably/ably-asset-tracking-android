@@ -1,8 +1,7 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
 import com.ably.tracking.common.Ably
-import com.ably.tracking.common.ResultCallbackFunction
-import com.ably.tracking.common.workerqueue.CallbackWorker
+import com.ably.tracking.common.workerqueue.Worker
 import com.ably.tracking.publisher.PublisherInteractor
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.PublisherState
@@ -11,11 +10,10 @@ import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 
 internal class DisconnectSuccessWorker(
     private val trackable: Trackable,
-    callbackFunction: ResultCallbackFunction<Unit>,
     private val publisherInteractor: PublisherInteractor,
     private val shouldRecalculateResolutionCallback: () -> Unit,
     private val ably: Ably,
-) : CallbackWorker<PublisherProperties, WorkerSpecification>(callbackFunction) {
+) : Worker<PublisherProperties, WorkerSpecification> {
     /**
      * Whether the worker is also performing disconnecting.
      * Used to properly handle unexpected exceptions in [onUnexpectedAsyncError].
@@ -107,7 +105,6 @@ internal class DisconnectSuccessWorker(
     }
 
     private fun notifyRemoveOperationFinished(properties: PublisherProperties) {
-        callbackFunction(Result.success(Unit))
         properties.trackableRemovalGuard.removeMarked(trackable, Result.success(true))
     }
 
@@ -117,5 +114,13 @@ internal class DisconnectSuccessWorker(
             // When async work fails we should make sure that the SDK state is not stuck in DISCONNECTING so we post a new worker
             postWork(WorkerSpecification.StoppingConnectionFinished)
         }
+    }
+
+    override fun doWhenStopped(exception: Exception) {
+        // No op
+    }
+
+    override fun onUnexpectedError(exception: Exception, postWork: (WorkerSpecification) -> Unit) {
+        // No op
     }
 }

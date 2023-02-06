@@ -9,7 +9,6 @@ import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ConnectionState
 import com.ably.tracking.common.ConnectionStateChange
-import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.publisher.PublisherInteractor
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.Trackable
@@ -33,7 +32,6 @@ class DisconnectSuccessWorkerTest {
 
     private val trackable = Trackable("testtrackable")
     private val otherTrackable = Trackable("other-trackable")
-    private val resultCallbackFunction: ResultCallbackFunction<Unit> = mockk(relaxed = true)
     private val recalculateResolutionCallbackFunction = mockk<() -> Unit>(relaxed = true)
     private val publisherInteractor = mockk<PublisherInteractor> {
         every { updateTrackables(any()) } just runs
@@ -50,7 +48,6 @@ class DisconnectSuccessWorkerTest {
 
     private val worker = DisconnectSuccessWorker(
         trackable,
-        resultCallbackFunction,
         publisherInteractor,
         recalculateResolutionCallbackFunction,
         ably
@@ -447,28 +444,6 @@ class DisconnectSuccessWorkerTest {
         assertThat(asyncWorks).isEmpty()
         assertThat(postedWorks).isEmpty()
         assertThat(updatedProperties.trackableRemovalGuard.isMarkedForRemoval(trackable)).isFalse()
-    }
-
-    @Test
-    fun `should always call the result callback with a success`() {
-        // given
-        val initialProperties = createPublisherPropertiesWithMultipleTrackables()
-
-        // when
-        worker.doWork(
-            initialProperties,
-            asyncWorks.appendWork(),
-            postedWorks.appendSpecification()
-        )
-
-        // then
-        assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).isEmpty()
-
-        // then
-        verify(exactly = 1) {
-            resultCallbackFunction(Result.success(Unit))
-        }
     }
 
     @Test

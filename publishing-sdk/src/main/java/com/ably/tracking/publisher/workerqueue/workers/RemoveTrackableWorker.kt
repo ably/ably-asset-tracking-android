@@ -54,7 +54,6 @@ internal class RemoveTrackableWorker(
     private fun buildDisconnectSuccessWorkerSpecification(postWork: (WorkerSpecification) -> Unit) =
         WorkerSpecification.DisconnectSuccess(
             trackable = trackable,
-            callbackFunction = {}, // no-op as we've already notified the caller
             shouldRecalculateResolutionCallback = {
                 postWork(WorkerSpecification.ChangeLocationEngineResolution)
             }
