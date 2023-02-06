@@ -20,7 +20,7 @@ android {
 
 dependencies {
     implementation project(':publishing-sdk')
-    implementation "io.ably:ably-android:$ably_core_version"
+    implementation project(":new-ably-java")
     implementation 'androidx.preference:preference-ktx:1.2.0'
     implementation 'com.amplifyframework:aws-storage-s3:1.4.1'
     implementation 'com.amplifyframework:aws-auth-cognito:1.4.1'
