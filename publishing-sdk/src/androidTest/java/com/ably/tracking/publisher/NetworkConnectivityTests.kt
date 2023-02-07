@@ -59,6 +59,7 @@ import io.ably.lib.types.PresenceMessage
 import io.ably.lib.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -380,9 +381,9 @@ class TestResources(
                     proxyClientOptions.key
                 )
             )
-
+            val coroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
             return DefaultPublisher(
-                DefaultAbly(ablySdkFactory, connectionConfiguration, Logging.aatDebugLogger),
+                DefaultAbly(ablySdkFactory, connectionConfiguration, Logging.aatDebugLogger, coroutineScope),
                 DefaultMapbox(
                     context,
                     MapConfiguration(MAPBOX_ACCESS_TOKEN),

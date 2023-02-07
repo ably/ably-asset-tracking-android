@@ -14,6 +14,8 @@ import io.ably.lib.realtime.ConnectionStateListener
 import io.ably.lib.types.ErrorInfo
 import io.mockk.confirmVerified
 import io.mockk.verifyOrder
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.runInterruptible
@@ -21,6 +23,7 @@ import kotlinx.coroutines.withTimeout
 import org.junit.Assert
 import kotlin.coroutines.resume
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
 
 class DefaultAblyTestScenarios {
     /**
@@ -81,6 +84,12 @@ class DefaultAblyTestScenarios {
             object Success : ExpectedResult()
 
             /**
+             * The operation fails with an [Exception] whose class is equal to [exceptionClass].
+             */
+            class FailureWithException(val exceptionClass: Class<*>) :
+                ExpectedResult()
+
+            /**
              * The operation fails with a [ConnectionException] whose [ConnectionException.errorInformation] is equal to [errorInformation].
              */
             class FailureWithConnectionException(val errorInformation: ErrorInformation) :
@@ -110,6 +119,15 @@ class DefaultAblyTestScenarios {
                          */
                         Assert.assertTrue(result.isSuccess)
                     }
+                    is FailureWithException -> {
+                        /* when ${this} is FailureWithException {
+                         * ...and ${op} fails with an Exception whose class is equal to ${this.exceptionClass}.
+                         * }
+                         */
+                        Assert.assertTrue(result.isFailure)
+                        val exception = result.exceptionOrNull()!!
+                        Assert.assertEquals(exception.javaClass, this.exceptionClass)
+                    }
                     is FailureWithConnectionException -> {
                         /* when ${this} is FailureWithConnectionException {
                          * ...and ${op} fails with a ConnectionException whose errorInformation is equal to ${this.errorInformation}.
@@ -136,6 +154,12 @@ class DefaultAblyTestScenarios {
              * The operation terminates and its result is described by [expectedResult].
              */
             class Terminates(val expectedResult: ExpectedResult) : ExpectedAsyncResult()
+
+            /**
+             * The operation fails with a [ConnectionException] whose [ConnectionException.errorInformation] is equal to [errorInformation].
+             */
+            class TerminatesWithConnectionException(val errorInformation: ErrorInformation) :
+                ExpectedAsyncResult()
 
             /**
              * The operation does not terminate within [timeoutInMilliseconds] milliseconds.
@@ -175,7 +199,20 @@ class DefaultAblyTestScenarios {
                         Assert.assertNotNull(result)
                         expectedResult.verify(result!!)
                     }
-
+                    is TerminatesWithConnectionException -> {
+                        /* when ${this} is TerminatesWithConnectionException {
+                         * ...and ${op} fails with a ConnectionException whose errorInformation is equal to ${this.errorInformation}.
+                         * }
+                         */
+                        Assert.assertTrue(result!!.isFailure)
+                        val exception = result.exceptionOrNull()!!
+                        Assert.assertTrue(exception is ConnectionException)
+                        val connectionException = exception as ConnectionException
+                        Assert.assertEquals(
+                            this.errorInformation,
+                            connectionException.errorInformation
+                        )
+                    }
                     is DoesNotTerminate -> {
                         /* when ${this} is DoesNotTerminate {
                          * ...and ${op} does not complete within ${this.timeoutInMilliseconds} milliseconds.
@@ -209,17 +246,25 @@ class DefaultAblyTestScenarios {
                 is ThenTypes.ExpectedAsyncResult.Terminates -> {
                     operation()
                 }
+                is ThenTypes.ExpectedAsyncResult.TerminatesWithConnectionException -> {
+                    operation()
+                }
                 is ThenTypes.ExpectedAsyncResult.DoesNotTerminate -> {
                     try {
-                        withTimeout(timeMillis = expectedAsyncResult.timeoutInMilliseconds) {
-                            /* This usage of runInterruptible is intended to ensure that even if `operation` is not cancellable — that is, even if it does not cooperate with cancellation (https://kotlinlang.org/docs/cancellation-and-timeouts.html#cancellation-is-cooperative) — the withTimeout method call will return after the timeout elapses. We have some methods in DefaultAbly that are not cancellable – see https://github.com/ably/ably-asset-tracking-android/issues/908.
-                             *
-                             * Perhaps there’s a better way to do this — to create a coroutine that’s cancellable even if it calls a non-cancellable one — that doesn’t involve making a trip from coroutines land to synchronous land and back again. I’m not familiar enough with the coroutines APIs to know.
-                             */
+                        /*
+                        * withContext is used to prevent potential dead lock when the timeout context is suspended inside the operation
+                         */
+                        withContext(Dispatchers.Default) {
+                            withTimeout(timeMillis = expectedAsyncResult.timeoutInMilliseconds) {
+                                /* This usage of runInterruptible is intended to ensure that even if `operation` is not cancellable — that is, even if it does not cooperate with cancellation (https://kotlinlang.org/docs/cancellation-and-timeouts.html#cancellation-is-cooperative) — the withTimeout method call will return after the timeout elapses. We have some methods in DefaultAbly that are not cancellable – see https://github.com/ably/ably-asset-tracking-android/issues/908.
+                                *
+                                * Perhaps there’s a better way to do this — to create a coroutine that’s cancellable even if it calls a non-cancellable one — that doesn’t involve making a trip from coroutines land to synchronous land and back again. I’m not familiar enough with the coroutines APIs to know.
+                                */
 
-                            runInterruptible {
-                                runBlocking {
-                                    operation()
+                                runInterruptible {
+                                    runBlocking {
+                                        operation()
+                                    }
                                 }
                             }
                         }
@@ -320,12 +365,16 @@ class DefaultAblyTestScenarios {
              */
             suspend fun test(
                 givenConfig: GivenConfig,
-                thenConfig: ThenConfig
+                thenConfig: ThenConfig,
+                coroutineScope: CoroutineScope
             ) {
                 // Given...
                 // ...that calling `containsKey` on the Channels instance returns ${givenConfig.channelsContainsKey}...
                 // ...and that calling `get` (the overload described by ${givenConfig.channelsGetOverload}) on the Channels instance returns a channel in the ${givenConfig.channelState} state...
-                val testEnvironment = DefaultAblyTestEnvironment.create(numberOfTrackables = 1)
+                val testEnvironment = DefaultAblyTestEnvironment.create(
+                    numberOfTrackables = 1,
+                    coroutineScope = coroutineScope
+                )
                 val configuredChannel = testEnvironment.configuredChannels[0]
                 testEnvironment.mockChannelsContainsKey(
                     key = configuredChannel.channelName,
@@ -495,10 +544,14 @@ class DefaultAblyTestScenarios {
              */
             suspend fun test(
                 givenConfig: GivenConfig,
-                thenConfig: ThenConfig
+                thenConfig: ThenConfig,
+                coroutineScope: CoroutineScope
             ) {
                 // Given...
-                val testEnvironment = DefaultAblyTestEnvironment.create(numberOfTrackables = 1)
+                val testEnvironment = DefaultAblyTestEnvironment.create(
+                    numberOfTrackables = 1,
+                    coroutineScope = coroutineScope
+                )
                 val configuredChannel = testEnvironment.configuredChannels[0]
 
                 // ...that calling `containsKey` on the Channels instance returns ${givenConfig.channelsContainsKey}...
@@ -536,13 +589,14 @@ class DefaultAblyTestScenarios {
 
                 // When...
 
-                val result = executeForVerifying(thenConfig.resultOfEnterChannelPresenceCallOnObjectUnderTest) {
-                    // ...we call `connect` on the object under test,
-                    testEnvironment.objectUnderTest.enterChannelPresence(
-                        configuredChannel.trackableId,
-                        PresenceData("")
-                    )
-                }
+                val result =
+                    executeForVerifying(thenConfig.resultOfEnterChannelPresenceCallOnObjectUnderTest) {
+                        // ...we call `connect` on the object under test,
+                        testEnvironment.objectUnderTest.enterChannelPresence(
+                            configuredChannel.trackableId,
+                            PresenceData("")
+                        )
+                    }
 
                 // Then...
                 // ...in the following order, precisely the following things happen...
@@ -581,6 +635,7 @@ class DefaultAblyTestScenarios {
             }
         }
     }
+
     /**
      * Provides test scenarios for [DefaultAbly.updatePresenceData]. See the [Companion.test] method.
      */
@@ -615,6 +670,7 @@ class DefaultAblyTestScenarios {
          */
         class ThenConfig(
             val verifyChannelsGet: Boolean,
+            val verifyGetChannelName: Boolean,
             /**
              * If [GivenConfig.mockChannelsGet] is `false` then this must be `false`.
              */
@@ -692,12 +748,19 @@ class DefaultAblyTestScenarios {
              * }
              * ```
              */
-            suspend fun test(givenConfig: GivenConfig, thenConfig: ThenConfig) {
+            suspend fun test(
+                givenConfig: GivenConfig,
+                thenConfig: ThenConfig,
+                coroutineScope: CoroutineScope
+            ) {
                 thenConfig.validate(givenConfig)
 
                 // Given...
 
-                val testEnvironment = DefaultAblyTestEnvironment.create(numberOfTrackables = 1)
+                val testEnvironment = DefaultAblyTestEnvironment.create(
+                    numberOfTrackables = 1,
+                    coroutineScope = coroutineScope
+                )
                 val configuredChannel = testEnvironment.configuredChannels[0]
 
                 // ...that calling `containsKey` on the Channels instance returns ${givenConfig.channelsContainsKey}...
@@ -741,13 +804,14 @@ class DefaultAblyTestScenarios {
 
                 // When...
 
-                val result = executeForVerifying(thenConfig.resultOfUpdatePresenceCallOnObjectUnderTest) {
-                    // ...we call `updatePresenceData` on the object under test,
-                    testEnvironment.objectUnderTest.updatePresenceData(
-                        configuredChannel.trackableId,
-                        PresenceData("") /* arbitrarily chosen */
-                    )
-                }
+                val result =
+                    executeForVerifying(thenConfig.resultOfUpdatePresenceCallOnObjectUnderTest) {
+                        // ...we call `updatePresenceData` on the object under test,
+                        testEnvironment.objectUnderTest.updatePresenceData(
+                            configuredChannel.trackableId,
+                            PresenceData("") /* arbitrarily chosen */
+                        )
+                    }
 
                 // Then...
                 // ...in the following order, precisely the following things happen...
@@ -769,6 +833,14 @@ class DefaultAblyTestScenarios {
                          * }
                          */
                         configuredChannel.presenceMock.update(any(), any())
+                    }
+
+                    if (thenConfig.verifyGetChannelName) {
+                        /* if ${thenConfig.verifyGetChannelName} {
+                         * ...and calls `get` (the overload that does not accept a ChannelOptions object) on the Channels instance...
+                         * }
+                         */
+                        configuredChannel.channelMock.name
                     }
                 }
 
@@ -867,10 +939,17 @@ class DefaultAblyTestScenarios {
          * ```
          */
         companion object {
-            suspend fun test(givenConfig: GivenConfig, thenConfig: ThenConfig) {
+            suspend fun test(
+                givenConfig: GivenConfig,
+                thenConfig: ThenConfig,
+                coroutineScope: CoroutineScope
+            ) {
                 thenConfig.validate(givenConfig)
 
-                val testEnvironment = DefaultAblyTestEnvironment.create(numberOfTrackables = 1)
+                val testEnvironment = DefaultAblyTestEnvironment.create(
+                    numberOfTrackables = 1,
+                    coroutineScope = coroutineScope
+                )
                 val configuredChannel = testEnvironment.configuredChannels[0]
 
                 // Given...
@@ -1035,8 +1114,15 @@ class DefaultAblyTestScenarios {
              * }
              * ```
              */
-            suspend fun test(givenConfig: GivenConfig, thenConfig: ThenConfig) {
-                val testEnvironment = DefaultAblyTestEnvironment.create(numberOfTrackables = 0)
+            suspend fun test(
+                givenConfig: GivenConfig,
+                thenConfig: ThenConfig,
+                coroutineScope: CoroutineScope
+            ) {
+                val testEnvironment = DefaultAblyTestEnvironment.create(
+                    numberOfTrackables = 0,
+                    coroutineScope = coroutineScope
+                )
 
                 // Given...
 
@@ -1162,18 +1248,7 @@ class DefaultAblyTestScenarios {
             val verifyClose: Boolean,
             val verifyConnectionOff: Boolean,
             val resultOfStopConnectionCallOnObjectUnderTest: ThenTypes.ExpectedAsyncResult
-        ) {
-            /**
-             * Checks that this object represents a valid test configuration.
-             *
-             * @throws InvalidTestConfigurationException If this object does not represent a valid test configuration.
-             */
-            init {
-                if (resultOfStopConnectionCallOnObjectUnderTest is ThenTypes.ExpectedAsyncResult.Terminates && resultOfStopConnectionCallOnObjectUnderTest.expectedResult is ThenTypes.ExpectedResult.FailureWithConnectionException) {
-                    throw InvalidTestConfigurationException("resultOfStopConnectionCallOnObjectUnderTest.expectedResult must not be FailureWithConnectionException")
-                }
-            }
-        }
+        )
 
         companion object {
             /**
@@ -1220,9 +1295,13 @@ class DefaultAblyTestScenarios {
              */
             suspend fun test(
                 givenConfig: GivenConfig,
-                thenConfig: ThenConfig
+                thenConfig: ThenConfig,
+                coroutineScope: CoroutineScope
             ) {
-                val testEnvironment = DefaultAblyTestEnvironment.create(numberOfTrackables = 0)
+                val testEnvironment = DefaultAblyTestEnvironment.create(
+                    numberOfTrackables = 0,
+                    coroutineScope = coroutineScope
+                )
 
                 // Given...
 
@@ -1252,10 +1331,11 @@ class DefaultAblyTestScenarios {
 
                 // When...
 
-                val result = executeForVerifying(thenConfig.resultOfStopConnectionCallOnObjectUnderTest) {
-                    // ...`stopConnection` is called on the object under test...
-                    testEnvironment.objectUnderTest.stopConnection()
-                }
+                val result =
+                    executeForVerifying(thenConfig.resultOfStopConnectionCallOnObjectUnderTest) {
+                        // ...`stopConnection` is called on the object under test...
+                        testEnvironment.objectUnderTest.stopConnection()
+                    }
 
                 // Then...
                 // ...in the following order, precisely the following things happen...
@@ -1418,11 +1498,15 @@ class DefaultAblyTestScenarios {
              */
             suspend fun test(
                 givenConfig: GivenConfig,
-                thenConfig: ThenConfig
+                thenConfig: ThenConfig,
+                coroutineScope: CoroutineScope
             ) {
                 thenConfig.validate(givenConfig)
 
-                val testEnvironment = DefaultAblyTestEnvironment.create(numberOfTrackables = 1)
+                val testEnvironment = DefaultAblyTestEnvironment.create(
+                    numberOfTrackables = 1,
+                    coroutineScope = coroutineScope
+                )
                 val configuredChannel = testEnvironment.configuredChannels[0]
 
                 // Given...
@@ -1468,20 +1552,21 @@ class DefaultAblyTestScenarios {
 
                 // When...
 
-                val result = executeForVerifying(thenConfig.resultOfSendRawLocationCallOnObjectUnderTest) {
-                    suspendCancellableCoroutine<Result<Unit>> { continuation ->
-                        // ...we call `sendRawLocation` on the object under test (with an arbitrarily-chosen LocationUpdate argument),
-                        testEnvironment.objectUnderTest.sendRawLocation(
-                            configuredChannel.trackableId,
-                            LocationUpdate(
-                                Location(0.0, 0.0, 0.0, 0.0f, 0.0f, 0.0f, 0),
-                                listOf()
-                            )
-                        ) { result ->
-                            continuation.resume(result)
+                val result =
+                    executeForVerifying(thenConfig.resultOfSendRawLocationCallOnObjectUnderTest) {
+                        suspendCancellableCoroutine<Result<Unit>> { continuation ->
+                            // ...we call `sendRawLocation` on the object under test (with an arbitrarily-chosen LocationUpdate argument),
+                            testEnvironment.objectUnderTest.sendRawLocation(
+                                configuredChannel.trackableId,
+                                LocationUpdate(
+                                    Location(0.0, 0.0, 0.0, 0.0f, 0.0f, 0.0f, 0),
+                                    listOf()
+                                )
+                            ) { result ->
+                                continuation.resume(result)
+                            }
                         }
                     }
-                }
 
                 // Then...
                 // ...in the following order, precisely the following things happen...

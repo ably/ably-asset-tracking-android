@@ -30,18 +30,16 @@ import io.ably.lib.types.ErrorInfo
 import io.ably.lib.types.Message
 import io.ably.lib.types.Param
 import io.ably.lib.util.Log
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
-import kotlin.coroutines.suspendCoroutine
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeout
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.coroutines.suspendCoroutine
 
 /**
  * Wrapper for the [AblyRealtime] that's used to interact with the Ably SDK.
@@ -266,10 +264,10 @@ constructor(
     private val ablySdkFactory: AblySdkFactory<ChannelStateListenerType>,
     connectionConfiguration: ConnectionConfiguration,
     private val logHandler: LogHandler?,
+    private val scope : CoroutineScope,
 ) : Ably {
     private val gson = Gson()
     private val ably: AblySdkRealtime<ChannelStateListenerType>
-    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private val TAG = createLoggingTag(this)
 
     init {
