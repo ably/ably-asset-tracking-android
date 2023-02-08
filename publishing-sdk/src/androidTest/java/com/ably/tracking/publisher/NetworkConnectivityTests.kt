@@ -27,25 +27,14 @@ import com.ably.tracking.connection.Authentication
 import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.logging.LogHandler
 import com.ably.tracking.logging.LogLevel
-import com.ably.tracking.test.android.common.AttachUnresponsive
 import com.ably.tracking.test.android.common.BooleanExpectation
-import com.ably.tracking.test.android.common.DetachUnresponsive
-import com.ably.tracking.test.android.common.DisconnectAndSuspend
-import com.ably.tracking.test.android.common.DisconnectWithFailedResume
-import com.ably.tracking.test.android.common.EnterFailedWithNonfatalNack
-import com.ably.tracking.test.android.common.EnterUnresponsive
 import com.ably.tracking.test.android.common.Fault
+import com.ably.tracking.test.android.common.FaultProxyClient
 import com.ably.tracking.test.android.common.FaultSimulation
 import com.ably.tracking.test.android.common.FaultType
 import com.ably.tracking.test.android.common.NOTIFICATION_CHANNEL_ID
-import com.ably.tracking.test.android.common.NullApplicationLayerFault
-import com.ably.tracking.test.android.common.NullTransportFault
 import com.ably.tracking.test.android.common.PUBLISHER_CLIENT_ID
-import com.ably.tracking.test.android.common.ReenterOnResumeFailed
-import com.ably.tracking.test.android.common.TcpConnectionRefused
-import com.ably.tracking.test.android.common.TcpConnectionUnresponsive
 import com.ably.tracking.test.android.common.UnitExpectation
-import com.ably.tracking.test.android.common.UpdateFailedWithNonfatalNack
 import com.ably.tracking.test.android.common.createNotificationChannel
 import com.ably.tracking.test.android.common.testLogD
 import com.google.gson.Gson
@@ -77,6 +66,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
+import java.net.URI
 import java.util.Date
 import java.util.UUID
 import java.util.concurrent.TimeoutException
@@ -90,27 +80,21 @@ class NetworkConnectivityTests(private val testFault: Fault) {
     private var testResources: TestResources? = null
 
     companion object {
+        private val client = FaultProxyClient(baseUri = URI("http://localhost:8080"))
+
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
-        fun data() = listOf(
-            arrayOf(NullTransportFault.fault),
-            arrayOf(NullApplicationLayerFault.fault),
-            arrayOf(TcpConnectionRefused.fault),
-            arrayOf(TcpConnectionUnresponsive.fault),
-            arrayOf(AttachUnresponsive.fault),
-            arrayOf(DetachUnresponsive.fault),
-            arrayOf(DisconnectWithFailedResume.fault),
-            arrayOf(EnterFailedWithNonfatalNack.fault),
-            arrayOf(UpdateFailedWithNonfatalNack.fault),
-            arrayOf(DisconnectAndSuspend.fault),
-            arrayOf(ReenterOnResumeFailed.fault),
-            arrayOf(EnterUnresponsive.fault),
-        )
+        fun data() = runBlocking {
+            client.getAllFaults()
+        }
     }
 
     @Before
     fun setUp() {
-        val simulation = testFault.simulate(BuildConfig.ABLY_API_KEY)
+        val simulation = runBlocking {
+            testFault.simulate(BuildConfig.ABLY_API_KEY)
+        }
+
         Assume.assumeFalse(simulation.skipTest)
 
         // We cannot use ktor on API Level 21 (Lollipop) because of:
@@ -335,7 +319,6 @@ class TestResources(
         fun setUp(faultParam: FaultSimulation): TestResources {
             val context = InstrumentationRegistry.getInstrumentation().targetContext
             val locationHelper = LocationHelper()
-            faultParam.proxy.start()
             val publisher = createPublisher(
                 context,
                 faultParam.proxy.clientOptions(),
@@ -456,7 +439,10 @@ class TestResources(
     fun tearDown() {
         shutdownPublisher(publisher).assertSuccess()
         locationHelper.close()
-        fault.cleanUp()
+
+        runBlocking {
+            fault.cleanUp()
+        }
     }
 
     /**
