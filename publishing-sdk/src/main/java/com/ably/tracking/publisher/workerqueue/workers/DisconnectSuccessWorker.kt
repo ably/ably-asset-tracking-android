@@ -36,7 +36,7 @@ internal class DisconnectSuccessWorker(
         if (isRemovedTrackableTheLastOne(properties)) {
             stopLocationUpdates(properties)
         }
-        notifyRemoveOperationFinished(properties)
+        notifyRemoveOperationFinished(postWork)
 
         val removedTheLastTrackable = properties.hasNoTrackablesAdded
         if (removedTheLastTrackable) {
@@ -104,8 +104,8 @@ internal class DisconnectSuccessWorker(
         }
     }
 
-    private fun notifyRemoveOperationFinished(properties: PublisherProperties) {
-        properties.trackableRemovalGuard.removeMarked(trackable, Result.success(true))
+    private fun notifyRemoveOperationFinished(postWork: (WorkerSpecification) -> Unit) {
+        postWork(WorkerSpecification.TrackableRemovalSuccess(trackable, Result.success(true)))
     }
 
     override fun onUnexpectedAsyncError(exception: Exception, postWork: (WorkerSpecification) -> Unit) {
@@ -121,6 +121,6 @@ internal class DisconnectSuccessWorker(
     }
 
     override fun onUnexpectedError(exception: Exception, postWork: (WorkerSpecification) -> Unit) {
-        // No op
+        notifyRemoveOperationFinished(postWork)
     }
 }

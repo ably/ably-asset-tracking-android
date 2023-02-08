@@ -47,6 +47,7 @@ import com.ably.tracking.publisher.workerqueue.workers.SetActiveTrackableWorker
 import com.ably.tracking.publisher.workerqueue.workers.StopWorker
 import com.ably.tracking.publisher.workerqueue.workers.StoppingConnectionFinishedWorker
 import com.ably.tracking.publisher.workerqueue.workers.TrackableRemovalRequestedWorker
+import com.ably.tracking.publisher.workerqueue.workers.TrackableRemovalSuccessWorker
 import com.ably.tracking.publisher.workerqueue.workers.UpdatePresenceDataWorker
 import kotlinx.coroutines.flow.StateFlow
 
@@ -124,6 +125,10 @@ internal class WorkerFactory(
                 workerSpecification.trackable,
                 ably,
                 workerSpecification.result,
+            )
+            is WorkerSpecification.TrackableRemovalSuccess -> TrackableRemovalSuccessWorker(
+                workerSpecification.trackable,
+                workerSpecification.result
             )
             is WorkerSpecification.AblyConnectionStateChange -> AblyConnectionStateChangeWorker(
                 workerSpecification.connectionStateChange,
@@ -344,6 +349,11 @@ internal sealed class WorkerSpecification {
     data class TrackableRemovalRequested(
         val trackable: Trackable,
         val result: Result<Unit>,
+    ) : WorkerSpecification()
+
+    data class TrackableRemovalSuccess(
+        val trackable: Trackable,
+        val result: Result<Boolean>,
     ) : WorkerSpecification()
 
     object StoppingConnectionFinished : WorkerSpecification()
