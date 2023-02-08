@@ -8,6 +8,10 @@ The version of Gradle that this project uses is specified by the `distributionUr
 
 If you are using [`asdf`](https://asdf-vm.com) to manage tool versions, then you can rely on the `.tool-versions` file in this repository, which is configured to use an appropriate version of Java.
 
+## Running the test proxy server
+
+In order to run the `NetworkConnectivityTests`, you will need to be running an instance of the [SDK Test Proxy](https://github.com/ably/sdk-test-proxy) on your development machine. You can do this by executing `./gradlew run` inside the `external/sdk-test-proxy` directory.
+
 ## Development
 
 This repository is structured as a Gradle [Multi-Project Build](https://docs.gradle.org/current/userguide/multi_project_builds.html).

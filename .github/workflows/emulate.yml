@@ -16,12 +16,18 @@ jobs:
             excludeModules: true
     steps:
       - uses: actions/checkout@v3
+        with:
+          submodules: recursive
 
       # Gradle 7 requires Java 11 to run
       - uses: actions/setup-java@v3
         with:
           distribution: zulu
           java-version: '19'
+
+      - name: Start SDK test proxy server
+        run: cd external/sdk-test-proxy && ./start-service
+        if: matrix.api-level != 21
 
       - uses: reactivecircus/android-emulator-runner@v2
         with:
