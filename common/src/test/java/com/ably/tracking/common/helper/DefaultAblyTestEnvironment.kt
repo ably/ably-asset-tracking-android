@@ -595,7 +595,7 @@ class DefaultAblyTestEnvironment private constructor(
             val connectionConfiguration =
                 ConnectionConfiguration(Authentication.basic("", "")) // arbitrarily chosen
             val objectUnderTest =
-                DefaultAbly(factory, connectionConfiguration, null /* arbitrarily chosen */, coroutineScope+ SupervisorJob())
+                DefaultAbly(factory, connectionConfiguration, null /* arbitrarily chosen */, coroutineScope + SupervisorJob())
 
             return DefaultAblyTestEnvironment(
                 objectUnderTest,

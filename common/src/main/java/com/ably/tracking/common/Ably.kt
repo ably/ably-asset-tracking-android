@@ -264,7 +264,7 @@ constructor(
     private val ablySdkFactory: AblySdkFactory<ChannelStateListenerType>,
     connectionConfiguration: ConnectionConfiguration,
     private val logHandler: LogHandler?,
-    private val scope : CoroutineScope,
+    private val scope: CoroutineScope,
 ) : Ably {
     private val gson = Gson()
     private val ably: AblySdkRealtime<ChannelStateListenerType>
