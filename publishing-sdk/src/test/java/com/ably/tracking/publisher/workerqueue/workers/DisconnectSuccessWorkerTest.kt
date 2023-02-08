@@ -427,7 +427,7 @@ class DisconnectSuccessWorkerTest {
         assertThat(updatedProperties.rawLocationsPublishingState.shouldRetryPublishing(trackable.id)).isTrue()
     }
 
-    fun `should post TrackableRemovalSuccess work`() {
+    fun `should post TrackableRemovalSuccess work on completion`() {
         // given
         val initialProperties = createPublisherPropertiesWithMultipleTrackables()
         initialProperties.trackableStateFlows[trackable.id] = MutableStateFlow(TrackableState.Offline())
@@ -445,6 +445,27 @@ class DisconnectSuccessWorkerTest {
         val postedWork = postedWorks[0] as WorkerSpecification.TrackableRemovalSuccess
         assertThat(postedWork.trackable).isEqualTo(trackable)
         assertThat(postedWork.result.isSuccess).isTrue()
+    }
+
+    fun `should post TrackableRemovalSuccess work on error`() {
+        // given
+        val initialProperties = createPublisherPropertiesWithMultipleTrackables()
+        initialProperties.trackableStateFlows[trackable.id] = MutableStateFlow(TrackableState.Offline())
+
+        // when
+        val exception = Exception("error")
+        worker.onUnexpectedError(
+            exception,
+            postedWorks.appendSpecification()
+        )
+
+        // then
+        assertThat(asyncWorks).isEmpty()
+        assertThat(postedWorks).hasSize(1)
+        val postedWork = postedWorks[0] as WorkerSpecification.TrackableRemovalSuccess
+        assertThat(postedWork.trackable).isEqualTo(trackable)
+        assertThat(postedWork.result.isSuccess).isFalse()
+        assertThat(postedWork.result.exceptionOrNull()).isEqualTo(exception)
     }
 
     @Test
