@@ -18,6 +18,9 @@ import io.mockk.verifySequence
 import io.ably.lib.realtime.ConnectionState
 import io.ably.lib.realtime.ConnectionStateListener
 import io.ably.lib.types.ErrorInfo
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.plus
 
 /**
  * Provides an environment for creating and testing an instance of [DefaultAbly].
@@ -547,7 +550,7 @@ class DefaultAblyTestEnvironment private constructor(
          *
          * @return A configured [DefaultAblyTestEnvironment] object.
          */
-        fun create(numberOfTrackables: Int): DefaultAblyTestEnvironment {
+        fun create(numberOfTrackables: Int, coroutineScope: CoroutineScope): DefaultAblyTestEnvironment {
             val configuredChannels = (numberOfTrackables downTo 1).map { i ->
                 val trackableId = "someTrackable-$i"
                 val channelName = "tracking:$trackableId"
@@ -557,6 +560,7 @@ class DefaultAblyTestEnvironment private constructor(
                 val channelMock = mockk<AblySdkRealtime.Channel<AblySdkChannelStateListener>>()
                 every { channelMock.state } returns ChannelState.initialized
                 every { channelMock.presence } returns presenceMock
+                every { channelMock.name } returns channelName
                 excludeRecords { channelMock.presence }
 
                 ConfiguredChannel(trackableId, channelName, channelMock, presenceMock)
@@ -591,7 +595,7 @@ class DefaultAblyTestEnvironment private constructor(
             val connectionConfiguration =
                 ConnectionConfiguration(Authentication.basic("", "")) // arbitrarily chosen
             val objectUnderTest =
-                DefaultAbly(factory, connectionConfiguration, null /* arbitrarily chosen */)
+                DefaultAbly(factory, connectionConfiguration, null /* arbitrarily chosen */, coroutineScope + SupervisorJob())
 
             return DefaultAblyTestEnvironment(
                 objectUnderTest,

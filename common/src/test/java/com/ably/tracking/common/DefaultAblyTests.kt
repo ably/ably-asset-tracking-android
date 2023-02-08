@@ -3,12 +3,13 @@ package com.ably.tracking.common
 import com.ably.tracking.ErrorInformation
 import com.ably.tracking.common.helper.DefaultAblyTestEnvironment
 import com.ably.tracking.common.helper.DefaultAblyTestScenarios
-import io.mockk.verifyOrder
 import io.ably.lib.realtime.ChannelState
 import io.ably.lib.realtime.ConnectionState
 import io.ably.lib.types.ErrorInfo
+import io.mockk.verifyOrder
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.TimeoutCancellationException
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withTimeout
 import org.junit.Assert
 import org.junit.Test
@@ -24,6 +25,7 @@ import org.junit.Test
  *
  * If we remove all of the built-in timeout behaviour from DefaultAbly in the future then it’ll be fine to delete these tests.
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 class DefaultAblyTests {
     /**
      * The arbitrarily-chosen number of milliseconds that a test will wait as a demonstration that a given operation does not have a built-in timeout. See "Demonstrating the absence of no built-in timeout" above.
@@ -37,7 +39,7 @@ class DefaultAblyTests {
      */
 
     @Test
-    fun `connect - when channel is not created and attach succeeds`() {
+    fun `connect - when channel is not created and attach succeeds`() = runTest {
         /* Given...
          *
          * ...that calling `containsKey` on the Channels instance returns false...
@@ -57,27 +59,26 @@ class DefaultAblyTests {
          * ...and the call to `connect` (on the object under test) succeeds.
          */
 
-        runBlocking {
-            DefaultAblyTestScenarios.Connect.test(
-                DefaultAblyTestScenarios.Connect.GivenConfig(
-                    channelsContainsKey = false,
-                    channelsGetOverload = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
-                    channelAttachBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Success
-                ),
-                DefaultAblyTestScenarios.Connect.ThenConfig(
-                    verifyChannelAttach = true,
-                    overloadOfChannelsGetToVerify = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
-                    verifyChannelRelease = false,
-                    resultOfConnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
-                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
-                    )
+        DefaultAblyTestScenarios.Connect.test(
+            DefaultAblyTestScenarios.Connect.GivenConfig(
+                channelsContainsKey = false,
+                channelsGetOverload = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
+                channelAttachBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Success
+            ),
+            DefaultAblyTestScenarios.Connect.ThenConfig(
+                verifyChannelAttach = true,
+                overloadOfChannelsGetToVerify = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
+                verifyChannelRelease = false,
+                resultOfConnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
+                    expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
                 )
-            )
-        }
+            ),
+            this
+        )
     }
 
     @Test
-    fun `connect - when channel is not created and attach fails`() {
+    fun `connect - when channel is not created and attach fails`() = runTest {
         /* Given...
          *
          * ...that calling `containsKey` on the Channels instance returns false...
@@ -104,39 +105,38 @@ class DefaultAblyTests {
             123 /* arbitrarily chosen */
         )
 
-        runBlocking {
-            DefaultAblyTestScenarios.Connect.test(
-                DefaultAblyTestScenarios.Connect.GivenConfig(
-                    channelsContainsKey = false,
-                    channelsGetOverload = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
-                    channelAttachBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Failure(
-                        attachError
+        DefaultAblyTestScenarios.Connect.test(
+            DefaultAblyTestScenarios.Connect.GivenConfig(
+                channelsContainsKey = false,
+                channelsGetOverload = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
+                channelAttachBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Failure(
+                    attachError
+                )
+            ),
+            DefaultAblyTestScenarios.Connect.ThenConfig(
+                overloadOfChannelsGetToVerify = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
+                verifyChannelAttach = true,
+                verifyChannelRelease = true,
+                resultOfConnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
+                    expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.FailureWithConnectionException(
+                        ErrorInformation(
+                            attachError.code,
+                            attachError.statusCode,
+                            attachError.message,
+                            attachError.code.toHref(),
+                            null
+                        )
                     )
                 ),
-                DefaultAblyTestScenarios.Connect.ThenConfig(
-                    overloadOfChannelsGetToVerify = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
-                    verifyChannelAttach = true,
-                    verifyChannelRelease = true,
-                    resultOfConnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
-                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.FailureWithConnectionException(
-                            ErrorInformation(
-                                attachError.code,
-                                attachError.statusCode,
-                                attachError.message,
-                                attachError.code.toHref(),
-                                null
-                            )
-                        )
-                    ),
-                )
-            )
-        }
+            ),
+            this
+        )
     }
 
     private fun Int.toHref() = "https://help.ably.io/error/$this"
 
     @Test
-    fun `connect - when channel attach does not complete`() {
+    fun `connect - when channel attach does not complete`() = runTest {
         /* Given...
          *
          * ...that calling `containsKey` on the Channels instance returns false...
@@ -156,27 +156,26 @@ class DefaultAblyTests {
          * ...and the call to `connect` (on the object under test) does not complete (see “Documenting the absence of built-in timeout” above).
          */
 
-        runBlocking {
-            DefaultAblyTestScenarios.Connect.test(
-                DefaultAblyTestScenarios.Connect.GivenConfig(
-                    channelsContainsKey = false,
-                    channelsGetOverload = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
-                    channelAttachBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.DoesNotComplete
-                ),
-                DefaultAblyTestScenarios.Connect.ThenConfig(
-                    overloadOfChannelsGetToVerify = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
-                    verifyChannelAttach = true,
-                    verifyChannelRelease = false,
-                    resultOfConnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.DoesNotTerminate(
-                        timeoutInMilliseconds = noTimeoutDemonstrationWaitingTimeInMilliseconds
-                    )
+        DefaultAblyTestScenarios.Connect.test(
+            DefaultAblyTestScenarios.Connect.GivenConfig(
+                channelsContainsKey = false,
+                channelsGetOverload = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
+                channelAttachBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.DoesNotComplete
+            ),
+            DefaultAblyTestScenarios.Connect.ThenConfig(
+                overloadOfChannelsGetToVerify = DefaultAblyTestEnvironment.ChannelsGetOverload.WITH_CHANNEL_OPTIONS,
+                verifyChannelAttach = true,
+                verifyChannelRelease = false,
+                resultOfConnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.DoesNotTerminate(
+                    timeoutInMilliseconds = noTimeoutDemonstrationWaitingTimeInMilliseconds
                 )
-            )
-        }
+            ),
+            this
+        )
     }
 
     @Test
-    fun `connect - when channel already exists`() {
+    fun `connect - when channel already exists`() = runTest {
         /* Given...
          *
          * ...that calling `containsKey` on the Channels instance returns true...
@@ -194,27 +193,26 @@ class DefaultAblyTests {
          * ...and the call to `connect` (on the object under test) succeeds.
          */
 
-        runBlocking {
-            DefaultAblyTestScenarios.Connect.test(
-                DefaultAblyTestScenarios.Connect.GivenConfig(
-                    channelsContainsKey = true,
-                    channelsGetOverload = DefaultAblyTestEnvironment.ChannelsGetOverload.WITHOUT_CHANNEL_OPTIONS,
-                    channelAttachBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.NotMocked
-                ),
-                DefaultAblyTestScenarios.Connect.ThenConfig(
-                    overloadOfChannelsGetToVerify = DefaultAblyTestEnvironment.ChannelsGetOverload.WITHOUT_CHANNEL_OPTIONS,
-                    verifyChannelAttach = false,
-                    verifyChannelRelease = false,
-                    resultOfConnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
-                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
-                    )
+        DefaultAblyTestScenarios.Connect.test(
+            DefaultAblyTestScenarios.Connect.GivenConfig(
+                channelsContainsKey = true,
+                channelsGetOverload = DefaultAblyTestEnvironment.ChannelsGetOverload.WITHOUT_CHANNEL_OPTIONS,
+                channelAttachBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.NotMocked
+            ),
+            DefaultAblyTestScenarios.Connect.ThenConfig(
+                overloadOfChannelsGetToVerify = DefaultAblyTestEnvironment.ChannelsGetOverload.WITHOUT_CHANNEL_OPTIONS,
+                verifyChannelAttach = false,
+                verifyChannelRelease = false,
+                resultOfConnectCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
+                    expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
                 )
-            )
-        }
+            ),
+            this
+        )
     }
 
     @Test
-    fun `enterChannelPresence - when presence enter succeeds`() {
+    fun `enterChannelPresence - when presence enter succeeds`() = runTest {
         /* Given...
          *
          * ...that calling `containsKey` on the Channels instance returns true...
@@ -233,25 +231,24 @@ class DefaultAblyTests {
          * ...and the call to `enterChannelPresence` (on the object under test) succeeds.
          */
 
-        runBlocking {
-            DefaultAblyTestScenarios.EnterChannelPresence.test(
-                DefaultAblyTestScenarios.EnterChannelPresence.GivenConfig(
-                    channelsContainsKey = true,
-                    presenceEnterBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Success,
-                ),
-                DefaultAblyTestScenarios.EnterChannelPresence.ThenConfig(
-                    verifyChannelsGet = true,
-                    verifyPresenceEnter = true,
-                    resultOfEnterChannelPresenceCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
-                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
-                    )
+        DefaultAblyTestScenarios.EnterChannelPresence.test(
+            DefaultAblyTestScenarios.EnterChannelPresence.GivenConfig(
+                channelsContainsKey = true,
+                presenceEnterBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Success,
+            ),
+            DefaultAblyTestScenarios.EnterChannelPresence.ThenConfig(
+                verifyChannelsGet = true,
+                verifyPresenceEnter = true,
+                resultOfEnterChannelPresenceCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
+                    expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
                 )
-            )
-        }
+            ),
+            this
+        )
     }
 
     @Test
-    fun `enterChannelPresence - when presence enter fails`() {
+    fun `enterChannelPresence - when presence enter fails`() = runTest {
         /* Given...
          *
          * ...that calling `containsKey` on the Channels instance returns true...
@@ -275,36 +272,35 @@ class DefaultAblyTests {
             123 /* arbitrarily chosen */
         )
 
-        runBlocking {
-            DefaultAblyTestScenarios.EnterChannelPresence.test(
-                DefaultAblyTestScenarios.EnterChannelPresence.GivenConfig(
-                    channelsContainsKey = true,
-                    presenceEnterBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Failure(
-                        presenceError
-                    ),
+        DefaultAblyTestScenarios.EnterChannelPresence.test(
+            DefaultAblyTestScenarios.EnterChannelPresence.GivenConfig(
+                channelsContainsKey = true,
+                presenceEnterBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Failure(
+                    presenceError
                 ),
-                DefaultAblyTestScenarios.EnterChannelPresence.ThenConfig(
-                    verifyChannelsGet = true,
-                    verifyPresenceEnter = true,
-                    resultOfEnterChannelPresenceCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
-                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.FailureWithConnectionException(
-                            errorInformation =
-                            ErrorInformation(
-                                code = presenceError.code,
-                                statusCode = 0,
-                                message = presenceError.message,
-                                href = null,
-                                cause = null
-                            )
+            ),
+            DefaultAblyTestScenarios.EnterChannelPresence.ThenConfig(
+                verifyChannelsGet = true,
+                verifyPresenceEnter = true,
+                resultOfEnterChannelPresenceCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
+                    expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.FailureWithConnectionException(
+                        errorInformation =
+                        ErrorInformation(
+                            code = presenceError.code,
+                            statusCode = 0,
+                            message = presenceError.message,
+                            href = null,
+                            cause = null
                         )
                     )
                 )
-            )
-        }
+            ),
+            this
+        )
     }
 
     @Test
-    fun `enterChannelPresence - when channel does not exist`() {
+    fun `enterChannelPresence - when channel does not exist`() = runTest {
         /* Given...
          *
          * ...that calling `containsKey` on the Channels instance returns false...
@@ -320,21 +316,20 @@ class DefaultAblyTests {
          * ...and the call to `enterChannelPresence` (on the object under test) succeeds.
          */
 
-        runBlocking {
-            DefaultAblyTestScenarios.EnterChannelPresence.test(
-                DefaultAblyTestScenarios.EnterChannelPresence.GivenConfig(
-                    channelsContainsKey = false,
-                    presenceEnterBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.NotMocked,
-                ),
-                DefaultAblyTestScenarios.EnterChannelPresence.ThenConfig(
-                    verifyChannelsGet = false,
-                    verifyPresenceEnter = false,
-                    resultOfEnterChannelPresenceCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
-                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
-                    )
+        DefaultAblyTestScenarios.EnterChannelPresence.test(
+            DefaultAblyTestScenarios.EnterChannelPresence.GivenConfig(
+                channelsContainsKey = false,
+                presenceEnterBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.NotMocked,
+            ),
+            DefaultAblyTestScenarios.EnterChannelPresence.ThenConfig(
+                verifyChannelsGet = false,
+                verifyPresenceEnter = false,
+                resultOfEnterChannelPresenceCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
+                    expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
                 )
-            )
-        }
+            ),
+            this
+        )
     }
 
     /*
@@ -344,7 +339,7 @@ class DefaultAblyTests {
      */
 
     @Test
-    fun `updatePresenceData - when presence update succeeds`() {
+    fun `updatePresenceData - when presence update succeeds`() = runTest {
         /* Given...
          *
          * ...that calling `containsKey` on the Channels instance returns true...
@@ -364,26 +359,26 @@ class DefaultAblyTests {
          * ...and the call to `updatePresenceData` (on the object under test) succeeds.
          */
 
-        runBlocking {
-            DefaultAblyTestScenarios.UpdatePresenceData.test(
-                DefaultAblyTestScenarios.UpdatePresenceData.GivenConfig(
-                    channelsContainsKey = true,
-                    mockChannelsGet = true,
-                    presenceUpdateBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Success
-                ),
-                DefaultAblyTestScenarios.UpdatePresenceData.ThenConfig(
-                    verifyChannelsGet = true,
-                    verifyPresenceUpdate = true,
-                    resultOfUpdatePresenceCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
-                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
-                    )
+        DefaultAblyTestScenarios.UpdatePresenceData.test(
+            DefaultAblyTestScenarios.UpdatePresenceData.GivenConfig(
+                channelsContainsKey = true,
+                mockChannelsGet = true,
+                presenceUpdateBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Success
+            ),
+            DefaultAblyTestScenarios.UpdatePresenceData.ThenConfig(
+                verifyChannelsGet = true,
+                verifyGetChannelName = false,
+                verifyPresenceUpdate = true,
+                resultOfUpdatePresenceCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
+                    expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
                 )
-            )
-        }
+            ),
+            this
+        )
     }
 
     @Test
-    fun `updatePresenceData - when presence update fails`() {
+    fun `updatePresenceData - when presence update fails`() = runTest {
         /* Given...
          *
          * ...that calling `containsKey` on the Channels instance returns true...
@@ -408,36 +403,36 @@ class DefaultAblyTests {
             123 /* arbitrarily chosen */
         )
 
-        runBlocking {
-            DefaultAblyTestScenarios.UpdatePresenceData.test(
-                DefaultAblyTestScenarios.UpdatePresenceData.GivenConfig(
-                    channelsContainsKey = true,
-                    mockChannelsGet = true,
-                    presenceUpdateBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Failure(
-                        presenceError
-                    )
-                ),
-                DefaultAblyTestScenarios.UpdatePresenceData.ThenConfig(
-                    verifyChannelsGet = true,
-                    verifyPresenceUpdate = true,
-                    resultOfUpdatePresenceCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
-                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.FailureWithConnectionException(
-                            ErrorInformation(
-                                presenceError.code,
-                                0,
-                                presenceError.message,
-                                null,
-                                null
-                            )
+        DefaultAblyTestScenarios.UpdatePresenceData.test(
+            DefaultAblyTestScenarios.UpdatePresenceData.GivenConfig(
+                channelsContainsKey = true,
+                mockChannelsGet = true,
+                presenceUpdateBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Failure(
+                    presenceError
+                )
+            ),
+            DefaultAblyTestScenarios.UpdatePresenceData.ThenConfig(
+                verifyChannelsGet = true,
+                verifyGetChannelName = false,
+                verifyPresenceUpdate = true,
+                resultOfUpdatePresenceCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
+                    expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.FailureWithConnectionException(
+                        ErrorInformation(
+                            presenceError.code,
+                            0,
+                            presenceError.message,
+                            null,
+                            null
                         )
                     )
                 )
-            )
-        }
+            ),
+            this
+        )
     }
 
     @Test
-    fun `updatePresenceData - when presence update doesn't complete`() {
+    fun `updatePresenceData - when presence update times out`() = runTest {
         /* Given...
          *
          * ...that calling `containsKey` on the Channels instance returns true...
@@ -458,26 +453,26 @@ class DefaultAblyTests {
          * ...and the call to `updatePresenceData` (on the object under test) does not complete (see “Documenting the absence of built-in timeout” above).
          */
 
-        runBlocking {
-            DefaultAblyTestScenarios.UpdatePresenceData.test(
-                DefaultAblyTestScenarios.UpdatePresenceData.GivenConfig(
-                    channelsContainsKey = true,
-                    mockChannelsGet = true,
-                    presenceUpdateBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.DoesNotComplete
-                ),
-                DefaultAblyTestScenarios.UpdatePresenceData.ThenConfig(
-                    verifyChannelsGet = true,
-                    verifyPresenceUpdate = true,
-                    resultOfUpdatePresenceCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.DoesNotTerminate(
-                        timeoutInMilliseconds = noTimeoutDemonstrationWaitingTimeInMilliseconds
-                    )
+        DefaultAblyTestScenarios.UpdatePresenceData.test(
+            DefaultAblyTestScenarios.UpdatePresenceData.GivenConfig(
+                channelsContainsKey = true,
+                mockChannelsGet = true,
+                presenceUpdateBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.DoesNotComplete
+            ),
+            DefaultAblyTestScenarios.UpdatePresenceData.ThenConfig(
+                verifyChannelsGet = true,
+                verifyGetChannelName = true,
+                verifyPresenceUpdate = true,
+                resultOfUpdatePresenceCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.TerminatesWithConnectionException(
+                    errorInformation = ErrorInformation("Timeout was thrown when updating presence of channel tracking:someTrackable-1")
                 )
-            )
-        }
+            ),
+            this
+        )
     }
 
     @Test
-    fun `updatePresenceData - when channel doesn't exist`() {
+    fun `updatePresenceData - when channel doesn't exist`() = runTest {
         /* Given...
          *
          * ...that calling `containsKey` on the Channels instance returns false...
@@ -493,26 +488,26 @@ class DefaultAblyTests {
          * ...and the call to `updatePresenceData` (on the object under test) succeeds.
          */
 
-        runBlocking {
-            DefaultAblyTestScenarios.UpdatePresenceData.test(
-                DefaultAblyTestScenarios.UpdatePresenceData.GivenConfig(
-                    channelsContainsKey = false,
-                    mockChannelsGet = false,
-                    presenceUpdateBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.NotMocked
-                ),
-                DefaultAblyTestScenarios.UpdatePresenceData.ThenConfig(
-                    verifyChannelsGet = false,
-                    verifyPresenceUpdate = false,
-                    resultOfUpdatePresenceCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
-                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
-                    )
+        DefaultAblyTestScenarios.UpdatePresenceData.test(
+            DefaultAblyTestScenarios.UpdatePresenceData.GivenConfig(
+                channelsContainsKey = false,
+                mockChannelsGet = false,
+                presenceUpdateBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.NotMocked
+            ),
+            DefaultAblyTestScenarios.UpdatePresenceData.ThenConfig(
+                verifyChannelsGet = false,
+                verifyGetChannelName = false,
+                verifyPresenceUpdate = false,
+                resultOfUpdatePresenceCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
+                    expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
                 )
-            )
-        }
+            ),
+            this
+        )
     }
 
     @Test
-    fun `disconnect - when presence leave succeeds`() {
+    fun `disconnect - when presence leave succeeds`() = runTest {
         /* Given...
          *
          * ...that calling containsKey on the Channels instance returns true...
@@ -533,21 +528,20 @@ class DefaultAblyTests {
          * ...and the call to `disconnect` (on the object under test) succeeds.
          */
 
-        runBlocking {
-            DefaultAblyTestScenarios.Disconnect.test(
-                DefaultAblyTestScenarios.Disconnect.GivenConfig(
-                    channelsContainsKey = true,
-                    presenceLeaveBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Success
-                ),
-                DefaultAblyTestScenarios.Disconnect.ThenConfig(
-                    verifyChannelTeardown = true
-                )
-            )
-        }
+        DefaultAblyTestScenarios.Disconnect.test(
+            DefaultAblyTestScenarios.Disconnect.GivenConfig(
+                channelsContainsKey = true,
+                presenceLeaveBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Success
+            ),
+            DefaultAblyTestScenarios.Disconnect.ThenConfig(
+                verifyChannelTeardown = true
+            ),
+            this
+        )
     }
 
     @Test
-    fun `disconnect - when presence leave fails`() {
+    fun `disconnect - when presence leave fails`() = runTest {
         /* Given...
          *
          * ...that calling containsKey on the Channels instance returns true...
@@ -573,23 +567,22 @@ class DefaultAblyTests {
             123 /* arbitrarily chosen */
         )
 
-        runBlocking {
-            DefaultAblyTestScenarios.Disconnect.test(
-                DefaultAblyTestScenarios.Disconnect.GivenConfig(
-                    channelsContainsKey = true,
-                    presenceLeaveBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Failure(
-                        presenceError
-                    )
-                ),
-                DefaultAblyTestScenarios.Disconnect.ThenConfig(
-                    verifyChannelTeardown = true
+        DefaultAblyTestScenarios.Disconnect.test(
+            DefaultAblyTestScenarios.Disconnect.GivenConfig(
+                channelsContainsKey = true,
+                presenceLeaveBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Failure(
+                    presenceError
                 )
-            )
-        }
+            ),
+            DefaultAblyTestScenarios.Disconnect.ThenConfig(
+                verifyChannelTeardown = true
+            ),
+            this
+        )
     }
 
     @Test
-    fun `disconnect - when presence leave does not complete`() {
+    fun `disconnect - when presence leave does not complete`() = runTest {
         /*
          * Given...
          *
@@ -611,21 +604,20 @@ class DefaultAblyTests {
          * ...and the call to `disconnect` (on the object under test) succeeds.
          */
 
-        runBlocking {
-            DefaultAblyTestScenarios.Disconnect.test(
-                DefaultAblyTestScenarios.Disconnect.GivenConfig(
-                    channelsContainsKey = true,
-                    presenceLeaveBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.DoesNotComplete
-                ),
-                DefaultAblyTestScenarios.Disconnect.ThenConfig(
-                    verifyChannelTeardown = true,
-                )
-            )
-        }
+        DefaultAblyTestScenarios.Disconnect.test(
+            DefaultAblyTestScenarios.Disconnect.GivenConfig(
+                channelsContainsKey = true,
+                presenceLeaveBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.DoesNotComplete
+            ),
+            DefaultAblyTestScenarios.Disconnect.ThenConfig(
+                verifyChannelTeardown = true,
+            ),
+            this
+        )
     }
 
     @Test
-    fun `disconnect - when channel doesn't exist`() {
+    fun `disconnect - when channel doesn't exist`() = runTest {
         /* Given...
          *
          * ...that calling containsKey on the Channels instance returns false...
@@ -640,17 +632,16 @@ class DefaultAblyTests {
          * ...and the call to `disconnect` (on the object under test) succeeds.
          */
 
-        runBlocking {
-            DefaultAblyTestScenarios.Disconnect.test(
-                DefaultAblyTestScenarios.Disconnect.GivenConfig(
-                    channelsContainsKey = false,
-                    presenceLeaveBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.NotMocked
-                ),
-                DefaultAblyTestScenarios.Disconnect.ThenConfig(
-                    verifyChannelTeardown = false,
-                )
-            )
-        }
+        DefaultAblyTestScenarios.Disconnect.test(
+            DefaultAblyTestScenarios.Disconnect.GivenConfig(
+                channelsContainsKey = false,
+                presenceLeaveBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.NotMocked
+            ),
+            DefaultAblyTestScenarios.Disconnect.ThenConfig(
+                verifyChannelTeardown = false,
+            ),
+            this
+        )
     }
 
     /*
@@ -660,27 +651,27 @@ class DefaultAblyTests {
      */
 
     @Test
-    fun `startConnection - when connection is in INITIALIZED state, and, after connect called, changes to CONNECTED`() {
-        /* Given...
-         *
-         * ...that the connection’s `state` property returns INITIALIZED...
-         * ...and that when the Realtime instance’s `connect` method is called, its connection’s `on` method immediately emits a connection state change whose `previous` is INITIALIZED, `current` is CONNECTED, `retryIn` is (arbitrarily-chosen) 0 and `reason` is (arbitrarily-chosen) null...
-         *
-         * When...
-         *
-         * ...the `startConnection` method is called on the object under test...
-         *
-         * Then...
-         * ...in the following order, precisely the following things happen...
-         *
-         * ...it fetches the connection’s state 2 times...
-         * ...and adds a listener to the connection using `on`...
-         * ...and tells the Realtime instance to connect...
-         * ...and removes a listener from the connection using `off`...
-         * ...and the call to `startConnection` (on the object under test) succeeds.
-         */
+    fun `startConnection - when connection is in INITIALIZED state, and, after connect called, changes to CONNECTED`() =
+        runTest {
+            /* Given...
+             *
+             * ...that the connection’s `state` property returns INITIALIZED...
+             * ...and that when the Realtime instance’s `connect` method is called, its connection’s `on` method immediately emits a connection state change whose `previous` is INITIALIZED, `current` is CONNECTED, `retryIn` is (arbitrarily-chosen) 0 and `reason` is (arbitrarily-chosen) null...
+             *
+             * When...
+             *
+             * ...the `startConnection` method is called on the object under test...
+             *
+             * Then...
+             * ...in the following order, precisely the following things happen...
+             *
+             * ...it fetches the connection’s state 2 times...
+             * ...and adds a listener to the connection using `on`...
+             * ...and tells the Realtime instance to connect...
+             * ...and removes a listener from the connection using `off`...
+             * ...and the call to `startConnection` (on the object under test) succeeds.
+             */
 
-        runBlocking {
             DefaultAblyTestScenarios.StartConnection.test(
                 DefaultAblyTestScenarios.StartConnection.GivenConfig(
                     initialConnectionState = ConnectionState.initialized,
@@ -699,33 +690,33 @@ class DefaultAblyTests {
                     verifyConnect = true,
                     verifyConnectionOff = true,
                     resultOfStartConnectionCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
-                )
+                ),
+                this
             )
         }
-    }
 
     @Test
-    fun `startConnection - when connection is in CONNECTING state and, after connect called, changes to CONNECTED`() {
-        /* Given...
-         *
-         * ...that the connection’s `state` property returns CONNECTING...
-         * ...and that when the Realtime instance’s `connect` method is called, its connection’s `on` method immediately emits a connection state change whose `previous` is CONNECTING, `current` is CONNECTED, `retryIn` is (arbitrarily-chosen) 0 and `reason` is (arbitrarily-chosen) null...
-         *
-         * When...
-         *
-         * ...the `startConnection` method is called on the object under test...
-         *
-         * Then...
-         * ...in the following order, precisely the following things happen...
-         *
-         * ...it fetches the connection’s state 2 times...
-         * ...and adds a listener to the connection using `on`...
-         * ...and tells the Realtime instance to connect...
-         * ...and removes a listener from the connection using `off`...
-         * ...and the call to `startConnection` (on the object under test) succeeds.
-         */
+    fun `startConnection - when connection is in CONNECTING state and, after connect called, changes to CONNECTED`() =
+        runTest {
+            /* Given...
+             *
+             * ...that the connection’s `state` property returns CONNECTING...
+             * ...and that when the Realtime instance’s `connect` method is called, its connection’s `on` method immediately emits a connection state change whose `previous` is CONNECTING, `current` is CONNECTED, `retryIn` is (arbitrarily-chosen) 0 and `reason` is (arbitrarily-chosen) null...
+             *
+             * When...
+             *
+             * ...the `startConnection` method is called on the object under test...
+             *
+             * Then...
+             * ...in the following order, precisely the following things happen...
+             *
+             * ...it fetches the connection’s state 2 times...
+             * ...and adds a listener to the connection using `on`...
+             * ...and tells the Realtime instance to connect...
+             * ...and removes a listener from the connection using `off`...
+             * ...and the call to `startConnection` (on the object under test) succeeds.
+             */
 
-        runBlocking {
             DefaultAblyTestScenarios.StartConnection.test(
                 DefaultAblyTestScenarios.StartConnection.GivenConfig(
                     initialConnectionState = ConnectionState.connecting,
@@ -744,33 +735,33 @@ class DefaultAblyTests {
                     verifyConnect = true,
                     verifyConnectionOff = true,
                     resultOfStartConnectionCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
-                )
+                ),
+                this
             )
         }
-    }
 
     @Test
-    fun `startConnection - when connection is in DISCONNECTED state and, after connect called, changes to CONNECTED`() {
-        /* Given...
-         *
-         * ...that the connection’s `state` property returns DISCONNECTED...
-         * ...and that when the Realtime instance’s `connect` method is called, its connection’s `on` method immediately emits a connection state change whose `previous` is DISCONNECTED, `current` is CONNECTED, `retryIn` is (arbitrarily-chosen) 0 and `reason` is (arbitrarily-chosen) null...
-         *
-         * When...
-         *
-         * ...the `startConnection` method is called on the object under test...
-         *
-         * Then...
-         * ...in the following order, precisely the following things happen...
-         *
-         * ...it fetches the connection’s state 2 times...
-         * ...and adds a listener to the connection using `on`...
-         * ...and tells the Realtime instance to connect...
-         * ...and removes a listener from the connection using `off`...
-         * ...and the call to `startConnection` (on the object under test) succeeds.
-         */
+    fun `startConnection - when connection is in DISCONNECTED state and, after connect called, changes to CONNECTED`() =
+        runTest {
+            /* Given...
+             *
+             * ...that the connection’s `state` property returns DISCONNECTED...
+             * ...and that when the Realtime instance’s `connect` method is called, its connection’s `on` method immediately emits a connection state change whose `previous` is DISCONNECTED, `current` is CONNECTED, `retryIn` is (arbitrarily-chosen) 0 and `reason` is (arbitrarily-chosen) null...
+             *
+             * When...
+             *
+             * ...the `startConnection` method is called on the object under test...
+             *
+             * Then...
+             * ...in the following order, precisely the following things happen...
+             *
+             * ...it fetches the connection’s state 2 times...
+             * ...and adds a listener to the connection using `on`...
+             * ...and tells the Realtime instance to connect...
+             * ...and removes a listener from the connection using `off`...
+             * ...and the call to `startConnection` (on the object under test) succeeds.
+             */
 
-        runBlocking {
             DefaultAblyTestScenarios.StartConnection.test(
                 DefaultAblyTestScenarios.StartConnection.GivenConfig(
                     initialConnectionState = ConnectionState.disconnected,
@@ -789,33 +780,33 @@ class DefaultAblyTests {
                     verifyConnect = true,
                     verifyConnectionOff = true,
                     resultOfStartConnectionCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
-                )
+                ),
+                this
             )
         }
-    }
 
     @Test
-    fun `startConnection - when connection is in SUSPENDED state and, after connect called, changes to CONNECTED`() {
-        /* Given...
-         *
-         * ...that the connection’s `state` property returns SUSPENDED...
-         * ...and that when the Realtime instance’s `connect` method is called, its connection’s `on` method immediately emits a connection state change whose `previous` is SUSPENDED, `current` is CONNECTED, `retryIn` is (arbitrarily-chosen) 0 and `reason` is (arbitrarily-chosen) null...
-         *
-         * When...
-         *
-         * ...the `startConnection` method is called on the object under test...
-         *
-         * Then...
-         * ...in the following order, precisely the following things happen...
-         *
-         * ...it fetches the connection’s state 2 times...
-         * ...and adds a listener to the connection using `on`...
-         * ...and tells the Realtime instance to connect...
-         * ...and removes a listener from the connection using `off`...
-         * ...and the call to `startConnection` (on the object under test) succeeds.
-         */
+    fun `startConnection - when connection is in SUSPENDED state and, after connect called, changes to CONNECTED`() =
+        runTest {
+            /* Given...
+             *
+             * ...that the connection’s `state` property returns SUSPENDED...
+             * ...and that when the Realtime instance’s `connect` method is called, its connection’s `on` method immediately emits a connection state change whose `previous` is SUSPENDED, `current` is CONNECTED, `retryIn` is (arbitrarily-chosen) 0 and `reason` is (arbitrarily-chosen) null...
+             *
+             * When...
+             *
+             * ...the `startConnection` method is called on the object under test...
+             *
+             * Then...
+             * ...in the following order, precisely the following things happen...
+             *
+             * ...it fetches the connection’s state 2 times...
+             * ...and adds a listener to the connection using `on`...
+             * ...and tells the Realtime instance to connect...
+             * ...and removes a listener from the connection using `off`...
+             * ...and the call to `startConnection` (on the object under test) succeeds.
+             */
 
-        runBlocking {
             DefaultAblyTestScenarios.StartConnection.test(
                 DefaultAblyTestScenarios.StartConnection.GivenConfig(
                     initialConnectionState = ConnectionState.suspended,
@@ -834,33 +825,33 @@ class DefaultAblyTests {
                     verifyConnect = true,
                     verifyConnectionOff = true,
                     resultOfStartConnectionCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
-                )
+                ),
+                this
             )
         }
-    }
 
     @Test
-    fun `startConnection - when connection is in CLOSING state and, after connect called, changes to CONNECTED`() {
-        /* Given...
-         *
-         * ...that the connection’s `state` property returns CLOSING...
-         * ...and that when the Realtime instance’s `connect` method is called, its connection’s `on` method immediately emits a connection state change whose `previous` is CLOSING, `current` is CONNECTED, `retryIn` is (arbitrarily-chosen) 0 and `reason` is (arbitrarily-chosen) null...
-         *
-         * When...
-         *
-         * ...the `startConnection` method is called on the object under test...
-         *
-         * Then...
-         * ...in the following order, precisely the following things happen...
-         *
-         * ...it fetches the connection’s state 2 times...
-         * ...and adds a listener to the connection using `on`...
-         * ...and tells the Realtime instance to connect...
-         * ...and removes a listener from the connection using `off`...
-         * ...and the call to `startConnection` (on the object under test) succeeds.
-         */
+    fun `startConnection - when connection is in CLOSING state and, after connect called, changes to CONNECTED`() =
+        runTest {
+            /* Given...
+             *
+             * ...that the connection’s `state` property returns CLOSING...
+             * ...and that when the Realtime instance’s `connect` method is called, its connection’s `on` method immediately emits a connection state change whose `previous` is CLOSING, `current` is CONNECTED, `retryIn` is (arbitrarily-chosen) 0 and `reason` is (arbitrarily-chosen) null...
+             *
+             * When...
+             *
+             * ...the `startConnection` method is called on the object under test...
+             *
+             * Then...
+             * ...in the following order, precisely the following things happen...
+             *
+             * ...it fetches the connection’s state 2 times...
+             * ...and adds a listener to the connection using `on`...
+             * ...and tells the Realtime instance to connect...
+             * ...and removes a listener from the connection using `off`...
+             * ...and the call to `startConnection` (on the object under test) succeeds.
+             */
 
-        runBlocking {
             DefaultAblyTestScenarios.StartConnection.test(
                 DefaultAblyTestScenarios.StartConnection.GivenConfig(
                     initialConnectionState = ConnectionState.closing,
@@ -879,33 +870,33 @@ class DefaultAblyTests {
                     verifyConnect = true,
                     verifyConnectionOff = true,
                     resultOfStartConnectionCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
-                )
+                ),
+                this
             )
         }
-    }
 
     @Test
-    fun `startConnection - when connection is in CLOSED state and, after connect called, changes to CONNECTED`() {
-        /* Given...
-         *
-         * ...that the connection’s `state` property returns CLOSED...
-         * ...and that when the Realtime instance’s `connect` method is called, its connection’s `on` method immediately emits a connection state change whose `previous` is CLOSED, `current` is CONNECTED, `retryIn` is (arbitrarily-chosen) 0 and `reason` is (arbitrarily-chosen) null...
-         *
-         * When...
-         *
-         * ...the `startConnection` method is called on the object under test...
-         *
-         * Then...
-         * ...in the following order, precisely the following things happen...
-         *
-         * ...it fetches the connection’s state 2 times...
-         * ...and adds a listener to the connection using `on`...
-         * ...and tells the Realtime instance to connect...
-         * ...and removes a listener from the connection using `off`...
-         * ...and the call to `startConnection` (on the object under test) succeeds.
-         */
+    fun `startConnection - when connection is in CLOSED state and, after connect called, changes to CONNECTED`() =
+        runTest {
+            /* Given...
+             *
+             * ...that the connection’s `state` property returns CLOSED...
+             * ...and that when the Realtime instance’s `connect` method is called, its connection’s `on` method immediately emits a connection state change whose `previous` is CLOSED, `current` is CONNECTED, `retryIn` is (arbitrarily-chosen) 0 and `reason` is (arbitrarily-chosen) null...
+             *
+             * When...
+             *
+             * ...the `startConnection` method is called on the object under test...
+             *
+             * Then...
+             * ...in the following order, precisely the following things happen...
+             *
+             * ...it fetches the connection’s state 2 times...
+             * ...and adds a listener to the connection using `on`...
+             * ...and tells the Realtime instance to connect...
+             * ...and removes a listener from the connection using `off`...
+             * ...and the call to `startConnection` (on the object under test) succeeds.
+             */
 
-        runBlocking {
             DefaultAblyTestScenarios.StartConnection.test(
                 DefaultAblyTestScenarios.StartConnection.GivenConfig(
                     initialConnectionState = ConnectionState.closed,
@@ -924,13 +915,13 @@ class DefaultAblyTests {
                     verifyConnect = true,
                     verifyConnectionOff = true,
                     resultOfStartConnectionCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
-                )
+                ),
+                this
             )
         }
-    }
 
     @Test
-    fun `startConnection - when connection is in FAILED state`() {
+    fun `startConnection - when connection is in FAILED state`() = runTest {
         /* Given...
          *
          * ...that the connection’s `state` property returns FAILED...
@@ -953,37 +944,36 @@ class DefaultAblyTests {
             123 /* arbitrarily chosen */
         )
 
-        runBlocking {
-            DefaultAblyTestScenarios.StartConnection.test(
-                DefaultAblyTestScenarios.StartConnection.GivenConfig(
-                    initialConnectionState = ConnectionState.failed,
-                    connectionReasonBehaviour = DefaultAblyTestScenarios.GivenTypes.ConnectionReasonMockBehaviour.Mocked(
-                        connectionReason
-                    ),
-                    connectBehaviour = DefaultAblyTestScenarios.GivenTypes.ConnectionStateChangeBehaviour.NoBehaviour
+        DefaultAblyTestScenarios.StartConnection.test(
+            DefaultAblyTestScenarios.StartConnection.GivenConfig(
+                initialConnectionState = ConnectionState.failed,
+                connectionReasonBehaviour = DefaultAblyTestScenarios.GivenTypes.ConnectionReasonMockBehaviour.Mocked(
+                    connectionReason
                 ),
-                DefaultAblyTestScenarios.StartConnection.ThenConfig(
-                    numberOfConnectionStateFetchesToVerify = 2,
-                    verifyConnectionReasonFetch = true,
-                    verifyConnectionOn = false,
-                    verifyConnect = false,
-                    verifyConnectionOff = false,
-                    resultOfStartConnectionCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.FailureWithConnectionException(
-                        ErrorInformation(
-                            connectionReason.code,
-                            0,
-                            connectionReason.message,
-                            null,
-                            null
-                        )
+                connectBehaviour = DefaultAblyTestScenarios.GivenTypes.ConnectionStateChangeBehaviour.NoBehaviour
+            ),
+            DefaultAblyTestScenarios.StartConnection.ThenConfig(
+                numberOfConnectionStateFetchesToVerify = 2,
+                verifyConnectionReasonFetch = true,
+                verifyConnectionOn = false,
+                verifyConnect = false,
+                verifyConnectionOff = false,
+                resultOfStartConnectionCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.FailureWithConnectionException(
+                    ErrorInformation(
+                        connectionReason.code,
+                        0,
+                        connectionReason.message,
+                        null,
+                        null
                     )
                 )
-            )
-        }
+            ),
+            this
+        )
     }
 
     @Test
-    fun `startConnection - when connection is in CONNECTED state`() {
+    fun `startConnection - when connection is in CONNECTED state`() = runTest {
         /* Given...
          *
          * ...that the connection’s `state` property returns CONNECTED...
@@ -999,52 +989,51 @@ class DefaultAblyTests {
          * ...and the call to `startConnection` (on the object under test) succeeds.
          */
 
-        runBlocking {
-            DefaultAblyTestScenarios.StartConnection.test(
-                DefaultAblyTestScenarios.StartConnection.GivenConfig(
-                    initialConnectionState = ConnectionState.connected,
-                    connectionReasonBehaviour = DefaultAblyTestScenarios.GivenTypes.ConnectionReasonMockBehaviour.NotMocked,
-                    connectBehaviour = DefaultAblyTestScenarios.GivenTypes.ConnectionStateChangeBehaviour.NoBehaviour,
-                ),
-                DefaultAblyTestScenarios.StartConnection.ThenConfig(
-                    numberOfConnectionStateFetchesToVerify = 1,
-                    verifyConnectionReasonFetch = false,
-                    verifyConnectionOn = false,
-                    verifyConnect = false,
-                    verifyConnectionOff = false,
-                    resultOfStartConnectionCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
-                )
-            )
-        }
+        DefaultAblyTestScenarios.StartConnection.test(
+            DefaultAblyTestScenarios.StartConnection.GivenConfig(
+                initialConnectionState = ConnectionState.connected,
+                connectionReasonBehaviour = DefaultAblyTestScenarios.GivenTypes.ConnectionReasonMockBehaviour.NotMocked,
+                connectBehaviour = DefaultAblyTestScenarios.GivenTypes.ConnectionStateChangeBehaviour.NoBehaviour,
+            ),
+            DefaultAblyTestScenarios.StartConnection.ThenConfig(
+                numberOfConnectionStateFetchesToVerify = 1,
+                verifyConnectionReasonFetch = false,
+                verifyConnectionOn = false,
+                verifyConnect = false,
+                verifyConnectionOff = false,
+                resultOfStartConnectionCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
+            ),
+            this
+        )
     }
 
     @Test
-    fun `startConnection - when, after connect called, connection changes to FAILED state`() {
-        /* Given...
-         *
-         * ...that the connection’s `state` property returns (arbitrarily chosen) INITIALIZED...
-         * ...and that when the Realtime instance’s `connect` method is called, its connection’s `on` method immediately emits a connection state change whose `previous` is INITIALIZED, `current` is FAILED, `retryIn` is (arbitrarily-chosen) 0 and `reason` is the arbitrarily-chosen error `connectionError`...
-         *
-         * When...
-         *
-         * ...the `startConnection` method is called on the object under test...
-         *
-         * Then...
-         * ...in the following order, precisely the following things happen...
-         *
-         * ...it fetches the connection’s state 2 times...
-         * ...and adds a listener to the connection using `on`...
-         * ...and tells the Realtime instance to connect...
-         * ...and removes a listener from the connection using `off`...
-         * ...and the call to `startConnection` (on the object under test) fails with a ConnectionException whose `code` and `message` are equal to those of `connectionError`.
-         */
+    fun `startConnection - when, after connect called, connection changes to FAILED state`() =
+        runTest {
+            /* Given...
+             *
+             * ...that the connection’s `state` property returns (arbitrarily chosen) INITIALIZED...
+             * ...and that when the Realtime instance’s `connect` method is called, its connection’s `on` method immediately emits a connection state change whose `previous` is INITIALIZED, `current` is FAILED, `retryIn` is (arbitrarily-chosen) 0 and `reason` is the arbitrarily-chosen error `connectionError`...
+             *
+             * When...
+             *
+             * ...the `startConnection` method is called on the object under test...
+             *
+             * Then...
+             * ...in the following order, precisely the following things happen...
+             *
+             * ...it fetches the connection’s state 2 times...
+             * ...and adds a listener to the connection using `on`...
+             * ...and tells the Realtime instance to connect...
+             * ...and removes a listener from the connection using `off`...
+             * ...and the call to `startConnection` (on the object under test) fails with a ConnectionException whose `code` and `message` are equal to those of `connectionError`.
+             */
 
-        val connectionError = ErrorInfo(
-            "example of an error message", /* arbitrarily chosen */
-            123 /* arbitrarily chosen */
-        )
+            val connectionError = ErrorInfo(
+                "example of an error message", /* arbitrarily chosen */
+                123 /* arbitrarily chosen */
+            )
 
-        runBlocking {
             DefaultAblyTestScenarios.StartConnection.test(
                 DefaultAblyTestScenarios.StartConnection.GivenConfig(
                     initialConnectionState = ConnectionState.initialized, /* arbitrarily-chosen */
@@ -1071,33 +1060,33 @@ class DefaultAblyTests {
                             null
                         )
                     )
-                )
+                ),
+                this
             )
         }
-    }
 
     @Test
-    fun `startConnection - when, after connect called, connection changes to CLOSED state`() {
-        /* Given...
-         *
-         * ...that the connection’s `state` property returns (arbitrarily chosen) INITIALIZED...
-         * ...and that when the Realtime instance’s `connect` method is called, its connection’s `on` method immediately emits a connection state change whose `previous` is INITIALIZED, `current` is CLOSED, `retryIn` is (arbitrarily-chosen) 0 and `reason` is (arbitrarily-chosen) null...
-         *
-         * When...
-         *
-         * ...the `startConnection` method is called on the object under test...
-         *
-         * Then...
-         * ...in the following order, precisely the following things happen...
-         *
-         * ...it fetches the connection’s state 2 times...
-         * ...and adds a listener to the connection using `on`...
-         * ...and tells the Realtime instance to connect...
-         * ...and removes a listener from the connection using `off`...
-         * ...and the call to `startConnection` (on the object under test) fails with a ConnectionException with `code` 100_000, `statusCode` 0, and `message` "Connection entered closed state whilst waiting for it to connect".
-         */
+    fun `startConnection - when, after connect called, connection changes to CLOSED state`() =
+        runTest {
+            /* Given...
+             *
+             * ...that the connection’s `state` property returns (arbitrarily chosen) INITIALIZED...
+             * ...and that when the Realtime instance’s `connect` method is called, its connection’s `on` method immediately emits a connection state change whose `previous` is INITIALIZED, `current` is CLOSED, `retryIn` is (arbitrarily-chosen) 0 and `reason` is (arbitrarily-chosen) null...
+             *
+             * When...
+             *
+             * ...the `startConnection` method is called on the object under test...
+             *
+             * Then...
+             * ...in the following order, precisely the following things happen...
+             *
+             * ...it fetches the connection’s state 2 times...
+             * ...and adds a listener to the connection using `on`...
+             * ...and tells the Realtime instance to connect...
+             * ...and removes a listener from the connection using `off`...
+             * ...and the call to `startConnection` (on the object under test) fails with a ConnectionException with `code` 100_000, `statusCode` 0, and `message` "Connection entered closed state whilst waiting for it to connect".
+             */
 
-        runBlocking {
             DefaultAblyTestScenarios.StartConnection.test(
                 DefaultAblyTestScenarios.StartConnection.GivenConfig(
                     initialConnectionState = ConnectionState.initialized, /* arbitrarily-chosen */
@@ -1124,10 +1113,10 @@ class DefaultAblyTests {
                             null
                         )
                     )
-                )
+                ),
+                this
             )
         }
-    }
 
     /*
     Observations from writing black-box tests for `stopConnection`:
@@ -1136,7 +1125,7 @@ class DefaultAblyTests {
     */
 
     @Test
-    fun `stopConnection - when connection is in INITIALIZED state`() {
+    fun `stopConnection - when connection is in INITIALIZED state`() = runTest {
         /* Given...
          *
          * ...that the connection’s `state` property returns INITIALIZED...
@@ -1153,52 +1142,51 @@ class DefaultAblyTests {
          * ...and the call to `stopConnection` (on the object under test) succeeds.
          */
 
-        runBlocking {
-            DefaultAblyTestScenarios.StopConnection.test(
-                DefaultAblyTestScenarios.StopConnection.GivenConfig(
-                    initialConnectionState = ConnectionState.initialized,
-                    closeBehaviour = DefaultAblyTestScenarios.GivenTypes.ConnectionStateChangeBehaviour.EmitStateChange(
-                        previous = ConnectionState.initialized,
-                        current = ConnectionState.closed,
-                        retryIn = 0,
-                        reason = null
-                    )
-                ),
-                DefaultAblyTestScenarios.StopConnection.ThenConfig(
-                    numberOfConnectionStateFetchesToVerify = 3,
-                    verifyConnectionOn = false,
-                    verifyClose = false,
-                    verifyConnectionOff = false,
-                    resultOfStopConnectionCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
-                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
-                    )
-                ),
-            )
-        }
+        DefaultAblyTestScenarios.StopConnection.test(
+            DefaultAblyTestScenarios.StopConnection.GivenConfig(
+                initialConnectionState = ConnectionState.initialized,
+                closeBehaviour = DefaultAblyTestScenarios.GivenTypes.ConnectionStateChangeBehaviour.EmitStateChange(
+                    previous = ConnectionState.initialized,
+                    current = ConnectionState.closed,
+                    retryIn = 0,
+                    reason = null
+                )
+            ),
+            DefaultAblyTestScenarios.StopConnection.ThenConfig(
+                numberOfConnectionStateFetchesToVerify = 3,
+                verifyConnectionOn = false,
+                verifyClose = false,
+                verifyConnectionOff = false,
+                resultOfStopConnectionCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
+                    expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
+                )
+            ),
+            this
+        )
     }
 
     @Test
-    fun `stopConnection - when connection is in CONNECTING state and, after close called, changes to CLOSED`() {
-        /* Given...
-         *
-         * ...that the connection’s `state` property returns CONNECTING...
-         * ...and that when the Realtime instance’s `close` method is called, its connection’s `on` method immediately emits a connection state change whose `previous` is CONNECTING, `current` is CLOSED, `retryIn` is (arbitrarily-chosen) 0 and `reason` is (arbitrarily-chosen) null...
-         *
-         * When...
-         *
-         * ...`stopConnection` is called on the object under test...
-         *
-         * Then...
-         * ...in the following order, precisely the following things happen...
-         *
-         * ...it fetches the connection’s state 3 times...
-         * ...and adds a listener to the connection using `on`...
-         * ...and tells the Realtime instance to close...
-         * ...and removes a listener from the connection using `off`...
-         * ...and the call to `stopConnection` (on the object under test) succeeds.
-         */
+    fun `stopConnection - when connection is in CONNECTING state and, after close called, changes to CLOSED`() =
+        runTest {
+            /* Given...
+             *
+             * ...that the connection’s `state` property returns CONNECTING...
+             * ...and that when the Realtime instance’s `close` method is called, its connection’s `on` method immediately emits a connection state change whose `previous` is CONNECTING, `current` is CLOSED, `retryIn` is (arbitrarily-chosen) 0 and `reason` is (arbitrarily-chosen) null...
+             *
+             * When...
+             *
+             * ...`stopConnection` is called on the object under test...
+             *
+             * Then...
+             * ...in the following order, precisely the following things happen...
+             *
+             * ...it fetches the connection’s state 3 times...
+             * ...and adds a listener to the connection using `on`...
+             * ...and tells the Realtime instance to close...
+             * ...and removes a listener from the connection using `off`...
+             * ...and the call to `stopConnection` (on the object under test) succeeds.
+             */
 
-        runBlocking {
             DefaultAblyTestScenarios.StopConnection.test(
                 DefaultAblyTestScenarios.StopConnection.GivenConfig(
                     initialConnectionState = ConnectionState.connecting,
@@ -1218,32 +1206,32 @@ class DefaultAblyTests {
                         expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
                     )
                 ),
+                this
             )
         }
-    }
 
     @Test
-    fun `stopConnection - when connection is in CONNECTED state and, after close called, changes to CLOSED`() {
-        /* Given...
-         *
-         * ...that the connection’s `state` property returns CONNECTED...
-         * ...and that when the Realtime instance’s `close` method is called, its connection’s `on` method immediately emits a connection state change whose `previous` is CONNECTED, `current` is CLOSED, `retryIn` is (arbitrarily-chosen) 0 and `reason` is (arbitrarily-chosen) null...
-         *
-         * When...
-         *
-         * ...`stopConnection` is called on the object under test...
-         *
-         * Then...
-         * ...in the following order, precisely the following things happen...
-         *
-         * ...it fetches the connection’s state 3 times...
-         * ...and adds a listener to the connection using `on`...
-         * ...and tells the Realtime instance to close...
-         * ...and removes a listener from the connection using `off`...
-         * ...and the call to `stopConnection` (on the object under test) succeeds.
-         */
+    fun `stopConnection - when connection is in CONNECTED state and, after close called, changes to CLOSED`() =
+        runTest {
+            /* Given...
+             *
+             * ...that the connection’s `state` property returns CONNECTED...
+             * ...and that when the Realtime instance’s `close` method is called, its connection’s `on` method immediately emits a connection state change whose `previous` is CONNECTED, `current` is CLOSED, `retryIn` is (arbitrarily-chosen) 0 and `reason` is (arbitrarily-chosen) null...
+             *
+             * When...
+             *
+             * ...`stopConnection` is called on the object under test...
+             *
+             * Then...
+             * ...in the following order, precisely the following things happen...
+             *
+             * ...it fetches the connection’s state 3 times...
+             * ...and adds a listener to the connection using `on`...
+             * ...and tells the Realtime instance to close...
+             * ...and removes a listener from the connection using `off`...
+             * ...and the call to `stopConnection` (on the object under test) succeeds.
+             */
 
-        runBlocking {
             DefaultAblyTestScenarios.StopConnection.test(
                 DefaultAblyTestScenarios.StopConnection.GivenConfig(
                     initialConnectionState = ConnectionState.connected,
@@ -1263,32 +1251,32 @@ class DefaultAblyTests {
                         expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
                     )
                 ),
+                this
             )
         }
-    }
 
     @Test
-    fun `stopConnection - when connection is in DISCONNECTED state and, after close called, changes to CLOSED`() {
-        /* Given...
-         *
-         * ...that the connection’s `state` property returns DISCONNECTED...
-         * ...and that when the Realtime instance’s `close` method is called, its connection’s `on` method immediately emits a connection state change whose `previous` is DISCONNECTED, `current` is CLOSED, `retryIn` is (arbitrarily-chosen) 0 and `reason` is (arbitrarily-chosen) null...
-         *
-         * When...
-         *
-         * ...`stopConnection` is called on the object under test...
-         *
-         * Then...
-         * ...in the following order, precisely the following things happen...
-         *
-         * ...it fetches the connection’s state 3 times...
-         * ...and adds a listener to the connection using `on`...
-         * ...and tells the Realtime instance to close...
-         * ...and removes a listener from the connection using `off`...
-         * ...and the call to `stopConnection` (on the object under test) succeeds.
-         */
+    fun `stopConnection - when connection is in DISCONNECTED state and, after close called, changes to CLOSED`() =
+        runTest {
+            /* Given...
+             *
+             * ...that the connection’s `state` property returns DISCONNECTED...
+             * ...and that when the Realtime instance’s `close` method is called, its connection’s `on` method immediately emits a connection state change whose `previous` is DISCONNECTED, `current` is CLOSED, `retryIn` is (arbitrarily-chosen) 0 and `reason` is (arbitrarily-chosen) null...
+             *
+             * When...
+             *
+             * ...`stopConnection` is called on the object under test...
+             *
+             * Then...
+             * ...in the following order, precisely the following things happen...
+             *
+             * ...it fetches the connection’s state 3 times...
+             * ...and adds a listener to the connection using `on`...
+             * ...and tells the Realtime instance to close...
+             * ...and removes a listener from the connection using `off`...
+             * ...and the call to `stopConnection` (on the object under test) succeeds.
+             */
 
-        runBlocking {
             DefaultAblyTestScenarios.StopConnection.test(
                 DefaultAblyTestScenarios.StopConnection.GivenConfig(
                     initialConnectionState = ConnectionState.disconnected,
@@ -1308,32 +1296,32 @@ class DefaultAblyTests {
                         expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
                     )
                 ),
+                this
             )
         }
-    }
 
     @Test
-    fun `stopConnection - when connection is in SUSPENDED state and, after close called, changes to CLOSED`() {
-        /* Given...
-         *
-         * ...that the connection’s `state` property returns SUSPENDED...
-         * ...and that when the Realtime instance’s `close` method is called, its connection’s `on` method immediately emits a connection state change whose `previous` is SUSPENDED, `current` is CLOSED, `retryIn` is (arbitrarily-chosen) 0 and `reason` is (arbitrarily-chosen) null...
-         *
-         * When...
-         *
-         * ...`stopConnection` is called on the object under test...
-         *
-         * Then...
-         * ...in the following order, precisely the following things happen...
-         *
-         * ...it fetches the connection’s state 3 times...
-         * ...and adds a listener to the connection using `on`...
-         * ...and tells the Realtime instance to close...
-         * ...and removes a listener from the connection using `off`...
-         * ...and the call to `stopConnection` (on the object under test) succeeds.
-         */
+    fun `stopConnection - when connection is in SUSPENDED state and, after close called, changes to CLOSED`() =
+        runTest {
+            /* Given...
+             *
+             * ...that the connection’s `state` property returns SUSPENDED...
+             * ...and that when the Realtime instance’s `close` method is called, its connection’s `on` method immediately emits a connection state change whose `previous` is SUSPENDED, `current` is CLOSED, `retryIn` is (arbitrarily-chosen) 0 and `reason` is (arbitrarily-chosen) null...
+             *
+             * When...
+             *
+             * ...`stopConnection` is called on the object under test...
+             *
+             * Then...
+             * ...in the following order, precisely the following things happen...
+             *
+             * ...it fetches the connection’s state 3 times...
+             * ...and adds a listener to the connection using `on`...
+             * ...and tells the Realtime instance to close...
+             * ...and removes a listener from the connection using `off`...
+             * ...and the call to `stopConnection` (on the object under test) succeeds.
+             */
 
-        runBlocking {
             DefaultAblyTestScenarios.StopConnection.test(
                 DefaultAblyTestScenarios.StopConnection.GivenConfig(
                     initialConnectionState = ConnectionState.suspended,
@@ -1353,32 +1341,32 @@ class DefaultAblyTests {
                         expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
                     )
                 ),
+                this
             )
         }
-    }
 
     @Test
-    fun `stopConnection - when connection is in CLOSING state and, after close called, changes to CLOSED`() {
-        /* Given...
-         *
-         * ...that the connection’s `state` property returns CLOSING...
-         * ...and that when the Realtime instance’s `close` method is called, its connection’s `on` method immediately emits a connection state change whose `previous` is CLOSING, `current` is CLOSED, `retryIn` is (arbitrarily-chosen) 0 and `reason` is (arbitrarily-chosen) null...
-         *
-         * When...
-         *
-         * ...`stopConnection` is called on the object under test...
-         *
-         * Then...
-         * ...in the following order, precisely the following things happen...
-         *
-         * ...it fetches the connection’s state 3 times...
-         * ...and adds a listener to the connection using `on`...
-         * ...and tells the Realtime instance to close...
-         * ...and removes a listener from the connection using `off`...
-         * ...and the call to `stopConnection` (on the object under test) succeeds.
-         */
+    fun `stopConnection - when connection is in CLOSING state and, after close called, changes to CLOSED`() =
+        runTest {
+            /* Given...
+             *
+             * ...that the connection’s `state` property returns CLOSING...
+             * ...and that when the Realtime instance’s `close` method is called, its connection’s `on` method immediately emits a connection state change whose `previous` is CLOSING, `current` is CLOSED, `retryIn` is (arbitrarily-chosen) 0 and `reason` is (arbitrarily-chosen) null...
+             *
+             * When...
+             *
+             * ...`stopConnection` is called on the object under test...
+             *
+             * Then...
+             * ...in the following order, precisely the following things happen...
+             *
+             * ...it fetches the connection’s state 3 times...
+             * ...and adds a listener to the connection using `on`...
+             * ...and tells the Realtime instance to close...
+             * ...and removes a listener from the connection using `off`...
+             * ...and the call to `stopConnection` (on the object under test) succeeds.
+             */
 
-        runBlocking {
             DefaultAblyTestScenarios.StopConnection.test(
                 DefaultAblyTestScenarios.StopConnection.GivenConfig(
                     initialConnectionState = ConnectionState.closing,
@@ -1398,12 +1386,12 @@ class DefaultAblyTests {
                         expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
                     )
                 ),
+                this
             )
         }
-    }
 
     @Test
-    fun `stopConnection - when connection is in CLOSED state`() {
+    fun `stopConnection - when connection is in CLOSED state`() = runTest {
         /* Given...
          *
          * ...that the connection’s `state` property returns CLOSED...
@@ -1419,27 +1407,26 @@ class DefaultAblyTests {
          * ...and the call to `stopConnection` (on the object under test) succeeds.
          */
 
-        runBlocking {
-            DefaultAblyTestScenarios.StopConnection.test(
-                DefaultAblyTestScenarios.StopConnection.GivenConfig(
-                    initialConnectionState = ConnectionState.closed,
-                    closeBehaviour = DefaultAblyTestScenarios.GivenTypes.ConnectionStateChangeBehaviour.NoBehaviour,
-                ),
-                DefaultAblyTestScenarios.StopConnection.ThenConfig(
-                    numberOfConnectionStateFetchesToVerify = 1,
-                    verifyConnectionOn = false,
-                    verifyClose = false,
-                    verifyConnectionOff = false,
-                    resultOfStopConnectionCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
-                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
-                    )
-                ),
-            )
-        }
+        DefaultAblyTestScenarios.StopConnection.test(
+            DefaultAblyTestScenarios.StopConnection.GivenConfig(
+                initialConnectionState = ConnectionState.closed,
+                closeBehaviour = DefaultAblyTestScenarios.GivenTypes.ConnectionStateChangeBehaviour.NoBehaviour,
+            ),
+            DefaultAblyTestScenarios.StopConnection.ThenConfig(
+                numberOfConnectionStateFetchesToVerify = 1,
+                verifyConnectionOn = false,
+                verifyClose = false,
+                verifyConnectionOff = false,
+                resultOfStopConnectionCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
+                    expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
+                )
+            ),
+            this
+        )
     }
 
     @Test
-    fun `stopConnection - when connection is in FAILED state`() {
+    fun `stopConnection - when connection is in FAILED state`() = runTest {
         /* Given...
          *
          * ...that the connection’s `state` property returns FAILED...
@@ -1455,45 +1442,44 @@ class DefaultAblyTests {
          * ...and the call to `stopConnection` (on the object under test) succeeds.
          */
 
-        runBlocking {
-            DefaultAblyTestScenarios.StopConnection.test(
-                DefaultAblyTestScenarios.StopConnection.GivenConfig(
-                    initialConnectionState = ConnectionState.failed,
-                    closeBehaviour = DefaultAblyTestScenarios.GivenTypes.ConnectionStateChangeBehaviour.NoBehaviour
-                ),
-                DefaultAblyTestScenarios.StopConnection.ThenConfig(
-                    numberOfConnectionStateFetchesToVerify = 2,
-                    verifyConnectionOn = false,
-                    verifyClose = false,
-                    verifyConnectionOff = false,
-                    resultOfStopConnectionCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
-                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
-                    )
-                ),
-            )
-        }
+        DefaultAblyTestScenarios.StopConnection.test(
+            DefaultAblyTestScenarios.StopConnection.GivenConfig(
+                initialConnectionState = ConnectionState.failed,
+                closeBehaviour = DefaultAblyTestScenarios.GivenTypes.ConnectionStateChangeBehaviour.NoBehaviour
+            ),
+            DefaultAblyTestScenarios.StopConnection.ThenConfig(
+                numberOfConnectionStateFetchesToVerify = 2,
+                verifyConnectionOn = false,
+                verifyClose = false,
+                verifyConnectionOff = false,
+                resultOfStopConnectionCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
+                    expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
+                )
+            ),
+            this
+        )
     }
 
     @Test
-    fun `stopConnection - when, after close is called, no connection state change occurs`() {
-        /* Given...
-         *
-         * ...that the connection’s `state` property returns CONNECTED (arbitrarily chosen)...
-         *
-         * When...
-         *
-         * ...`stopConnection` is called on the object under test...
-         *
-         * Then...
-         * ...in the following order, precisely the following things happen...
-         *
-         * ...it fetches the connection’s state 2 times...
-         * ...and adds a listener to the connection using `on`...
-         * ...and tells the Realtime instance to close...
-         * ...and the call to `stopConnection` (on the object under test) does not complete (see “Documenting the absence of built-in timeout” above).
-         */
+    fun `stopConnection - when, after close is called, no connection state change occurs`() =
+        runTest {
+            /* Given...
+             *
+             * ...that the connection’s `state` property returns CONNECTED (arbitrarily chosen)...
+             *
+             * When...
+             *
+             * ...`stopConnection` is called on the object under test...
+             *
+             * Then...
+             * ...in the following order, precisely the following things happen...
+             *
+             * ...it fetches the connection’s state 2 times...
+             * ...and adds a listener to the connection using `on`...
+             * ...and tells the Realtime instance to close...
+             * ...and the call to `stopConnection` (on the object under test) does not complete (see “Documenting the absence of built-in timeout” above).
+             */
 
-        runBlocking {
             DefaultAblyTestScenarios.StopConnection.test(
                 DefaultAblyTestScenarios.StopConnection.GivenConfig(
                     initialConnectionState = ConnectionState.connected, // arbitrarily chosen
@@ -1504,13 +1490,15 @@ class DefaultAblyTests {
                     verifyConnectionOn = true,
                     verifyClose = true,
                     verifyConnectionOff = false,
-                    resultOfStopConnectionCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.DoesNotTerminate(
-                        timeoutInMilliseconds = noTimeoutDemonstrationWaitingTimeInMilliseconds
+                    resultOfStopConnectionCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
+                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.FailureWithException(
+                            exceptionClass = TimeoutCancellationException::class.java
+                        )
                     )
-                )
+                ),
+                this
             )
         }
-    }
 
     /*
     Observations from writing black-box tests for `sendRawLocation`:
@@ -1519,7 +1507,7 @@ class DefaultAblyTests {
      */
 
     @Test
-    fun `sendRawLocation - when publish succeeds`() {
+    fun `sendRawLocation - when publish succeeds`() = runTest {
         /* Given...
          *
          * ...that the Channels instance’s `containsKey` method returns true...
@@ -1539,26 +1527,25 @@ class DefaultAblyTests {
          * ...and the call to `sendRawLocation` (on the object under test) succeeds.
          */
 
-        runBlocking {
-            DefaultAblyTestScenarios.SendRawLocation.test(
-                DefaultAblyTestScenarios.SendRawLocation.GivenConfig(
-                    channelsContainsKey = true,
-                    mockChannelsGet = true,
-                    publishBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Success
-                ),
-                DefaultAblyTestScenarios.SendRawLocation.ThenConfig(
-                    verifyChannelsGet = true,
-                    verifyPublish = true,
-                    resultOfSendRawLocationCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
-                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
-                    )
+        DefaultAblyTestScenarios.SendRawLocation.test(
+            DefaultAblyTestScenarios.SendRawLocation.GivenConfig(
+                channelsContainsKey = true,
+                mockChannelsGet = true,
+                publishBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Success
+            ),
+            DefaultAblyTestScenarios.SendRawLocation.ThenConfig(
+                verifyChannelsGet = true,
+                verifyPublish = true,
+                resultOfSendRawLocationCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
+                    expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
                 )
-            )
-        }
+            ),
+            this
+        )
     }
 
     @Test
-    fun `sendRawLocation - when publish fails`() {
+    fun `sendRawLocation - when publish fails`() = runTest {
         /* Given...
          *
          * ...that the Channels instance’s `containsKey` method returns true...
@@ -1583,36 +1570,35 @@ class DefaultAblyTests {
             123 /* arbitrarily chosen */
         )
 
-        runBlocking {
-            DefaultAblyTestScenarios.SendRawLocation.test(
-                DefaultAblyTestScenarios.SendRawLocation.GivenConfig(
-                    channelsContainsKey = true,
-                    mockChannelsGet = true,
-                    publishBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Failure(
-                        publishError
-                    )
-                ),
-                DefaultAblyTestScenarios.SendRawLocation.ThenConfig(
-                    verifyChannelsGet = true,
-                    verifyPublish = true,
-                    resultOfSendRawLocationCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
-                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.FailureWithConnectionException(
-                            ErrorInformation(
-                                publishError.code,
-                                0,
-                                publishError.message,
-                                null,
-                                null
-                            )
+        DefaultAblyTestScenarios.SendRawLocation.test(
+            DefaultAblyTestScenarios.SendRawLocation.GivenConfig(
+                channelsContainsKey = true,
+                mockChannelsGet = true,
+                publishBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.Failure(
+                    publishError
+                )
+            ),
+            DefaultAblyTestScenarios.SendRawLocation.ThenConfig(
+                verifyChannelsGet = true,
+                verifyPublish = true,
+                resultOfSendRawLocationCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
+                    expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.FailureWithConnectionException(
+                        ErrorInformation(
+                            publishError.code,
+                            0,
+                            publishError.message,
+                            null,
+                            null
                         )
                     )
                 )
-            )
-        }
+            ),
+            this
+        )
     }
 
     @Test
-    fun `sendRawLocation - when publish doesn't complete`() {
+    fun `sendRawLocation - when publish doesn't complete`() = runTest {
         /* Given...
          *
          * ...that the Channels instance’s `containsKey` method returns true...
@@ -1632,26 +1618,25 @@ class DefaultAblyTests {
          * ...and the call to `sendRawLocation` (on the object under test) does not complete (see “Documenting the absence of built-in timeout” above).
          */
 
-        runBlocking {
-            DefaultAblyTestScenarios.SendRawLocation.test(
-                DefaultAblyTestScenarios.SendRawLocation.GivenConfig(
-                    channelsContainsKey = true,
-                    mockChannelsGet = true,
-                    publishBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.DoesNotComplete
-                ),
-                DefaultAblyTestScenarios.SendRawLocation.ThenConfig(
-                    verifyChannelsGet = true,
-                    verifyPublish = true,
-                    resultOfSendRawLocationCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.DoesNotTerminate(
-                        timeoutInMilliseconds = noTimeoutDemonstrationWaitingTimeInMilliseconds
-                    )
+        DefaultAblyTestScenarios.SendRawLocation.test(
+            DefaultAblyTestScenarios.SendRawLocation.GivenConfig(
+                channelsContainsKey = true,
+                mockChannelsGet = true,
+                publishBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.DoesNotComplete
+            ),
+            DefaultAblyTestScenarios.SendRawLocation.ThenConfig(
+                verifyChannelsGet = true,
+                verifyPublish = true,
+                resultOfSendRawLocationCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.DoesNotTerminate(
+                    timeoutInMilliseconds = noTimeoutDemonstrationWaitingTimeInMilliseconds
                 )
-            )
-        }
+            ),
+            this
+        )
     }
 
     @Test
-    fun `sendRawLocation - when channel doesn't exist`() {
+    fun `sendRawLocation - when channel doesn't exist`() = runTest {
         /* Given...
          *
          * ...that the Channels instance’s `containsKey` method returns false...
@@ -1667,29 +1652,29 @@ class DefaultAblyTests {
          * ...and the call to `sendRawLocation` (on the object under test) succeeds.
          */
 
-        runBlocking {
-            DefaultAblyTestScenarios.SendRawLocation.test(
-                DefaultAblyTestScenarios.SendRawLocation.GivenConfig(
-                    channelsContainsKey = false,
-                    mockChannelsGet = false,
-                    publishBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.NotMocked
-                ),
-                DefaultAblyTestScenarios.SendRawLocation.ThenConfig(
-                    verifyChannelsGet = false,
-                    verifyPublish = false,
-                    resultOfSendRawLocationCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
-                        expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
-                    )
+        DefaultAblyTestScenarios.SendRawLocation.test(
+            DefaultAblyTestScenarios.SendRawLocation.GivenConfig(
+                channelsContainsKey = false,
+                mockChannelsGet = false,
+                publishBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.NotMocked
+            ),
+            DefaultAblyTestScenarios.SendRawLocation.ThenConfig(
+                verifyChannelsGet = false,
+                verifyPublish = false,
+                resultOfSendRawLocationCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.Terminates(
+                    expectedResult = DefaultAblyTestScenarios.ThenTypes.ExpectedResult.Success
                 )
-            )
-        }
+            ),
+            this
+        )
     }
 
     @Test
-    fun `close - behaviour when all presence leave calls succeed`() {
+    fun `close - behaviour when all presence leave calls succeed`() = runTest {
         // Given...
         // ...that the Realtime instance has 3 channels...
-        val testEnvironment = DefaultAblyTestEnvironment.create(numberOfTrackables = 3)
+        val testEnvironment =
+            DefaultAblyTestEnvironment.create(numberOfTrackables = 3, coroutineScope = this)
 
         // ...and that each of these channels...
         for (configuredChannel in testEnvironment.configuredChannels) {
@@ -1718,10 +1703,8 @@ class DefaultAblyTests {
         testEnvironment.stubConnectionOff()
 
         // When...
-        runBlocking {
-            // ... we call `close` on the object under test,
-            testEnvironment.objectUnderTest.close(PresenceData("" /* arbitrary value */))
-        }
+        // ... we call `close` on the object under test,
+        testEnvironment.objectUnderTest.close(PresenceData("" /* arbitrary value */))
 
         // Then...
         verifyOrder {
@@ -1744,10 +1727,11 @@ class DefaultAblyTests {
     }
 
     @Test
-    fun `close - behaviour when some presence leave calls succeed and others fail`() {
+    fun `close - behaviour when some presence leave calls succeed and others fail`() = runTest {
         // Given...
         // ...that the Realtime instance has 3 channels...
-        val testEnvironment = DefaultAblyTestEnvironment.create(numberOfTrackables = 3)
+        val testEnvironment =
+            DefaultAblyTestEnvironment.create(numberOfTrackables = 3, coroutineScope = this)
 
         testEnvironment.configuredChannels.forEachIndexed { i, configuredChannel ->
             configuredChannel.mockName()
@@ -1784,10 +1768,8 @@ class DefaultAblyTests {
         testEnvironment.stubConnectionOff()
 
         // When...
-        runBlocking {
-            // ... we call `close` on the object under test,
-            testEnvironment.objectUnderTest.close(PresenceData("" /* arbitrary value */))
-        }
+        // ... we call `close` on the object under test,
+        testEnvironment.objectUnderTest.close(PresenceData("" /* arbitrary value */))
 
         // Then...
         verifyOrder {
@@ -1812,24 +1794,25 @@ class DefaultAblyTests {
     }
 
     @Test
-    fun `close - behaviour when wrapped in a withTimeout block, when the timeout elapses during the presence leave operation`() {
-        // Given...
-        // ...that the Realtime instance has 1 channel...
-        val testEnvironment = DefaultAblyTestEnvironment.create(numberOfTrackables = 1)
-        val configuredChannel = testEnvironment.configuredChannels[0]
+    fun `close - behaviour when wrapped in a withTimeout block, when the timeout elapses during the presence leave operation`() =
+        runTest {
+            // Given...
+            // ...that the Realtime instance has 1 channel...
+            val testEnvironment =
+                DefaultAblyTestEnvironment.create(numberOfTrackables = 1, coroutineScope = this)
+            val configuredChannel = testEnvironment.configuredChannels[0]
 
-        configuredChannel.mockName()
-        // ...which is in the ATTACHED state...
-        configuredChannel.mockState(ChannelState.attached)
+            configuredChannel.mockName()
+            // ...which is in the ATTACHED state...
+            configuredChannel.mockState(ChannelState.attached)
 
-        // ...and which, when asked to leave presence, never finishes doing so...
-        configuredChannel.mockNonCompletingPresenceLeave()
+            // ...and which, when asked to leave presence, never finishes doing so...
+            configuredChannel.mockNonCompletingPresenceLeave()
 
-        testEnvironment.mockChannelsEntrySet()
+            testEnvironment.mockChannelsEntrySet()
 
-        // When...
-        var caughtTimeoutCancellationException = false
-        runBlocking {
+            // When...
+            var caughtTimeoutCancellationException = false
             try {
                 // ... we call `close` on the object under test within a withTimeout block, whose timeMillis is chosen arbitrarily but hopefully large enough so that internally, the call to `close` gets as far as telling the channel to leave presence...
                 withTimeout(1000) {
@@ -1838,22 +1821,21 @@ class DefaultAblyTests {
             } catch (_: TimeoutCancellationException) {
                 caughtTimeoutCancellationException = true
             }
+
+            // Then...
+            verifyOrder {
+                // ...the channel is told to leave presence...
+                configuredChannel.presenceMock.leave(any(), any())
+            }
+
+            // ...and the withTimeout call raises a TimeoutCancellationException.
+            Assert.assertTrue(caughtTimeoutCancellationException)
+
+            /* A note on why this test exists:
+             *
+             * 1. We have removed the ability for users to directly specify a timeout for the Publisher.stop() operation via a parameter on the `stop` method call, and our UPGRADING.md guide recommends that users instead wrap the call to `stop` in a `withTimeout` block. I wanted to check that this works...
+             *
+             * 2. ...specifically, I was a little unsure about whether it would work because I had seen, under certain circumstances which I now don’t remember, TimeoutCancellationException errors being caught by a `catch (e: Exception)` block in the internals of DefaultAbly (in an area related to discarding exceptions thrown by the presence leave operation), and not reaching the caller of withTimeout, which I remember finding surprising. I am being vague — and probably misguided and paranoid — here because I don't have much of an understanding of exactly how timeouts (and more generally, cancellation) work in Kotlin coroutines. But I wanted to be sure that the TimeoutCancellationException would indeed find its way to the caller of withTimeout.
+             */
         }
-
-        // Then...
-        verifyOrder {
-            // ...the channel is told to leave presence...
-            configuredChannel.presenceMock.leave(any(), any())
-        }
-
-        // ...and the withTimeout call raises a TimeoutCancellationException.
-        Assert.assertTrue(caughtTimeoutCancellationException)
-
-        /* A note on why this test exists:
-         *
-         * 1. We have removed the ability for users to directly specify a timeout for the Publisher.stop() operation via a parameter on the `stop` method call, and our UPGRADING.md guide recommends that users instead wrap the call to `stop` in a `withTimeout` block. I wanted to check that this works...
-         *
-         * 2. ...specifically, I was a little unsure about whether it would work because I had seen, under certain circumstances which I now don’t remember, TimeoutCancellationException errors being caught by a `catch (e: Exception)` block in the internals of DefaultAbly (in an area related to discarding exceptions thrown by the presence leave operation), and not reaching the caller of withTimeout, which I remember finding surprising. I am being vague — and probably misguided and paranoid — here because I don't have much of an understanding of exactly how timeouts (and more generally, cancellation) work in Kotlin coroutines. But I wanted to be sure that the TimeoutCancellationException would indeed find its way to the caller of withTimeout.
-         */
-    }
 }
