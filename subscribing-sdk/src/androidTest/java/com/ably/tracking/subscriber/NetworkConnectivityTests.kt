@@ -50,6 +50,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -388,7 +389,8 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
                     DefaultAbly(
                         ablySdkFactory,
                         connectionConfiguration,
-                        Logging.aatDebugLogger
+                        Logging.aatDebugLogger,
+                        CoroutineScope(Dispatchers.IO + SupervisorJob())
                     ),
                     Resolution(Accuracy.BALANCED, 1L, 0.0),
                     trackableId,
@@ -420,7 +422,8 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
             val defaultAbly = DefaultAbly(
                 DefaultAblySdkFactory(),
                 connectionConfiguration,
-                Logging.aatDebugLogger
+                Logging.aatDebugLogger,
+                CoroutineScope(Dispatchers.IO + SupervisorJob())
             )
 
             runBlocking {
@@ -430,7 +433,6 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
             val connectedToAbly = BooleanExpectation("Successfully connected to Ably")
             defaultAbly.connect(
                 trackableId,
-                ablyPublishingPresenceData,
                 useRewind = true,
                 willPublish = true,
             ) { result ->
@@ -438,6 +440,10 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
             }
             connectedToAbly.await(10)
             connectedToAbly.assertSuccess()
+
+            runBlocking {
+                defaultAbly.updatePresenceData(trackableId, ablyPublishingPresenceData)
+            }
 
             // Wait for channel to come online
             var receivedFirstOnlineStateChange = false
