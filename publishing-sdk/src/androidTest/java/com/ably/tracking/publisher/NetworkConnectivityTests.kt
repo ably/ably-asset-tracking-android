@@ -66,7 +66,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
-import java.net.URI
+import java.net.URL
 import java.util.Date
 import java.util.UUID
 import java.util.concurrent.TimeoutException
@@ -80,7 +80,9 @@ class NetworkConnectivityTests(private val testFault: Fault) {
     private var testResources: TestResources? = null
 
     companion object {
-        private val client = FaultProxyClient(baseUri = URI("http://localhost:8080"))
+        // 10.0.2.2 is the loopback interface of the host machine the emulator is running on
+        // https://developer.android.com/studio/run/emulator-networking.html#networkaddresses
+        private val client = FaultProxyClient(baseUrl = URL("http://10.0.2.2:8080"))
 
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
