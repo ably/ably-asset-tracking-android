@@ -363,9 +363,6 @@ class AttachUnresponsive(apiKey: String) : DropAction(
             override val name = "AttachUnresponsive"
         }
     }
-
-    // Test appears to crash JVM
-    override val skipSubscriberTest = true
 }
 
 /**
@@ -478,9 +475,6 @@ class EnterUnresponsive(apiKey: String) : UnresponsiveAfterAction(
  * Publisher should continue regardless.
  */
 class DisconnectWithFailedResume(apiKey: String) : ApplicationLayerFault(apiKey) {
-
-    override val skipSubscriberTest = true
-
     companion object {
         val fault = object : Fault() {
             override fun simulate(apiKey: String) = DisconnectWithFailedResume(apiKey)
