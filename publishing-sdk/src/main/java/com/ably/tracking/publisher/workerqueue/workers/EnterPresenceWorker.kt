@@ -3,7 +3,7 @@ package com.ably.tracking.publisher.workerqueue.workers
 import com.ably.tracking.ConnectionException
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.PresenceData
-import com.ably.tracking.common.isFatalAblyFailure
+import com.ably.tracking.common.isFatal
 import com.ably.tracking.common.workerqueue.DefaultWorker
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.Trackable
@@ -11,11 +11,17 @@ import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 import kotlinx.coroutines.delay
 
 /**
+ * Error code specific to enter presence on a suspended channel error
+ */
+private const val ENTER_PRESENCE_ON_SUSPENDED_CHANNEL_ERROR_CODE = 91_001
+
+/**
  * How long should we wait before queueing enter retry presence work if enter presence fails.
  */
 private const val PRESENCE_ENTER_DELAY_IN_MILLISECONDS = 15_000L
 
-internal class RetryEnterPresenceWorker(
+// TODO rename this to EnterPresenceWorker - probably already done by Andy
+internal class EnterPresenceWorker(
     private val trackable: Trackable,
     private val ably: Ably
 ) : DefaultWorker<PublisherProperties, WorkerSpecification>() {
@@ -57,11 +63,11 @@ internal class RetryEnterPresenceWorker(
 
         when {
             enterPresenceResult.isSuccess -> postWork(
-                WorkerSpecification.RetryEnterPresenceSuccess(
+                WorkerSpecification.EnterPresenceSuccess(
                     trackable
                 )
             )
-            enterPresenceResult.isFatalAblyFailure() -> postFailTrackableWork(
+            isFatalFailure(enterPresenceResult) -> postFailTrackableWork(
                 postWork,
                 enterPresenceResult
             )
@@ -70,6 +76,12 @@ internal class RetryEnterPresenceWorker(
                 postWork(WorkerSpecification.RetryEnterPresence(trackable))
             }
         }
+    }
+
+    private fun isFatalFailure(result: Result<Unit>): Boolean {
+        val connectionException = result.exceptionOrNull() as? ConnectionException
+        return connectionException != null && connectionException.isFatal() &&
+            connectionException.errorInformation.code != ENTER_PRESENCE_ON_SUSPENDED_CHANNEL_ERROR_CODE
     }
 
     private fun postFailTrackableWork(

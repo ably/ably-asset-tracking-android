@@ -5,28 +5,7 @@ plugins {
     id 'org.jlleitschuh.gradle.ktlint'
 }
 
-// These files are optional for builds of this project.
-// They need to be placed in this project's folder (e.g. by our assemble GitHub workflow).
-// They should never be checked in, hence why they're also in this project's Git ignore file.
-final firebaseAppDistributionPrivateKeyFile = project.file('firebase-app-distribution-private-key.json')
-final signingKeyStoreFile = project.file('signing.jks')
-final hasGoogleServices = project.file('google-services.json').exists()
-final canDistribute = firebaseAppDistributionPrivateKeyFile.exists()
-
-if (hasGoogleServices) {
-    apply plugin: 'com.google.gms.google-services'
-    apply plugin: 'com.google.firebase.crashlytics'
-}
-if (canDistribute) {
-    if (!hasGoogleServices) {
-        // When we configure `android.buildTypes.release.firebaseAppDistribution` then we don't want to have to supply
-        // values which can already be found in google-services.json (e.g. appId).
-        // Therefore, this project build insists on Google Services configuration being available if Firebase App
-        // Distribution (`canDistribute`) is in the mix.
-        throw new GradleException("Firebase App Distribution private key file was found but Google Services file was not found.")
-    }
-    apply plugin: 'com.google.firebase.appdistribution'
-}
+apply from: "../firebase-app.gradle"
 
 android {
     defaultConfig {
@@ -37,32 +16,6 @@ android {
         resValue "string", "mapbox_access_token", findProperty('MAPBOX_ACCESS_TOKEN') ?: ""
     }
     namespace 'com.ably.tracking.example.publisher'
-
-    if (canDistribute) {
-        if (!(signingKeyStoreFile.exists())) {
-            throw new GradleException("Java KeyStore file was not found, despite the presence of a Firebase App Distribution private key file.")
-        }
-
-        signingConfigs {
-            release {
-                keyAlias findProperty("ANDROID_SIGNING_KEY_ALIAS")
-                keyPassword findProperty("ANDROID_SIGNING_KEY_PASSWORD")
-                storeFile signingKeyStoreFile
-                storePassword findProperty("ANDROID_SIGNING_STORE_PASSWORD")
-            }
-        }
-    }
-
-    buildTypes {
-        release {
-            if (canDistribute) {
-                firebaseAppDistribution {
-                    serviceCredentialsFile = firebaseAppDistributionPrivateKeyFile.getAbsolutePath()
-                }
-                signingConfig signingConfigs.release
-            }
-        }
-    }
 }
 
 dependencies {
@@ -74,15 +27,4 @@ dependencies {
     implementation 'pub.devrel:easypermissions:3.0.0'
     // This version needs to be compatible with the "com.mapbox.navigation:core" dependency version from publishing-sdk.
     implementation 'com.mapbox.maps:android:10.10.0'
-
-    // Add application runtime implementation dependencies required for Crashlytics.
-    if (hasGoogleServices) {
-        // The BoM for the Firebase platform (it specifies the versions for Firebase dependencies).
-        implementation platform('com.google.firebase:firebase-bom:31.2.0')
-
-        // Firebase dependencies, which should not specifies versions as those are provided
-        // for us because we're including the BoM above.
-        // see: https://firebase.google.com/docs/crashlytics/get-started?platform=android
-        implementation 'com.google.firebase:firebase-crashlytics'
-    }
 }

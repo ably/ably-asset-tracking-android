@@ -7,6 +7,7 @@ import com.ably.tracking.subscriber.SubscriberProperties
 import com.ably.tracking.subscriber.workerqueue.WorkerSpecification
 import com.ably.tracking.test.common.mockConnectFailure
 import com.ably.tracking.test.common.mockConnectSuccess
+import com.ably.tracking.test.common.mockEnterPresenceSuccess
 import com.ably.tracking.test.common.mockStartConnectionFailure
 import com.ably.tracking.test.common.mockStartConnectionSuccess
 import io.mockk.Runs
@@ -27,18 +28,19 @@ internal class StartConnectionWorkerTest {
     private val trackableId = "123123"
     private val callbackFunction: ResultCallbackFunction<Unit> = mockk(relaxed = true)
     private val subscriberProperties: SubscriberProperties = mockk()
-    private val presenceData: PresenceData = mockk()
     private val startConnectionWorker = StartConnectionWorker(ably, trackableId, callbackFunction)
 
     private val asyncWorks = mutableListOf<suspend () -> Unit>()
     private val postedWorks = mutableListOf<WorkerSpecification>()
 
     @Test
-    fun `should call ably connect and post update trackable worker specification on success`() = runTest {
+    fun `should call ably connect and ably enterChannelPresence and post update trackable worker specification on success`() = runTest {
         // given
         ably.mockStartConnectionSuccess()
         ably.mockConnectSuccess(trackableId)
+        ably.mockEnterPresenceSuccess(trackableId)
         every { subscriberProperties.emitStateEventsIfRequired() } just Runs
+        val presenceData: PresenceData = mockk()
         every { subscriberProperties.presenceData } returns presenceData
 
         // when
@@ -56,10 +58,10 @@ internal class StartConnectionWorkerTest {
             ably.startConnection()
             ably.connect(
                 trackableId,
-                presenceData,
                 useRewind = true,
                 willSubscribe = true
             )
+            ably.enterChannelPresence(trackableId, presenceData)
         }
         Assert.assertEquals(WorkerSpecification.SubscribeForPresenceMessages(callbackFunction), postedWorks[0])
     }
@@ -70,7 +72,6 @@ internal class StartConnectionWorkerTest {
         ably.mockStartConnectionSuccess()
         ably.mockConnectFailure(trackableId)
         every { subscriberProperties.emitStateEventsIfRequired() } just Runs
-        every { subscriberProperties.presenceData } returns presenceData
 
         // when
         val updatedProperties =
@@ -87,7 +88,6 @@ internal class StartConnectionWorkerTest {
             ably.startConnection()
             ably.connect(
                 trackableId,
-                presenceData,
                 useRewind = true,
                 willSubscribe = true
             )
@@ -118,7 +118,6 @@ internal class StartConnectionWorkerTest {
         coVerify(exactly = 0) {
             ably.connect(
                 trackableId,
-                subscriberProperties.presenceData,
                 useRewind = true,
                 willSubscribe = true
             )

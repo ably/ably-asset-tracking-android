@@ -1,5 +1,4 @@
 # Secrets which should never be committed
-/src/main/res/raw/amplifyconfiguration.json
 /google-services.json
 
 # Intermediary or transient folders created when assembling the app.

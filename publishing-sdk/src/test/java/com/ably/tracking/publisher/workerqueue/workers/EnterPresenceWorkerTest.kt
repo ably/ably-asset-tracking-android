@@ -21,14 +21,15 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class RetryEnterPresenceWorkerTest {
+class EnterPresenceWorkerTest {
+
+    private val trackable = Trackable("testtrackable")
 
     private val ably: Ably = mockk {
         coEvery { startConnection() } returns Result.success(Unit)
     }
-    private val trackable = Trackable("testtrackable")
 
-    private val worker = RetryEnterPresenceWorker(trackable, ably)
+    private val worker = EnterPresenceWorker(trackable, ably)
 
     private val asyncWorks = mutableListOf<suspend () -> Unit>()
     private val postedWorks = mutableListOf<WorkerSpecification>()
@@ -39,7 +40,6 @@ class RetryEnterPresenceWorkerTest {
             // given
             val initialProperties = createPublisherProperties()
             initialProperties.trackables.add(trackable)
-            initialProperties.duplicateTrackableGuard.clear(trackable)
             mockChannelStateChange(ConnectionState.ONLINE)
             ably.mockEnterPresenceSuccess(trackable.id)
 
@@ -53,7 +53,7 @@ class RetryEnterPresenceWorkerTest {
             // then
             asyncWorks.executeAll()
 
-            val postedWork = postedWorks[0] as WorkerSpecification.RetryEnterPresenceSuccess
+            val postedWork = postedWorks[0] as WorkerSpecification.EnterPresenceSuccess
             assertThat(postedWork.trackable).isEqualTo(trackable)
         }
     }
@@ -63,7 +63,6 @@ class RetryEnterPresenceWorkerTest {
         runTest {
             // given
             val initialProperties = createPublisherProperties()
-            initialProperties.duplicateTrackableGuard.clear(trackable)
 
             // when
             worker.doWork(
@@ -87,7 +86,6 @@ class RetryEnterPresenceWorkerTest {
             // given
             val initialProperties = createPublisherProperties()
             initialProperties.trackables.add(trackable)
-            initialProperties.duplicateTrackableGuard.clear(trackable)
             initialProperties.trackableRemovalGuard.markForRemoval(trackable) {}
 
             // when
@@ -111,7 +109,6 @@ class RetryEnterPresenceWorkerTest {
         runTest(context = UnconfinedTestDispatcher()) {
             // given
             val initialProperties = createPublisherProperties()
-            initialProperties.duplicateTrackableGuard.clear(trackable)
             initialProperties.trackables.add(trackable)
             mockChannelStateChange(ConnectionState.ONLINE)
             ably.mockEnterPresenceFailure(trackable.id, isFatal = false)
@@ -140,7 +137,6 @@ class RetryEnterPresenceWorkerTest {
         runTest {
             // given
             val initialProperties = createPublisherProperties()
-            initialProperties.duplicateTrackableGuard.clear(trackable)
             initialProperties.trackables.add(trackable)
             mockChannelStateChange(ConnectionState.ONLINE)
             ably.mockEnterPresenceFailure(trackable.id, isFatal = true)
@@ -161,11 +157,55 @@ class RetryEnterPresenceWorkerTest {
     }
 
     @Test
+    fun `should post RetryEnterPresence work when connection failed with a fatal error with 91001 error code`() {
+        runTest {
+            // given
+            val initialProperties = createPublisherProperties()
+            initialProperties.trackables.add(trackable)
+            mockChannelStateChange(ConnectionState.ONLINE)
+            ably.mockEnterPresenceChannelSuspendedException(trackable.id)
+
+            // when
+            worker.doWork(
+                initialProperties,
+                asyncWorks.appendWork(),
+                postedWorks.appendSpecification()
+            )
+
+            // then
+            asyncWorks.launchAll(this)
+
+            assertThat(postedWorks).isEmpty()
+
+            advanceUntilIdle()
+
+            assertThat(postedWorks)
+                .contains(WorkerSpecification.RetryEnterPresence(trackable))
+        }
+    }
+
+    private fun Ably.mockEnterPresenceChannelSuspendedException(trackableId: String) {
+        coEvery {
+            enterChannelPresence(trackableId, any())
+        } returns Result.failure(channelSuspendedException())
+    }
+
+    // returns connection exception specific to enter presence on a suspended channel
+    private fun channelSuspendedException() = ConnectionException(
+        ErrorInformation(
+            code = 91001,
+            statusCode = 400,
+            message = "Test",
+            href = null,
+            cause = null
+        )
+    )
+
+    @Test
     fun `should post FailTrackable work when connection when channel transitions to failed`() {
         runTest {
             // given
             val initialProperties = createPublisherProperties()
-            initialProperties.duplicateTrackableGuard.clear(trackable)
             initialProperties.trackables.add(trackable)
             mockChannelStateChange(ConnectionState.FAILED)
 

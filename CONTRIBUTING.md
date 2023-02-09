@@ -193,7 +193,8 @@ The release process must include the following steps:
 
 1. Ensure that all work intended for this release has landed to `main`
 2. Create a release branch named like `release/1.2.3`
-3. Add a commit to bump the version number - this commit should also include an update to the root `README.md`, where the latest version number is explicitly referenced
+3. Add a commit to bump the version number - this commit should also include an update to the root `README.md`,where
+the latest version number is explicitly referenced. You must also bump version code by 1 for each version bump.
 4. Add a commit to update the change log
 5. Push the release branch to GitHub
 6. Open a PR for the release against the release branch you just pushed
@@ -212,3 +213,13 @@ We tend to use [github_changelog_generator](https://github.com/skywinder/Github-
 Your mileage may vary, but it seems the most reliable method to invoke the generator is something like:
 `github_changelog_generator -u ably -p ably-asset-tracking-android --since-tag v1.0.0 --output delta.md`
 and then manually merge the delta contents in to the main change log (where `v1.0.0` in this case is the tag for the previous release).
+
+### Checking that the release reached Maven Central
+
+There is always a slight delay after our publish workflow has completed until the release appears at Maven Central, measuring in minutes.
+
+The following sites will get updated once the release is available:
+
+- [central.sonatype.com](https://central.sonatype.com/search?sort=name&namespace=com.ably.tracking) - their newest Web UI (at the time of writing this, at least) so is likely to be the quickest to get updated
+- [search.maven.org](https://search.maven.org/search?q=g:com.ably.tracking)
+- [mvnrepository.com](https://mvnrepository.com/artifact/com.ably.tracking)

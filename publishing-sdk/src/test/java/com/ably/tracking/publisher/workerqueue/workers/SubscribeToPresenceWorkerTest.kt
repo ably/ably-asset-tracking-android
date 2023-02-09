@@ -19,12 +19,12 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
 @ExperimentalCoroutinesApi
-internal class RetrySubscribeToPresenceWorkerTest {
+internal class SubscribeToPresenceWorkerTest {
     private val trackable = Trackable("test-trackable")
     private val ably = mockk<Ably>(relaxed = true)
     private val presenceUpdateListener: (PresenceMessage) -> Unit = {}
 
-    private val worker = RetrySubscribeToPresenceWorker(trackable, ably, null, presenceUpdateListener)
+    private val worker = SubscribeToPresenceWorker(trackable, ably, null, presenceUpdateListener)
 
     private val asyncWorks = mutableListOf<suspend () -> Unit>()
     private val postedWorks = mutableListOf<WorkerSpecification>()
@@ -33,6 +33,25 @@ internal class RetrySubscribeToPresenceWorkerTest {
     fun `should post no async works if the trackable is not in the added trackable set`() {
         // given
         val initialProperties = createPublisherProperties()
+
+        // when
+        worker.doWork(
+            initialProperties,
+            asyncWorks.appendWork(),
+            postedWorks.appendSpecification()
+        )
+
+        // then
+        assertThat(asyncWorks).isEmpty()
+        assertThat(postedWorks).isEmpty()
+    }
+
+    @Test
+    fun `should post no async works if the trackable is marked for removal`() {
+        // given
+        val initialProperties = createPublisherProperties()
+        initialProperties.trackables.add(trackable)
+        initialProperties.trackableRemovalGuard.markForRemoval(trackable) {}
 
         // when
         worker.doWork(
@@ -108,7 +127,7 @@ internal class RetrySubscribeToPresenceWorkerTest {
 
             // then
             assertThat(postedWorks).hasSize(1)
-            val postedWork = postedWorks.first() as WorkerSpecification.RetrySubscribeToPresenceSuccess
+            val postedWork = postedWorks.first() as WorkerSpecification.SubscribeToPresenceSuccess
             assertThat(postedWork.trackable).isEqualTo(trackable)
         }
 
@@ -132,7 +151,7 @@ internal class RetrySubscribeToPresenceWorkerTest {
 
             // then
             assertThat(postedWorks).hasSize(1)
-            val postedWork = postedWorks.first() as WorkerSpecification.RetrySubscribeToPresence
+            val postedWork = postedWorks.first() as WorkerSpecification.SubscribeToPresence
             assertThat(postedWork.trackable).isEqualTo(trackable)
             assertThat(postedWork.presenceUpdateListener).isEqualTo(presenceUpdateListener)
         }

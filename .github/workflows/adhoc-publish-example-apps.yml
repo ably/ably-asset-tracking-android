@@ -1,18 +1,21 @@
 # This is a manually triggered workflow (hence on: workflow_dispatch).
 # See: https://docs.github.com/en/actions/reference/events-that-trigger-workflows#manual-events
 
-name: Publish Example Apps
+name: Adhoc Publish Example Apps
 on:
   workflow_dispatch:
     inputs:
-      version:
-        description: 'Version, without v prefix, appended to v to locate tag'
-        required: true
       include-individual-riders:
         type: boolean
         description: Include the `individual-riders` testers' group, immediately adding them to and notifying them of the new release.
         default: true
         required: true
+      release-notes:
+        type: string
+        description: |
+          Additional information to add to the release notes.
+          Not required but can be helpful to let testers know what's new as they may be waiting upon this feature or fix.
+        required: false
 
 jobs:
   publish:
@@ -20,8 +23,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-        with:
-          ref: v${{ github.event.inputs.version }}
 
       # TODO replace branch ref (underlying https://github.com/ably/github-event-context-action/pull/2) with `v1` tag
       - uses: ably/github-event-context-action@add-build-metadata-output-and-release
@@ -67,8 +68,10 @@ jobs:
           ORG_GRADLE_PROJECT_MAPBOX_DOWNLOADS_TOKEN: ${{ secrets.MAPBOX_DOWNLOADS_TOKEN }}
           ORG_GRADLE_PROJECT_MAPBOX_ACCESS_TOKEN: ${{ secrets.MAPBOX_ACCESS_TOKEN }}
           ORG_GRADLE_PROJECT_ABLY_API_KEY: ${{ secrets.ABLY_API_KEY }}
+          ORG_GRADLE_PROJECT_ABLY_BUILD_CONTEXT_TITLE: ${{ steps.context.outputs.title }}
+          ORG_GRADLE_PROJECT_ABLY_BUILD_CONTEXT_BUILD_METADATA: ${{ steps.context.outputs.build-metadata }}
           ORG_GRADLE_PROJECT_APP_DISTRIBUTION_INCLUDE_INDIVIDUAL_RIDERS: ${{ github.event.inputs.include-individual-riders }}
-          ORG_GRADLE_PROJECT_APP_DISTRIBUTION_RELEASE_NOTES: "${{ steps.context.outputs.title }} [${{ steps.context.outputs.build-metadata }}]"
+          ORG_GRADLE_PROJECT_APP_DISTRIBUTION_RELEASE_NOTES: ${{ github.event.inputs.release-notes }}
         run: |
           ./gradlew \
             :publishing-example-app:assembleRelease \
