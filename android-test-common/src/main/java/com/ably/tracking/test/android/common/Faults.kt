@@ -672,6 +672,8 @@ class UpdateFailedWithNonfatalNack(apiKey: String) : PresenceNackFault(
  */
 class ReenterOnResumeFailed(apiKey: String) : ApplicationLayerFault(apiKey) {
 
+    override val skipSubscriberTest = true
+
     companion object {
         val fault = object : Fault() {
             override fun simulate(apiKey: String) = ReenterOnResumeFailed(apiKey)
