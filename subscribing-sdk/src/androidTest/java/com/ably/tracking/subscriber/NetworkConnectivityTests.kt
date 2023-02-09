@@ -122,7 +122,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
     fun faultBeforeStartingSubscriber() {
         withResources { resources ->
             resources.fault.enable()
-            val subscriber  = resources.getSubscriber()
+            val subscriber = resources.getSubscriber()
             val defaultAbly = resources.createAndStartPublishingAblyConnection()
 
             // Add an active trackable while fault active and subscriber is offline
@@ -136,7 +136,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
                 faultType = resources.fault.type,
                 locationUpdate = null,
                 publisherResolution = null,
-                subscriberResolution = null,
+                subscriberResolution = subscriberResolution,
                 subscriberResolutionPreferenceFlow = resources.subscriberResolutions
             ).waitForStateTransition {
                 // Connect up a publisher to do publisher things
@@ -194,11 +194,15 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
 
             // Assert the subscriber goes online
             val locationUpdate = Location(1.0, 2.0, 4000.1, 351.2f, 331.1f, 22.5f, 1234)
+            val publisherResolution = Resolution(Accuracy.BALANCED, 1L, 0.0)
+            val subscriberResolution = Resolution(Accuracy.BALANCED, 1L, 0.0)
             SubscriberMonitor.onlineWithoutFail(
                 subscriber = subscriber,
                 label = "[no fault] subscriber online",
                 trackableId = resources.trackableId,
                 locationUpdate = locationUpdate,
+                publisherResolution = publisherResolution,
+                subscriberResolution = subscriberResolution,
                 timeout = 10_000L,
                 subscriberResolutionPreferenceFlow = resources.subscriberResolutions
             ).waitForStateTransition {
@@ -225,6 +229,8 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
                 label = "[fault active] subscriber",
                 trackableId = resources.trackableId,
                 faultType = resources.fault.type,
+                publisherResolution = publisherResolution,
+                subscriberResolution = subscriberResolution,
                 subscriberResolutionPreferenceFlow = resources.subscriberResolutions
             ).waitForStateTransition {
                 // Start the fault
@@ -238,6 +244,8 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
                 label = "[fault resolved] subscriber",
                 trackableId = resources.trackableId,
                 faultType = resources.fault.type,
+                publisherResolution = publisherResolution,
+                subscriberResolution = subscriberResolution,
                 subscriberResolutionPreferenceFlow = resources.subscriberResolutions
             ).waitForStateTransition {
                 resources.fault.resolve()
