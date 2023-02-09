@@ -187,11 +187,61 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
      * We expect the subscriber to stop cleanly, with no exceptions.
      */
     @Test
-    fun faultAfterStartingSubscriber() {
+    fun faultBeforeStoppingSubscriber() {
         withResources { resources ->
-            resources.getSubscriber()
-            resources.fault.enable()
-            resources.shutdownSubscriber()
+            val subscriber = resources.getSubscriber()
+            val defaultAbly = resources.createAndStartPublishingAblyConnection()
+
+            // Assert the subscriber goes online
+            val locationUpdate = Location(1.0, 2.0, 4000.1, 351.2f, 331.1f, 22.5f, 1234)
+            SubscriberMonitor.onlineWithoutFail(
+                subscriber = subscriber,
+                label = "[no fault] subscriber online",
+                trackableId = resources.trackableId,
+                locationUpdate = locationUpdate,
+                timeout = 10_000L,
+                subscriberResolutionPreferenceFlow = resources.subscriberResolutions
+            ).waitForStateTransition {
+                val locationSent = BooleanExpectation("Location sent successfully on Ably channel")
+                defaultAbly.sendEnhancedLocation(
+                    resources.trackableId,
+                    EnhancedLocationUpdate(
+                        locationUpdate,
+                        arrayListOf(),
+                        arrayListOf(),
+                        LocationUpdateType.ACTUAL
+                    )
+                ) { result ->
+                    locationSent.fulfill(result.isSuccess)
+                }
+
+                locationSent.await(10)
+                locationSent.assertSuccess()
+            }
+
+            // Enable the fault, shutdown the subscriber
+            SubscriberMonitor.forActiveFaultWhenShuttingDownSubscriber(
+                subscriber = subscriber,
+                label = "[fault active] subscriber",
+                trackableId = resources.trackableId,
+                faultType = resources.fault.type,
+                subscriberResolutionPreferenceFlow = resources.subscriberResolutions
+            ).waitForStateTransition {
+                // Start the fault
+                resources.fault.enable()
+                resources.shutdownSubscriber()
+            }.close()
+
+            // Resolve the fault
+            SubscriberMonitor.forResolvedFaultWithSubscriberStopped(
+                subscriber = subscriber,
+                label = "[fault resolved] subscriber",
+                trackableId = resources.trackableId,
+                faultType = resources.fault.type,
+                subscriberResolutionPreferenceFlow = resources.subscriberResolutions
+            ).waitForStateTransition {
+                resources.fault.resolve()
+            }.close()
         }
     }
 
@@ -609,7 +659,7 @@ class SubscriberMonitor(
 
     companion object {
         /**
-         * Construct [PublisherMonitor] configured to expect appropriate state transitions
+         * Construct [SubscriberMonitor] configured to expect appropriate state transitions
          * for the given fault type while it is active. [label] will be used for logging captured transitions.
          */
         fun forActiveFault(
@@ -620,8 +670,8 @@ class SubscriberMonitor(
             locationUpdate: Location? = null,
             publisherResolution: Resolution? = null,
             publisherDisconnected: Boolean = false,
-            subscriberResolution: Resolution?,
-            subscriberResolutionPreferenceFlow: SharedFlow<Resolution>
+            subscriberResolution: Resolution? = null,
+            subscriberResolutionPreferenceFlow: SharedFlow<Resolution>,
         ) = SubscriberMonitor(
             subscriber = subscriber,
             label = label,
@@ -659,7 +709,57 @@ class SubscriberMonitor(
         )
 
         /**
-         * Construct a [PublisherMonitor] configured to expect appropriate transitions for
+         * Construct [SubscriberMonitor] configured to expect appropriate state transitions
+         * for the given fault type while it is active but the subscriber is shutting down.
+         *
+         * [label] will be used for logging captured transitions.
+         */
+        fun forActiveFaultWhenShuttingDownSubscriber(
+            subscriber: Subscriber,
+            label: String,
+            trackableId: String,
+            faultType: FaultType,
+            locationUpdate: Location? = null,
+            publisherResolution: Resolution? = null,
+            publisherDisconnected: Boolean = false,
+            subscriberResolution: Resolution? = null,
+            subscriberResolutionPreferenceFlow: SharedFlow<Resolution>,
+        ) = SubscriberMonitor(
+            subscriber = subscriber,
+            label = label,
+            trackableId = trackableId,
+            expectedState = when (faultType) {
+                is FaultType.Fatal -> TrackableState.Failed::class
+                else -> TrackableState.Offline::class
+            },
+            failureStates = when (faultType) {
+                is FaultType.Fatal -> setOf(TrackableState.Offline::class)
+                is FaultType.Nonfatal, is FaultType.NonfatalWhenResolved ->
+                    setOf(TrackableState.Failed::class)
+            },
+            expectedSubscriberPresence = when (faultType) {
+                is FaultType.Nonfatal -> false
+                is FaultType.NonfatalWhenResolved -> true
+                is FaultType.Fatal -> false
+            },
+            expectedPublisherPresence = when (faultType) {
+                is FaultType.Nonfatal -> !publisherDisconnected
+                is FaultType.NonfatalWhenResolved -> false
+                is FaultType.Fatal -> false
+            },
+            expectedLocation = locationUpdate,
+            timeout = when (faultType) {
+                is FaultType.Fatal -> faultType.failedWithinMillis
+                is FaultType.Nonfatal -> faultType.resolvedWithinMillis
+                is FaultType.NonfatalWhenResolved -> faultType.offlineWithinMillis
+            },
+            expectedPublisherResolution = publisherResolution,
+            expectedSubscriberResolution = subscriberResolution,
+            subscriberResolutionPreferenceFlow = subscriberResolutionPreferenceFlow
+        )
+
+        /**
+         * Construct a [SubscriberMonitor] configured to expect appropriate transitions for
          * the given fault type after it has been resolved. [label] is used for logging.
          */
         fun forResolvedFault(
@@ -670,7 +770,7 @@ class SubscriberMonitor(
             locationUpdate: Location? = null,
             publisherResolution: Resolution? = null,
             expectedPublisherPresence: Boolean = true,
-            subscriberResolution: Resolution,
+            subscriberResolution: Resolution? = null,
             subscriberResolutionPreferenceFlow: SharedFlow<Resolution>
         ) = SubscriberMonitor(
             subscriber = subscriber,
@@ -708,7 +808,41 @@ class SubscriberMonitor(
         )
 
         /**
-         * Construct a [PublisherMonitor] configured to expect a Trackable to come
+         * Construct a [SubscriberMonitor] configured to expect appropriate transitions for
+         * the given fault type after it has been resolved and the publisher is stopped.
+         *
+         * [label] is used for logging.
+         */
+        fun forResolvedFaultWithSubscriberStopped(
+            subscriber: Subscriber,
+            label: String,
+            trackableId: String,
+            faultType: FaultType,
+            locationUpdate: Location? = null,
+            publisherResolution: Resolution? = null,
+            subscriberResolution: Resolution? = null,
+            subscriberResolutionPreferenceFlow: SharedFlow<Resolution>
+        ) = SubscriberMonitor(
+            subscriber = subscriber,
+            label = label,
+            trackableId = trackableId,
+            expectedState = TrackableState.Offline::class,
+            failureStates = setOf(TrackableState.Failed::class),
+            expectedSubscriberPresence = false,
+            expectedPublisherPresence = true,
+            expectedLocation = locationUpdate,
+            timeout = when (faultType) {
+                is FaultType.Fatal -> faultType.failedWithinMillis
+                is FaultType.Nonfatal -> faultType.resolvedWithinMillis
+                is FaultType.NonfatalWhenResolved -> faultType.offlineWithinMillis
+            },
+            expectedPublisherResolution = publisherResolution,
+            expectedSubscriberResolution = subscriberResolution,
+            subscriberResolutionPreferenceFlow = subscriberResolutionPreferenceFlow
+        )
+
+        /**
+         * Construct a [SubscriberMonitor] configured to expect a Trackable to come
          * online within a given timeout, and fail if the Failed state is seen at any point.
          */
         fun onlineWithoutFail(
@@ -716,7 +850,7 @@ class SubscriberMonitor(
             label: String,
             trackableId: String,
             timeout: Long,
-            subscriberResolution: Resolution,
+            subscriberResolution: Resolution? = null,
             locationUpdate: Location? = null,
             publisherResolution: Resolution? = null,
             subscriberResolutionPreferenceFlow: SharedFlow<Resolution>
