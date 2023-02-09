@@ -117,11 +117,66 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
      *
      * We expect the subscriber to not throw an exception.
      */
+    @OptIn(DelicateCoroutinesApi::class)
     @Test
     fun faultBeforeStartingSubscriber() {
         withResources { resources ->
             resources.fault.enable()
-            resources.getSubscriber()
+            val subscriber  = resources.getSubscriber()
+            val defaultAbly = resources.createAndStartPublishingAblyConnection()
+
+            // Add an active trackable while fault active and subscriber is offline
+            val locationUpdate = Location(2.0, 2.0, 4000.1, 351.2f, 331.1f, 22.5f, 1234)
+            val publisherResolution = Resolution(Accuracy.MINIMUM, 100L, 0.0)
+            val subscriberResolution = Resolution(Accuracy.MAXIMUM, 2L, 0.0)
+            SubscriberMonitor.forActiveFault(
+                subscriber = subscriber,
+                label = "[fault active] subscriber",
+                trackableId = resources.trackableId,
+                faultType = resources.fault.type,
+                locationUpdate = null,
+                publisherResolution = null,
+                subscriberResolution = null,
+                subscriberResolutionPreferenceFlow = resources.subscriberResolutions
+            ).waitForStateTransition {
+                // Connect up a publisher to do publisher things
+                defaultAbly.updatePresenceData(resources.trackableId, PresenceData(ClientTypes.PUBLISHER, publisherResolution, false))
+
+                val locationSent = BooleanExpectation("Location sent successfully on Ably channel")
+                defaultAbly.sendEnhancedLocation(
+                    resources.trackableId,
+                    EnhancedLocationUpdate(
+                        locationUpdate,
+                        arrayListOf(),
+                        arrayListOf(),
+                        LocationUpdateType.ACTUAL
+                    )
+                ) { result ->
+                    locationSent.fulfill(result.isSuccess)
+                }
+
+                locationSent.await(10)
+                locationSent.assertSuccess()
+
+                // While we're offline-ish, change the subscribers preferred resolution
+                GlobalScope.launch {
+                    subscriber.resolutionPreference(subscriberResolution)
+                }
+            }.close()
+
+            // Resolve the fault and make sure everything comes through
+            SubscriberMonitor.forResolvedFault(
+                subscriber = subscriber,
+                label = "[fault resolved] subscriber",
+                trackableId = resources.trackableId,
+                faultType = resources.fault.type,
+                locationUpdate = locationUpdate,
+                publisherResolution = publisherResolution,
+                subscriberResolution = subscriberResolution,
+                subscriberResolutionPreferenceFlow = resources.subscriberResolutions
+            ).waitForStateTransition {
+                resources.fault.resolve()
+            }.close()
         }
     }
 
@@ -546,7 +601,7 @@ class SubscriberMonitor(
     private val expectedLocation: Location? = null,
     private val expectedPublisherResolution: Resolution?,
     private val subscriberResolutionPreferenceFlow: SharedFlow<Resolution>,
-    private val expectedSubscriberResolution: Resolution,
+    private val expectedSubscriberResolution: Resolution?,
     val timeout: Long,
 ) {
 
@@ -565,7 +620,7 @@ class SubscriberMonitor(
             locationUpdate: Location? = null,
             publisherResolution: Resolution? = null,
             publisherDisconnected: Boolean = false,
-            subscriberResolution: Resolution,
+            subscriberResolution: Resolution?,
             subscriberResolutionPreferenceFlow: SharedFlow<Resolution>
         ) = SubscriberMonitor(
             subscriber = subscriber,
@@ -718,6 +773,11 @@ class SubscriberMonitor(
      * Assert that we receive the expected subscriber resolution.
      */
     private fun assertSubscriberPreferredResolution() {
+        if (expectedSubscriberResolution == null) {
+            testLogD("SubscriberMonitor: $label - (SKIPPED) expectedSubscriberResolution = null")
+            return
+        }
+
         testLogD("SubscriberMonitor: $label - (WAITING) preferredSubscriberResolution = $expectedSubscriberResolution")
         val preferredSubscriberResolution = runBlocking {
             subscriberResolutionPreferenceFlow.first { resolution ->
