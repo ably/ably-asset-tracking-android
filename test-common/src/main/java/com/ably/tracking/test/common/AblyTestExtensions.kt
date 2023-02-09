@@ -147,22 +147,10 @@ fun Ably.mockSendEnhancedLocationFailureThenSuccess(trackableId: String) {
 }
 
 fun Ably.mockUpdatePresenceDataSuccess(trackableId: String) {
-    val callbackSlot = slot<(Result<Unit>) -> Unit>()
-    every {
-        updatePresenceData(trackableId, any(), capture(callbackSlot))
-    } answers {
-        callbackSlot.captured(Result.success(Unit))
-    }
     coEvery { updatePresenceData(trackableId, any()) } returns Result.success(Unit)
 }
 
 fun Ably.mockUpdatePresenceDataFailure(trackableId: String) {
-    val callbackSlot = slot<(Result<Unit>) -> Unit>()
-    every {
-        updatePresenceData(trackableId, any(), capture(callbackSlot))
-    } answers {
-        callbackSlot.captured(Result.failure(anyConnectionException()))
-    }
     coEvery { updatePresenceData(trackableId, any()) } returns Result.failure(anyConnectionException())
 }
 

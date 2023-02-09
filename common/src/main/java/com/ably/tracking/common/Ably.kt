@@ -213,13 +213,7 @@ interface Ably {
      *
      * @param trackableId The ID of the trackable channel.
      * @param presenceData The data that will be send via the presence channel.
-     * @param callback The function that will be called when updating presence data completes. If something goes wrong it will be called with [ConnectionException].
      */
-    fun updatePresenceData(trackableId: String, presenceData: PresenceData, callback: (Result<Unit>) -> Unit)
-
-    /**
-     * A suspending version of [updatePresenceData]
-     * */
     suspend fun updatePresenceData(trackableId: String, presenceData: PresenceData): Result<Unit>
 
     /**
@@ -773,13 +767,6 @@ constructor(
             }
         }
 
-    override fun updatePresenceData(trackableId: String, presenceData: PresenceData, callback: (Result<Unit>) -> Unit) {
-        scope.launch {
-            val result = updatePresenceData(trackableId, presenceData)
-            callback(result)
-        }
-    }
-
     override suspend fun updatePresenceData(trackableId: String, presenceData: PresenceData): Result<Unit> {
         val trackableChannel = getChannelIfExists(trackableId) ?: return Result.success(Unit)
         return try {
@@ -927,8 +914,6 @@ constructor(
     override fun getChannelState(trackableId: String): ChannelState? =
         getChannelIfExists(trackableId)?.state
 
-    private fun ChannelState.isConnected(): Boolean = this == ChannelState.attached
-
     private fun ConnectionState.isConnected(): Boolean = this == ConnectionState.connected
 
     private fun ConnectionState.isClosed(): Boolean = this == ConnectionState.closed
@@ -936,9 +921,6 @@ constructor(
     private fun ConnectionState.isFailed(): Boolean = this == ConnectionState.failed
 
     private fun ConnectionState.isInitialized(): Boolean = this == ConnectionState.initialized
-
-    private fun ConnectionException.isConnectionResumeException(): Boolean =
-        errorInformation.let { it.message == "Connection resume failed" && it.code == 50000 && it.statusCode == 500 }
 
     /**
      * Enter the presence of [channel] and waits for this operation to complete.
