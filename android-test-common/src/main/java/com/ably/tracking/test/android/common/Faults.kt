@@ -41,14 +41,15 @@ class Fault(
  */
 class FaultSimulation(
     private val dto: FaultSimulationDto,
-    private val apiKey: String,
+    proxyHost: String,
+    apiKey: String,
     private val client: FaultProxyClient
 ) {
     val proxy: RealtimeProxy
     val type: FaultType
 
     init {
-        proxy = RealtimeProxy(this.dto.proxy, apiKey)
+        proxy = RealtimeProxy(this.dto.proxy, proxyHost, apiKey)
         type = dto.type
     }
 

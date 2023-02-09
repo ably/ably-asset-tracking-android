@@ -12,6 +12,7 @@ const val PUBLISHER_CLIENT_ID = "AatNetworkConnectivityTests_Publisher"
  */
 class RealtimeProxy(
     private val dto: ProxyDto,
+    private val host: String,
     private val apiKey: String
 ) {
     /**
@@ -28,7 +29,7 @@ class RealtimeProxy(
             testLogD("${msg!!} - $tr", tr)
         }
         this.logLevel = Log.VERBOSE
-        this.realtimeHost = dto.listenHost
+        this.realtimeHost = host
         this.port = dto.listenPort
         // Note that TLS is disabled, so that the proxy can act as a man in the middle.
         this.tls = false

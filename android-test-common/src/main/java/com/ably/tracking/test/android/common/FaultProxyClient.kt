@@ -13,7 +13,7 @@ import kotlinx.serialization.json.Json
 
 // TODO don't duplicate these, make a library instead
 @Serializable
-data class ProxyDto(val listenHost: String, val listenPort: Int)
+data class ProxyDto(val listenPort: Int)
 
 @Serializable
 data class FaultSimulationDto(val id: String, val type: FaultType, val proxy: ProxyDto) {}
@@ -47,7 +47,7 @@ class FaultProxyClient(
         val response = client.post(url)
         val dto = Json.decodeFromString<FaultSimulationDto>(response.body<String>())
 
-        return FaultSimulation(dto, apiKey, this)
+        return FaultSimulation(dto, baseUrl.host, apiKey, this)
     }
 
     suspend fun enableFaultSimulation(id: String) {
