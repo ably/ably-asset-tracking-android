@@ -97,6 +97,8 @@ class NetworkConnectivityTests(private val testFault: Fault) {
             testFault.simulate(BuildConfig.ABLY_API_KEY)
         }
 
+        // TODO log the simulation here so we can see what’s going on
+
         Assume.assumeFalse(simulation.skipTest)
 
         // We cannot use ktor on API Level 21 (Lollipop) because of:

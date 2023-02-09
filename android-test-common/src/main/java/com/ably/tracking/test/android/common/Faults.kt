@@ -53,7 +53,7 @@ class FaultSimulation(
         type = dto.type
     }
 
-    // TODO decide how to address this
+    // TODO decide how to address this – we don't have any skipped tests right now
     val skipTest = false
 
     /**
