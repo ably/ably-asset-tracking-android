@@ -59,6 +59,7 @@ import io.ably.lib.types.PresenceMessage
 import io.ably.lib.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -125,65 +126,62 @@ class NetworkConnectivityTests(private val testFault: Fault) {
     fun tearDown() {
         testResources?.tearDown()
     }
+
     /**
      * Test that Publisher can handle the given fault occurring before a user
      * adds a new trackable, and moves Trackables to the expected state once
      * the fault has cleared.
      */
     @Test
-    fun faultBeforeAddingTrackable() {
+    fun faultBeforeAddingTrackable() = withResources {
         val primaryTrackable = Trackable(UUID.randomUUID().toString())
         val secondaryTrackable = Trackable(UUID.randomUUID().toString())
 
-        withResources {
-            fault.enable()
+        fault.enable()
 
-            // Add an active trackable while fault active
-            val locationUpdate = locationHelper.locationUpdate(80.0, 100.0)
-            PublisherMonitor.forActiveFault(
-                label = "[fault active] publisher.track()",
-                trackable = primaryTrackable,
-                faultType = fault.type,
-                locationUpdate = locationUpdate
-            ).waitForStateTransition {
-                publisher.track(primaryTrackable).also {
-                    locationHelper.sendUpdate(locationUpdate)
-                }
-            }.close()
-
-            // Add a secondary (not active) trackable too
-            PublisherMonitor.forActiveFault(
-                label = "[fault active] publisher.add()",
-                trackable = secondaryTrackable,
-                faultType = fault.type,
-            ).waitForStateTransition {
-                publisher.add(secondaryTrackable).also {
-                    // apparently another location update is needed for this to go online
-                    locationHelper.sendUpdate(
-                        locationHelper.locationUpdate(81.0, 101.0)
-                    )
-                }
-            }.close()
-
-            // Remove that second trackable while fault still active
-            runBlocking {
-                Assert.assertTrue(publisher.remove(secondaryTrackable))
+        // Add an active trackable while fault active
+        val locationUpdate = locationHelper.locationUpdate(80.0, 100.0)
+        PublisherMonitor.forActiveFault(
+            label = "[fault active] publisher.track()",
+            trackable = primaryTrackable,
+            faultType = fault.type,
+            locationUpdate = locationUpdate
+        ).waitForStateTransition {
+            publisher.track(primaryTrackable).also {
+                locationHelper.sendUpdate(locationUpdate)
             }
+        }.close()
 
-            // / Resolve the fault and ensure active trackable reaches intended state
-            PublisherMonitor.forResolvedFault(
-                label = "[fault resolved] publisher.getTrackableState()",
-                trackable = primaryTrackable,
-                faultType = fault.type
-            ).waitForStateTransition {
-                fault.resolve()
-                publisher.getTrackableState(primaryTrackable.id)!!
-            }.close()
+        // Add a secondary (not active) trackable too
+        PublisherMonitor.forActiveFault(
+            label = "[fault active] publisher.add()",
+            trackable = secondaryTrackable,
+            faultType = fault.type,
+        ).waitForStateTransition {
+            publisher.add(secondaryTrackable).also {
+                // apparently another location update is needed for this to go online
+                locationHelper.sendUpdate(
+                    locationHelper.locationUpdate(81.0, 101.0)
+                )
+            }
+        }.close()
 
-            Assert.assertNull(
-                publisher.getTrackableState(secondaryTrackable.id)
-            )
-        }
+        // Remove that second trackable while fault still active
+        Assert.assertTrue(publisher.remove(secondaryTrackable))
+
+        // / Resolve the fault and ensure active trackable reaches intended state
+        PublisherMonitor.forResolvedFault(
+            label = "[fault resolved] publisher.getTrackableState()",
+            trackable = primaryTrackable,
+            faultType = fault.type
+        ).waitForStateTransition {
+            fault.resolve()
+            publisher.getTrackableState(primaryTrackable.id)!!
+        }.close()
+
+        Assert.assertNull(
+            publisher.getTrackableState(secondaryTrackable.id)
+        )
     }
 
     /**
@@ -194,77 +192,73 @@ class NetworkConnectivityTests(private val testFault: Fault) {
      * during the fault.
      */
     @Test
-    fun faultDuringTracking() {
+    fun faultDuringTracking() = withResources {
         val primaryTrackable = Trackable(UUID.randomUUID().toString())
         val secondaryTrackable = Trackable(UUID.randomUUID().toString())
 
-        withResources {
-            // Add active trackable, wait for it to reach Online state
-            val locationUpdate = locationHelper.locationUpdate(82.0, 102.0)
-            PublisherMonitor.onlineWithoutFail(
-                label = "[no fault] publisher.track()",
-                trackable = primaryTrackable,
-                locationUpdate = locationUpdate,
-                timeout = 10_000L
-            ).waitForStateTransition {
-                publisher.track(primaryTrackable).also {
-                    locationHelper.sendUpdate(locationUpdate)
-                }
-            }.close()
-
-            // Add another (non-active) trackable and wait for it to be online
-            PublisherMonitor.onlineWithoutFail(
-                label = "[no fault] publisher.add()",
-                trackable = secondaryTrackable,
-                timeout = 10_000L
-            ).waitForStateTransition {
-                publisher.add(secondaryTrackable).also {
-                    // apparently another location update is needed for this to go online
-                    locationHelper.sendUpdate(
-                        locationHelper.locationUpdate(83.0, 103.0)
-                    )
-                }
-            }.close()
-
-            // Enable the fault, wait for Trackable to move to expected state
-            PublisherMonitor.forActiveFault(
-                label = "[fault active] publisher.getTrackableState(primary)",
-                trackable = primaryTrackable,
-                faultType = fault.type
-            ).waitForStateTransition {
-                fault.enable()
-                publisher.getTrackableState(primaryTrackable.id)!!
-            }.close()
-
-            // Ensure secondary trackable is also now in expected fault state
-            PublisherMonitor.forActiveFault(
-                label = "[fault active] publisher.getTrackableState(secondary)",
-                trackable = secondaryTrackable,
-                faultType = fault.type
-            ).waitForStateTransition {
-                publisher.getTrackableState(secondaryTrackable.id)!!
-            }.close()
-
-            // Remove the secondary trackable while fault is active
-            runBlocking {
-                Assert.assertTrue(publisher.remove(secondaryTrackable))
+        // Add active trackable, wait for it to reach Online state
+        val locationUpdate = locationHelper.locationUpdate(82.0, 102.0)
+        PublisherMonitor.onlineWithoutFail(
+            label = "[no fault] publisher.track()",
+            trackable = primaryTrackable,
+            locationUpdate = locationUpdate,
+            timeout = 10_000L
+        ).waitForStateTransition {
+            publisher.track(primaryTrackable).also {
+                locationHelper.sendUpdate(locationUpdate)
             }
+        }.close()
 
-            // Resolve the fault, wait for Trackable to move to expected state
-            PublisherMonitor.forResolvedFault(
-                label = "[fault resolved] publisher.getTrackableState(primary)",
-                trackable = primaryTrackable,
-                faultType = fault.type
-            ).waitForStateTransition {
-                fault.resolve()
-                publisher.getTrackableState(primaryTrackable.id)!!
-            }.close()
+        // Add another (non-active) trackable and wait for it to be online
+        PublisherMonitor.onlineWithoutFail(
+            label = "[no fault] publisher.add()",
+            trackable = secondaryTrackable,
+            timeout = 10_000L
+        ).waitForStateTransition {
+            publisher.add(secondaryTrackable).also {
+                // apparently another location update is needed for this to go online
+                locationHelper.sendUpdate(
+                    locationHelper.locationUpdate(83.0, 103.0)
+                )
+            }
+        }.close()
 
-            // Ensure that the secondary Trackable is gone
-            Assert.assertNull(
-                publisher.getTrackableState(secondaryTrackable.id)
-            )
-        }
+        // Enable the fault, wait for Trackable to move to expected state
+        PublisherMonitor.forActiveFault(
+            label = "[fault active] publisher.getTrackableState(primary)",
+            trackable = primaryTrackable,
+            faultType = fault.type
+        ).waitForStateTransition {
+            fault.enable()
+            publisher.getTrackableState(primaryTrackable.id)!!
+        }.close()
+
+        // Ensure secondary trackable is also now in expected fault state
+        PublisherMonitor.forActiveFault(
+            label = "[fault active] publisher.getTrackableState(secondary)",
+            trackable = secondaryTrackable,
+            faultType = fault.type
+        ).waitForStateTransition {
+            publisher.getTrackableState(secondaryTrackable.id)!!
+        }.close()
+
+        // Remove the secondary trackable while fault is active
+        Assert.assertTrue(publisher.remove(secondaryTrackable))
+
+        // Resolve the fault, wait for Trackable to move to expected state
+        PublisherMonitor.forResolvedFault(
+            label = "[fault resolved] publisher.getTrackableState(primary)",
+            trackable = primaryTrackable,
+            faultType = fault.type
+        ).waitForStateTransition {
+            fault.resolve()
+            publisher.getTrackableState(primaryTrackable.id)!!
+        }.close()
+
+        // Ensure that the secondary Trackable is gone
+        Assert.assertNull(
+            publisher.getTrackableState(secondaryTrackable.id)
+        )
     }
 
     /**
@@ -272,57 +266,53 @@ class NetworkConnectivityTests(private val testFault: Fault) {
      * Resolve the fault and ensure that the new instance is operating normally.
      */
     @Test
-    fun faultDuringPublisherRestart() {
-        withResources {
-            // Enable the fault and restart the publisher
-            fault.enable()
-            runBlocking {
-                publisher.stop()
+    fun faultDuringPublisherRestart() = withResources {
+        // Enable the fault and restart the publisher
+        fault.enable()
+        publisher.stop()
+
+        val newPublisher = TestResources.createPublisher(
+            context = context,
+            proxyClientOptions = fault.proxy.clientOptions(),
+            locationChannelName = locationHelper.channelName
+        )
+
+        // Resolve the fault and ensure the new publisher works
+        fault.resolve()
+        val trackable = Trackable(UUID.randomUUID().toString())
+        val location = locationHelper.locationUpdate(84.0, 104.0)
+        PublisherMonitor.forResolvedFault(
+            "[fault resolved] ensure publisher working",
+            trackable = trackable,
+            faultType = fault.type,
+            locationUpdate = location
+        ).waitForStateTransition {
+            newPublisher.track(trackable).also {
+                locationHelper.sendUpdate(location)
             }
+        }.close()
 
-            val newPublisher = TestResources.createPublisher(
-                context = context,
-                proxyClientOptions = fault.proxy.clientOptions(),
-                locationChannelName = locationHelper.channelName
-            )
-
-            // Resolve the fault and ensure the new publisher works
-            fault.resolve()
-            val trackable = Trackable(UUID.randomUUID().toString())
-            val location = locationHelper.locationUpdate(84.0, 104.0)
-            PublisherMonitor.forResolvedFault(
-                "[fault resolved] ensure publisher working",
-                trackable = trackable,
-                faultType = fault.type,
-                locationUpdate = location
-            ).waitForStateTransition {
-                newPublisher.track(trackable).also {
-                    locationHelper.sendUpdate(location)
-                }
-            }.close()
-
-            /*
-             * Stop the new publisher.
-             * This is required because Mapbox instances are kept as a singleton and not reducing the reference
-             * count to zero will result in a stale instance leaking into other tests that run subsequently if
-             * garbage collection doesn't clean things up fast enough (which can lead to other tests seeing incorrect
-             * location updates).
-             */
-            runBlocking {
-                newPublisher.stop()
-            }
-        }
+        /*
+         * Stop the new publisher.
+         * This is required because Mapbox instances are kept as a singleton and not reducing the reference
+         * count to zero will result in a stale instance leaking into other tests that run subsequently if
+         * garbage collection doesn't clean things up fast enough (which can lead to other tests seeing incorrect
+         * location updates).
+         */
+        newPublisher.stop()
     }
 
     /**
      * Checks that we have TestResources initialized and executes the test body
      */
-    private fun withResources(testBody: TestResources.() -> Unit) {
+    private fun withResources(testBody: suspend TestResources.() -> Unit) {
         val resources = testResources
         if (resources == null) {
             Assert.fail("Test has not been initialized")
         } else {
-            resources.apply(testBody)
+            runBlocking {
+                resources.testBody()
+            }
         }
     }
 }
@@ -346,7 +336,11 @@ class TestResources(
             val context = InstrumentationRegistry.getInstrumentation().targetContext
             val locationHelper = LocationHelper()
             faultParam.proxy.start()
-            val publisher = createPublisher(context, faultParam.proxy.clientOptions(), locationHelper.channelName)
+            val publisher = createPublisher(
+                context,
+                faultParam.proxy.clientOptions(),
+                locationHelper.channelName
+            )
 
             return TestResources(
                 context = context,
@@ -368,7 +362,8 @@ class TestResources(
         ): Publisher {
             val resolution = Resolution(Accuracy.BALANCED, 1000L, 0.0)
             val ablySdkFactory = object : AblySdkFactory<DefaultAblySdkChannelStateListener> {
-                override fun createRealtime(clientOptions: ClientOptions) = DefaultAblySdkRealtime(proxyClientOptions)
+                override fun createRealtime(clientOptions: ClientOptions) =
+                    DefaultAblySdkRealtime(proxyClientOptions)
 
                 override fun wrapChannelStateListener(
                     underlyingListener: AblySdkFactory.UnderlyingChannelStateListener<DefaultAblySdkChannelStateListener>
@@ -380,9 +375,14 @@ class TestResources(
                     proxyClientOptions.key
                 )
             )
-
+            val coroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
             return DefaultPublisher(
-                DefaultAbly(ablySdkFactory, connectionConfiguration, Logging.aatDebugLogger),
+                DefaultAbly(
+                    ablySdkFactory,
+                    connectionConfiguration,
+                    Logging.aatDebugLogger,
+                    coroutineScope
+                ),
                 DefaultMapbox(
                     context,
                     MapConfiguration(MAPBOX_ACCESS_TOKEN),
@@ -420,7 +420,8 @@ class TestResources(
 
             ably.connection.on { testLogD("Ably connection state change: ${it.current}") }
 
-            val connectedToSimulationChannel = UnitExpectation("Connected to location simulation channel")
+            val connectedToSimulationChannel =
+                UnitExpectation("Connected to location simulation channel")
             simulationChannel.on {
                 testLogD("Ably channel state change: ${it.current}")
                 if (it.current == ChannelState.attached) {
@@ -694,30 +695,28 @@ class PublisherMonitor(
      * returned StateFlow<TrackableState> to the given receiver, then waits for expectations
      * to be delivered (or not) before cleaning up.
      */
-    fun waitForStateTransition(
+    suspend fun waitForStateTransition(
         asyncOp: suspend () -> StateFlow<TrackableState>
     ): PublisherMonitor {
-        runBlocking {
-            try {
-                withTimeout(timeout) {
-                    val trackableStateFlow = asyncOp()
-                    testLogD("$label - success")
+        try {
+            withTimeout(timeout) {
+                val trackableStateFlow = asyncOp()
+                testLogD("$label - success")
 
-                    testLogD("Await state transition")
-                    assertStateTransition(trackableStateFlow)
-                    testLogD("Await assert presence")
-                    assertPresence()
-                    testLogD("Await assert location")
-                    assertLocationUpdated()
-                    testLogD("Await assert done")
-                }
-            } catch (timeoutCancellationException: TimeoutCancellationException) {
-                testLogD("$label - timed out")
-                throw AssertionError("$label timed out.", timeoutCancellationException)
-            } catch (exception: Exception) {
-                testLogD("$label - failed - $exception")
-                throw AssertionError("$label did not result in success.", exception)
+                testLogD("Await state transition")
+                assertStateTransition(trackableStateFlow)
+                testLogD("Await assert presence")
+                assertPresence()
+                testLogD("Await assert location")
+                assertLocationUpdated()
+                testLogD("Await assert done")
             }
+        } catch (timeoutCancellationException: TimeoutCancellationException) {
+            testLogD("$label - timed out")
+            throw AssertionError("$label timed out.", timeoutCancellationException)
+        } catch (exception: Exception) {
+            testLogD("$label - failed - $exception")
+            throw AssertionError("$label did not result in success.", exception)
         }
 
         return this
@@ -755,7 +754,7 @@ class PublisherMonitor(
     /**
      * Throw an assertion error if the publisher's presence does not meet expectations for this test.
      */
-    private fun assertPresence() {
+    private suspend fun assertPresence() {
         if (expectedPublisherPresence == null) {
             // not checking for publisher presence in this test
             testLogD("PublisherMonitor: $label - (SKIP) expectedPublisherPresence = null")
@@ -772,25 +771,23 @@ class PublisherMonitor(
          * This can lead to flakey tests if the re-enter doesn't happen in time, so a grace period here gives
          * sufficient time for things to happen.
          */
-        runBlocking {
-            try {
-                withTimeout(10000) {
-                    while (true) {
-                        val publisherPresent = publisherIsPresent()
-                        if (publisherPresent == expectedPublisherPresence) {
-                            testLogD("PublisherMonitor: $label - (PASS) publisherPresent = $publisherPresent")
-                            break
-                        }
-
-                        delay(500)
+        try {
+            withTimeout(10000) {
+                while (true) {
+                    val publisherPresent = publisherIsPresent()
+                    if (publisherPresent == expectedPublisherPresence) {
+                        testLogD("PublisherMonitor: $label - (PASS) publisherPresent = $publisherPresent")
+                        break
                     }
+
+                    delay(500)
                 }
-            } catch (exception: TimeoutCancellationException) {
-                testLogD("PublisherMonitor: $label - (FAIL) publisherPresent timed out before becoming $expectedPublisherPresence")
-                throw AssertionError(
-                    "Expected publisherPresent to be $expectedPublisherPresence but timed out"
-                )
             }
+        } catch (exception: TimeoutCancellationException) {
+            testLogD("PublisherMonitor: $label - (FAIL) publisherPresent timed out before becoming $expectedPublisherPresence")
+            throw AssertionError(
+                "Expected publisherPresent to be $expectedPublisherPresence but timed out"
+            )
         }
     }
 
@@ -812,7 +809,7 @@ class PublisherMonitor(
      * Throw an assertion error if expectations about published location updates have not
      * been meet in this test.
      */
-    private fun assertLocationUpdated() {
+    private suspend fun assertLocationUpdated() {
         if (expectedLocationUpdate == null) {
             // no expected location set - skip assertion
             testLogD("PublisherMonitor: $label - (SKIP) expectedLocationUpdate = null")
@@ -820,31 +817,29 @@ class PublisherMonitor(
         }
 
         try {
-            runBlocking {
-                // The location update may be published some time after arriving on the mapbox source channel
-                withTimeout(10000) {
-                    while (true) {
-                        val latestMsg = ably.channels
-                            .get("tracking:${trackable.id}")
-                            ?.history(null)
-                            ?.items()
-                            ?.firstOrNull()
+            // The location update may be published some time after arriving on the mapbox source channel
+            withTimeout(10000) {
+                while (true) {
+                    val latestMsg = ably.channels
+                        .get("tracking:${trackable.id}")
+                        ?.history(null)
+                        ?.items()
+                        ?.firstOrNull()
 
-                        // Check the trackable channel for the expected update
-                        if (latestMsg != null) {
-                            val latestLocation = gson.fromJson(
-                                latestMsg.data as String,
-                                EnhancedLocationUpdateMessage::class.java
-                            ).location
+                    // Check the trackable channel for the expected update
+                    if (latestMsg != null) {
+                        val latestLocation = gson.fromJson(
+                            latestMsg.data as String,
+                            EnhancedLocationUpdateMessage::class.java
+                        ).location
 
-                            if (latestLocation.equalGeometry(expectedLocationUpdate)) {
-                                testLogD("PublisherMonitor: $label - (PASS) lastPublishedLocation = $latestLocation")
-                                return@withTimeout
-                            }
+                        if (latestLocation.equalGeometry(expectedLocationUpdate)) {
+                            testLogD("PublisherMonitor: $label - (PASS) lastPublishedLocation = $latestLocation")
+                            return@withTimeout
                         }
-
-                        delay(200)
                     }
+
+                    delay(200)
                 }
             }
         } catch (timeout: TimeoutException) {

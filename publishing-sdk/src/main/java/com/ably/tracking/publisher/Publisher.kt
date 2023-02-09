@@ -40,8 +40,6 @@ interface Publisher {
      * @param trackable The object to be added to this publisher's tracked set, if it's not already there, and to be
      * made the actively tracked object.
      * @return [StateFlow] that represents the [TrackableState] of the added [Trackable].
-     *
-     * @throws ConnectionException when something goes wrong with the Ably connection
      */
     @JvmSynthetic
     suspend fun track(trackable: Trackable): StateFlow<TrackableState>
@@ -54,8 +52,6 @@ interface Publisher {
      *
      * @param trackable The object to be added to this publisher's tracked set, if it's not already there.
      * @return [StateFlow] that represents the [TrackableState] of the added [Trackable].
-     *
-     * @throws ConnectionException when something goes wrong with the Ably connection
      */
     @JvmSynthetic
     suspend fun add(trackable: Trackable): StateFlow<TrackableState>
