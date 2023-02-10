@@ -24,9 +24,9 @@ internal class TrackableRemovalRequestedWorker(
         postWork: (WorkerSpecification) -> Unit
     ): PublisherProperties {
         if (result.isSuccess) {
-            properties.trackableRemovalGuard.removeMarked(trackable, Result.success(true))
+            postWork(WorkerSpecification.TrackableRemovalSuccess(trackable, Result.success(true)))
         } else {
-            properties.trackableRemovalGuard.removeMarked(trackable, Result.failure(result.exceptionOrNull()!!))
+            postWork(WorkerSpecification.TrackableRemovalSuccess(trackable, Result.failure(result.exceptionOrNull()!!)))
         }
         val removedTheLastTrackable = properties.hasNoTrackablesAdded
         if (removedTheLastTrackable) {

@@ -25,7 +25,7 @@ internal class RemoveTrackableWorker(
             properties.trackables.contains(trackable) -> {
                 // Immediately change trackable state to "Offline"
                 setTrackableStateToOffline(properties)
-                properties.trackableRemovalGuard.markForRemoval(trackable, callbackFunction)
+                properties.trackableRemovalGuard.markForRemoval(trackable) {}
                 doAsyncWork {
                     // Immediately notify the caller as disconnecting should happen in the background
                     callbackFunction(Result.success(true))
@@ -54,7 +54,6 @@ internal class RemoveTrackableWorker(
     private fun buildDisconnectSuccessWorkerSpecification(postWork: (WorkerSpecification) -> Unit) =
         WorkerSpecification.DisconnectSuccess(
             trackable = trackable,
-            callbackFunction = {}, // no-op as we've already notified the caller
             shouldRecalculateResolutionCallback = {
                 postWork(WorkerSpecification.ChangeLocationEngineResolution)
             }

@@ -132,28 +132,6 @@ class DefaultPublisherTest {
 
             // Have to remove the previous one before re-adding
             publisher.remove(trackable)
-        }
-
-        // We need to wait for the trackable to have fully left the publisher before continuing
-        // See: https://github.com/ably/ably-asset-tracking-android/issues/984
-        var trackableRemovedFromPublisher = false
-        publisher.trackables.onEach {
-            if (!it.contains(trackable)) {
-                trackableRemovedFromPublisher = true
-            }
-        }.launchIn(scope)
-
-        runBlocking {
-            withTimeout(5000) {
-                while (true) {
-                    if (trackableRemovedFromPublisher) {
-                        break
-                    }
-
-                    delay(5)
-                }
-            }
-
             publisher.add(trackable)
         }
 
