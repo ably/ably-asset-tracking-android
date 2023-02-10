@@ -144,8 +144,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
                 PresenceData(ClientTypes.PUBLISHER, publisherResolution, false)
             )
 
-            val locationSent = BooleanExpectation("Location sent successfully on Ably channel")
-            defaultAbly.sendEnhancedLocation(
+            defaultAbly.sendEnhancedLocationSuspending(
                 trackableId,
                 EnhancedLocationUpdate(
                     locationUpdate,
@@ -153,12 +152,8 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
                     arrayListOf(),
                     LocationUpdateType.ACTUAL
                 )
-            ) { result ->
-                locationSent.fulfill(result.isSuccess)
-            }
-
-            locationSent.await(10)
-            locationSent.assertSuccess()
+            )
+            testLogD("Sent enhanced location update on Ably channel")
 
             // While we're offline-ish, change the subscribers preferred resolution
             GlobalScope.launch {
@@ -206,8 +201,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
             timeout = 10_000L,
             subscriberResolutionPreferenceFlow = subscriberResolutions
         ).waitForStateTransition {
-            val locationSent = BooleanExpectation("Location sent successfully on Ably channel")
-            defaultAbly.sendEnhancedLocation(
+            defaultAbly.sendEnhancedLocationSuspending(
                 trackableId,
                 EnhancedLocationUpdate(
                     locationUpdate,
@@ -215,12 +209,8 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
                     arrayListOf(),
                     LocationUpdateType.ACTUAL
                 )
-            ) { result ->
-                locationSent.fulfill(result.isSuccess)
-            }
-
-            locationSent.await(10)
-            locationSent.assertSuccess()
+            )
+            testLogD("Sent enhanced location update on Ably channel")
         }
 
         // Enable the fault, shutdown the subscriber
@@ -279,8 +269,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
             subscriberResolution = subscriberResolution,
             subscriberResolutionPreferenceFlow = subscriberResolutions
         ).waitForStateTransition {
-            val locationSent = BooleanExpectation("Location sent successfully on Ably channel")
-            defaultAbly.sendEnhancedLocation(
+            defaultAbly.sendEnhancedLocationSuspending(
                 trackableId,
                 EnhancedLocationUpdate(
                     locationUpdate,
@@ -288,12 +277,8 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
                     arrayListOf(),
                     LocationUpdateType.ACTUAL
                 )
-            ) { result ->
-                locationSent.fulfill(result.isSuccess)
-            }
-
-            locationSent.await(10)
-            locationSent.assertSuccess()
+            )
+            testLogD("Sent enhanced location update on Ably channel")
         }
 
         // Add an active trackable while fault active
@@ -328,8 +313,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
                 PresenceData(ClientTypes.PUBLISHER, secondPublisherResolution, false)
             )
 
-            val locationSent = BooleanExpectation("Location sent successfully on Ably channel")
-            defaultAbly.sendEnhancedLocation(
+            defaultAbly.sendEnhancedLocationSuspending(
                 trackableId,
                 EnhancedLocationUpdate(
                     secondLocationUpdate,
@@ -337,12 +321,8 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
                     arrayListOf(),
                     LocationUpdateType.ACTUAL
                 )
-            ) { result ->
-                locationSent.fulfill(result.isSuccess)
-            }
-
-            locationSent.await(10)
-            locationSent.assertSuccess()
+            )
+            testLogD("Sent second enhanced location update on Ably channel")
 
             // While we're offline-ish, change the subscribers preferred resolution
             GlobalScope.launch {
@@ -368,8 +348,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
                 PresenceData(ClientTypes.PUBLISHER, thirdPublisherResolution, false)
             )
 
-            val locationSent = BooleanExpectation("Location sent successfully on Ably channel")
-            defaultAbly.sendEnhancedLocation(
+            defaultAbly.sendEnhancedLocationSuspending(
                 trackableId,
                 EnhancedLocationUpdate(
                     thirdLocationUpdate,
@@ -377,12 +356,8 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
                     arrayListOf(),
                     LocationUpdateType.ACTUAL
                 )
-            ) { result ->
-                locationSent.fulfill(result.isSuccess)
-            }
-
-            locationSent.await(10)
-            locationSent.assertSuccess()
+            )
+            testLogD("Sent third enhanced location update on Ably channel")
 
             // Resolve the problem
             fault.resolve()
