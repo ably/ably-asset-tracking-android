@@ -119,65 +119,66 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
      */
     @OptIn(DelicateCoroutinesApi::class)
     @Test
-    fun faultBeforeStartingSubscriber() {
-        withResources { resources ->
-            resources.fault.enable()
-            val subscriber = resources.getSubscriber()
-            val defaultAbly = resources.createAndStartPublishingAblyConnection()
+    fun faultBeforeStartingSubscriber() = withResources {
+        fault.enable()
+        val subscriber = getSubscriber()
+        val defaultAbly = createAndStartPublishingAblyConnection()
 
-            // Add an active trackable while fault active and subscriber is offline
-            val locationUpdate = Location(2.0, 2.0, 4000.1, 351.2f, 331.1f, 22.5f, 1234)
-            val publisherResolution = Resolution(Accuracy.MINIMUM, 100L, 0.0)
-            val subscriberResolution = Resolution(Accuracy.MAXIMUM, 2L, 0.0)
-            SubscriberMonitor.forActiveFault(
-                subscriber = subscriber,
-                label = "[fault active] subscriber",
-                trackableId = resources.trackableId,
-                faultType = resources.fault.type,
-                locationUpdate = null,
-                publisherResolution = null,
-                subscriberResolution = subscriberResolution,
-                subscriberResolutionPreferenceFlow = resources.subscriberResolutions
-            ).waitForStateTransition {
-                // Connect up a publisher to do publisher things
-                defaultAbly.updatePresenceData(resources.trackableId, PresenceData(ClientTypes.PUBLISHER, publisherResolution, false))
+        // Add an active trackable while fault active and subscriber is offline
+        val locationUpdate = Location(2.0, 2.0, 4000.1, 351.2f, 331.1f, 22.5f, 1234)
+        val publisherResolution = Resolution(Accuracy.MINIMUM, 100L, 0.0)
+        val subscriberResolution = Resolution(Accuracy.MAXIMUM, 2L, 0.0)
+        SubscriberMonitor.forActiveFault(
+            subscriber = subscriber,
+            label = "[fault active] subscriber",
+            trackableId = trackableId,
+            faultType = fault.type,
+            locationUpdate = null,
+            publisherResolution = null,
+            subscriberResolution = subscriberResolution,
+            subscriberResolutionPreferenceFlow = subscriberResolutions
+        ).waitForStateTransition {
+            // Connect up a publisher to do publisher things
+            defaultAbly.updatePresenceData(
+                trackableId,
+                PresenceData(ClientTypes.PUBLISHER, publisherResolution, false)
+            )
 
-                val locationSent = BooleanExpectation("Location sent successfully on Ably channel")
-                defaultAbly.sendEnhancedLocation(
-                    resources.trackableId,
-                    EnhancedLocationUpdate(
-                        locationUpdate,
-                        arrayListOf(),
-                        arrayListOf(),
-                        LocationUpdateType.ACTUAL
-                    )
-                ) { result ->
-                    locationSent.fulfill(result.isSuccess)
-                }
+            val locationSent = BooleanExpectation("Location sent successfully on Ably channel")
+            defaultAbly.sendEnhancedLocation(
+                trackableId,
+                EnhancedLocationUpdate(
+                    locationUpdate,
+                    arrayListOf(),
+                    arrayListOf(),
+                    LocationUpdateType.ACTUAL
+                )
+            ) { result ->
+                locationSent.fulfill(result.isSuccess)
+            }
 
-                locationSent.await(10)
-                locationSent.assertSuccess()
+            locationSent.await(10)
+            locationSent.assertSuccess()
 
-                // While we're offline-ish, change the subscribers preferred resolution
-                GlobalScope.launch {
-                    subscriber.resolutionPreference(subscriberResolution)
-                }
-            }.close()
+            // While we're offline-ish, change the subscribers preferred resolution
+            GlobalScope.launch {
+                subscriber.resolutionPreference(subscriberResolution)
+            }
+        }.close()
 
-            // Resolve the fault and make sure everything comes through
-            SubscriberMonitor.forResolvedFault(
-                subscriber = subscriber,
-                label = "[fault resolved] subscriber",
-                trackableId = resources.trackableId,
-                faultType = resources.fault.type,
-                locationUpdate = locationUpdate,
-                publisherResolution = publisherResolution,
-                subscriberResolution = subscriberResolution,
-                subscriberResolutionPreferenceFlow = resources.subscriberResolutions
-            ).waitForStateTransition {
-                resources.fault.resolve()
-            }.close()
-        }
+        // Resolve the fault and make sure everything comes through
+        SubscriberMonitor.forResolvedFault(
+            subscriber = subscriber,
+            label = "[fault resolved] subscriber",
+            trackableId = trackableId,
+            faultType = fault.type,
+            locationUpdate = locationUpdate,
+            publisherResolution = publisherResolution,
+            subscriberResolution = subscriberResolution,
+            subscriberResolutionPreferenceFlow = subscriberResolutions
+        ).waitForStateTransition {
+            fault.resolve()
+        }.close()
     }
 
     /**
@@ -187,70 +188,68 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
      * We expect the subscriber to stop cleanly, with no exceptions.
      */
     @Test
-    fun faultBeforeStoppingSubscriber() {
-        withResources { resources ->
-            val subscriber = resources.getSubscriber()
-            val defaultAbly = resources.createAndStartPublishingAblyConnection()
+    fun faultBeforeStoppingSubscriber() = withResources {
+        val subscriber = getSubscriber()
+        val defaultAbly = createAndStartPublishingAblyConnection()
 
-            // Assert the subscriber goes online
-            val locationUpdate = Location(1.0, 2.0, 4000.1, 351.2f, 331.1f, 22.5f, 1234)
-            val publisherResolution = Resolution(Accuracy.BALANCED, 1L, 0.0)
-            val subscriberResolution = Resolution(Accuracy.BALANCED, 1L, 0.0)
-            SubscriberMonitor.onlineWithoutFail(
-                subscriber = subscriber,
-                label = "[no fault] subscriber online",
-                trackableId = resources.trackableId,
-                locationUpdate = locationUpdate,
-                publisherResolution = publisherResolution,
-                subscriberResolution = subscriberResolution,
-                timeout = 10_000L,
-                subscriberResolutionPreferenceFlow = resources.subscriberResolutions
-            ).waitForStateTransition {
-                val locationSent = BooleanExpectation("Location sent successfully on Ably channel")
-                defaultAbly.sendEnhancedLocation(
-                    resources.trackableId,
-                    EnhancedLocationUpdate(
-                        locationUpdate,
-                        arrayListOf(),
-                        arrayListOf(),
-                        LocationUpdateType.ACTUAL
-                    )
-                ) { result ->
-                    locationSent.fulfill(result.isSuccess)
-                }
-
-                locationSent.await(10)
-                locationSent.assertSuccess()
+        // Assert the subscriber goes online
+        val locationUpdate = Location(1.0, 2.0, 4000.1, 351.2f, 331.1f, 22.5f, 1234)
+        val publisherResolution = Resolution(Accuracy.BALANCED, 1L, 0.0)
+        val subscriberResolution = Resolution(Accuracy.BALANCED, 1L, 0.0)
+        SubscriberMonitor.onlineWithoutFail(
+            subscriber = subscriber,
+            label = "[no fault] subscriber online",
+            trackableId = trackableId,
+            locationUpdate = locationUpdate,
+            publisherResolution = publisherResolution,
+            subscriberResolution = subscriberResolution,
+            timeout = 10_000L,
+            subscriberResolutionPreferenceFlow = subscriberResolutions
+        ).waitForStateTransition {
+            val locationSent = BooleanExpectation("Location sent successfully on Ably channel")
+            defaultAbly.sendEnhancedLocation(
+                trackableId,
+                EnhancedLocationUpdate(
+                    locationUpdate,
+                    arrayListOf(),
+                    arrayListOf(),
+                    LocationUpdateType.ACTUAL
+                )
+            ) { result ->
+                locationSent.fulfill(result.isSuccess)
             }
 
-            // Enable the fault, shutdown the subscriber
-            SubscriberMonitor.forActiveFaultWhenShuttingDownSubscriber(
-                subscriber = subscriber,
-                label = "[fault active] subscriber",
-                trackableId = resources.trackableId,
-                faultType = resources.fault.type,
-                publisherResolution = publisherResolution,
-                subscriberResolution = subscriberResolution,
-                subscriberResolutionPreferenceFlow = resources.subscriberResolutions
-            ).waitForStateTransition {
-                // Start the fault
-                resources.fault.enable()
-                resources.shutdownSubscriber()
-            }.close()
-
-            // Resolve the fault
-            SubscriberMonitor.forResolvedFaultWithSubscriberStopped(
-                subscriber = subscriber,
-                label = "[fault resolved] subscriber",
-                trackableId = resources.trackableId,
-                faultType = resources.fault.type,
-                publisherResolution = publisherResolution,
-                subscriberResolution = subscriberResolution,
-                subscriberResolutionPreferenceFlow = resources.subscriberResolutions
-            ).waitForStateTransition {
-                resources.fault.resolve()
-            }.close()
+            locationSent.await(10)
+            locationSent.assertSuccess()
         }
+
+        // Enable the fault, shutdown the subscriber
+        SubscriberMonitor.forActiveFaultWhenShuttingDownSubscriber(
+            subscriber = subscriber,
+            label = "[fault active] subscriber",
+            trackableId = trackableId,
+            faultType = fault.type,
+            publisherResolution = publisherResolution,
+            subscriberResolution = subscriberResolution,
+            subscriberResolutionPreferenceFlow = subscriberResolutions
+        ).waitForStateTransition {
+            // Start the fault
+            fault.enable()
+            shutdownSubscriber()
+        }.close()
+
+        // Resolve the fault
+        SubscriberMonitor.forResolvedFaultWithSubscriberStopped(
+            subscriber = subscriber,
+            label = "[fault resolved] subscriber",
+            trackableId = trackableId,
+            faultType = fault.type,
+            publisherResolution = publisherResolution,
+            subscriberResolution = subscriberResolution,
+            subscriberResolutionPreferenceFlow = subscriberResolutions
+        ).waitForStateTransition {
+            fault.resolve()
+        }.close()
     }
 
     /**
@@ -261,173 +260,180 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
      */
     @OptIn(DelicateCoroutinesApi::class)
     @Test
-    fun faultWhilstTracking() {
-        withResources { resources ->
-            val subscriber = resources.getSubscriber()
+    fun faultWhilstTracking() = withResources {
+        val subscriber = getSubscriber()
 
-            // Bring a publisher online and send a location update
-            val defaultAbly = resources.createAndStartPublishingAblyConnection()
-            val locationUpdate = Location(1.0, 2.0, 4000.1, 351.2f, 331.1f, 22.5f, 1234)
-            val publisherResolution = Resolution(Accuracy.BALANCED, 1L, 0.0)
-            val subscriberResolution = Resolution(Accuracy.BALANCED, 1L, 0.0)
+        // Bring a publisher online and send a location update
+        val defaultAbly = createAndStartPublishingAblyConnection()
+        val locationUpdate = Location(1.0, 2.0, 4000.1, 351.2f, 331.1f, 22.5f, 1234)
+        val publisherResolution = Resolution(Accuracy.BALANCED, 1L, 0.0)
+        val subscriberResolution = Resolution(Accuracy.BALANCED, 1L, 0.0)
 
-            SubscriberMonitor.onlineWithoutFail(
-                subscriber = subscriber,
-                label = "[no fault] subscriber online",
-                trackableId = resources.trackableId,
-                locationUpdate = locationUpdate,
-                timeout = 10_000L,
-                publisherResolution = publisherResolution,
-                subscriberResolution = subscriberResolution,
-                subscriberResolutionPreferenceFlow = resources.subscriberResolutions
-            ).waitForStateTransition {
-                val locationSent = BooleanExpectation("Location sent successfully on Ably channel")
-                defaultAbly.sendEnhancedLocation(
-                    resources.trackableId,
-                    EnhancedLocationUpdate(
-                        locationUpdate,
-                        arrayListOf(),
-                        arrayListOf(),
-                        LocationUpdateType.ACTUAL
-                    )
-                ) { result ->
-                    locationSent.fulfill(result.isSuccess)
-                }
-
-                locationSent.await(10)
-                locationSent.assertSuccess()
+        SubscriberMonitor.onlineWithoutFail(
+            subscriber = subscriber,
+            label = "[no fault] subscriber online",
+            trackableId = trackableId,
+            locationUpdate = locationUpdate,
+            timeout = 10_000L,
+            publisherResolution = publisherResolution,
+            subscriberResolution = subscriberResolution,
+            subscriberResolutionPreferenceFlow = subscriberResolutions
+        ).waitForStateTransition {
+            val locationSent = BooleanExpectation("Location sent successfully on Ably channel")
+            defaultAbly.sendEnhancedLocation(
+                trackableId,
+                EnhancedLocationUpdate(
+                    locationUpdate,
+                    arrayListOf(),
+                    arrayListOf(),
+                    LocationUpdateType.ACTUAL
+                )
+            ) { result ->
+                locationSent.fulfill(result.isSuccess)
             }
 
-            // Add an active trackable while fault active
-            val secondLocationUpdate = Location(2.0, 2.0, 4000.1, 351.2f, 331.1f, 22.5f, 1234)
-            val secondPublisherResolution = Resolution(Accuracy.MINIMUM, 100L, 0.0)
-            val secondSubscriberResolution = Resolution(Accuracy.MAXIMUM, 2L, 0.0)
-            SubscriberMonitor.forActiveFault(
-                subscriber = subscriber,
-                label = "[fault active] subscriber",
-                trackableId = resources.trackableId,
-                faultType = resources.fault.type,
-                locationUpdate = when (resources.fault.type) {
-                    is FaultType.Nonfatal -> secondLocationUpdate
-                    else -> locationUpdate
-                },
-                publisherResolution = when (resources.fault.type) {
-                    is FaultType.Nonfatal -> secondPublisherResolution
-                    else -> publisherResolution
-                },
-                subscriberResolution = when (resources.fault.type) {
-                    is FaultType.Nonfatal -> secondSubscriberResolution
-                    else -> subscriberResolution
-                },
-                subscriberResolutionPreferenceFlow = resources.subscriberResolutions
-            ).waitForStateTransition {
-                // Start the fault
-                resources.fault.enable()
-
-                // Connect up a publisher to do publisher things
-                defaultAbly.updatePresenceData(resources.trackableId, PresenceData(ClientTypes.PUBLISHER, secondPublisherResolution, false))
-
-                val locationSent = BooleanExpectation("Location sent successfully on Ably channel")
-                defaultAbly.sendEnhancedLocation(
-                    resources.trackableId,
-                    EnhancedLocationUpdate(
-                        secondLocationUpdate,
-                        arrayListOf(),
-                        arrayListOf(),
-                        LocationUpdateType.ACTUAL
-                    )
-                ) { result ->
-                    locationSent.fulfill(result.isSuccess)
-                }
-
-                locationSent.await(10)
-                locationSent.assertSuccess()
-
-                // While we're offline-ish, change the subscribers preferred resolution
-                GlobalScope.launch {
-                    subscriber.resolutionPreference(secondSubscriberResolution)
-                }
-            }.close()
-
-            // Resolve the fault, wait for Trackable to move to expected state
-            val thirdLocationUpdate = Location(3.0, 2.0, 4000.1, 351.2f, 331.1f, 22.5f, 1234)
-            val thirdPublisherResolution = Resolution(Accuracy.MAXIMUM, 3L, 0.0)
-            SubscriberMonitor.forResolvedFault(
-                subscriber = subscriber,
-                label = "[fault resolved] subscriber",
-                trackableId = resources.trackableId,
-                faultType = resources.fault.type,
-                locationUpdate = thirdLocationUpdate,
-                publisherResolution = thirdPublisherResolution,
-                subscriberResolution = secondSubscriberResolution,
-                subscriberResolutionPreferenceFlow = resources.subscriberResolutions
-            ).waitForStateTransition {
-                defaultAbly.updatePresenceData(resources.trackableId, PresenceData(ClientTypes.PUBLISHER, thirdPublisherResolution, false))
-
-                val locationSent = BooleanExpectation("Location sent successfully on Ably channel")
-                defaultAbly.sendEnhancedLocation(
-                    resources.trackableId,
-                    EnhancedLocationUpdate(
-                        thirdLocationUpdate,
-                        arrayListOf(),
-                        arrayListOf(),
-                        LocationUpdateType.ACTUAL
-                    )
-                ) { result ->
-                    locationSent.fulfill(result.isSuccess)
-                }
-
-                locationSent.await(10)
-                locationSent.assertSuccess()
-
-                // Resolve the problem
-                resources.fault.resolve()
-            }.close()
-
-            // Restart the fault to simulate the publisher going away whilst we're offline
-            SubscriberMonitor.forActiveFault(
-                subscriber = subscriber,
-                label = "[fault active] publisher shutdown for disconnect test",
-                trackableId = resources.trackableId,
-                faultType = resources.fault.type,
-                locationUpdate = thirdLocationUpdate,
-                publisherResolution = thirdPublisherResolution,
-                publisherDisconnected = true,
-                subscriberResolution = secondSubscriberResolution,
-                subscriberResolutionPreferenceFlow = resources.subscriberResolutions
-            ).waitForStateTransition {
-                // Start the fault
-                resources.fault.enable()
-
-                // Disconnect the publisher
-                resources.shutdownAblyPublishing()
-            }.close()
-
-            // Resolve the fault one last time and check that the publisher is offline
-            SubscriberMonitor.forResolvedFault(
-                subscriber = subscriber,
-                label = "[fault resolved] subscriber publisher disconnect test",
-                trackableId = resources.trackableId,
-                faultType = resources.fault.type,
-                locationUpdate = thirdLocationUpdate,
-                expectedPublisherPresence = false,
-                subscriberResolution = secondSubscriberResolution,
-                subscriberResolutionPreferenceFlow = resources.subscriberResolutions
-            ).waitForStateTransition {
-                // Resolve the problem
-                resources.fault.resolve()
-            }.close()
+            locationSent.await(10)
+            locationSent.assertSuccess()
         }
+
+        // Add an active trackable while fault active
+        val secondLocationUpdate = Location(2.0, 2.0, 4000.1, 351.2f, 331.1f, 22.5f, 1234)
+        val secondPublisherResolution = Resolution(Accuracy.MINIMUM, 100L, 0.0)
+        val secondSubscriberResolution = Resolution(Accuracy.MAXIMUM, 2L, 0.0)
+        SubscriberMonitor.forActiveFault(
+            subscriber = subscriber,
+            label = "[fault active] subscriber",
+            trackableId = trackableId,
+            faultType = fault.type,
+            locationUpdate = when (fault.type) {
+                is FaultType.Nonfatal -> secondLocationUpdate
+                else -> locationUpdate
+            },
+            publisherResolution = when (fault.type) {
+                is FaultType.Nonfatal -> secondPublisherResolution
+                else -> publisherResolution
+            },
+            subscriberResolution = when (fault.type) {
+                is FaultType.Nonfatal -> secondSubscriberResolution
+                else -> subscriberResolution
+            },
+            subscriberResolutionPreferenceFlow = subscriberResolutions
+        ).waitForStateTransition {
+            // Start the fault
+            fault.enable()
+
+            // Connect up a publisher to do publisher things
+            defaultAbly.updatePresenceData(
+                trackableId,
+                PresenceData(ClientTypes.PUBLISHER, secondPublisherResolution, false)
+            )
+
+            val locationSent = BooleanExpectation("Location sent successfully on Ably channel")
+            defaultAbly.sendEnhancedLocation(
+                trackableId,
+                EnhancedLocationUpdate(
+                    secondLocationUpdate,
+                    arrayListOf(),
+                    arrayListOf(),
+                    LocationUpdateType.ACTUAL
+                )
+            ) { result ->
+                locationSent.fulfill(result.isSuccess)
+            }
+
+            locationSent.await(10)
+            locationSent.assertSuccess()
+
+            // While we're offline-ish, change the subscribers preferred resolution
+            GlobalScope.launch {
+                subscriber.resolutionPreference(secondSubscriberResolution)
+            }
+        }.close()
+
+        // Resolve the fault, wait for Trackable to move to expected state
+        val thirdLocationUpdate = Location(3.0, 2.0, 4000.1, 351.2f, 331.1f, 22.5f, 1234)
+        val thirdPublisherResolution = Resolution(Accuracy.MAXIMUM, 3L, 0.0)
+        SubscriberMonitor.forResolvedFault(
+            subscriber = subscriber,
+            label = "[fault resolved] subscriber",
+            trackableId = trackableId,
+            faultType = fault.type,
+            locationUpdate = thirdLocationUpdate,
+            publisherResolution = thirdPublisherResolution,
+            subscriberResolution = secondSubscriberResolution,
+            subscriberResolutionPreferenceFlow = subscriberResolutions
+        ).waitForStateTransition {
+            defaultAbly.updatePresenceData(
+                trackableId,
+                PresenceData(ClientTypes.PUBLISHER, thirdPublisherResolution, false)
+            )
+
+            val locationSent = BooleanExpectation("Location sent successfully on Ably channel")
+            defaultAbly.sendEnhancedLocation(
+                trackableId,
+                EnhancedLocationUpdate(
+                    thirdLocationUpdate,
+                    arrayListOf(),
+                    arrayListOf(),
+                    LocationUpdateType.ACTUAL
+                )
+            ) { result ->
+                locationSent.fulfill(result.isSuccess)
+            }
+
+            locationSent.await(10)
+            locationSent.assertSuccess()
+
+            // Resolve the problem
+            fault.resolve()
+        }.close()
+
+        // Restart the fault to simulate the publisher going away whilst we're offline
+        SubscriberMonitor.forActiveFault(
+            subscriber = subscriber,
+            label = "[fault active] publisher shutdown for disconnect test",
+            trackableId = trackableId,
+            faultType = fault.type,
+            locationUpdate = thirdLocationUpdate,
+            publisherResolution = thirdPublisherResolution,
+            publisherDisconnected = true,
+            subscriberResolution = secondSubscriberResolution,
+            subscriberResolutionPreferenceFlow = subscriberResolutions
+        ).waitForStateTransition {
+            // Start the fault
+            fault.enable()
+
+            // Disconnect the publisher
+            shutdownAblyPublishing()
+        }.close()
+
+        // Resolve the fault one last time and check that the publisher is offline
+        SubscriberMonitor.forResolvedFault(
+            subscriber = subscriber,
+            label = "[fault resolved] subscriber publisher disconnect test",
+            trackableId = trackableId,
+            faultType = fault.type,
+            locationUpdate = thirdLocationUpdate,
+            expectedPublisherPresence = false,
+            subscriberResolution = secondSubscriberResolution,
+            subscriberResolutionPreferenceFlow = subscriberResolutions
+        ).waitForStateTransition {
+            // Resolve the problem
+            fault.resolve()
+        }.close()
     }
 
     /**
      * Checks that we have TestResources initialized and executes the test body
      */
-    private fun withResources(testBody: (TestResources) -> Unit) {
-        if (testResources == null) {
+    private fun withResources(testBody: suspend TestResources.() -> Unit) {
+        val resources = testResources
+        if (resources == null) {
             Assert.fail("Test has not been initialized")
         } else {
-            testResources!!.let(testBody)
+            runBlocking {
+                resources.testBody()
+            }
         }
     }
 
@@ -445,7 +451,8 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
 
         private var subscriber: Subscriber? = null
         private var ablyPublishing: DefaultAbly<DefaultAblySdkChannelStateListener>? = null
-        private val ablyPublishingPresenceData = PresenceData(ClientTypes.PUBLISHER, Resolution(Accuracy.BALANCED, 1L, 0.0))
+        private val ablyPublishingPresenceData =
+            PresenceData(ClientTypes.PUBLISHER, Resolution(Accuracy.BALANCED, 1L, 0.0))
         val subscriberResolutions = MutableSharedFlow<Resolution>(replay = 1)
 
         companion object {
@@ -484,7 +491,9 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
 
             val ablySdkFactory = object : AblySdkFactory<DefaultAblySdkChannelStateListener> {
                 override fun createRealtime(clientOptions: ClientOptions) =
-                    DefaultAblySdkRealtime(fault.proxy.clientOptions().apply { clientId = SUBSCRIBER_CLIENT_ID })
+                    DefaultAblySdkRealtime(
+                        fault.proxy.clientOptions().apply { clientId = SUBSCRIBER_CLIENT_ID }
+                    )
 
                 override fun wrapChannelStateListener(
                     underlyingListener: AblySdkFactory.UnderlyingChannelStateListener<DefaultAblySdkChannelStateListener>
@@ -1010,7 +1019,8 @@ class SubscriberMonitor(
     @OptIn(Experimental::class)
     private fun assertPublisherPresence() = runBlocking {
         testLogD("SubscriberMonitor (WAITING): $label - publisher presence -> $expectedPublisherPresence")
-        val presence = subscriber.publisherPresence.first { presence -> presence == expectedPublisherPresence }
+        val presence =
+            subscriber.publisherPresence.first { presence -> presence == expectedPublisherPresence }
         testLogD("SubscriberMonitor (PASS): $label - publisher presence was $presence")
     }
 
