@@ -1,6 +1,24 @@
 # Upgrade / Migration Guide
 
+## Version 1.6.0 to 1.6.1
+
+### `Publisher`’s `add()` and `track()` methods no longer throw `ConnectionException`
+
+These methods now use the state emitted by the returned `StateFlow<TrackableState>` (namely the `Offline` and `Failed` states) to communicate any errors that occur when connecting to Ably.
+
+The documentation for these methods still states that they can throw `ConnectionException` “when something goes wrong with the Ably connection”, but this is no longer true and this exception is no longer thrown. We will correct the documentation in the next release (see https://github.com/ably/ably-asset-tracking-android/issues/995).
+
+We have also introduced retry behaviours that mean that non-fatal errors upon adding a trackable are now handled by the Publisher SDK and will not cause the trackable to enter the `Failed` state.
+
 ## Version 1.5.1 to 1.6.0
+
+### `Publisher.remove()` no longer throws `ConnectionException`
+
+This operation will no longer fail.
+
+### `Publisher` and `Subscriber`’s `stop()` methods no longer throw `ConnectionException`
+
+These operations will no longer fail.
 
 ### Removed user-specified timeout from `Publisher.stop`
 
@@ -17,6 +35,21 @@ try {
     // Choose how to you want to respond to the timeout, by example for calling publisher.stop() again to retry
 }
 ```
+
+### `LocationUpdateType.PREDICTED` is now deprecated and will not be emitted by the Publisher SDK
+
+The Publisher SDK no longer emits predicted location updates.
+
+### Clarified circumstances in which `Publisher.Builder.start()` will throw `ConnectionException`
+
+The documentation for this method previously stated that it would throw a `ConnectionException` “if something goes wrong during connection initialization”. We have updated the documentation to clarify that it will in fact only throw this exception if the connection configuration is invalid.
+
+### `ConnectionConfiguration` can now be created from a static `TokenRequest` or JWT
+
+We’ve added the following methods to `Authentication`:
+
+- `tokenRequest(staticTokenRequest: TokenRequest)`
+- `jwt(staticJwt: String)`
 
 ## Version 1.3.0 to 1.4.0
 

@@ -10,7 +10,6 @@ import com.google.common.truth.Truth.assertThat
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
-import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
@@ -30,7 +29,7 @@ class TrackableRemovalRequestedWorkerTest {
     private val postedWorks = mutableListOf<WorkerSpecification>()
 
     @Test
-    fun `should mark removal success if result is successful`() {
+    fun `should post TrackableRemovalSuccessWork if result is successful`() {
         // given
         val initialProperties = createPublisherPropertiesWithMultipleTrackables()
         val removeTrackableCallbackFunction: ResultCallbackFunction<Boolean> = mockk(relaxed = true)
@@ -45,15 +44,11 @@ class TrackableRemovalRequestedWorkerTest {
 
         // then
         assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).isEmpty()
+        assertThat(postedWorks).hasSize(1)
 
-        verify(exactly = 1) {
-            removeTrackableCallbackFunction.invoke(
-                match {
-                    it.getOrNull() == true
-                }
-            )
-        }
+        val posted = postedWorks[0] as WorkerSpecification.TrackableRemovalSuccess
+        assertThat(posted.trackable).isEqualTo(trackable)
+        assertThat(posted.result.isSuccess).isTrue()
     }
 
     @Test
@@ -74,15 +69,11 @@ class TrackableRemovalRequestedWorkerTest {
 
         // then
         assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).isEmpty()
+        assertThat(postedWorks).hasSize(1)
 
-        verify(exactly = 1) {
-            removeTrackableCallbackFunction.invoke(
-                match {
-                    it.exceptionOrNull() != null
-                }
-            )
-        }
+        val posted = postedWorks[0] as WorkerSpecification.TrackableRemovalSuccess
+        assertThat(posted.trackable).isEqualTo(trackable)
+        assertThat(posted.result.isSuccess).isFalse()
     }
 
     @Test
@@ -102,11 +93,11 @@ class TrackableRemovalRequestedWorkerTest {
 
         // then
         assertThat(asyncWorks).hasSize(1)
-        assertThat(postedWorks).hasSize(1)
+        assertThat(postedWorks).hasSize(2)
 
         assertThat(updatedProperties.state).isEqualTo(PublisherState.DISCONNECTING)
         coVerify { ably.stopConnection() }
-        assertThat(postedWorks.first()).isEqualTo(WorkerSpecification.StoppingConnectionFinished)
+        assertThat(postedWorks[1]).isEqualTo(WorkerSpecification.StoppingConnectionFinished)
     }
 
     private fun prepareWorkerWithResult(result: Result<Unit>) =

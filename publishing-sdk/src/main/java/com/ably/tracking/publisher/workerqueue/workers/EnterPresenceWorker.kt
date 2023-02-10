@@ -20,7 +20,6 @@ private const val ENTER_PRESENCE_ON_SUSPENDED_CHANNEL_ERROR_CODE = 91_001
  */
 private const val PRESENCE_ENTER_DELAY_IN_MILLISECONDS = 15_000L
 
-// TODO rename this to EnterPresenceWorker - probably already done by Andy
 internal class EnterPresenceWorker(
     private val trackable: Trackable,
     private val ably: Ably
