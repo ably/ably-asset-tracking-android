@@ -127,7 +127,6 @@ interface Ably {
         callback: (Result<Unit>) -> Unit
     )
 
-
     /**
      * Sends an enhanced location update to the channel in a suspending fashion.
      * Should be called only when there's an existing channel for the [trackableId].
@@ -136,7 +135,7 @@ interface Ably {
      * @param trackableId The ID of the trackable channel.
      * @param locationUpdate The location update that is sent to the channel.
      */
-    suspend fun sendEnhancedLocationSuspending(trackableId: String, locationUpdate: EnhancedLocationUpdate);
+    suspend fun sendEnhancedLocationSuspending(trackableId: String, locationUpdate: EnhancedLocationUpdate)
 
     /**
      * Sends a raw location update to the channel.
