@@ -2,10 +2,12 @@ package com.ably.tracking.publisher.workerqueue.workers
 
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
+import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.PresenceMessage
 import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.publisher.DefaultCorePublisher
 import com.ably.tracking.publisher.PublisherInteractor
+import com.ably.tracking.publisher.PublisherState
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 import com.ably.tracking.test.common.mockConnectFailure
@@ -42,7 +44,8 @@ class AddTrackableWorkerTest {
     private val trackable = Trackable("testtrackable")
 
     private val presenceUpdateListener = { _: PresenceMessage -> }
-    private val worker = AddTrackableWorker(trackable, resultCallbackFunction, presenceUpdateListener, {}, ably, publisherInteractor, hooks)
+    private val channelStateChangeListener = { _: ConnectionStateChange -> }
+    private val worker = AddTrackableWorker(trackable, resultCallbackFunction, presenceUpdateListener, channelStateChangeListener, ably, publisherInteractor, hooks)
 
     private val asyncWorks = mutableListOf<suspend () -> Unit>()
     private val postedWorks = mutableListOf<WorkerSpecification>()
@@ -93,6 +96,60 @@ class AddTrackableWorkerTest {
     }
 
     // async work tests
+    @Test
+    fun `should post AddTrackable work when publisher is disconnecting`() {
+        runTest {
+            // given
+            val initialProperties = createPublisherProperties()
+            initialProperties.state = PublisherState.DISCONNECTING
+
+            // when
+            worker.doWork(
+                initialProperties,
+                asyncWorks.appendWork(),
+                postedWorks.appendSpecification()
+            )
+
+            // then
+            asyncWorks.executeAll()
+            assertThat(asyncWorks).isNotEmpty()
+            assertThat(postedWorks).hasSize(1)
+
+            val postedWorkerSpecification = postedWorks[0] as WorkerSpecification.AddTrackable
+            assertThat(postedWorkerSpecification.trackable).isEqualTo(trackable)
+            assertThat(postedWorkerSpecification.presenceUpdateListener).isEqualTo(presenceUpdateListener)
+            assertThat(postedWorkerSpecification.callbackFunction).isEqualTo(resultCallbackFunction)
+            assertThat(postedWorkerSpecification.channelStateChangeListener).isEqualTo(channelStateChangeListener)
+        }
+    }
+
+    @Test
+    fun `should post AddTrackable work when publisher is marked for removal`() {
+        runTest {
+            // given
+            val initialProperties = createPublisherProperties()
+            initialProperties.trackableRemovalGuard.markForRemoval(trackable) {}
+
+            // when
+            worker.doWork(
+                initialProperties,
+                asyncWorks.appendWork(),
+                postedWorks.appendSpecification()
+            )
+
+            // then
+            asyncWorks.executeAll()
+            assertThat(asyncWorks).isNotEmpty()
+            assertThat(postedWorks).hasSize(1)
+
+            val postedWorkerSpecification = postedWorks[0] as WorkerSpecification.AddTrackable
+            assertThat(postedWorkerSpecification.trackable).isEqualTo(trackable)
+            assertThat(postedWorkerSpecification.presenceUpdateListener).isEqualTo(presenceUpdateListener)
+            assertThat(postedWorkerSpecification.callbackFunction).isEqualTo(resultCallbackFunction)
+            assertThat(postedWorkerSpecification.channelStateChangeListener).isEqualTo(channelStateChangeListener)
+        }
+    }
+
     @Test
     fun `should post ConnectionReady work when connection was successful`() {
         runTest {
