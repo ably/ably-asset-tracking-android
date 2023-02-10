@@ -53,7 +53,7 @@ class UpdatePresenceDataWorkerTest {
     }
 
     @Test
-    fun `should not call updatePresenceData when waiting for channel returns failure`() {
+    fun `should not call updatePresenceData and post work when waiting for channel returns failure`() {
         runTest {
             // given
             ably.mockWaitForChannelToAttachFailure(trackableId)
@@ -71,6 +71,9 @@ class UpdatePresenceDataWorkerTest {
             coVerify(exactly = 0) {
                 ably.updatePresenceData(trackableId, presenceData)
             }
+            val postedWorker = postedWorks[0] as WorkerSpecification.UpdatePresenceData
+            assertThat(postedWorker.presenceData).isEqualTo(presenceData)
+            assertThat(postedWorker.trackableId).isEqualTo(trackableId)
         }
     }
 
@@ -94,7 +97,29 @@ class UpdatePresenceDataWorkerTest {
             } catch (exception: java.lang.Exception) {
                 Assert.fail("Should not throw any exceptions")
             }
-            assertThat(postedWorks).hasSize(0)
+        }
+    }
+
+    @Test
+    fun `should post  when updatePresenceData returns failure`() {
+        runTest {
+            // given
+            ably.mockWaitForChannelToAttachSuccess(trackableId)
+            ably.mockUpdatePresenceDataFailure(trackableId)
+
+            // when
+            worker.doWork(
+                initialProperties,
+                asyncWorks.appendWork(),
+                postedWorks.appendSpecification()
+            )
+
+            // then
+            asyncWorks.executeAll()
+
+            val postedWorker = postedWorks[0] as WorkerSpecification.UpdatePresenceData
+            assertThat(postedWorker.presenceData).isEqualTo(presenceData)
+            assertThat(postedWorker.trackableId).isEqualTo(trackableId)
         }
     }
 }

@@ -432,46 +432,6 @@ class DefaultAblyTests {
     }
 
     @Test
-    fun `updatePresenceData - when presence update times out`() = runTest {
-        /* Given...
-         *
-         * ...that calling `containsKey` on the Channels instance returns true...
-         * ...and that calling `get` (the overload that does not accept a ChannelOptions object) on the Channels instance returns a channel...
-         * ...which, when told to update presence data, never finishes doing so...
-         *
-         *
-         * When...
-         *
-         * ...we call `updatePresenceData` on the object under test,
-         *
-         * Then...
-         * ...in the following order, precisely the following things happen...
-         *
-         * ...it calls `containsKey` on the Channels instance...
-         * ...and calls `get` (the overload that does not accept a ChannelOptions object) on the Channels instance...
-         * ...and tells the channel to update presence data...
-         * ...and the call to `updatePresenceData` (on the object under test) does not complete (see “Documenting the absence of built-in timeout” above).
-         */
-
-        DefaultAblyTestScenarios.UpdatePresenceData.test(
-            DefaultAblyTestScenarios.UpdatePresenceData.GivenConfig(
-                channelsContainsKey = true,
-                mockChannelsGet = true,
-                presenceUpdateBehaviour = DefaultAblyTestScenarios.GivenTypes.CompletionListenerMockBehaviour.DoesNotComplete
-            ),
-            DefaultAblyTestScenarios.UpdatePresenceData.ThenConfig(
-                verifyChannelsGet = true,
-                verifyGetChannelName = true,
-                verifyPresenceUpdate = true,
-                resultOfUpdatePresenceCallOnObjectUnderTest = DefaultAblyTestScenarios.ThenTypes.ExpectedAsyncResult.TerminatesWithConnectionException(
-                    errorInformation = ErrorInformation("Timeout was thrown when updating presence of channel tracking:someTrackable-1")
-                )
-            ),
-            this
-        )
-    }
-
-    @Test
     fun `updatePresenceData - when channel doesn't exist`() = runTest {
         /* Given...
          *

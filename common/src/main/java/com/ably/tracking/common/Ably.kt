@@ -217,6 +217,17 @@ interface Ably {
     suspend fun updatePresenceData(trackableId: String, presenceData: PresenceData): Result<Unit>
 
     /**
+     * Updates presence data in the [trackableId] channel's presence.
+     * Should be called only when there's an existing channel for the [trackableId].
+     * Will attempt retry with a 30 seconds timeout.
+     * If a channel for the [trackableId] doesn't exist then nothing happens.
+     *
+     * @param trackableId The ID of the trackable channel.
+     * @param presenceData The data that will be send via the presence channel.
+     */
+    suspend fun updatePresenceDataWithRetry(trackableId: String, presenceData: PresenceData): Result<Unit>
+
+    /**
      * Removes the [trackableId] channel from the connected channels and leaves the presence of that channel.
      * If a channel for the given [trackableId] doesn't exist then it just completes.
      *
@@ -767,7 +778,21 @@ constructor(
             }
         }
 
-    override suspend fun updatePresenceData(trackableId: String, presenceData: PresenceData): Result<Unit> {
+    override suspend fun updatePresenceData(
+        trackableId: String,
+        presenceData: PresenceData
+    ): Result<Unit> {
+        val trackableChannel = getChannelIfExists(trackableId) ?: return Result.success(Unit)
+        return try {
+            updatePresenceData(trackableChannel, presenceData)
+            Result.success(Unit)
+        } catch (exception: ConnectionException) {
+            logHandler?.w("$TAG Failed to update presence data for trackable $trackableId", exception)
+            Result.failure(exception)
+        }
+    }
+
+    override suspend fun updatePresenceDataWithRetry(trackableId: String, presenceData: PresenceData): Result<Unit> {
         val trackableChannel = getChannelIfExists(trackableId) ?: return Result.success(Unit)
         return try {
             // This simple retry mechanism should be removed while fixing https://github.com/ably/ably-asset-tracking-android/issues/962
@@ -805,7 +830,7 @@ constructor(
     }
 
     private suspend fun updatePresenceData(channel: AblySdkRealtime.Channel<ChannelStateListenerType>, presenceData: PresenceData) {
-        suspendCancellableCoroutine<Unit> { continuation ->
+        suspendCancellableCoroutine { continuation ->
             try {
                 channel.presence.update(
                     gson.toJson(presenceData.toMessage()),

@@ -10,6 +10,7 @@ import com.ably.tracking.common.workerqueue.WorkerFactory
 import com.ably.tracking.subscriber.SubscriberProperties
 import com.ably.tracking.subscriber.SubscriberInteractor
 import com.ably.tracking.subscriber.workerqueue.workers.ChangeResolutionWorker
+import com.ably.tracking.subscriber.workerqueue.workers.DeprecatedChangeResolutionWorker
 import com.ably.tracking.subscriber.workerqueue.workers.DisconnectWorker
 import com.ably.tracking.subscriber.workerqueue.workers.ProcessInitialPresenceMessagesWorker
 import com.ably.tracking.subscriber.workerqueue.workers.StartConnectionWorker
@@ -59,11 +60,16 @@ internal class WorkerFactory(
             is WorkerSpecification.UpdatePublisherPresence -> UpdatePublisherPresenceWorker(
                 workerSpecification.presenceMessage
             )
-            is WorkerSpecification.ChangeResolution -> ChangeResolutionWorker(
+            is WorkerSpecification.DeprecatedChangeResolution -> DeprecatedChangeResolutionWorker(
                 ably,
                 trackableId,
                 workerSpecification.resolution,
                 workerSpecification.callbackFunction
+            )
+            is WorkerSpecification.ChangeResolution -> ChangeResolutionWorker(
+                ably,
+                trackableId,
+                workerSpecification.resolution
             )
             is WorkerSpecification.Disconnect -> DisconnectWorker(
                 ably,
@@ -95,9 +101,13 @@ internal sealed class WorkerSpecification {
         val presenceMessage: PresenceMessage
     ) : WorkerSpecification()
 
-    data class ChangeResolution(
+    data class DeprecatedChangeResolution(
         val resolution: Resolution?,
         val callbackFunction: ResultCallbackFunction<Unit>
+    ) : WorkerSpecification()
+
+    data class ChangeResolution(
+        val resolution: Resolution?
     ) : WorkerSpecification()
 
     data class StartConnection(

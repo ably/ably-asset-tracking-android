@@ -147,10 +147,12 @@ fun Ably.mockSendEnhancedLocationFailureThenSuccess(trackableId: String) {
 }
 
 fun Ably.mockUpdatePresenceDataSuccess(trackableId: String) {
+    coEvery { updatePresenceDataWithRetry(trackableId, any()) } returns Result.success(Unit)
     coEvery { updatePresenceData(trackableId, any()) } returns Result.success(Unit)
 }
 
 fun Ably.mockUpdatePresenceDataFailure(trackableId: String) {
+    coEvery { updatePresenceDataWithRetry(trackableId, any()) } returns Result.failure(anyConnectionException())
     coEvery { updatePresenceData(trackableId, any()) } returns Result.failure(anyConnectionException())
 }
 
