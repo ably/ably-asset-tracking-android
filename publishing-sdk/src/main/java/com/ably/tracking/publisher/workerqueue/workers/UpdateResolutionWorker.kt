@@ -1,5 +1,6 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
+import com.ably.tracking.Resolution
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.PresenceData
 import com.ably.tracking.common.isFatalAblyFailure
@@ -7,9 +8,9 @@ import com.ably.tracking.common.workerqueue.DefaultWorker
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 
-internal class UpdatePresenceDataWorker(
+internal class UpdateResolutionWorker(
     private val trackableId: String,
-    private val presenceData: PresenceData,
+    private val resolution: Resolution,
     private val ably: Ably,
 ) : DefaultWorker<PublisherProperties, WorkerSpecification>() {
 
@@ -19,18 +20,19 @@ internal class UpdatePresenceDataWorker(
         postWork: (WorkerSpecification) -> Unit
     ): PublisherProperties {
         doAsyncWork {
-            val result = waitAndUpdatePresence()
+            val result = waitAndUpdatePresence(properties.presenceData)
             if (result.isFailure && !result.isFatalAblyFailure()) {
-                postWork(WorkerSpecification.UpdatePresenceData(trackableId, presenceData))
+                postWork(WorkerSpecification.UpdateResolution(trackableId, resolution))
             }
         }
         return properties
     }
 
-    private suspend fun waitAndUpdatePresence(): Result<Unit> {
+    private suspend fun waitAndUpdatePresence(presenceData: PresenceData): Result<Unit> {
         val waitResult = ably.waitForChannelToAttach(trackableId)
+        val updatedPresenceData = presenceData.copy(resolution = resolution)
         return if (waitResult.isSuccess) {
-            ably.updatePresenceData(trackableId, presenceData)
+            ably.updatePresenceData(trackableId, updatedPresenceData)
         } else {
             waitResult
         }

@@ -1,7 +1,8 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
+import com.ably.tracking.Accuracy
+import com.ably.tracking.Resolution
 import com.ably.tracking.common.Ably
-import com.ably.tracking.common.PresenceData
 import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 import com.ably.tracking.test.common.mockUpdatePresenceDataFailure
 import com.ably.tracking.test.common.mockUpdatePresenceDataSuccess
@@ -16,14 +17,14 @@ import org.junit.Assert
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class UpdatePresenceDataWorkerTest {
+class UpdateResolutionWorkerTest {
 
     private val ably: Ably = mockk()
     private val trackableId = "testtrackable"
 
-    private val presenceData: PresenceData = mockk()
+    private val resolution: Resolution = Resolution(Accuracy.BALANCED, 100L, 100.0)
 
-    private val worker = UpdatePresenceDataWorker(trackableId, presenceData, ably)
+    private val worker = UpdateResolutionWorker(trackableId, resolution, ably)
 
     private val initialProperties = createPublisherProperties()
     private val asyncWorks = mutableListOf<suspend () -> Unit>()
@@ -47,7 +48,7 @@ class UpdatePresenceDataWorkerTest {
             asyncWorks.executeAll()
 
             coVerify {
-                ably.updatePresenceData(trackableId, presenceData)
+                ably.updatePresenceData(trackableId, match { it.resolution == resolution })
             }
         }
     }
@@ -69,10 +70,10 @@ class UpdatePresenceDataWorkerTest {
             asyncWorks.executeAll()
 
             coVerify(exactly = 0) {
-                ably.updatePresenceData(trackableId, presenceData)
+                ably.updatePresenceData(trackableId, any())
             }
-            val postedWorker = postedWorks[0] as WorkerSpecification.UpdatePresenceData
-            assertThat(postedWorker.presenceData).isEqualTo(presenceData)
+            val postedWorker = postedWorks[0] as WorkerSpecification.UpdateResolution
+            assertThat(postedWorker.resolution).isEqualTo(resolution)
             assertThat(postedWorker.trackableId).isEqualTo(trackableId)
         }
     }
@@ -117,8 +118,8 @@ class UpdatePresenceDataWorkerTest {
             // then
             asyncWorks.executeAll()
 
-            val postedWorker = postedWorks[0] as WorkerSpecification.UpdatePresenceData
-            assertThat(postedWorker.presenceData).isEqualTo(presenceData)
+            val postedWorker = postedWorks[0] as WorkerSpecification.UpdateResolution
+            assertThat(postedWorker.resolution).isEqualTo(resolution)
             assertThat(postedWorker.trackableId).isEqualTo(trackableId)
         }
     }
