@@ -9,6 +9,7 @@ import com.ably.tracking.common.workerqueue.Worker
 import com.ably.tracking.common.workerqueue.WorkerFactory
 import com.ably.tracking.subscriber.SubscriberProperties
 import com.ably.tracking.subscriber.SubscriberInteractor
+import com.ably.tracking.subscriber.workerqueue.workers.ChangeResolutionSuccessWorker
 import com.ably.tracking.subscriber.workerqueue.workers.ChangeResolutionWorker
 import com.ably.tracking.subscriber.workerqueue.workers.DeprecatedChangeResolutionWorker
 import com.ably.tracking.subscriber.workerqueue.workers.DisconnectWorker
@@ -71,6 +72,10 @@ internal class WorkerFactory(
                 trackableId,
                 workerSpecification.resolution
             )
+            is WorkerSpecification.ChangeResolutionSuccess -> ChangeResolutionSuccessWorker(
+                trackableId,
+                workerSpecification.resolution
+            )
             is WorkerSpecification.Disconnect -> DisconnectWorker(
                 ably,
                 workerSpecification.trackableId,
@@ -107,6 +112,10 @@ internal sealed class WorkerSpecification {
     ) : WorkerSpecification()
 
     data class ChangeResolution(
+        val resolution: Resolution?
+    ) : WorkerSpecification()
+
+    data class ChangeResolutionSuccess(
         val resolution: Resolution?
     ) : WorkerSpecification()
 

@@ -140,6 +140,7 @@ private class DefaultCoreSubscriber(
 
 internal data class SubscriberProperties private constructor(
     var presenceData: PresenceData,
+    private val updatingResolutions: MutableMap<String, MutableList<Resolution?>>,
     private val eventFlows: EventFlows,
 
     override var isStopped: Boolean = false,
@@ -156,7 +157,26 @@ internal data class SubscriberProperties private constructor(
     internal constructor(
         initialResolution: Resolution?,
         eventFlows: EventFlows,
-    ) : this(PresenceData(ClientTypes.SUBSCRIBER, initialResolution), eventFlows)
+    ) : this(PresenceData(ClientTypes.SUBSCRIBER, initialResolution), mutableMapOf(), eventFlows)
+
+    fun addUpdatingResolution(trackableId: String, resolution: Resolution?) {
+        val updatingList = updatingResolutions[trackableId] ?: mutableListOf()
+        updatingList.add(resolution)
+        updatingResolutions[trackableId] = updatingList
+    }
+
+    fun containsUpdatingResolution(trackableId: String, resolution: Resolution?) =
+        updatingResolutions[trackableId]?.contains(resolution) == true
+
+    fun isLastUpdatingResolution(trackableId: String, resolution: Resolution?) =
+        updatingResolutions[trackableId]?.last() == resolution
+
+    fun removeUpdatingResolution(trackableId: String, resolution: Resolution?) {
+        updatingResolutions[trackableId]?.remove(resolution)
+        if (updatingResolutions[trackableId]?.isEmpty() == true) {
+            updatingResolutions.remove(trackableId)
+        }
+    }
 
     fun updateForConnectionStateChangeAndThenEmitStateEventsIfRequired(stateChange: ConnectionStateChange) {
         lastConnectionStateChange = stateChange

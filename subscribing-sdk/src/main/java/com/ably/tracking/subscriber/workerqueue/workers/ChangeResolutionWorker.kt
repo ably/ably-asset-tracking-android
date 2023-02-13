@@ -19,11 +19,20 @@ internal class ChangeResolutionWorker(
         postWork: (WorkerSpecification) -> Unit
     ): SubscriberProperties {
         properties.presenceData = properties.presenceData.copy(resolution = resolution)
-        doAsyncWork {
-            val result = waitAndUpdatePresence(properties.presenceData)
-            if (result.isFailure && !result.isFatalAblyFailure()) {
-                postWork(WorkerSpecification.ChangeResolution(resolution))
+        if (!properties.containsUpdatingResolution(trackableId, resolution)) {
+            properties.addUpdatingResolution(trackableId, resolution)
+        }
+        if (properties.isLastUpdatingResolution(trackableId, resolution)) {
+            doAsyncWork {
+                val result = waitAndUpdatePresence(properties.presenceData)
+                if (result.isFailure && !result.isFatalAblyFailure()) {
+                    postWork(WorkerSpecification.ChangeResolution(resolution))
+                } else {
+                    postWork(WorkerSpecification.ChangeResolutionSuccess(resolution))
+                }
             }
+        } else {
+            properties.removeUpdatingResolution(trackableId, resolution)
         }
         return properties
     }

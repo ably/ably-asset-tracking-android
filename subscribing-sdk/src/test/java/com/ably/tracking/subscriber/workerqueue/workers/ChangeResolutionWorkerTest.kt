@@ -1,5 +1,6 @@
 package com.ably.tracking.subscriber.workerqueue.workers
 
+import com.ably.tracking.Accuracy
 import com.ably.tracking.Resolution
 import com.ably.tracking.common.Ably
 import com.ably.tracking.subscriber.workerqueue.WorkerSpecification
@@ -51,6 +52,35 @@ class ChangeResolutionWorkerTest {
             }
         }
     }
+
+    @Test
+    fun `should not call updatePresenceData, not post work and remove resolution from properties when newer resolution is present`() =
+        runTest {
+            // given
+            initialProperties.addUpdatingResolution(trackableId, resolution)
+            initialProperties.addUpdatingResolution(
+                trackableId,
+                Resolution(Accuracy.HIGH, 50L, 50.0)
+            )
+            ably.mockWaitForChannelToAttachFailure(trackableId)
+
+            // when
+            val updatedProperties = worker.doWork(
+                initialProperties,
+                asyncWorks.appendWork(),
+                postedWorks.appendSpecification()
+            )
+
+            // then
+            asyncWorks.executeAll()
+            assertThat(postedWorks).hasSize(0)
+            assertThat(
+                updatedProperties.containsUpdatingResolution(
+                    trackableId,
+                    resolution
+                )
+            ).isFalse()
+        }
 
     @Test
     fun `should not call updatePresenceData and post work when waiting for channel returns failure`() {
