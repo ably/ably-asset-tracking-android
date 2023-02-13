@@ -1,11 +1,12 @@
 buildscript {
-    ext.kotlin_version = '1.6.21'
+    ext.kotlin_version = '1.7.21'
+    ext.kotlin_coroutines_version = '1.6.4'
     ext.copyright_message = (new File('COPYRIGHT')).readLines().get(0)
 
     // The version of Ably's client library for Java that we're using.
     // Source code: https://github.com/ably/ably-java
     // Maven coordinates: groupId 'io.ably', artifactId ':'ably-android'.
-    ext.ably_core_version = '1.2.21'
+    ext.ably_core_version = '1.2.25'
 
     repositories {
         google()
@@ -13,13 +14,16 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.3.1'
+        classpath 'com.android.tools.build:gradle:7.4.0'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
 
-        // Firebase Crashlytics
-        // see: https://firebase.google.com/docs/crashlytics/get-started?platform=android
-        classpath 'com.google.gms:google-services:4.3.14'
-        classpath 'com.google.firebase:firebase-crashlytics-gradle:2.9.2'
+        // Firebase Crashlytics and App Distribution
+        // see:
+        // - https://firebase.google.com/docs/crashlytics/get-started?platform=android
+        // - https://firebase.google.com/docs/app-distribution/android/distribute-gradle
+        classpath 'com.google.gms:google-services:4.3.15' // 19 January 2023
+        classpath 'com.google.firebase:firebase-crashlytics-gradle:2.9.2' // 15 September 2022
+        classpath 'com.google.firebase:firebase-appdistribution-gradle:3.2.0' // 19 January 2023
 
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
@@ -27,7 +31,7 @@ buildscript {
 }
 
 plugins {
-    id 'org.jlleitschuh.gradle.ktlint' version '10.2.1'
+    id 'org.jlleitschuh.gradle.ktlint' version '11.0.0'
     id 'org.jetbrains.dokka' version '1.4.32'
     id 'io.github.gradle-nexus.publish-plugin' version "1.1.0"
 }
@@ -39,13 +43,24 @@ tasks.dokkaHtmlMultiModule.configure {
     )
 }
 
+logger.lifecycle("Gradle JVM: ${org.gradle.internal.jvm.Jvm.current()}")
+
+// By design, this property is only injected by our adhoc-publish-example-apps workflow, not by other workflows (for example, publish-example-apps).
+// This means that when not adhoc-publishing example app builds it will have a value of `null` (org.codehaus.groovy.runtime.NullObject).
+final githubBuildMetadata = findProperty("ABLY_BUILD_CONTEXT_BUILD_METADATA")
+logger.lifecycle("githubBuildMetadata [${githubBuildMetadata.getClass()}]: $githubBuildMetadata")
+
 allprojects {
     // group and version properties are configured here as they're inherited by the maven-publish plugin.
     group = 'com.ably.tracking'
 
     // version MUST conform to the Semantic Versioning Specification (https://semver.org/) version 2.0.0
     // on incrementing this value, ensure to also increment versionCode in android defaultConfig (also in this file)
-    version = '1.5.1'
+    version = '1.6.2'
+
+    if (githubBuildMetadata) {
+        version += "+${githubBuildMetadata}"
+    }
 
     // Values used to publish the SDK to maven repositories.
     ext {
@@ -80,6 +95,7 @@ subprojects {
         final evaluatedSubProjectIsAnApp = evaluatedSubProject.pluginManager.hasPlugin('com.android.application')
         final evaluatedSubProjectIsAnExampleApp = evaluatedSubProjectIsAnApp && evaluatedSubProject.name.contains('example')
         final evaluatedSubProjectIsKotlin = evaluatedSubProject.pluginManager.hasPlugin('kotlin-android')
+        logger.lifecycle("SubProject Evaluation for ${evaluatedSubProject.name}: Library=${evaluatedSubProjectIsALibrary}, App=${evaluatedSubProjectIsAnApp}, ExampleApp=${evaluatedSubProjectIsAnExampleApp}, Kotlin=${evaluatedSubProjectIsKotlin}")
 
         // This is a convention for this Gradle modules/projects in this repository.
         // If the name has 'java' on the end (e.g. 'subscribing-sdk-java') or in the
@@ -101,18 +117,42 @@ subprojects {
         }
 
         android {
-            compileSdkVersion 31
-            buildToolsVersion '30.0.3'
+            compileSdkVersion 33
+            buildToolsVersion '33.0.1'
+
+            packagingOptions {
+                // If we don't exclude 'META-INF/*' then `./gradlew/connectedCheck` fails with:
+                //   Execution failed for task ':core-sdk-java:mergeDebugAndroidTestJavaResource'.
+                //   > A failure occurred while executing com.android.build.gradle.internal.tasks.MergeJavaResWorkAction
+                //       > 12 files found with path 'META-INF/INDEX.LIST' from inputs:
+                //   - /Users/quintinwillison/.gradle/caches/transforms-3/ae58b6a62ada6747292af50f47ad3fee/transformed/jetified-netty-codec-http2-4.1.86.Final.jar
+                //   - /Users/quintinwillison/.gradle/caches/transforms-3/f1236fea4dbae41bc32ac55a85f6b3bd/transformed/jetified-netty-transport-native-kqueue-4.1.86.Final.jar
+                //   - /Users/quintinwillison/.gradle/caches/transforms-3/3bde7caee3288eeec736343e1ef6bcf9/transformed/jetified-netty-transport-native-epoll-4.1.86.Final.jar
+                //   - /Users/quintinwillison/.gradle/caches/transforms-3/12e69c78bc747486c940da51810bfd9c/transformed/jetified-netty-codec-http-4.1.86.Final.jar
+                //   - /Users/quintinwillison/.gradle/caches/transforms-3/d4184ed97d39c5a1d0b706dbbe0dbf35/transformed/jetified-netty-handler-4.1.86.Final.jar
+                //   - /Users/quintinwillison/.gradle/caches/transforms-3/99bb3b8608be9c2bd59c61265d224fb6/transformed/jetified-netty-codec-4.1.86.Final.jar
+                //   - /Users/quintinwillison/.gradle/caches/transforms-3/fc3f8bcdefe05d515a75cd71c6757335/transformed/jetified-netty-transport-classes-kqueue-4.1.86.Final.jar
+                //   - /Users/quintinwillison/.gradle/caches/transforms-3/e7af7f748138f134013b272874950077/transformed/jetified-netty-transport-classes-epoll-4.1.86.Final.jar
+                //   - /Users/quintinwillison/.gradle/caches/transforms-3/fd2e0a57576bd59a1650c0494ab3fc0a/transformed/jetified-netty-transport-native-unix-common-4.1.86.Final.jar
+                //   - /Users/quintinwillison/.gradle/caches/transforms-3/0fd5b682236ce9fd53e58aecc05a5ffd/transformed/jetified-netty-transport-4.1.86.Final.jar
+                //   - /Users/quintinwillison/.gradle/caches/transforms-3/1502ea043ca2e82ce79bfa06181a8a4d/transformed/jetified-netty-buffer-4.1.86.Final.jar
+                //   - /Users/quintinwillison/.gradle/caches/transforms-3/a7a5476cb4601d76f24b1d349745bfe6/transformed/jetified-netty-resolver-4.1.86.Final.jar
+                //   Adding a packagingOptions block may help, please refer to
+                //   https://developer.android.com/reference/tools/gradle-api/7.3/com/android/build/api/dsl/ResourcesPackagingOptions
+                //   for more information                //
+                // from: https://stackoverflow.com/a/68136374
+                exclude 'META-INF/*'
+            }
 
             defaultConfig {
                 minSdkVersion((evaluatedSubProjectIsJava || evaluatedSubProjectIsAnExampleApp) ? 24 : 21)
-                targetSdkVersion 31
+                targetSdkVersion 33
 
                 // We have no reason not to match versions assigned to all artifacts generated by
                 // projects in this repository. Therefore, this same version number is used for SDK and
                 // example app projects alike.
                 // - versionCode MUST be incremented by 1 for each release from the main branch
-                versionCode 35
+                versionCode 39
                 versionName version
 
                 testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
@@ -158,7 +198,8 @@ subprojects {
                     'IconLocation',
                     'StopShip',
                     'DefaultLocale',
-                    'ObsoleteSdkInt'
+                    'ObsoleteSdkInt',
+                    'MonochromeLauncherIcon'
 
                 // Lint rules which are disabled by default (see: lint --show), but which we would
                 // rather were enabled.
@@ -186,8 +227,28 @@ subprojects {
                     // Configuration that must not be applied to SDK project main source set builds for the release variant/buildType.
                     // This configuration is, however, required for Android's connectedCheck task (which uses the androidTest source set
                     // with the debug variant/buildType).
-                    buildConfigField 'String', 'ABLY_API_KEY', "\"${findProperty('ABLY_API_KEY') ?: ""}\""
-                    buildConfigField 'String', 'MAPBOX_ACCESS_TOKEN', "\"${findProperty('MAPBOX_ACCESS_TOKEN') ?: ""}\""
+                    if (findProperty('runtimeSecrets') == 'USE_DUMMY_EMPTY_STRING_VALUES') {
+                        // We know that we're not going to need to compile anything that needs BuildConfig to contain
+                        // any of these secrets. For example, unit test runs, where we know there are no system tests
+                        // being run or app builds being made where those apps embed secrets.
+                        logger.lifecycle("Using dummy, empty-string secrets configuration (ABLY_API_KEY and MAPBOX_ACCESS_TOKEN) for the '${delegate.name}' Android build type.")
+                        buildConfigField 'String', 'ABLY_API_KEY', "\"\""
+                        buildConfigField 'String', 'MAPBOX_ACCESS_TOKEN', "\"\""
+                        return
+                    }
+
+                    final ABLY_API_KEY = findProperty('ABLY_API_KEY')
+                    final MAPBOX_ACCESS_TOKEN = findProperty('MAPBOX_ACCESS_TOKEN')
+                    if (ABLY_API_KEY == null || ABLY_API_KEY.trim().length() < 1) {
+                        throw new GradleException('ABLY_API_KEY not specified or is empty.')
+                    }
+                    if (MAPBOX_ACCESS_TOKEN == null || MAPBOX_ACCESS_TOKEN.trim().length() < 1) {
+                        throw new GradleException('MAPBOX_ACCESS_TOKEN not specified or is empty.')
+                    }
+
+                    buildConfigField 'String', 'ABLY_API_KEY', "\"${ABLY_API_KEY}\""
+                    buildConfigField 'String', 'MAPBOX_ACCESS_TOKEN', "\"${MAPBOX_ACCESS_TOKEN}\""
+                    logger.lifecycle("Secrets have been added to BuildConfig (ABLY_API_KEY and MAPBOX_ACCESS_TOKEN) for the '${delegate.name}' Android build type.")
                 }
 
                 def versionConfigFields = {
@@ -198,15 +259,22 @@ subprojects {
                 }
 
                 debug {
-                    apply secretConfigFields on it
-                    apply versionConfigFields on it
+                    // Secrets must not be injected into SDK builds - they are only for example apps or SDK
+                    // integration tests (via Android's `connectedCheck` task), which are testing using the debug
+                    // variant/buildType.
+                    if (evaluatedSubProjectIsAnApp || findProperty('runtimeSecrets') == 'FOR_ALL_PROJECTS_BECAUSE_WE_ARE_RUNNING_INTEGRATION_TESTS') {
+                        apply secretConfigFields on it
+                    }
+                    if (evaluatedSubProjectIsALibrary) {
+                        apply versionConfigFields on it
+                    }
                 }
 
                 release {
                     // Secrets must not be injected into SDK builds - they are only for example apps or SDK
                     // integration tests (via Android's `connectedCheck` task), which are testing using the debug
                     // variant/buildType.
-                    if (evaluatedSubProjectIsAnApp) {
+                    if (evaluatedSubProjectIsAnApp || findProperty('runtimeSecrets') == 'FOR_ALL_PROJECTS_BECAUSE_WE_ARE_RUNNING_INTEGRATION_TESTS') {
                         apply secretConfigFields on it
                     }
                     if (evaluatedSubProjectIsALibrary) {
@@ -231,26 +299,33 @@ subprojects {
         }
 
         dependencies {
-            implementation 'androidx.appcompat:appcompat:1.4.1'
-            implementation 'com.google.android.material:material:1.5.0'
+            implementation 'androidx.appcompat:appcompat:1.6.0'
+            implementation 'com.google.android.material:material:1.7.0'
+
+            constraints {
+                implementation('androidx.fragment:fragment:1.5.5') {
+                    because("The older 1.4 version uses Lint API version 11 but we're running 13 (7.3+), which was triggering ObsoleteLintCustomCheck to fail lintDebug.")
+                }
+            }
 
             if (evaluatedSubProjectIsKotlin) {
                 implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-                implementation 'androidx.core:core-ktx:1.3.2'
-                implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.2'
+                implementation 'androidx.core:core-ktx:1.9.0'
+                implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlin_coroutines_version'
 
                 // Projects that use our SDK projects will crash when dispatching to the Main thread on
                 // the Android runtime unless we include this dependency. See:
                 // https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines/-dispatchers/-main.html
-                implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.4.2'
-                testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.4.2"
+                implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$kotlin_coroutines_version"
+                testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$kotlin_coroutines_version"
                 testImplementation 'io.mockk:mockk:1.12.2'
             } else {
                 testImplementation 'org.mockito:mockito-core:3.6.28'
+                testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test-jvm:$kotlin_coroutines_version"
             }
 
             if (evaluatedSubProjectIsAnApp) {
-                implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
+                implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
                 implementation 'androidx.multidex:multidex:2.0.1'
                 implementation 'com.jakewharton.timber:timber:4.7.1'
             }

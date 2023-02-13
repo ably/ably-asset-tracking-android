@@ -5,11 +5,7 @@ plugins {
     id 'org.jlleitschuh.gradle.ktlint'
 }
 
-final useCrashlytics = project.file('google-services.json').exists()
-if (useCrashlytics) {
-    apply plugin: 'com.google.gms.google-services'
-    apply plugin: 'com.google.firebase.crashlytics'
-}
+apply from: "../firebase-app.gradle"
 
 android {
     defaultConfig {
@@ -30,18 +26,6 @@ dependencies {
     implementation 'com.amplifyframework:aws-auth-cognito:1.4.1'
     implementation 'pub.devrel:easypermissions:3.0.0'
     // This version needs to be compatible with the "com.mapbox.navigation:core" dependency version from publishing-sdk.
-    implementation 'com.mapbox.maps:android:10.8.0'
-    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.5.1'
-    //for memory leak detection
+    implementation 'com.mapbox.maps:android:10.10.0'
     debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.10'
-
-    if (useCrashlytics) {
-        // The BoM for the Firebase platform (it specifies the versions for Firebase dependencies).
-        implementation platform('com.google.firebase:firebase-bom:26.8.0')
-
-        // Firebase dependencies, which should not specifies versions as those are provided
-        // for us because we're including the BoM above.
-        // see: https://firebase.google.com/docs/crashlytics/get-started?platform=android
-        implementation 'com.google.firebase:firebase-crashlytics'
-    }
 }

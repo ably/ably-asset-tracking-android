@@ -10,8 +10,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Java 11 is the minimum for Gradle 7, Java 16 is the maximum for Gradle 7
-        java-version: [ 11, 16 ]
+        # Compatibility documentation:
+        # https://docs.gradle.org/current/userguide/compatibility.html#java
+        # https://developer.android.com/studio/releases/gradle-plugin#7-4-0
+        java-version: [
+          11, # Minimum for the Gradle Android plugin version 7.4.0
+          16, # Maximum for Gradle version 7.0
+          19, # Maximum for Gradle version 7.6
+        ]
     steps:
       - uses: actions/checkout@v3
 
@@ -20,7 +26,7 @@ jobs:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
 
-      - run: ./gradlew check testDebugUnitTestCoverage testReleaseUnitTestCoverage --profile
+      - run: ./gradlew check testDebugUnitTestCoverage testReleaseUnitTestCoverage --stacktrace --profile -PruntimeSecrets=USE_DUMMY_EMPTY_STRING_VALUES
         env:
           ORG_GRADLE_PROJECT_MAPBOX_DOWNLOADS_TOKEN: ${{ secrets.MAPBOX_DOWNLOADS_TOKEN }}
 
@@ -63,13 +69,6 @@ jobs:
         with:
           name: java-version-${{ matrix.java-version }}-publishing-sdk-build-reports
           path: publishing-sdk/build/reports
-
-      - uses: actions/upload-artifact@v3
-        name: Build Reports for subscribing-example-app
-        if: always()
-        with:
-          name: java-version-${{ matrix.java-version }}-subscribing-example-app-build-reports
-          path: subscribing-example-app/build/reports
 
       - uses: actions/upload-artifact@v3
         name: Build Reports for subscribing-java-testing

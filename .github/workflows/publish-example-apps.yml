@@ -1,0 +1,78 @@
+# This is a manually triggered workflow (hence on: workflow_dispatch).
+# See: https://docs.github.com/en/actions/reference/events-that-trigger-workflows#manual-events
+
+name: Publish Example Apps
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version, without v prefix, appended to v to locate tag'
+        required: true
+      include-individual-riders:
+        type: boolean
+        description: Include the `individual-riders` testers' group, immediately adding them to and notifying them of the new release.
+        default: true
+        required: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: v${{ github.event.inputs.version }}
+
+      # TODO replace branch ref (underlying https://github.com/ably/github-event-context-action/pull/2) with `v1` tag
+      - uses: ably/github-event-context-action@add-build-metadata-output-and-release
+        id: context
+
+      - uses: actions/setup-java@v3
+        with:
+          distribution: zulu
+          java-version: '19'
+
+      # Hydrating this file before we build (assemble) the app apk(s) in order to ensure Crashlytics support is included.
+      - name: Populate Google Services files from Secrets
+        env:
+          PUBLISHING_EXAMPLE_APP_GOOGLE_SERVICES_JSON: ${{ secrets.PUBLISHING_EXAMPLE_APP_GOOGLE_SERVICES_JSON }}
+          SUBSCRIBING_EXAMPLE_APP_GOOGLE_SERVICES_JSON: ${{ secrets.SUBSCRIBING_EXAMPLE_APP_GOOGLE_SERVICES_JSON }}
+        run: |
+          echo "$PUBLISHING_EXAMPLE_APP_GOOGLE_SERVICES_JSON" > publishing-example-app/google-services.json
+          echo "$SUBSCRIBING_EXAMPLE_APP_GOOGLE_SERVICES_JSON" > subscribing-example-app/google-services.json
+
+      - name: Populate Android Signing file from Secrets
+        env:
+          AAT_SDK_EXAMPLE_APPS_ANDROID_SIGNING_JKS_FILE_BASE64: ${{ secrets.AAT_SDK_EXAMPLE_APPS_ANDROID_SIGNING_JKS_FILE_BASE64 }}
+        run: echo "$AAT_SDK_EXAMPLE_APPS_ANDROID_SIGNING_JKS_FILE_BASE64" | openssl base64 -d -out signing.jks
+
+      - name: Populate Google Service Account private key file from Secrets
+        env:
+          ASSET_TRACKING_SDKS_GSERVICEACCOUNT_PRIVATE_KEY_JSON: ${{ secrets.ASSET_TRACKING_SDKS_GSERVICEACCOUNT_PRIVATE_KEY_JSON }}
+        run: echo "$ASSET_TRACKING_SDKS_GSERVICEACCOUNT_PRIVATE_KEY_JSON" > firebase-app-distribution-private-key.json
+
+      # for S3 uploads from the app
+      - name: Populate AWS Amplify Configuration file from Secrets
+        run: |
+          mkdir publishing-example-app/src/main/res/raw
+          echo "$AMPLIFY_CONFIGURATION" > publishing-example-app/src/main/res/raw/amplifyconfiguration.json
+        env:
+          AMPLIFY_CONFIGURATION: ${{ secrets.AMPLIFY_CONFIGURATION }}
+
+      - name: Build and Upload Example Apps
+        env:
+          ORG_GRADLE_PROJECT_ANDROID_SIGNING_KEY_ALIAS: ${{ secrets.AAT_SDK_EXAMPLE_APPS_ANDROID_SIGNING_KEY_ALIAS }}
+          ORG_GRADLE_PROJECT_ANDROID_SIGNING_KEY_PASSWORD: ${{ secrets.AAT_SDK_EXAMPLE_APPS_ANDROID_SIGNING_KEY_PASSWORD }}
+          ORG_GRADLE_PROJECT_ANDROID_SIGNING_STORE_PASSWORD: ${{ secrets.AAT_SDK_EXAMPLE_APPS_ANDROID_SIGNING_STORE_PASSWORD }}
+          ORG_GRADLE_PROJECT_MAPBOX_DOWNLOADS_TOKEN: ${{ secrets.MAPBOX_DOWNLOADS_TOKEN }}
+          ORG_GRADLE_PROJECT_MAPBOX_ACCESS_TOKEN: ${{ secrets.MAPBOX_ACCESS_TOKEN }}
+          ORG_GRADLE_PROJECT_ABLY_API_KEY: ${{ secrets.ABLY_API_KEY }}
+          ORG_GRADLE_PROJECT_APP_DISTRIBUTION_INCLUDE_INDIVIDUAL_RIDERS: ${{ github.event.inputs.include-individual-riders }}
+          ORG_GRADLE_PROJECT_APP_DISTRIBUTION_RELEASE_NOTES: "${{ steps.context.outputs.title }} [${{ steps.context.outputs.build-metadata }}]"
+        run: |
+          ./gradlew \
+            :publishing-example-app:assembleRelease \
+            :subscribing-example-app:assembleRelease \
+            :publishing-example-app:appDistributionUploadRelease \
+            :subscribing-example-app:appDistributionUploadRelease \
+            --stacktrace

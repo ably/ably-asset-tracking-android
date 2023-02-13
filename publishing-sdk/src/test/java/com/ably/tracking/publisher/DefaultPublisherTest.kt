@@ -2,19 +2,28 @@ package com.ably.tracking.publisher
 
 import android.annotation.SuppressLint
 import com.ably.tracking.ConnectionException
+import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
 import com.ably.tracking.test.common.mockConnectFailureThenSuccess
 import com.ably.tracking.test.common.mockConnectSuccess
-import com.ably.tracking.test.common.mockDisconnectSuccess
 import com.ably.tracking.test.common.mockSubscribeToPresenceError
 import com.ably.tracking.test.common.mockSubscribeToPresenceSuccess
+import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.TimeoutCancellationException
 import java.util.UUID
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.junit.Assert
 import org.junit.Test
 
@@ -36,7 +45,6 @@ class DefaultPublisherTest {
         // given
         val trackableId = UUID.randomUUID().toString()
         ably.mockConnectSuccess(trackableId)
-        ably.mockDisconnectSuccess(trackableId)
         ably.mockSubscribeToPresenceError(trackableId)
 
         // when
@@ -52,7 +60,6 @@ class DefaultPublisherTest {
         // given
         val trackableId = UUID.randomUUID().toString()
         ably.mockConnectSuccess(trackableId)
-        ably.mockDisconnectSuccess(trackableId)
         ably.mockSubscribeToPresenceError(trackableId)
 
         // when
@@ -86,31 +93,51 @@ class DefaultPublisherTest {
 
         // then
         coVerify(exactly = 1) {
-            ably.connect(trackableId, any(), any(), any(), any())
+            ably.connect(trackableId, any(), any(), any())
         }
     }
 
     @Test()
-    fun `should repeat adding process when adding the first trackable has failed before starting to add the second one`() {
+    fun `should repeat adding process when adding the first trackable has failed with fatal exception before starting to add the second one`() {
         // given
         val trackableId = UUID.randomUUID().toString()
         val trackable = Trackable(trackableId)
-        ably.mockConnectFailureThenSuccess(trackableId)
+        ably.mockConnectFailureThenSuccess(trackableId, isFatal = true)
         ably.mockSubscribeToPresenceSuccess(trackableId)
+        val scope = CoroutineScope(Dispatchers.Default)
 
         // when
+        val trackableStateFlow: StateFlow<TrackableState>
         runBlocking {
-            try {
-                publisher.add(trackable)
-            } catch (exception: Exception) {
-                // ignoring exception in this test
+            trackableStateFlow = publisher.add(trackable)
+        }
+
+        var enteredFailedState = false
+        trackableStateFlow.onEach {
+            if (it is TrackableState.Failed) {
+                enteredFailedState = true
             }
+        }.launchIn(scope)
+
+        runBlocking {
+            withTimeout(5000) {
+                while (true) {
+                    if (enteredFailedState) {
+                        break
+                    }
+
+                    delay(5)
+                }
+            }
+
+            // Have to remove the previous one before re-adding
+            publisher.remove(trackable)
             publisher.add(trackable)
         }
 
         // then
-        coVerify(exactly = 2) {
-            ably.connect(trackableId, any(), any(), any(), any())
+        coVerify(exactly = 2, timeout = 10000) {
+            ably.connect(trackableId, any(), any(), any())
         }
     }
 
@@ -131,47 +158,70 @@ class DefaultPublisherTest {
         }
 
         // then
-        coVerify(exactly = 1) {
-            ably.connect(trackableId, any(), any(), any(), any())
+        coVerify(exactly = 1, timeout = 10000) {
+            ably.connect(trackableId, any(), any(), any())
         }
     }
 
     @Test()
-    fun `should fail adding process when adding a trackable that is currently being added and it fails`() {
+    fun `should not fail adding process when adding a trackable that is currently being added and it fails with fatal exception`() {
         // given
         val trackableId = UUID.randomUUID().toString()
         val trackable = Trackable(trackableId)
-        var didFirstAddFail = false
-        var didSecondAddFail = false
         // without the callback delay sometimes the first add() ends before the second one begins
-        ably.mockConnectFailureThenSuccess(trackableId, callbackDelayInMilliseconds = 100L)
+        ably.mockConnectFailureThenSuccess(trackableId, isFatal = true, callbackDelayInMilliseconds = 100L)
         ably.mockSubscribeToPresenceSuccess(trackableId)
+        val scope = CoroutineScope(Dispatchers.Default)
 
         // when
+        val trackableStateFlow: StateFlow<TrackableState>
         runBlocking {
-            coroutineScope {
-                launch {
-                    try {
-                        publisher.add(trackable)
-                    } catch (exception: Exception) {
-                        didFirstAddFail = true
+            trackableStateFlow = publisher.add(trackable)
+        }
+
+        var enteredFailedState = false
+        trackableStateFlow.onEach {
+            if (it is TrackableState.Failed) {
+                enteredFailedState = true
+            }
+        }.launchIn(scope)
+
+        runBlocking {
+            withTimeout(5000) {
+                while (true) {
+                    if (enteredFailedState) {
+                        break
                     }
-                }
-                launch {
-                    try {
-                        publisher.add(trackable)
-                    } catch (exception: Exception) {
-                        didSecondAddFail = true
-                    }
+
+                    delay(5)
                 }
             }
         }
 
+        var secondAttemptEnteredFailedState = false
+        trackableStateFlow.onEach {
+            if (it is TrackableState.Failed) {
+                secondAttemptEnteredFailedState = true
+            }
+        }.launchIn(scope)
+
+        runBlocking {
+            withTimeout(5000) {
+                while (true) {
+                    if (secondAttemptEnteredFailedState) {
+                        break
+                    }
+
+                    delay(5)
+                }
+            }
+
+            publisher.add(trackable)
+        }
+
         // then
-        Assert.assertTrue("First add should fail", didFirstAddFail)
-        Assert.assertTrue("Second add should fail", didSecondAddFail)
-        coVerify(exactly = 1) {
-            ably.connect(trackableId, any(), any(), any(), any())
+        coVerify(exactly = 1, timeout = 10000) {
+            ably.connect(trackableId, any(), any(), any())
         }
     }
 
@@ -220,5 +270,36 @@ class DefaultPublisherTest {
         verify(exactly = 1) {
             mapbox.clearRoute()
         }
+    }
+
+    @Test()
+    fun `close - behaviour when wrapped in a withTimeout block, when the timeout elapses during the presence leave operation`() {
+        // Given...
+        // ...when ably.close() is called, it takes 2 seconds to complete...
+        coEvery { ably.close(any()) } coAnswers { delay(2000) }
+
+        // When...
+        var caughtTimeoutCancellationException = false
+        runBlocking {
+            try {
+                // ...we call publisher.stop() from within a withTimeout block with a timeout of 1 second...
+                withTimeout(1000) {
+                    publisher.stop()
+                }
+            } catch (e: TimeoutCancellationException) {
+                caughtTimeoutCancellationException = true
+            }
+        }
+
+        // Then...
+        coVerify(exactly = 1) {
+            // ...ably.close() is called...
+            ably.close(any())
+        }
+
+        // ...and the withTimeout block throws a TimeoutCancellationException.
+        Assert.assertTrue(caughtTimeoutCancellationException)
+
+        // This test exists for similar probably-paranoid-and-misguided reasons as the test "close - behaviour when wrapped in a withTimeout block, when the timeout elapses during the presence leave operation" in DefaultAblyTests - to give me confidence that if the publisher.close() call is wrapped in a withTimeout block and the timeout elapses, then the TimeoutCancellationException will find its way to the caller of withTimeout.
     }
 }

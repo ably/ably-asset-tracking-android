@@ -10,6 +10,7 @@ import com.ably.tracking.test.common.createLocation
 import com.ably.tracking.test.common.mockConnectSuccess
 import com.ably.tracking.test.common.mockSendEnhancedLocationSuccess
 import com.ably.tracking.test.common.mockSubscribeToPresenceSuccess
+import com.ably.tracking.test.common.waitForCapture
 import com.mapbox.geojson.LineString
 import com.mapbox.geojson.Point
 import com.mapbox.turf.TurfConstants
@@ -162,6 +163,8 @@ class CorePublisherResolutionTest(
         runBlocking(Dispatchers.IO) {
             addTrackableToCorePublisher(trackable)
         }
+
+        locationUpdatesObserverSlot.waitForCapture(5000)
         locationUpdatesObserver = locationUpdatesObserverSlot.captured
     }
 
@@ -179,7 +182,7 @@ class CorePublisherResolutionTest(
 
     private suspend fun stopCorePublisher() {
         suspendCoroutine<Unit> { continuation ->
-            corePublisher.stop(30_000L) {
+            corePublisher.stop() {
                 try {
                     continuation.resume(it.getOrThrow())
                 } catch (exception: Exception) {

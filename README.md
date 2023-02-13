@@ -1,8 +1,9 @@
 # Ably Asset Tracking SDKs for Android
 
-![.github/workflows/check.yml](https://github.com/ably/ably-asset-tracking-android/workflows/.github/workflows/check.yml/badge.svg)
-![.github/workflows/emulate.yml](https://github.com/ably/ably-asset-tracking-android/workflows/.github/workflows/emulate.yml/badge.svg)
-![.github/workflows/assemble.yml](https://github.com/ably/ably-asset-tracking-android/workflows/.github/workflows/assemble.yml/badge.svg)
+[![.github/workflows/check.yml](https://github.com/ably/ably-asset-tracking-android/actions/workflows/check.yml/badge.svg)](https://github.com/ably/ably-asset-tracking-android/actions/workflows/check.yml)
+[![.github/workflows/emulate.yml](https://github.com/ably/ably-asset-tracking-android/actions/workflows/emulate.yml/badge.svg)](https://github.com/ably/ably-asset-tracking-android/actions/workflows/emulate.yml)
+[![.github/workflows/assemble.yml](https://github.com/ably/ably-asset-tracking-android/actions/workflows/assemble.yml/badge.svg)](https://github.com/ably/ably-asset-tracking-android/actions/workflows/assemble.yml)
+[![.github/workflows/docs.yml](https://github.com/ably/ably-asset-tracking-android/actions/workflows/docs.yml/badge.svg)](https://github.com/ably/ably-asset-tracking-android/actions/workflows/docs.yml)
 
 _[Ably](https://ably.com) is the platform that powers synchronized digital experiences in realtime. Whether attending an event in a virtual venue, receiving realtime financial information, or monitoring live car performance data – consumers simply expect realtime digital experiences as standard. Ably provides a suite of APIs to build, extend, and deliver powerful digital experiences in realtime for more than 250 million devices across 80 countries each month. Organizations like Bloomberg, HubSpot, Verizon, and Hopin depend on Ably’s platform to offload the growing complexity of business-critical realtime data synchronization at global scale. For more information, see the [Ably documentation](https://ably.com/docs)._
 
@@ -48,6 +49,10 @@ MAPBOX_DOWNLOADS_TOKEN=create_token_with_downloads_read_secret_scope
 MAPBOX_ACCESS_TOKEN=create_token_with_all_public_scopes
 GOOGLE_MAPS_API_KEY=create_api_key_with_geolocation_maps_sdk
 ```
+
+Our Gradle build configuration also has support for uploading example apps to Firebase App Distribution with Crashlytics support - see
+[`CONTRIBUTING.md`: Secrets Required to Distribute the Example Apps](CONTRIBUTING.md#secrets-required-to-distribute-the-example-apps)
+for more detail on this.
 
 ## Usage
 
@@ -127,13 +132,13 @@ you can then add the Ably Asset Tracking dependency that you require in your Gra
 ```groovy
 dependencies {
     // Publishers, developing in Kotlin, will need the Publishing SDK
-    implementation 'com.ably.tracking:publishing-sdk:1.5.1'
+    implementation 'com.ably.tracking:publishing-sdk:1.6.2'
 
     // Subscribers, developing in Kotlin, will need the Subscribing SDK
-    implementation 'com.ably.tracking:subscribing-sdk:1.5.1'
+    implementation 'com.ably.tracking:subscribing-sdk:1.6.2'
 
     // Subscribers, developing in Kotlin, can optionally use the UI utilities
-    implementation 'com.ably.tracking:ui-sdk:1.5.1'
+    implementation 'com.ably.tracking:ui-sdk:1.6.2'
 }
 ```
 
@@ -356,10 +361,10 @@ Firstly, you have to exclude the notification module from Mapbox Navigation SDK 
 
 ```groovy
 // The Ably Asset Tracking Publisher SDK for Android.
-implementation ('com.ably.tracking:publishing-sdk:1.5.1')
+implementation ('com.ably.tracking:publishing-sdk:1.6.2')
 
 // The Mapbox Navigation SDK.
-implementation ('com.mapbox.navigation:android:2.8.0') {
+implementation ('com.mapbox.navigation:android:2.10.0') {
     exclude group: "com.mapbox.navigation", module: "notification"
 }
 ```

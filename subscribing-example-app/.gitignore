@@ -1,0 +1,5 @@
+# Secrets which should never be committed
+/google-services.json
+
+# Intermediary or transient folders created when assembling the app.
+/release/

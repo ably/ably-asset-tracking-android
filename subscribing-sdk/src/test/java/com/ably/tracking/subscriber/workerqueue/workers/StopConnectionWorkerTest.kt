@@ -4,18 +4,18 @@ import com.ably.tracking.Accuracy
 import com.ably.tracking.Resolution
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ResultCallbackFunction
-import com.ably.tracking.subscriber.SubscriberProperties
 import com.ably.tracking.subscriber.SubscriberInteractor
+import com.ably.tracking.subscriber.SubscriberProperties
+import com.ably.tracking.subscriber.SubscriberStoppedException
 import com.ably.tracking.subscriber.workerqueue.WorkerSpecification
-import com.ably.tracking.test.common.mockCloseFailure
-import com.ably.tracking.test.common.mockCloseSuccessWithDelay
+import com.ably.tracking.test.common.mockCloseSuccess
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.runs
 import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert
 import org.junit.Test
 
@@ -33,10 +33,10 @@ internal class StopConnectionWorkerTest {
     private val postedWorks = mutableListOf<WorkerSpecification>()
 
     @Test
-    fun `should call ably close and notify callback with success`() = runBlockingTest {
+    fun `should call ably close and notify callback with success`() = runTest {
         // given
         val initialProperties = SubscriberProperties(Resolution(Accuracy.BALANCED, 100, 100.0), mockk())
-        ably.mockCloseSuccessWithDelay(10)
+        ably.mockCloseSuccess()
 
         // when
         val updatedProperties =
@@ -49,15 +49,14 @@ internal class StopConnectionWorkerTest {
     }
 
     @Test
-    fun `should call ably close and notify callback with failure when it fails`() = runBlockingTest {
+    fun `should call the callback function with a success if subscriber is already stopped`() = runTest {
         // given
-        val initialProperties = SubscriberProperties(Resolution(Accuracy.BALANCED, 100, 100.0), mockk())
-        ably.mockCloseFailure()
+        ably.mockCloseSuccess()
 
         // when
-        stopConnectionWorker.doWork(initialProperties, asyncWorks.appendWork(), postedWorks.appendSpecification())
+        stopConnectionWorker.doWhenStopped(SubscriberStoppedException())
 
         // then
-        verify { callbackFunction.invoke(match { it.isFailure }) }
+        verify { callbackFunction.invoke(match { it.isSuccess }) }
     }
 }

@@ -2,7 +2,9 @@ package com.ably.tracking.publisher
 
 import android.Manifest
 import androidx.annotation.RequiresPermission
+import com.ably.tracking.ConnectionException
 import com.ably.tracking.EnhancedLocationUpdate
+import com.ably.tracking.ErrorInformation
 import com.ably.tracking.Location
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.LocationUpdateType
@@ -29,6 +31,8 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import com.ably.tracking.common.workerqueue.WorkerQueue
 import com.ably.tracking.publisher.workerqueue.WorkerFactory
+import io.ably.lib.realtime.ChannelState
+import kotlinx.coroutines.delay
 
 /**
  * This interface exposes methods for [DefaultPublisher].
@@ -38,7 +42,7 @@ internal interface CorePublisher {
     fun addTrackable(trackable: Trackable, callbackFunction: ResultCallbackFunction<StateFlow<TrackableState>>)
     fun removeTrackable(trackable: Trackable, callbackFunction: ResultCallbackFunction<Boolean>)
     fun changeRoutingProfile(routingProfile: RoutingProfile)
-    fun stop(timeoutInMilliseconds: Long, callbackFunction: ResultCallbackFunction<Unit>)
+    fun stop(callbackFunction: ResultCallbackFunction<Unit>)
     val locations: SharedFlow<LocationUpdate>
     val trackables: SharedFlow<Set<Trackable>>
     val locationHistory: SharedFlow<LocationHistoryData>
@@ -56,6 +60,7 @@ internal interface PublisherInteractor {
     fun resolveResolution(trackable: Trackable, properties: PublisherProperties)
     fun updateTrackableStateFlows(properties: PublisherProperties)
     fun updateTrackableState(properties: PublisherProperties, trackableId: String)
+    fun setFinalTrackableState(properties: PublisherProperties, trackableId: String, finalState: TrackableState)
     fun notifyResolutionPolicyThatTrackableWasRemoved(trackable: Trackable)
     fun removeCurrentDestination(properties: PublisherProperties)
     fun notifyResolutionPolicyThatActiveTrackableHasChanged(trackable: Trackable?)
@@ -138,6 +143,11 @@ constructor(
     private val sendResolutionEnabled: Boolean,
     constantLocationEngineResolution: Resolution?,
 ) : CorePublisher, PublisherInteractor, TimeProvider {
+
+    companion object {
+        private const val LOCATION_PUBLISH_ON_SUSPENDED_CHANNEL_DELAY = 1_000L
+    }
+
     private val TAG = createLoggingTag(this)
     private val scope = CoroutineScope(singleThreadDispatcher + SupervisorJob())
     private val workerQueue: WorkerQueue<PublisherProperties, WorkerSpecification>
@@ -178,7 +188,8 @@ constructor(
             scope = scope,
             workerFactory = workerFactory,
             copyProperties = { copy() },
-            getStoppedException = { PublisherStoppedException() }
+            getStoppedException = { PublisherStoppedException() },
+            logHandler = logHandler,
         )
         ably.subscribeForAblyStateChange { enqueue(WorkerSpecification.AblyConnectionStateChange(it)) }
         mapbox.setLocationHistoryListener { historyData -> scope.launch { _locationHistory.emit(historyData) } }
@@ -251,8 +262,8 @@ constructor(
         enqueue(WorkerSpecification.ChangeRoutingProfile(routingProfile))
     }
 
-    override fun stop(timeoutInMilliseconds: Long, callbackFunction: ResultCallbackFunction<Unit>) {
-        enqueue(WorkerSpecification.Stop(callbackFunction, timeoutInMilliseconds))
+    override fun stop(callbackFunction: ResultCallbackFunction<Unit>) {
+        enqueue(WorkerSpecification.Stop(callbackFunction))
     }
 
     override fun retrySendingEnhancedLocation(
@@ -314,6 +325,20 @@ constructor(
             enhancedLocationUpdate.type
         )
         properties.enhancedLocationsPublishingState.markMessageAsPending(trackableId)
+        if (ably.getChannelState(trackableId) == ChannelState.suspended) {
+            scope.launch {
+                delay(LOCATION_PUBLISH_ON_SUSPENDED_CHANNEL_DELAY)
+                val exception = ConnectionException(ErrorInformation("Enhanced location cannot be sent when channel is in suspended state"))
+                enqueue(
+                    WorkerSpecification.SendEnhancedLocationFailure(
+                        locationUpdate,
+                        trackableId,
+                        exception
+                    )
+                )
+            }
+            return
+        }
         ably.sendEnhancedLocation(trackableId, locationUpdate) {
             if (it.isSuccess) {
                 enqueue(
@@ -396,6 +421,22 @@ constructor(
             properties.skippedRawLocations.toList(trackableId),
         )
         properties.rawLocationsPublishingState.markMessageAsPending(trackableId)
+
+        if (ably.getChannelState(trackableId) == ChannelState.suspended) {
+            scope.launch {
+                delay(LOCATION_PUBLISH_ON_SUSPENDED_CHANNEL_DELAY)
+                val exception =
+                    ConnectionException(ErrorInformation("Raw location cannot be sent when channel is in suspended state"))
+                enqueue(
+                    WorkerSpecification.SendRawLocationFailure(
+                        locationUpdate,
+                        trackableId,
+                        exception
+                    )
+                )
+            }
+            return
+        }
         ably.sendRawLocation(trackableId, locationUpdate) {
             if (it.isSuccess) {
                 enqueue(WorkerSpecification.SendRawLocationSuccess(locationUpdate.location, trackableId))
@@ -431,17 +472,37 @@ constructor(
         mapbox.startTrip()
     }
 
+    override fun setFinalTrackableState(
+        properties: PublisherProperties,
+        trackableId: String,
+        finalState: TrackableState
+    ) {
+        if (properties.hasSetFinalTrackableState(trackableId)) {
+            logHandler?.w("Trying to set the final state of trackable $trackableId multiple times")
+        } else {
+            properties.trackablesWithFinalStateSet.add(trackableId)
+            publishNewTrackableState(properties, trackableId, finalState)
+            logHandler?.v("Set the final state (${finalState.javaClass.simpleName}) of trackable $trackableId")
+        }
+    }
+
     override fun updateTrackableState(properties: PublisherProperties, trackableId: String) {
+        // Dynamic trackable state updates are only active if the final trackable state was not set
+        if (properties.hasSetFinalTrackableState(trackableId)) {
+            logHandler?.w("Ignoring a state update of trackable $trackableId after its final state was set")
+            return
+        }
         val hasSentAtLeastOneLocation: Boolean = properties.lastSentEnhancedLocations[trackableId] != null
         val lastChannelConnectionStateChange = getLastChannelConnectionStateChange(properties, trackableId)
         val isSubscribedToPresence = properties.trackableSubscribedToPresenceFlags[trackableId] == true
+        val hasEnteredPresence = properties.trackableEnteredPresenceFlags[trackableId] == true
         val newTrackableState = when (properties.lastConnectionStateChange.state) {
             ConnectionState.ONLINE -> {
                 when (lastChannelConnectionStateChange.state) {
                     ConnectionState.ONLINE ->
                         when {
-                            hasSentAtLeastOneLocation && isSubscribedToPresence -> TrackableState.Online
-                            hasSentAtLeastOneLocation && !isSubscribedToPresence -> TrackableState.Publishing
+                            hasSentAtLeastOneLocation && hasEnteredPresence && isSubscribedToPresence -> TrackableState.Online
+                            hasSentAtLeastOneLocation && hasEnteredPresence && !isSubscribedToPresence -> TrackableState.Publishing
                             else -> TrackableState.Offline()
                         }
                     ConnectionState.OFFLINE -> TrackableState.Offline()
@@ -451,12 +512,21 @@ constructor(
             ConnectionState.OFFLINE -> TrackableState.Offline()
             ConnectionState.FAILED -> TrackableState.Failed(properties.lastConnectionStateChange.errorInformation!!) // are we sure error information will always be present?
         }
+
         if (newTrackableState != properties.trackableStates[trackableId]) {
-            properties.trackableStates[trackableId] = newTrackableState
-            scope.launch {
-                if (properties.state != PublisherState.STOPPED) {
-                    properties.trackableStateFlows[trackableId]?.emit(newTrackableState)
-                }
+            publishNewTrackableState(properties, trackableId, newTrackableState)
+        }
+    }
+
+    private fun publishNewTrackableState(
+        properties: PublisherProperties,
+        trackableId: String,
+        newTrackableState: TrackableState
+    ) {
+        properties.trackableStates[trackableId] = newTrackableState
+        scope.launch {
+            if (properties.state != PublisherState.STOPPED) {
+                properties.trackableStateFlows[trackableId]?.emit(newTrackableState)
             }
         }
     }
@@ -549,8 +619,8 @@ constructor(
                 properties.resolutions[trackable.id] = resolution
                 enqueue(WorkerSpecification.ChangeLocationEngineResolution)
                 if (sendResolutionEnabled) {
-                    // For now we ignore the result of this operation but perhaps we should retry it if it fails
-                    ably.updatePresenceData(trackable.id, properties.presenceData.copy(resolution = resolution)) {}
+                    val presenceData = properties.presenceData.copy(resolution = resolution)
+                    enqueue(WorkerSpecification.UpdatePresenceData(trackable.id, presenceData))
                 }
             }
         }

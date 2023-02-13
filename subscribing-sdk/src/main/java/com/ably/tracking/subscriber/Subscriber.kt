@@ -87,8 +87,6 @@ interface Subscriber {
     /**
      * Stops this subscriber from listening to published locations. Once a subscriber has been stopped, it cannot be
      * restarted.
-     *
-     * @throws ConnectionException If something goes wrong during connection closing
      */
     @JvmSynthetic
     suspend fun stop()
@@ -141,7 +139,7 @@ interface Subscriber {
          *
          * @return A new subscriber instance.
          * @throws BuilderConfigurationIncompleteException If all required params aren't set
-         * @throws ConnectionException If something goes wrong during connection initialization
+         * @throws ConnectionException If connection configuration is invalid.
          */
         @JvmSynthetic
         suspend fun start(): Subscriber

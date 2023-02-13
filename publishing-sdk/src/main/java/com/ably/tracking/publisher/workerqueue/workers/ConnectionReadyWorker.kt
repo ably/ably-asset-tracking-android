@@ -1,26 +1,20 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
-import com.ably.tracking.TrackableState
+import com.ably.tracking.ErrorInformation
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.workerqueue.Worker
-import com.ably.tracking.publisher.DefaultCorePublisher
 import com.ably.tracking.publisher.PublisherInteractor
 import com.ably.tracking.publisher.PublisherProperties
+import com.ably.tracking.publisher.PublisherState
 import com.ably.tracking.publisher.Trackable
 import com.ably.tracking.publisher.workerqueue.WorkerSpecification
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
 
 internal class ConnectionReadyWorker(
     private val trackable: Trackable,
-    private val callbackFunction: AddTrackableCallbackFunction,
     private val ably: Ably,
-    private val hooks: DefaultCorePublisher.Hooks,
     private val publisherInteractor: PublisherInteractor,
     private val channelStateChangeListener: ((connectionStateChange: ConnectionStateChange) -> Unit),
-    private val isSubscribedToPresence: Boolean,
-    private val presenceUpdateListener: ((presenceMessage: com.ably.tracking.common.PresenceMessage) -> Unit),
 ) : Worker<PublisherProperties, WorkerSpecification> {
 
     override fun doWork(
@@ -35,31 +29,31 @@ internal class ConnectionReadyWorker(
             return properties
         }
 
+        setPublisherState(properties)
         subscribeForChannelStateChanges()
         startLocationUpdates(properties)
-        addTrackableToPublisher(properties)
-        val trackableState = properties.trackableStates[trackable.id] ?: TrackableState.Offline()
-        val trackableStateFlow = properties.trackableStateFlows[trackable.id] ?: MutableStateFlow(trackableState)
-        updateTrackableState(properties, trackableState, trackableStateFlow, isSubscribedToPresence)
-        notifyAddOperationFinished(properties, trackableStateFlow)
-
-        if (!isSubscribedToPresence) {
-            postWork(WorkerSpecification.RetrySubscribeToPresence(trackable, presenceUpdateListener))
-        }
 
         return properties
     }
 
-    override fun doWhenStopped(exception: Exception) {
-        callbackFunction(Result.failure(exception))
+    /**
+     * Set the publisher state to CONNECTED if we were previously CONNECTING.
+     *
+     * This indicates that we've done everything connection-wise for this trackable, so the next
+     * trackable may now start adding in AddTrackableWorker.
+     */
+    private fun setPublisherState(properties: PublisherProperties) {
+        if (properties.state == PublisherState.CONNECTING) {
+            properties.state = PublisherState.CONNECTED
+        }
     }
 
     private suspend fun onTrackableRemovalRequested(
         properties: PublisherProperties,
         postWork: (WorkerSpecification) -> Unit
     ) {
-        val result = ably.disconnect(trackable.id, properties.presenceData)
-        postWork(WorkerSpecification.TrackableRemovalRequested(trackable, callbackFunction, result))
+        ably.disconnect(trackable.id, properties.presenceData)
+        postWork(WorkerSpecification.TrackableRemovalRequested(trackable, Result.success(Unit)))
     }
 
     private fun subscribeForChannelStateChanges() {
@@ -74,31 +68,22 @@ internal class ConnectionReadyWorker(
         }
     }
 
-    private fun addTrackableToPublisher(properties: PublisherProperties) {
-        properties.trackables.add(trackable)
-        publisherInteractor.updateTrackables(properties)
-        publisherInteractor.resolveResolution(trackable, properties)
-        hooks.trackables?.onTrackableAdded(trackable)
+    override fun onUnexpectedAsyncError(exception: Exception, postWork: (WorkerSpecification) -> Unit) {
+        postWork(
+            WorkerSpecification.TrackableRemovalRequested(trackable, Result.failure(exception))
+        )
     }
 
-    private fun updateTrackableState(
-        properties: PublisherProperties,
-        trackableState: TrackableState,
-        trackableStateFlow: MutableStateFlow<TrackableState>,
-        isSubscribedToPresence: Boolean,
-    ) {
-        properties.trackableStateFlows[trackable.id] = trackableStateFlow
-        publisherInteractor.updateTrackableStateFlows(properties)
-        properties.trackableStates[trackable.id] = trackableState
-        properties.trackableSubscribedToPresenceFlags[trackable.id] = isSubscribedToPresence
+    override fun doWhenStopped(exception: Exception) {
+        // No op
     }
 
-    private fun notifyAddOperationFinished(
-        properties: PublisherProperties,
-        trackableStateFlow: MutableStateFlow<TrackableState>
-    ) {
-        val successResult = Result.success(trackableStateFlow.asStateFlow())
-        callbackFunction(successResult)
-        properties.duplicateTrackableGuard.finishAddingTrackable(trackable, successResult)
+    override fun onUnexpectedError(exception: Exception, postWork: (WorkerSpecification) -> Unit) {
+        postWork(
+            WorkerSpecification.FailTrackable(
+                trackable,
+                ErrorInformation("Unexpected error on connection ready: $exception")
+            )
+        )
     }
 }

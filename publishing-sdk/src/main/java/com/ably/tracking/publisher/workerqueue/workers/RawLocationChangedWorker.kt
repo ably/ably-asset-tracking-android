@@ -4,7 +4,7 @@ import com.ably.tracking.Location
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.common.logging.createLoggingTag
 import com.ably.tracking.common.logging.v
-import com.ably.tracking.common.workerqueue.Worker
+import com.ably.tracking.common.workerqueue.DefaultWorker
 import com.ably.tracking.logging.LogHandler
 import com.ably.tracking.publisher.PublisherInteractor
 import com.ably.tracking.publisher.PublisherProperties
@@ -14,7 +14,7 @@ internal class RawLocationChangedWorker(
     private val location: Location,
     private val publisherInteractor: PublisherInteractor,
     private val logHandler: LogHandler?,
-) : Worker<PublisherProperties, WorkerSpecification> {
+) : DefaultWorker<PublisherProperties, WorkerSpecification>() {
     private val TAG = createLoggingTag(this)
 
     override fun doWork(
@@ -38,6 +38,4 @@ internal class RawLocationChangedWorker(
         }
         return properties
     }
-
-    override fun doWhenStopped(exception: Exception) = Unit
 }

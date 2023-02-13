@@ -191,7 +191,7 @@ fun ChannelState.toTracking() = when (this) {
  * Extension converting Ably Realtime channel state change events to the equivalent [ConnectionStateChange] API
  * presented to users of the Ably Asset Tracking SDKs.
  */
-fun io.ably.lib.realtime.ChannelStateListener.ChannelStateChange.toTracking() =
+fun AblySdkChannelStateListener.ChannelStateChange.toTracking() =
     ConnectionStateChange(
         this.current.toTracking(),
         this.reason?.toTracking()
@@ -221,3 +221,25 @@ private fun TokenAuthException.toAblyException(): AblyException =
         is CouldNotFetchTokenException ->
             AblyException.fromErrorInfo(ErrorInfo(message, 401, 100_002))
     }
+
+/**
+ * Indicates whether the result is a failure that a fatal exception from as a reason and we should not attempt to retry it.
+ */
+fun <T : Any> Result<T>.isFatalAblyFailure() =
+    isFailure && (exceptionOrNull() as? ConnectionException)?.isFatal() == true
+
+/**
+ * Indicates whether the exception from Ably is fatal and we should not attempt to retry it.
+ * Fatal errors have status codes like 4xx (e.g. 400).
+ */
+fun ConnectionException.isFatal(): Boolean {
+    return (400..499).contains(errorInformation.statusCode)
+}
+
+/**
+ * Indicates whether the exception from Ably is retriable and we can attempt to retry it.
+ * Non-fatal errors have status codes in range 500-504.
+ */
+fun ConnectionException.isRetriable(): Boolean {
+    return (500..504).contains(errorInformation.statusCode)
+}

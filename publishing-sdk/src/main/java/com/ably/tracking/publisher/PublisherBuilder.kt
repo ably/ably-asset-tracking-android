@@ -7,11 +7,14 @@ import androidx.annotation.RequiresPermission
 import com.ably.tracking.BuilderConfigurationIncompleteException
 import com.ably.tracking.Resolution
 import com.ably.tracking.common.DefaultAbly
-import com.ably.tracking.common.DefaultAblySdkRealtimeFactory
+import com.ably.tracking.common.DefaultAblySdkFactory
 import com.ably.tracking.common.logging.createLoggingTag
 import com.ably.tracking.common.logging.v
 import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.logging.LogHandler
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 
 internal data class PublisherBuilder(
     val connectionConfiguration: ConnectionConfiguration? = null,
@@ -80,9 +83,11 @@ internal data class PublisherBuilder(
             throw BuilderConfigurationIncompleteException()
         }
         logHandler?.v("$TAG Creating a publisher instance")
+
+        val coroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
         // All below fields are required and above code checks if they are nulls, so using !! should be safe from NPE
         return DefaultPublisher(
-            DefaultAbly(DefaultAblySdkRealtimeFactory(), connectionConfiguration!!, logHandler),
+            DefaultAbly(DefaultAblySdkFactory(), connectionConfiguration!!, logHandler, coroutineScope),
             DefaultMapbox(
                 androidContext!!,
                 mapConfiguration!!,

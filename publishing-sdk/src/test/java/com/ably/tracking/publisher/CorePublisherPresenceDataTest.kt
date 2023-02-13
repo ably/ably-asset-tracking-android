@@ -53,7 +53,7 @@ class CorePublisherPresenceDataTest {
         }
         val expectedPresenceData = PresenceData(ClientTypes.PUBLISHER, null, null)
         coVerify(exactly = 1) {
-            ably.connect(trackableId, expectedPresenceData, any(), any(), any())
+            ably.enterChannelPresence(trackableId, expectedPresenceData)
         }
     }
 
@@ -73,7 +73,7 @@ class CorePublisherPresenceDataTest {
         }
         val expectedPresenceData = PresenceData(ClientTypes.PUBLISHER, null, true)
         coVerify(exactly = 1) {
-            ably.connect(trackableId, expectedPresenceData, any(), any(), any())
+            ably.enterChannelPresence(trackableId, expectedPresenceData)
         }
     }
 
@@ -106,7 +106,7 @@ class CorePublisherPresenceDataTest {
 
     private suspend fun stopCorePublisher(corePublisher: CorePublisher) {
         suspendCoroutine<Unit> { continuation ->
-            corePublisher.stop(30_000L) {
+            corePublisher.stop() {
                 try {
                     continuation.resume(it.getOrThrow())
                 } catch (exception: Exception) {

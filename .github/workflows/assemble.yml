@@ -10,11 +10,10 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      # Gradle 7 requires Java 11 to run
       - uses: actions/setup-java@v3
         with:
-          distribution: 'zulu'
-          java-version: '11'
+          distribution: zulu
+          java-version: '19'
 
       - name: Populate AWS Amplify Configuration file from Secrets
         run: |
@@ -23,7 +22,7 @@ jobs:
         env:
           AMPLIFY_CONFIGURATION: ${{ secrets.AMPLIFY_CONFIGURATION }}
 
-      - run: ./gradlew assemble
+      - run: ./gradlew assemble --stacktrace
         env:
           ORG_GRADLE_PROJECT_MAPBOX_DOWNLOADS_TOKEN: ${{ secrets.MAPBOX_DOWNLOADS_TOKEN }}
           ORG_GRADLE_PROJECT_MAPBOX_ACCESS_TOKEN: ${{ secrets.MAPBOX_ACCESS_TOKEN }}
@@ -54,31 +53,18 @@ jobs:
           path: subscribing-sdk/build/outputs/aar/subscribing-sdk-release.aar
           if-no-files-found: error
 
-      - uses: actions/upload-artifact@v3
-        with:
-          name: subscribing-example-app-debug
-          path: subscribing-example-app/build/outputs/apk/debug/subscribing-example-app-debug.apk
-          if-no-files-found: error
-
-      - uses: actions/upload-artifact@v3
-        with:
-          name: subscribing-example-app-release-unsigned
-          path: subscribing-example-app/build/outputs/apk/release/subscribing-example-app-release-unsigned.apk
-          if-no-files-found: error
-
-      - uses: actions/upload-artifact@v3
-        with:
-          name: publishing-example-app-debug
-          path: publishing-example-app/build/outputs/apk/debug/publishing-example-app-debug.apk
-          if-no-files-found: error
-
-      - uses: actions/upload-artifact@v3
-        with:
-          name: publishing-example-app-release-unsigned
-          path: publishing-example-app/build/outputs/apk/release/publishing-example-app-release-unsigned.apk
-          if-no-files-found: error
+      # The Kotlin example apps were once being uploaded as workflow artifacts.
+      # We're not doing that anymore so we're going to just validate that something got assembled for them.
+      - name: Validate that Kotlin Example App APKs were Generated
+        run: |
+          ls -lR subscribing-example-app/build/outputs/apk/debug/
+          ls -lR subscribing-example-app/build/outputs/apk/release/
+          ls -lR publishing-example-app/build/outputs/apk/debug/
+          ls -lR publishing-example-app/build/outputs/apk/release/
 
       # The Java app variants are not functional as they are just used to validate build and run tests.
       # So just validate that something got assembled for them.
-      - run: ls -lR publishing-java-testing/build/outputs/apk/
-      - run: ls -lR subscribing-java-testing/build/outputs/apk/
+      - name: Validate that Java APKs were Generated
+        run: |
+          ls -lR publishing-java-testing/build/outputs/apk/
+          ls -lR subscribing-java-testing/build/outputs/apk/

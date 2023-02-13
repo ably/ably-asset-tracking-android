@@ -16,23 +16,34 @@ import com.ably.tracking.connection.ConnectionConfiguration;
 import com.ably.tracking.java.AuthenticationFacade;
 import com.ably.tracking.subscriber.Subscriber;
 import com.ably.tracking.subscriber.java.SubscriberFacade;
+import com.ably.tracking.test.common.ReplaceMainCoroutineDispatcherRule;
 import com.ably.tracking.ui.animation.CoreLocationAnimator;
 import com.ably.tracking.ui.animation.LocationAnimator;
 import com.ably.tracking.ui.java.animation.CoreLocationAnimatorFacade;
 import com.ably.tracking.ui.java.animation.LocationAnimatorFacade;
 
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
 
+import kotlinx.coroutines.ExperimentalCoroutinesApi;
+
+@ExperimentalCoroutinesApi
 public class UsageExamples {
     SubscriberFacade subscriberFacade;
     Subscriber nativeSubscriber;
     Subscriber.Builder nativeSubscriberBuilder;
     SubscriberFacade.Builder subscriberFacadeBuilder;
+
+    // We need to inject a different coroutine dispatcher in place of the Main dispatcher,
+    // because DefaultSubscriberFacade is directly accessing it.
+    // Otherwise, tests fail with RuntimeException: Stub!
+    @Rule
+    public ReplaceMainCoroutineDispatcherRule replaceMainCoroutineDispatcherRule = new ReplaceMainCoroutineDispatcherRule();
 
     @Before
     public void beforeEach() {

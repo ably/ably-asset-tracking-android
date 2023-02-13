@@ -10,9 +10,7 @@ import com.ably.tracking.common.ConnectionState
 import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.PresenceData
 import com.ably.tracking.common.workerqueue.Properties
-import com.ably.tracking.publisher.guards.DefaultDuplicateTrackableGuard
 import com.ably.tracking.publisher.guards.DefaultTrackableRemovalGuard
-import com.ably.tracking.publisher.guards.DuplicateTrackableGuard
 import com.ably.tracking.publisher.guards.TrackableRemovalGuard
 import kotlinx.coroutines.flow.MutableStateFlow
 
@@ -24,7 +22,6 @@ private constructor(
     areRawLocationsEnabled: Boolean?,
     enhancedLocationsPublishingState: LocationsPublishingState<EnhancedLocationUpdate>,
     rawLocationsPublishingState: LocationsPublishingState<LocationUpdate>,
-    duplicateTrackableGuard: DuplicateTrackableGuard,
     trackableRemovalGuard: TrackableRemovalGuard,
     private val onActiveTrackableUpdated: (Trackable?) -> Unit,
     private val onRoutingProfileUpdated: (RoutingProfile) -> Unit
@@ -44,7 +41,6 @@ private constructor(
         areRawLocationsEnabled,
         LocationsPublishingState(),
         LocationsPublishingState(),
-        DefaultDuplicateTrackableGuard(),
         DefaultTrackableRemovalGuard(),
         onActiveTrackableUpdated,
         onRoutingProfileUpdated
@@ -63,6 +59,8 @@ private constructor(
     val trackableStates: MutableMap<String, TrackableState> = mutableMapOf()
         get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
     val trackableSubscribedToPresenceFlags: MutableMap<String, Boolean> = mutableMapOf()
+        get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
+    val trackableEnteredPresenceFlags: MutableMap<String, Boolean> = mutableMapOf()
         get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
     val trackableStateFlows: MutableMap<String, MutableStateFlow<TrackableState>> = mutableMapOf()
         get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
@@ -114,8 +112,6 @@ private constructor(
         get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
     val rawLocationsPublishingState: LocationsPublishingState<LocationUpdate> = rawLocationsPublishingState
         get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-    val duplicateTrackableGuard: DuplicateTrackableGuard = duplicateTrackableGuard
-        get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
     val trackableRemovalGuard: TrackableRemovalGuard = trackableRemovalGuard
         get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
     val areRawLocationsEnabled: Boolean = areRawLocationsEnabled ?: false
@@ -127,8 +123,10 @@ private constructor(
             }
             field = value
         }
-    val hasNoTrackablesAddingOrAdded: Boolean
-        get() = trackables.isEmpty() && !duplicateTrackableGuard.isCurrentlyAddingAnyTrackable()
+    val hasNoTrackablesAdded: Boolean
+        get() = trackables.isEmpty()
+    val trackablesWithFinalStateSet: MutableSet<String> = mutableSetOf()
+        get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
 
     override val isStopped: Boolean
         get() = state == PublisherState.STOPPED
@@ -141,7 +139,6 @@ private constructor(
             areRawLocationsEnabled,
             enhancedLocationsPublishingState,
             rawLocationsPublishingState,
-            duplicateTrackableGuard,
             trackableRemovalGuard,
             onActiveTrackableUpdated,
             onRoutingProfileUpdated
@@ -152,6 +149,7 @@ private constructor(
                 it.trackables.addAll(trackables)
                 it.trackableStates.putAll(trackableStates)
                 it.trackableSubscribedToPresenceFlags.putAll(trackableSubscribedToPresenceFlags)
+                it.trackableEnteredPresenceFlags.putAll(trackableEnteredPresenceFlags)
                 it.trackableStateFlows.putAll(trackableStateFlows)
                 it.lastChannelConnectionStateChanges.putAll(lastChannelConnectionStateChanges)
                 it.lastConnectionStateChange = lastConnectionStateChange
@@ -171,11 +169,14 @@ private constructor(
                 it.state = state
             }
 
+    fun hasSetFinalTrackableState(trackableId: String): Boolean = trackablesWithFinalStateSet.contains(trackableId)
+
     fun dispose() {
         trackables.clear()
         trackableStates.clear()
         trackableStateFlows.clear()
         trackableSubscribedToPresenceFlags.clear()
+        trackableEnteredPresenceFlags.clear()
         lastChannelConnectionStateChanges.clear()
         resolutions.clear()
         lastSentEnhancedLocations.clear()
@@ -191,8 +192,8 @@ private constructor(
         rawLocationChangedCommands.clear()
         enhancedLocationsPublishingState.clearAll()
         rawLocationsPublishingState.clearAll()
-        duplicateTrackableGuard.clearAll()
         trackableRemovalGuard.clearAll()
+        trackablesWithFinalStateSet.clear()
         isDisposed = true
     }
 }

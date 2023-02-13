@@ -20,8 +20,8 @@ jobs:
       # Gradle 7 requires Java 11 to run
       - uses: actions/setup-java@v3
         with:
-          distribution: 'zulu'
-          java-version: '11'
+          distribution: zulu
+          java-version: '19'
 
       - uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -32,7 +32,12 @@ jobs:
           #boot. See https://developer.android.com/studio/run/emulator-commandline#common for more
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
           # ${{ condition && 'ifTrue' || 'ifFalse' }} is a workaround for a ternary operator https://github.com/actions/runner/issues/409#issuecomment-752775072
-          script: ${{ matrix.excludeModules && './gradlew connectedCheck -x :publishing-java-testing:connectedCheck -x :subscribing-java-testing:connectedCheck -x :publishing-example-app:connectedCheck -x :subscribing-example-app:connectedCheck' || './gradlew connectedCheck' }}
+          script: |
+            ${{
+              matrix.excludeModules
+                && './gradlew connectedCheck --stacktrace -x :publishing-java-testing:connectedCheck -x :subscribing-java-testing:connectedCheck -x :publishing-example-app:connectedCheck -x :subscribing-example-app:connectedCheck -PruntimeSecrets=FOR_ALL_PROJECTS_BECAUSE_WE_ARE_RUNNING_INTEGRATION_TESTS'
+                || './gradlew connectedCheck --stacktrace -PruntimeSecrets=FOR_ALL_PROJECTS_BECAUSE_WE_ARE_RUNNING_INTEGRATION_TESTS'
+            }}
         env:
           ORG_GRADLE_PROJECT_MAPBOX_DOWNLOADS_TOKEN: ${{ secrets.MAPBOX_DOWNLOADS_TOKEN }}
           ORG_GRADLE_PROJECT_MAPBOX_ACCESS_TOKEN: ${{ secrets.MAPBOX_ACCESS_TOKEN }}

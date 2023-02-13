@@ -1,11 +1,13 @@
 package com.ably.tracking.publisher
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Build
 import androidx.annotation.RequiresPermission
 import androidx.core.app.NotificationManagerCompat
 import com.ably.tracking.Location
+import com.ably.tracking.LocationValidationException
 import com.ably.tracking.Resolution
 import com.ably.tracking.common.MILLISECONDS_PER_SECOND
 import com.ably.tracking.common.ResultCallbackFunction
@@ -17,6 +19,7 @@ import com.ably.tracking.common.toAssetTracking
 import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.logging.LogHandler
 import com.ably.tracking.publisher.debug.AblySimulationLocationEngine
+import com.ably.tracking.publisher.debug.FlowLocationEngine
 import com.ably.tracking.publisher.locationengine.FusedAndroidLocationEngine
 import com.ably.tracking.publisher.locationengine.GoogleLocationEngine
 import com.ably.tracking.publisher.locationengine.LocationEngineUtils
@@ -181,6 +184,61 @@ private object MapboxInstanceProvider {
 }
 
 /**
+ *  A standalone and independently testable utility class used by the DefaultMapbox implementation
+ *  to create LocationObserver instances which validate, sanitize and transform mapbox locations
+ *  before sending them on to AAT.
+ */
+internal class MapboxLocationObserverProvider(
+    private val logHandler: LogHandler?,
+    private val TAG: String,
+) {
+    fun createLocationObserver(locationUpdatesObserver: LocationUpdatesObserver) =
+        object : LocationObserver {
+            override fun onNewRawLocation(rawLocation: android.location.Location) {
+                logHandler?.v("$TAG Raw location received from Mapbox: $rawLocation")
+                val rawLocationResult = rawLocation.toAssetTracking()
+                try {
+                    locationUpdatesObserver.onRawLocationChanged(rawLocationResult.getOrThrow())
+                } catch (locationValidationException: LocationValidationException) {
+                    logHandler?.v("$TAG Swallowing invalid raw location from Mapbox, validation exception was: $locationValidationException")
+                }
+            }
+
+            override fun onNewLocationMatcherResult(locationMatcherResult: LocationMatcherResult) {
+                val enhancedLocation = locationMatcherResult.enhancedLocation
+                val keyPoints = locationMatcherResult.keyPoints
+                logHandler?.v("$TAG Enhanced location received from Mapbox: $enhancedLocation")
+                val intermediateLocations =
+                    if (keyPoints.size > 1) keyPoints.subList(0, keyPoints.size - 1)
+                    else emptyList()
+                val currentTimeInMilliseconds = System.currentTimeMillis()
+                // Enhanced locations don't have real world timestamps so we use the current device time
+                val enhancedLocationResult =
+                    enhancedLocation.toAssetTracking(currentTimeInMilliseconds)
+                try {
+                    locationUpdatesObserver.onEnhancedLocationChanged(
+                        enhancedLocationResult.getOrThrow(),
+                        intermediateLocations.mapNotNull { location ->
+                            val timeDifference = enhancedLocation.time - location.time
+                            // Intermediate locations should have timestamps in relation to the enhanced location time
+                            val intermediateLocationResult =
+                                location.toAssetTracking(currentTimeInMilliseconds - timeDifference)
+                            try {
+                                intermediateLocationResult.getOrThrow()
+                            } catch (locationValidationException: LocationValidationException) {
+                                logHandler?.v("$TAG Swallowing invalid intermediate location from Mapbox, validation exception was: ${intermediateLocationResult.exceptionOrNull()}")
+                                null
+                            }
+                        }
+                    )
+                } catch (locationValidationException: LocationValidationException) {
+                    logHandler?.v("$TAG Swallowing invalid enhanced location from Mapbox, validation exception was: $locationValidationException")
+                }
+            }
+        }
+}
+
+/**
  * The special Mapbox configuration that enables the Asset Tracking Profile (a.k.a. the Cycling Profile).
  */
 private const val ASSET_TRACKING_PROFILE_ENABLED_CONFIGURATION: String = """
@@ -231,6 +289,7 @@ internal class DefaultMapbox(
     private var locationHistoryListener: (LocationHistoryListener)? = null
     private var locationObserver: LocationObserver? = null
     private lateinit var arrivalObserver: ArrivalObserver
+    private val mapboxLocationObserverProvider = MapboxLocationObserverProvider(logHandler, TAG)
 
     init {
         setupTripNotification(notificationProvider, notificationId)
@@ -247,6 +306,10 @@ internal class DefaultMapbox(
                 is LocationSourceRaw -> {
                     logHandler?.v("$TAG Use history data replayer location engine")
                     useHistoryDataReplayerLocationEngine(mapboxBuilder, it)
+                }
+                is LocationSourceFlow -> {
+                    logHandler?.v("$TAG Use flow replayer location engine")
+                    mapboxBuilder.locationEngine(FlowLocationEngine(it.flow, logHandler))
                 }
             }
         }
@@ -278,7 +341,11 @@ internal class DefaultMapbox(
     /**
      * On Android 24 and below the shared notification is removed when [MapboxNavigation.stopTripSession] is called.
      * This notification should be always visible when the [Publisher] is running so we show it once again manually.
+     *
+     * The permission POST_NOTIFICATIONS cannot be added as a RequiresPermission annotation as it was only added
+     * in API level 33.
      */
+    @SuppressLint("MissingPermission")
     private fun reshowTripNotification() {
         if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.N) {
             NotificationManagerCompat.from(context).notify(notificationId, notificationProvider.getNotification())
@@ -353,31 +420,7 @@ internal class DefaultMapbox(
     }
 
     private fun createLocationObserver(locationUpdatesObserver: LocationUpdatesObserver) =
-        object : LocationObserver {
-            override fun onNewRawLocation(rawLocation: android.location.Location) {
-                logHandler?.v("$TAG Raw location received from Mapbox: $rawLocation")
-                locationUpdatesObserver.onRawLocationChanged(rawLocation.toAssetTracking())
-            }
-
-            override fun onNewLocationMatcherResult(locationMatcherResult: LocationMatcherResult) {
-                val enhancedLocation = locationMatcherResult.enhancedLocation
-                val keyPoints = locationMatcherResult.keyPoints
-                logHandler?.v("$TAG Enhanced location received from Mapbox: $enhancedLocation")
-                val intermediateLocations =
-                    if (keyPoints.size > 1) keyPoints.subList(0, keyPoints.size - 1)
-                    else emptyList()
-                val currentTimeInMilliseconds = System.currentTimeMillis()
-                locationUpdatesObserver.onEnhancedLocationChanged(
-                    // Enhanced locations don't have real world timestamps so we use the current device time
-                    enhancedLocation.toAssetTracking(currentTimeInMilliseconds),
-                    // Intermediate locations should have timestamps in relation to the enhanced location time
-                    intermediateLocations.map { location ->
-                        val timeDifference = enhancedLocation.time - location.time
-                        location.toAssetTracking(currentTimeInMilliseconds - timeDifference)
-                    }
-                )
-            }
-        }
+        mapboxLocationObserverProvider.createLocationObserver(locationUpdatesObserver)
 
     override fun registerLocationObserver(locationUpdatesObserver: LocationUpdatesObserver) {
         unregisterLocationObserver()
@@ -418,7 +461,8 @@ internal class DefaultMapbox(
                             // https://docs.mapbox.com/android/navigation/guides/migrate-to-v2/#request-a-route
                             mapboxNavigation.setNavigationRoutes(routes)
                             val routeDuration = (it.directionsRoute.durationTypical() ?: it.directionsRoute.duration())
-                            val routeDurationInMilliseconds = routeDuration * MILLISECONDS_PER_SECOND
+                            val routeDurationInMilliseconds =
+                                routeDuration * MILLISECONDS_PER_SECOND
                             routeDurationCallback(Result.success(routeDurationInMilliseconds.toLong()))
                         }
                     }

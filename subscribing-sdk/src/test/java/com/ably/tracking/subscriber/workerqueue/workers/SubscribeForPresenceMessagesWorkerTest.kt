@@ -18,7 +18,7 @@ import io.mockk.CapturingSlot
 import io.mockk.mockk
 import io.mockk.slot
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert
 import org.junit.Test
 
@@ -35,7 +35,7 @@ internal class SubscribeForPresenceMessagesWorkerTest {
     private val postedWorks = mutableListOf<WorkerSpecification>()
 
     @Test
-    fun `should post update presence work when presence listener is called`() = runBlockingTest {
+    fun `should post update presence work when presence listener is called`() = runTest {
         // given
         val initialProperties = SubscriberProperties(Resolution(Accuracy.BALANCED, 100, 100.0), mockk())
         val presenceListenerSlot: CapturingSlot<(PresenceMessage) -> Unit> = slot()
@@ -64,7 +64,7 @@ internal class SubscribeForPresenceMessagesWorkerTest {
 
     @Test
     fun `should post process initial presence messages work when both get current presence and subscribe to presence return success`() =
-        runBlockingTest {
+        runTest {
             // given
             val initialProperties = SubscriberProperties(Resolution(Accuracy.BALANCED, 100, 100.0), mockk())
             val initialPresenceMessages = listOf(anyPresenceMessage())
@@ -90,7 +90,7 @@ internal class SubscribeForPresenceMessagesWorkerTest {
         }
 
     @Test
-    fun `should post disconnect work when subscribe to presence returns failure`() = runBlockingTest {
+    fun `should post disconnect work when subscribe to presence returns failure`() = runTest {
         // given
         val initialProperties = SubscriberProperties(Resolution(Accuracy.BALANCED, 100, 100.0), mockk())
         ably.mockGetCurrentPresenceSuccess(trackableId)
@@ -109,7 +109,7 @@ internal class SubscribeForPresenceMessagesWorkerTest {
     }
 
     @Test
-    fun `should post disconnect work when get current presence returns failure`() = runBlockingTest {
+    fun `should post disconnect work when get current presence returns failure`() = runTest {
         // given
         val initialProperties = SubscriberProperties(Resolution(Accuracy.BALANCED, 100, 100.0), mockk())
         ably.mockGetCurrentPresenceError(trackableId)
@@ -122,6 +122,20 @@ internal class SubscribeForPresenceMessagesWorkerTest {
             postedWorks.appendSpecification()
         )
         asyncWorks.executeAll()
+
+        // then
+        Assert.assertTrue(postedWorks[0] is WorkerSpecification.Disconnect)
+    }
+
+    @Test
+    fun `should post disconnect work when async work throw an unexpected exception`() = runTest {
+        // given
+
+        // when
+        subscribeForPresenceMessagesWorker.onUnexpectedAsyncError(
+            Exception("Unexpected exception"),
+            postedWorks.appendSpecification(),
+        )
 
         // then
         Assert.assertTrue(postedWorks[0] is WorkerSpecification.Disconnect)

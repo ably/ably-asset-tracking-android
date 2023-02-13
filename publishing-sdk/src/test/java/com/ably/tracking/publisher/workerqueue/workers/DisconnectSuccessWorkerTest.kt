@@ -9,7 +9,6 @@ import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ConnectionState
 import com.ably.tracking.common.ConnectionStateChange
-import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.publisher.PublisherInteractor
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.Trackable
@@ -25,7 +24,7 @@ import io.mockk.runs
 import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
 @ExperimentalCoroutinesApi
@@ -33,7 +32,6 @@ class DisconnectSuccessWorkerTest {
 
     private val trackable = Trackable("testtrackable")
     private val otherTrackable = Trackable("other-trackable")
-    private val resultCallbackFunction: ResultCallbackFunction<Unit> = mockk(relaxed = true)
     private val recalculateResolutionCallbackFunction = mockk<() -> Unit>(relaxed = true)
     private val publisherInteractor = mockk<PublisherInteractor> {
         every { updateTrackables(any()) } just runs
@@ -50,7 +48,6 @@ class DisconnectSuccessWorkerTest {
 
     private val worker = DisconnectSuccessWorker(
         trackable,
-        resultCallbackFunction,
         publisherInteractor,
         recalculateResolutionCallbackFunction,
         ably
@@ -73,7 +70,7 @@ class DisconnectSuccessWorkerTest {
 
         // then
         assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).isEmpty()
+        assertThat(postedWorks).hasSize(1)
 
         assertThat(updatedProperties.trackables).doesNotContain(trackable)
     }
@@ -93,7 +90,7 @@ class DisconnectSuccessWorkerTest {
 
         // then
         assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).isEmpty()
+        assertThat(postedWorks).hasSize(1)
         assertThat(updatedProperties.trackableStateFlows).isEmpty()
     }
 
@@ -112,7 +109,7 @@ class DisconnectSuccessWorkerTest {
 
         // then
         assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).isEmpty()
+        assertThat(postedWorks).hasSize(1)
         assertThat(updatedProperties.trackableStates).isEmpty()
     }
 
@@ -131,7 +128,7 @@ class DisconnectSuccessWorkerTest {
 
         // then
         assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).isEmpty()
+        assertThat(postedWorks).hasSize(1)
         assertThat(updatedProperties.resolutions).isEmpty()
     }
 
@@ -150,7 +147,7 @@ class DisconnectSuccessWorkerTest {
 
         // then
         assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).isEmpty()
+        assertThat(postedWorks).hasSize(1)
 
         verify(exactly = 1) {
             recalculateResolutionCallbackFunction.invoke()
@@ -172,7 +169,7 @@ class DisconnectSuccessWorkerTest {
 
         // then
         assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).isEmpty()
+        assertThat(postedWorks).hasSize(1)
 
         verify(exactly = 0) {
             recalculateResolutionCallbackFunction.invoke()
@@ -194,7 +191,7 @@ class DisconnectSuccessWorkerTest {
 
         // then
         assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).isEmpty()
+        assertThat(postedWorks).hasSize(1)
         assertThat(updatedProperties.requests).isEmpty()
     }
 
@@ -213,7 +210,7 @@ class DisconnectSuccessWorkerTest {
 
         // then
         assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).isEmpty()
+        assertThat(postedWorks).hasSize(1)
         assertThat(updatedProperties.lastSentEnhancedLocations).isEmpty()
     }
 
@@ -232,7 +229,7 @@ class DisconnectSuccessWorkerTest {
 
         // then
         assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).isEmpty()
+        assertThat(postedWorks).hasSize(1)
         assertThat(updatedProperties.lastSentRawLocations).isEmpty()
     }
 
@@ -252,7 +249,7 @@ class DisconnectSuccessWorkerTest {
 
         // then
         assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).isEmpty()
+        assertThat(postedWorks).hasSize(1)
         assertThat(updatedProperties.lastChannelConnectionStateChanges).isEmpty()
     }
 
@@ -270,7 +267,7 @@ class DisconnectSuccessWorkerTest {
 
         // then
         assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).isEmpty()
+        assertThat(postedWorks).hasSize(1)
         verify(exactly = 1) {
             publisherInteractor.updateTrackables(updatedProperties)
         }
@@ -290,7 +287,7 @@ class DisconnectSuccessWorkerTest {
 
         // then
         assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).isEmpty()
+        assertThat(postedWorks).hasSize(1)
 
         verify(exactly = 1) {
             publisherInteractor.updateTrackableStateFlows(updatedProperties)
@@ -311,7 +308,7 @@ class DisconnectSuccessWorkerTest {
 
         // then
         assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).isEmpty()
+        assertThat(postedWorks).hasSize(1)
 
         verify(exactly = 1) {
             publisherInteractor.notifyResolutionPolicyThatTrackableWasRemoved(trackable)
@@ -332,7 +329,7 @@ class DisconnectSuccessWorkerTest {
 
         // then
         assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).isEmpty()
+        assertThat(postedWorks).hasSize(1)
 
         verify(exactly = 1) {
             publisherInteractor.removeAllSubscribers(trackable, updatedProperties)
@@ -354,7 +351,7 @@ class DisconnectSuccessWorkerTest {
 
         // then
         assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).isEmpty()
+        assertThat(postedWorks).hasSize(1)
 
         assertThat(updatedProperties.skippedEnhancedLocations.toList(trackable.id)).isEmpty()
     }
@@ -374,7 +371,7 @@ class DisconnectSuccessWorkerTest {
 
         // then
         assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).isEmpty()
+        assertThat(postedWorks).hasSize(1)
 
         assertThat(updatedProperties.skippedRawLocations.toList(trackable.id)).isEmpty()
     }
@@ -398,7 +395,7 @@ class DisconnectSuccessWorkerTest {
 
         // then
         assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).isEmpty()
+        assertThat(postedWorks).hasSize(1)
 
         assertThat(updatedProperties.enhancedLocationsPublishingState.hasPendingMessage(trackable.id)).isFalse()
         assertThat(updatedProperties.enhancedLocationsPublishingState.getNextWaiting(trackable.id)).isNull()
@@ -423,37 +420,17 @@ class DisconnectSuccessWorkerTest {
 
         // then
         assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).isEmpty()
+        assertThat(postedWorks).hasSize(1)
 
         assertThat(updatedProperties.rawLocationsPublishingState.hasPendingMessage(trackable.id)).isFalse()
         assertThat(updatedProperties.rawLocationsPublishingState.getNextWaiting(trackable.id)).isNull()
         assertThat(updatedProperties.rawLocationsPublishingState.shouldRetryPublishing(trackable.id)).isTrue()
     }
 
-    @Test
-    fun `should clear the duplicate trackable guard for the removed trackable`() {
+    fun `should post TrackableRemovalSuccess work on completion`() {
         // given
         val initialProperties = createPublisherPropertiesWithMultipleTrackables()
-        initialProperties.duplicateTrackableGuard.startAddingTrackable(trackable)
-
-        // when
-        val updatedProperties = worker.doWork(
-            initialProperties,
-            asyncWorks.appendWork(),
-            postedWorks.appendSpecification()
-        )
-
-        // then
-        assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).isEmpty()
-
-        assertThat(updatedProperties.duplicateTrackableGuard.isCurrentlyAddingTrackable(trackable)).isFalse()
-    }
-
-    @Test
-    fun `should always call the result callback with a success`() {
-        // given
-        val initialProperties = createPublisherPropertiesWithMultipleTrackables()
+        initialProperties.trackableStateFlows[trackable.id] = MutableStateFlow(TrackableState.Offline())
 
         // when
         worker.doWork(
@@ -464,12 +441,31 @@ class DisconnectSuccessWorkerTest {
 
         // then
         assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).isEmpty()
+        assertThat(postedWorks).hasSize(1)
+        val postedWork = postedWorks[0] as WorkerSpecification.TrackableRemovalSuccess
+        assertThat(postedWork.trackable).isEqualTo(trackable)
+        assertThat(postedWork.result.isSuccess).isTrue()
+    }
+
+    fun `should post TrackableRemovalSuccess work on error`() {
+        // given
+        val initialProperties = createPublisherPropertiesWithMultipleTrackables()
+        initialProperties.trackableStateFlows[trackable.id] = MutableStateFlow(TrackableState.Offline())
+
+        // when
+        val exception = Exception("error")
+        worker.onUnexpectedError(
+            exception,
+            postedWorks.appendSpecification()
+        )
 
         // then
-        verify(exactly = 1) {
-            resultCallbackFunction(Result.success(Unit))
-        }
+        assertThat(asyncWorks).isEmpty()
+        assertThat(postedWorks).hasSize(1)
+        val postedWork = postedWorks[0] as WorkerSpecification.TrackableRemovalSuccess
+        assertThat(postedWork.trackable).isEqualTo(trackable)
+        assertThat(postedWork.result.isSuccess).isFalse()
+        assertThat(postedWork.result.exceptionOrNull()).isEqualTo(exception)
     }
 
     @Test
@@ -487,7 +483,7 @@ class DisconnectSuccessWorkerTest {
 
         // then
         assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).isEmpty()
+        assertThat(postedWorks).hasSize(1)
 
         assertThat(updatedProperties.active).isNull()
     }
@@ -507,7 +503,7 @@ class DisconnectSuccessWorkerTest {
 
         // then
         assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).isEmpty()
+        assertThat(postedWorks).hasSize(1)
 
         verify(exactly = 1) {
             publisherInteractor.removeCurrentDestination(updatedProperties)
@@ -529,7 +525,7 @@ class DisconnectSuccessWorkerTest {
 
         // then
         assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).isEmpty()
+        assertThat(postedWorks).hasSize(1)
 
         verify(exactly = 1) {
             publisherInteractor.notifyResolutionPolicyThatActiveTrackableHasChanged(null)
@@ -551,7 +547,7 @@ class DisconnectSuccessWorkerTest {
 
         // then
         assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).isEmpty()
+        assertThat(postedWorks).hasSize(1)
 
         assertThat(updatedProperties.active).isEqualTo(otherTrackable)
     }
@@ -571,7 +567,7 @@ class DisconnectSuccessWorkerTest {
 
         // then
         assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).isEmpty()
+        assertThat(postedWorks).hasSize(1)
 
         verify(exactly = 0) {
             publisherInteractor.removeCurrentDestination(updatedProperties)
@@ -593,7 +589,7 @@ class DisconnectSuccessWorkerTest {
 
         // then
         assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).isEmpty()
+        assertThat(postedWorks).hasSize(1)
 
         verify(exactly = 0) {
             publisherInteractor.notifyResolutionPolicyThatActiveTrackableHasChanged(null)
@@ -615,7 +611,7 @@ class DisconnectSuccessWorkerTest {
         )
 
         // then
-        assertThat(postedWorks).isEmpty()
+        assertThat(postedWorks).hasSize(1)
 
         verify(exactly = 1) {
             publisherInteractor.stopLocationUpdates(updatedProperties)
@@ -637,7 +633,7 @@ class DisconnectSuccessWorkerTest {
 
         // then
         assertThat(asyncWorks).isEmpty()
-        assertThat(postedWorks).isEmpty()
+        assertThat(postedWorks).hasSize(1)
 
         verify(exactly = 0) {
             publisherInteractor.stopLocationUpdates(updatedProperties)
@@ -659,7 +655,7 @@ class DisconnectSuccessWorkerTest {
         )
 
         // then
-        assertThat(postedWorks).isEmpty()
+        assertThat(postedWorks).hasSize(1)
 
         verify(exactly = 0) {
             publisherInteractor.stopLocationUpdates(updatedProperties)
@@ -668,7 +664,7 @@ class DisconnectSuccessWorkerTest {
 
     @Test
     fun `should stop ably and post StoppingConnectionFinished work if the removed trackable was the last one`() =
-        runBlockingTest {
+        runTest {
             // given
             val initialProperties = createPublisherPropertiesWithMultipleTrackables()
             initialProperties.trackables.remove(otherTrackable)
@@ -683,8 +679,8 @@ class DisconnectSuccessWorkerTest {
 
             // then
             assertThat(asyncWorks).hasSize(1)
-            assertThat(postedWorks).hasSize(1)
-            val postedWorker = postedWorks.first()
+            assertThat(postedWorks).hasSize(2)
+            val postedWorker = postedWorks[1]
 
             coVerify(exactly = 1) {
                 ably.stopConnection()
