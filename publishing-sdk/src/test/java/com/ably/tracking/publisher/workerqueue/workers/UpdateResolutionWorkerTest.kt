@@ -79,6 +79,32 @@ class UpdateResolutionWorkerTest {
     }
 
     @Test
+    fun `should not call updatePresenceData, not post work and remove resolution from properties when newer resolution is present`() {
+        runTest {
+            // given
+            initialProperties.updatingResolutions.add(resolution)
+            initialProperties.updatingResolutions.add(Resolution(Accuracy.HIGH, 50L, 50.0))
+            ably.mockWaitForChannelToAttachFailure(trackableId)
+
+            // when
+            val updatedProperties = worker.doWork(
+                initialProperties,
+                asyncWorks.appendWork(),
+                postedWorks.appendSpecification()
+            )
+
+            // then
+            asyncWorks.executeAll()
+            assertThat(postedWorks).isEmpty()
+
+            assertThat(updatedProperties.updatingResolutions).doesNotContain(resolution)
+            coVerify(exactly = 0) {
+                ably.updatePresenceData(trackableId, any())
+            }
+        }
+    }
+
+    @Test
     fun `should not throw any exception when updatePresenceData returns failure`() {
         runTest {
             // given

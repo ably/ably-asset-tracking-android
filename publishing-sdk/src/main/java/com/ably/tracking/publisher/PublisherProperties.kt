@@ -23,6 +23,7 @@ private constructor(
     enhancedLocationsPublishingState: LocationsPublishingState<EnhancedLocationUpdate>,
     rawLocationsPublishingState: LocationsPublishingState<LocationUpdate>,
     trackableRemovalGuard: TrackableRemovalGuard,
+    val updatingResolutions: MutableList<Resolution>,
     private val onActiveTrackableUpdated: (Trackable?) -> Unit,
     private val onRoutingProfileUpdated: (RoutingProfile) -> Unit
 ) : Properties {
@@ -42,6 +43,7 @@ private constructor(
         LocationsPublishingState(),
         LocationsPublishingState(),
         DefaultTrackableRemovalGuard(),
+        mutableListOf(),
         onActiveTrackableUpdated,
         onRoutingProfileUpdated
     )
@@ -64,7 +66,8 @@ private constructor(
         get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
     val trackableStateFlows: MutableMap<String, MutableStateFlow<TrackableState>> = mutableMapOf()
         get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-    val lastChannelConnectionStateChanges: MutableMap<String, ConnectionStateChange> = mutableMapOf()
+    val lastChannelConnectionStateChanges: MutableMap<String, ConnectionStateChange> =
+        mutableMapOf()
         get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
     var lastConnectionStateChange: ConnectionStateChange = ConnectionStateChange(
         ConnectionState.OFFLINE, null
@@ -110,7 +113,8 @@ private constructor(
     val enhancedLocationsPublishingState: LocationsPublishingState<EnhancedLocationUpdate> =
         enhancedLocationsPublishingState
         get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
-    val rawLocationsPublishingState: LocationsPublishingState<LocationUpdate> = rawLocationsPublishingState
+    val rawLocationsPublishingState: LocationsPublishingState<LocationUpdate> =
+        rawLocationsPublishingState
         get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
     val trackableRemovalGuard: TrackableRemovalGuard = trackableRemovalGuard
         get() = if (isDisposed) throw PublisherPropertiesDisposedException() else field
@@ -140,6 +144,7 @@ private constructor(
             enhancedLocationsPublishingState,
             rawLocationsPublishingState,
             trackableRemovalGuard,
+            updatingResolutions,
             onActiveTrackableUpdated,
             onRoutingProfileUpdated
         )
@@ -169,7 +174,8 @@ private constructor(
                 it.state = state
             }
 
-    fun hasSetFinalTrackableState(trackableId: String): Boolean = trackablesWithFinalStateSet.contains(trackableId)
+    fun hasSetFinalTrackableState(trackableId: String): Boolean =
+        trackablesWithFinalStateSet.contains(trackableId)
 
     fun dispose() {
         trackables.clear()

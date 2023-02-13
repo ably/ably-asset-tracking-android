@@ -19,11 +19,19 @@ internal class UpdateResolutionWorker(
         doAsyncWork: (suspend () -> Unit) -> Unit,
         postWork: (WorkerSpecification) -> Unit
     ): PublisherProperties {
-        doAsyncWork {
-            val result = waitAndUpdatePresence(properties.presenceData)
-            if (result.isFailure && !result.isFatalAblyFailure()) {
-                postWork(WorkerSpecification.UpdateResolution(trackableId, resolution))
+        val updatingResolutions = properties.updatingResolutions
+        if (!updatingResolutions.contains(resolution)) {
+            updatingResolutions.add(resolution)
+        }
+        if (updatingResolutions.last() == resolution) {
+            doAsyncWork {
+                val result = waitAndUpdatePresence(properties.presenceData)
+                if (result.isFailure && !result.isFatalAblyFailure()) {
+                    postWork(WorkerSpecification.UpdateResolution(trackableId, resolution))
+                }
             }
+        } else {
+            updatingResolutions.remove(resolution)
         }
         return properties
     }
