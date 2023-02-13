@@ -15,6 +15,8 @@ import io.ably.lib.types.ClientOptions
 import io.ably.lib.types.ErrorInfo
 import io.ably.lib.types.Message
 import io.ably.lib.types.PresenceMessage
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 
 /**
  * An implementation of [AblySdkFactory] which uses the `ably-java` client library.
@@ -91,6 +93,10 @@ constructor(clientOptions: ClientOptions) : AblySdkRealtime<DefaultAblySdkChanne
         override fun off(listener: ConnectionStateListener) {
             connection.off(listener)
         }
+
+        override fun offAll() {
+            connection.off()
+        }
     }
 
     class Channels
@@ -110,8 +116,31 @@ constructor(clientOptions: ClientOptions) : AblySdkRealtime<DefaultAblySdkChanne
             return channels.containsKey(key)
         }
 
-        override fun release(channelName: String) {
+        override suspend fun release(channelName: String) {
+
+            var detached = false
+            channels.get(channelName).detach(object : CompletionListener {
+                override fun onSuccess() {
+                    detached = true
+                }
+
+                override fun onError(reason: ErrorInfo?) {
+                    detached = false
+                }
+
+            })
+
+            while (!detached) {
+                delay(50)
+            }
+
             channels.release(channelName)
+        }
+
+        override fun offAll() {
+           channels.values().forEach{
+               it.off()
+           }
         }
 
         override fun entrySet(): Iterable<Map.Entry<String, AblySdkRealtime.Channel<DefaultAblySdkChannelStateListener>>> {

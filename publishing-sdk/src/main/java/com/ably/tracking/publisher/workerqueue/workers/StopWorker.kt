@@ -29,6 +29,7 @@ internal class StopWorker(
             }
             publisherInteractor.closeMapbox()
             ably.close(properties.presenceData)
+            ably.destroy()
             properties.dispose()
             callbackFunction(Result.success(Unit))
         }

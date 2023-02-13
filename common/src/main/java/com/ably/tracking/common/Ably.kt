@@ -247,6 +247,8 @@ interface Ably {
      * Stops the Ably connection.
      */
     suspend fun stopConnection(): Result<Unit>
+
+    fun destroy()
 }
 
 private const val CHANNEL_NAME_PREFIX = "tracking:"
@@ -309,6 +311,11 @@ constructor(
 
     override fun subscribeForAblyStateChange(listener: (ConnectionStateChange) -> Unit) {
         ably.connection.on { listener(it.toTracking()) }
+    }
+
+    override fun destroy() {
+        ably.connection.offAll()
+        ably.channels.offAll()
     }
 
     override fun subscribeForChannelStateChange(trackableId: String, listener: (ConnectionStateChange) -> Unit) {
@@ -530,6 +537,7 @@ constructor(
         }
         channelToRemove.unsubscribe()
         channelToRemove.presence.unsubscribe()
+        channelToRemove.off()
         ably.channels.release(channelToRemove.name)
     }
 

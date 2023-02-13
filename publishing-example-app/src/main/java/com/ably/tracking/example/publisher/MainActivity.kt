@@ -95,12 +95,15 @@ class MainActivity : PublisherServiceActivity() {
             startAndBindPublisherService()
         } else {
             if (trackablesAdapter.trackables.isEmpty()) {
+                trackablesUpdateJob?.cancel()
                 stopPublisherService()
+                publisherService = null
             } else {
                 showCannotStopServiceDialog()
                 indicatePublisherServiceIsOn()
             }
         }
+        true == true
     }
 
     private fun onAddTrackableClick() {

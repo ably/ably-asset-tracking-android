@@ -21,6 +21,7 @@ import com.ably.tracking.publisher.Publisher
 import com.ably.tracking.publisher.PublisherNotificationProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -45,6 +46,7 @@ class PublisherService : Service() {
     private val binder = Binder(WeakReference(this))
     var publisher: Publisher? = null
     private lateinit var appPreferences: AppPreferences
+    var locationUpdateJob: Job? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -73,7 +75,13 @@ class PublisherService : Service() {
         // We want to be sure that after the service is stopped the publisher is stopped too.
         // Otherwise we could end up with multiple active publishers.
         Log.d("onDestroy", "onDestroy: ")
-        scope.launch { publisher?.stop() }
+        scope.launch {
+            publisher?.stop()
+            publisher = null
+        }
+
+        locationUpdateJob?.cancel()
+        locationUpdateJob = null
         super.onDestroy()
     }
 
@@ -87,7 +95,7 @@ class PublisherService : Service() {
     fun startPublisher(locationSource: LocationSource? = null) {
         if (!isPublisherStarted) {
             publisher = createPublisher(locationSource).apply {
-                locationHistory
+                locationUpdateJob = locationHistory
                     .onEach { uploadLocationHistoryData(it) }
                     .launchIn(scope)
             }
@@ -95,8 +103,8 @@ class PublisherService : Service() {
     }
 
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
-    private fun createPublisher(locationSource: LocationSource?): Publisher =
-        Publisher.publishers()
+    private fun createPublisher(locationSource: LocationSource?): Publisher {
+        return Publisher.publishers()
             .connection(ConnectionConfiguration(Authentication.basic(CLIENT_ID, ABLY_API_KEY)))
             .map(MapConfiguration(MAPBOX_ACCESS_TOKEN))
             .locationSource(locationSource)
@@ -115,9 +123,7 @@ class PublisherService : Service() {
                 }
             })
             .backgroundTrackingNotificationProvider(
-                object : PublisherNotificationProvider {
-                    override fun getNotification(): Notification = notification
-                },
+                NotificationProviderWrapper(notification.clone()),
                 NOTIFICATION_ID
             )
             .rawLocations(appPreferences.shouldSendRawLocations())
@@ -125,6 +131,7 @@ class PublisherService : Service() {
             .constantLocationEngineResolution(createConstantLocationEngineResolution())
             .vehicleProfile(appPreferences.getVehicleProfile().toAssetTracking())
             .start()
+    }
 
     private fun createDefaultResolution(): Resolution =
         Resolution(
@@ -148,4 +155,9 @@ class PublisherService : Service() {
         } else {
             null
         }
+}
+
+class NotificationProviderWrapper(private val notification: Notification): PublisherNotificationProvider
+{
+    override fun getNotification(): Notification = notification
 }

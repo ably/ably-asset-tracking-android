@@ -101,7 +101,9 @@ interface AblySdkRealtime<ChannelStateListenerType : AblySdkChannelStateListener
         fun get(channelName: String): Channel<ChannelStateListenerType>
         fun entrySet(): Iterable<Map.Entry<String, Channel<ChannelStateListenerType>>>
         fun containsKey(key: Any): Boolean
-        fun release(channelName: String)
+        suspend fun release(channelName: String)
+
+        fun offAll()
     }
 
     interface Connection {
@@ -110,5 +112,7 @@ interface AblySdkRealtime<ChannelStateListenerType : AblySdkChannelStateListener
 
         fun on(listener: ConnectionStateListener)
         fun off(listener: ConnectionStateListener)
+
+        fun offAll()
     }
 }

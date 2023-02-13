@@ -4,8 +4,11 @@ import android.content.ComponentName
 import android.content.Intent
 import android.content.ServiceConnection
 import android.os.IBinder
+import android.window.OnBackInvokedDispatcher
+import androidx.activity.addCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.os.BuildCompat
 
 /**
  * The activity to extend when connection to the publisher service is needed.
@@ -25,12 +28,27 @@ abstract class PublisherServiceActivity : AppCompatActivity() {
          * such as when the service has crashed or has been killed.
          * This is not called when the client unbinds.
          */
-        override fun onServiceDisconnected(className: ComponentName) {}
+        override fun onServiceDisconnected(className: ComponentName) {
+            onStop()
+        }
     }
 
+    @androidx.annotation.OptIn(BuildCompat.PrereleaseSdkCheck::class)
     override fun onStart() {
         super.onStart()
         bindPublisherService()
+
+        if (BuildCompat.isAtLeastT()) {
+            onBackInvokedDispatcher.registerOnBackInvokedCallback(
+                OnBackInvokedDispatcher.PRIORITY_DEFAULT
+            ) {
+                finish()
+            }
+        } else {
+            onBackPressedDispatcher.addCallback(this) {
+                finish()
+            }
+        }
     }
 
     override fun onStop() {
