@@ -48,6 +48,7 @@ import com.ably.tracking.publisher.workerqueue.workers.StopWorker
 import com.ably.tracking.publisher.workerqueue.workers.StoppingConnectionFinishedWorker
 import com.ably.tracking.publisher.workerqueue.workers.TrackableRemovalRequestedWorker
 import com.ably.tracking.publisher.workerqueue.workers.TrackableRemovalSuccessWorker
+import com.ably.tracking.publisher.workerqueue.workers.UpdateResolutionSuccessWorker
 import com.ably.tracking.publisher.workerqueue.workers.UpdateResolutionWorker
 import kotlinx.coroutines.flow.StateFlow
 
@@ -143,6 +144,10 @@ internal class WorkerFactory(
                 workerSpecification.trackableId,
                 workerSpecification.resolution,
                 ably
+            )
+            is WorkerSpecification.UpdateResolutionSuccess -> UpdateResolutionSuccessWorker(
+                workerSpecification.trackableId,
+                workerSpecification.resolution
             )
             is WorkerSpecification.ChangeRoutingProfile -> ChangeRoutingProfileWorker(
                 workerSpecification.routingProfile,
@@ -240,6 +245,11 @@ internal sealed class WorkerSpecification {
     object ChangeLocationEngineResolution : WorkerSpecification()
 
     data class UpdateResolution(
+        val trackableId: String,
+        val resolution: Resolution
+    ) : WorkerSpecification()
+
+    data class UpdateResolutionSuccess(
         val trackableId: String,
         val resolution: Resolution
     ) : WorkerSpecification()

@@ -23,7 +23,7 @@ private constructor(
     enhancedLocationsPublishingState: LocationsPublishingState<EnhancedLocationUpdate>,
     rawLocationsPublishingState: LocationsPublishingState<LocationUpdate>,
     trackableRemovalGuard: TrackableRemovalGuard,
-    val updatingResolutions: MutableList<Resolution>,
+    private val updatingResolutions: MutableMap<String, MutableList<Resolution>>,
     private val onActiveTrackableUpdated: (Trackable?) -> Unit,
     private val onRoutingProfileUpdated: (RoutingProfile) -> Unit
 ) : Properties {
@@ -43,7 +43,7 @@ private constructor(
         LocationsPublishingState(),
         LocationsPublishingState(),
         DefaultTrackableRemovalGuard(),
-        mutableListOf(),
+        mutableMapOf(),
         onActiveTrackableUpdated,
         onRoutingProfileUpdated
     )
@@ -134,6 +134,25 @@ private constructor(
 
     override val isStopped: Boolean
         get() = state == PublisherState.STOPPED
+
+    fun addUpdatingResolution(trackableId: String, resolution: Resolution) {
+        val updatingList = updatingResolutions[trackableId] ?: mutableListOf()
+        updatingList.add(resolution)
+        updatingResolutions[trackableId] = updatingList
+    }
+
+    fun containsUpdatingResolution(trackableId: String, resolution: Resolution) =
+        updatingResolutions[trackableId]?.contains(resolution) == true
+
+    fun isLastUpdatingResolution(trackableId: String, resolution: Resolution) =
+        updatingResolutions[trackableId]?.last() == resolution
+
+    fun removeUpdatingResolution(trackableId: String, resolution: Resolution) {
+        updatingResolutions[trackableId]?.remove(resolution)
+        if (updatingResolutions[trackableId]?.isEmpty() == true) {
+            updatingResolutions.remove(trackableId)
+        }
+    }
 
     fun copy(): PublisherProperties =
         PublisherProperties(

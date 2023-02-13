@@ -46,10 +46,14 @@ class UpdateResolutionWorkerTest {
 
             // then
             asyncWorks.executeAll()
+            assertThat(postedWorks).hasSize(1)
 
             coVerify {
                 ably.updatePresenceData(trackableId, match { it.resolution == resolution })
             }
+            val postedWork = postedWorks[0] as WorkerSpecification.UpdateResolutionSuccess
+            assertThat(postedWork.trackableId).isEqualTo(trackableId)
+            assertThat(postedWork.resolution).isEqualTo(resolution)
         }
     }
 
@@ -82,8 +86,11 @@ class UpdateResolutionWorkerTest {
     fun `should not call updatePresenceData, not post work and remove resolution from properties when newer resolution is present`() {
         runTest {
             // given
-            initialProperties.updatingResolutions.add(resolution)
-            initialProperties.updatingResolutions.add(Resolution(Accuracy.HIGH, 50L, 50.0))
+            initialProperties.addUpdatingResolution(trackableId, resolution)
+            initialProperties.addUpdatingResolution(
+                trackableId,
+                Resolution(Accuracy.HIGH, 50L, 50.0)
+            )
             ably.mockWaitForChannelToAttachFailure(trackableId)
 
             // when
@@ -97,7 +104,12 @@ class UpdateResolutionWorkerTest {
             asyncWorks.executeAll()
             assertThat(postedWorks).isEmpty()
 
-            assertThat(updatedProperties.updatingResolutions).doesNotContain(resolution)
+            assertThat(
+                updatedProperties.containsUpdatingResolution(
+                    trackableId,
+                    resolution
+                )
+            ).isFalse()
             coVerify(exactly = 0) {
                 ably.updatePresenceData(trackableId, any())
             }
