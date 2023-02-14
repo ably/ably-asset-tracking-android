@@ -1024,7 +1024,7 @@ class SubscriberMonitor(
      * Throw an assertion error if expectations about published location updates have not
      * been meet in this test.
      */
-    private suspend  fun assertLocationUpdated() {
+    private suspend fun assertLocationUpdated() {
         if (expectedLocation == null) {
             // no expected location set - skip assertion
             testLogD("SubscriberMonitor: $label - (SKIP) expectedLocationUpdate = null")
