@@ -225,6 +225,7 @@ interface Ably {
      * @param trackableId The ID of the trackable channel.
      * @param presenceData The data that will be send via the presence channel.
      */
+    // This function should be removed together with deprecated suspending resolutionPreference function in Subscriber
     suspend fun updatePresenceDataWithRetry(trackableId: String, presenceData: PresenceData): Result<Unit>
 
     /**
@@ -795,7 +796,6 @@ constructor(
     override suspend fun updatePresenceDataWithRetry(trackableId: String, presenceData: PresenceData): Result<Unit> {
         val trackableChannel = getChannelIfExists(trackableId) ?: return Result.success(Unit)
         return try {
-            // This simple retry mechanism should be removed while fixing https://github.com/ably/ably-asset-tracking-android/issues/962
             withTimeout(30_000L) {
                 updatePresenceDataRepeating(trackableChannel, presenceData)
                 Result.success(Unit)
