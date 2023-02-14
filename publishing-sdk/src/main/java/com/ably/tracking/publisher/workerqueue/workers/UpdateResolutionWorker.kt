@@ -22,11 +22,13 @@ internal class UpdateResolutionWorker(
         if (!properties.containsUpdatingResolution(trackableId, resolution)) {
             properties.addUpdatingResolution(trackableId, resolution)
         }
-        if (properties.isLastUpdatingResolution(trackableId, resolution)) {
-            waitAndUpdatePresenceAsync(doAsyncWork, properties, postWork)
-        } else {
+
+        if (!properties.isLastUpdatingResolution(trackableId, resolution)) {
             properties.removeUpdatingResolution(trackableId, resolution)
+            return properties
         }
+
+        waitAndUpdatePresenceAsync(doAsyncWork, properties, postWork)
         return properties
     }
 

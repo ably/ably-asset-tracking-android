@@ -18,15 +18,18 @@ internal class ChangeResolutionWorker(
         doAsyncWork: (suspend () -> Unit) -> Unit,
         postWork: (WorkerSpecification) -> Unit
     ): SubscriberProperties {
-        properties.presenceData = properties.presenceData.copy(resolution = resolution)
         if (!properties.containsUpdatingResolution(trackableId, resolution)) {
             properties.addUpdatingResolution(trackableId, resolution)
         }
-        if (properties.isLastUpdatingResolution(trackableId, resolution)) {
-            waitAndUpdatePresenceAsync(doAsyncWork, properties, postWork)
-        } else {
+
+        if (!properties.isLastUpdatingResolution(trackableId, resolution)) {
             properties.removeUpdatingResolution(trackableId, resolution)
+            return properties
         }
+
+        properties.presenceData = properties.presenceData.copy(resolution = resolution)
+        waitAndUpdatePresenceAsync(doAsyncWork, properties, postWork)
+
         return properties
     }
 
