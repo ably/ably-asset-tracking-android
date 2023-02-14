@@ -530,6 +530,7 @@ constructor(
         }
         channelToRemove.unsubscribe()
         channelToRemove.presence.unsubscribe()
+        channelToRemove.off()
         ably.channels.release(channelToRemove.name)
     }
 
