@@ -458,7 +458,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
          * This is a function rather than passed into the constructor as one of the tests requires
          * the subscriber not to be started prior to test commencement.
          */
-        fun getSubscriber(): Subscriber {
+        suspend fun getSubscriber(): Subscriber {
 
             if (subscriber != null) {
                 return subscriber!!
@@ -481,19 +481,17 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
                 )
             )
 
-            runBlocking {
-                subscriber = DefaultSubscriber(
-                    DefaultAbly(
-                        ablySdkFactory,
-                        connectionConfiguration,
-                        Logging.aatDebugLogger,
-                        CoroutineScope(Dispatchers.IO + SupervisorJob())
-                    ),
-                    Resolution(Accuracy.BALANCED, 1L, 0.0),
-                    trackableId,
-                    Logging.aatDebugLogger
-                ).apply { start() }
-            }
+            subscriber = DefaultSubscriber(
+                DefaultAbly(
+                    ablySdkFactory,
+                    connectionConfiguration,
+                    Logging.aatDebugLogger,
+                    CoroutineScope(Dispatchers.IO + SupervisorJob())
+                ),
+                Resolution(Accuracy.BALANCED, 1L, 0.0),
+                trackableId,
+                Logging.aatDebugLogger
+            ).apply { start() }
 
             return subscriber!!
         }
@@ -502,7 +500,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
          * Creates and starts a connection to an Ably channel for the purpose of publishing location
          * updates and emulating trackable state change events.
          */
-        fun createAndStartPublishingAblyConnection(): DefaultAbly<DefaultAblySdkChannelStateListener> {
+        suspend fun createAndStartPublishingAblyConnection(): DefaultAbly<DefaultAblySdkChannelStateListener> {
             if (ablyPublishing != null) {
                 return ablyPublishing!!
             }
@@ -523,9 +521,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
                 CoroutineScope(Dispatchers.IO + SupervisorJob())
             )
 
-            runBlocking {
-                Assert.assertTrue(defaultAbly.startConnection().isSuccess)
-            }
+            Assert.assertTrue(defaultAbly.startConnection().isSuccess)
 
             val connectedToAbly = BooleanExpectation("Successfully connected to Ably")
             defaultAbly.connect(
@@ -538,9 +534,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
             connectedToAbly.await(10)
             connectedToAbly.assertSuccess()
 
-            runBlocking {
-                defaultAbly.updatePresenceData(trackableId, ablyPublishingPresenceData)
-            }
+            defaultAbly.updatePresenceData(trackableId, ablyPublishingPresenceData)
 
             // Wait for channel to come online
             var receivedFirstOnlineStateChange = false
@@ -555,17 +549,15 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
             stateChangeExpectation.assertFulfilled()
 
             // Listen for presence and resolution updates
-            runBlocking {
-                defaultAbly.subscribeForPresenceMessages(trackableId, listener = { message ->
-                    if (message.data.type == ClientTypes.SUBSCRIBER) {
-                        message.data.resolution?.let {
-                            runBlocking {
-                                subscriberResolutions.emit(message.data.resolution!!)
-                            }
+            defaultAbly.subscribeForPresenceMessages(trackableId, listener = { message ->
+                if (message.data.type == ClientTypes.SUBSCRIBER) {
+                    message.data.resolution?.let {
+                        runBlocking {
+                            subscriberResolutions.emit(message.data.resolution!!)
                         }
                     }
-                })
-            }
+                }
+            })
 
             ablyPublishing = defaultAbly
 
@@ -573,26 +565,26 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
         }
 
         fun tearDown() {
-            val stopExpectation = shutdownSubscriber()
-            stopExpectation.assertSuccess()
-            scope.cancel()
-            shutdownAblyPublishing()
-            fault.proxy.stop()
+            runBlocking {
+                val stopExpectation = shutdownSubscriber()
+                stopExpectation.assertSuccess()
+                scope.cancel()
+                shutdownAblyPublishing()
+                fault.proxy.stop()
+            }
         }
 
         /**
          * If the test has started up a publishing connection to the Ably
          * channel, shut it down.
          */
-        fun shutdownAblyPublishing() {
-            runBlocking {
-                ablyPublishing?.let {
-                    testLogD("Shutting down Ably publishing connection")
-                    it.close(ablyPublishingPresenceData)
-                    testLogD("Ably publishing connection shutdown")
-                }
-                ablyPublishing = null
+        suspend fun shutdownAblyPublishing() {
+            ablyPublishing?.let {
+                testLogD("Shutting down Ably publishing connection")
+                it.close(ablyPublishingPresenceData)
+                testLogD("Ably publishing connection shutdown")
             }
+            ablyPublishing = null
         }
 
         /**
@@ -600,18 +592,17 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
          * Returns a BooleanExpectation, which can be used to check for successful
          * shutdown of the publisher
          */
-        fun shutdownSubscriber(): BooleanExpectation {
+        suspend fun shutdownSubscriber(): BooleanExpectation {
             val stopExpectation = BooleanExpectation("stop response")
-            runBlocking {
-                try {
-                    subscriber?.stop()
-                    testLogD("stop success")
-                    stopExpectation.fulfill(true)
-                } catch (e: Exception) {
-                    testLogD("stop failed")
-                    stopExpectation.fulfill(true)
-                }
+            try {
+                subscriber?.stop()
+                testLogD("stop success")
+                stopExpectation.fulfill(true)
+            } catch (e: Exception) {
+                testLogD("stop failed")
+                stopExpectation.fulfill(true)
             }
+
             stopExpectation.await()
             subscriber = null
             return stopExpectation
@@ -863,33 +854,31 @@ class SubscriberMonitor(
     }
 
     /**
-     * Performs the given async (suspending) operation in a runBlocking, attaching the
+     * Performs the given async (suspending) operation, attaching the
      * returned StateFlow<TrackableState> to the given receiver, then waits for expectations
      * to be delivered (or not) before cleaning up.
      */
-    fun waitForStateTransition(
+    suspend fun waitForStateTransition(
         asyncOp: suspend () -> Unit
     ): SubscriberMonitor {
-        runBlocking {
-            try {
-                withTimeout(timeout) {
-                    asyncOp()
-                    testLogD("$label - async op success")
+        try {
+            withTimeout(timeout) {
+                asyncOp()
+                testLogD("$label - async op success")
 
-                    assertStateTransition()
-                    assertSubscriberPresence()
-                    assertPublisherPresence()
-                    assertLocationUpdated()
-                    assertPublisherResolution()
-                    assertSubscriberPreferredResolution()
-                }
-            } catch (timeoutCancellationException: TimeoutCancellationException) {
-                testLogD("$label - timed out")
-                throw AssertionError("$label timed out.", timeoutCancellationException)
-            } catch (exception: Exception) {
-                testLogD("$label - failed - $exception")
-                throw AssertionError("$label did not result in success.", exception)
+                assertStateTransition()
+                assertSubscriberPresence()
+                assertPublisherPresence()
+                assertLocationUpdated()
+                assertPublisherResolution()
+                assertSubscriberPreferredResolution()
             }
+        } catch (timeoutCancellationException: TimeoutCancellationException) {
+            testLogD("$label - timed out")
+            throw AssertionError("$label timed out.", timeoutCancellationException)
+        } catch (exception: Exception) {
+            testLogD("$label - failed - $exception")
+            throw AssertionError("$label did not result in success.", exception)
         }
 
         return this
@@ -898,19 +887,18 @@ class SubscriberMonitor(
     /**
      * Assert that we receive the expected subscriber resolution.
      */
-    private fun assertSubscriberPreferredResolution() {
+    private suspend fun assertSubscriberPreferredResolution() {
         if (expectedSubscriberResolution == null) {
             testLogD("SubscriberMonitor: $label - (SKIPPED) expectedSubscriberResolution = null")
             return
         }
 
         testLogD("SubscriberMonitor: $label - (WAITING) preferredSubscriberResolution = $expectedSubscriberResolution")
-        val preferredSubscriberResolution = runBlocking {
-            subscriberResolutionPreferenceFlow.first { resolution ->
-                testLogD("Checking subscriber resolution $resolution")
-                resolution == expectedSubscriberResolution
-            }
+        val preferredSubscriberResolution = subscriberResolutionPreferenceFlow.first { resolution ->
+            testLogD("Checking subscriber resolution $resolution")
+            resolution == expectedSubscriberResolution
         }
+
         if (preferredSubscriberResolution != expectedSubscriberResolution) {
             testLogD("SubscriberMonitor: $label - (FAIL) preferredSubscriberResolution = $preferredSubscriberResolution")
             throw AssertionError(
@@ -921,7 +909,7 @@ class SubscriberMonitor(
         }
     }
 
-    private fun assertPublisherResolution() {
+    private suspend fun assertPublisherResolution() {
         if (expectedPublisherResolution == null) {
             testLogD("SubscriberMonitor: $label - (SKIP) expectedPublisherResolution = null")
             return
@@ -946,10 +934,8 @@ class SubscriberMonitor(
      * This can happen at any time after the initial trackable state transition,
      * and so we cannot rely on the first state we collect being the "newest" one.
      */
-    private fun listenForExpectedPublisherResolution(): Resolution {
-        val lastResolution = runBlocking {
-            subscriber.resolutions.first { resolution -> resolution == expectedPublisherResolution }
-        }
+    private suspend fun listenForExpectedPublisherResolution(): Resolution {
+        val lastResolution = subscriber.resolutions.first { resolution -> resolution == expectedPublisherResolution }
 
         testLogD("lastPublisherResolution: $lastResolution")
         return lastResolution
@@ -992,7 +978,7 @@ class SubscriberMonitor(
      * and so we cannot rely on the first state we collect being the "new" one.
      */
     @OptIn(Experimental::class)
-    private fun assertPublisherPresence() = runBlocking {
+    private suspend fun assertPublisherPresence() {
         testLogD("SubscriberMonitor (WAITING): $label - publisher presence -> $expectedPublisherPresence")
         val presence =
             subscriber.publisherPresence.first { presence -> presence == expectedPublisherPresence }
@@ -1038,7 +1024,7 @@ class SubscriberMonitor(
      * Throw an assertion error if expectations about published location updates have not
      * been meet in this test.
      */
-    private fun assertLocationUpdated() {
+    private suspend  fun assertLocationUpdated() {
         if (expectedLocation == null) {
             // no expected location set - skip assertion
             testLogD("SubscriberMonitor: $label - (SKIP) expectedLocationUpdate = null")
@@ -1063,10 +1049,8 @@ class SubscriberMonitor(
      * These location updates may arrive at any time after the trackable transitions to online, so we therefore
      * cannot rely on the first thing we find being the "newest" state and therefore must wait for a bit.
      */
-    private fun listenForExpectedLocationUpdate(): Location {
-        val lastLocation: Location = runBlocking {
-            subscriber.locations.first { locationUpdate -> locationUpdate.location == expectedLocation }.location
-        }
+    private suspend fun listenForExpectedLocationUpdate(): Location {
+        val lastLocation: Location = subscriber.locations.first { locationUpdate -> locationUpdate.location == expectedLocation }.location
 
         testLogD("lastLocation: $lastLocation")
         return lastLocation
