@@ -989,6 +989,7 @@ class DefaultAblyTestScenarios {
 
                 configuredChannel.stubUnsubscribe()
                 configuredChannel.stubPresenceUnsubscribe()
+                configuredChannel.stubOffAll()
                 configuredChannel.mockName()
                 testEnvironment.stubRelease(configuredChannel)
 
@@ -1012,6 +1013,7 @@ class DefaultAblyTestScenarios {
                          * ...and calls `get` on the Channels instance...
                          * ...and tells the channel to leave presence...
                          * ...and calls `unsubscribe` on the channel and on its Presence instance...
+                         * ...and calls `off` on the channel to unregister all listeners
                          * ...and fetches the channel’s name and calls `release` on the Channels instance...
                          * }
                          */
@@ -1021,6 +1023,7 @@ class DefaultAblyTestScenarios {
 
                         configuredChannel.channelMock.unsubscribe()
                         configuredChannel.presenceMock.unsubscribe()
+                        configuredChannel.channelMock.off()
                         configuredChannel.channelMock.name
                         testEnvironment.channelsMock.release(configuredChannel.channelName)
                     }
@@ -1328,6 +1331,7 @@ class DefaultAblyTestScenarios {
                 }
 
                 testEnvironment.stubConnectionOff()
+                testEnvironment.stubConnectionOffAll()
 
                 // When...
 
@@ -1369,6 +1373,8 @@ class DefaultAblyTestScenarios {
                          */
                         testEnvironment.connectionMock.off(any())
                     }
+
+                    testEnvironment.connectionMock.off()
                 }
 
                 /* when ${thenConfig.resultOfStopConnectionCallOnObjectUnderTest} is Terminates and ${thenConfig.resultOfStopConnectionCallOnObjectUnderTest.result} is Success {

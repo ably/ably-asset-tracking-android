@@ -1686,6 +1686,7 @@ class DefaultAblyTests {
             configuredChannel.mockSuccessfulPresenceLeave()
             configuredChannel.stubUnsubscribe()
             configuredChannel.stubPresenceUnsubscribe()
+            configuredChannel.stubOffAll()
             testEnvironment.stubRelease(configuredChannel)
         }
 
@@ -1701,6 +1702,7 @@ class DefaultAblyTests {
             reason = null
         )
         testEnvironment.stubConnectionOff()
+        testEnvironment.stubConnectionOffAll()
 
         // When...
         // ... we call `close` on the object under test,
@@ -1751,6 +1753,7 @@ class DefaultAblyTests {
             }
             configuredChannel.stubUnsubscribe()
             configuredChannel.stubPresenceUnsubscribe()
+            configuredChannel.stubOffAll()
             testEnvironment.stubRelease(configuredChannel)
         }
 
@@ -1766,6 +1769,7 @@ class DefaultAblyTests {
             reason = null
         )
         testEnvironment.stubConnectionOff()
+        testEnvironment.stubConnectionOffAll()
 
         // When...
         // ... we call `close` on the object under test,

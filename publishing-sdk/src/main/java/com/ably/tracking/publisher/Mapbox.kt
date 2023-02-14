@@ -414,6 +414,7 @@ internal class DefaultMapbox(
             }
 
             if (MapboxInstanceProvider.destroyIfPossible()) {
+                Mapbox_TripNotificationModuleConfiguration.moduleProvider = null
                 logHandler?.v("$TAG Destroyed the MapboxNavigation instance")
             }
         }

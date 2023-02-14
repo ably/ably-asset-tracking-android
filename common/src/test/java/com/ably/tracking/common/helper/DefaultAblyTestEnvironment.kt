@@ -115,6 +115,13 @@ class DefaultAblyTestEnvironment private constructor(
         }
 
         /**
+         * Stubs [channelMock]’s [AblySdkRealtime.Channel.off] method for all listeners.
+         */
+        fun stubOffNoListeners() {
+            every { channelMock.off() } returns Unit
+        }
+
+        /**
          * Stubs [presenceMock]’s [AblySdkRealtime.Presence.unsubscribe] method.
          */
         fun stubPresenceUnsubscribe() {
@@ -324,6 +331,13 @@ class DefaultAblyTestEnvironment private constructor(
         }
 
         /**
+         * Stubs [channelMock]’s [AblySdkRealtime.Channel.off] method (the overload with no listeners).
+         */
+        fun stubOffAll() {
+            every { channelMock.off() } returns Unit
+        }
+
+        /**
          * Mocks [channelMock]’s [AblySdkRealtime.Channel.on] method to capture the received [AblySdkChannelStateListener], and to then immediately call this listener with a [AblySdkChannelStateListener.ChannelStateChange] MockK mock constructed from the [current] argument.
          *
          * @param current The value that the state change’s [ConnectionStateListener.ConnectionStateChange.current] property will return.
@@ -513,10 +527,17 @@ class DefaultAblyTestEnvironment private constructor(
     }
 
     /**
-     * Stubs [connectionMock]’s [AblySdkRealtime.Connection.off] method.
+     * Stubs [connectionMock]’s [AblySdkRealtime.Connection.off] method (the override with a single listener).
      */
     fun stubConnectionOff() {
         every { connectionMock.off(any()) } returns Unit
+    }
+
+    /**
+     * Stubs [connectionMock]’s [AblySdkRealtime.Connection.off] method.
+     */
+    fun stubConnectionOffAll() {
+        every { connectionMock.off() } returns Unit
     }
 
     /**

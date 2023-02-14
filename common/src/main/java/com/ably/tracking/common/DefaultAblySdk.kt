@@ -91,6 +91,10 @@ constructor(clientOptions: ClientOptions) : AblySdkRealtime<DefaultAblySdkChanne
         override fun off(listener: ConnectionStateListener) {
             connection.off(listener)
         }
+
+        override fun off() {
+            connection.off()
+        }
     }
 
     class Channels
