@@ -65,12 +65,13 @@ internal class DefaultSubscriber(
         }
     }
 
+    @Deprecated("Use sendResolutionPreference instead")
     override suspend fun resolutionPreference(resolution: Resolution?) {
         logHandler?.v("$TAG Subscriber resolutionPreference operation started")
         // send change request over channel and wait for the result
         suspendCoroutine<Unit> { continuation ->
             core.enqueue(
-                WorkerSpecification.ChangeResolution(
+                WorkerSpecification.DeprecatedChangeResolution(
                     resolution,
                     continuation.wrapInResultCallback(
                         onSuccess = { logHandler?.v("$TAG Subscriber resolutionPreference operation succeeded") },
@@ -79,6 +80,10 @@ internal class DefaultSubscriber(
                 )
             )
         }
+    }
+
+    override fun sendResolutionPreference(resolution: Resolution?) {
+        core.enqueue(WorkerSpecification.ChangeResolution(resolution))
     }
 
     override suspend fun stop() {

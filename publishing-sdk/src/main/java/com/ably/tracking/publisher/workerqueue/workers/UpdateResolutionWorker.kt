@@ -1,23 +1,24 @@
-package com.ably.tracking.subscriber.workerqueue.workers
+package com.ably.tracking.publisher.workerqueue.workers
 
 import com.ably.tracking.Resolution
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.PresenceData
 import com.ably.tracking.common.isFatalAblyFailure
-import com.ably.tracking.subscriber.SubscriberProperties
 import com.ably.tracking.common.workerqueue.DefaultWorker
-import com.ably.tracking.subscriber.workerqueue.WorkerSpecification
+import com.ably.tracking.publisher.PublisherProperties
+import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 
-internal class ChangeResolutionWorker(
-    private val ably: Ably,
+internal class UpdateResolutionWorker(
     private val trackableId: String,
-    private val resolution: Resolution?
-) : DefaultWorker<SubscriberProperties, WorkerSpecification>() {
+    private val resolution: Resolution,
+    private val ably: Ably,
+) : DefaultWorker<PublisherProperties, WorkerSpecification>() {
+
     override fun doWork(
-        properties: SubscriberProperties,
+        properties: PublisherProperties,
         doAsyncWork: (suspend () -> Unit) -> Unit,
         postWork: (WorkerSpecification) -> Unit
-    ): SubscriberProperties {
+    ): PublisherProperties {
         if (!properties.containsUpdatingResolution(trackableId, resolution)) {
             properties.addUpdatingResolution(trackableId, resolution)
         }
@@ -27,31 +28,30 @@ internal class ChangeResolutionWorker(
             return properties
         }
 
-        properties.presenceData = properties.presenceData.copy(resolution = resolution)
         waitAndUpdatePresenceAsync(doAsyncWork, properties, postWork)
-
         return properties
     }
 
     private fun waitAndUpdatePresenceAsync(
         doAsyncWork: (suspend () -> Unit) -> Unit,
-        properties: SubscriberProperties,
+        properties: PublisherProperties,
         postWork: (WorkerSpecification) -> Unit
     ) {
         doAsyncWork {
             val result = waitAndUpdatePresence(properties.presenceData)
             if (result.isFailure && !result.isFatalAblyFailure()) {
-                postWork(WorkerSpecification.ChangeResolution(resolution))
+                postWork(WorkerSpecification.UpdateResolution(trackableId, resolution))
             } else {
-                postWork(WorkerSpecification.ChangeResolutionSuccess(resolution))
+                postWork(WorkerSpecification.UpdateResolutionSuccess(trackableId, resolution))
             }
         }
     }
 
     private suspend fun waitAndUpdatePresence(presenceData: PresenceData): Result<Unit> {
         val waitResult = ably.waitForChannelToAttach(trackableId)
+        val updatedPresenceData = presenceData.copy(resolution = resolution)
         return if (waitResult.isSuccess) {
-            ably.updatePresenceData(trackableId, presenceData)
+            ably.updatePresenceData(trackableId, updatedPresenceData)
         } else {
             waitResult
         }
