@@ -8,7 +8,7 @@ import java.lang.ref.WeakReference
 
 internal class DefaultBatteryDataProviderTest {
     val contextMock = mockk<Context>()
-    val batteryDataProvider = DefaultBatteryDataProvider(WeakReference(contextMock))
+    val batteryDataProvider = DefaultBatteryDataProvider(contextMock)
 
     @Test
     fun `should calculate battery percentage from level and scale`() {
