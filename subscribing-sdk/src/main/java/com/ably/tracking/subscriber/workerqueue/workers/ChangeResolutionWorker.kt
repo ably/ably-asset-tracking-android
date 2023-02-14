@@ -23,18 +23,26 @@ internal class ChangeResolutionWorker(
             properties.addUpdatingResolution(trackableId, resolution)
         }
         if (properties.isLastUpdatingResolution(trackableId, resolution)) {
-            doAsyncWork {
-                val result = waitAndUpdatePresence(properties.presenceData)
-                if (result.isFailure && !result.isFatalAblyFailure()) {
-                    postWork(WorkerSpecification.ChangeResolution(resolution))
-                } else {
-                    postWork(WorkerSpecification.ChangeResolutionSuccess(resolution))
-                }
-            }
+            waitAndUpdatePresenceAsync(doAsyncWork, properties, postWork)
         } else {
             properties.removeUpdatingResolution(trackableId, resolution)
         }
         return properties
+    }
+
+    private fun waitAndUpdatePresenceAsync(
+        doAsyncWork: (suspend () -> Unit) -> Unit,
+        properties: SubscriberProperties,
+        postWork: (WorkerSpecification) -> Unit
+    ) {
+        doAsyncWork {
+            val result = waitAndUpdatePresence(properties.presenceData)
+            if (result.isFailure && !result.isFatalAblyFailure()) {
+                postWork(WorkerSpecification.ChangeResolution(resolution))
+            } else {
+                postWork(WorkerSpecification.ChangeResolutionSuccess(resolution))
+            }
+        }
     }
 
     private suspend fun waitAndUpdatePresence(presenceData: PresenceData): Result<Unit> {
