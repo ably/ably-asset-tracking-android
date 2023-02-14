@@ -3,7 +3,6 @@ package com.ably.tracking.publisher
 import android.content.Context
 import com.ably.tracking.Accuracy
 import com.ably.tracking.Resolution
-import java.lang.ref.WeakReference
 import kotlin.math.min
 
 class DefaultResolutionPolicyFactory(
