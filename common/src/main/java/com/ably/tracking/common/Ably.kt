@@ -530,6 +530,7 @@ constructor(
         }
         channelToRemove.unsubscribe()
         channelToRemove.presence.unsubscribe()
+        // TODO: Can possibly be removed once https://github.com/ably/ably-java/issues/919 is resolved
         channelToRemove.off()
         ably.channels.release(channelToRemove.name)
     }
