@@ -94,9 +94,16 @@ class PublisherService : Service() {
         }
     }
 
+    /**
+     * In this method, we take a clone of the notification used by the service.
+     *
+     * This is to prevent a leaking issue, whereby the service would be kept alive
+     * by a synthetic lambda in mapbox if the [notification] member were used directly.
+     */
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
-    private fun createPublisher(locationSource: LocationSource?): Publisher =
-        Publisher.publishers()
+    private fun createPublisher(locationSource: LocationSource?): Publisher {
+        val providedNotification = notification.clone()
+        return Publisher.publishers()
             .connection(ConnectionConfiguration(Authentication.basic(CLIENT_ID, ABLY_API_KEY)))
             .map(MapConfiguration(MAPBOX_ACCESS_TOKEN))
             .locationSource(locationSource)
@@ -116,7 +123,7 @@ class PublisherService : Service() {
             })
             .backgroundTrackingNotificationProvider(
                 object : PublisherNotificationProvider {
-                    override fun getNotification(): Notification = notification
+                    override fun getNotification(): Notification = providedNotification
                 },
                 NOTIFICATION_ID
             )
@@ -125,6 +132,7 @@ class PublisherService : Service() {
             .constantLocationEngineResolution(createConstantLocationEngineResolution())
             .vehicleProfile(appPreferences.getVehicleProfile().toAssetTracking())
             .start()
+    }
 
     private fun createDefaultResolution(): Resolution =
         Resolution(
