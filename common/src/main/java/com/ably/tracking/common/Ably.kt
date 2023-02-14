@@ -1016,6 +1016,7 @@ constructor(
             withTimeout(STOP_CONNECTION_MAXIMUM_DURATION_IN_MILLISECONDS) {
                 closeSuspending()
             }
+            ably.connection.off()
             Result.success(Unit)
         } catch (connectionException: ConnectionException) {
             logHandler?.w("$TAG Failed to stop Ably connection", connectionException)
