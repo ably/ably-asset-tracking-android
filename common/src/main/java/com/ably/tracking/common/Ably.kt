@@ -1022,9 +1022,11 @@ constructor(
             Result.success(Unit)
         } catch (connectionException: ConnectionException) {
             logHandler?.w("$TAG Failed to stop Ably connection", connectionException)
+            ably.connection.off()
             Result.failure(connectionException)
         } catch (exception: TimeoutCancellationException) {
             logHandler?.w("$TAG Stop Ably connection timed out", exception)
+            ably.connection.off()
             Result.failure(exception)
         }
     }
