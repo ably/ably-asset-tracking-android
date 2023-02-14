@@ -21,7 +21,11 @@ internal interface BatteryDataProvider {
 /**
  * Based on https://developer.android.com/training/monitoring-device-state/battery-monitoring
  */
-internal class DefaultBatteryDataProvider(private val context: WeakReference<Context>) : BatteryDataProvider {
+internal class DefaultBatteryDataProvider(context: Context) : BatteryDataProvider {
+    private val weakContext: WeakReference<Context>
+    init {
+        weakContext = WeakReference(context)
+    }
     private val MINIMUM_BATTERY_PERCENTAGE = 0.0f
     private val MAXIMUM_BATTERY_PERCENTAGE = 100.0f
 
