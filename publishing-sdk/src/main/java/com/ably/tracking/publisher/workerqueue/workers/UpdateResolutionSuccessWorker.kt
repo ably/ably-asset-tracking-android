@@ -1,15 +1,13 @@
 package com.ably.tracking.publisher.workerqueue.workers
 
-import com.ably.tracking.common.Ably
-import com.ably.tracking.common.PresenceData
+import com.ably.tracking.Resolution
 import com.ably.tracking.common.workerqueue.DefaultWorker
 import com.ably.tracking.publisher.PublisherProperties
 import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 
-internal class UpdatePresenceDataWorker(
+internal class UpdateResolutionSuccessWorker(
     private val trackableId: String,
-    private val presenceData: PresenceData,
-    private val ably: Ably,
+    private val resolution: Resolution
 ) : DefaultWorker<PublisherProperties, WorkerSpecification>() {
 
     override fun doWork(
@@ -17,13 +15,7 @@ internal class UpdatePresenceDataWorker(
         doAsyncWork: (suspend () -> Unit) -> Unit,
         postWork: (WorkerSpecification) -> Unit
     ): PublisherProperties {
-        doAsyncWork {
-            val waitResult = ably.waitForChannelToAttach(trackableId)
-            if (waitResult.isSuccess) {
-                // For now we ignore the result of this operation but perhaps we should retry it if it fails
-                ably.updatePresenceData(trackableId, presenceData)
-            }
-        }
+        properties.removeUpdatingResolution(trackableId, resolution)
         return properties
     }
 }

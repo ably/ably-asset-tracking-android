@@ -31,7 +31,22 @@ interface SubscriberFacade : Subscriber {
      *
      * @return A [CompletableFuture] that completes when the request has been completed.
      */
+    @Deprecated("Use sendResolutionPreferenceAsync instead")
     fun resolutionPreferenceAsync(resolution: Resolution?): CompletableFuture<Void>
+
+    /**
+     * Sends the preferred resolution for updates, to be requested from the remote publisher.
+     * Returns immediately, letting the request to be processed asynchronously.
+     *
+     * An initial resolution may be defined from the outset of a [Subscriber]'s lifespan by using the
+     * [resolution][Builder.resolution] method on the [Builder] instance used to [start][Builder.start] it.
+     *
+     * Requests sent using this method will take time to propagate back to the publisher.
+     *
+     * @param resolution The preferred resolution or null if has no resolution preference.
+     *
+     */
+    fun sendResolutionPreferenceAsync(resolution: Resolution?)
 
     /**
      * Adds a handler to be notified when an enhanced location update is available.

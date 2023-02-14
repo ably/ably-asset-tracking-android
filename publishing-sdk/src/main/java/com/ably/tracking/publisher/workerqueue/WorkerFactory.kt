@@ -5,10 +5,10 @@ import com.ably.tracking.ErrorInformation
 import com.ably.tracking.Location
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.LocationUpdateType
+import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.ConnectionStateChange
-import com.ably.tracking.common.PresenceData
 import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.common.TimeProvider
 import com.ably.tracking.common.workerqueue.Worker
@@ -48,7 +48,8 @@ import com.ably.tracking.publisher.workerqueue.workers.StopWorker
 import com.ably.tracking.publisher.workerqueue.workers.StoppingConnectionFinishedWorker
 import com.ably.tracking.publisher.workerqueue.workers.TrackableRemovalRequestedWorker
 import com.ably.tracking.publisher.workerqueue.workers.TrackableRemovalSuccessWorker
-import com.ably.tracking.publisher.workerqueue.workers.UpdatePresenceDataWorker
+import com.ably.tracking.publisher.workerqueue.workers.UpdateResolutionSuccessWorker
+import com.ably.tracking.publisher.workerqueue.workers.UpdateResolutionWorker
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -139,10 +140,14 @@ internal class WorkerFactory(
                 resolutionPolicy,
                 mapbox,
             )
-            is WorkerSpecification.UpdatePresenceData -> UpdatePresenceDataWorker(
+            is WorkerSpecification.UpdateResolution -> UpdateResolutionWorker(
                 workerSpecification.trackableId,
-                workerSpecification.presenceData,
+                workerSpecification.resolution,
                 ably
+            )
+            is WorkerSpecification.UpdateResolutionSuccess -> UpdateResolutionSuccessWorker(
+                workerSpecification.trackableId,
+                workerSpecification.resolution
             )
             is WorkerSpecification.ChangeRoutingProfile -> ChangeRoutingProfileWorker(
                 workerSpecification.routingProfile,
@@ -239,9 +244,14 @@ internal sealed class WorkerSpecification {
 
     object ChangeLocationEngineResolution : WorkerSpecification()
 
-    data class UpdatePresenceData(
+    data class UpdateResolution(
         val trackableId: String,
-        val presenceData: PresenceData,
+        val resolution: Resolution
+    ) : WorkerSpecification()
+
+    data class UpdateResolutionSuccess(
+        val trackableId: String,
+        val resolution: Resolution
     ) : WorkerSpecification()
 
     data class ChangeRoutingProfile(

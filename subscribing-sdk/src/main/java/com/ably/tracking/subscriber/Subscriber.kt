@@ -43,7 +43,21 @@ interface Subscriber {
      * @throws ConnectionException If something goes wrong when sending the preferred resolution.
      */
     @JvmSynthetic
+    @Deprecated("Use sendResolutionPreference instead")
     suspend fun resolutionPreference(resolution: Resolution?)
+
+    /**
+     * Sends the preferred resolution for updates, to be requested from the remote publisher.
+     * Returns immediately, letting the request to be processed asynchronously.
+     *
+     * An initial resolution may be defined from the outset of a [Subscriber]'s lifespan by using the
+     * [resolution][Builder.resolution] method on the [Builder] instance used to [start][Builder.start] it.
+     *
+     * Requests sent using this method will take time to propagate back to the publisher.
+     *
+     * @param resolution The preferred resolution or null if has no resolution preference.
+     */
+    fun sendResolutionPreference(resolution: Resolution?)
 
     /**
      * The shared flow emitting enhanced location values when they become available.

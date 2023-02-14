@@ -619,8 +619,7 @@ constructor(
                 properties.resolutions[trackable.id] = resolution
                 enqueue(WorkerSpecification.ChangeLocationEngineResolution)
                 if (sendResolutionEnabled) {
-                    val presenceData = properties.presenceData.copy(resolution = resolution)
-                    enqueue(WorkerSpecification.UpdatePresenceData(trackable.id, presenceData))
+                    enqueue(WorkerSpecification.UpdateResolution(trackable.id, resolution))
                 }
             }
         }

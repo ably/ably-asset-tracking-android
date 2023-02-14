@@ -1,6 +1,10 @@
 package com.ably.tracking.subscriber.workerqueue.workers
 
+import com.ably.tracking.Accuracy
+import com.ably.tracking.Resolution
+import com.ably.tracking.subscriber.SubscriberProperties
 import com.ably.tracking.subscriber.workerqueue.WorkerSpecification
+import io.mockk.mockk
 
 fun MutableList<suspend () -> Unit>.appendWork(): (suspend () -> Unit) -> Unit =
     { asyncWork ->
@@ -15,3 +19,6 @@ internal fun MutableList<WorkerSpecification>.appendSpecification(): (WorkerSpec
     { workSpecification ->
         add(workSpecification)
     }
+
+internal fun createSubscriberProperties() =
+    SubscriberProperties(Resolution(Accuracy.BALANCED, 100, 100.0), mockk())
