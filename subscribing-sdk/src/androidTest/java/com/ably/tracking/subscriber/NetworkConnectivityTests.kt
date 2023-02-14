@@ -155,10 +155,8 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
             )
             testLogD("Sent enhanced location update on Ably channel")
 
-            // While we're offline-ish, change the subscribers preferred resolution
-            GlobalScope.launch {
-                subscriber.resolutionPreference(subscriberResolution)
-            }
+            // While we're offline-ish, change the subscribers preferred resolutions
+            subscriber.sendResolutionPreference(subscriberResolution)
         }.close()
 
         // Resolve the fault and make sure everything comes through
@@ -325,9 +323,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
             testLogD("Sent second enhanced location update on Ably channel")
 
             // While we're offline-ish, change the subscribers preferred resolution
-            GlobalScope.launch {
-                subscriber.resolutionPreference(secondSubscriberResolution)
-            }
+            subscriber.sendResolutionPreference(secondSubscriberResolution)
         }.close()
 
         // Resolve the fault, wait for Trackable to move to expected state
