@@ -21,6 +21,7 @@ import com.ably.tracking.publisher.Publisher
 import com.ably.tracking.publisher.PublisherNotificationProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -45,6 +46,7 @@ class PublisherService : Service() {
     private val binder = Binder(WeakReference(this))
     var publisher: Publisher? = null
     private lateinit var appPreferences: AppPreferences
+    private var locationUpdateJob: Job? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -74,6 +76,8 @@ class PublisherService : Service() {
         // Otherwise we could end up with multiple active publishers.
         Log.d("onDestroy", "onDestroy: ")
         scope.launch { publisher?.stop() }
+        locationUpdateJob?.cancel()
+        locationUpdateJob = null
         super.onDestroy()
     }
 
@@ -87,7 +91,7 @@ class PublisherService : Service() {
     fun startPublisher(locationSource: LocationSource? = null) {
         if (!isPublisherStarted) {
             publisher = createPublisher(locationSource).apply {
-                locationHistory
+                locationUpdateJob = locationHistory
                     .onEach { uploadLocationHistoryData(it) }
                     .launchIn(scope)
             }

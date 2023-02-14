@@ -70,6 +70,7 @@ abstract class PublisherServiceActivity : AppCompatActivity() {
      */
     protected fun stopPublisherService() {
         stopService(createServiceIntent())
+        publisherService = null
     }
 
     private fun bindPublisherService() {

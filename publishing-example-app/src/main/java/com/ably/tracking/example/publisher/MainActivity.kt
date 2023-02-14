@@ -95,6 +95,7 @@ class MainActivity : PublisherServiceActivity() {
             startAndBindPublisherService()
         } else {
             if (trackablesAdapter.trackables.isEmpty()) {
+                trackablesUpdateJob?.cancel()
                 stopPublisherService()
             } else {
                 showCannotStopServiceDialog()
