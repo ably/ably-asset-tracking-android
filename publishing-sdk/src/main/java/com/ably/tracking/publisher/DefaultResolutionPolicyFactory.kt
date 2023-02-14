@@ -16,9 +16,7 @@ class DefaultResolutionPolicyFactory(
     ): ResolutionPolicy {
         return DefaultResolutionPolicy(
             hooks, methods, defaultResolution,
-            DefaultBatteryDataProvider(
-                WeakReference(context)
-            )
+            DefaultBatteryDataProvider(context)
         )
     }
 }

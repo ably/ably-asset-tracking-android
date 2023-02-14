@@ -29,7 +29,7 @@ internal class DefaultBatteryDataProvider(context: Context) : BatteryDataProvide
     private val MINIMUM_BATTERY_PERCENTAGE = 0.0f
     private val MAXIMUM_BATTERY_PERCENTAGE = 100.0f
 
-    override fun getCurrentBatteryPercentage(): Float? = context.get()?.let { getCurrentBatteryPercentage(it) }
+    override fun getCurrentBatteryPercentage(): Float? = weakContext.get()?.let { getCurrentBatteryPercentage(it) }
 
     private fun getCurrentBatteryPercentage(context: Context): Float? =
         getCurrentBatteryStatusIntent(context)?.let { intent ->
