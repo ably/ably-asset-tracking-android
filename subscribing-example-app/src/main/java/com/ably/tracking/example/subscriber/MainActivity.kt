@@ -217,20 +217,16 @@ class MainActivity : AppCompatActivity() {
         googleMap?.cameraPosition?.zoom?.let {
             val newResolution = getResolutionForZoomLevel(it)
             if (newResolution != resolution) {
-                scope.launch { changeResolution(newResolution) }
+                changeResolution(newResolution)
             }
         }
     }
 
-    private suspend fun changeResolution(newResolution: Resolution) {
+    private fun changeResolution(newResolution: Resolution) {
         subscriber?.let {
-            try {
-                it.resolutionPreference(newResolution)
-                resolution = newResolution
-                updateResolutionInfo(newResolution)
-            } catch (exception: Exception) {
-                showToast(R.string.error_changing_resolution_failed)
-            }
+            it.sendResolutionPreference(newResolution)
+            resolution = newResolution
+            updateResolutionInfo(newResolution)
         }
     }
 

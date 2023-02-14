@@ -1,9 +1,9 @@
-package com.ably.tracking.subscriber.workerqueue.workers
+package com.ably.tracking.publisher.workerqueue.workers
 
 import com.ably.tracking.Accuracy
 import com.ably.tracking.Resolution
 import com.ably.tracking.common.Ably
-import com.ably.tracking.subscriber.workerqueue.WorkerSpecification
+import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 import com.ably.tracking.test.common.mockUpdatePresenceDataFailure
 import com.ably.tracking.test.common.mockUpdatePresenceDataSuccess
 import com.ably.tracking.test.common.mockWaitForChannelToAttachFailure
@@ -17,16 +17,16 @@ import org.junit.Assert
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class ChangeResolutionWorkerTest {
+class UpdateResolutionWorkerTest {
 
     private val ably: Ably = mockk()
     private val trackableId = "testtrackable"
 
-    private val resolution: Resolution = mockk()
+    private val resolution: Resolution = Resolution(Accuracy.BALANCED, 100L, 100.0)
 
-    private val worker = ChangeResolutionWorker(ably, trackableId, resolution)
+    private val worker = UpdateResolutionWorker(trackableId, resolution, ably)
 
-    private val initialProperties = createSubscriberProperties()
+    private val initialProperties = createPublisherProperties()
     private val asyncWorks = mutableListOf<suspend () -> Unit>()
     private val postedWorks = mutableListOf<WorkerSpecification>()
 
@@ -46,41 +46,16 @@ class ChangeResolutionWorkerTest {
 
             // then
             asyncWorks.executeAll()
+            assertThat(postedWorks).hasSize(1)
 
             coVerify {
-                ably.updatePresenceData(trackableId, initialProperties.presenceData)
+                ably.updatePresenceData(trackableId, match { it.resolution == resolution })
             }
+            val postedWork = postedWorks[0] as WorkerSpecification.UpdateResolutionSuccess
+            assertThat(postedWork.trackableId).isEqualTo(trackableId)
+            assertThat(postedWork.resolution).isEqualTo(resolution)
         }
     }
-
-    @Test
-    fun `should not call updatePresenceData, not post work and remove resolution from properties when newer resolution is present`() =
-        runTest {
-            // given
-            initialProperties.addUpdatingResolution(trackableId, resolution)
-            initialProperties.addUpdatingResolution(
-                trackableId,
-                Resolution(Accuracy.HIGH, 50L, 50.0)
-            )
-            ably.mockWaitForChannelToAttachFailure(trackableId)
-
-            // when
-            val updatedProperties = worker.doWork(
-                initialProperties,
-                asyncWorks.appendWork(),
-                postedWorks.appendSpecification()
-            )
-
-            // then
-            asyncWorks.executeAll()
-            assertThat(postedWorks).hasSize(0)
-            assertThat(
-                updatedProperties.containsUpdatingResolution(
-                    trackableId,
-                    resolution
-                )
-            ).isFalse()
-        }
 
     @Test
     fun `should not call updatePresenceData and post work when waiting for channel returns failure`() {
@@ -101,8 +76,43 @@ class ChangeResolutionWorkerTest {
             coVerify(exactly = 0) {
                 ably.updatePresenceData(trackableId, any())
             }
-            val postedWorker = postedWorks[0] as WorkerSpecification.ChangeResolution
+            val postedWorker = postedWorks[0] as WorkerSpecification.UpdateResolution
             assertThat(postedWorker.resolution).isEqualTo(resolution)
+            assertThat(postedWorker.trackableId).isEqualTo(trackableId)
+        }
+    }
+
+    @Test
+    fun `should not call updatePresenceData, not post work and remove resolution from properties when newer resolution is present`() {
+        runTest {
+            // given
+            initialProperties.addUpdatingResolution(trackableId, resolution)
+            initialProperties.addUpdatingResolution(
+                trackableId,
+                Resolution(Accuracy.HIGH, 50L, 50.0)
+            )
+            ably.mockWaitForChannelToAttachFailure(trackableId)
+
+            // when
+            val updatedProperties = worker.doWork(
+                initialProperties,
+                asyncWorks.appendWork(),
+                postedWorks.appendSpecification()
+            )
+
+            // then
+            asyncWorks.executeAll()
+            assertThat(postedWorks).isEmpty()
+
+            assertThat(
+                updatedProperties.containsUpdatingResolution(
+                    trackableId,
+                    resolution
+                )
+            ).isFalse()
+            coVerify(exactly = 0) {
+                ably.updatePresenceData(trackableId, any())
+            }
         }
     }
 
@@ -146,8 +156,9 @@ class ChangeResolutionWorkerTest {
             // then
             asyncWorks.executeAll()
 
-            val postedWorker = postedWorks[0] as WorkerSpecification.ChangeResolution
+            val postedWorker = postedWorks[0] as WorkerSpecification.UpdateResolution
             assertThat(postedWorker.resolution).isEqualTo(resolution)
+            assertThat(postedWorker.trackableId).isEqualTo(trackableId)
         }
     }
 }

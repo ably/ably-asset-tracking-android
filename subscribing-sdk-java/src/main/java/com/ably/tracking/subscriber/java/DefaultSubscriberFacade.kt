@@ -21,9 +21,14 @@ internal class DefaultSubscriberFacade(
 ) : SubscriberFacade, Subscriber by subscriber {
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
+    @Suppress("DEPRECATION")
+    @Deprecated("Use sendResolutionPreferenceAsync instead")
     override fun resolutionPreferenceAsync(resolution: Resolution?): CompletableFuture<Void> {
         return scope.future { subscriber.resolutionPreference(resolution) }.thenRun { }
     }
+
+    override fun sendResolutionPreferenceAsync(resolution: Resolution?) =
+        subscriber.sendResolutionPreference(resolution)
 
     override fun addLocationListener(listener: LocationUpdateListener) {
         subscriber.locations

@@ -10,7 +10,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
 // PLACEHOLDERS:
@@ -62,14 +61,11 @@ fun exampleUsage(trackingId: String) {
         }
         .launchIn(scope)
     // Request a different resolution when needed.
-    scope.launch {
-        try {
-            subscriber.resolutionPreference(
-                Resolution(Accuracy.MAXIMUM, desiredInterval = 100L, minimumDisplacement = 2.0)
-            )
-            // change request submitted successfully
-        } catch (exception: Exception) {
-            // change request could not be submitted
-        }
-    }
+    subscriber.sendResolutionPreference(
+        Resolution(
+            Accuracy.MAXIMUM,
+            desiredInterval = 100L,
+            minimumDisplacement = 2.0
+        )
+    )
 }
