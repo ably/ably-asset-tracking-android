@@ -4,7 +4,6 @@ import android.content.Context
 import io.mockk.mockk
 import org.junit.Assert
 import org.junit.Test
-import java.lang.ref.WeakReference
 
 internal class DefaultBatteryDataProviderTest {
     val contextMock = mockk<Context>()
