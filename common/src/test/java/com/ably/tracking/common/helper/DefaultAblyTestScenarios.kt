@@ -1331,7 +1331,6 @@ class DefaultAblyTestScenarios {
                 }
 
                 testEnvironment.stubConnectionOff()
-                testEnvironment.stubConnectionOffAll()
 
                 // When...
 

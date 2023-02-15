@@ -1662,7 +1662,6 @@ class DefaultAblyTests {
             reason = null
         )
         testEnvironment.stubConnectionOff()
-        testEnvironment.stubConnectionOffAll()
 
         // When...
         // ... we call `close` on the object under test,
@@ -1729,7 +1728,6 @@ class DefaultAblyTests {
             reason = null
         )
         testEnvironment.stubConnectionOff()
-        testEnvironment.stubConnectionOffAll()
 
         // When...
         // ... we call `close` on the object under test,
