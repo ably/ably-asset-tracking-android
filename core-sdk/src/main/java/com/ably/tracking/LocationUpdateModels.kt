@@ -17,8 +17,8 @@ open class LocationUpdate(
     val skippedLocations: List<Location>,
 ) {
     override fun equals(other: Any?): Boolean =
-        when {
-            other is LocationUpdate -> location == other.location && skippedLocations == other.skippedLocations
+        when (other) {
+            is LocationUpdate -> location == other.location && skippedLocations == other.skippedLocations
             else -> false
         }
 
@@ -126,9 +126,9 @@ data class Location(
             latitude,
             longitude,
             altitude,
-            if (accuracy.isFinite()) accuracy else 0.0f,
-            if (bearing.isFinite()) bearing else 0.0f,
-            if (speed.isFinite()) speed else 0.0f,
+            if (accuracy.isFinite()) accuracy else -1.0f,
+            if (bearing.isFinite()) bearing else -1.0f,
+            if (speed.isFinite()) speed else -1.0f,
             time,
         )
     }

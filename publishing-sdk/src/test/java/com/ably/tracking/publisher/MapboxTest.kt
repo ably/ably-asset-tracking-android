@@ -70,9 +70,9 @@ class MapboxTest {
                     Assert.assertTrue(it.latitude == 1.0)
                     Assert.assertTrue(it.longitude == 1.0)
                     Assert.assertTrue(it.altitude == 1.0)
-                    Assert.assertTrue(it.accuracy == 0.0f)
-                    Assert.assertTrue(it.bearing == 0.0f)
-                    Assert.assertTrue(it.speed == 0.0f)
+                    Assert.assertTrue(it.accuracy == -1.0f)
+                    Assert.assertTrue(it.bearing == -1.0f)
+                    Assert.assertTrue(it.speed == -1.0f)
                     Assert.assertTrue(it.time == 1L)
                 }
             )
@@ -231,9 +231,9 @@ class MapboxTest {
                     Assert.assertTrue(it.latitude == 1.0)
                     Assert.assertTrue(it.longitude == 1.0)
                     Assert.assertTrue(it.altitude == 1.0)
-                    Assert.assertTrue(it.accuracy == 0.0f)
-                    Assert.assertTrue(it.bearing == 0.0f)
-                    Assert.assertTrue(it.speed == 0.0f)
+                    Assert.assertTrue(it.accuracy == -1.0f)
+                    Assert.assertTrue(it.bearing == -1.0f)
+                    Assert.assertTrue(it.speed == -1.0f)
                     Assert.assertTrue(it.time > 1) // should now be current time
                 },
                 withArg {
@@ -486,9 +486,9 @@ class MapboxTest {
                     Assert.assertTrue(it[1].latitude == 5.0)
                     Assert.assertTrue(it[1].longitude == 5.0)
                     Assert.assertTrue(it[1].altitude == 5.0)
-                    Assert.assertTrue(it[1].accuracy == 0.0f)
-                    Assert.assertTrue(it[1].bearing == 0.0f)
-                    Assert.assertTrue(it[1].speed == 0.0f)
+                    Assert.assertTrue(it[1].accuracy == -1.0f)
+                    Assert.assertTrue(it[1].bearing == -1.0f)
+                    Assert.assertTrue(it[1].speed == -1.0f)
                     Assert.assertTrue(it[1].time > 5) // should now be current time
                 }
             )
@@ -499,18 +499,21 @@ class MapboxTest {
         latitude: Double,
         longitude: Double,
         altitude: Double,
-        accuracy: Float,
-        bearing: Float,
-        speed: Float,
+        accuracy: Float?,
+        bearing: Float?,
+        speed: Float?,
         time: Long,
     ): android.location.Location {
         val location = mockk<android.location.Location>()
         every { location.latitude } returns latitude
         every { location.longitude } returns longitude
         every { location.altitude } returns altitude
-        every { location.accuracy } returns accuracy
-        every { location.bearing } returns bearing
-        every { location.speed } returns speed
+        every { location.accuracy } returns (accuracy ?: Float.MIN_VALUE)
+        every { location.hasAccuracy() } returns (accuracy != null)
+        every { location.bearing } returns (bearing ?: Float.MIN_VALUE)
+        every { location.hasBearing() } returns (bearing != null)
+        every { location.speed } returns (speed ?: Float.MIN_VALUE)
+        every { location.hasSpeed() } returns (speed != null)
         every { location.time } returns time
         return location
     }
