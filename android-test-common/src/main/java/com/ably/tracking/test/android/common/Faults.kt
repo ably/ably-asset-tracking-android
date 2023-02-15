@@ -49,7 +49,10 @@ abstract class FaultSimulation {
      * The advantage of this approach is that the test code remains active and continually compiled as
      * a first class citizen of the codebase, while we work on other things to get it passing.
      */
-    open val skipTest: Boolean = false
+    open val skipPublisherTest: Boolean = false
+
+    // Causes the same behaviour as skipPublisherTest for the subscriber NetworkConnectivityTests
+    open val skipSubscriberTest: Boolean = false
 
     /**
      * A RealtimeProxy instance that will be manipulated by this fault
@@ -162,6 +165,9 @@ class TcpConnectionRefused(apiKey: String) : TransportLayerFault(apiKey) {
         onlineWithinMillis = 60_000
     )
 
+    // May be able to be removed once the issues surrounding skipTest are resolved
+    override val skipSubscriberTest = true
+
     override fun enable() {
         tcpProxy.stop()
     }
@@ -176,6 +182,8 @@ class TcpConnectionRefused(apiKey: String) : TransportLayerFault(apiKey) {
  * proxy from forwarding packets in both directions
  */
 class TcpConnectionUnresponsive(apiKey: String) : TransportLayerFault(apiKey) {
+
+    override val skipSubscriberTest = true
 
     companion object {
         val fault = object : Fault() {
@@ -211,6 +219,9 @@ class DisconnectAndSuspend(apiKey: String) : TransportLayerFault(apiKey) {
             override val name = "DisconnectAndSuspend"
         }
     }
+
+    // May be able to be removed once the issues surrounding skipTest are resolved
+    override val skipSubscriberTest = true
 
     private val timer = Timer()
 
@@ -445,6 +456,8 @@ class EnterUnresponsive(apiKey: String) : UnresponsiveAfterAction(
     direction = FrameDirection.ClientToServer,
     action = Message.Action.PRESENCE
 ) {
+    override val skipSubscriberTest = true
+
     companion object {
         val fault = object : Fault() {
             override fun simulate(apiKey: String) = EnterUnresponsive(apiKey)
@@ -462,7 +475,6 @@ class EnterUnresponsive(apiKey: String) : UnresponsiveAfterAction(
  * Publisher should continue regardless.
  */
 class DisconnectWithFailedResume(apiKey: String) : ApplicationLayerFault(apiKey) {
-
     companion object {
         val fault = object : Fault() {
             override fun simulate(apiKey: String) = DisconnectWithFailedResume(apiKey)
@@ -620,6 +632,9 @@ class EnterFailedWithNonfatalNack(apiKey: String) : PresenceNackFault(
         }
     }
 
+    // Can probably be removed once skipTest issues are resolved
+    override val skipSubscriberTest = true
+
     override val type = FaultType.Nonfatal(
         resolvedWithinMillis = 60_000L
     )
@@ -642,6 +657,8 @@ class UpdateFailedWithNonfatalNack(apiKey: String) : PresenceNackFault(
         }
     }
 
+    override val skipSubscriberTest = true
+
     override val type = FaultType.Nonfatal(
         resolvedWithinMillis = 60_000L
     )
@@ -654,6 +671,8 @@ class UpdateFailedWithNonfatalNack(apiKey: String) : PresenceNackFault(
  * it sees that re-enter has failed.
  */
 class ReenterOnResumeFailed(apiKey: String) : ApplicationLayerFault(apiKey) {
+
+    override val skipSubscriberTest = true
 
     companion object {
         val fault = object : Fault() {

@@ -90,3 +90,10 @@ jobs:
         with:
           name: api-level-${{ matrix.api-level }}-publishing-sdk-build-reports
           path: publishing-sdk/build/reports
+
+      - uses: actions/upload-artifact@v3
+        name: Build Reports for subscribing-sdk
+        if: always()
+        with:
+          name: api-level-${{ matrix.api-level }}-subscribing-sdk-build-reports
+          path: subscribing-sdk/build/reports

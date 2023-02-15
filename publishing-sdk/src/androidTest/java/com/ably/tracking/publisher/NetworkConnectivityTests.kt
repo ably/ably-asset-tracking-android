@@ -111,7 +111,7 @@ class NetworkConnectivityTests(private val testFault: Fault) {
     @Before
     fun setUp() {
         val simulation = testFault.simulate(BuildConfig.ABLY_API_KEY)
-        Assume.assumeFalse(simulation.skipTest)
+        Assume.assumeFalse(simulation.skipPublisherTest)
 
         // We cannot use ktor on API Level 21 (Lollipop) because of:
         // https://youtrack.jetbrains.com/issue/KTOR-4751/HttpCache-plugin-uses-ConcurrentMap.computeIfAbsent-method-that-is-available-only-since-Android-API-24

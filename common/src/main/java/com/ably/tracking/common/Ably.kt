@@ -128,6 +128,16 @@ interface Ably {
     )
 
     /**
+     * Sends an enhanced location update to the channel in a suspending fashion.
+     * Should be called only when there's an existing channel for the [trackableId].
+     * If a channel for the [trackableId] doesn't exist then it just returns.
+     *
+     * @param trackableId The ID of the trackable channel.
+     * @param locationUpdate The location update that is sent to the channel.
+     */
+    suspend fun sendEnhancedLocationSuspending(trackableId: String, locationUpdate: EnhancedLocationUpdate)
+
+    /**
      * Sends a raw location update to the channel.
      * Should be called only when there's an existing channel for the [trackableId].
      * If a channel for the [trackableId] doesn't exist then it just calls [callback] with success.
@@ -554,6 +564,22 @@ constructor(
             logHandler?.w("$TAG Failed to leave presence for channel ${channel.name} due to a retriable exception, the operation will be retried in $PRESENCE_LEAVE_RETRY_DELAY_IN_MILLISECONDS ms", connectionException)
             delay(PRESENCE_LEAVE_RETRY_DELAY_IN_MILLISECONDS)
             leavePresenceRepeating(channel, presenceData)
+        }
+    }
+
+    override suspend fun sendEnhancedLocationSuspending(trackableId: String, locationUpdate: EnhancedLocationUpdate) {
+        logHandler?.d("$TAG sendEnhancedLocationMessageSuspending: publishing")
+        suspendCancellableCoroutine { continuation ->
+            sendEnhancedLocation(
+                trackableId,
+                locationUpdate,
+            ) { result ->
+                try {
+                    continuation.resume(result.getOrThrow())
+                } catch (exception: Exception) {
+                    continuation.resumeWithException(exception)
+                }
+            }
         }
     }
 
