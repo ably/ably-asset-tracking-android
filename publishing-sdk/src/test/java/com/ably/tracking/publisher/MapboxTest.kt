@@ -278,7 +278,6 @@ class MapboxTest {
             expectedIntermediateLocations = null
         )
 
-
     @Test
     fun `Should suppress enhanced location update with invalid altitude`() =
         testEnhancedLocationUpdate(
@@ -298,7 +297,6 @@ class MapboxTest {
             expectedLocation = null,
             expectedIntermediateLocations = null
         )
-
 
     @Test
     fun `Should not suppress enhanced location update with zero time`() =

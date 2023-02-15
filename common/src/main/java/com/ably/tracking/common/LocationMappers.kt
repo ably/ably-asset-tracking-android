@@ -25,4 +25,3 @@ fun android.location.Location.toAssetTracking(timestamp: Long = time): Result<Lo
         .sanitize()
         .validate()
 }
-
