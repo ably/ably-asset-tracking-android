@@ -72,6 +72,29 @@ class MapboxTest {
         )
 
     @Test
+    fun `Should forward raw location update with no accuracy, no bearing and no speed`() =
+        testRawLocationUpdate(
+            inputLocation = createAndroidLocation(
+                latitude = 1.0,
+                longitude = 1.0,
+                altitude = 1.0,
+                accuracy = null,
+                bearing = null,
+                speed = null,
+                time = 1
+            ),
+            expectedLocation = Location(
+                latitude = 1.0,
+                longitude = 1.0,
+                altitude = 1.0,
+                accuracy = -1.0f,
+                bearing = -1.0f,
+                speed = -1.0f,
+                time = 1L
+            )
+        )
+
+    @Test
     fun `Should suppress raw location update with invalid latitude`() =
         testRawLocationUpdate(
             inputLocation = createAndroidLocation(
@@ -170,6 +193,34 @@ class MapboxTest {
                     accuracy = Float.NaN,
                     bearing = Float.NaN,
                     speed = Float.NaN,
+                    time = 1
+                ),
+                keyPoints = emptyList(),
+            ),
+            currentTime = 1L,
+            expectedLocation = Location(
+                latitude = 1.0,
+                longitude = 1.0,
+                altitude = 1.0,
+                accuracy = -1.0f,
+                bearing = -1.0f,
+                speed = -1.0f,
+                time = 1L
+            ),
+            expectedIntermediateLocations = emptyList()
+        )
+
+    @Test
+    fun `Should forward enhanced location update with no accuracy, no bearing and no speed`() =
+        testEnhancedLocationUpdate(
+            inputLocation = createMapboxLocationMatcherResult(
+                enhancedLocation = createAndroidLocation(
+                    latitude = 1.0,
+                    longitude = 1.0,
+                    altitude = 1.0,
+                    accuracy = null,
+                    bearing = null,
+                    speed = null,
                     time = 1
                 ),
                 keyPoints = emptyList(),
