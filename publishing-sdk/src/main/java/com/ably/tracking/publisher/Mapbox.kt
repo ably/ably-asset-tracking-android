@@ -190,7 +190,8 @@ private object MapboxInstanceProvider {
  */
 internal class MapboxLocationObserverProvider(
     private val logHandler: LogHandler?,
-    private val TAG: String,
+    private val timeProvider: TimeProvider,
+    private val TAG: String
 ) {
     fun createLocationObserver(locationUpdatesObserver: LocationUpdatesObserver) =
         object : LocationObserver {
@@ -211,7 +212,7 @@ internal class MapboxLocationObserverProvider(
                 val intermediateLocations =
                     if (keyPoints.size > 1) keyPoints.subList(0, keyPoints.size - 1)
                     else emptyList()
-                val currentTimeInMilliseconds = System.currentTimeMillis()
+                val currentTimeInMilliseconds = timeProvider.getCurrentTime()
                 // Enhanced locations don't have real world timestamps so we use the current device time
                 val enhancedLocationResult =
                     enhancedLocation.toAssetTracking(currentTimeInMilliseconds)
@@ -289,7 +290,7 @@ internal class DefaultMapbox(
     private var locationHistoryListener: (LocationHistoryListener)? = null
     private var locationObserver: LocationObserver? = null
     private lateinit var arrivalObserver: ArrivalObserver
-    private val mapboxLocationObserverProvider = MapboxLocationObserverProvider(logHandler, TAG)
+    private val mapboxLocationObserverProvider = MapboxLocationObserverProvider(logHandler, TimeProvider(), TAG)
 
     init {
         setupTripNotification(notificationProvider, notificationId)
@@ -546,4 +547,8 @@ internal class DefaultMapbox(
     override fun setLocationHistoryListener(listener: LocationHistoryListener?) {
         this.locationHistoryListener = listener
     }
+}
+
+internal open class TimeProvider {
+    open fun getCurrentTime() = System.currentTimeMillis()
 }
