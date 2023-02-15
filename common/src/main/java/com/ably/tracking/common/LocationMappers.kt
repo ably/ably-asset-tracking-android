@@ -3,6 +3,11 @@ package com.ably.tracking.common
 import com.ably.tracking.Location
 
 fun android.location.Location.toAssetTracking(timestamp: Long = time): Result<Location> {
+    val altitude = if (hasAltitude()) {
+        altitude
+    } else {
+        Double.NaN
+    }
     val accuracy = if (hasAccuracy()) {
         accuracy
     } else {

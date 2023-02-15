@@ -299,6 +299,26 @@ class MapboxTest {
         )
 
     @Test
+    fun `Should suppress enhanced location update with no altitude`() =
+        testEnhancedLocationUpdate(
+            inputLocation = createMapboxLocationMatcherResult(
+                enhancedLocation = createAndroidLocation(
+                    latitude = 1.0,
+                    longitude = 1.0,
+                    altitude = null,
+                    accuracy = 1.0f,
+                    bearing = 1.0f,
+                    speed = 1.0f,
+                    time = 1
+                ),
+                keyPoints = emptyList(),
+            ),
+            currentTime = 1L,
+            expectedLocation = null,
+            expectedIntermediateLocations = null
+        )
+
+    @Test
     fun `Should not suppress enhanced location update with zero time`() =
         testEnhancedLocationUpdate(
             inputLocation = createMapboxLocationMatcherResult(
@@ -538,7 +558,7 @@ class MapboxTest {
     private fun createAndroidLocation(
         latitude: Double,
         longitude: Double,
-        altitude: Double,
+        altitude: Double?,
         accuracy: Float?,
         bearing: Float?,
         speed: Float?,
@@ -547,7 +567,8 @@ class MapboxTest {
         val location = mockk<android.location.Location>()
         every { location.latitude } returns latitude
         every { location.longitude } returns longitude
-        every { location.altitude } returns altitude
+        every { location.altitude } returns (altitude ?: Double.MIN_VALUE)
+        every { location.hasAltitude() } returns (altitude != null)
         every { location.accuracy } returns (accuracy ?: Float.MIN_VALUE)
         every { location.hasAccuracy() } returns (accuracy != null)
         every { location.bearing } returns (bearing ?: Float.MIN_VALUE)
