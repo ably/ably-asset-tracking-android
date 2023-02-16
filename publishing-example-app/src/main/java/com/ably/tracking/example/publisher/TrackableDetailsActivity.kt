@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import com.ably.tracking.Location
 import com.ably.tracking.TrackableState
 import com.ably.tracking.publisher.Trackable
@@ -54,13 +55,13 @@ class TrackableDetailsActivity : PublisherServiceActivity() {
         publisherService?.publisher?.apply {
             getTrackableState(trackableId)
                 ?.onEach { updateAssetStateInfo(it) }
-                ?.launchIn(scope)
+                ?.launchIn(lifecycleScope)
             locations
                 .onEach { updateLocationInfo(it.location) }
-                .launchIn(scope)
+                .launchIn(lifecycleScope)
             trackables
                 .onEach { this@TrackableDetailsActivity.trackables = it }
-                .launchIn(scope)
+                .launchIn(lifecycleScope)
         }
     }
 

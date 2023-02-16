@@ -21,4 +21,5 @@ dependencies {
     implementation project(':ui-sdk')
     implementation 'com.google.android.gms:play-services-maps:17.0.0'
     implementation 'androidx.fragment:fragment:1.4.1'
+    debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.10'
 }

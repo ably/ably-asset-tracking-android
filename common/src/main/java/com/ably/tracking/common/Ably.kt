@@ -546,6 +546,8 @@ constructor(
         }
         channelToRemove.unsubscribe()
         channelToRemove.presence.unsubscribe()
+        // TODO: Can possibly be removed once https://github.com/ably/ably-java/issues/919 is resolved
+        channelToRemove.off()
         ably.channels.release(channelToRemove.name)
     }
 
@@ -1049,12 +1051,15 @@ constructor(
             withTimeout(STOP_CONNECTION_MAXIMUM_DURATION_IN_MILLISECONDS) {
                 closeSuspending()
             }
+            ably.connection.off()
             Result.success(Unit)
         } catch (connectionException: ConnectionException) {
             logHandler?.w("$TAG Failed to stop Ably connection", connectionException)
+            ably.connection.off()
             Result.failure(connectionException)
         } catch (exception: TimeoutCancellationException) {
             logHandler?.w("$TAG Stop Ably connection timed out", exception)
+            ably.connection.off()
             Result.failure(exception)
         }
     }

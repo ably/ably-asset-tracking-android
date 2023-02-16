@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.BatteryManager
 import androidx.core.math.MathUtils.clamp
+import java.lang.ref.WeakReference
 
 internal interface BatteryDataProvider {
 
@@ -20,12 +21,15 @@ internal interface BatteryDataProvider {
 /**
  * Based on https://developer.android.com/training/monitoring-device-state/battery-monitoring
  */
-internal class DefaultBatteryDataProvider(private val context: Context) : BatteryDataProvider {
+internal class DefaultBatteryDataProvider(context: Context) : BatteryDataProvider {
+    private val weakContext: WeakReference<Context>
+    init {
+        weakContext = WeakReference(context)
+    }
     private val MINIMUM_BATTERY_PERCENTAGE = 0.0f
     private val MAXIMUM_BATTERY_PERCENTAGE = 100.0f
 
-    override fun getCurrentBatteryPercentage(): Float? =
-        getCurrentBatteryPercentage(context)
+    override fun getCurrentBatteryPercentage(): Float? = weakContext.get()?.let { getCurrentBatteryPercentage(it) }
 
     private fun getCurrentBatteryPercentage(context: Context): Float? =
         getCurrentBatteryStatusIntent(context)?.let { intent ->

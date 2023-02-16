@@ -110,5 +110,6 @@ interface AblySdkRealtime<ChannelStateListenerType : AblySdkChannelStateListener
 
         fun on(listener: ConnectionStateListener)
         fun off(listener: ConnectionStateListener)
+        fun off()
     }
 }
