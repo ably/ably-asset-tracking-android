@@ -117,6 +117,11 @@ data class Location(
      */
     val time: Long
 ) {
+
+    companion object {
+        const val INVALID_VALUE = -1.0f
+    }
+
     /**
      * Utility function that coerces non-finite values to sensible defaults
      * where possible.
@@ -126,9 +131,9 @@ data class Location(
             latitude,
             longitude,
             altitude,
-            if (accuracy.isFinite()) accuracy else -1.0f,
-            if (bearing.isFinite()) bearing else -1.0f,
-            if (speed.isFinite()) speed else -1.0f,
+            if (accuracy.isFinite()) accuracy else INVALID_VALUE,
+            if (bearing.isFinite()) bearing else INVALID_VALUE,
+            if (speed.isFinite()) speed else INVALID_VALUE,
             time,
         )
     }

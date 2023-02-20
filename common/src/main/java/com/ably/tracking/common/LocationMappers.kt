@@ -8,22 +8,23 @@ fun android.location.Location.toAssetTracking(timestamp: Long = time): Result<Lo
     } else {
         Double.NaN
     }
+
     val accuracy = if (hasAccuracy()) {
         accuracy
     } else {
-        Float.NaN
+        Location.INVALID_VALUE
     }
 
     val bearing = if (hasBearing()) {
         bearing
     } else {
-        Float.NaN
+        Location.INVALID_VALUE
     }
 
     val speed = if (hasSpeed()) {
         speed
     } else {
-        Float.NaN
+        Location.INVALID_VALUE
     }
 
     return Location(latitude, longitude, altitude, accuracy, bearing, speed, timestamp)
