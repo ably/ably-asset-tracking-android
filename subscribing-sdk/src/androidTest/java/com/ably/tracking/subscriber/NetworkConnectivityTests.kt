@@ -30,6 +30,7 @@ import com.ably.tracking.test.android.common.DisconnectAndSuspend
 import com.ably.tracking.test.android.common.DisconnectWithFailedResume
 import com.ably.tracking.test.android.common.EnterFailedWithNonfatalNack
 import com.ably.tracking.test.android.common.EnterUnresponsive
+import com.ably.tracking.test.android.common.Fault
 import com.ably.tracking.test.android.common.FaultSimulation
 import com.ably.tracking.test.android.common.FaultType
 import com.ably.tracking.test.android.common.NullApplicationLayerFault
@@ -69,38 +70,39 @@ import java.util.UUID
 import kotlin.reflect.KClass
 
 @RunWith(Parameterized::class)
-class NetworkConnectivityTests(private val testFault: FaultSimulation) {
+class NetworkConnectivityTests(private val testFault: Fault) {
     private var testResources: TestResources? = null
 
     companion object {
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
         fun data() = listOf(
-            arrayOf(NullTransportFault(BuildConfig.ABLY_API_KEY)),
-            arrayOf(NullApplicationLayerFault(BuildConfig.ABLY_API_KEY)),
-            arrayOf(TcpConnectionRefused(BuildConfig.ABLY_API_KEY)),
-            arrayOf(TcpConnectionUnresponsive(BuildConfig.ABLY_API_KEY)),
-            arrayOf(AttachUnresponsive(BuildConfig.ABLY_API_KEY)),
-            arrayOf(DetachUnresponsive(BuildConfig.ABLY_API_KEY)),
-            arrayOf(DisconnectWithFailedResume(BuildConfig.ABLY_API_KEY)),
-            arrayOf(EnterFailedWithNonfatalNack(BuildConfig.ABLY_API_KEY)),
-            arrayOf(UpdateFailedWithNonfatalNack(BuildConfig.ABLY_API_KEY)),
-            arrayOf(DisconnectAndSuspend(BuildConfig.ABLY_API_KEY)),
-            arrayOf(ReenterOnResumeFailed(BuildConfig.ABLY_API_KEY)),
-            arrayOf(EnterUnresponsive(BuildConfig.ABLY_API_KEY)),
+            arrayOf(NullTransportFault.fault),
+            arrayOf(NullApplicationLayerFault.fault),
+            arrayOf(TcpConnectionRefused.fault),
+            arrayOf(TcpConnectionUnresponsive.fault),
+            arrayOf(AttachUnresponsive.fault),
+            arrayOf(DetachUnresponsive.fault),
+            arrayOf(DisconnectWithFailedResume.fault),
+            arrayOf(EnterFailedWithNonfatalNack.fault),
+            arrayOf(UpdateFailedWithNonfatalNack.fault),
+            arrayOf(DisconnectAndSuspend.fault),
+            arrayOf(ReenterOnResumeFailed.fault),
+            arrayOf(EnterUnresponsive.fault),
         )
     }
 
     @Before
     fun setUp() {
-        Assume.assumeFalse(testFault.skipSubscriberTest)
+        val simulation = testFault.simulate(BuildConfig.ABLY_API_KEY)
+        Assume.assumeFalse(simulation.skipSubscriberTest)
 
         // We cannot use ktor on API Level 21 (Lollipop) because of:
         // https://youtrack.jetbrains.com/issue/KTOR-4751/HttpCache-plugin-uses-ConcurrentMap.computeIfAbsent-method-that-is-available-only-since-Android-API-24
         // We we're only running them if runtime API Level is 24 (N) or above.
         Assume.assumeTrue(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
 
-        testResources = TestResources.setUp(testFault)
+        testResources = TestResources.setUp(simulation)
         createNotificationChannel(testResources?.context!!)
     }
 
@@ -564,7 +566,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
                 stopExpectation.assertSuccess()
                 scope.cancel()
                 shutdownAblyPublishing()
-                fault.proxy.stop()
+                fault.cleanUp()
             }
         }
 
