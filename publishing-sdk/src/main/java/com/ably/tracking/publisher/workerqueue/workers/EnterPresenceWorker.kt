@@ -72,7 +72,7 @@ internal class EnterPresenceWorker(
             )
             else -> {
                 delay(PRESENCE_ENTER_DELAY_IN_MILLISECONDS)
-                postWork(WorkerSpecification.RetryEnterPresence(trackable))
+                postWork(WorkerSpecification.EnterPresence(trackable))
             }
         }
     }
@@ -95,6 +95,6 @@ internal class EnterPresenceWorker(
         exception: Exception,
         postWork: (WorkerSpecification) -> Unit
     ) {
-        postWork(WorkerSpecification.RetryEnterPresence(trackable))
+        postWork(WorkerSpecification.EnterPresence(trackable))
     }
 }

@@ -35,7 +35,7 @@ class EnterPresenceWorkerTest {
     private val postedWorks = mutableListOf<WorkerSpecification>()
 
     @Test
-    fun `should post RetryEnterPresenceSuccess work when connection succeeded`() {
+    fun `should post EnterPresenceSuccess work when connection succeeded`() {
         runTest {
             // given
             val initialProperties = createPublisherProperties()
@@ -105,7 +105,7 @@ class EnterPresenceWorkerTest {
     }
 
     @Test
-    fun `should post RetryEnterPresence work after delay when connection failed with a non-fatal error`() {
+    fun `should post EnterPresence work after delay when connection failed with a non-fatal error`() {
         runTest(context = UnconfinedTestDispatcher()) {
             // given
             val initialProperties = createPublisherProperties()
@@ -128,7 +128,7 @@ class EnterPresenceWorkerTest {
             advanceUntilIdle()
 
             assertThat(postedWorks)
-                .contains(WorkerSpecification.RetryEnterPresence(trackable))
+                .contains(WorkerSpecification.EnterPresence(trackable))
         }
     }
 
@@ -157,7 +157,7 @@ class EnterPresenceWorkerTest {
     }
 
     @Test
-    fun `should post RetryEnterPresence work when connection failed with a fatal error with 91001 error code`() {
+    fun `should post EnterPresence work when connection failed with a fatal error with 91001 error code`() {
         runTest {
             // given
             val initialProperties = createPublisherProperties()
@@ -180,7 +180,7 @@ class EnterPresenceWorkerTest {
             advanceUntilIdle()
 
             assertThat(postedWorks)
-                .contains(WorkerSpecification.RetryEnterPresence(trackable))
+                .contains(WorkerSpecification.EnterPresence(trackable))
         }
     }
 

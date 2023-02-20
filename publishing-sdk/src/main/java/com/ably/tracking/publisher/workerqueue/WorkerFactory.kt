@@ -86,10 +86,6 @@ internal class WorkerFactory(
                 workerSpecification.trackable,
                 ably,
             )
-            is WorkerSpecification.RetryEnterPresence -> EnterPresenceWorker(
-                workerSpecification.trackable,
-                ably
-            )
             is WorkerSpecification.EnterPresenceSuccess -> EnterPresenceSuccessWorker(
                 workerSpecification.trackable,
                 publisherInteractor
@@ -265,10 +261,6 @@ internal sealed class WorkerSpecification {
 
     data class EnterPresence(
         val trackable: Trackable,
-    ) : WorkerSpecification()
-
-    data class RetryEnterPresence(
-        val trackable: Trackable
     ) : WorkerSpecification()
 
     data class EnterPresenceSuccess(

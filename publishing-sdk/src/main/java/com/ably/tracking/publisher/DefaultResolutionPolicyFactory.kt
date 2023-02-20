@@ -13,7 +13,10 @@ class DefaultResolutionPolicyFactory(
         hooks: ResolutionPolicy.Hooks,
         methods: ResolutionPolicy.Methods
     ): ResolutionPolicy {
-        return DefaultResolutionPolicy(hooks, methods, defaultResolution, DefaultBatteryDataProvider(context))
+        return DefaultResolutionPolicy(
+            hooks, methods, defaultResolution,
+            DefaultBatteryDataProvider(context)
+        )
     }
 }
 
