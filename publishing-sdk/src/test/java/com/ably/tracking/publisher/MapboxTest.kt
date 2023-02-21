@@ -1,516 +1,580 @@
 package com.ably.tracking.publisher
 
+import com.ably.tracking.Location
 import com.mapbox.navigation.core.trip.session.LocationMatcherResult
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.runs
 import io.mockk.verify
-import kotlinx.coroutines.runBlocking
 import org.junit.Assert
 import org.junit.Test
 
 class MapboxTest {
-    private val mockLocationUpdatesObserver = mockk<LocationUpdatesObserver>()
+
+    private val mockLocationUpdatesObserver = mockk<LocationUpdatesObserver> {
+        every { onRawLocationChanged(any()) } just runs
+        every { onEnhancedLocationChanged(any(), any()) } just runs
+    }
+
+    private val timeProvider: TimeProvider = mockk()
+
     private val mapboxLocationObserverProvider =
-        MapboxLocationObserverProvider(null, "MapboxTest")
+        MapboxLocationObserverProvider(null, timeProvider, "MapboxTest")
+
+    private val mapboxLocationObserver =
+        mapboxLocationObserverProvider.createLocationObserver(mockLocationUpdatesObserver)
 
     @Test
-    fun `Should forward valid raw location update`() {
-        val mapboxLocationObserver =
-            mapboxLocationObserverProvider.createLocationObserver(mockLocationUpdatesObserver)
-        every { mockLocationUpdatesObserver.onRawLocationChanged(any()) } returns mockk()
-        runBlocking {
-            mapboxLocationObserver.onNewRawLocation(
-                createAndroidLocation(
-                    1.0,
-                    1.0,
-                    1.0,
-                    1.0f,
-                    1.0f,
-                    1.0f,
-                    1
-                )
+    fun `Should forward valid raw location update`() =
+        testRawLocationUpdate(
+            inputLocation = createAndroidLocation(
+                latitude = 1.0,
+                longitude = 1.0,
+                altitude = 1.0,
+                accuracy = 1.0f,
+                bearing = 1.0f,
+                speed = 1.0f,
+                time = 1
+            ),
+            expectedLocation = Location(
+                latitude = 1.0,
+                longitude = 1.0,
+                altitude = 1.0,
+                accuracy = 1.0f,
+                bearing = 1.0f,
+                speed = 1.0f,
+                time = 1L
             )
-        }
-        verify {
-            mockLocationUpdatesObserver.onRawLocationChanged(
-                withArg {
-                    Assert.assertTrue(it.latitude == 1.0)
-                    Assert.assertTrue(it.longitude == 1.0)
-                    Assert.assertTrue(it.altitude == 1.0)
-                    Assert.assertTrue(it.accuracy == 1.0f)
-                    Assert.assertTrue(it.bearing == 1.0f)
-                    Assert.assertTrue(it.speed == 1.0f)
-                    Assert.assertTrue(it.time == 1L)
-                }
-            )
-        }
-    }
+        )
 
     @Test
-    fun `Should forward raw location update with repaired accuracy, bearing and speed`() {
-        val mapboxLocationObserver =
-            mapboxLocationObserverProvider.createLocationObserver(mockLocationUpdatesObserver)
-        every { mockLocationUpdatesObserver.onRawLocationChanged(any()) } returns mockk()
-        runBlocking {
-            mapboxLocationObserver.onNewRawLocation(
-                createAndroidLocation(
-                    1.0,
-                    1.0,
-                    1.0,
-                    Float.NaN,
-                    Float.NaN,
-                    Float.NaN,
-                    1
-                )
+    fun `Should forward raw location update with repaired accuracy, bearing and speed`() =
+        testRawLocationUpdate(
+            inputLocation = createAndroidLocation(
+                latitude = 1.0,
+                longitude = 1.0,
+                altitude = 1.0,
+                accuracy = Float.NaN,
+                bearing = Float.NaN,
+                speed = Float.NaN,
+                time = 1
+            ),
+            expectedLocation = Location(
+                latitude = 1.0,
+                longitude = 1.0,
+                altitude = 1.0,
+                accuracy = -1.0f,
+                bearing = -1.0f,
+                speed = -1.0f,
+                time = 1L
             )
-        }
-        verify {
-            mockLocationUpdatesObserver.onRawLocationChanged(
-                withArg {
-                    Assert.assertTrue(it.latitude == 1.0)
-                    Assert.assertTrue(it.longitude == 1.0)
-                    Assert.assertTrue(it.altitude == 1.0)
-                    Assert.assertTrue(it.accuracy == 0.0f)
-                    Assert.assertTrue(it.bearing == 0.0f)
-                    Assert.assertTrue(it.speed == 0.0f)
-                    Assert.assertTrue(it.time == 1L)
-                }
-            )
-        }
-    }
+        )
 
     @Test
-    fun `Should suppress raw location update with invalid latitude`() {
-        val mapboxLocationObserver =
-            mapboxLocationObserverProvider.createLocationObserver(mockLocationUpdatesObserver)
-        every { mockLocationUpdatesObserver.onRawLocationChanged(any()) } returns mockk()
-        runBlocking {
-            mapboxLocationObserver.onNewRawLocation(
-                createAndroidLocation(
-                    Double.NaN,
-                    1.0,
-                    1.0,
-                    1.0f,
-                    1.0f,
-                    1.0f,
-                    1
-                )
+    fun `Should forward raw location update with no accuracy, no bearing and no speed`() =
+        testRawLocationUpdate(
+            inputLocation = createAndroidLocation(
+                latitude = 1.0,
+                longitude = 1.0,
+                altitude = 1.0,
+                accuracy = null,
+                bearing = null,
+                speed = null,
+                time = 1
+            ),
+            expectedLocation = Location(
+                latitude = 1.0,
+                longitude = 1.0,
+                altitude = 1.0,
+                accuracy = -1.0f,
+                bearing = -1.0f,
+                speed = -1.0f,
+                time = 1L
             )
-        }
-        verify(exactly = 0) {
-            mockLocationUpdatesObserver.onRawLocationChanged(any())
-        }
-    }
+        )
 
     @Test
-    fun `Should suppress raw location update with invalid longitude`() {
-        val mapboxLocationObserver =
-            mapboxLocationObserverProvider.createLocationObserver(mockLocationUpdatesObserver)
-        every { mockLocationUpdatesObserver.onRawLocationChanged(any()) } returns mockk()
-        runBlocking {
-            mapboxLocationObserver.onNewRawLocation(
-                createAndroidLocation(
-                    1.0,
-                    Double.NaN,
-                    1.0,
-                    1.0f,
-                    1.0f,
-                    1.0f,
-                    1
-                )
-            )
-        }
-        verify(exactly = 0) {
-            mockLocationUpdatesObserver.onRawLocationChanged(any())
-        }
-    }
+    fun `Should suppress raw location update with invalid latitude`() =
+        testRawLocationUpdate(
+            inputLocation = createAndroidLocation(
+                latitude = Double.NaN,
+                longitude = 1.0,
+                altitude = 1.0,
+                accuracy = 1.0f,
+                bearing = 1.0f,
+                speed = 1.0f,
+                time = 1
+            ),
+            expectedLocation = null
+        )
 
     @Test
-    fun `Should suppress raw location update with invalid altitude`() {
-        val mapboxLocationObserver =
-            mapboxLocationObserverProvider.createLocationObserver(mockLocationUpdatesObserver)
-        every { mockLocationUpdatesObserver.onRawLocationChanged(any()) } returns mockk()
-        runBlocking {
-            mapboxLocationObserver.onNewRawLocation(
-                createAndroidLocation(
-                    1.0,
-                    1.0,
-                    Double.NaN,
-                    1.0f,
-                    1.0f,
-                    1.0f,
-                    1
-                )
-            )
-        }
-        verify(exactly = 0) {
-            mockLocationUpdatesObserver.onRawLocationChanged(any())
-        }
-    }
+    fun `Should suppress raw location update with invalid longitude`() =
+        testRawLocationUpdate(
+            inputLocation = createAndroidLocation(
+                latitude = 1.0,
+                longitude = Double.NaN,
+                altitude = 1.0,
+                accuracy = 1.0f,
+                bearing = 1.0f,
+                speed = 1.0f,
+                time = 1
+            ),
+            expectedLocation = null
+        )
 
     @Test
-    fun `Should suppress raw location update with zero time`() {
-        val mapboxLocationObserver =
-            mapboxLocationObserverProvider.createLocationObserver(mockLocationUpdatesObserver)
-        every { mockLocationUpdatesObserver.onRawLocationChanged(any()) } returns mockk()
-        runBlocking {
-            mapboxLocationObserver.onNewRawLocation(
-                createAndroidLocation(
-                    1.0,
-                    1.0,
-                    1.0,
-                    1.0f,
-                    1.0f,
-                    1.0f,
-                    0
-                )
-            )
-        }
-        verify(exactly = 0) {
-            mockLocationUpdatesObserver.onRawLocationChanged(any())
-        }
-    }
+    fun `Should suppress raw location update with invalid altitude`() =
+        testRawLocationUpdate(
+            inputLocation = createAndroidLocation(
+                latitude = 1.0,
+                longitude = 1.0,
+                altitude = Double.NaN,
+                accuracy = 1.0f,
+                bearing = 1.0f,
+                speed = 1.0f,
+                time = 1
+            ),
+            expectedLocation = null
+        )
 
     @Test
-    fun `Should forward valid enhanced location update`() {
-        val mapboxLocationObserver =
-            mapboxLocationObserverProvider.createLocationObserver(mockLocationUpdatesObserver)
-        every {
-            mockLocationUpdatesObserver.onEnhancedLocationChanged(
-                any(),
-                any()
-            )
-        } returns mockk()
-        runBlocking {
-            mapboxLocationObserver.onNewLocationMatcherResult(
-                createMapboxLocationMatcherResult(
+    fun `Should suppress raw location update with zero time`() =
+        testRawLocationUpdate(
+            inputLocation = createAndroidLocation(
+                latitude = 1.0,
+                longitude = 1.0,
+                altitude = 1.0,
+                accuracy = 1.0f,
+                bearing = 1.0f,
+                speed = 1.0f,
+                time = 0
+            ),
+            expectedLocation = null
+        )
+
+    @Test
+    fun `Should forward valid enhanced location update`() =
+        testEnhancedLocationUpdate(
+            inputLocation = createMapboxLocationMatcherResult(
+                enhancedLocation = createAndroidLocation(
+                    latitude = 1.0,
+                    longitude = 1.0,
+                    altitude = 1.0,
+                    accuracy = 1.0f,
+                    bearing = 1.0f,
+                    speed = 1.0f,
+                    time = 1
+                ),
+                keyPoints = emptyList(),
+            ),
+            currentTime = 1L,
+            expectedLocation = Location(
+                latitude = 1.0,
+                longitude = 1.0,
+                altitude = 1.0,
+                accuracy = 1.0f,
+                bearing = 1.0f,
+                speed = 1.0f,
+                time = 1L
+            ),
+            expectedIntermediateLocations = emptyList()
+        )
+
+    @Test
+    fun `Should forward enhanced location update with repaired accuracy, bearing and speed`() =
+        testEnhancedLocationUpdate(
+            inputLocation = createMapboxLocationMatcherResult(
+                enhancedLocation = createAndroidLocation(
+                    latitude = 1.0,
+                    longitude = 1.0,
+                    altitude = 1.0,
+                    accuracy = Float.NaN,
+                    bearing = Float.NaN,
+                    speed = Float.NaN,
+                    time = 1
+                ),
+                keyPoints = emptyList(),
+            ),
+            currentTime = 1L,
+            expectedLocation = Location(
+                latitude = 1.0,
+                longitude = 1.0,
+                altitude = 1.0,
+                accuracy = -1.0f,
+                bearing = -1.0f,
+                speed = -1.0f,
+                time = 1L
+            ),
+            expectedIntermediateLocations = emptyList()
+        )
+
+    @Test
+    fun `Should forward enhanced location update with no accuracy, no bearing and no speed`() =
+        testEnhancedLocationUpdate(
+            inputLocation = createMapboxLocationMatcherResult(
+                enhancedLocation = createAndroidLocation(
+                    latitude = 1.0,
+                    longitude = 1.0,
+                    altitude = 1.0,
+                    accuracy = null,
+                    bearing = null,
+                    speed = null,
+                    time = 1
+                ),
+                keyPoints = emptyList(),
+            ),
+            currentTime = 1L,
+            expectedLocation = Location(
+                latitude = 1.0,
+                longitude = 1.0,
+                altitude = 1.0,
+                accuracy = -1.0f,
+                bearing = -1.0f,
+                speed = -1.0f,
+                time = 1L
+            ),
+            expectedIntermediateLocations = emptyList()
+        )
+
+    @Test
+    fun `Should suppress enhanced location update with invalid latitude`() =
+        testEnhancedLocationUpdate(
+            inputLocation = createMapboxLocationMatcherResult(
+                enhancedLocation = createAndroidLocation(
+                    latitude = Double.NaN,
+                    longitude = 1.0,
+                    altitude = 1.0,
+                    accuracy = 1.0f,
+                    bearing = 1.0f,
+                    speed = 1.0f,
+                    time = 1
+                ),
+                keyPoints = emptyList(),
+            ),
+            currentTime = 1L,
+            expectedLocation = null,
+            expectedIntermediateLocations = null
+        )
+
+    @Test
+    fun `Should suppress enhanced location update with invalid longitude`() =
+        testEnhancedLocationUpdate(
+            inputLocation = createMapboxLocationMatcherResult(
+                enhancedLocation = createAndroidLocation(
+                    latitude = 1.0,
+                    longitude = Double.NaN,
+                    altitude = 1.0,
+                    accuracy = 1.0f,
+                    bearing = 1.0f,
+                    speed = 1.0f,
+                    time = 1
+                ),
+                keyPoints = emptyList(),
+            ),
+            currentTime = 1L,
+            expectedLocation = null,
+            expectedIntermediateLocations = null
+        )
+
+    @Test
+    fun `Should suppress enhanced location update with invalid altitude`() =
+        testEnhancedLocationUpdate(
+            inputLocation = createMapboxLocationMatcherResult(
+                enhancedLocation = createAndroidLocation(
+                    latitude = 1.0,
+                    longitude = 1.0,
+                    altitude = Double.NaN,
+                    accuracy = 1.0f,
+                    bearing = 1.0f,
+                    speed = 1.0f,
+                    time = 1
+                ),
+                keyPoints = emptyList(),
+            ),
+            currentTime = 1L,
+            expectedLocation = null,
+            expectedIntermediateLocations = null
+        )
+
+    @Test
+    fun `Should suppress enhanced location update with no altitude`() =
+        testEnhancedLocationUpdate(
+            inputLocation = createMapboxLocationMatcherResult(
+                enhancedLocation = createAndroidLocation(
+                    latitude = 1.0,
+                    longitude = 1.0,
+                    altitude = null,
+                    accuracy = 1.0f,
+                    bearing = 1.0f,
+                    speed = 1.0f,
+                    time = 1
+                ),
+                keyPoints = emptyList(),
+            ),
+            currentTime = 1L,
+            expectedLocation = null,
+            expectedIntermediateLocations = null
+        )
+
+    @Test
+    fun `Should not suppress enhanced location update with zero time`() =
+        testEnhancedLocationUpdate(
+            inputLocation = createMapboxLocationMatcherResult(
+                enhancedLocation = createAndroidLocation(
+                    latitude = 1.0,
+                    longitude = 1.0,
+                    altitude = 1.0,
+                    accuracy = 1.0f,
+                    bearing = 1.0f,
+                    speed = 1.0f,
+                    time = 0
+                ),
+                keyPoints = emptyList(),
+            ),
+            currentTime = 1L,
+            expectedLocation = Location(
+                latitude = 1.0,
+                longitude = 1.0,
+                altitude = 1.0,
+                accuracy = 1.0f,
+                bearing = 1.0f,
+                speed = 1.0f,
+                time = 1L
+            ),
+            expectedIntermediateLocations = emptyList()
+        )
+
+    @Test
+    fun `Should forward valid intermediate location updates`() =
+        testEnhancedLocationUpdate(
+            inputLocation = createMapboxLocationMatcherResult(
+                enhancedLocation = createAndroidLocation(
+                    latitude = 1.0,
+                    longitude = 1.0,
+                    altitude = 1.0,
+                    accuracy = 1.0f,
+                    bearing = 1.0f,
+                    speed = 1.0f,
+                    time = 0
+                ),
+                keyPoints = listOf(
                     createAndroidLocation(1.0, 1.0, 1.0, 1.0f, 1.0f, 1.0f, 1),
-                    emptyList(),
-                )
-            )
-        }
-        verify {
-            mockLocationUpdatesObserver.onEnhancedLocationChanged(
-                withArg {
-                    Assert.assertTrue(it.latitude == 1.0)
-                    Assert.assertTrue(it.longitude == 1.0)
-                    Assert.assertTrue(it.altitude == 1.0)
-                    Assert.assertTrue(it.accuracy == 1.0f)
-                    Assert.assertTrue(it.bearing == 1.0f)
-                    Assert.assertTrue(it.speed == 1.0f)
-                    Assert.assertTrue(it.time > 1) // should now be current time
-                },
-                withArg {
-                    Assert.assertTrue(it.isEmpty())
-                }
-            )
-        }
-    }
-
-    @Test
-    fun `Should forward enhanced location update with repaired accuracy, bearing and speed`() {
-        val mapboxLocationObserver =
-            mapboxLocationObserverProvider.createLocationObserver(mockLocationUpdatesObserver)
-        every {
-            mockLocationUpdatesObserver.onEnhancedLocationChanged(
-                any(),
-                any()
-            )
-        } returns mockk()
-        runBlocking {
-            mapboxLocationObserver.onNewLocationMatcherResult(
-                createMapboxLocationMatcherResult(
-                    createAndroidLocation(1.0, 1.0, 1.0, Float.NaN, Float.NaN, Float.NaN, 1),
-                    emptyList(),
-                )
-            )
-        }
-        verify {
-            mockLocationUpdatesObserver.onEnhancedLocationChanged(
-                withArg {
-                    Assert.assertTrue(it.latitude == 1.0)
-                    Assert.assertTrue(it.longitude == 1.0)
-                    Assert.assertTrue(it.altitude == 1.0)
-                    Assert.assertTrue(it.accuracy == 0.0f)
-                    Assert.assertTrue(it.bearing == 0.0f)
-                    Assert.assertTrue(it.speed == 0.0f)
-                    Assert.assertTrue(it.time > 1) // should now be current time
-                },
-                withArg {
-                    Assert.assertTrue(it.isEmpty())
-                }
-            )
-        }
-    }
-
-    @Test
-    fun `Should suppress enhanced location update with invalid latitude`() {
-        val mapboxLocationObserver =
-            mapboxLocationObserverProvider.createLocationObserver(mockLocationUpdatesObserver)
-        every {
-            mockLocationUpdatesObserver.onEnhancedLocationChanged(
-                any(),
-                any()
-            )
-        } returns mockk()
-        runBlocking {
-            mapboxLocationObserver.onNewLocationMatcherResult(
-                createMapboxLocationMatcherResult(
-                    createAndroidLocation(Double.NaN, 1.0, 1.0, 1.0f, 1.0f, 1.0f, 1),
-                    emptyList(),
-                )
-            )
-        }
-        verify(exactly = 0) {
-            mockLocationUpdatesObserver.onEnhancedLocationChanged(any(), any())
-        }
-    }
-
-    @Test
-    fun `Should suppress enhanced location update with invalid longitude`() {
-        val mapboxLocationObserver =
-            mapboxLocationObserverProvider.createLocationObserver(mockLocationUpdatesObserver)
-        every {
-            mockLocationUpdatesObserver.onEnhancedLocationChanged(
-                any(),
-                any()
-            )
-        } returns mockk()
-        runBlocking {
-            mapboxLocationObserver.onNewLocationMatcherResult(
-                createMapboxLocationMatcherResult(
-                    createAndroidLocation(1.0, Double.NaN, 1.0, 1.0f, 1.0f, 1.0f, 1),
-                    emptyList(),
-                )
-            )
-        }
-        verify(exactly = 0) {
-            mockLocationUpdatesObserver.onEnhancedLocationChanged(any(), any())
-        }
-    }
-
-    @Test
-    fun `Should suppress enhanced location update with invalid altitude`() {
-        val mapboxLocationObserver =
-            mapboxLocationObserverProvider.createLocationObserver(mockLocationUpdatesObserver)
-        every {
-            mockLocationUpdatesObserver.onEnhancedLocationChanged(
-                any(),
-                any()
-            )
-        } returns mockk()
-        runBlocking {
-            mapboxLocationObserver.onNewLocationMatcherResult(
-                createMapboxLocationMatcherResult(
-                    createAndroidLocation(1.0, 1.0, Double.NaN, 1.0f, 1.0f, 1.0f, 1),
-                    emptyList(),
-                )
-            )
-        }
-        verify(exactly = 0) {
-            mockLocationUpdatesObserver.onEnhancedLocationChanged(any(), any())
-        }
-    }
-
-    @Test
-    fun `Should not suppress enhanced location update with zero time`() {
-        val mapboxLocationObserver =
-            mapboxLocationObserverProvider.createLocationObserver(mockLocationUpdatesObserver)
-        every {
-            mockLocationUpdatesObserver.onEnhancedLocationChanged(
-                any(),
-                any()
-            )
-        } returns mockk()
-        runBlocking {
-            mapboxLocationObserver.onNewLocationMatcherResult(
-                createMapboxLocationMatcherResult(
-                    createAndroidLocation(1.0, 1.0, 1.0, 1.0f, 1.0f, 1.0f, 0),
-                    emptyList(),
-                )
-            )
-        }
-        verify {
-            mockLocationUpdatesObserver.onEnhancedLocationChanged(
-                withArg {
-                    Assert.assertTrue(it.latitude == 1.0)
-                    Assert.assertTrue(it.longitude == 1.0)
-                    Assert.assertTrue(it.altitude == 1.0)
-                    Assert.assertTrue(it.accuracy == 1.0f)
-                    Assert.assertTrue(it.bearing == 1.0f)
-                    Assert.assertTrue(it.speed == 1.0f)
-                    Assert.assertTrue(it.time > 1) // should now be current time
-                },
-                withArg {
-                    Assert.assertTrue(it.isEmpty())
-                }
-            )
-        }
-    }
-
-    @Test
-    fun `Should forward valid intermediate location updates`() {
-        val mapboxLocationObserver =
-            mapboxLocationObserverProvider.createLocationObserver(mockLocationUpdatesObserver)
-        every {
-            mockLocationUpdatesObserver.onEnhancedLocationChanged(
-                any(),
-                any()
-            )
-        } returns mockk()
-        runBlocking {
-            mapboxLocationObserver.onNewLocationMatcherResult(
-                createMapboxLocationMatcherResult(
+                    createAndroidLocation(2.0, 2.0, 2.0, 2.0f, 2.0f, 2.0f, 2),
+                    // the last key point is always the same as the enhanced location
+                    // https://docs.mapbox.com/android/navigation/api/2.8.0/libnavigation-core/com.mapbox.navigation.core.trip.session/-location-matcher-result/key-points.html
                     createAndroidLocation(3.0, 3.0, 3.0, 3.0f, 3.0f, 3.0f, 3),
-                    listOf(
-                        createAndroidLocation(1.0, 1.0, 1.0, 1.0f, 1.0f, 1.0f, 1),
-                        createAndroidLocation(2.0, 2.0, 2.0, 2.0f, 2.0f, 2.0f, 2),
-                        // the last key point is always the same as the enhanced location
-                        // https://docs.mapbox.com/android/navigation/api/2.8.0/libnavigation-core/com.mapbox.navigation.core.trip.session/-location-matcher-result/key-points.html
-                        createAndroidLocation(3.0, 3.0, 3.0, 3.0f, 3.0f, 3.0f, 3),
-                    )
+                ),
+            ),
+            currentTime = 1L,
+            expectedLocation = Location(
+                latitude = 1.0,
+                longitude = 1.0,
+                altitude = 1.0,
+                accuracy = 1.0f,
+                bearing = 1.0f,
+                speed = 1.0f,
+                time = 1L
+            ),
+            expectedIntermediateLocations = listOf(
+                Location(
+                    latitude = 1.0,
+                    longitude = 1.0,
+                    altitude = 1.0,
+                    accuracy = 1.0f,
+                    bearing = 1.0f,
+                    speed = 1.0f,
+                    time = 2L
+                ),
+                Location(
+                    latitude = 2.0,
+                    longitude = 2.0,
+                    altitude = 2.0,
+                    accuracy = 2.0f,
+                    bearing = 2.0f,
+                    speed = 2.0f,
+                    time = 3L
                 )
             )
-        }
-        verify {
-            mockLocationUpdatesObserver.onEnhancedLocationChanged(
-                withArg {
-                    Assert.assertTrue(it.latitude == 3.0)
-                    Assert.assertTrue(it.longitude == 3.0)
-                    Assert.assertTrue(it.altitude == 3.0)
-                    Assert.assertTrue(it.accuracy == 3.0f)
-                    Assert.assertTrue(it.bearing == 3.0f)
-                    Assert.assertTrue(it.speed == 3.0f)
-                    Assert.assertTrue(it.time > 3) // should now be current time
-                },
-                withArg {
-                    Assert.assertTrue(it.size == 2)
-                    Assert.assertTrue(it[0].latitude == 1.0)
-                    Assert.assertTrue(it[0].longitude == 1.0)
-                    Assert.assertTrue(it[0].altitude == 1.0)
-                    Assert.assertTrue(it[0].accuracy == 1.0f)
-                    Assert.assertTrue(it[0].bearing == 1.0f)
-                    Assert.assertTrue(it[0].speed == 1.0f)
-                    Assert.assertTrue(it[0].time > 1) // should now be current time
-                    Assert.assertTrue(it[1].latitude == 2.0)
-                    Assert.assertTrue(it[1].longitude == 2.0)
-                    Assert.assertTrue(it[1].altitude == 2.0)
-                    Assert.assertTrue(it[1].accuracy == 2.0f)
-                    Assert.assertTrue(it[1].bearing == 2.0f)
-                    Assert.assertTrue(it[1].speed == 2.0f)
-                    Assert.assertTrue(it[1].time > 2) // should now be current time
-                }
+        )
+
+    @Test
+    fun `Should suppress invalid intermediate location updates and forward others with repaired accuracy, bearing and speed`() =
+
+        testEnhancedLocationUpdate(
+            inputLocation = createMapboxLocationMatcherResult(
+                enhancedLocation = createAndroidLocation(
+                    latitude = 6.0,
+                    longitude = 6.0,
+                    altitude = 6.0,
+                    accuracy = 6.0f,
+                    bearing = 6.0f,
+                    speed = 6.0f,
+                    time = 6
+                ),
+                keyPoints = listOf(
+                    createAndroidLocation(
+                        latitude = 1.0,
+                        longitude = 1.0,
+                        altitude = 1.0,
+                        accuracy = 1.0f,
+                        bearing = 1.0f,
+                        speed = 1.0f,
+                        time = 1
+                    ),
+                    createAndroidLocation(
+                        latitude = Double.NaN,
+                        longitude = 2.0,
+                        altitude = 2.0,
+                        accuracy = 2.0f,
+                        bearing = 2.0f,
+                        speed = 2.0f,
+                        time = 2
+                    ), // invalid, should be suppressed
+                    createAndroidLocation(
+                        latitude = 3.0,
+                        longitude = Double.NaN,
+                        altitude = 3.0,
+                        accuracy = 3.0f,
+                        bearing = 3.0f,
+                        speed = 3.0f,
+                        time = 3
+                    ), // invalid, should be suppressed
+                    createAndroidLocation(
+                        latitude = 4.0,
+                        longitude = 4.0,
+                        altitude = Double.NaN,
+                        accuracy = 4.0f,
+                        bearing = 4.0f,
+                        speed = 4.0f,
+                        time = 4
+                    ), // invalid, should be suppressed
+                    createAndroidLocation(
+                        latitude = 5.0,
+                        longitude = 5.0,
+                        altitude = 5.0,
+                        accuracy = Float.NaN,
+                        bearing = Float.NaN,
+                        speed = Float.NaN,
+                        time = 5
+                    ), // should be repaired
+                    // the last key point is always the same as the enhanced location
+                    // https://docs.mapbox.com/android/navigation/api/2.8.0/libnavigation-core/com.mapbox.navigation.core.trip.session/-location-matcher-result/key-points.html
+                    createAndroidLocation(
+                        latitude = 6.0,
+                        longitude = 6.0,
+                        altitude = 6.0,
+                        accuracy = 6.0f,
+                        bearing = 6.0f,
+                        speed = 6.0f,
+                        time = 6
+                    ),
+                ),
+            ),
+            currentTime = 10L,
+            expectedLocation = Location(
+                latitude = 6.0,
+                longitude = 6.0,
+                altitude = 6.0,
+                accuracy = 6.0f,
+                bearing = 6.0f,
+                speed = 6.0f,
+                time = 10L
+            ),
+            expectedIntermediateLocations = listOf(
+                Location(
+                    latitude = 1.0,
+                    longitude = 1.0,
+                    altitude = 1.0,
+                    accuracy = 1.0f,
+                    bearing = 1.0f,
+                    speed = 1.0f,
+                    time = 5L
+                ),
+                Location(
+                    latitude = 5.0,
+                    longitude = 5.0,
+                    altitude = 5.0,
+                    accuracy = -1.0f,
+                    bearing = -1.0f,
+                    speed = -1.0f,
+                    time = 9L
+                )
             )
+        )
+
+    private fun testRawLocationUpdate(
+        inputLocation: android.location.Location,
+        expectedLocation: Location?
+    ) {
+        // given
+        // when
+        mapboxLocationObserver.onNewRawLocation(inputLocation)
+
+        // then
+        if (expectedLocation == null) {
+            verify(exactly = 0) { mockLocationUpdatesObserver.onRawLocationChanged(any()) }
+        } else {
+            verify { mockLocationUpdatesObserver.onRawLocationChanged(expectedLocation) }
         }
     }
 
-    @Test
-    fun `Should suppress invalid intermediate location updates and forward others with repaired accuracy, bearing and speed`() {
-        val mapboxLocationObserver =
-            mapboxLocationObserverProvider.createLocationObserver(mockLocationUpdatesObserver)
-        every {
-            mockLocationUpdatesObserver.onEnhancedLocationChanged(
-                any(),
-                any()
-            )
-        } returns mockk()
-        runBlocking {
-            mapboxLocationObserver.onNewLocationMatcherResult(
-                createMapboxLocationMatcherResult(
-                    createAndroidLocation(6.0, 6.0, 6.0, 6.0f, 6.0f, 6.0f, 6),
-                    listOf(
-                        createAndroidLocation(1.0, 1.0, 1.0, 1.0f, 1.0f, 1.0f, 1),
-                        createAndroidLocation(
-                            Double.NaN,
-                            2.0,
-                            2.0,
-                            2.0f,
-                            2.0f,
-                            2.0f,
-                            2
-                        ), // invalid, should be suppressed
-                        createAndroidLocation(
-                            3.0,
-                            Double.NaN,
-                            3.0,
-                            3.0f,
-                            3.0f,
-                            3.0f,
-                            3
-                        ), // invalid, should be suppressed
-                        createAndroidLocation(
-                            4.0,
-                            4.0,
-                            Double.NaN,
-                            4.0f,
-                            4.0f,
-                            4.0f,
-                            4
-                        ), // invalid, should be suppressed
-                        createAndroidLocation(
-                            5.0,
-                            5.0,
-                            5.0,
-                            Float.NaN,
-                            Float.NaN,
-                            Float.NaN,
-                            5
-                        ), // should be repaired
-                        // the last key point is always the same as the enhanced location
-                        // https://docs.mapbox.com/android/navigation/api/2.8.0/libnavigation-core/com.mapbox.navigation.core.trip.session/-location-matcher-result/key-points.html
-                        createAndroidLocation(6.0, 6.0, 6.0, 6.0f, 6.0f, 6.0f, 6),
+    private fun testEnhancedLocationUpdate(
+        inputLocation: LocationMatcherResult,
+        currentTime: Long,
+        expectedLocation: Location?,
+        expectedIntermediateLocations: List<Location>?
+    ) {
+        // given
+        timeProvider.mockTime(currentTime)
+
+        // when
+        mapboxLocationObserver.onNewLocationMatcherResult(inputLocation)
+
+        // then
+        when {
+            expectedLocation == null && expectedIntermediateLocations == null -> {
+                verify(exactly = 0) {
+                    mockLocationUpdatesObserver.onEnhancedLocationChanged(
+                        any(),
+                        any()
                     )
-                )
-            )
-        }
-        verify {
-            mockLocationUpdatesObserver.onEnhancedLocationChanged(
-                withArg {
-                    Assert.assertTrue(it.latitude == 6.0)
-                    Assert.assertTrue(it.longitude == 6.0)
-                    Assert.assertTrue(it.altitude == 6.0)
-                    Assert.assertTrue(it.accuracy == 6.0f)
-                    Assert.assertTrue(it.bearing == 6.0f)
-                    Assert.assertTrue(it.speed == 6.0f)
-                    Assert.assertTrue(it.time > 6) // should now be current time
-                },
-                withArg {
-                    Assert.assertTrue(it.size == 2)
-                    Assert.assertTrue(it[0].latitude == 1.0)
-                    Assert.assertTrue(it[0].longitude == 1.0)
-                    Assert.assertTrue(it[0].altitude == 1.0)
-                    Assert.assertTrue(it[0].accuracy == 1.0f)
-                    Assert.assertTrue(it[0].bearing == 1.0f)
-                    Assert.assertTrue(it[0].speed == 1.0f)
-                    Assert.assertTrue(it[0].time > 1) // should now be current time
-                    Assert.assertTrue(it[1].latitude == 5.0)
-                    Assert.assertTrue(it[1].longitude == 5.0)
-                    Assert.assertTrue(it[1].altitude == 5.0)
-                    Assert.assertTrue(it[1].accuracy == 0.0f)
-                    Assert.assertTrue(it[1].bearing == 0.0f)
-                    Assert.assertTrue(it[1].speed == 0.0f)
-                    Assert.assertTrue(it[1].time > 5) // should now be current time
                 }
-            )
+            }
+            expectedLocation != null && expectedIntermediateLocations != null -> {
+                verify {
+                    mockLocationUpdatesObserver.onEnhancedLocationChanged(
+                        expectedLocation,
+                        expectedIntermediateLocations
+                    )
+                }
+            }
+            else ->
+                Assert.fail("both expected values should either be null or non-null, got $expectedLocation, $expectedIntermediateLocations")
         }
     }
 
     private fun createAndroidLocation(
         latitude: Double,
         longitude: Double,
-        altitude: Double,
-        accuracy: Float,
-        bearing: Float,
-        speed: Float,
+        altitude: Double?,
+        accuracy: Float?,
+        bearing: Float?,
+        speed: Float?,
         time: Long,
     ): android.location.Location {
         val location = mockk<android.location.Location>()
         every { location.latitude } returns latitude
         every { location.longitude } returns longitude
-        every { location.altitude } returns altitude
-        every { location.accuracy } returns accuracy
-        every { location.bearing } returns bearing
-        every { location.speed } returns speed
+        every { location.altitude } returns (altitude ?: Double.MIN_VALUE)
+        every { location.hasAltitude() } returns (altitude != null)
+        every { location.accuracy } returns (accuracy ?: Float.MIN_VALUE)
+        every { location.hasAccuracy() } returns (accuracy != null)
+        every { location.bearing } returns (bearing ?: Float.MIN_VALUE)
+        every { location.hasBearing() } returns (bearing != null)
+        every { location.speed } returns (speed ?: Float.MIN_VALUE)
+        every { location.hasSpeed() } returns (speed != null)
         every { location.time } returns time
         return location
     }
@@ -523,5 +587,9 @@ class MapboxTest {
         every { locationMatcherResult.enhancedLocation } returns enhancedLocation
         every { locationMatcherResult.keyPoints } returns keyPoints
         return locationMatcherResult
+    }
+
+    private fun TimeProvider.mockTime(time: Long) {
+        every { getCurrentTime() } returns time
     }
 }

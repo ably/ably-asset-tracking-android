@@ -17,8 +17,8 @@ open class LocationUpdate(
     val skippedLocations: List<Location>,
 ) {
     override fun equals(other: Any?): Boolean =
-        when {
-            other is LocationUpdate -> location == other.location && skippedLocations == other.skippedLocations
+        when (other) {
+            is LocationUpdate -> location == other.location && skippedLocations == other.skippedLocations
             else -> false
         }
 
@@ -94,22 +94,21 @@ data class Location(
     val longitude: Double,
     /**
      * Altitude of the location in meters above the WGS 84 reference ellipsoid.
-     * 0.0 if not available.
      */
     val altitude: Double,
     /**
      * Estimated horizontal accuracy of the location, radial, in meters.
-     * 0.0 if not available.
+     * -1.0 if not available.
      */
     val accuracy: Float,
     /**
      * Bearing of the location in degrees.
-     * 0.0 if not available.
+     * -1.0 if not available.
      */
     val bearing: Float,
     /**
      * Speed of the location in meters per second.
-     * 0.0 if not available.
+     * -1.0 if not available.
      */
     val speed: Float,
     /**
@@ -117,6 +116,11 @@ data class Location(
      */
     val time: Long
 ) {
+
+    companion object {
+        const val INVALID_VALUE = -1.0f
+    }
+
     /**
      * Utility function that coerces non-finite values to sensible defaults
      * where possible.
@@ -126,9 +130,9 @@ data class Location(
             latitude,
             longitude,
             altitude,
-            if (accuracy.isFinite()) accuracy else 0.0f,
-            if (bearing.isFinite()) bearing else 0.0f,
-            if (speed.isFinite()) speed else 0.0f,
+            if (accuracy.isFinite()) accuracy else INVALID_VALUE,
+            if (bearing.isFinite()) bearing else INVALID_VALUE,
+            if (speed.isFinite()) speed else INVALID_VALUE,
             time,
         )
     }
