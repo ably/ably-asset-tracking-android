@@ -94,7 +94,6 @@ data class Location(
     val longitude: Double,
     /**
      * Altitude of the location in meters above the WGS 84 reference ellipsoid.
-     * -1.0 if not available.
      */
     val altitude: Double,
     /**
