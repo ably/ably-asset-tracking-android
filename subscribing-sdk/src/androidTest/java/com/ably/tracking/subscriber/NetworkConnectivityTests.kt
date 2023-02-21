@@ -1,9 +1,9 @@
 package com.ably.tracking.subscriber
 
 import android.content.Context
-import android.os.Build
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ably.tracking.Accuracy
+import android.os.Build
 import com.ably.tracking.EnhancedLocationUpdate
 import com.ably.tracking.Location
 import com.ably.tracking.LocationUpdateType
@@ -22,26 +22,16 @@ import com.ably.tracking.connection.Authentication
 import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.logging.LogHandler
 import com.ably.tracking.logging.LogLevel
-import com.ably.tracking.test.android.common.AttachUnresponsive
 import com.ably.tracking.test.android.common.BooleanExpectation
 import com.ably.tracking.test.android.common.createNotificationChannel
-import com.ably.tracking.test.android.common.DetachUnresponsive
-import com.ably.tracking.test.android.common.DisconnectAndSuspend
-import com.ably.tracking.test.android.common.DisconnectWithFailedResume
-import com.ably.tracking.test.android.common.EnterFailedWithNonfatalNack
-import com.ably.tracking.test.android.common.EnterUnresponsive
+import com.ably.tracking.test.android.common.Fault
+import com.ably.tracking.test.android.common.FaultProxyClient
 import com.ably.tracking.test.android.common.FaultSimulation
 import com.ably.tracking.test.android.common.FaultType
-import com.ably.tracking.test.android.common.NullApplicationLayerFault
-import com.ably.tracking.test.android.common.NullTransportFault
 import com.ably.tracking.test.android.common.PUBLISHER_CLIENT_ID
-import com.ably.tracking.test.android.common.ReenterOnResumeFailed
 import com.ably.tracking.test.android.common.SUBSCRIBER_CLIENT_ID
-import com.ably.tracking.test.android.common.TcpConnectionRefused
-import com.ably.tracking.test.android.common.TcpConnectionUnresponsive
 import com.ably.tracking.test.android.common.testLogD
 import com.ably.tracking.test.android.common.UnitExpectation
-import com.ably.tracking.test.android.common.UpdateFailedWithNonfatalNack
 import io.ably.lib.realtime.AblyRealtime
 import io.ably.lib.types.ClientOptions
 import io.ably.lib.types.PresenceMessage
@@ -69,38 +59,38 @@ import java.util.UUID
 import kotlin.reflect.KClass
 
 @RunWith(Parameterized::class)
-class NetworkConnectivityTests(private val testFault: FaultSimulation) {
+class NetworkConnectivityTests(private val testFault: Fault) {
     private var testResources: TestResources? = null
 
     companion object {
+        private val client = FaultProxyClient()
+
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
-        fun data() = listOf(
-            arrayOf(NullTransportFault(BuildConfig.ABLY_API_KEY)),
-            arrayOf(NullApplicationLayerFault(BuildConfig.ABLY_API_KEY)),
-            arrayOf(TcpConnectionRefused(BuildConfig.ABLY_API_KEY)),
-            arrayOf(TcpConnectionUnresponsive(BuildConfig.ABLY_API_KEY)),
-            arrayOf(AttachUnresponsive(BuildConfig.ABLY_API_KEY)),
-            arrayOf(DetachUnresponsive(BuildConfig.ABLY_API_KEY)),
-            arrayOf(DisconnectWithFailedResume(BuildConfig.ABLY_API_KEY)),
-            arrayOf(EnterFailedWithNonfatalNack(BuildConfig.ABLY_API_KEY)),
-            arrayOf(UpdateFailedWithNonfatalNack(BuildConfig.ABLY_API_KEY)),
-            arrayOf(DisconnectAndSuspend(BuildConfig.ABLY_API_KEY)),
-            arrayOf(ReenterOnResumeFailed(BuildConfig.ABLY_API_KEY)),
-            arrayOf(EnterUnresponsive(BuildConfig.ABLY_API_KEY)),
-        )
+        fun data() = runBlocking {
+            // We cannot use ktor on API Level 21 (Lollipop) because of:
+            // https://youtrack.jetbrains.com/issue/KTOR-4751/HttpCache-plugin-uses-ConcurrentMap.computeIfAbsent-method-that-is-available-only-since-Android-API-24
+            // We're only running them if runtime API Level is 24 (N) or above.
+            //
+            // We could remove this restriction if we replaced ktor with a different HTTP client library – see https://github.com/ably/ably-asset-tracking-android/issues/1010
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                client.getAllFaults()
+            } else {
+                listOf<Fault>()
+            }
+        }
     }
 
     @Before
     fun setUp() {
-        Assume.assumeFalse(testFault.skipSubscriberTest)
+        val simulation = runBlocking {
+            testFault.simulate(BuildConfig.ABLY_API_KEY)
+        }
 
-        // We cannot use ktor on API Level 21 (Lollipop) because of:
-        // https://youtrack.jetbrains.com/issue/KTOR-4751/HttpCache-plugin-uses-ConcurrentMap.computeIfAbsent-method-that-is-available-only-since-Android-API-24
-        // We we're only running them if runtime API Level is 24 (N) or above.
-        Assume.assumeTrue(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
+        testResources = TestResources.setUp(simulation)
 
-        testResources = TestResources.setUp(testFault)
+        Assume.assumeFalse(simulation.skipSubscriberTest)
+
         createNotificationChannel(testResources?.context!!)
     }
 
@@ -434,8 +424,6 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
                 val scope = CoroutineScope(Dispatchers.Unconfined)
                 val trackableId = UUID.randomUUID().toString()
 
-                faultParam.proxy.start()
-
                 return TestResources(
                     context = context,
                     fault = faultParam,
@@ -564,7 +552,7 @@ class NetworkConnectivityTests(private val testFault: FaultSimulation) {
                 stopExpectation.assertSuccess()
                 scope.cancel()
                 shutdownAblyPublishing()
-                fault.proxy.stop()
+                fault.cleanUp()
             }
         }
 
