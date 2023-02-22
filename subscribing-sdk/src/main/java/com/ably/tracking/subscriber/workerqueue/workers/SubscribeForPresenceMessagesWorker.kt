@@ -7,7 +7,7 @@ import com.ably.tracking.subscriber.SubscriberProperties
 import com.ably.tracking.common.workerqueue.CallbackWorker
 import com.ably.tracking.subscriber.workerqueue.WorkerSpecification
 
-internal class SubscribeForPresenceMessagesWorker(
+internal class  SubscribeForPresenceMessagesWorker(
     private val ably: Ably,
     private val trackableId: String,
     callbackFunction: ResultCallbackFunction<Unit>

@@ -25,6 +25,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import leakcanary.AppWatcher
 import timber.log.Timber
 import java.lang.ref.WeakReference
 
@@ -46,6 +47,7 @@ class PublisherService : Service() {
     var publisher: Publisher? = null
     private lateinit var appPreferences: AppPreferences
     private var locationUpdateJob: Job? = null
+    private var notificationDuplicateWeakReference: WeakReference<Notification>? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -77,6 +79,11 @@ class PublisherService : Service() {
         scope.launch { publisher?.stop() }
         locationUpdateJob?.cancel()
         locationUpdateJob = null
+        notificationDuplicateWeakReference?.get()
+            ?.let { AppWatcher.objectWatcher.expectWeaklyReachable(
+                it,
+                "Notification duplicate was cleaned up"
+            ) }
         super.onDestroy()
     }
 
@@ -106,6 +113,7 @@ class PublisherService : Service() {
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
     private fun createPublisher(locationSource: LocationSource?): Publisher {
         val providedNotification = notification.clone()
+        notificationDuplicateWeakReference = WeakReference(providedNotification)
         return Publisher.publishers()
             .connection(ConnectionConfiguration(Authentication.basic(CLIENT_ID, ABLY_API_KEY)))
             .map(MapConfiguration(MAPBOX_ACCESS_TOKEN))
