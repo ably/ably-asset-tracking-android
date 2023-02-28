@@ -13,6 +13,7 @@ import com.ably.tracking.subscriber.workerqueue.workers.ChangeResolutionSuccessW
 import com.ably.tracking.subscriber.workerqueue.workers.ChangeResolutionWorker
 import com.ably.tracking.subscriber.workerqueue.workers.DeprecatedChangeResolutionWorker
 import com.ably.tracking.subscriber.workerqueue.workers.DisconnectWorker
+import com.ably.tracking.subscriber.workerqueue.workers.EnterPresenceWorker
 import com.ably.tracking.subscriber.workerqueue.workers.ProcessInitialPresenceMessagesWorker
 import com.ably.tracking.subscriber.workerqueue.workers.StartConnectionWorker
 import com.ably.tracking.subscriber.workerqueue.workers.StopConnectionWorker
@@ -43,6 +44,7 @@ internal class WorkerFactory(
                 trackableId,
                 workerSpecification.callbackFunction
             )
+            is WorkerSpecification.EnterPresence -> EnterPresenceWorker(workerSpecification.trackableId, ably)
             is WorkerSpecification.SubscribeForPresenceMessages -> SubscribeForPresenceMessagesWorker(
                 ably,
                 trackableId,
@@ -122,6 +124,8 @@ internal sealed class WorkerSpecification {
     data class StartConnection(
         val callbackFunction: ResultCallbackFunction<Unit>
     ) : WorkerSpecification()
+
+    data class EnterPresence(val trackableId: String) : WorkerSpecification()
 
     data class SubscribeForPresenceMessages(
         val callbackFunction: ResultCallbackFunction<Unit>
