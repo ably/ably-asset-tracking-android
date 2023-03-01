@@ -126,7 +126,7 @@ class NetworkConnectivityTests(private val testFault: Fault) {
             subscriberResolution = subscriberResolution,
             subscriberResolutionPreferenceFlow = subscriberResolutions
         ).waitForStateTransition {
-            // Connect up a publisher to do publisher things
+            // Connect up a subscriber to do subscriber things
             defaultAbly.updatePresenceData(
                 trackableId,
                 PresenceData(ClientTypes.PUBLISHER, publisherResolution, false)

@@ -34,7 +34,7 @@ internal class StartConnectionWorkerTest {
     private val postedWorks = mutableListOf<WorkerSpecification>()
 
     @Test
-    fun `should call ably connect and ably enterChannelPresence and post update trackable worker specification on success`() = runTest {
+    fun `should call ably connect and post enterPresence worker specification and post update trackable worker specification on success`() = runTest {
         // given
         ably.mockStartConnectionSuccess()
         ably.mockConnectSuccess(trackableId)
@@ -61,9 +61,9 @@ internal class StartConnectionWorkerTest {
                 useRewind = true,
                 willSubscribe = true
             )
-            ably.enterChannelPresence(trackableId, presenceData)
         }
         Assert.assertEquals(WorkerSpecification.SubscribeForPresenceMessages(callbackFunction), postedWorks[0])
+        Assert.assertEquals(WorkerSpecification.EnterPresence(trackableId), postedWorks[1])
     }
 
     @Test

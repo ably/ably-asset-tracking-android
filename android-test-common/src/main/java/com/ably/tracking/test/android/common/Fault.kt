@@ -64,7 +64,6 @@ class FaultSimulation(
         "TcpConnectionUnresponsive",
         "DisconnectAndSuspend",
         "EnterUnresponsive",
-        "EnterFailedWithNonfatalNack",
         "UpdateFailedWithNonfatalNack",
         "ReenterOnResumeFailed",
     )

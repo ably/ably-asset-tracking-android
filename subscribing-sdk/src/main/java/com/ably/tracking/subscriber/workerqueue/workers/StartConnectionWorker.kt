@@ -17,12 +17,11 @@ internal class StartConnectionWorker(
         postWork: (WorkerSpecification) -> Unit
     ): SubscriberProperties {
         properties.emitStateEventsIfRequired()
-        doAsyncWork { connectAndEnterPresence(properties, postWork) }
+        doAsyncWork { connectAndEnterPresence(postWork) }
         return properties
     }
 
     private suspend fun connectAndEnterPresence(
-        properties: SubscriberProperties,
         postWork: (WorkerSpecification) -> Unit
     ) {
         val startAblyConnectionResult = ably.startConnection()
@@ -41,12 +40,7 @@ internal class StartConnectionWorker(
             return
         }
 
-        val enterPresenceResult = ably.enterChannelPresence(trackableId, properties.presenceData)
-
-        if (enterPresenceResult.isSuccess) {
-            postWork(WorkerSpecification.SubscribeForPresenceMessages(callbackFunction))
-        } else {
-            callbackFunction(enterPresenceResult)
-        }
+        postWork(WorkerSpecification.SubscribeForPresenceMessages(callbackFunction))
+        postWork(WorkerSpecification.EnterPresence(trackableId))
     }
 }
