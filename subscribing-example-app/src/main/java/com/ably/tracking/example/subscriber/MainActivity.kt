@@ -55,6 +55,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import com.ably.tracking.annotations.Experimental
+import kotlinx.coroutines.Job
 
 // The client ID for the Ably SDK instance.
 private const val CLIENT_ID = "<INSERT_CLIENT_ID_HERE>"
@@ -86,6 +87,11 @@ class MainActivity : AppCompatActivity() {
     // SupervisorJob() is used to keep the scope working after any of its children fail
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
+    // Job references so we can cancel them
+    var enhancedPositionsJob: Job? = null
+    var enhancedPositionsCameraJob: Job? = null
+    var rawPositionsJob: Job? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -111,15 +117,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupLocationMarkerAnimations() {
-        enhancedLocationAnimator.positionsFlow
+        enhancedPositionsJob = enhancedLocationAnimator.positionsFlow
             .onEach { showMarkerOnMap(it, isRaw = false) }
             .launchIn(scope)
 
-        enhancedLocationAnimator.cameraPositionsFlow
+        enhancedPositionsCameraJob = enhancedLocationAnimator.cameraPositionsFlow
             .onEach { moveCamera(it) }
             .launchIn(scope)
 
-        rawLocationAnimator.positionsFlow
+        rawPositionsJob = rawLocationAnimator.positionsFlow
             .onEach { showMarkerOnMap(it, isRaw = true) }
             .launchIn(scope)
     }
@@ -307,10 +313,19 @@ class MainActivity : AppCompatActivity() {
         assetPresenceStateTextView.setTextColor(ContextCompat.getColor(this, textColorId))
         assetPresenceStateTextView.backgroundTintList =
             ColorStateList.valueOf(ContextCompat.getColor(this, backgroundColorId))
+        Timber.e("Publisher presence now $isPresent")
     }
 
     private fun stopSubscribing() {
         showLoading()
+        enhancedPositionsJob?.cancel()
+        enhancedPositionsCameraJob?.cancel()
+        rawPositionsJob?.cancel()
+        enhancedMarker?.remove()
+        enhancedMarker = null
+        rawMarker?.remove()
+        rawMarker = null
+        googleMap?.clear()
         scope.launch {
             try {
                 subscriber?.stop()
