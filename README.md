@@ -364,7 +364,7 @@ Firstly, you have to exclude the notification module from Mapbox Navigation SDK 
 implementation ('com.ably.tracking:publishing-sdk:1.6.3')
 
 // The Mapbox Navigation SDK.
-implementation ('com.mapbox.navigation:android:2.10.0') {
+implementation ('com.mapbox.navigation:android:2.11.0') {
     exclude group: "com.mapbox.navigation", module: "notification"
 }
 ```
