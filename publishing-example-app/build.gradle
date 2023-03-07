@@ -26,6 +26,6 @@ dependencies {
     implementation 'com.amplifyframework:aws-auth-cognito:1.4.1'
     implementation 'pub.devrel:easypermissions:3.0.0'
     // This version needs to be compatible with the "com.mapbox.navigation:core" dependency version from publishing-sdk.
-    implementation 'com.mapbox.maps:android:10.10.0'
+    implementation 'com.mapbox.maps:android:10.11.1'
     debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.10'
 }
