@@ -1,5 +1,11 @@
 # Upgrade / Migration Guide
 
+## Version 1.6.3 to 1.6.4
+
+### `Subscriber`’s `resolutionPreference()` method is deprecated
+
+`sendResolutionPreference()` which returns immediately and uses an internal retry mechanism should be used instead.
+
 ## Version 1.6.0 to 1.6.1
 
 ### `Publisher`’s `add()` and `track()` methods no longer throw `ConnectionException`
