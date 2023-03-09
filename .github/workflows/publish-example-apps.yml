@@ -23,8 +23,7 @@ jobs:
         with:
           ref: v${{ github.event.inputs.version }}
 
-      # TODO replace branch ref (underlying https://github.com/ably/github-event-context-action/pull/2) with `v1` tag
-      - uses: ably/github-event-context-action@add-build-metadata-output-and-release
+      - uses: ably/github-event-context-action@v1
         id: context
 
       - uses: actions/setup-java@v3
