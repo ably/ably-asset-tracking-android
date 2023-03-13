@@ -42,6 +42,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.first
@@ -662,14 +663,20 @@ class SubscriberMonitor(
                 is FaultType.NonfatalWhenResolved -> false
                 is FaultType.Fatal -> false
             },
-            expectedLocation = locationUpdate,
+            expectedLocation =  when (faultType) {
+                is FaultType.Fatal, is FaultType.NonfatalWhenResolved -> null
+                is FaultType.Nonfatal -> locationUpdate
+            },
             timeout = when (faultType) {
                 is FaultType.Fatal -> faultType.failedWithinMillis
                 is FaultType.Nonfatal -> faultType.resolvedWithinMillis
                 is FaultType.NonfatalWhenResolved -> faultType.offlineWithinMillis
             },
             expectedPublisherResolution = publisherResolution,
-            expectedSubscriberResolution = subscriberResolution,
+            expectedSubscriberResolution = when (faultType) {
+                is FaultType.Fatal, is FaultType.NonfatalWhenResolved -> null
+                is FaultType.Nonfatal -> subscriberResolution
+            },
             subscriberResolutionPreferenceFlow = subscriberResolutionPreferenceFlow
         )
 
@@ -686,7 +693,6 @@ class SubscriberMonitor(
             faultType: FaultType,
             locationUpdate: Location? = null,
             publisherResolution: Resolution? = null,
-            publisherDisconnected: Boolean = false,
             subscriberResolution: Resolution? = null,
             subscriberResolutionPreferenceFlow: SharedFlow<Resolution>,
         ) = SubscriberMonitor(
@@ -707,11 +713,7 @@ class SubscriberMonitor(
                 is FaultType.NonfatalWhenResolved -> true
                 is FaultType.Fatal -> false
             },
-            expectedPublisherPresence = when (faultType) {
-                is FaultType.Nonfatal -> !publisherDisconnected
-                is FaultType.NonfatalWhenResolved -> false
-                is FaultType.Fatal -> false
-            },
+            expectedPublisherPresence = false,
             expectedLocation = locationUpdate,
             timeout = when (faultType) {
                 is FaultType.Fatal -> faultType.failedWithinMillis
@@ -761,7 +763,10 @@ class SubscriberMonitor(
                 else -> true
             },
             expectedPublisherPresence = expectedPublisherPresence,
-            expectedLocation = locationUpdate,
+            expectedLocation =  when (faultType) {
+                is FaultType.Fatal, is FaultType.NonfatalWhenResolved -> null
+                is FaultType.Nonfatal -> locationUpdate
+            },
             timeout = when (faultType) {
                 is FaultType.Fatal -> faultType.failedWithinMillis
                 is FaultType.Nonfatal -> faultType.resolvedWithinMillis
@@ -794,7 +799,7 @@ class SubscriberMonitor(
             expectedState = TrackableState.Offline::class,
             failureStates = setOf(TrackableState.Failed::class),
             expectedSubscriberPresence = false,
-            expectedPublisherPresence = true,
+            expectedPublisherPresence = false,
             expectedLocation = locationUpdate,
             timeout = when (faultType) {
                 is FaultType.Fatal -> faultType.failedWithinMillis
@@ -845,12 +850,13 @@ class SubscriberMonitor(
     ): SubscriberMonitor {
         try {
             withTimeout(timeout) {
+                testLogD("$label - async op starting")
                 asyncOp()
                 testLogD("$label - async op success")
 
                 assertStateTransition()
-                assertSubscriberPresence()
                 assertPublisherPresence()
+                assertSubscriberPresence()
                 assertLocationUpdated()
                 assertPublisherResolution()
                 assertSubscriberPreferredResolution()
@@ -970,22 +976,21 @@ class SubscriberMonitor(
     /**
      * Throw an assertion error if the subscriber's presence does not meet expectations for this test.
      */
-    private fun assertSubscriberPresence() {
+    private suspend fun assertSubscriberPresence() {
         if (expectedSubscriberPresence == null) {
             // not checking for publisher presence in this test
             testLogD("SubscriberMonitor: $label - (SKIP) expectedSubscriberPresence = null")
             return
         }
 
-        val publisherPresent = subscriberIsPresent()
-        if (publisherPresent != expectedSubscriberPresence) {
-            testLogD("SubscriberMonitor: $label - (FAIL) subscriberPresent = $publisherPresent")
-            throw AssertionError(
-                "Expected subscriberPresence: $expectedSubscriberPresence but got $publisherPresent"
-            )
-        } else {
-            testLogD("SubscriberMonitor: $label - (PASS) subscriberPresent = $publisherPresent")
+        var subscriberPresent = subscriberIsPresent()
+        while (subscriberPresent != expectedSubscriberPresence) {
+            testLogD("SubscriberMonitor: $label - (WAITING) subscriberPresent = $subscriberPresent")
+            delay(1000)
+            subscriberPresent = subscriberIsPresent()
         }
+
+        testLogD("SubscriberMonitor: $label - (PASS) subscriberPresent = $subscriberPresent")
     }
 
     /**

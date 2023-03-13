@@ -44,7 +44,10 @@ internal class WorkerFactory(
                 trackableId,
                 workerSpecification.callbackFunction
             )
-            is WorkerSpecification.EnterPresence -> EnterPresenceWorker(workerSpecification.trackableId, ably)
+            is WorkerSpecification.EnterPresence -> EnterPresenceWorker(
+                workerSpecification.trackableId,
+                ably
+            )
             is WorkerSpecification.SubscribeForPresenceMessages -> SubscribeForPresenceMessagesWorker(
                 ably,
                 trackableId,

@@ -1,11 +1,15 @@
 package com.ably.tracking.subscriber.workerqueue.workers
 
 import com.ably.tracking.common.Ably
+import com.ably.tracking.common.ConnectionState
+import com.ably.tracking.common.ConnectionStateChange
 import com.ably.tracking.common.ResultCallbackFunction
-import com.ably.tracking.subscriber.SubscriberProperties
+import com.ably.tracking.common.doOnFatalAblyFailure
 import com.ably.tracking.common.workerqueue.CallbackWorker
+import com.ably.tracking.subscriber.SubscriberProperties
 import com.ably.tracking.subscriber.workerqueue.WorkerSpecification
 
+//TODO remove callback
 internal class StartConnectionWorker(
     private val ably: Ably,
     private val trackableId: String,
@@ -17,28 +21,28 @@ internal class StartConnectionWorker(
         postWork: (WorkerSpecification) -> Unit
     ): SubscriberProperties {
         properties.emitStateEventsIfRequired()
-        doAsyncWork { connectAndEnterPresence(postWork) }
+        callbackFunction(Result.success(Unit))
+        doAsyncWork { connect(postWork) }
         return properties
     }
 
-    private suspend fun connectAndEnterPresence(
+    private suspend fun connect(
         postWork: (WorkerSpecification) -> Unit
     ) {
-        val startAblyConnectionResult = ably.startConnection()
-        if (startAblyConnectionResult.isFailure) {
-            callbackFunction(startAblyConnectionResult)
-            return
+        ably.startConnection().doOnFatalAblyFailure { errorInformation ->
+            val connectionStateChange =
+                ConnectionStateChange(ConnectionState.FAILED, errorInformation)
+            postWork(WorkerSpecification.UpdateConnectionState(connectionStateChange))
+            return@connect
         }
 
-        val connectResult = ably.connect(
-            trackableId,
-            useRewind = true,
-            willSubscribe = true
-        )
-        if (connectResult.isFailure) {
-            callbackFunction(connectResult)
-            return
-        }
+        ably.connect(trackableId, useRewind = true, willSubscribe = true)
+            .doOnFatalAblyFailure { errorInformation ->
+                val connectionStateChange =
+                    ConnectionStateChange(ConnectionState.FAILED, errorInformation)
+                postWork(WorkerSpecification.UpdateConnectionState(connectionStateChange))
+                return@connect
+            }
 
         postWork(WorkerSpecification.SubscribeForPresenceMessages(callbackFunction))
         postWork(WorkerSpecification.EnterPresence(trackableId))

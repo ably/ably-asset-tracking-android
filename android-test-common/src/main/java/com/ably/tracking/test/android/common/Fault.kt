@@ -61,7 +61,6 @@ class FaultSimulation(
     // Causes the same behaviour as faultNamesSkippedForPublisherTest for the subscriber NetworkConnectivityTests
     private val faultNamesSkippedForSubscriberTest = listOf(
         "TcpConnectionRefused",
-        "TcpConnectionUnresponsive",
         "DisconnectAndSuspend",
         "EnterUnresponsive",
         "UpdateFailedWithNonfatalNack",
