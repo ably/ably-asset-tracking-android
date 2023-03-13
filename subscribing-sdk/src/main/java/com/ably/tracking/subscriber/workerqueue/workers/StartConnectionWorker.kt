@@ -9,7 +9,6 @@ import com.ably.tracking.common.workerqueue.CallbackWorker
 import com.ably.tracking.subscriber.SubscriberProperties
 import com.ably.tracking.subscriber.workerqueue.WorkerSpecification
 
-//TODO remove callback
 internal class StartConnectionWorker(
     private val ably: Ably,
     private val trackableId: String,
@@ -44,7 +43,7 @@ internal class StartConnectionWorker(
                 return@connect
             }
 
-        postWork(WorkerSpecification.SubscribeForPresenceMessages(callbackFunction))
+        postWork(WorkerSpecification.SubscribeForPresenceMessages)
         postWork(WorkerSpecification.EnterPresence(trackableId))
     }
 }

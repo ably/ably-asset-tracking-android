@@ -663,7 +663,7 @@ class SubscriberMonitor(
                 is FaultType.NonfatalWhenResolved -> false
                 is FaultType.Fatal -> false
             },
-            expectedLocation =  when (faultType) {
+            expectedLocation = when (faultType) {
                 is FaultType.Fatal, is FaultType.NonfatalWhenResolved -> null
                 is FaultType.Nonfatal -> locationUpdate
             },
@@ -763,7 +763,7 @@ class SubscriberMonitor(
                 else -> true
             },
             expectedPublisherPresence = expectedPublisherPresence,
-            expectedLocation =  when (faultType) {
+            expectedLocation = when (faultType) {
                 is FaultType.Fatal, is FaultType.NonfatalWhenResolved -> null
                 is FaultType.Nonfatal -> locationUpdate
             },

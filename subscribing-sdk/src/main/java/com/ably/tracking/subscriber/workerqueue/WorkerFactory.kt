@@ -50,12 +50,10 @@ internal class WorkerFactory(
             )
             is WorkerSpecification.SubscribeForPresenceMessages -> SubscribeForPresenceMessagesWorker(
                 ably,
-                trackableId,
-                workerSpecification.callbackFunction
+                trackableId
             )
             is WorkerSpecification.SubscribeToChannel -> SubscribeToChannelWorker(
-                subscriberInteractor,
-                workerSpecification.callbackFunction
+                subscriberInteractor
             )
             is WorkerSpecification.UpdateConnectionState -> UpdateConnectionStateWorker(
                 workerSpecification.connectionStateChange
@@ -92,8 +90,7 @@ internal class WorkerFactory(
                 workerSpecification.callbackFunction
             )
             is WorkerSpecification.ProcessInitialPresenceMessages -> ProcessInitialPresenceMessagesWorker(
-                workerSpecification.presenceMessages,
-                workerSpecification.callbackFunction,
+                workerSpecification.presenceMessages
             )
         }
 }
@@ -130,13 +127,9 @@ internal sealed class WorkerSpecification {
 
     data class EnterPresence(val trackableId: String) : WorkerSpecification()
 
-    data class SubscribeForPresenceMessages(
-        val callbackFunction: ResultCallbackFunction<Unit>
-    ) : WorkerSpecification()
+    object SubscribeForPresenceMessages : WorkerSpecification()
 
-    data class SubscribeToChannel(
-        val callbackFunction: ResultCallbackFunction<Unit>
-    ) : WorkerSpecification()
+    object SubscribeToChannel : WorkerSpecification()
 
     data class Disconnect(
         val trackableId: String,
@@ -147,8 +140,6 @@ internal sealed class WorkerSpecification {
         val callbackFunction: ResultCallbackFunction<Unit>
     ) : WorkerSpecification()
 
-    data class ProcessInitialPresenceMessages(
-        val presenceMessages: List<PresenceMessage>,
-        val callbackFunction: ResultCallbackFunction<Unit>,
-    ) : WorkerSpecification()
+    data class ProcessInitialPresenceMessages(val presenceMessages: List<PresenceMessage>) :
+        WorkerSpecification()
 }

@@ -206,8 +206,10 @@ fun AblySdkChannelStateListener.ChannelStateChange.toTracking() =
  */
 fun io.ably.lib.types.PresenceMessage.getPresenceData(gson: Gson): PresenceData? =
     when (data) {
-        is String -> gson.fromJsonOrNull(data as? String, PresenceDataMessage::class.java)?.toTracking()
-        is JsonObject -> gson.fromJsonOrNull(data.toString(), PresenceDataMessage::class.java)?.toTracking()
+        is String -> gson.fromJsonOrNull(data as? String, PresenceDataMessage::class.java)
+            ?.toTracking()
+        is JsonObject -> gson.fromJsonOrNull(data.toString(), PresenceDataMessage::class.java)
+            ?.toTracking()
         else -> null
     }
 
@@ -225,9 +227,9 @@ private fun TokenAuthException.toAblyException(): AblyException =
 /**
  * Performs passed action if this result is a fatal Ably failure
  */
-inline fun <T : Any> Result<T>.doOnFatalAblyFailure(action: (ErrorInformation)->Unit){
+inline fun <T : Any> Result<T>.doOnFatalAblyFailure(action: (ErrorInformation) -> Unit) {
     val connectionException = exceptionOrNull() as? ConnectionException
-    if(connectionException?.isFatal() == true){
+    if (connectionException?.isFatal() == true) {
         action(connectionException.errorInformation)
     }
 }

@@ -4,7 +4,6 @@ import com.ably.tracking.common.ClientTypes
 import com.ably.tracking.common.PresenceAction
 import com.ably.tracking.common.PresenceData
 import com.ably.tracking.common.PresenceMessage
-import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.subscriber.SubscriberProperties
 import com.ably.tracking.subscriber.workerqueue.WorkerSpecification
 import io.mockk.Runs
@@ -28,7 +27,7 @@ internal class ProcessInitialPresenceMessagesWorkerTest {
     fun `should process all presence messages`() = runTest {
         // given
         val presenceMessages = listOf(anyPresenceMessage(), anyPresenceMessage(), anyPresenceMessage())
-        val worker = ProcessInitialPresenceMessagesWorker(presenceMessages) {}
+        val worker = ProcessInitialPresenceMessagesWorker(presenceMessages)
         every { subscriberProperties.updateForPresenceMessagesAndThenEmitStateEventsIfRequired(any()) } just Runs
 
         // when
@@ -47,9 +46,8 @@ internal class ProcessInitialPresenceMessagesWorkerTest {
     @Test
     fun `should post subscribe to channel work after processing presence messages`() = runTest {
         // given
-        val callbackFunction: ResultCallbackFunction<Unit> = {}
         val presenceMessages = emptyList<PresenceMessage>()
-        val worker = ProcessInitialPresenceMessagesWorker(presenceMessages, callbackFunction)
+        val worker = ProcessInitialPresenceMessagesWorker(presenceMessages)
         every { subscriberProperties.updateForPresenceMessagesAndThenEmitStateEventsIfRequired(any()) } just Runs
 
         // when
@@ -60,7 +58,7 @@ internal class ProcessInitialPresenceMessagesWorkerTest {
         )
 
         // then
-        Assert.assertEquals(WorkerSpecification.SubscribeToChannel(callbackFunction), postedWorks[0])
+        Assert.assertEquals(WorkerSpecification.SubscribeToChannel, postedWorks[0])
         verify {
             subscriberProperties.updateForPresenceMessagesAndThenEmitStateEventsIfRequired(presenceMessages)
         }

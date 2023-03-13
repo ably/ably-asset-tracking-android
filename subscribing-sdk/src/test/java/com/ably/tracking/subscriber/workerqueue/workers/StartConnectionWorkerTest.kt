@@ -59,7 +59,7 @@ internal class StartConnectionWorkerTest {
                 willSubscribe = true
             )
         }
-        Assert.assertEquals(WorkerSpecification.SubscribeForPresenceMessages(callbackFunction), postedWorks[0])
+        Assert.assertEquals(WorkerSpecification.SubscribeForPresenceMessages, postedWorks[0])
         Assert.assertEquals(WorkerSpecification.EnterPresence(trackableId), postedWorks[1])
     }
 }
