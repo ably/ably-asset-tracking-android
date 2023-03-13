@@ -10,6 +10,7 @@ apply from: '../jacoco.gradle'
 dependencies {
     api project(':subscribing-sdk')
     api project(':core-sdk-java')
+    api project(':common')
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.4.2'
 }
 
