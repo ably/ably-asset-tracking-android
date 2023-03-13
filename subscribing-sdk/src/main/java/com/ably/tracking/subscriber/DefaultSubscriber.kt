@@ -5,6 +5,7 @@ import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
 import com.ably.tracking.annotations.Experimental
 import com.ably.tracking.common.Ably
+import com.ably.tracking.common.ConnectionState
 import com.ably.tracking.common.logging.createLoggingTag
 import com.ably.tracking.common.logging.v
 import com.ably.tracking.common.logging.w
@@ -42,6 +43,10 @@ internal class DefaultSubscriber(
 
     override val nextLocationUpdateIntervals: SharedFlow<Long>
         get() = core.nextLocationUpdateIntervals
+
+    @Experimental
+    override val connectionStates: StateFlow<ConnectionState>
+        get() = core.connectionStates
 
     init {
         core = createCoreSubscriber(ably, resolution, trackableId, logHandler)

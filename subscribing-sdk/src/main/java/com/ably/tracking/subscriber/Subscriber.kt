@@ -6,6 +6,7 @@ import com.ably.tracking.LocationUpdate
 import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
 import com.ably.tracking.annotations.Experimental
+import com.ably.tracking.common.ConnectionState
 import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.logging.LogHandler
 import kotlinx.coroutines.flow.SharedFlow
@@ -96,6 +97,13 @@ interface Subscriber {
      * The shared flow emitting the estimated next location update intervals in milliseconds when they become available.
      */
     val nextLocationUpdateIntervals: SharedFlow<Long>
+        @JvmSynthetic get
+
+    /**
+     * The shared flow emitting values when the ably connection state changes.
+     */
+    @Experimental
+    val connectionStates: StateFlow<ConnectionState>
         @JvmSynthetic get
 
     /**

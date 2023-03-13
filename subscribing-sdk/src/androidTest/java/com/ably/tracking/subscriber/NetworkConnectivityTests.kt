@@ -611,9 +611,10 @@ class SubscriberMonitor(
     val trackableId: String,
     private val expectedState: KClass<out TrackableState>,
     private val failureStates: Set<KClass<out TrackableState>>,
+    private val expectedConnectionState: ConnectionState,
+    private val expectedLocation: Location? = null,
     private val expectedSubscriberPresence: Boolean?,
     private val expectedPublisherPresence: Boolean?,
-    private val expectedLocation: Location? = null,
     private val expectedPublisherResolution: Resolution?,
     private val subscriberResolutionPreferenceFlow: SharedFlow<Resolution>,
     private val expectedSubscriberResolution: Resolution?,
@@ -651,6 +652,11 @@ class SubscriberMonitor(
                 is FaultType.Fatal -> setOf(TrackableState.Offline::class)
                 is FaultType.Nonfatal, is FaultType.NonfatalWhenResolved ->
                     setOf(TrackableState.Failed::class)
+            },
+            expectedConnectionState = when (faultType) {
+                is FaultType.Nonfatal -> ConnectionState.ONLINE
+                is FaultType.NonfatalWhenResolved -> ConnectionState.OFFLINE
+                is FaultType.Fatal -> ConnectionState.FAILED
             },
             expectedSubscriberPresence = when (faultType) {
                 is FaultType.Nonfatal -> true
@@ -701,6 +707,11 @@ class SubscriberMonitor(
                 is FaultType.Fatal -> setOf(TrackableState.Offline::class)
                 is FaultType.Nonfatal, is FaultType.NonfatalWhenResolved ->
                     setOf(TrackableState.Failed::class)
+            },
+            expectedConnectionState = when (faultType) {
+                is FaultType.Nonfatal -> ConnectionState.OFFLINE
+                is FaultType.NonfatalWhenResolved -> ConnectionState.ONLINE
+                is FaultType.Fatal -> ConnectionState.FAILED
             },
             expectedSubscriberPresence = when (faultType) {
                 is FaultType.Nonfatal -> false
@@ -756,6 +767,10 @@ class SubscriberMonitor(
                 is FaultType.Nonfatal, is FaultType.NonfatalWhenResolved ->
                     setOf(TrackableState.Failed::class)
             },
+            expectedConnectionState = when (faultType) {
+                is FaultType.Fatal -> ConnectionState.FAILED
+                else -> ConnectionState.ONLINE
+            },
             expectedSubscriberPresence = when (faultType) {
                 is FaultType.Fatal -> false
                 else -> true
@@ -791,6 +806,7 @@ class SubscriberMonitor(
             subscriber = subscriber,
             label = label,
             trackableId = trackableId,
+            expectedConnectionState = ConnectionState.OFFLINE,
             expectedState = TrackableState.Offline::class,
             failureStates = setOf(TrackableState.Failed::class),
             expectedSubscriberPresence = false,
@@ -823,6 +839,7 @@ class SubscriberMonitor(
             subscriber,
             label = label,
             trackableId = trackableId,
+            expectedConnectionState = ConnectionState.ONLINE,
             expectedState = TrackableState.Online::class,
             failureStates = setOf(TrackableState.Failed::class),
             expectedSubscriberPresence = true,
@@ -851,6 +868,7 @@ class SubscriberMonitor(
                 assertStateTransition()
                 assertSubscriberPresence()
                 assertPublisherPresence()
+                assertConnectionState()
                 assertLocationUpdated()
                 assertPublisherResolution()
                 assertSubscriberPreferredResolution()
@@ -965,6 +983,20 @@ class SubscriberMonitor(
         val presence =
             subscriber.publisherPresence.first { presence -> presence == expectedPublisherPresence }
         testLogD("SubscriberMonitor (PASS): $label - publisher presence was $presence")
+    }
+
+    /**
+     * Assert that we eventually receive the expected connection state.
+     *
+     * This can happen at any time after the initial trackable state transition,
+     * and so we cannot rely on the first state we collect being the "new" one.
+     */
+    @OptIn(Experimental::class)
+    private suspend fun assertConnectionState() {
+        testLogD("SubscriberMonitor (WAITING): $label - connection state -> $expectedConnectionState")
+        val presence =
+            subscriber.connectionStates.first { connectionState -> connectionState == expectedConnectionState }
+        testLogD("SubscriberMonitor (PASS): $label - connection state was $presence")
     }
 
     /**

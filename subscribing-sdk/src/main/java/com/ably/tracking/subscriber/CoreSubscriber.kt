@@ -37,6 +37,7 @@ internal interface CoreSubscriber {
     val publisherPresence: StateFlow<Boolean>
     val resolutions: SharedFlow<Resolution>
     val nextLocationUpdateIntervals: SharedFlow<Long>
+    val connectionStates: StateFlow<ConnectionState>
 }
 
 /**
@@ -92,6 +93,9 @@ private class DefaultCoreSubscriber(
     override val nextLocationUpdateIntervals: SharedFlow<Long>
         get() = eventFlows.nextLocationUpdateIntervals
 
+    override val connectionStates: StateFlow<ConnectionState>
+        get() = eventFlows.connectionStates
+
     init {
         val workerFactory = WorkerFactory(this, ably, trackableId)
         val scope = CoroutineScope(singleThreadDispatcher + SupervisorJob())
@@ -135,6 +139,9 @@ private class DefaultCoreSubscriber(
         // TODO what is this method achieving, why is it not in normal flow?
         // Perhaps related to: https://github.com/ably/ably-asset-tracking-android/issues/802
         eventFlows.emit(TrackableState.Offline())
+        // Has to go here because we have to .off listeners in DefaultAbly when connection is closing.
+        // There may be a better way to do this
+        eventFlows.emitConnectionState(ConnectionState.OFFLINE)
     }
 }
 
@@ -179,7 +186,10 @@ internal data class SubscriberProperties private constructor(
     }
 
     fun updateForConnectionStateChangeAndThenEmitStateEventsIfRequired(stateChange: ConnectionStateChange) {
-        lastConnectionStateChange = stateChange
+        if (stateChange != lastConnectionStateChange) {
+            lastConnectionStateChange = stateChange
+            eventFlows.emitConnectionState(stateChange.state)
+        }
         emitStateEventsIfRequired()
     }
 
@@ -248,6 +258,7 @@ internal data class SubscriberProperties private constructor(
         private val _publisherPresence: MutableStateFlow<Boolean> = MutableStateFlow(false)
         private val _resolutions: MutableSharedFlow<Resolution> = MutableSharedFlow(replay = 1)
         private val _nextLocationUpdateIntervals: MutableSharedFlow<Long> = MutableSharedFlow(replay = 1)
+        private val _connectionStates: MutableStateFlow<ConnectionState> = MutableStateFlow(ConnectionState.OFFLINE)
 
         fun emitEnhanced(locationUpdate: LocationUpdate) {
             scope.launch { _enhancedLocations.emit(locationUpdate) }
@@ -263,6 +274,10 @@ internal data class SubscriberProperties private constructor(
 
         fun emit(trackableState: TrackableState) {
             scope.launch { _trackableStates.emit(trackableState) }
+        }
+
+        fun emitConnectionState(connectionState: ConnectionState) {
+            scope.launch { _connectionStates.emit(connectionState) }
         }
 
         fun emit(resolutions: Array<Resolution>) {
@@ -293,6 +308,9 @@ internal data class SubscriberProperties private constructor(
 
         val nextLocationUpdateIntervals: SharedFlow<Long>
             get() = _nextLocationUpdateIntervals.asSharedFlow()
+
+        val connectionStates: StateFlow<ConnectionState>
+            get() = _connectionStates.asStateFlow()
     }
 
     private class PendingResolutions {
