@@ -2,6 +2,7 @@ package com.ably.tracking.subscriber.java
 
 import com.ably.tracking.Resolution
 import com.ably.tracking.annotations.Experimental
+import com.ably.tracking.java.ConnectionStateListener
 import com.ably.tracking.java.LocationUpdateIntervalListener
 import com.ably.tracking.java.LocationUpdateListener
 import com.ably.tracking.java.PublisherPresenceListener
@@ -70,7 +71,15 @@ interface SubscriberFacade : Subscriber {
     fun addListener(listener: TrackableStateListener)
 
     /**
-     * Adds a handler to be notified when the the presence of the publisher changes.
+     * Adds a handler to be notified when the Ably connection state changes.
+     *
+     * @param listener the listening function to be notified.
+     */
+    @Experimental
+    fun addAblyConnectionStateListener(listener: ConnectionStateListener)
+
+    /**
+     * Adds a handler to be notified when the presence of the publisher changes.
      * The publisher is present when the value is "true". If the value is "false" the publisher is not present.
      *
      * @param listener the listening function to be notified.

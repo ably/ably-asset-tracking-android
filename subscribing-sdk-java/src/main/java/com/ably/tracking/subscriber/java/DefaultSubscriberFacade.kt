@@ -2,6 +2,7 @@ package com.ably.tracking.subscriber.java
 
 import com.ably.tracking.Resolution
 import com.ably.tracking.annotations.Experimental
+import com.ably.tracking.java.ConnectionStateListener
 import com.ably.tracking.java.LocationUpdateIntervalListener
 import com.ably.tracking.java.LocationUpdateListener
 import com.ably.tracking.java.PublisherPresenceListener
@@ -45,6 +46,13 @@ internal class DefaultSubscriberFacade(
     override fun addListener(listener: TrackableStateListener) {
         subscriber.trackableStates
             .onEach { listener.onStateChanged(it) }
+            .launchIn(scope)
+    }
+
+    @Experimental
+    override fun addAblyConnectionStateListener(listener: ConnectionStateListener) {
+        subscriber.connectionStates
+            .onEach { listener.onAblyConnectionStateChanged(it) }
             .launchIn(scope)
     }
 

@@ -3,6 +3,7 @@ package com.ably.tracking.java
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
+import com.ably.tracking.common.ConnectionState
 
 /**
  * Defines an interface, to be implemented in Java code utilising the Ably Asset Tracking SDKs, allowing that code to
@@ -18,6 +19,14 @@ interface LocationUpdateListener {
  */
 interface TrackableStateListener {
     fun onStateChanged(trackableState: TrackableState)
+}
+
+/**
+ * Defines an interface, to be implemented in Java code utilising the Ably Asset Tracking SDKs, allowing that code to
+ * handle events containing the ably connection state changes.
+ */
+interface ConnectionStateListener {
+    fun onAblyConnectionStateChanged(connectionState: ConnectionState)
 }
 
 /**
