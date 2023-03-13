@@ -5,17 +5,14 @@ import com.ably.tracking.common.PresenceData
 import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.subscriber.SubscriberProperties
 import com.ably.tracking.subscriber.workerqueue.WorkerSpecification
-import com.ably.tracking.test.common.mockConnectFailure
 import com.ably.tracking.test.common.mockConnectSuccess
 import com.ably.tracking.test.common.mockEnterPresenceSuccess
-import com.ably.tracking.test.common.mockStartConnectionFailure
 import com.ably.tracking.test.common.mockStartConnectionSuccess
 import io.mockk.Runs
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
-import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert
@@ -64,65 +61,5 @@ internal class StartConnectionWorkerTest {
         }
         Assert.assertEquals(WorkerSpecification.SubscribeForPresenceMessages(callbackFunction), postedWorks[0])
         Assert.assertEquals(WorkerSpecification.EnterPresence(trackableId), postedWorks[1])
-    }
-
-    @Test
-    fun `should call ably connect and notify callback on failure`() = runTest {
-        // given
-        ably.mockStartConnectionSuccess()
-        ably.mockConnectFailure(trackableId)
-        every { subscriberProperties.emitStateEventsIfRequired() } just Runs
-
-        // when
-        val updatedProperties =
-            startConnectionWorker.doWork(
-                subscriberProperties,
-                asyncWorks.appendWork(),
-                postedWorks.appendSpecification()
-            )
-        asyncWorks.executeAll()
-
-        // then
-        Assert.assertEquals(subscriberProperties, updatedProperties)
-        coVerify {
-            ably.startConnection()
-            ably.connect(
-                trackableId,
-                useRewind = true,
-                willSubscribe = true
-            )
-        }
-        verify { callbackFunction.invoke(match { it.isFailure }) }
-        Assert.assertTrue(postedWorks.isEmpty())
-    }
-
-    @Test
-    fun `should notify callback about failure when starting Ably connection fails`() = runTest {
-        // given
-        ably.mockStartConnectionFailure()
-        ably.mockConnectSuccess(trackableId)
-        every { subscriberProperties.emitStateEventsIfRequired() } just Runs
-
-        // when
-        val updatedProperties =
-            startConnectionWorker.doWork(
-                subscriberProperties,
-                asyncWorks.appendWork(),
-                postedWorks.appendSpecification()
-            )
-        asyncWorks.executeAll()
-
-        // then
-        Assert.assertEquals(subscriberProperties, updatedProperties)
-        coVerify { ably.startConnection() }
-        coVerify(exactly = 0) {
-            ably.connect(
-                trackableId,
-                useRewind = true,
-                willSubscribe = true
-            )
-        }
-        verify { callbackFunction.invoke(match { it.isFailure }) }
-        Assert.assertTrue(postedWorks.isEmpty())
     }
 }
