@@ -76,6 +76,10 @@ interface SubscriberFacade : Subscriber {
      *
      * @param listener the listening function to be notified.
      */
+    @Deprecated(
+        "addPublisherPresenceStateChangeListener provides more granular information on publisher presence. addPublisherPresenceListener may be removed in a later version of AAT",
+        replaceWith = ReplaceWith("addPublisherPresenceStateChangeListener")
+    )
     @Experimental
     fun addPublisherPresenceListener(listener: PublisherPresenceListener)
 

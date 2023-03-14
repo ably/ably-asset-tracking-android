@@ -25,6 +25,10 @@ interface TrackableStateListener {
  * Defines an interface, to be implemented in Java code utilising the Ably Asset Tracking SDKs, allowing that code to
  * handle events containing the publisher presence changes.
  */
+@Deprecated(
+    "The PublisherPresenceStateChangeListener provides more granular information on publisher presence. PublisherPresenceListener may be removed in a later version of AAT",
+    replaceWith = ReplaceWith("PublisherPresenceStateChangeListener")
+)
 interface PublisherPresenceListener {
     fun onPublisherPresenceChanged(isPresent: Boolean)
 }
