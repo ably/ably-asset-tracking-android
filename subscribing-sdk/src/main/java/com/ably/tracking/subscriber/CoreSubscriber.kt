@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.util.Date
 
 /**
  * This interface exposes methods for [DefaultSubscriber].
@@ -39,7 +40,7 @@ internal interface CoreSubscriber {
         replaceWith = ReplaceWith("publisherPresenceStateChanges")
     )
     val publisherPresence: StateFlow<Boolean>
-    val publisherPresenceStateChanges: SharedFlow<PublisherPresenceStateChange>
+    val publisherPresenceStateChanges: StateFlow<PublisherPresenceStateChange>
     val resolutions: SharedFlow<Resolution>
     val nextLocationUpdateIntervals: SharedFlow<Long>
 }
@@ -95,7 +96,7 @@ private class DefaultCoreSubscriber(
     override val publisherPresence: StateFlow<Boolean>
         get() = eventFlows.publisherPresence
 
-    override val publisherPresenceStateChanges: SharedFlow<PublisherPresenceStateChange>
+    override val publisherPresenceStateChanges: StateFlow<PublisherPresenceStateChange>
         get() = eventFlows.publisherPresenceStateChanges
 
     override val resolutions: SharedFlow<Resolution>
@@ -261,7 +262,9 @@ internal data class SubscriberProperties private constructor(
         private val _rawLocations: MutableSharedFlow<LocationUpdate> = MutableSharedFlow(replay = 1)
         private val _trackableStates: MutableStateFlow<TrackableState> = MutableStateFlow(TrackableState.Offline())
         private val _publisherPresence: MutableStateFlow<Boolean> = MutableStateFlow(false)
-        private val _publisherPresenceStateChanges: MutableSharedFlow<PublisherPresenceStateChange> = MutableSharedFlow(replay = 1)
+        private val _publisherPresenceStateChanges: StateFlow<PublisherPresenceStateChange> = MutableStateFlow(
+            PublisherPresenceStateChange(PublisherPresenceState.UNKNOWN, PublisherPresenceState.UNKNOWN, null, Date().time, listOf())
+        )
         private val _resolutions: MutableSharedFlow<Resolution> = MutableSharedFlow(replay = 1)
         private val _nextLocationUpdateIntervals: MutableSharedFlow<Long> = MutableSharedFlow(replay = 1)
 
@@ -304,8 +307,8 @@ internal data class SubscriberProperties private constructor(
         val publisherPresence: StateFlow<Boolean>
             get() = _publisherPresence
 
-        val publisherPresenceStateChanges: SharedFlow<PublisherPresenceStateChange>
-            get() = _publisherPresenceStateChanges.asSharedFlow()
+        val publisherPresenceStateChanges: StateFlow<PublisherPresenceStateChange>
+            get() = _publisherPresenceStateChanges
 
         val resolutions: SharedFlow<Resolution>
             get() = _resolutions.asSharedFlow()

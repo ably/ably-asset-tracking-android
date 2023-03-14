@@ -1,7 +1,6 @@
 package com.ably.tracking.subscriber
 
 import com.ably.tracking.ErrorInformation
-import java.util.*
 
 /**
  * This represents the "overall" publisher presence - as long as there is
@@ -34,7 +33,7 @@ data class KnownPublisher(
     val clientId: String,
     val connectionId: String,
     val state: LastKnownPublisherState,
-    val lastSeen: Date
+    val lastSeen: Long
 )
 
 data class PublisherPresenceStateChange(
@@ -60,7 +59,7 @@ data class PublisherPresenceStateChange(
      * Where the state change was a result of a presence message, this timestamp will be the timestamp
      * associated with that presence message.
      */
-    val timestamp: Date,
+    val timestamp: Long,
 
     /**
      * Any given trackable may have multiple publishers associated. This list provides
