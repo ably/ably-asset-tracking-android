@@ -34,6 +34,10 @@ internal interface CoreSubscriber {
     val enhancedLocations: SharedFlow<LocationUpdate>
     val rawLocations: SharedFlow<LocationUpdate>
     val trackableStates: StateFlow<TrackableState>
+    @Deprecated(
+        "The publisherPresenceStateChanges SharedFlow provides more granular information on publisher presence. The Boolean version may be removed in a later version of AAT",
+        replaceWith = ReplaceWith("publisherPresenceStateChanges")
+    )
     val publisherPresence: StateFlow<Boolean>
     val publisherPresenceStateChanges: SharedFlow<PublisherPresenceStateChange>
     val resolutions: SharedFlow<Resolution>
@@ -246,6 +250,8 @@ internal data class SubscriberProperties private constructor(
             lastEmittedValueOfIsPublisherVisible = isPublisherVisible
             eventFlows.emitPublisherPresence(isPublisherVisible)
         }
+
+
 
         eventFlows.emit(pendingPublisherResolutions.drain())
     }

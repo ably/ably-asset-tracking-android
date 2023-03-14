@@ -33,6 +33,7 @@ internal class DefaultSubscriber(
     override val trackableStates: StateFlow<TrackableState>
         get() = core.trackableStates
 
+    @Suppress("DEPRECATION")
     @Deprecated(
         "The publisherPresenceStateChanges SharedFlow provides more granular information on publisher presence. The Boolean version may be removed in a later version of AAT",
         replaceWith = ReplaceWith("publisherPresenceStateChanges")

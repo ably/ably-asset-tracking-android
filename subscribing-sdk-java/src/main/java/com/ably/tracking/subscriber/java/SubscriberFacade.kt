@@ -4,7 +4,6 @@ import com.ably.tracking.Resolution
 import com.ably.tracking.annotations.Experimental
 import com.ably.tracking.java.LocationUpdateIntervalListener
 import com.ably.tracking.java.LocationUpdateListener
-import com.ably.tracking.java.PublisherPresenceListener
 import com.ably.tracking.java.PublisherPresenceStateChangeListener
 import com.ably.tracking.java.ResolutionListener
 import com.ably.tracking.java.TrackableStateListener
@@ -76,12 +75,13 @@ interface SubscriberFacade : Subscriber {
      *
      * @param listener the listening function to be notified.
      */
+    @Suppress("DEPRECATION")
     @Deprecated(
         "addPublisherPresenceStateChangeListener provides more granular information on publisher presence. addPublisherPresenceListener may be removed in a later version of AAT",
         replaceWith = ReplaceWith("addPublisherPresenceStateChangeListener")
     )
     @Experimental
-    fun addPublisherPresenceListener(listener: PublisherPresenceListener)
+    fun addPublisherPresenceListener(listener: com.ably.tracking.java.PublisherPresenceListener)
 
     /**
      * Adds a handler to be notified when the state of publisher presence changes.
