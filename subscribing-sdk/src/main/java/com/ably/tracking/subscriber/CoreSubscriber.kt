@@ -35,6 +35,7 @@ internal interface CoreSubscriber {
     val rawLocations: SharedFlow<LocationUpdate>
     val trackableStates: StateFlow<TrackableState>
     val publisherPresence: StateFlow<Boolean>
+    val publisherPresenceStateChanges: SharedFlow<PublisherPresenceStateChange>
     val resolutions: SharedFlow<Resolution>
     val nextLocationUpdateIntervals: SharedFlow<Long>
 }
@@ -85,6 +86,9 @@ private class DefaultCoreSubscriber(
 
     override val publisherPresence: StateFlow<Boolean>
         get() = eventFlows.publisherPresence
+
+    override val publisherPresenceStateChanges: SharedFlow<PublisherPresenceStateChange>
+        get() = eventFlows.publisherPresenceStateChanges
 
     override val resolutions: SharedFlow<Resolution>
         get() = eventFlows.resolutions
@@ -246,6 +250,7 @@ internal data class SubscriberProperties private constructor(
         private val _rawLocations: MutableSharedFlow<LocationUpdate> = MutableSharedFlow(replay = 1)
         private val _trackableStates: MutableStateFlow<TrackableState> = MutableStateFlow(TrackableState.Offline())
         private val _publisherPresence: MutableStateFlow<Boolean> = MutableStateFlow(false)
+        private val _publisherPresenceStateChanges: MutableSharedFlow<PublisherPresenceStateChange> = MutableSharedFlow(replay = 1)
         private val _resolutions: MutableSharedFlow<Resolution> = MutableSharedFlow(replay = 1)
         private val _nextLocationUpdateIntervals: MutableSharedFlow<Long> = MutableSharedFlow(replay = 1)
 
@@ -287,6 +292,9 @@ internal data class SubscriberProperties private constructor(
 
         val publisherPresence: StateFlow<Boolean>
             get() = _publisherPresence
+
+        val publisherPresenceStateChanges: SharedFlow<PublisherPresenceStateChange>
+            get() = _publisherPresenceStateChanges.asSharedFlow()
 
         val resolutions: SharedFlow<Resolution>
             get() = _resolutions.asSharedFlow()

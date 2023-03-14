@@ -5,6 +5,7 @@ import com.ably.tracking.annotations.Experimental
 import com.ably.tracking.java.LocationUpdateIntervalListener
 import com.ably.tracking.java.LocationUpdateListener
 import com.ably.tracking.java.PublisherPresenceListener
+import com.ably.tracking.java.PublisherPresenceStateChangeListener
 import com.ably.tracking.java.ResolutionListener
 import com.ably.tracking.java.TrackableStateListener
 import com.ably.tracking.subscriber.Subscriber
@@ -77,6 +78,12 @@ interface SubscriberFacade : Subscriber {
      */
     @Experimental
     fun addPublisherPresenceListener(listener: PublisherPresenceListener)
+
+    /**
+     * Adds a handler to be notified when the state of publisher presence changes.
+     */
+    @Experimental
+    fun addPublisherPresenceStateChangeListener(listener: PublisherPresenceStateChangeListener)
 
     /**
      * Adds a handler to be notified when the publisher's resolution changes.

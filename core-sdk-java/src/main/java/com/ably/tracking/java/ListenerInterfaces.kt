@@ -3,6 +3,7 @@ package com.ably.tracking.java
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
+import com.ably.tracking.subscriber.PublisherPresenceStateChange
 
 /**
  * Defines an interface, to be implemented in Java code utilising the Ably Asset Tracking SDKs, allowing that code to
@@ -26,6 +27,14 @@ interface TrackableStateListener {
  */
 interface PublisherPresenceListener {
     fun onPublisherPresenceChanged(isPresent: Boolean)
+}
+
+/**
+ * Defines an interface, to be implemented in Java code utilising the Ably Asset Tracking SDKs, allowing that code to
+ * handle events containing the publisher presence state changes.
+ */
+interface PublisherPresenceStateChangeListener {
+    fun onPublisherPresenceStateChanged(publisherPresenceStateChange: PublisherPresenceStateChange)
 }
 
 /**

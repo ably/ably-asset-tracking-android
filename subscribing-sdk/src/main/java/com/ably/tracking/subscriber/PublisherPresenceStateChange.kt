@@ -52,7 +52,7 @@ data class PublisherPresenceStateChange(
      * Any error information associated with the state change (e.g. the connection went offline)
      */
     val reason: ErrorInformation?,
-    
+
     /**
      * The timestamp associated with this state change. In the event of the connection going offline, this
      * timestamp will be the time at which the connection went offline.

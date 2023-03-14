@@ -5,6 +5,7 @@ import com.ably.tracking.annotations.Experimental
 import com.ably.tracking.java.LocationUpdateIntervalListener
 import com.ably.tracking.java.LocationUpdateListener
 import com.ably.tracking.java.PublisherPresenceListener
+import com.ably.tracking.java.PublisherPresenceStateChangeListener
 import com.ably.tracking.java.ResolutionListener
 import com.ably.tracking.java.TrackableStateListener
 import com.ably.tracking.subscriber.Subscriber
@@ -52,6 +53,13 @@ internal class DefaultSubscriberFacade(
     override fun addPublisherPresenceListener(listener: PublisherPresenceListener) {
         subscriber.publisherPresence
             .onEach { listener.onPublisherPresenceChanged(it) }
+            .launchIn(scope)
+    }
+
+    @Experimental
+    override fun addPublisherPresenceStateChangeListener(listener: PublisherPresenceStateChangeListener) {
+        subscriber.publisherPresenceStateChanges
+            .onEach { listener.onPublisherPresenceStateChanged(it) }
             .launchIn(scope)
     }
 

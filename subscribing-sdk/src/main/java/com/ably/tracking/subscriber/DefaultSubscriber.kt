@@ -37,6 +37,10 @@ internal class DefaultSubscriber(
     override val publisherPresence: StateFlow<Boolean>
         get() = core.publisherPresence
 
+    @Experimental
+    override val publisherPresenceStateChanges: SharedFlow<PublisherPresenceStateChange>
+        get() = core.publisherPresenceStateChanges
+
     override val resolutions: SharedFlow<Resolution>
         get() = core.resolutions
 
