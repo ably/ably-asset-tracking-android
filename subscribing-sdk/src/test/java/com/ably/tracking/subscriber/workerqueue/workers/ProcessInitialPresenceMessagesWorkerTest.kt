@@ -69,6 +69,7 @@ internal class ProcessInitialPresenceMessagesWorkerTest {
     private fun anyPresenceMessage() = PresenceMessage(
         action = PresenceAction.PRESENT_OR_ENTER,
         data = PresenceData(ClientTypes.PUBLISHER, null, null),
+        timestamp = 123,
         memberKey = "",
     )
 }

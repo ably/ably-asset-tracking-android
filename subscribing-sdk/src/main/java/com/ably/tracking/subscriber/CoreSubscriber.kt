@@ -155,6 +155,7 @@ internal data class SubscriberProperties private constructor(
 
     private var presentPublisherMemberKeys: MutableSet<String> = HashSet(),
     private var lastEmittedValueOfIsPublisherVisible: Boolean? = null,
+    private var lastEmittedValueOfPublisherPresenceState: PublisherPresenceState? = null,
     private var lastEmittedTrackableState: TrackableState = TrackableState.Offline(),
     private var lastConnectionStateChange: ConnectionStateChange =
         ConnectionStateChange(ConnectionState.OFFLINE, null),
