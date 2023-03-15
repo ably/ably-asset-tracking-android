@@ -12,6 +12,8 @@ import io.ably.lib.types.ChannelOptions
 import io.ably.lib.types.ClientOptions
 import io.ably.lib.types.ErrorInfo
 import io.ably.lib.types.Message
+import io.ably.lib.types.PaginatedResult
+import io.ably.lib.types.Param
 import io.ably.lib.types.PresenceMessage
 
 interface AblySdkFactory<ChannelStateListenerType : AblySdkChannelStateListener> {
@@ -94,6 +96,7 @@ interface AblySdkRealtime<ChannelStateListenerType : AblySdkChannelStateListener
         fun enter(data: Any, listener: CompletionListener)
         fun update(data: Any, listener: CompletionListener)
         fun leave(data: Any, listener: CompletionListener)
+        fun getHistory(params: Array<Param>): PaginatedResult<PresenceMessage>
     }
 
     interface Channels<ChannelStateListenerType : AblySdkChannelStateListener> {

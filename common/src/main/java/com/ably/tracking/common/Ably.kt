@@ -239,6 +239,16 @@ interface Ably {
     suspend fun updatePresenceDataWithRetry(trackableId: String, presenceData: PresenceData): Result<Unit>
 
     /**
+     * Retrieves presence history on [trackableId] channel.
+     * Should be called only when there's an existing channel for the [trackableId].
+     * If a channel for the [trackableId] doesn't exist then returns result containing empty list.
+     *
+     * @param trackableId The ID of the trackable channel.
+     * @param duration The duration in milliseconds how long from now should be fetched.
+     */
+    suspend fun getRecentPresenceHistory(trackableId: String, duration: Long): Result<List<PresenceMessage>>
+
+    /**
      * Removes the [trackableId] channel from the connected channels and leaves the presence of that channel.
      * If a channel for the given [trackableId] doesn't exist then it just completes.
      *
@@ -881,6 +891,51 @@ constructor(
                 continuation.resumeWithException(trackingException)
             }
         }
+    }
+
+    override suspend fun getRecentPresenceHistory(
+        trackableId: String,
+        duration: Long
+    ): Result<List<PresenceMessage>> =
+        suspendCancellableCoroutine { continuation ->
+            scope.launch {
+                val channel = getChannelIfExists(trackableId)
+
+                if (channel == null) {
+                    continuation.resume(Result.success(emptyList()))
+                    return@launch
+                }
+
+                val now = System.currentTimeMillis()
+                val params = arrayOf(
+                    Param("start", (now - duration).toString()),
+                    Param("end", now.toString()),
+                    Param("direction", "backwards")
+                )
+
+                try {
+                    val history = channel.getAllHistoryEntries(params)
+                        .mapNotNull { it.toTracking(gson) }
+                    continuation.resume(Result.success(history))
+                } catch (connectionException: ConnectionException) {
+                    logHandler?.w(
+                        "$TAG Failed to get recent history for trackable $trackableId",
+                        connectionException
+                    )
+                    continuation.resume(Result.failure(connectionException))
+                }
+            }
+        }
+
+    private fun AblySdkRealtime.Channel<ChannelStateListenerType>.getAllHistoryEntries(params: Array<Param>): MutableList<io.ably.lib.types.PresenceMessage> {
+        var historyPage = presence.getHistory(params)
+        val historyEntries = mutableListOf<io.ably.lib.types.PresenceMessage>()
+        historyEntries.addAll(historyPage.items())
+        while (historyPage.hasNext()) {
+            historyPage = historyPage.next()
+            historyEntries.addAll(historyPage.items())
+        }
+        return historyEntries
     }
 
     private fun getChannelIfExists(trackableId: String): AblySdkRealtime.Channel<ChannelStateListenerType>? {

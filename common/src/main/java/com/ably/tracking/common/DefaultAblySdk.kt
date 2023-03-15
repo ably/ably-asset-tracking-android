@@ -14,6 +14,8 @@ import io.ably.lib.types.ChannelOptions
 import io.ably.lib.types.ClientOptions
 import io.ably.lib.types.ErrorInfo
 import io.ably.lib.types.Message
+import io.ably.lib.types.PaginatedResult
+import io.ably.lib.types.Param
 import io.ably.lib.types.PresenceMessage
 
 /**
@@ -181,6 +183,9 @@ constructor(clientOptions: ClientOptions) : AblySdkRealtime<DefaultAblySdkChanne
             override fun get(wait: Boolean): Array<PresenceMessage> {
                 return presence.get(wait)
             }
+
+            override fun getHistory(params: Array<Param>): PaginatedResult<PresenceMessage> =
+                presence.history(params)
 
             override fun enter(data: Any, listener: CompletionListener) {
                 return presence.enter(data, listener)
