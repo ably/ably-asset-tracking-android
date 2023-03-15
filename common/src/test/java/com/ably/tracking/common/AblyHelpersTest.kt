@@ -10,9 +10,8 @@ import org.junit.Test
 
 class AblyHelpersTest {
     @Test
-    fun itConvertsPresenceMessagesToTracking()
-    {
-        val gson = Gson();
+    fun itConvertsPresenceMessagesToTracking() {
+        val gson = Gson()
         val incomingPresenceMessage = """
             {
                 "id": "6lxmVGvq-4:1:0",

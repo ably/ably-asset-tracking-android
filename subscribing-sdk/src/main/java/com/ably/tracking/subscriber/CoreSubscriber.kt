@@ -252,8 +252,6 @@ internal data class SubscriberProperties private constructor(
             eventFlows.emitPublisherPresence(isPublisherVisible)
         }
 
-
-
         eventFlows.emit(pendingPublisherResolutions.drain())
     }
 
