@@ -4,7 +4,6 @@ import com.ably.tracking.Resolution
 import com.ably.tracking.annotations.Experimental
 import com.ably.tracking.java.LocationUpdateIntervalListener
 import com.ably.tracking.java.LocationUpdateListener
-import com.ably.tracking.java.PublisherPresenceStateChangeListener
 import com.ably.tracking.java.ResolutionListener
 import com.ably.tracking.java.TrackableStateListener
 import com.ably.tracking.subscriber.Subscriber
