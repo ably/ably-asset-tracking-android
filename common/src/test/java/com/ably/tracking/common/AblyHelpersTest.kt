@@ -13,7 +13,15 @@ class AblyHelpersTest {
     fun itConvertsPresenceMessagesToTracking()
     {
         val gson = Gson();
-        val incomingPresenceMessage = "{\"id\": \"6lxmVGvq-4:1:0\", \"clientId\": \"AatNetworkConnectivityTests_Subscriber\", \"connectionId\": \"6lxmVGvq-4\", \"timestamp\": 1678439051717, \"data\": \"{\\\"resolution\\\":{\\\"accuracy\\\":\\\"BALANCED\\\",\\\"desiredInterval\\\":1,\\\"minimumDisplacement\\\":0.0},\\\"type\\\":\\\"SUBSCRIBER\\\"}\", \"action\": 4 }"
+        val incomingPresenceMessage = """
+            {
+                "id": "6lxmVGvq-4:1:0",
+                "clientId": "AatNetworkConnectivityTests_Subscriber",
+                "connectionId": "6lxmVGvq-4",
+                "timestamp": 1678439051717,
+                "data": "{\"resolution\":{\"accuracy\":\"BALANCED\",\"desiredInterval\":1,\"minimumDisplacement\":0.0},\"type\":\"SUBSCRIBER\"}", "action": 4
+            }
+        """.trimIndent()
         val ablyJavaMessage = AblyJavaPresenceMessage.fromEncoded(incomingPresenceMessage, ChannelOptions())
 
         val trackingMessage: PresenceMessage = ablyJavaMessage.toTracking(gson)!!
