@@ -115,7 +115,7 @@ private class DefaultCoreSubscriber(
 
     override fun subscribeForChannelState() {
         ably.subscribeForChannelStateChange(trackableId) {
-            enqueue(WorkerSpecification.UpdateChannelConnectionState(it))
+            enqueue(WorkerSpecification.FetchHistoryForChannelConnectionStateChange(trackableId, it))
         }
     }
 
@@ -183,8 +183,13 @@ internal data class SubscriberProperties private constructor(
         emitStateEventsIfRequired()
     }
 
-    fun updateForChannelConnectionStateChangeAndThenEmitStateEventsIfRequired(stateChange: ConnectionStateChange) {
+    fun updateForChannelConnectionStateChangeAndThenEmitStateEventsIfRequired(
+        stateChange: ConnectionStateChange,
+        presenceHistory: List<PresenceMessage>?
+    ) {
         lastChannelConnectionStateChange = stateChange
+        //TODO incorporate presence history into states logic
+        presenceHistory?.size
         emitStateEventsIfRequired()
     }
 
