@@ -613,6 +613,8 @@ class SubscriberMonitor(
     private val failureStates: Set<KClass<out TrackableState>>,
     private val expectedSubscriberPresence: Boolean?,
     private val expectedPublisherPresence: Boolean,
+    private val expectedPublisherPresenceState: PublisherPresenceState,
+    private val failurePublisherPresenceStates: Set<PublisherPresenceState>,
     private val expectedLocation: Location? = null,
     private val expectedPublisherResolution: Resolution?,
     private val subscriberResolutionPreferenceFlow: SharedFlow<Resolution>,
@@ -665,6 +667,11 @@ class SubscriberMonitor(
                 is FaultType.NonfatalWhenResolved -> false
                 is FaultType.Fatal -> false
             },
+            expectedPublisherPresenceState = when (faultType) {
+                is FaultType.Nonfatal -> if (publisherDisconnected) PublisherPresenceState.ABSENT else PublisherPresenceState.PRESENT
+                is FaultType.NonfatalWhenResolved, is FaultType.Fatal -> PublisherPresenceState.UNKNOWN
+            },
+            failurePublisherPresenceStates = if (publisherDisconnected) setOf(PublisherPresenceState.PRESENT) else setOf(PublisherPresenceState.ABSENT),
             expectedLocation = locationUpdate,
             timeout = when (faultType) {
                 is FaultType.Fatal -> faultType.failedWithinMillis
@@ -718,6 +725,8 @@ class SubscriberMonitor(
                 is FaultType.NonfatalWhenResolved -> false
                 is FaultType.Fatal -> false
             },
+            expectedPublisherPresenceState = PublisherPresenceState.UNKNOWN,
+            failurePublisherPresenceStates = if (publisherDisconnected) setOf(PublisherPresenceState.PRESENT) else setOf(PublisherPresenceState.ABSENT),
             expectedLocation = locationUpdate,
             timeout = when (faultType) {
                 is FaultType.Fatal -> faultType.failedWithinMillis
@@ -770,6 +779,11 @@ class SubscriberMonitor(
                 else -> true
             },
             expectedPublisherPresence = !publisherDisconnected,
+            expectedPublisherPresenceState = when (faultType) {
+                is FaultType.Nonfatal, is FaultType.NonfatalWhenResolved -> if (publisherDisconnected) PublisherPresenceState.ABSENT else PublisherPresenceState.PRESENT
+                is FaultType.Fatal -> PublisherPresenceState.UNKNOWN
+            },
+            failurePublisherPresenceStates = if (publisherDisconnected) setOf(PublisherPresenceState.PRESENT) else setOf(PublisherPresenceState.ABSENT),
             expectedLocation = locationUpdate,
             timeout = when (faultType) {
                 is FaultType.Fatal -> faultType.failedWithinMillis
@@ -807,6 +821,8 @@ class SubscriberMonitor(
             failureStates = setOf(TrackableState.Failed::class),
             expectedSubscriberPresence = false,
             expectedPublisherPresence = true,
+            expectedPublisherPresenceState = PublisherPresenceState.UNKNOWN,
+            failurePublisherPresenceStates = setOf(PublisherPresenceState.ABSENT),
             expectedLocation = locationUpdate,
             timeout = when (faultType) {
                 is FaultType.Fatal -> faultType.failedWithinMillis
@@ -842,6 +858,8 @@ class SubscriberMonitor(
             failureStates = setOf(TrackableState.Failed::class),
             expectedSubscriberPresence = true,
             expectedPublisherPresence = true,
+            expectedPublisherPresenceState = PublisherPresenceState.PRESENT,
+            failurePublisherPresenceStates = setOf(PublisherPresenceState.ABSENT),
             expectedLocation = locationUpdate,
             timeout = timeout,
             expectedPublisherResolution = publisherResolution,
@@ -866,6 +884,7 @@ class SubscriberMonitor(
                 assertStateTransition()
                 assertSubscriberPresence()
                 assertPublisherPresence()
+                assertPublisherPresenceStateTransition()
                 assertLocationUpdated()
                 assertPublisherResolution()
                 assertSubscriberPreferredResolution()
@@ -1000,6 +1019,41 @@ class SubscriberMonitor(
             )
         } else {
             testLogD("SubscriberMonitor: $label - (PASS) subscriberPresent = $publisherPresent")
+        }
+    }
+
+    /**
+     * Assert that we eventually receive the expected publisher presence state, and do not receive any of the failure publisher presence states.
+     *
+     * @throws AssertionError If the expected [PublisherPresenceStateChange] hasn't been emitted.
+     */
+    @OptIn(Experimental::class)
+    private suspend fun assertPublisherPresenceStateTransition() {
+        testLogD("$label Awaiting publisher presence state transition to $expectedPublisherPresenceState")
+        val result = subscriber.publisherPresenceStateChanges.mapNotNull { receive(it) }.first()
+        if (!result) {
+            throw AssertionError("Expectation '$label' publisher presence state transition did not result in success.")
+        }
+    }
+
+    /**
+     * Maps received [PublisherPresenceStateChange] to a success/fail/ignore outcome for this test.
+     */
+    private fun receive(stateChange: PublisherPresenceStateChange): Boolean? {
+        val newState = stateChange.current
+        when {
+            failurePublisherPresenceStates.contains(newState) -> {
+                testLogD("SubscriberMonitor (FAIL): $label - $newState")
+                false
+            }
+            expectedPublisherPresenceState == newState -> {
+                testLogD("SubscriberMonitor (SUCCESS): $label - $newState")
+                true
+            }
+            else -> {
+                testLogD("SubscriberMonitor (IGNORED): $label - $newState")
+                null
+            }
         }
     }
 
