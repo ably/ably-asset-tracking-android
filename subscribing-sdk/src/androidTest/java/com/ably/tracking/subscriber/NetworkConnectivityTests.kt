@@ -612,7 +612,7 @@ class SubscriberMonitor(
     private val expectedState: KClass<out TrackableState>,
     private val failureStates: Set<KClass<out TrackableState>>,
     private val expectedSubscriberPresence: Boolean?,
-    private val expectedPublisherPresence: Boolean?,
+    private val expectedPublisherPresence: Boolean,
     private val expectedLocation: Location? = null,
     private val expectedPublisherResolution: Resolution?,
     private val subscriberResolutionPreferenceFlow: SharedFlow<Resolution>,
