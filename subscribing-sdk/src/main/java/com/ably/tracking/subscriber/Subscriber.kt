@@ -90,7 +90,7 @@ interface Subscriber {
      * The shared flow emitting state changes in publisher presence.
      */
     @Experimental
-    val publisherPresenceStateChanges: SharedFlow<PublisherPresenceStateChange>
+    val publisherPresenceStateChanges: StateFlow<PublisherPresenceStateChange>
         @JvmSynthetic get
 
     /**
