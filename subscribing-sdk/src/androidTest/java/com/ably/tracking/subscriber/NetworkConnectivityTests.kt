@@ -774,7 +774,7 @@ class SubscriberMonitor(
 
         /**
          * Construct a [SubscriberMonitor] configured to expect appropriate transitions for
-         * the given fault type after it has been resolved and the publisher is stopped.
+         * the given fault type after it has been resolved and the subscriber is stopped.
          *
          * [label] is used for logging.
          */
