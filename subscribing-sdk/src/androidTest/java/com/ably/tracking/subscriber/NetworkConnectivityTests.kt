@@ -373,7 +373,7 @@ class NetworkConnectivityTests(private val testFault: Fault) {
             trackableId = trackableId,
             faultType = fault.type,
             locationUpdate = thirdLocationUpdate,
-            expectedPublisherPresence = false,
+            publisherDisconnected = true,
             subscriberResolution = secondSubscriberResolution,
             subscriberResolutionPreferenceFlow = subscriberResolutions
         ).waitForStateTransition {
@@ -734,7 +734,7 @@ class SubscriberMonitor(
             faultType: FaultType,
             locationUpdate: Location? = null,
             publisherResolution: Resolution? = null,
-            expectedPublisherPresence: Boolean = true,
+            publisherDisconnected: Boolean = false,
             subscriberResolution: Resolution? = null,
             subscriberResolutionPreferenceFlow: SharedFlow<Resolution>
         ) = SubscriberMonitor(
@@ -742,7 +742,7 @@ class SubscriberMonitor(
             label = label,
             trackableId = trackableId,
             expectedState = when {
-                !expectedPublisherPresence -> TrackableState.Offline::class
+                publisherDisconnected -> TrackableState.Offline::class
                 faultType is FaultType.Fatal -> TrackableState.Failed::class
                 faultType is FaultType.Nonfatal || faultType is FaultType.NonfatalWhenResolved ->
                     TrackableState.Online::class
@@ -760,7 +760,7 @@ class SubscriberMonitor(
                 is FaultType.Fatal -> false
                 else -> true
             },
-            expectedPublisherPresence = expectedPublisherPresence,
+            expectedPublisherPresence = !publisherDisconnected,
             expectedLocation = locationUpdate,
             timeout = when (faultType) {
                 is FaultType.Fatal -> faultType.failedWithinMillis
