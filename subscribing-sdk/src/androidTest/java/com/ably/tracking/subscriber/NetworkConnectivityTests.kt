@@ -626,6 +626,9 @@ class SubscriberMonitor(
         /**
          * Construct [SubscriberMonitor] configured to expect appropriate state transitions
          * for the given fault type while it is active. [label] will be used for logging captured transitions.
+         *
+         * Assumptions:
+         * - A publisher is present on the channel if and only if `publisherDisconnected` is false.
          */
         fun forActiveFault(
             subscriber: Subscriber,
@@ -678,6 +681,9 @@ class SubscriberMonitor(
          * for the given fault type while it is active but the subscriber is shutting down.
          *
          * [label] will be used for logging captured transitions.
+         *
+         * Assumptions:
+         * - A publisher is present on the channel if and only if `publisherDisconnected` is false.
          */
         fun forActiveFaultWhenShuttingDownSubscriber(
             subscriber: Subscriber,
@@ -726,6 +732,9 @@ class SubscriberMonitor(
         /**
          * Construct a [SubscriberMonitor] configured to expect appropriate transitions for
          * the given fault type after it has been resolved. [label] is used for logging.
+         *
+         * Assumptions:
+         * - A publisher is present on the channel if and only if `publisherDisconnected` is false.
          */
         fun forResolvedFault(
             subscriber: Subscriber,
@@ -777,6 +786,9 @@ class SubscriberMonitor(
          * the given fault type after it has been resolved and the subscriber is stopped.
          *
          * [label] is used for logging.
+         *
+         * Assumptions:
+         * - A publisher is present on the channel.
          */
         fun forResolvedFaultWithSubscriberStopped(
             subscriber: Subscriber,
@@ -809,6 +821,9 @@ class SubscriberMonitor(
         /**
          * Construct a [SubscriberMonitor] configured to expect a Trackable to come
          * online within a given timeout, and fail if the Failed state is seen at any point.
+
+         * Assumptions:
+         * - A publisher is present on the channel.
          */
         fun onlineWithoutFail(
             subscriber: Subscriber,
