@@ -40,12 +40,7 @@ data class PublisherPresenceStateChange(
     /**
      * The current overall publisher presence state.
      */
-    val current: PublisherPresenceState,
-
-    /**
-     * The previous overall publisher presence state.
-     */
-    val previous: PublisherPresenceState,
+    val state: PublisherPresenceState,
 
     /**
      * Any error information associated with the state change (e.g. the connection went offline)
