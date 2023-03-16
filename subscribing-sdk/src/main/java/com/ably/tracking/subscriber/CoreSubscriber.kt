@@ -188,7 +188,7 @@ internal data class SubscriberProperties private constructor(
         presenceHistory: List<PresenceMessage>?
     ) {
         lastChannelConnectionStateChange = stateChange
-        //TODO incorporate presence history into states logic
+        // TODO incorporate presence history into states logic
         presenceHistory?.size
         emitStateEventsIfRequired()
     }
