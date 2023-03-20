@@ -9,6 +9,8 @@ data class PresenceMessage(
     val action: PresenceAction,
     val data: PresenceData,
 
+    val timestamp: Long,
+
     /**
      * Combination of Ably `clientId` and `connectionId`.
      * See: https://sdk.ably.com/builds/ably/specification/main/features/#TP3h
