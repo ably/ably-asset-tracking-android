@@ -917,12 +917,12 @@ constructor(
                     val history = channel.getAllHistoryEntries(params)
                         .mapNotNull { it.toTracking(gson) }
                     continuation.resume(Result.success(history))
-                } catch (connectionException: ConnectionException) {
+                } catch (exception: AblyException) {
                     logHandler?.w(
                         "$TAG Failed to get recent history for trackable $trackableId",
-                        connectionException
+                        exception
                     )
-                    continuation.resume(Result.failure(connectionException))
+                    continuation.resume(Result.failure(exception.errorInfo.toTrackingException()))
                 }
             }
         }
