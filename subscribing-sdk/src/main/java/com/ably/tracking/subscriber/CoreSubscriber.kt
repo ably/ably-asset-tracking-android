@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.util.Date
 
 /**
  * This interface exposes methods for [DefaultSubscriber].
@@ -34,7 +35,12 @@ internal interface CoreSubscriber {
     val enhancedLocations: SharedFlow<LocationUpdate>
     val rawLocations: SharedFlow<LocationUpdate>
     val trackableStates: StateFlow<TrackableState>
+    @Deprecated(
+        "The publisherPresenceStateChanges SharedFlow provides more granular information on publisher presence. The Boolean version may be removed in a later version of AAT",
+        replaceWith = ReplaceWith("publisherPresenceStateChanges")
+    )
     val publisherPresence: StateFlow<Boolean>
+    val publisherPresenceStateChanges: StateFlow<PublisherPresenceStateChange>
     val resolutions: SharedFlow<Resolution>
     val nextLocationUpdateIntervals: SharedFlow<Long>
 }
@@ -83,8 +89,15 @@ private class DefaultCoreSubscriber(
     override val trackableStates: StateFlow<TrackableState>
         get() = eventFlows.trackableStates
 
+    @Deprecated(
+        "The publisherPresenceStateChanges SharedFlow provides more granular information on publisher presence. The Boolean version may be removed in a later version of AAT",
+        replaceWith = ReplaceWith("publisherPresenceStateChanges")
+    )
     override val publisherPresence: StateFlow<Boolean>
         get() = eventFlows.publisherPresence
+
+    override val publisherPresenceStateChanges: StateFlow<PublisherPresenceStateChange>
+        get() = eventFlows.publisherPresenceStateChanges
 
     override val resolutions: SharedFlow<Resolution>
         get() = eventFlows.resolutions
@@ -147,6 +160,7 @@ internal data class SubscriberProperties private constructor(
 
     private var presentPublisherMemberKeys: MutableSet<String> = HashSet(),
     private var lastEmittedValueOfIsPublisherVisible: Boolean? = null,
+    private var lastEmittedValueOfPublisherPresenceState: PublisherPresenceState? = null,
     private var lastEmittedTrackableState: TrackableState = TrackableState.Offline(),
     private var lastConnectionStateChange: ConnectionStateChange =
         ConnectionStateChange(ConnectionState.OFFLINE, null),
@@ -251,6 +265,9 @@ internal data class SubscriberProperties private constructor(
         private val _rawLocations: MutableSharedFlow<LocationUpdate> = MutableSharedFlow(replay = 1)
         private val _trackableStates: MutableStateFlow<TrackableState> = MutableStateFlow(TrackableState.Offline())
         private val _publisherPresence: MutableStateFlow<Boolean> = MutableStateFlow(false)
+        private val _publisherPresenceStateChanges: StateFlow<PublisherPresenceStateChange> = MutableStateFlow(
+            PublisherPresenceStateChange(PublisherPresenceState.UNKNOWN, null, Date().time, listOf())
+        )
         private val _resolutions: MutableSharedFlow<Resolution> = MutableSharedFlow(replay = 1)
         private val _nextLocationUpdateIntervals: MutableSharedFlow<Long> = MutableSharedFlow(replay = 1)
 
@@ -292,6 +309,9 @@ internal data class SubscriberProperties private constructor(
 
         val publisherPresence: StateFlow<Boolean>
             get() = _publisherPresence
+
+        val publisherPresenceStateChanges: StateFlow<PublisherPresenceStateChange>
+            get() = _publisherPresenceStateChanges
 
         val resolutions: SharedFlow<Resolution>
             get() = _resolutions.asSharedFlow()

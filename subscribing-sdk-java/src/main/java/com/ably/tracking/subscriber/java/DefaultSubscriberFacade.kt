@@ -4,7 +4,6 @@ import com.ably.tracking.Resolution
 import com.ably.tracking.annotations.Experimental
 import com.ably.tracking.java.LocationUpdateIntervalListener
 import com.ably.tracking.java.LocationUpdateListener
-import com.ably.tracking.java.PublisherPresenceListener
 import com.ably.tracking.java.ResolutionListener
 import com.ably.tracking.java.TrackableStateListener
 import com.ably.tracking.subscriber.Subscriber
@@ -48,10 +47,22 @@ internal class DefaultSubscriberFacade(
             .launchIn(scope)
     }
 
+    @Suppress("DEPRECATION")
+    @Deprecated(
+        "The addPublisherPresenceStateChangeListener listener provides more granular information on publisher presence.",
+        replaceWith = ReplaceWith("addPublisherPresenceStateChangeListener")
+    )
     @Experimental
-    override fun addPublisherPresenceListener(listener: PublisherPresenceListener) {
+    override fun addPublisherPresenceListener(listener: com.ably.tracking.java.PublisherPresenceListener) {
         subscriber.publisherPresence
             .onEach { listener.onPublisherPresenceChanged(it) }
+            .launchIn(scope)
+    }
+
+    @Experimental
+    override fun addPublisherPresenceStateChangeListener(listener: PublisherPresenceStateChangeListener) {
+        subscriber.publisherPresenceStateChanges
+            .onEach { listener.onPublisherPresenceStateChanged(it) }
             .launchIn(scope)
     }
 
