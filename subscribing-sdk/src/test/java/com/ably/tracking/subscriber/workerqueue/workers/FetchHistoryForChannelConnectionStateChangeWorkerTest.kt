@@ -67,6 +67,7 @@ internal class FetchHistoryForChannelConnectionStateChangeWorkerTest {
                 PresenceMessage(
                     PresenceAction.UPDATE,
                     PresenceData(ClientTypes.PUBLISHER),
+                    1234,
                     ""
                 )
             )
