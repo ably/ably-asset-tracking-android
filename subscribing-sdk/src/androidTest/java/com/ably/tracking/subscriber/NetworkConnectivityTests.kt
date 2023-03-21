@@ -1040,8 +1040,8 @@ class SubscriberMonitor(
      * Maps received [PublisherPresenceStateChange] to a success/fail/ignore outcome for this test.
      */
     private fun receive(stateChange: PublisherPresenceStateChange): Boolean? {
-        val newState = stateChange.current
-        when {
+        val newState = stateChange.state
+        return when {
             failurePublisherPresenceStates.contains(newState) -> {
                 testLogD("SubscriberMonitor (FAIL): $label - $newState")
                 false
