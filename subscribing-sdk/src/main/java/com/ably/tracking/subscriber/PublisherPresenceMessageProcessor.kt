@@ -8,8 +8,8 @@ import com.ably.tracking.common.PresenceMessage
  */
 interface PublisherPresenceMessageProcessor {
     /**
-     * Given a list of presence messages, process them and return the last presence message for
-     * any given member that we haven't yet processed.
+     * Given a list of presence messages, process them and return the last "new" presence message for
+     * any given publisher.
      */
     fun processPresenceMessagesAndGetChanges(messages: List<PresenceMessage>): List<PresenceMessage>
 }
