@@ -1,5 +1,6 @@
 package com.ably.tracking.subscriber
 
+import com.ably.tracking.ErrorInformation
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.Resolution
 import com.ably.tracking.TrackableState
@@ -266,7 +267,18 @@ internal data class SubscriberProperties private constructor(
         private val _trackableStates: MutableStateFlow<TrackableState> = MutableStateFlow(TrackableState.Offline())
         private val _publisherPresence: MutableStateFlow<Boolean> = MutableStateFlow(false)
         private val _publisherPresenceStateChanges: StateFlow<PublisherPresenceStateChange> = MutableStateFlow(
-            PublisherPresenceStateChange(PublisherPresenceState.UNKNOWN, null, Date().time, listOf())
+            PublisherPresenceStateChange(
+                PublisherPresenceState.UNKNOWN,
+                ErrorInformation(
+                    code = PublisherStateUnknownReasons.SUBSCRIBER_NEVER_ONLINE.value,
+                    statusCode = 0,
+                    message = "Subscriber has never been online",
+                    href = null,
+                    cause = null
+                ),
+                Date().time,
+                listOf()
+            )
         )
         private val _resolutions: MutableSharedFlow<Resolution> = MutableSharedFlow(replay = 1)
         private val _nextLocationUpdateIntervals: MutableSharedFlow<Long> = MutableSharedFlow(replay = 1)
