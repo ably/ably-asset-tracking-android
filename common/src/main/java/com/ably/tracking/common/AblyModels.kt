@@ -20,7 +20,42 @@ data class PresenceMessage(
     val connectionId: String,
 
     val id: String
-)
+) {
+    /**
+     * Given a message to compare to, deduces whether this message is "newer".
+     *
+     * Ably spec point: RTP2b
+     */
+    fun isNewerThan(compare: PresenceMessage): Boolean {
+
+        // RTP2b1
+        if (this.isSynthesizedLeave() || compare.isSynthesizedLeave()) {
+            return this.timestamp > compare.timestamp;
+        }
+
+        // RTP2b2
+        val thisIdSplit = splitId()
+        val compareIdSplit = compare.splitId()
+
+        // Check valid connection id
+        if (thisIdSplit.size != 3 || compareIdSplit.size != 3) {
+            return false
+        }
+
+        val thisMessageSerial = thisIdSplit[1].toIntOrNull()
+        val thisIndex = thisIdSplit[2].toIntOrNull()
+        val compareMessageSerial = compareIdSplit[1].toIntOrNull()
+        val compareMessageIndex = compareIdSplit[2].toIntOrNull()
+
+
+        return thisMessageSerial != null && thisIndex != null && compareMessageSerial != null && compareMessageIndex != null &&
+            ((thisMessageSerial > compareMessageSerial) || (thisMessageSerial == compareMessageSerial && thisIndex > compareMessageIndex))
+    }
+
+    private fun isSynthesizedLeave(): Boolean = !this.id.startsWith(this.connectionId)
+
+    private fun splitId(): List<String> = this.id.split(':', limit = 3)
+}
 
 enum class PresenceAction {
     PRESENT_OR_ENTER, LEAVE_OR_ABSENT, UPDATE;
