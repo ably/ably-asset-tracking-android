@@ -648,7 +648,7 @@ class SubscriberMonitor(
                 else -> TrackableState.Online::class
             },
             failureStates = when (faultType) {
-                is FaultType.Fatal -> setOf(TrackableState.Offline::class)
+                is FaultType.Fatal -> setOf(TrackableState.Online::class, TrackableState.Offline::class)
                 is FaultType.Nonfatal, is FaultType.NonfatalWhenResolved ->
                     setOf(TrackableState.Failed::class)
             },
