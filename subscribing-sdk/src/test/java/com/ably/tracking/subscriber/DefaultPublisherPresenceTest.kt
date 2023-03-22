@@ -1,8 +1,16 @@
 package com.ably.tracking.subscriber
 
+import com.ably.tracking.Accuracy
 import com.ably.tracking.ErrorInformation
+import com.ably.tracking.Resolution
+import com.ably.tracking.common.ClientTypes
+import com.ably.tracking.common.PresenceAction
+import com.ably.tracking.common.PresenceData
+import com.ably.tracking.common.PresenceMessage
 import com.google.common.truth.Truth.assertThat
+import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
@@ -20,13 +28,62 @@ class DefaultPublisherPresenceTest {
     private val mockMessageProcessor = mockk<PublisherPresenceMessageProcessor>(relaxed = true)
 
     companion object {
+        private val mockPresenceData = PresenceData(ClientTypes.PUBLISHER, Resolution(Accuracy.BALANCED, 123, 1.2))
+
+        /**
+         * If the current overall state is PRESENT, then the lastSeen of any PRESENT publishers will be "now". So we have to use an approximation.
+         *
+         * If the overall state is anything else, or if the publisher is ABSENT - then we expect exact timestamps based on presence messages or the time
+         * the connection went offline, and we can assert that exact match.
+         */
+        private fun knownPublisherTimestampsMatch(overallState: PublisherPresenceState, expected: KnownPublisher, actual: KnownPublisher): Boolean {
+            if (overallState == PublisherPresenceState.PRESENT && expected.state == LastKnownPublisherState.PRESENT) {
+                return abs(expected.lastSeen - actual.lastSeen) < 5000
+            }
+
+            return expected.lastSeen == actual.lastSeen
+        }
+
+        /**
+         * Compare two known publisher matches for equality.
+         */
+        private fun knownPublisherMatches(overallState: PublisherPresenceState, expected: KnownPublisher, actual: KnownPublisher): Boolean =
+            expected.state == actual.state &&
+                expected.clientId == actual.clientId &&
+                expected.memberKey == actual.memberKey &&
+                expected.connectionId == actual.connectionId &&
+                knownPublisherTimestampsMatch(overallState, expected, actual)
+
+        /**
+         * Check that the list of known publishers matches.
+         */
+        private fun knownPublishersMatches(expected: PublisherPresenceStateChange, actual: PublisherPresenceStateChange): Boolean {
+            if (expected.publishers.size != actual.publishers.size) {
+                return false
+            }
+
+            expected.publishers.forEachIndexed { index, knownPublisher ->
+                if (!knownPublisherMatches(expected.state, knownPublisher, actual.publishers[index])) {
+                    return false
+                }
+            }
+
+            return true
+        }
+
+        /**
+         * Compare two state changes for equality.
+         */
         private fun stateChangeMatchesExpected(expected: PublisherPresenceStateChange, actual: PublisherPresenceStateChange): Boolean =
             expected.state == actual.state &&
             expected.reason == actual.reason &&
-            abs(expected.timestamp - actual.timestamp) < 3000 &&
-            expected.publishers == actual.publishers
+            abs(expected.timestamp - actual.timestamp) < 5000 &&
+            knownPublishersMatches(expected, actual)
 
-        private suspend fun waitForValueEmission(publisherPresence: DefaultPublisherPresence, expectedStateChange: PublisherPresenceStateChange, scope: CoroutineScope): Boolean {
+        /**
+         * Wait for a given value to be emitted on the StateFlow.
+         */
+        private suspend fun assertValueEmission(publisherPresence: DefaultPublisherPresence, expectedStateChange: PublisherPresenceStateChange, scope: CoroutineScope) {
             val expectedValueEmitted = AtomicBoolean()
             val awaitingJob = publisherPresence.stateChanges.onEach {
                 if (stateChangeMatchesExpected(expectedStateChange, it)) {
@@ -41,7 +98,26 @@ class DefaultPublisherPresenceTest {
             }
 
             awaitingJob.cancel()
-            return expectedValueEmitted.get()
+            assertThat(expectedValueEmitted.get()).isTrue()
+        }
+
+        /**
+         * Wait for a bit to check that no state updates, except for an "allowed" state, are emitted.
+         */
+        private suspend fun assertNoValueEmission(publisherPresence: DefaultPublisherPresence, allowedStateChange: PublisherPresenceStateChange, scope: CoroutineScope) {
+            val awaitingJob = publisherPresence.stateChanges.onEach {
+                if (!stateChangeMatchesExpected(allowedStateChange, it)) {
+                    throw AssertionError("Did not expect a value to be emitted")
+                }
+            }.launchIn(scope)
+
+
+            val startTime = Date().time
+            while (Date().time < startTime + 10000) {
+                delay(500)
+            }
+
+            awaitingJob.cancel()
         }
     }
 
@@ -57,6 +133,424 @@ class DefaultPublisherPresenceTest {
 
         val publisherPresence = DefaultPublisherPresence(mockMessageProcessor, this)
 
-        assertThat(waitForValueEmission(publisherPresence, expectedStateChange, this)).isTrue()
+        assertValueEmission(publisherPresence, expectedStateChange, this)
+    }
+
+    @Test
+    fun itEmitsEventsForNewPublishers() = runTest {
+        val expectedStateChange = PublisherPresenceStateChange(
+            PublisherPresenceState.PRESENT,
+            null,
+            Date().time,
+            listOf(
+                KnownPublisher(
+                    "abc:def",
+                    "def",
+                    "abc",
+                    LastKnownPublisherState.PRESENT,
+                    Date().time
+                )
+            )
+        )
+
+        val publisherPresence = DefaultPublisherPresence(mockMessageProcessor, this)
+
+        val messages = listOf(
+            PresenceMessage(
+                action = PresenceAction.PRESENT_OR_ENTER,
+                data = mockPresenceData,
+                timestamp = 123,
+                memberKey = "abc:def",
+                connectionId = "abc",
+                clientId = "def",
+                id = "abc:0:2"
+            )
+        )
+        every { mockMessageProcessor.processPresenceMessagesAndGetChanges(messages) } returns messages
+        publisherPresence.processPresenceMessages(messages)
+
+        assertValueEmission(publisherPresence, expectedStateChange, this)
+        verify(exactly = 1) {
+            mockMessageProcessor.processPresenceMessagesAndGetChanges(messages)
+        }
+    }
+
+    @Test
+    fun itEmitsEventsForAbsentPublishers() = runTest {
+        val expectedStateChange = PublisherPresenceStateChange(
+            PublisherPresenceState.ABSENT,
+            null,
+            Date().time,
+            listOf(
+                KnownPublisher(
+                    "abc:def",
+                    "def",
+                    "abc",
+                    LastKnownPublisherState.ABSENT,
+                    123
+                )
+            )
+        )
+
+        val publisherPresence = DefaultPublisherPresence(mockMessageProcessor, this)
+
+        val messages = listOf(
+            PresenceMessage(
+                action = PresenceAction.LEAVE_OR_ABSENT,
+                data = mockPresenceData,
+                timestamp = 123,
+                memberKey = "abc:def",
+                connectionId = "abc",
+                clientId = "def",
+                id = "abc:0:2"
+            )
+        )
+        every { mockMessageProcessor.processPresenceMessagesAndGetChanges(messages) } returns messages
+        publisherPresence.processPresenceMessages(messages)
+
+        assertValueEmission(publisherPresence, expectedStateChange, this)
+        verify(exactly = 1) {
+            mockMessageProcessor.processPresenceMessagesAndGetChanges(messages)
+        }
+    }
+
+    @Test
+    fun itEmitsAnOverallStatusOfPresentIfAtLeastOneKnownPublisher() = runTest {
+        val expectedStateChange = PublisherPresenceStateChange(
+            PublisherPresenceState.PRESENT,
+            null,
+            Date().time,
+            listOf(
+                KnownPublisher(
+                    "abc:def",
+                    "def",
+                    "abc",
+                    LastKnownPublisherState.ABSENT,
+                    123
+                ),
+                KnownPublisher(
+                    "ghi:jkl",
+                    "jkl",
+                    "ghi",
+                    LastKnownPublisherState.PRESENT,
+                    Date().time
+                )
+            )
+        )
+
+        val publisherPresence = DefaultPublisherPresence(mockMessageProcessor, this)
+
+        val messages = listOf(
+            PresenceMessage(
+                action = PresenceAction.LEAVE_OR_ABSENT,
+                data = mockPresenceData,
+                timestamp = 123,
+                memberKey = "abc:def",
+                connectionId = "abc",
+                clientId = "def",
+                id = "abc:0:2"
+            ),
+            PresenceMessage(
+                action = PresenceAction.PRESENT_OR_ENTER,
+                data = mockPresenceData,
+                timestamp = 123,
+                memberKey = "ghi:jkl",
+                connectionId = "ghi",
+                clientId = "jkl",
+                id = "ghi:0:2"
+            )
+        )
+        every { mockMessageProcessor.processPresenceMessagesAndGetChanges(messages) } returns messages
+        publisherPresence.processPresenceMessages(messages)
+
+        assertValueEmission(publisherPresence, expectedStateChange, this)
+        verify(exactly = 1) {
+            mockMessageProcessor.processPresenceMessagesAndGetChanges(messages)
+        }
+    }
+
+    @Test
+    fun itUpdatesPublishersAndEmitsChanges() = runTest {
+        val firstExpectedStateChange = PublisherPresenceStateChange(
+            PublisherPresenceState.ABSENT,
+            null,
+            Date().time,
+            listOf(
+                KnownPublisher(
+                    "abc:def",
+                    "def",
+                    "abc",
+                    LastKnownPublisherState.ABSENT,
+                    123
+                ),
+                KnownPublisher(
+                    "ghi:jkl",
+                    "jkl",
+                    "ghi",
+                    LastKnownPublisherState.ABSENT,
+                    234
+                )
+            )
+        )
+
+        val secondExpectedStateChange = PublisherPresenceStateChange(
+            PublisherPresenceState.PRESENT,
+            null,
+            Date().time,
+            listOf(
+                KnownPublisher(
+                    "abc:def",
+                    "def",
+                    "abc",
+                    LastKnownPublisherState.PRESENT,
+                    Date().time
+                ),
+                KnownPublisher(
+                    "ghi:jkl",
+                    "jkl",
+                    "ghi",
+                    LastKnownPublisherState.ABSENT,
+                    234
+                )
+            )
+        )
+
+        val publisherPresence = DefaultPublisherPresence(mockMessageProcessor, this)
+        val firstMessages = listOf(
+            PresenceMessage(
+                action = PresenceAction.LEAVE_OR_ABSENT,
+                data = mockPresenceData,
+                timestamp = 123,
+                memberKey = "abc:def",
+                connectionId = "abc",
+                clientId = "def",
+                id = "abc:0:2"
+            ),
+            PresenceMessage(
+                action = PresenceAction.LEAVE_OR_ABSENT,
+                data = mockPresenceData,
+                timestamp = 234,
+                memberKey = "ghi:jkl",
+                connectionId = "ghi",
+                clientId = "jkl",
+                id = "ghi:0:2"
+            )
+        )
+
+        val secondMessages = listOf(
+            PresenceMessage(
+                action = PresenceAction.PRESENT_OR_ENTER,
+                data = mockPresenceData,
+                timestamp = 123,
+                memberKey = "abc:def",
+                connectionId = "abc",
+                clientId = "def",
+                id = "abc:0:2"
+            ),
+        )
+        every { mockMessageProcessor.processPresenceMessagesAndGetChanges(firstMessages) } returns firstMessages
+        every { mockMessageProcessor.processPresenceMessagesAndGetChanges(secondMessages) } returns secondMessages
+        publisherPresence.processPresenceMessages(firstMessages)
+        assertValueEmission(publisherPresence, firstExpectedStateChange, this)
+        publisherPresence.processPresenceMessages(secondMessages)
+        assertValueEmission(publisherPresence, secondExpectedStateChange, this)
+
+        verify(exactly = 1) {
+            mockMessageProcessor.processPresenceMessagesAndGetChanges(firstMessages)
+            mockMessageProcessor.processPresenceMessagesAndGetChanges(secondMessages)
+        }
+    }
+
+    @Test
+    fun itDoesNotEmitUpdatesIfThereAreNoChangesToUnderlyingPublisherStateAndTheOverallStateHasntChanged() = runTest {
+        val initialStateChange = PublisherPresenceStateChange(
+            PublisherPresenceState.PRESENT,
+            null,
+            Date().time,
+            listOf(
+                KnownPublisher(
+                    "abc:def",
+                    "def",
+                    "abc",
+                    LastKnownPublisherState.PRESENT,
+                    Date().time
+                )
+            )
+        )
+
+        val publisherPresence = DefaultPublisherPresence(mockMessageProcessor, this)
+        val firstMessages = listOf(
+            PresenceMessage(
+                action = PresenceAction.PRESENT_OR_ENTER,
+                data = mockPresenceData,
+                timestamp = 123,
+                memberKey = "abc:def",
+                connectionId = "abc",
+                clientId = "def",
+                id = "abc:0:2"
+            )
+        )
+
+        val secondMessages = listOf(
+            PresenceMessage(
+                action = PresenceAction.UPDATE,
+                data = mockPresenceData,
+                timestamp = 123,
+                memberKey = "abc:def",
+                connectionId = "abc",
+                clientId = "def",
+                id = "abc:0:2"
+            ),
+        )
+        every { mockMessageProcessor.processPresenceMessagesAndGetChanges(firstMessages) } returns firstMessages
+        every { mockMessageProcessor.processPresenceMessagesAndGetChanges(secondMessages) } returns secondMessages
+        publisherPresence.processPresenceMessages(firstMessages)
+        assertValueEmission(publisherPresence, initialStateChange, this)
+        publisherPresence.processPresenceMessages(secondMessages)
+        assertNoValueEmission(publisherPresence, initialStateChange, this)
+
+        verify(exactly = 1) {
+            mockMessageProcessor.processPresenceMessagesAndGetChanges(firstMessages)
+            mockMessageProcessor.processPresenceMessagesAndGetChanges(secondMessages)
+        }
+    }
+
+    @Test
+    fun itEmitsAStateChangeIfTransitioningFromUnknownEvenIfPublishersHaveNotChanged() = runTest {
+        val initialStateChange = PublisherPresenceStateChange(
+            PublisherPresenceState.PRESENT,
+            null,
+            Date().time,
+            listOf(
+                KnownPublisher(
+                    "abc:def",
+                    "def",
+                    "abc",
+                    LastKnownPublisherState.PRESENT,
+                    Date().time
+                )
+            )
+        )
+
+        val publisherPresence = DefaultPublisherPresence(mockMessageProcessor, this)
+        val firstMessages = listOf(
+            PresenceMessage(
+                action = PresenceAction.PRESENT_OR_ENTER,
+                data = mockPresenceData,
+                timestamp = 123,
+                memberKey = "abc:def",
+                connectionId = "abc",
+                clientId = "def",
+                id = "abc:0:2"
+            )
+        )
+
+        val secondMessages = listOf(
+            PresenceMessage(
+                action = PresenceAction.UPDATE,
+                data = mockPresenceData,
+                timestamp = 123,
+                memberKey = "abc:def",
+                connectionId = "abc",
+                clientId = "def",
+                id = "abc:0:2"
+            ),
+        )
+        every { mockMessageProcessor.processPresenceMessagesAndGetChanges(firstMessages) } returns firstMessages
+        every { mockMessageProcessor.processPresenceMessagesAndGetChanges(secondMessages) } returns secondMessages
+        publisherPresence.processPresenceMessages(firstMessages)
+        assertValueEmission(publisherPresence, initialStateChange, this)
+        publisherPresence.connectionOffline()
+
+
+        val secondStateChange = PublisherPresenceStateChange(
+            PublisherPresenceState.PRESENT,
+            null,
+            Date().time,
+            listOf(
+                KnownPublisher(
+                    "abc:def",
+                    "def",
+                    "abc",
+                    LastKnownPublisherState.PRESENT,
+                    Date().time
+                )
+            )
+        )
+        publisherPresence.processPresenceMessages(secondMessages)
+        assertValueEmission(publisherPresence, secondStateChange, this)
+
+        verify(exactly = 1) {
+            mockMessageProcessor.processPresenceMessagesAndGetChanges(firstMessages)
+            mockMessageProcessor.processPresenceMessagesAndGetChanges(secondMessages)
+        }
+    }
+
+    @Test
+    fun itHasPresentPublishersIfAtLeastOneKnownPublisherIsPresent() = runTest {
+        val publisherPresence = DefaultPublisherPresence(mockMessageProcessor, this)
+
+        val messages = listOf(
+            PresenceMessage(
+                action = PresenceAction.LEAVE_OR_ABSENT,
+                data = mockPresenceData,
+                timestamp = 123,
+                memberKey = "abc:def",
+                connectionId = "abc",
+                clientId = "def",
+                id = "abc:0:2"
+            ),
+            PresenceMessage(
+                action = PresenceAction.PRESENT_OR_ENTER,
+                data = mockPresenceData,
+                timestamp = 123,
+                memberKey = "ghi:jkl",
+                connectionId = "ghi",
+                clientId = "jkl",
+                id = "ghi:0:2"
+            )
+        )
+        every { mockMessageProcessor.processPresenceMessagesAndGetChanges(messages) } returns messages
+        publisherPresence.processPresenceMessages(messages)
+
+        assertThat(publisherPresence.hasPresentPublishers()).isTrue()
+
+        verify(exactly = 1) {
+            mockMessageProcessor.processPresenceMessagesAndGetChanges(messages)
+        }
+    }
+
+    @Test
+    fun itDoesntHavePresentPublishersIfNonePresent() = runTest {
+        val publisherPresence = DefaultPublisherPresence(mockMessageProcessor, this)
+
+        val messages = listOf(
+            PresenceMessage(
+                action = PresenceAction.LEAVE_OR_ABSENT,
+                data = mockPresenceData,
+                timestamp = 123,
+                memberKey = "abc:def",
+                connectionId = "abc",
+                clientId = "def",
+                id = "abc:0:2"
+            ),
+            PresenceMessage(
+                action = PresenceAction.LEAVE_OR_ABSENT,
+                data = mockPresenceData,
+                timestamp = 123,
+                memberKey = "ghi:jkl",
+                connectionId = "ghi",
+                clientId = "jkl",
+                id = "ghi:0:2"
+            )
+        )
+        every { mockMessageProcessor.processPresenceMessagesAndGetChanges(messages) } returns messages
+        publisherPresence.processPresenceMessages(messages)
+
+        assertThat(publisherPresence.hasPresentPublishers()).isFalse()
+
+        verify(exactly = 1) {
+            mockMessageProcessor.processPresenceMessagesAndGetChanges(messages)
+        }
     }
 }
