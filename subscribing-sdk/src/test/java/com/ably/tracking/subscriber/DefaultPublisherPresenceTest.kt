@@ -37,7 +37,10 @@ class DefaultPublisherPresenceTest {
          * the connection went offline, and we can assert that exact match.
          */
         private fun knownPublisherTimestampsMatch(overallState: PublisherPresenceState, expected: KnownPublisher, actual: KnownPublisher): Boolean {
-            if (overallState == PublisherPresenceState.PRESENT && expected.state == LastKnownPublisherState.PRESENT) {
+            if (
+                (overallState == PublisherPresenceState.PRESENT || overallState == PublisherPresenceState.UNKNOWN) &&
+                expected.state == LastKnownPublisherState.PRESENT
+            ) {
                 return abs(expected.lastSeen - actual.lastSeen) < 5000
             }
 
@@ -548,6 +551,73 @@ class DefaultPublisherPresenceTest {
         publisherPresence.processPresenceMessages(messages)
 
         assertThat(publisherPresence.hasPresentPublishers()).isFalse()
+
+        verify(exactly = 1) {
+            mockMessageProcessor.processPresenceMessagesAndGetChanges(messages)
+        }
+    }
+
+    @Test
+    fun itEmitsAStateChangeWhenTheConnectionIsOfflineWherePresentPublishersHaveLastSeenAsNow() = runTest {
+
+        val expectedStateChange = PublisherPresenceStateChange(
+            PublisherPresenceState.UNKNOWN,
+            ErrorInformation(
+                code = PublisherStateUnknownReasons.SUBSCRIBER_NOT_ONLINE.value,
+                statusCode = 0,
+                message = "Subscriber is not online",
+                href = null,
+                cause = null
+            ),
+            Date().time,
+            listOf(
+                KnownPublisher(
+                    "abc:def",
+                    "def",
+                    "abc",
+                    LastKnownPublisherState.PRESENT,
+                    Date().time + 5000 // We'll put in a delay to simulate time passing
+                ),
+                KnownPublisher(
+                    "ghi:jkl",
+                    "jkl",
+                    "ghi",
+                    LastKnownPublisherState.ABSENT,
+                    234
+                )
+            )
+        )
+
+        val publisherPresence = DefaultPublisherPresence(mockMessageProcessor, this)
+
+        val messages = listOf(
+            PresenceMessage(
+                action = PresenceAction.PRESENT_OR_ENTER,
+                data = mockPresenceData,
+                timestamp = 123,
+                memberKey = "abc:def",
+                connectionId = "abc",
+                clientId = "def",
+                id = "abc:0:2"
+            ),
+            PresenceMessage(
+                action = PresenceAction.LEAVE_OR_ABSENT,
+                data = mockPresenceData,
+                timestamp = 234,
+                memberKey = "ghi:jkl",
+                connectionId = "ghi",
+                clientId = "jkl",
+                id = "ghi:0:2"
+            )
+        )
+        every { mockMessageProcessor.processPresenceMessagesAndGetChanges(messages) } returns messages
+        publisherPresence.processPresenceMessages(messages)
+
+        // Simulate some time passing between the original presence messages and the connection going offline
+        delay(5000)
+
+        publisherPresence.connectionOffline()
+        assertValueEmission(publisherPresence, expectedStateChange, this)
 
         verify(exactly = 1) {
             mockMessageProcessor.processPresenceMessagesAndGetChanges(messages)

@@ -134,7 +134,7 @@ class DefaultPublisherPresence (
                     ErrorInformation(
                         code = PublisherStateUnknownReasons.SUBSCRIBER_NOT_ONLINE.value,
                         statusCode = 0,
-                        message = "Subscriber has never been online",
+                        message = "Subscriber is not online",
                         href = null,
                         cause = null
                     ),
