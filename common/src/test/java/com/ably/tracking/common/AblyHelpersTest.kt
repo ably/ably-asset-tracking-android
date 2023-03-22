@@ -26,7 +26,10 @@ class AblyHelpersTest {
         val trackingMessage: PresenceMessage = ablyJavaMessage.toTracking(gson)!!
 
         assertThat(trackingMessage.timestamp).isEqualTo(1678439051717)
+        assertThat(trackingMessage.id).isEqualTo("6lxmVGvq-4:1:0")
         assertThat(trackingMessage.memberKey).isEqualTo("6lxmVGvq-4:AatNetworkConnectivityTests_Subscriber")
+        assertThat(trackingMessage.connectionId).isEqualTo("6lxmVGvq-4")
+        assertThat(trackingMessage.clientId).isEqualTo("AatNetworkConnectivityTests_Subscriber")
         assertThat(trackingMessage.action).isEqualTo(PresenceAction.UPDATE)
         assertThat(trackingMessage.data.type).isEqualTo(ClientTypes.SUBSCRIBER)
         assertThat(trackingMessage.data.resolution).isEqualTo(Resolution(Accuracy.BALANCED, 1, 0.0))

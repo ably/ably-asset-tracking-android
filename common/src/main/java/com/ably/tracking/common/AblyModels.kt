@@ -16,6 +16,10 @@ data class PresenceMessage(
      * See: https://sdk.ably.com/builds/ably/specification/main/features/#TP3h
      */
     val memberKey: String,
+    val clientId: String,
+    val connectionId: String,
+
+    val id: String
 )
 
 enum class PresenceAction {
