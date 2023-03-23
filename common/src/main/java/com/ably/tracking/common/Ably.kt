@@ -341,7 +341,11 @@ constructor(
         getChannelIfExists(trackableId)?.let { channel ->
             // Emit the current channel state
             channel.state.toTracking().let { currentChannelState ->
-                // Initial state is launched in a fire-and-forget manner to not block this method on the listener() call
+                /*
+                    Initial state is launched in a fire-and-forget manner to not block this method on the listener() call.
+
+                    Note, this behaviour is *required* for the extended publisher presence API.
+                 */
                 scope.launch { listener(ConnectionStateChange(currentChannelState, null)) }
             }
 
