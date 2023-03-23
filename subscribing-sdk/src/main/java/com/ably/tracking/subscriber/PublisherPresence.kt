@@ -117,6 +117,10 @@ class DefaultPublisherPresence (
      * time to now. And emit a state change.
      */
     override fun connectionOffline() {
+        if (lastEmittedStateChange.state == PublisherPresenceState.UNKNOWN) {
+            return
+        }
+
         publisherMap.forEach {
             it.value.apply {
                 if (this.state == LastKnownPublisherState.PRESENT) {

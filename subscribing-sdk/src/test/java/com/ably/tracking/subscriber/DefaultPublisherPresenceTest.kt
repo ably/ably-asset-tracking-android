@@ -623,4 +623,72 @@ class DefaultPublisherPresenceTest {
             mockMessageProcessor.processPresenceMessagesAndGetChanges(messages)
         }
     }
+
+    @Test
+    fun itDoesntEmitStateChangesIfConnectionAlreadyOffline() = runTest {
+
+        val expectedStateChange = PublisherPresenceStateChange(
+            PublisherPresenceState.UNKNOWN,
+            ErrorInformation(
+                code = PublisherStateUnknownReasons.SUBSCRIBER_NOT_ONLINE.value,
+                statusCode = 0,
+                message = "Subscriber is not online",
+                href = null,
+                cause = null
+            ),
+            Date().time,
+            listOf(
+                KnownPublisher(
+                    "abc:def",
+                    "def",
+                    "abc",
+                    LastKnownPublisherState.PRESENT,
+                    Date().time
+                ),
+                KnownPublisher(
+                    "ghi:jkl",
+                    "jkl",
+                    "ghi",
+                    LastKnownPublisherState.ABSENT,
+                    234
+                )
+            )
+        )
+
+        val publisherPresence = DefaultPublisherPresence(mockMessageProcessor, this)
+
+        val messages = listOf(
+            PresenceMessage(
+                action = PresenceAction.PRESENT_OR_ENTER,
+                data = mockPresenceData,
+                timestamp = 123,
+                memberKey = "abc:def",
+                connectionId = "abc",
+                clientId = "def",
+                id = "abc:0:2"
+            ),
+            PresenceMessage(
+                action = PresenceAction.LEAVE_OR_ABSENT,
+                data = mockPresenceData,
+                timestamp = 234,
+                memberKey = "ghi:jkl",
+                connectionId = "ghi",
+                clientId = "jkl",
+                id = "ghi:0:2"
+            )
+        )
+        every { mockMessageProcessor.processPresenceMessagesAndGetChanges(messages) } returns messages
+        publisherPresence.processPresenceMessages(messages)
+        publisherPresence.connectionOffline()
+
+        // Simulate some time passing between the original connection offline and now
+        delay(5000)
+
+        publisherPresence.connectionOffline()
+        assertNoValueEmission(publisherPresence, expectedStateChange, this)
+
+        verify(exactly = 1) {
+            mockMessageProcessor.processPresenceMessagesAndGetChanges(messages)
+        }
+    }
 }
