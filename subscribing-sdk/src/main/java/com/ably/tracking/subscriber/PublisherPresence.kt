@@ -34,7 +34,7 @@ class DefaultPublisherPresence (
     private val presenceMessageProcessor: PublisherPresenceMessageProcessor,
     private val scope: CoroutineScope
 ) : PublisherPresence {
-    private val lastEmittedStateChange: PublisherPresenceStateChange = PublisherPresenceStateChange(PublisherPresenceState.UNKNOWN, ErrorInformation(
+    private var lastEmittedStateChange: PublisherPresenceStateChange = PublisherPresenceStateChange(PublisherPresenceState.UNKNOWN, ErrorInformation(
         code = PublisherStateUnknownReasons.SUBSCRIBER_NEVER_ONLINE.value,
         statusCode = 0,
         message = "Subscriber has never been online",
@@ -88,27 +88,25 @@ class DefaultPublisherPresence (
         // Emit an event
         // If the individual publishers are present, then their lastSeen time is now.
         val nowTime = Date().time
-        scope.launch {
-            _stateChanges.emit(
-                PublisherPresenceStateChange(
-              when (hasPresentPublishers()) {
-                        true -> PublisherPresenceState.PRESENT
-                        else -> PublisherPresenceState.ABSENT
-                    },
-                    null,
-                    nowTime,
-                    publisherMapAsList().map {
-                        if (it.state == LastKnownPublisherState.PRESENT) {
-                            it.apply {
-                                this.lastSeen = nowTime
-                            }
+        emitStateChange(
+            PublisherPresenceStateChange(
+                when (hasPresentPublishers()) {
+                    true -> PublisherPresenceState.PRESENT
+                    else -> PublisherPresenceState.ABSENT
+                },
+                null,
+                nowTime,
+                publisherMapAsList().map {
+                    if (it.state == LastKnownPublisherState.PRESENT) {
+                        it.apply {
+                            this.lastSeen = nowTime
                         }
-
-                        it
                     }
-                )
+
+                    it
+                }
             )
-        }
+        )
     }
 
     /**
@@ -127,20 +125,18 @@ class DefaultPublisherPresence (
             }
         }
 
-        scope.launch {
-            _stateChanges.emit(
-                PublisherPresenceStateChange(
-                    PublisherPresenceState.UNKNOWN,
-                    ErrorInformation(
-                        code = PublisherStateUnknownReasons.SUBSCRIBER_NOT_ONLINE.value,
-                        statusCode = 0,
-                        message = "Subscriber is not online",
-                        href = null,
-                        cause = null
-                    ),
-                    Date().time, publisherMapAsList())
-            )
-        }
+        emitStateChange(
+            PublisherPresenceStateChange(
+                PublisherPresenceState.UNKNOWN,
+                ErrorInformation(
+                    code = PublisherStateUnknownReasons.SUBSCRIBER_NOT_ONLINE.value,
+                    statusCode = 0,
+                    message = "Subscriber is not online",
+                    href = null,
+                    cause = null
+                ),
+                Date().time, publisherMapAsList())
+        )
     }
 
     override fun hasPresentPublishers(): Boolean = publisherMap.asSequence().firstOrNull { it.value.state == LastKnownPublisherState.PRESENT } != null
@@ -169,4 +165,11 @@ class DefaultPublisherPresence (
     }
 
     private fun publisherMapAsList(): List<KnownPublisher> = publisherMap.toList().map{ it.second }
+
+    private fun emitStateChange(stateChange: PublisherPresenceStateChange) {
+        lastEmittedStateChange = stateChange
+        scope.launch {
+            _stateChanges.emit(stateChange)
+        }
+    }
 }
