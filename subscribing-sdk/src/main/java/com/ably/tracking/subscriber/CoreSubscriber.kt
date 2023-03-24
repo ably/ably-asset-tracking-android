@@ -193,6 +193,17 @@ internal data class SubscriberProperties private constructor(
     }
 
     fun updateForConnectionStateChangeAndThenEmitStateEventsIfRequired(stateChange: ConnectionStateChange) {
+        /**
+         * If a connection drops offline, then let the publisher presence handler know that this has happened.
+         *
+         * When it comes back online, there's no guarantee that the channel has re-attached yet, or that presence has
+         * been re-entered, so handle that operation in the [updateForChannelConnectionStateChangeAndThenEmitStateEventsIfRequired]
+         * handler when the channel attaches.
+         */
+        if (stateChange.state == ConnectionState.OFFLINE && !eventFlows.lastPublisherPresenceIsUnknown()) {
+            eventFlows.emitPublisherPresenceUnknown()
+        }
+
         lastConnectionStateChange = stateChange
         emitStateEventsIfRequired()
     }
@@ -202,13 +213,15 @@ internal data class SubscriberProperties private constructor(
         presenceHistory: List<PresenceMessage>?
     ) {
         /**
-         * If we transition into the offline state, then we let the extended publisher presence API handlers know that the connection
-         * has gone into the offline state, so that they can emit state events as required.
+         * If the channel detaches, then let the publisher presence handlers know that the connection is no longer online. Note, that
+         * per RTL3e, the overall connection dropping will not set the channel to detached (or in AAT, an offline state). The channel
+         * only enters an OFFLINE state (in AAT terms) when the connection comes back, at which point the channel briefly goes back to
+         * ATTACHING before returning to ATTACHED.
          *
-         * If we're going back to online again, then we'll have some presence history to work with. Take the history, plus any messages
-         * received over the realtime connection in the meantime, do event emission.
+         * If the channel has returned to the ATTACHED state (or ONLINE, in AAT terms), then we have the presence history for the channel plus
+         * any realtime presence events received in the interim - let the publisher presence handlers know this.
          */
-        if (stateChange.state == ConnectionState.OFFLINE && lastChannelConnectionStateChange.state != ConnectionState.OFFLINE) {
+        if (stateChange.state == ConnectionState.OFFLINE && !eventFlows.lastPublisherPresenceIsUnknown()) {
             eventFlows.emitPublisherPresenceUnknown()
         } else {
             eventFlows.emitPublisherPresenceStateChange((presenceHistory ?: mutableListOf()) + cachedRealtimePresenceMessages)
@@ -228,7 +241,7 @@ internal data class SubscriberProperties private constructor(
             So, if the channel is in an offline state (aka, we're still fetching the presence history before reporting the
             channel as online again), cache and received messages.
          */
-        if (lastChannelConnectionStateChange.state == ConnectionState.OFFLINE) {
+        if (eventFlows.lastPublisherPresenceIsUnknown()) {
             cachedRealtimePresenceMessages += presenceMessages
         } else {
             eventFlows.emitPublisherPresenceStateChange(presenceMessages)
@@ -320,6 +333,8 @@ internal data class SubscriberProperties private constructor(
         fun emitPublisherPresenceStateChange(presenceMessages: List<PresenceMessage>) {
             publisherPresenceMonitor.processPresenceMessages(presenceMessages)
         }
+
+        fun lastPublisherPresenceIsUnknown(): Boolean = publisherPresenceMonitor.lastStateIsUnknown()
 
         fun emit(resolutions: Array<Resolution>) {
             if (resolutions.isNotEmpty()) {

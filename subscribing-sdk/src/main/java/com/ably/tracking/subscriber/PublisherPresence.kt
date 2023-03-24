@@ -14,6 +14,11 @@ interface PublisherPresence {
     val stateChanges: StateFlow<PublisherPresenceStateChange>
 
     /**
+     * Returns true if the current presence is unknown.
+     */
+    fun lastStateIsUnknown(): Boolean
+
+    /**
      * Returns true if we have known publishers present.
      */
     fun hasPresentPublishers(): Boolean
@@ -78,7 +83,7 @@ class DefaultPublisherPresence (
          * Unless we're changing overall state or the publishers underlying have changed,
          * then there's nothing to do.
          */
-        if (!lastOverallStateWasUnknown() && !publishersHaveChangedSinceLastEmission()) {
+        if (!lastStateIsUnknown() && !publishersHaveChangedSinceLastEmission()) {
             return
         }
 
@@ -142,7 +147,7 @@ class DefaultPublisherPresence (
 
     override fun hasPresentPublishers(): Boolean = publisherMap.asSequence().firstOrNull { it.value.state == LastKnownPublisherState.PRESENT } != null
 
-    private fun lastOverallStateWasUnknown(): Boolean = lastEmittedStateChange.state == PublisherPresenceState.UNKNOWN
+    override fun lastStateIsUnknown(): Boolean = lastEmittedStateChange.state == PublisherPresenceState.UNKNOWN
 
     /**
      * Checks if publishers have changed since the last event.

@@ -137,6 +137,7 @@ class DefaultPublisherPresenceTest {
         val publisherPresence = DefaultPublisherPresence(mockMessageProcessor, this)
 
         assertValueEmission(publisherPresence, expectedStateChange, this)
+        assertThat(publisherPresence.lastStateIsUnknown()).isTrue()
     }
 
     @Test
@@ -173,6 +174,7 @@ class DefaultPublisherPresenceTest {
         publisherPresence.processPresenceMessages(messages)
 
         assertValueEmission(publisherPresence, expectedStateChange, this)
+        assertThat(publisherPresence.lastStateIsUnknown()).isFalse()
         verify(exactly = 1) {
             mockMessageProcessor.processPresenceMessagesAndGetChanges(messages)
         }
@@ -212,6 +214,7 @@ class DefaultPublisherPresenceTest {
         publisherPresence.processPresenceMessages(messages)
 
         assertValueEmission(publisherPresence, expectedStateChange, this)
+        assertThat(publisherPresence.lastStateIsUnknown()).isFalse()
         verify(exactly = 1) {
             mockMessageProcessor.processPresenceMessagesAndGetChanges(messages)
         }
@@ -267,6 +270,7 @@ class DefaultPublisherPresenceTest {
         publisherPresence.processPresenceMessages(messages)
 
         assertValueEmission(publisherPresence, expectedStateChange, this)
+        assertThat(publisherPresence.lastStateIsUnknown()).isFalse()
         verify(exactly = 1) {
             mockMessageProcessor.processPresenceMessagesAndGetChanges(messages)
         }
@@ -355,8 +359,10 @@ class DefaultPublisherPresenceTest {
         every { mockMessageProcessor.processPresenceMessagesAndGetChanges(secondMessages) } returns secondMessages
         publisherPresence.processPresenceMessages(firstMessages)
         assertValueEmission(publisherPresence, firstExpectedStateChange, this)
+        assertThat(publisherPresence.lastStateIsUnknown()).isFalse()
         publisherPresence.processPresenceMessages(secondMessages)
         assertValueEmission(publisherPresence, secondExpectedStateChange, this)
+        assertThat(publisherPresence.lastStateIsUnknown()).isFalse()
 
         verify(exactly = 1) {
             mockMessageProcessor.processPresenceMessagesAndGetChanges(firstMessages)
@@ -409,8 +415,73 @@ class DefaultPublisherPresenceTest {
         every { mockMessageProcessor.processPresenceMessagesAndGetChanges(secondMessages) } returns secondMessages
         publisherPresence.processPresenceMessages(firstMessages)
         assertValueEmission(publisherPresence, initialStateChange, this)
+        assertThat(publisherPresence.lastStateIsUnknown()).isFalse()
         publisherPresence.processPresenceMessages(secondMessages)
         assertNoValueEmission(publisherPresence, initialStateChange, this)
+        assertThat(publisherPresence.lastStateIsUnknown()).isFalse()
+
+        verify(exactly = 1) {
+            mockMessageProcessor.processPresenceMessagesAndGetChanges(firstMessages)
+            mockMessageProcessor.processPresenceMessagesAndGetChanges(secondMessages)
+        }
+    }
+
+    @Test
+    fun itEmitsAStateChangeIfTransitioningFromUnknownIfNoNewNessages() = runTest {
+        val initialStateChange = PublisherPresenceStateChange(
+            PublisherPresenceState.PRESENT,
+            null,
+            Date().time,
+            listOf(
+                KnownPublisher(
+                    "abc:def",
+                    "def",
+                    "abc",
+                    LastKnownPublisherState.PRESENT,
+                    Date().time
+                )
+            )
+        )
+
+        val publisherPresence = DefaultPublisherPresence(mockMessageProcessor, this)
+        val firstMessages = listOf(
+            PresenceMessage(
+                action = PresenceAction.PRESENT_OR_ENTER,
+                data = mockPresenceData,
+                timestamp = 123,
+                memberKey = "abc:def",
+                connectionId = "abc",
+                clientId = "def",
+                id = "abc:0:2"
+            )
+        )
+
+        val secondMessages = listOf<PresenceMessage>()
+        every { mockMessageProcessor.processPresenceMessagesAndGetChanges(firstMessages) } returns firstMessages
+        every { mockMessageProcessor.processPresenceMessagesAndGetChanges(secondMessages) } returns secondMessages
+        publisherPresence.processPresenceMessages(firstMessages)
+        assertValueEmission(publisherPresence, initialStateChange, this)
+        assertThat(publisherPresence.lastStateIsUnknown()).isFalse()
+        publisherPresence.connectionOffline()
+
+
+        val secondStateChange = PublisherPresenceStateChange(
+            PublisherPresenceState.PRESENT,
+            null,
+            Date().time,
+            listOf(
+                KnownPublisher(
+                    "abc:def",
+                    "def",
+                    "abc",
+                    LastKnownPublisherState.PRESENT,
+                    Date().time
+                )
+            )
+        )
+        publisherPresence.processPresenceMessages(secondMessages)
+        assertValueEmission(publisherPresence, secondStateChange, this)
+        assertThat(publisherPresence.lastStateIsUnknown()).isFalse()
 
         verify(exactly = 1) {
             mockMessageProcessor.processPresenceMessagesAndGetChanges(firstMessages)
@@ -463,6 +534,7 @@ class DefaultPublisherPresenceTest {
         every { mockMessageProcessor.processPresenceMessagesAndGetChanges(secondMessages) } returns secondMessages
         publisherPresence.processPresenceMessages(firstMessages)
         assertValueEmission(publisherPresence, initialStateChange, this)
+        assertThat(publisherPresence.lastStateIsUnknown()).isFalse()
         publisherPresence.connectionOffline()
 
 
@@ -482,6 +554,7 @@ class DefaultPublisherPresenceTest {
         )
         publisherPresence.processPresenceMessages(secondMessages)
         assertValueEmission(publisherPresence, secondStateChange, this)
+        assertThat(publisherPresence.lastStateIsUnknown()).isFalse()
 
         verify(exactly = 1) {
             mockMessageProcessor.processPresenceMessagesAndGetChanges(firstMessages)
@@ -517,6 +590,7 @@ class DefaultPublisherPresenceTest {
         publisherPresence.processPresenceMessages(messages)
 
         assertThat(publisherPresence.hasPresentPublishers()).isTrue()
+        assertThat(publisherPresence.lastStateIsUnknown()).isFalse()
 
         verify(exactly = 1) {
             mockMessageProcessor.processPresenceMessagesAndGetChanges(messages)
@@ -551,6 +625,7 @@ class DefaultPublisherPresenceTest {
         publisherPresence.processPresenceMessages(messages)
 
         assertThat(publisherPresence.hasPresentPublishers()).isFalse()
+        assertThat(publisherPresence.lastStateIsUnknown()).isFalse()
 
         verify(exactly = 1) {
             mockMessageProcessor.processPresenceMessagesAndGetChanges(messages)
@@ -612,12 +687,14 @@ class DefaultPublisherPresenceTest {
         )
         every { mockMessageProcessor.processPresenceMessagesAndGetChanges(messages) } returns messages
         publisherPresence.processPresenceMessages(messages)
+        assertThat(publisherPresence.lastStateIsUnknown()).isFalse()
 
         // Simulate some time passing between the original presence messages and the connection going offline
         delay(5000)
 
         publisherPresence.connectionOffline()
         assertValueEmission(publisherPresence, expectedStateChange, this)
+        assertThat(publisherPresence.lastStateIsUnknown()).isTrue()
 
         verify(exactly = 1) {
             mockMessageProcessor.processPresenceMessagesAndGetChanges(messages)
@@ -679,13 +756,16 @@ class DefaultPublisherPresenceTest {
         )
         every { mockMessageProcessor.processPresenceMessagesAndGetChanges(messages) } returns messages
         publisherPresence.processPresenceMessages(messages)
+        assertThat(publisherPresence.lastStateIsUnknown()).isFalse()
         publisherPresence.connectionOffline()
+        assertThat(publisherPresence.lastStateIsUnknown()).isTrue()
 
         // Simulate some time passing between the original connection offline and now
         delay(5000)
 
         publisherPresence.connectionOffline()
         assertNoValueEmission(publisherPresence, expectedStateChange, this)
+        assertThat(publisherPresence.lastStateIsUnknown()).isTrue()
 
         verify(exactly = 1) {
             mockMessageProcessor.processPresenceMessagesAndGetChanges(messages)
