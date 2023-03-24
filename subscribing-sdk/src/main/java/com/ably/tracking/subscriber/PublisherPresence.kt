@@ -60,21 +60,18 @@ class DefaultPublisherPresence (
      */
     override fun processPresenceMessages(messages: List<PresenceMessage>) {
 
-        // Check if there's any message that we haven't seen before
+        // Check if there's any message that we haven't seen before, update publisher map with new messages
         val newMessages = presenceMessageProcessor.processPresenceMessagesAndGetChanges(messages)
-        if (newMessages.isEmpty()) {
-            return
-        }
-
-        // Update our publisher map
-        newMessages.forEach {
-            publisherMap[it.memberKey] = KnownPublisher(
-                memberKey = it.memberKey,
-                clientId = it.clientId,
-                connectionId = it.connectionId,
-                state = getLastKnownState(it),
-                lastSeen = it.timestamp
-            )
+        if (newMessages.isNotEmpty()) {
+            newMessages.forEach {
+                publisherMap[it.memberKey] = KnownPublisher(
+                    memberKey = it.memberKey,
+                    clientId = it.clientId,
+                    connectionId = it.connectionId,
+                    state = getLastKnownState(it),
+                    lastSeen = it.timestamp
+                )
+            }
         }
 
         /**
