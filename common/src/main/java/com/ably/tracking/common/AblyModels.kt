@@ -30,7 +30,7 @@ data class PresenceMessage(
 
         // RTP2b1
         if (this.isSynthesizedLeave() || compare.isSynthesizedLeave()) {
-            return this.timestamp > compare.timestamp;
+            return this.timestamp > compare.timestamp
         }
 
         // RTP2b2
@@ -46,7 +46,6 @@ data class PresenceMessage(
         val thisIndex = thisIdSplit[2].toIntOrNull()
         val compareMessageSerial = compareIdSplit[1].toIntOrNull()
         val compareMessageIndex = compareIdSplit[2].toIntOrNull()
-
 
         return thisMessageSerial != null && thisIndex != null && compareMessageSerial != null && compareMessageIndex != null &&
             ((thisMessageSerial > compareMessageSerial) || (thisMessageSerial == compareMessageSerial && thisIndex > compareMessageIndex))
