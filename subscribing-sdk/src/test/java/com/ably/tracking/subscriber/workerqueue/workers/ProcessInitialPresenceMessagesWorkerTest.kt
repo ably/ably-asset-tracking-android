@@ -71,5 +71,8 @@ internal class ProcessInitialPresenceMessagesWorkerTest {
         data = PresenceData(ClientTypes.PUBLISHER, null, null),
         timestamp = 123,
         memberKey = "",
+        clientId = "",
+        connectionId = "",
+        id = ""
     )
 }

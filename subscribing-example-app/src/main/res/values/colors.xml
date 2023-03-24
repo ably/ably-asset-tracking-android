@@ -24,6 +24,7 @@
     <color name="asset_information_divider">@color/grey</color>
     <color name="header_title">@color/orange</color>
     <color name="asset_online">@color/green</color>
+    <color name="asset_unknown">@color/yellow</color>
     <color name="asset_offline">@color/grey</color>
     <color name="asset_failed">@color/light_red</color>
 </resources>

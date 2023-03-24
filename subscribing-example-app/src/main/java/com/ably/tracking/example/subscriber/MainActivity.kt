@@ -55,6 +55,8 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import com.ably.tracking.annotations.Experimental
+import com.ably.tracking.subscriber.PublisherPresenceState
+import com.ably.tracking.subscriber.PublisherPresenceStateChange
 import kotlinx.coroutines.Job
 
 // The client ID for the Ably SDK instance.
@@ -208,6 +210,9 @@ class MainActivity : AppCompatActivity() {
                 publisherPresence
                     .onEach { updatePresenceState(it) }
                     .launchIn(scope)
+                publisherPresenceStateChanges
+                    .onEach { updatePresenceStateChanges(it) }
+                    .launchIn(scope)
                 resolutions
                     .onEach {
                         updatePublisherResolutionInfo(it)
@@ -306,14 +311,29 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updatePresenceState(isPresent: Boolean) {
-        val textColorId = if (isPresent) R.color.black else R.color.mid_grey
-        val backgroundColorId = if (isPresent) R.color.asset_online else R.color.asset_offline
-
-        assetPresenceStateTextView.text = if (isPresent) "Presence: Online" else "Presence: Offline"
-        assetPresenceStateTextView.setTextColor(ContextCompat.getColor(this, textColorId))
-        assetPresenceStateTextView.backgroundTintList =
-            ColorStateList.valueOf(ContextCompat.getColor(this, backgroundColorId))
         Timber.e("Publisher presence now $isPresent")
+    }
+
+    private fun updatePresenceStateChanges(stateChange: PublisherPresenceStateChange) {
+        val textColourId = when (stateChange.state) {
+            PublisherPresenceState.UNKNOWN, PublisherPresenceState.PRESENT -> R.color.black
+            PublisherPresenceState.ABSENT -> R.color.mid_grey
+        }
+        val backgroundColourId = when (stateChange.state) {
+            PublisherPresenceState.UNKNOWN -> R.color.asset_unknown
+            PublisherPresenceState.PRESENT -> R.color.asset_online
+            PublisherPresenceState.ABSENT -> R.color.asset_offline
+        }
+
+        assetPresenceStateTextView.text = when (stateChange.state) {
+            PublisherPresenceState.UNKNOWN -> "Presence: Unknown"
+            PublisherPresenceState.PRESENT -> "Presence: Present"
+            PublisherPresenceState.ABSENT -> "Presence: Absent"
+        }
+        assetPresenceStateTextView.setTextColor(ContextCompat.getColor(this, textColourId))
+        assetPresenceStateTextView.backgroundTintList =
+            ColorStateList.valueOf(ContextCompat.getColor(this, backgroundColourId))
+        Timber.e("Extended publisher presence now $stateChange")
     }
 
     private fun stopSubscribing() {

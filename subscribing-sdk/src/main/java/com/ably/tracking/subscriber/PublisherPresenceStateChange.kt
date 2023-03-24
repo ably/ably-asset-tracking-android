@@ -25,15 +25,33 @@ enum class LastKnownPublisherState {
 }
 
 /**
+ * An enumeration of the reasons why we might not know why the publisher is present or not.
+ *
+ * As per codes defined in https://github.com/ably/ably-asset-tracking-common/blob/main/specification/README.md
+ */
+enum class PublisherStateUnknownReasons(val value: Int) {
+    SUBSCRIBER_NEVER_ONLINE(100004),
+    SUBSCRIBER_NOT_ONLINE(100005);
+
+    companion object {
+        private val values = values()
+        fun getByValue(value: Int?): PublisherStateUnknownReasons? = values.firstOrNull {
+            it.value == value
+        }
+    }
+}
+
+/**
  * Represents a publisher that AAT knows (via presence history of presence events)
  * has been present at some point. This class can be used to identify previous publishers
  * and when they might have been present.
  */
 data class KnownPublisher(
+    val memberKey: String,
     val clientId: String,
     val connectionId: String,
-    val state: LastKnownPublisherState,
-    val lastSeen: Long
+    var state: LastKnownPublisherState,
+    var lastSeen: Long
 )
 
 data class PublisherPresenceStateChange(
