@@ -25,20 +25,17 @@ class DefaultPublisherPresenceMessageProcessor : PublisherPresenceMessageProcess
         val newMessages = mutableMapOf<String, PresenceMessage>()
 
         // If the message is about a publisher and is newer than the last one we have for that publisher, process it
-        for (presenceMessage: PresenceMessage in messages) {
-            if (presenceMessage.data.type != ClientTypes.PUBLISHER) {
-                continue
+        messages.filter { it.data.type == ClientTypes.PUBLISHER }
+            .forEach { presenceMessage ->
+                if (presenceMessage.isNewerThanExistingMember()) {
+                    memberMap[presenceMessage.memberKey] = presenceMessage
+                    newMessages[presenceMessage.memberKey] = presenceMessage
+                }
             }
-
-            if (
-                !memberMap.contains(presenceMessage.memberKey) ||
-                presenceMessage.isNewerThan(memberMap[presenceMessage.memberKey]!!)
-            ) {
-                memberMap[presenceMessage.memberKey] = presenceMessage
-                newMessages[presenceMessage.memberKey] = presenceMessage
-            }
-        }
 
         return newMessages.toList().map { it.second }
     }
+
+    private fun PresenceMessage.isNewerThanExistingMember(): Boolean =
+        memberMap[memberKey]?.let { isNewerThan(it) } ?: true
 }
