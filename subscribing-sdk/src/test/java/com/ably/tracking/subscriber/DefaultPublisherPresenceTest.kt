@@ -79,9 +79,9 @@ class DefaultPublisherPresenceTest {
          */
         private fun stateChangeMatchesExpected(expected: PublisherPresenceStateChange, actual: PublisherPresenceStateChange): Boolean =
             expected.state == actual.state &&
-            expected.reason == actual.reason &&
-            abs(expected.timestamp - actual.timestamp) < 5000 &&
-            knownPublishersMatches(expected, actual)
+                expected.reason == actual.reason &&
+                abs(expected.timestamp - actual.timestamp) < 5000 &&
+                knownPublishersMatches(expected, actual)
 
         /**
          * Wait for a given value to be emitted on the StateFlow.
@@ -93,7 +93,6 @@ class DefaultPublisherPresenceTest {
                     expectedValueEmitted.set(true)
                 }
             }.launchIn(scope)
-
 
             val startTime = Date().time
             while (!expectedValueEmitted.get() && Date().time < startTime + 10000) {
@@ -114,7 +113,6 @@ class DefaultPublisherPresenceTest {
                 }
             }.launchIn(scope)
 
-
             val startTime = Date().time
             while (Date().time < startTime + 10000) {
                 delay(500)
@@ -126,13 +124,18 @@ class DefaultPublisherPresenceTest {
 
     @Test
     fun itEmitsADefaultValueOntoTheStateflow() = runTest {
-        val expectedStateChange = PublisherPresenceStateChange(PublisherPresenceState.UNKNOWN, ErrorInformation(
-            code = PublisherStateUnknownReasons.SUBSCRIBER_NEVER_ONLINE.value,
-            statusCode = 0,
-            message = "Subscriber has never been online",
-            href = null,
-            cause = null
-        ), Date().time, listOf())
+        val expectedStateChange = PublisherPresenceStateChange(
+            PublisherPresenceState.UNKNOWN,
+            ErrorInformation(
+                code = PublisherStateUnknownReasons.SUBSCRIBER_NEVER_ONLINE.value,
+                statusCode = 0,
+                message = "Subscriber has never been online",
+                href = null,
+                cause = null
+            ),
+            Date().time,
+            listOf()
+        )
 
         val publisherPresence = DefaultPublisherPresence(mockMessageProcessor, this)
 
@@ -464,7 +467,6 @@ class DefaultPublisherPresenceTest {
         assertThat(publisherPresence.lastStateIsUnknown()).isFalse()
         publisherPresence.connectionOffline()
 
-
         val secondStateChange = PublisherPresenceStateChange(
             PublisherPresenceState.PRESENT,
             null,
@@ -536,7 +538,6 @@ class DefaultPublisherPresenceTest {
         assertValueEmission(publisherPresence, initialStateChange, this)
         assertThat(publisherPresence.lastStateIsUnknown()).isFalse()
         publisherPresence.connectionOffline()
-
 
         val secondStateChange = PublisherPresenceStateChange(
             PublisherPresenceState.PRESENT,

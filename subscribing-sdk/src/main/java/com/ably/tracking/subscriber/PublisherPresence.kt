@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import java.util.*
+import java.util.Date
 
 interface PublisherPresence {
     val stateChanges: StateFlow<PublisherPresenceStateChange>
@@ -35,17 +35,22 @@ interface PublisherPresence {
     fun processPresenceMessages(messages: List<PresenceMessage>)
 }
 
-class DefaultPublisherPresence (
+class DefaultPublisherPresence(
     private val presenceMessageProcessor: PublisherPresenceMessageProcessor,
     private val scope: CoroutineScope
 ) : PublisherPresence {
-    private var lastEmittedStateChange: PublisherPresenceStateChange = PublisherPresenceStateChange(PublisherPresenceState.UNKNOWN, ErrorInformation(
-        code = PublisherStateUnknownReasons.SUBSCRIBER_NEVER_ONLINE.value,
-        statusCode = 0,
-        message = "Subscriber has never been online",
-        href = null,
-        cause = null
-    ), Date().time, listOf())
+    private var lastEmittedStateChange: PublisherPresenceStateChange = PublisherPresenceStateChange(
+        PublisherPresenceState.UNKNOWN,
+        ErrorInformation(
+            code = PublisherStateUnknownReasons.SUBSCRIBER_NEVER_ONLINE.value,
+            statusCode = 0,
+            message = "Subscriber has never been online",
+            href = null,
+            cause = null
+        ),
+        Date().time,
+        listOf()
+    )
 
     private val publisherMap: MutableMap<String, KnownPublisher> = mutableMapOf()
 
@@ -141,7 +146,9 @@ class DefaultPublisherPresence (
                     href = null,
                     cause = null
                 ),
-                Date().time, publisherMapAsList())
+                Date().time,
+                publisherMapAsList()
+            )
         )
     }
 
@@ -170,7 +177,7 @@ class DefaultPublisherPresence (
         else -> LastKnownPublisherState.PRESENT
     }
 
-    private fun publisherMapAsList(): List<KnownPublisher> = publisherMap.toList().map{ it.second }
+    private fun publisherMapAsList(): List<KnownPublisher> = publisherMap.toList().map { it.second }
 
     private fun emitStateChange(stateChange: PublisherPresenceStateChange) {
         lastEmittedStateChange = stateChange

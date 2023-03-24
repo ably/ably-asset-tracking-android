@@ -14,7 +14,7 @@ interface PublisherPresenceMessageProcessor {
     fun processPresenceMessagesAndGetChanges(messages: List<PresenceMessage>): List<PresenceMessage>
 }
 
-class DefaultPublisherPresenceMessageProcessor: PublisherPresenceMessageProcessor {
+class DefaultPublisherPresenceMessageProcessor : PublisherPresenceMessageProcessor {
 
     // Stores the last applicable presence message associated with this member
     private val memberMap: MutableMap<String, PresenceMessage> = mutableMapOf()

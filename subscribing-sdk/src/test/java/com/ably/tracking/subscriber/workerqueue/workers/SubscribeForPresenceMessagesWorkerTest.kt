@@ -146,12 +146,12 @@ internal class SubscribeForPresenceMessagesWorkerTest {
     }
 
     private fun anyPresenceMessage() = PresenceMessage(
-            PresenceAction.PRESENT_OR_ENTER,
-            PresenceData(ClientTypes.PUBLISHER),
-            123,
-            "any-member-key",
-            "any-client-id",
-            "any-connection-id",
-            "any-id"
-        )
+        PresenceAction.PRESENT_OR_ENTER,
+        PresenceData(ClientTypes.PUBLISHER),
+        123,
+        "any-member-key",
+        "any-client-id",
+        "any-connection-id",
+        "any-id"
+    )
 }

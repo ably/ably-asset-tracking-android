@@ -510,8 +510,7 @@ class PresenceMessageNewnessTest(val testName: String, val firstMessage: Presenc
     }
 
     @Test
-    fun presenceMessagesCanBeComparedForNewness()
-    {
+    fun presenceMessagesCanBeComparedForNewness() {
         assertThat(firstMessage.isNewerThan(secondMessage)).isEqualTo(shouldBeNewer)
     }
 }
