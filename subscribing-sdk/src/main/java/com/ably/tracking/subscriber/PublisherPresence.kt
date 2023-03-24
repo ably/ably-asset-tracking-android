@@ -97,10 +97,7 @@ class DefaultPublisherPresence(
         val nowTime = Date().time
         emitStateChange(
             PublisherPresenceStateChange(
-                when (hasPresentPublishers()) {
-                    true -> PublisherPresenceState.PRESENT
-                    else -> PublisherPresenceState.ABSENT
-                },
+                if (hasPresentPublishers()) PublisherPresenceState.PRESENT else PublisherPresenceState.ABSENT,
                 null,
                 nowTime,
                 publisherMapAsList().map {
