@@ -162,7 +162,7 @@ class DefaultPublisherPresence(
         else -> LastKnownPublisherState.PRESENT
     }
 
-    private fun publisherMapAsList(): List<KnownPublisher> = publisherMap.toList().map { it.second }
+    private fun publisherMapAsList(): List<KnownPublisher> = publisherMap.values.toList()
 
     private fun emitStateChange(stateChange: PublisherPresenceStateChange) {
         lastEmittedStateChange = stateChange
