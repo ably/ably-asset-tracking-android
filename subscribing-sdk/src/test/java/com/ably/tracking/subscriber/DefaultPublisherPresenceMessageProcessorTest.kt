@@ -121,6 +121,6 @@ class DefaultPublisherPresenceMessageProcessorTest {
         memberKey = memberKey,
         connectionId = memberKey.split(':', limit = 2)[0],
         clientId = memberKey.split(':', limit = 2)[1],
-        id = "abc:0:${messageIndex}"
+        id = "abc:0:$messageIndex"
     )
 }
