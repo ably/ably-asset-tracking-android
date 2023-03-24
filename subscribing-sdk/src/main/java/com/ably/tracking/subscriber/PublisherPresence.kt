@@ -92,23 +92,16 @@ class DefaultPublisherPresence(
             return
         }
 
-        // Emit an event
-        // If the individual publishers are present, then their lastSeen time is now.
-        val nowTime = Date().time
+        // Update present publishers to "seen now" and emit event
+        val now = Date().time
+        updatePresentPublishersLastSeenTo(now)
+
         emitStateChange(
             PublisherPresenceStateChange(
                 if (hasPresentPublishers()) PublisherPresenceState.PRESENT else PublisherPresenceState.ABSENT,
                 null,
-                nowTime,
-                publisherMapAsList().map {
-                    if (it.state == LastKnownPublisherState.PRESENT) {
-                        it.apply {
-                            this.lastSeen = nowTime
-                        }
-                    }
-
-                    it
-                }
+                now,
+                publisherMapAsList()
             )
         )
     }
@@ -125,13 +118,8 @@ class DefaultPublisherPresence(
             return
         }
 
-        publisherMap.forEach {
-            it.value.apply {
-                if (this.state == LastKnownPublisherState.PRESENT) {
-                    this.lastSeen = Date().time
-                }
-            }
-        }
+        val now = Date().time
+        updatePresentPublishersLastSeenTo(now)
 
         emitStateChange(
             PublisherPresenceStateChange(
@@ -143,7 +131,7 @@ class DefaultPublisherPresence(
                     href = null,
                     cause = null
                 ),
-                Date().time,
+                now,
                 publisherMapAsList()
             )
         )
@@ -180,6 +168,16 @@ class DefaultPublisherPresence(
         lastEmittedStateChange = stateChange
         scope.launch {
             _stateChanges.emit(stateChange)
+        }
+    }
+
+    private fun updatePresentPublishersLastSeenTo(timestamp: Long) {
+        publisherMap.forEach {
+            it.value.apply {
+                if (this.state == LastKnownPublisherState.PRESENT) {
+                    this.lastSeen = timestamp
+                }
+            }
         }
     }
 }
