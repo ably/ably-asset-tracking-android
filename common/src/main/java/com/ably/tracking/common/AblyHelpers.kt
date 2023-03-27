@@ -163,6 +163,9 @@ fun io.ably.lib.types.PresenceMessage.toTracking(gson: Gson): PresenceMessage? =
             presenceData,
             this.timestamp,
             this.memberKey(),
+            this.clientId,
+            this.connectionId,
+            this.id
         )
     }
 

@@ -47,10 +47,11 @@ enum class PublisherStateUnknownReasons(val value: Int) {
  * and when they might have been present.
  */
 data class KnownPublisher(
+    val memberKey: String,
     val clientId: String,
     val connectionId: String,
-    val state: LastKnownPublisherState,
-    val lastSeen: Long
+    var state: LastKnownPublisherState,
+    var lastSeen: Long
 )
 
 data class PublisherPresenceStateChange(

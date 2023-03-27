@@ -1,9 +1,12 @@
 package com.ably.tracking.common
 
 import com.ably.tracking.Accuracy
+import com.ably.tracking.Resolution
 import com.ably.tracking.common.message.PresenceDataMessage
+import com.google.common.truth.Truth
 import com.google.gson.Gson
 import com.google.gson.JsonObject
+import io.ably.lib.types.ChannelOptions
 import io.ably.lib.types.PresenceMessage
 import org.junit.Assert
 import org.junit.Test
@@ -43,6 +46,8 @@ class PresenceDataTests {
         // given
         val presenceData = gson.toJson(PresenceDataMessage("abc", null, null))
         val presenceMessage = PresenceMessage(PresenceMessage.Action.enter, clientId, presenceData)
+        presenceMessage.connectionId = "TEST2"
+        presenceMessage.id = "TEST3"
 
         // when
         val parsedMessage = presenceMessage.toTracking(gson)
@@ -57,28 +62,28 @@ class PresenceDataTests {
 
     @Test
     fun `parse presence message if presence data is in the correct JSON object format`() {
-        // given
-        val resolutionDataJson = JsonObject().apply {
-            addProperty("accuracy", "MAXIMUM")
-            addProperty("desiredInterval", 500)
-            addProperty("minimumDisplacement", 2)
-        }
-        val presenceDataJson = JsonObject().apply {
-            addProperty("type", "SUBSCRIBER")
-            add("resolution", resolutionDataJson)
-        }
-        val presenceMessage = PresenceMessage(PresenceMessage.Action.enter, clientId, presenceDataJson)
+        val incomingPresenceMessage = """
+            {
+                "id": "6lxmVGvq-4:1:0",
+                "clientId": "AatNetworkConnectivityTests_Subscriber",
+                "connectionId": "6lxmVGvq-4",
+                "timestamp": 1678439051717,
+                "data": "{\"resolution\":{\"accuracy\":\"BALANCED\",\"desiredInterval\":1,\"minimumDisplacement\":0.0},\"type\":\"SUBSCRIBER\"}", "action": 4
+            }
+        """.trimIndent()
+        val ablyJavaMessage = PresenceMessage.fromEncoded(incomingPresenceMessage, ChannelOptions())
 
-        // when
-        val parsedMessage = presenceMessage.toTracking(gson)
+        val trackingMessage: com.ably.tracking.common.PresenceMessage = ablyJavaMessage.toTracking(gson)!!
 
-        // then
-        Assert.assertNotNull(parsedMessage)
-        Assert.assertNotNull(parsedMessage?.data)
-        Assert.assertEquals(ClientTypes.SUBSCRIBER, parsedMessage?.data?.type)
-        Assert.assertEquals(Accuracy.MAXIMUM, parsedMessage?.data?.resolution?.accuracy)
-        Assert.assertEquals(500L, parsedMessage?.data?.resolution?.desiredInterval)
-        Assert.assertEquals(2.0, parsedMessage?.data?.resolution?.minimumDisplacement)
+        Truth.assertThat(trackingMessage.timestamp).isEqualTo(1678439051717)
+        Truth.assertThat(trackingMessage.id).isEqualTo("6lxmVGvq-4:1:0")
+        Truth.assertThat(trackingMessage.memberKey).isEqualTo("6lxmVGvq-4:AatNetworkConnectivityTests_Subscriber")
+        Truth.assertThat(trackingMessage.connectionId).isEqualTo("6lxmVGvq-4")
+        Truth.assertThat(trackingMessage.clientId).isEqualTo("AatNetworkConnectivityTests_Subscriber")
+        Truth.assertThat(trackingMessage.action).isEqualTo(PresenceAction.UPDATE)
+        Truth.assertThat(trackingMessage.data.type).isEqualTo(ClientTypes.SUBSCRIBER)
+        Truth.assertThat(trackingMessage.data.resolution)
+            .isEqualTo(Resolution(Accuracy.BALANCED, 1, 0.0))
     }
 
     @Test
