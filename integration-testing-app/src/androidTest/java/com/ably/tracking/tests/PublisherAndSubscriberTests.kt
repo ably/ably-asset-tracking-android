@@ -9,6 +9,7 @@ import com.ably.tracking.test.android.common.BooleanExpectation
 import com.ably.tracking.test.android.common.UnitExpectation
 import com.ably.tracking.test.android.common.testLogD
 import com.google.common.truth.Truth.assertThat
+import java.util.UUID
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -22,7 +23,6 @@ import kotlinx.coroutines.withTimeout
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.util.*
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
@@ -71,7 +71,6 @@ class PublisherAndSubscriberTests {
             trackExpectation.fulfill(false)
         }
 
-
         // await
         dataEndedExpectation.await()
 
@@ -105,7 +104,6 @@ class PublisherAndSubscriberTests {
                 delay(100)
             }
         }
-
 
         Assert.assertTrue(
             "Subscriber should receive at least half the number of events published (received: ${receivedLocations.size}, published: ${publishedLocations.size})",
@@ -149,7 +147,6 @@ class PublisherAndSubscriberTests {
 
         // start publishing location updates
         publisher.track(Trackable(trackableId))
-
 
         // await for at least one received location update
         subscriberReceivedLocationUpdateExpectation.await()

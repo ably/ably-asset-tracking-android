@@ -89,10 +89,10 @@ suspend fun Subscriber.awaitOnline() =
     trackableStates.first { it is TrackableState.Online }
 
 private fun getLocationData(context: Context): LocationHistoryData {
-    val historyString = context.assets.open("location_history_small.txt").use { String(it.readBytes()) }
+    val historyString =
+        context.assets.open("location_history_small.txt").use { String(it.readBytes()) }
     return Gson().fromJson(historyString, LocationHistoryData::class.java)
 }
-
 
 class FakePublisher(private val trackableId: String) {
 
@@ -109,7 +109,7 @@ class FakePublisher(private val trackableId: String) {
         channel.presence.enterPresence()
     }
 
-    fun publish(name:String, message: String) {
+    fun publish(name: String, message: String) {
         channel.publish(name, message)
     }
 
@@ -126,14 +126,17 @@ class FakePublisher(private val trackableId: String) {
     private suspend fun Presence.enterPresence() = suspendCoroutine<Unit> {
         val presenceData = PresenceData(ClientTypes.PUBLISHER)
         val dataJson = Gson().toJson(presenceData.toMessage())
-        enter(dataJson, object : CompletionListener {
-            override fun onSuccess() {
-                it.resume(Unit)
-            }
+        enter(
+            dataJson,
+            object : CompletionListener {
+                override fun onSuccess() {
+                    it.resume(Unit)
+                }
 
-            override fun onError(reason: ErrorInfo?) {
-                it.resumeWithException(RuntimeException(reason.toString()))
+                override fun onError(reason: ErrorInfo?) {
+                    it.resumeWithException(RuntimeException(reason.toString()))
+                }
             }
-        })
+        )
     }
 }
