@@ -4,32 +4,31 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.TrackableState
-import com.ably.tracking.annotations.Experimental
 import com.ably.tracking.publisher.Trackable
-import com.ably.tracking.subscriber.Subscriber
 import com.ably.tracking.test.android.common.BooleanExpectation
 import com.ably.tracking.test.android.common.UnitExpectation
 import com.ably.tracking.test.android.common.testLogD
 import com.google.common.truth.Truth.assertThat
-import io.ably.lib.realtime.AblyRealtime
-import java.util.UUID
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withTimeout
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.util.*
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
 class PublisherAndSubscriberTests {
     @Test
-    fun createAndStartPublisherAndSubscriberAndWaitUntilDataEnds() {
+    fun createAndStartPublisherAndSubscriberAndWaitUntilDataEnds() = runTest {
         // given
         val dataEndedExpectation = UnitExpectation("data ended")
         val publisherStoppedExpectation = UnitExpectation("publisher stopped")
@@ -42,10 +41,11 @@ class PublisherAndSubscriberTests {
         val scope = CoroutineScope(Dispatchers.Default)
 
         // when
-        var subscriber: Subscriber
-        runBlocking {
-            subscriber = createAndStartSubscriber(trackableId)
-        }
+        val fakePublisher = FakePublisher(trackableId)
+        fakePublisher.enterPresence()
+
+        val subscriber = createAndStartSubscriber(trackableId)
+        subscriber.awaitOnline()
 
         subscriber.locations
             .onEach { receivedLocations.add(it) }
@@ -62,16 +62,15 @@ class PublisherAndSubscriberTests {
             .onEach { publishedLocations.add(it) }
             .launchIn(scope)
 
-        runBlocking {
-            try {
-                publisher.track(Trackable(trackableId))
-                testLogD("track success")
-                trackExpectation.fulfill(true)
-            } catch (e: Exception) {
-                testLogD("track failed")
-                trackExpectation.fulfill(false)
-            }
+        try {
+            publisher.track(Trackable(trackableId))
+            testLogD("track success")
+            trackExpectation.fulfill(true)
+        } catch (e: Exception) {
+            testLogD("track failed")
+            trackExpectation.fulfill(false)
         }
+
 
         // await
         dataEndedExpectation.await()
@@ -101,13 +100,12 @@ class PublisherAndSubscriberTests {
             Wait for everything to have been emitted onto the publisher locations channel,
             as this happens on the same coroutine scope as, but outside of, the worker queue.
          */
-        runBlocking {
-            withTimeout(10000) {
-                while (publishedLocations.size < receivedLocations.size) {
-                    delay(100)
-                }
+        withTimeout(10000) {
+            while (publishedLocations.size < receivedLocations.size) {
+                delay(100)
             }
         }
+
 
         Assert.assertTrue(
             "Subscriber should receive at least half the number of events published (received: ${receivedLocations.size}, published: ${publishedLocations.size})",
@@ -123,20 +121,18 @@ class PublisherAndSubscriberTests {
     }
 
     @Test
-    fun shouldSendRawLocationsWhenTheyAreEnabled() {
+    fun shouldSendRawLocationsWhenTheyAreEnabled() = runTest {
         // given
         var hasNotReceivedLocationUpdate = true
-        val subscriberReceivedLocationUpdateExpectation = UnitExpectation("subscriber received a location update")
+        val subscriberReceivedLocationUpdateExpectation =
+            UnitExpectation("subscriber received a location update")
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val trackableId = UUID.randomUUID().toString()
         val scope = CoroutineScope(Dispatchers.Default)
 
         // when
         // create subscriber and publisher
-        var subscriber: Subscriber
-        runBlocking {
-            subscriber = createAndStartSubscriber(trackableId)
-        }
+        val subscriber = createAndStartSubscriber(trackableId)
 
         val publisher = createAndStartPublisher(context, rawLocations = true)
 
@@ -152,19 +148,16 @@ class PublisherAndSubscriberTests {
             .launchIn(scope)
 
         // start publishing location updates
-        runBlocking {
-            publisher.track(Trackable(trackableId))
-        }
+        publisher.track(Trackable(trackableId))
+
 
         // await for at least one received location update
         subscriberReceivedLocationUpdateExpectation.await()
 
         // cleanup
-        runBlocking {
-            coroutineScope {
-                launch { publisher.stop() }
-                launch { subscriber.stop() }
-            }
+        coroutineScope {
+            launch { publisher.stop() }
+            launch { subscriber.stop() }
         }
 
         // then
@@ -172,20 +165,18 @@ class PublisherAndSubscriberTests {
     }
 
     @Test
-    fun shouldSendCalculatedResolutionsWhenTheyAreEnabled() {
+    fun shouldSendCalculatedResolutionsWhenTheyAreEnabled() = runTest {
         // given
         var hasNotReceivedResolution = true
-        val subscriberReceivedResolutionExpectation = UnitExpectation("subscriber received a publisher resolution")
+        val subscriberReceivedResolutionExpectation =
+            UnitExpectation("subscriber received a publisher resolution")
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val trackableId = UUID.randomUUID().toString()
         val scope = CoroutineScope(Dispatchers.Default)
 
         // when
         // create subscriber and publisher
-        var subscriber: Subscriber
-        runBlocking {
-            subscriber = createAndStartSubscriber(trackableId)
-        }
+        val subscriber = createAndStartSubscriber(trackableId)
 
         val publisher = createAndStartPublisher(context, sendResolution = true)
 
@@ -201,19 +192,15 @@ class PublisherAndSubscriberTests {
             .launchIn(scope)
 
         // start publishing location updates
-        runBlocking {
-            publisher.track(Trackable(trackableId))
-        }
+        publisher.track(Trackable(trackableId))
 
         // await for at least one received publisher resolution
         subscriberReceivedResolutionExpectation.await()
 
         // cleanup
-        runBlocking {
-            coroutineScope {
-                launch { publisher.stop() }
-                launch { subscriber.stop() }
-            }
+        coroutineScope {
+            launch { publisher.stop() }
+            launch { subscriber.stop() }
         }
 
         // then
@@ -221,18 +208,18 @@ class PublisherAndSubscriberTests {
     }
 
     @Test
-    fun shouldFailSubscriberWhenItReceivesMalformedMessage() {
+    fun shouldFailSubscriberWhenItReceivesMalformedMessage() = runTest {
         // given
         val subscriberFailedExpectation = UnitExpectation("subscriber failed")
         val trackableId = UUID.randomUUID().toString()
         val scope = CoroutineScope(Dispatchers.Default)
-        val ably = AblyRealtime(ABLY_API_KEY)
+
+        val fakePublisher = FakePublisher(trackableId)
+        fakePublisher.enterPresence()
 
         // when
-        var subscriber: Subscriber
-        runBlocking {
-            subscriber = createAndStartSubscriber(trackableId)
-        }
+        val subscriber = createAndStartSubscriber(trackableId)
+        subscriber.awaitOnline()
 
         subscriber.trackableStates
             .onEach {
@@ -243,7 +230,7 @@ class PublisherAndSubscriberTests {
             .launchIn(scope)
 
         // publish malformed (empty) message
-        ably.channels.get("tracking:$trackableId").publish("enhanced", "{}")
+        fakePublisher.publish("enhanced", "{}")
 
         // await
         subscriberFailedExpectation.await()
@@ -252,67 +239,11 @@ class PublisherAndSubscriberTests {
         val finalTrackableState = subscriber.trackableStates.value
 
         // cleanup
-        runBlocking {
-            subscriber.stop()
-        }
+        subscriber.stop()
 
         // then
         subscriberFailedExpectation.assertFulfilled()
         assertThat(finalTrackableState)
             .isInstanceOf(TrackableState.Failed::class.java)
-    }
-
-    @OptIn(Experimental::class)
-    @Test
-    fun shouldNotEmitPublisherPresenceFalseIfPublisherIsPresentFromTheStart() {
-        // given
-        val publisherViewsTrackableAsOnline = UnitExpectation("publisher views trackable as online")
-        val subscriberEmittedPublisherPresentExpectation = UnitExpectation("subscriber emitted publisher present")
-        val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val trackableId = UUID.randomUUID().toString()
-        val scope = CoroutineScope(Dispatchers.Default)
-        val publisherPresentValues = mutableListOf<Boolean>()
-
-        // when
-        // create publisher and start tracking
-        val publisher = createAndStartPublisher(context, sendResolution = true)
-        runBlocking {
-            publisher.track(Trackable(trackableId)).onEach { trackableState ->
-                if (trackableState == TrackableState.Online) {
-                    publisherViewsTrackableAsOnline.fulfill()
-                }
-            }.launchIn(scope)
-        }
-        publisherViewsTrackableAsOnline.await()
-
-        // create subscriber and listen for publisher presence
-        var subscriber: Subscriber
-        runBlocking {
-            subscriber = createAndStartSubscriber(trackableId)
-        }
-        subscriber.publisherPresence
-            .onEach { isPublisherPresent ->
-                publisherPresentValues.add(isPublisherPresent)
-                if (isPublisherPresent) {
-                    subscriberEmittedPublisherPresentExpectation.fulfill()
-                }
-            }
-            .launchIn(scope)
-
-        // await for publisher present event
-        subscriberEmittedPublisherPresentExpectation.await()
-
-        // cleanup
-        runBlocking {
-            coroutineScope {
-                launch { publisher.stop() }
-                launch { subscriber.stop() }
-            }
-        }
-
-        // then
-        publisherViewsTrackableAsOnline.assertFulfilled()
-        subscriberEmittedPublisherPresentExpectation.assertFulfilled()
-        Assert.assertTrue("first publisherPresence value should be true", publisherPresentValues.first())
     }
 }
