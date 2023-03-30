@@ -52,7 +52,7 @@ internal class ChangeResolutionWorker(
     private suspend fun waitAndUpdatePresence(presenceData: PresenceData): Result<Unit> {
         val waitResult = ably.waitForChannelToAttach(trackableId)
         return if (waitResult.isSuccess) {
-            //TODO remove this delay once ably-java issue is fixed https://github.com/ably/ably-java/issues/930
+            // TODO remove this delay once ably-java issue is fixed https://github.com/ably/ably-java/issues/930
             delay(100)
             ably.updatePresenceData(trackableId, presenceData)
         } else {
