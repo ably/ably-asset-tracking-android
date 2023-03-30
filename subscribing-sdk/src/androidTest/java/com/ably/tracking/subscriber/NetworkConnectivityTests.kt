@@ -133,20 +133,20 @@ class NetworkConnectivityTests(private val testFault: Fault) {
                 PresenceData(ClientTypes.PUBLISHER, publisherResolution, false)
             )
 
-            defaultAbly.sendEnhancedLocationSuspending(
-                trackableId,
-                EnhancedLocationUpdate(
-                    locationUpdate,
-                    arrayListOf(),
-                    arrayListOf(),
-                    LocationUpdateType.ACTUAL
-                )
-            )
-            testLogD("Sent enhanced location update on Ably channel")
-
             // While we're offline-ish, change the subscribers preferred resolutions
             subscriber.sendResolutionPreference(subscriberResolution)
         }.close()
+
+        defaultAbly.sendEnhancedLocationSuspending(
+            trackableId,
+            EnhancedLocationUpdate(
+                locationUpdate,
+                arrayListOf(),
+                arrayListOf(),
+                LocationUpdateType.ACTUAL
+            )
+        )
+        testLogD("Sent enhanced location update on Ably channel")
 
         // Resolve the fault and make sure everything comes through
         SubscriberMonitor.forResolvedFault(
