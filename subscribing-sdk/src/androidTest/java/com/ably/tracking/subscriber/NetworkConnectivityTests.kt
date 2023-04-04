@@ -32,9 +32,10 @@ import com.ably.tracking.test.android.common.PUBLISHER_CLIENT_ID
 import com.ably.tracking.test.android.common.SUBSCRIBER_CLIENT_ID
 import com.ably.tracking.test.android.common.testLogD
 import com.ably.tracking.test.android.common.UnitExpectation
+import com.ably.tracking.test.android.common.awaitSubscriberPresent
+import com.ably.tracking.test.android.common.subscriberIsPresent
 import io.ably.lib.realtime.AblyRealtime
 import io.ably.lib.types.ClientOptions
-import io.ably.lib.types.PresenceMessage
 import io.ably.lib.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -172,6 +173,7 @@ class NetworkConnectivityTests(private val testFault: Fault) {
     @Test
     fun faultBeforeStoppingSubscriber() = withResources {
         val subscriber = getSubscriber()
+        awaitSubscriberPresent()
         val defaultAbly = createAndStartPublishingAblyConnection()
 
         // Assert the subscriber goes online
@@ -239,6 +241,7 @@ class NetworkConnectivityTests(private val testFault: Fault) {
     @Test
     fun faultWhilstTracking() = withResources {
         val subscriber = getSubscriber()
+        awaitSubscriberPresent()
 
         // Bring a publisher online and send a location update
         val defaultAbly = createAndStartPublishingAblyConnection()
@@ -545,6 +548,14 @@ class NetworkConnectivityTests(private val testFault: Fault) {
             ablyPublishing = defaultAbly
 
             return ablyPublishing!!
+        }
+
+        suspend fun awaitSubscriberPresent() {
+            try {
+                AblyRealtime(CLIENT_OPTS_NO_PROXY).awaitSubscriberPresent(trackableId, 10_000)
+            } catch (exception: TimeoutCancellationException) {
+                testLogD("Awaiting for subscriber presence failed after 10 seconds")
+            }
         }
 
         fun tearDown() {
@@ -923,7 +934,8 @@ class SubscriberMonitor(
      * and so we cannot rely on the first state we collect being the "newest" one.
      */
     private suspend fun listenForExpectedPublisherResolution(): Resolution {
-        val lastResolution = subscriber.resolutions.first { resolution -> resolution == expectedPublisherResolution }
+        val lastResolution =
+            subscriber.resolutions.first { resolution -> resolution == expectedPublisherResolution }
 
         testLogD("lastPublisherResolution: $lastResolution")
         return lastResolution
@@ -983,29 +995,15 @@ class SubscriberMonitor(
             return
         }
 
-        var subscriberPresent = subscriberIsPresent()
+        var subscriberPresent = ably.subscriberIsPresent(trackableId)
         while (subscriberPresent != expectedSubscriberPresence) {
             testLogD("SubscriberMonitor: $label - (WAITING) subscriberPresent = $subscriberPresent")
-            delay(1000)
-            subscriberPresent = subscriberIsPresent()
+            delay(200)
+            subscriberPresent = ably.subscriberIsPresent(trackableId)
         }
 
         testLogD("SubscriberMonitor: $label - (PASS) subscriberPresent = $subscriberPresent")
     }
-
-    /**
-     * Perform a request to the Ably API to get a snapshot of the current presence for the channel,
-     * and check to see if the Subscriber's clientId is present in that snapshot.
-     */
-    private fun subscriberIsPresent() =
-        ably.channels
-            .get("tracking:$trackableId")
-            ?.presence
-            ?.get(true)
-            ?.find {
-                it.clientId == SUBSCRIBER_CLIENT_ID &&
-                    it.action == PresenceMessage.Action.present
-            } != null
 
     /**
      * Throw an assertion error if expectations about published location updates have not
@@ -1037,7 +1035,8 @@ class SubscriberMonitor(
      * cannot rely on the first thing we find being the "newest" state and therefore must wait for a bit.
      */
     private suspend fun listenForExpectedLocationUpdate(): Location {
-        val lastLocation: Location = subscriber.locations.first { locationUpdate -> locationUpdate.location == expectedLocation }.location
+        val lastLocation: Location =
+            subscriber.locations.first { locationUpdate -> locationUpdate.location == expectedLocation }.location
 
         testLogD("lastLocation: $lastLocation")
         return lastLocation
