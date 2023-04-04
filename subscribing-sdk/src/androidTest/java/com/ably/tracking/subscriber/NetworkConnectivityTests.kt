@@ -450,7 +450,7 @@ class NetworkConnectivityTests(private val testFault: Fault) {
             val ablySdkFactory = object : AblySdkFactory<DefaultAblySdkChannelStateListener> {
                 override fun createRealtime(clientOptions: ClientOptions) =
                     DefaultAblySdkRealtime(
-                        fault.proxy.clientOptions().apply { clientId = SUBSCRIBER_CLIENT_ID }
+                        fault.proxy.subscriberClientOptions()
                     )
 
                 override fun wrapChannelStateListener(
@@ -460,7 +460,7 @@ class NetworkConnectivityTests(private val testFault: Fault) {
             val connectionConfiguration = ConnectionConfiguration(
                 Authentication.basic(
                     SUBSCRIBER_CLIENT_ID,
-                    fault.proxy.clientOptions().key
+                    fault.proxy.subscriberClientOptions().key
                 )
             )
 
@@ -492,7 +492,7 @@ class NetworkConnectivityTests(private val testFault: Fault) {
             val connectionConfiguration = ConnectionConfiguration(
                 Authentication.basic(
                     PUBLISHER_CLIENT_ID,
-                    fault.proxy.clientOptions().key
+                    fault.proxy.publisherClientOptions().key
                 )
             )
 
