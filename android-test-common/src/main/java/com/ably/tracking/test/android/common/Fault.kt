@@ -62,9 +62,7 @@ class FaultSimulation(
     private val faultNamesSkippedForSubscriberTest = listOf(
         "TcpConnectionRefused",
         "DisconnectAndSuspend",
-        "EnterUnresponsive",
-        "UpdateFailedWithNonfatalNack",
-        "ReenterOnResumeFailed",
+        "EnterUnresponsive"
     )
 
     val skipSubscriberTest = faultNamesSkippedForSubscriberTest.contains(dto.name)
