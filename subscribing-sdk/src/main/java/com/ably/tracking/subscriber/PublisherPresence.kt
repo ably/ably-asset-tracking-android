@@ -137,7 +137,7 @@ class DefaultPublisherPresence(
         )
     }
 
-    override fun hasPresentPublishers(): Boolean = publisherMap.asSequence().firstOrNull { it.value.state == LastKnownPublisherState.PRESENT } != null
+    override fun hasPresentPublishers(): Boolean = publisherMap.any { it.value.state == LastKnownPublisherState.PRESENT }
 
     override fun lastStateIsUnknown(): Boolean = lastEmittedStateChange.state == PublisherPresenceState.UNKNOWN
 
