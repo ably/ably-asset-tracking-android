@@ -7,6 +7,7 @@ import com.ably.tracking.common.isFatalAblyFailure
 import com.ably.tracking.subscriber.SubscriberProperties
 import com.ably.tracking.common.workerqueue.DefaultWorker
 import com.ably.tracking.subscriber.workerqueue.WorkerSpecification
+import kotlinx.coroutines.delay
 
 internal class ChangeResolutionWorker(
     private val ably: Ably,
@@ -51,6 +52,8 @@ internal class ChangeResolutionWorker(
     private suspend fun waitAndUpdatePresence(presenceData: PresenceData): Result<Unit> {
         val waitResult = ably.waitForChannelToAttach(trackableId)
         return if (waitResult.isSuccess) {
+            // TODO remove this delay once ably-java issue is fixed https://github.com/ably/ably-java/issues/930
+            delay(100)
             ably.updatePresenceData(trackableId, presenceData)
         } else {
             waitResult

@@ -132,9 +132,11 @@ private class DefaultCoreSubscriber(
     }
 
     override fun notifyAssetIsOffline() {
-        // TODO what is this method achieving, why is it not in normal flow?
-        // Perhaps related to: https://github.com/ably/ably-asset-tracking-android/issues/802
+        // This method goes around normal properties update flow because all workers
+        // enqueued after changing properties.isStopped to true
+        // will be skipped inside WorkerQueue.
         eventFlows.emit(TrackableState.Offline())
+        eventFlows.emitPublisherPresence(false)
     }
 }
 

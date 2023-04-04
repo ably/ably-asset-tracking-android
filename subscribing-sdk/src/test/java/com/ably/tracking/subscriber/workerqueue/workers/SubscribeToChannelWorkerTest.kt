@@ -2,7 +2,6 @@ package com.ably.tracking.subscriber.workerqueue.workers
 
 import com.ably.tracking.Accuracy
 import com.ably.tracking.Resolution
-import com.ably.tracking.common.ResultCallbackFunction
 import com.ably.tracking.subscriber.SubscriberInteractor
 import com.ably.tracking.subscriber.SubscriberProperties
 import com.ably.tracking.subscriber.workerqueue.WorkerSpecification
@@ -23,9 +22,8 @@ internal class SubscribeToChannelWorkerTest {
         every { subscribeForEnhancedEvents(any()) } just runs
         every { subscribeForRawEvents(any()) } just runs
     }
-    private val callbackFunction: ResultCallbackFunction<Unit> = mockk(relaxed = true)
-    private val subscribeToChannelWorker =
-        SubscribeToChannelWorker(subscriberInteractor, callbackFunction)
+
+    private val subscribeToChannelWorker = SubscribeToChannelWorker(subscriberInteractor)
 
     private val asyncWorks = mutableListOf<suspend () -> Unit>()
     private val postedWorks = mutableListOf<WorkerSpecification>()
@@ -33,7 +31,8 @@ internal class SubscribeToChannelWorkerTest {
     @Test
     fun `should notify callback after calling subscriberInteractor`() = runTest {
         // given
-        val initialProperties = SubscriberProperties(Resolution(Accuracy.BALANCED, 100, 100.0), mockk())
+        val initialProperties =
+            SubscriberProperties(Resolution(Accuracy.BALANCED, 100, 100.0), mockk())
 
         // when
         subscribeToChannelWorker.doWork(
@@ -47,7 +46,6 @@ internal class SubscribeToChannelWorkerTest {
             subscriberInteractor.subscribeForChannelState()
             subscriberInteractor.subscribeForEnhancedEvents(initialProperties.presenceData)
             subscriberInteractor.subscribeForRawEvents(initialProperties.presenceData)
-            callbackFunction.invoke(match { it.isSuccess })
         }
     }
 }

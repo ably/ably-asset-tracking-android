@@ -261,7 +261,7 @@ class NetworkConnectivityTests(private val testFault: Fault) {
 
         val newPublisher = TestResources.createPublisher(
             context = context,
-            proxyClientOptions = fault.proxy.clientOptions(),
+            proxyClientOptions = fault.proxy.publisherClientOptions(),
             locationChannelName = locationHelper.channelName
         )
 
@@ -325,7 +325,7 @@ class TestResources(
             val locationHelper = LocationHelper()
             val publisher = createPublisher(
                 context,
-                faultParam.proxy.clientOptions(),
+                faultParam.proxy.publisherClientOptions(),
                 locationHelper.channelName
             )
 

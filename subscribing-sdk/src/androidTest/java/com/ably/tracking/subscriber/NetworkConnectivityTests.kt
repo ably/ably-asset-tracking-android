@@ -32,9 +32,10 @@ import com.ably.tracking.test.android.common.PUBLISHER_CLIENT_ID
 import com.ably.tracking.test.android.common.SUBSCRIBER_CLIENT_ID
 import com.ably.tracking.test.android.common.testLogD
 import com.ably.tracking.test.android.common.UnitExpectation
+import com.ably.tracking.test.android.common.awaitSubscriberPresent
+import com.ably.tracking.test.android.common.subscriberIsPresent
 import io.ably.lib.realtime.AblyRealtime
 import io.ably.lib.types.ClientOptions
-import io.ably.lib.types.PresenceMessage
 import io.ably.lib.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -42,6 +43,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.first
@@ -132,20 +134,20 @@ class NetworkConnectivityTests(private val testFault: Fault) {
                 PresenceData(ClientTypes.PUBLISHER, publisherResolution, false)
             )
 
-            defaultAbly.sendEnhancedLocationSuspending(
-                trackableId,
-                EnhancedLocationUpdate(
-                    locationUpdate,
-                    arrayListOf(),
-                    arrayListOf(),
-                    LocationUpdateType.ACTUAL
-                )
-            )
-            testLogD("Sent enhanced location update on Ably channel")
-
             // While we're offline-ish, change the subscribers preferred resolutions
             subscriber.sendResolutionPreference(subscriberResolution)
         }.close()
+
+        defaultAbly.sendEnhancedLocationSuspending(
+            trackableId,
+            EnhancedLocationUpdate(
+                locationUpdate,
+                arrayListOf(),
+                arrayListOf(),
+                LocationUpdateType.ACTUAL
+            )
+        )
+        testLogD("Sent enhanced location update on Ably channel")
 
         // Resolve the fault and make sure everything comes through
         SubscriberMonitor.forResolvedFault(
@@ -171,6 +173,7 @@ class NetworkConnectivityTests(private val testFault: Fault) {
     @Test
     fun faultBeforeStoppingSubscriber() = withResources {
         val subscriber = getSubscriber()
+        awaitSubscriberPresent()
         val defaultAbly = createAndStartPublishingAblyConnection()
 
         // Assert the subscriber goes online
@@ -238,6 +241,7 @@ class NetworkConnectivityTests(private val testFault: Fault) {
     @Test
     fun faultWhilstTracking() = withResources {
         val subscriber = getSubscriber()
+        awaitSubscriberPresent()
 
         // Bring a publisher online and send a location update
         val defaultAbly = createAndStartPublishingAblyConnection()
@@ -449,7 +453,7 @@ class NetworkConnectivityTests(private val testFault: Fault) {
             val ablySdkFactory = object : AblySdkFactory<DefaultAblySdkChannelStateListener> {
                 override fun createRealtime(clientOptions: ClientOptions) =
                     DefaultAblySdkRealtime(
-                        fault.proxy.clientOptions().apply { clientId = SUBSCRIBER_CLIENT_ID }
+                        fault.proxy.subscriberClientOptions()
                     )
 
                 override fun wrapChannelStateListener(
@@ -459,7 +463,7 @@ class NetworkConnectivityTests(private val testFault: Fault) {
             val connectionConfiguration = ConnectionConfiguration(
                 Authentication.basic(
                     SUBSCRIBER_CLIENT_ID,
-                    fault.proxy.clientOptions().key
+                    fault.proxy.subscriberClientOptions().key
                 )
             )
 
@@ -491,7 +495,7 @@ class NetworkConnectivityTests(private val testFault: Fault) {
             val connectionConfiguration = ConnectionConfiguration(
                 Authentication.basic(
                     PUBLISHER_CLIENT_ID,
-                    fault.proxy.clientOptions().key
+                    fault.proxy.publisherClientOptions().key
                 )
             )
 
@@ -544,6 +548,14 @@ class NetworkConnectivityTests(private val testFault: Fault) {
             ablyPublishing = defaultAbly
 
             return ablyPublishing!!
+        }
+
+        suspend fun awaitSubscriberPresent() {
+            try {
+                AblyRealtime(CLIENT_OPTS_NO_PROXY).awaitSubscriberPresent(trackableId, 10_000)
+            } catch (exception: TimeoutCancellationException) {
+                testLogD("Awaiting for subscriber presence failed after 10 seconds")
+            }
         }
 
         fun tearDown() {
@@ -662,14 +674,20 @@ class SubscriberMonitor(
                 is FaultType.NonfatalWhenResolved -> false
                 is FaultType.Fatal -> false
             },
-            expectedLocation = locationUpdate,
+            expectedLocation = when (faultType) {
+                is FaultType.Fatal, is FaultType.NonfatalWhenResolved -> null
+                is FaultType.Nonfatal -> locationUpdate
+            },
             timeout = when (faultType) {
                 is FaultType.Fatal -> faultType.failedWithinMillis
                 is FaultType.Nonfatal -> faultType.resolvedWithinMillis
                 is FaultType.NonfatalWhenResolved -> faultType.offlineWithinMillis
             },
             expectedPublisherResolution = publisherResolution,
-            expectedSubscriberResolution = subscriberResolution,
+            expectedSubscriberResolution = when (faultType) {
+                is FaultType.Fatal, is FaultType.NonfatalWhenResolved -> null
+                is FaultType.Nonfatal -> subscriberResolution
+            },
             subscriberResolutionPreferenceFlow = subscriberResolutionPreferenceFlow
         )
 
@@ -686,7 +704,6 @@ class SubscriberMonitor(
             faultType: FaultType,
             locationUpdate: Location? = null,
             publisherResolution: Resolution? = null,
-            publisherDisconnected: Boolean = false,
             subscriberResolution: Resolution? = null,
             subscriberResolutionPreferenceFlow: SharedFlow<Resolution>,
         ) = SubscriberMonitor(
@@ -707,11 +724,7 @@ class SubscriberMonitor(
                 is FaultType.NonfatalWhenResolved -> true
                 is FaultType.Fatal -> false
             },
-            expectedPublisherPresence = when (faultType) {
-                is FaultType.Nonfatal -> !publisherDisconnected
-                is FaultType.NonfatalWhenResolved -> false
-                is FaultType.Fatal -> false
-            },
+            expectedPublisherPresence = false,
             expectedLocation = locationUpdate,
             timeout = when (faultType) {
                 is FaultType.Fatal -> faultType.failedWithinMillis
@@ -761,7 +774,10 @@ class SubscriberMonitor(
                 else -> true
             },
             expectedPublisherPresence = expectedPublisherPresence,
-            expectedLocation = locationUpdate,
+            expectedLocation = when (faultType) {
+                is FaultType.Fatal, is FaultType.NonfatalWhenResolved -> null
+                is FaultType.Nonfatal -> locationUpdate
+            },
             timeout = when (faultType) {
                 is FaultType.Fatal -> faultType.failedWithinMillis
                 is FaultType.Nonfatal -> faultType.resolvedWithinMillis
@@ -794,7 +810,7 @@ class SubscriberMonitor(
             expectedState = TrackableState.Offline::class,
             failureStates = setOf(TrackableState.Failed::class),
             expectedSubscriberPresence = false,
-            expectedPublisherPresence = true,
+            expectedPublisherPresence = false,
             expectedLocation = locationUpdate,
             timeout = when (faultType) {
                 is FaultType.Fatal -> faultType.failedWithinMillis
@@ -845,12 +861,13 @@ class SubscriberMonitor(
     ): SubscriberMonitor {
         try {
             withTimeout(timeout) {
+                testLogD("$label - async op starting")
                 asyncOp()
                 testLogD("$label - async op success")
 
                 assertStateTransition()
-                assertSubscriberPresence()
                 assertPublisherPresence()
+                assertSubscriberPresence()
                 assertLocationUpdated()
                 assertPublisherResolution()
                 assertSubscriberPreferredResolution()
@@ -917,7 +934,8 @@ class SubscriberMonitor(
      * and so we cannot rely on the first state we collect being the "newest" one.
      */
     private suspend fun listenForExpectedPublisherResolution(): Resolution {
-        val lastResolution = subscriber.resolutions.first { resolution -> resolution == expectedPublisherResolution }
+        val lastResolution =
+            subscriber.resolutions.first { resolution -> resolution == expectedPublisherResolution }
 
         testLogD("lastPublisherResolution: $lastResolution")
         return lastResolution
@@ -970,37 +988,22 @@ class SubscriberMonitor(
     /**
      * Throw an assertion error if the subscriber's presence does not meet expectations for this test.
      */
-    private fun assertSubscriberPresence() {
+    private suspend fun assertSubscriberPresence() {
         if (expectedSubscriberPresence == null) {
             // not checking for publisher presence in this test
             testLogD("SubscriberMonitor: $label - (SKIP) expectedSubscriberPresence = null")
             return
         }
 
-        val publisherPresent = subscriberIsPresent()
-        if (publisherPresent != expectedSubscriberPresence) {
-            testLogD("SubscriberMonitor: $label - (FAIL) subscriberPresent = $publisherPresent")
-            throw AssertionError(
-                "Expected subscriberPresence: $expectedSubscriberPresence but got $publisherPresent"
-            )
-        } else {
-            testLogD("SubscriberMonitor: $label - (PASS) subscriberPresent = $publisherPresent")
+        var subscriberPresent = ably.subscriberIsPresent(trackableId)
+        while (subscriberPresent != expectedSubscriberPresence) {
+            testLogD("SubscriberMonitor: $label - (WAITING) subscriberPresent = $subscriberPresent")
+            delay(200)
+            subscriberPresent = ably.subscriberIsPresent(trackableId)
         }
-    }
 
-    /**
-     * Perform a request to the Ably API to get a snapshot of the current presence for the channel,
-     * and check to see if the Subscriber's clientId is present in that snapshot.
-     */
-    private fun subscriberIsPresent() =
-        ably.channels
-            .get("tracking:$trackableId")
-            ?.presence
-            ?.get(true)
-            ?.find {
-                it.clientId == SUBSCRIBER_CLIENT_ID &&
-                    it.action == PresenceMessage.Action.present
-            } != null
+        testLogD("SubscriberMonitor: $label - (PASS) subscriberPresent = $subscriberPresent")
+    }
 
     /**
      * Throw an assertion error if expectations about published location updates have not
@@ -1032,7 +1035,8 @@ class SubscriberMonitor(
      * cannot rely on the first thing we find being the "newest" state and therefore must wait for a bit.
      */
     private suspend fun listenForExpectedLocationUpdate(): Location {
-        val lastLocation: Location = subscriber.locations.first { locationUpdate -> locationUpdate.location == expectedLocation }.location
+        val lastLocation: Location =
+            subscriber.locations.first { locationUpdate -> locationUpdate.location == expectedLocation }.location
 
         testLogD("lastLocation: $lastLocation")
         return lastLocation

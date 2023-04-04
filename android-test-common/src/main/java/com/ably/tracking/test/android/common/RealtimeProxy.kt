@@ -16,12 +16,21 @@ class RealtimeProxy(
     private val host: String,
     private val apiKey: String
 ) {
+
     /**
-     * Ably ClientOptions that have been configured to direct traffic
+     * Ably publisher ClientOptions that have been configured to direct traffic
      * through this proxy service
      */
-    fun clientOptions() = ClientOptions().apply {
-        this.clientId = PUBLISHER_CLIENT_ID
+    fun publisherClientOptions() = clientOptions(PUBLISHER_CLIENT_ID)
+
+    /**
+     * Ably subscriber ClientOptions that have been configured to direct traffic
+     * through this proxy service
+     */
+    fun subscriberClientOptions() = clientOptions(SUBSCRIBER_CLIENT_ID)
+
+    private fun clientOptions(clientId: String) = ClientOptions().apply {
+        this.clientId = clientId
         this.agents = mapOf(AGENT_HEADER_NAME to BuildConfig.VERSION_NAME)
         this.idempotentRestPublishing = true
         this.autoConnect = false
