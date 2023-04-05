@@ -166,7 +166,11 @@ class PresenceMessageWorkerTest {
             PresenceMessage(
                 action,
                 PresenceData(if (isSubscriber) ClientTypes.SUBSCRIBER else ClientTypes.PUBLISHER),
-                "test-member-key"
+                1234,
+                "test-member-key",
+                "test-client-id",
+                "test-connection-id",
+                "test-id"
             ),
             publisherInteractor
         )

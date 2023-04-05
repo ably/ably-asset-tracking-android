@@ -59,7 +59,11 @@ internal class SubscribeForPresenceMessagesWorkerTest {
     private fun createPresenceMessage() = PresenceMessage(
         action = PresenceAction.PRESENT_OR_ENTER,
         data = PresenceData(ClientTypes.PUBLISHER, null, null),
+        timestamp = 123,
         memberKey = "",
+        clientId = "",
+        connectionId = "",
+        id = ""
     )
 
     @Test
@@ -141,6 +145,13 @@ internal class SubscribeForPresenceMessagesWorkerTest {
         Assert.assertTrue(postedWorks[0] is WorkerSpecification.Disconnect)
     }
 
-    private fun anyPresenceMessage() =
-        PresenceMessage(PresenceAction.PRESENT_OR_ENTER, PresenceData(ClientTypes.PUBLISHER), "any-client-id")
+    private fun anyPresenceMessage() = PresenceMessage(
+        PresenceAction.PRESENT_OR_ENTER,
+        PresenceData(ClientTypes.PUBLISHER),
+        123,
+        "any-member-key",
+        "any-client-id",
+        "any-connection-id",
+        "any-id"
+    )
 }

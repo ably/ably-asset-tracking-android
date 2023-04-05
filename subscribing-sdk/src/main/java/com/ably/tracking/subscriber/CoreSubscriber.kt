@@ -34,7 +34,12 @@ internal interface CoreSubscriber {
     val enhancedLocations: SharedFlow<LocationUpdate>
     val rawLocations: SharedFlow<LocationUpdate>
     val trackableStates: StateFlow<TrackableState>
+    @Deprecated(
+        "The publisherPresenceStateChanges SharedFlow provides more granular information on publisher presence. The Boolean version may be removed in a later version of AAT",
+        replaceWith = ReplaceWith("publisherPresenceStateChanges")
+    )
     val publisherPresence: StateFlow<Boolean>
+    val publisherPresenceStateChanges: StateFlow<PublisherPresenceStateChange>
     val resolutions: SharedFlow<Resolution>
     val nextLocationUpdateIntervals: SharedFlow<Long>
 }
@@ -83,8 +88,15 @@ private class DefaultCoreSubscriber(
     override val trackableStates: StateFlow<TrackableState>
         get() = eventFlows.trackableStates
 
+    @Deprecated(
+        "The publisherPresenceStateChanges SharedFlow provides more granular information on publisher presence. The Boolean version may be removed in a later version of AAT",
+        replaceWith = ReplaceWith("publisherPresenceStateChanges")
+    )
     override val publisherPresence: StateFlow<Boolean>
         get() = eventFlows.publisherPresence
+
+    override val publisherPresenceStateChanges: StateFlow<PublisherPresenceStateChange>
+        get() = eventFlows.publisherPresenceStateChanges
 
     override val resolutions: SharedFlow<Resolution>
         get() = eventFlows.resolutions
@@ -95,7 +107,7 @@ private class DefaultCoreSubscriber(
     init {
         val workerFactory = WorkerFactory(this, ably, trackableId)
         val scope = CoroutineScope(singleThreadDispatcher + SupervisorJob())
-        eventFlows = SubscriberProperties.EventFlows(scope)
+        eventFlows = SubscriberProperties.EventFlows(scope, DefaultPublisherPresence(DefaultPublisherPresenceMessageProcessor(), scope))
         val properties = SubscriberProperties(initialResolution, eventFlows)
         workerQueue = WorkerQueue(
             properties = properties,
@@ -115,7 +127,7 @@ private class DefaultCoreSubscriber(
 
     override fun subscribeForChannelState() {
         ably.subscribeForChannelStateChange(trackableId) {
-            enqueue(WorkerSpecification.UpdateChannelConnectionState(it))
+            enqueue(WorkerSpecification.FetchHistoryForChannelConnectionStateChange(trackableId, it))
         }
     }
 
@@ -131,9 +143,13 @@ private class DefaultCoreSubscriber(
         }
     }
 
+    /**
+     * Called when the connection is stopped as part of subscriber shutdown.
+     */
     override fun notifyAssetIsOffline() {
         // TODO what is this method achieving, why is it not in normal flow?
         // Perhaps related to: https://github.com/ably/ably-asset-tracking-android/issues/802
+        eventFlows.emitPublisherPresenceUnknown()
         eventFlows.emit(TrackableState.Offline())
     }
 }
@@ -147,12 +163,14 @@ internal data class SubscriberProperties private constructor(
 
     private var presentPublisherMemberKeys: MutableSet<String> = HashSet(),
     private var lastEmittedValueOfIsPublisherVisible: Boolean? = null,
+    private var lastEmittedValueOfPublisherPresenceState: PublisherPresenceState? = null,
     private var lastEmittedTrackableState: TrackableState = TrackableState.Offline(),
     private var lastConnectionStateChange: ConnectionStateChange =
         ConnectionStateChange(ConnectionState.OFFLINE, null),
     private var lastChannelConnectionStateChange: ConnectionStateChange =
         ConnectionStateChange(ConnectionState.OFFLINE, null),
     private var pendingPublisherResolutions: PendingResolutions = PendingResolutions(),
+    private var cachedRealtimePresenceMessages: MutableList<PresenceMessage> = mutableListOf()
 ) : Properties {
     internal constructor(
         initialResolution: Resolution?,
@@ -179,16 +197,60 @@ internal data class SubscriberProperties private constructor(
     }
 
     fun updateForConnectionStateChangeAndThenEmitStateEventsIfRequired(stateChange: ConnectionStateChange) {
+        /**
+         * If a connection drops offline, then let the publisher presence handler know that this has happened.
+         *
+         * When it comes back online, there's no guarantee that the channel has re-attached yet, or that presence has
+         * been re-entered, so handle that operation in the [updateForChannelConnectionStateChangeAndThenEmitStateEventsIfRequired]
+         * handler when the channel attaches.
+         */
+        if (stateChange.state == ConnectionState.OFFLINE && !eventFlows.lastPublisherPresenceIsUnknown()) {
+            eventFlows.emitPublisherPresenceUnknown()
+        }
+
         lastConnectionStateChange = stateChange
         emitStateEventsIfRequired()
     }
 
-    fun updateForChannelConnectionStateChangeAndThenEmitStateEventsIfRequired(stateChange: ConnectionStateChange) {
+    fun updateForChannelConnectionStateChangeAndThenEmitStateEventsIfRequired(
+        stateChange: ConnectionStateChange,
+        presenceHistory: List<PresenceMessage>?
+    ) {
+        /**
+         * If the channel detaches, then let the publisher presence handlers know that the connection is no longer online. Note, that
+         * per RTL3e, the overall connection dropping will not set the channel to detached (or in AAT, an offline state). The channel
+         * only enters an OFFLINE state (in AAT terms) when the connection comes back, at which point the channel briefly goes back to
+         * ATTACHING before returning to ATTACHED.
+         *
+         * If the channel has returned to the ATTACHED state (or ONLINE, in AAT terms), then we have the presence history for the channel plus
+         * any realtime presence events received in the interim - let the publisher presence handlers know this.
+         */
+        if (stateChange.state == ConnectionState.OFFLINE && !eventFlows.lastPublisherPresenceIsUnknown()) {
+            eventFlows.emitPublisherPresenceUnknown()
+        } else {
+            eventFlows.emitPublisherPresenceStateChange((presenceHistory ?: mutableListOf()) + cachedRealtimePresenceMessages)
+            cachedRealtimePresenceMessages.clear()
+        }
+
         lastChannelConnectionStateChange = stateChange
         emitStateEventsIfRequired()
     }
 
     fun updateForPresenceMessagesAndThenEmitStateEventsIfRequired(presenceMessages: List<PresenceMessage>) {
+        /*
+            For the extended publisher presence API, we will need to amalgamate any messages received on realtime
+            with the presence history for a channel, and ideally this needs to happen in one go when the channel
+            comes online, not in drips and drabs.
+
+            So, if the channel is in an offline state (aka, we're still fetching the presence history before reporting the
+            channel as online again), cache and received messages.
+         */
+        if (eventFlows.lastPublisherPresenceIsUnknown()) {
+            cachedRealtimePresenceMessages += presenceMessages
+        } else {
+            eventFlows.emitPublisherPresenceStateChange(presenceMessages)
+        }
+
         for (presenceMessage in presenceMessages) {
             // We are only interested in presence updates from publishers.
             if (presenceMessage.data.type == ClientTypes.PUBLISHER) {
@@ -241,7 +303,10 @@ internal data class SubscriberProperties private constructor(
         eventFlows.emit(pendingPublisherResolutions.drain())
     }
 
-    internal class EventFlows(private val scope: CoroutineScope) {
+    internal class EventFlows(
+        private val scope: CoroutineScope,
+        private val publisherPresenceMonitor: PublisherPresence
+    ) {
         private val _enhancedLocations: MutableSharedFlow<LocationUpdate> = MutableSharedFlow(replay = 1)
         private val _rawLocations: MutableSharedFlow<LocationUpdate> = MutableSharedFlow(replay = 1)
         private val _trackableStates: MutableStateFlow<TrackableState> = MutableStateFlow(TrackableState.Offline())
@@ -265,6 +330,16 @@ internal data class SubscriberProperties private constructor(
             scope.launch { _trackableStates.emit(trackableState) }
         }
 
+        fun emitPublisherPresenceUnknown() {
+            publisherPresenceMonitor.connectionOffline()
+        }
+
+        fun emitPublisherPresenceStateChange(presenceMessages: List<PresenceMessage>) {
+            publisherPresenceMonitor.processPresenceMessages(presenceMessages)
+        }
+
+        fun lastPublisherPresenceIsUnknown(): Boolean = publisherPresenceMonitor.lastStateIsUnknown()
+
         fun emit(resolutions: Array<Resolution>) {
             if (resolutions.isNotEmpty()) {
                 scope.launch {
@@ -287,6 +362,9 @@ internal data class SubscriberProperties private constructor(
 
         val publisherPresence: StateFlow<Boolean>
             get() = _publisherPresence
+
+        val publisherPresenceStateChanges: StateFlow<PublisherPresenceStateChange>
+            get() = publisherPresenceMonitor.stateChanges
 
         val resolutions: SharedFlow<Resolution>
             get() = _resolutions.asSharedFlow()

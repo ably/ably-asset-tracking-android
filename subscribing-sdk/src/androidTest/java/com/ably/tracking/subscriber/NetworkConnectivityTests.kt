@@ -373,7 +373,7 @@ class NetworkConnectivityTests(private val testFault: Fault) {
             trackableId = trackableId,
             faultType = fault.type,
             locationUpdate = thirdLocationUpdate,
-            expectedPublisherPresence = false,
+            publisherDisconnected = true,
             subscriberResolution = secondSubscriberResolution,
             subscriberResolutionPreferenceFlow = subscriberResolutions
         ).waitForStateTransition {
@@ -612,7 +612,9 @@ class SubscriberMonitor(
     private val expectedState: KClass<out TrackableState>,
     private val failureStates: Set<KClass<out TrackableState>>,
     private val expectedSubscriberPresence: Boolean?,
-    private val expectedPublisherPresence: Boolean?,
+    private val expectedPublisherPresence: Boolean,
+    private val expectedPublisherPresenceState: PublisherPresenceState,
+    private val failurePublisherPresenceStates: Set<PublisherPresenceState>,
     private val expectedLocation: Location? = null,
     private val expectedPublisherResolution: Resolution?,
     private val subscriberResolutionPreferenceFlow: SharedFlow<Resolution>,
@@ -626,6 +628,9 @@ class SubscriberMonitor(
         /**
          * Construct [SubscriberMonitor] configured to expect appropriate state transitions
          * for the given fault type while it is active. [label] will be used for logging captured transitions.
+         *
+         * Assumptions:
+         * - A publisher is present on the channel if and only if `publisherDisconnected` is false.
          */
         fun forActiveFault(
             subscriber: Subscriber,
@@ -662,6 +667,11 @@ class SubscriberMonitor(
                 is FaultType.NonfatalWhenResolved -> false
                 is FaultType.Fatal -> false
             },
+            expectedPublisherPresenceState = when (faultType) {
+                is FaultType.Nonfatal -> if (publisherDisconnected) PublisherPresenceState.ABSENT else PublisherPresenceState.PRESENT
+                is FaultType.NonfatalWhenResolved, is FaultType.Fatal -> PublisherPresenceState.UNKNOWN
+            },
+            failurePublisherPresenceStates = if (publisherDisconnected) setOf(PublisherPresenceState.PRESENT) else setOf(PublisherPresenceState.ABSENT),
             expectedLocation = locationUpdate,
             timeout = when (faultType) {
                 is FaultType.Fatal -> faultType.failedWithinMillis
@@ -678,6 +688,9 @@ class SubscriberMonitor(
          * for the given fault type while it is active but the subscriber is shutting down.
          *
          * [label] will be used for logging captured transitions.
+         *
+         * Assumptions:
+         * - A publisher is present on the channel if and only if `publisherDisconnected` is false.
          */
         fun forActiveFaultWhenShuttingDownSubscriber(
             subscriber: Subscriber,
@@ -712,6 +725,8 @@ class SubscriberMonitor(
                 is FaultType.NonfatalWhenResolved -> false
                 is FaultType.Fatal -> false
             },
+            expectedPublisherPresenceState = PublisherPresenceState.UNKNOWN,
+            failurePublisherPresenceStates = if (publisherDisconnected) setOf(PublisherPresenceState.PRESENT) else setOf(PublisherPresenceState.ABSENT),
             expectedLocation = locationUpdate,
             timeout = when (faultType) {
                 is FaultType.Fatal -> faultType.failedWithinMillis
@@ -726,6 +741,9 @@ class SubscriberMonitor(
         /**
          * Construct a [SubscriberMonitor] configured to expect appropriate transitions for
          * the given fault type after it has been resolved. [label] is used for logging.
+         *
+         * Assumptions:
+         * - A publisher is present on the channel if and only if `publisherDisconnected` is false.
          */
         fun forResolvedFault(
             subscriber: Subscriber,
@@ -734,7 +752,7 @@ class SubscriberMonitor(
             faultType: FaultType,
             locationUpdate: Location? = null,
             publisherResolution: Resolution? = null,
-            expectedPublisherPresence: Boolean = true,
+            publisherDisconnected: Boolean = false,
             subscriberResolution: Resolution? = null,
             subscriberResolutionPreferenceFlow: SharedFlow<Resolution>
         ) = SubscriberMonitor(
@@ -742,7 +760,7 @@ class SubscriberMonitor(
             label = label,
             trackableId = trackableId,
             expectedState = when {
-                !expectedPublisherPresence -> TrackableState.Offline::class
+                publisherDisconnected -> TrackableState.Offline::class
                 faultType is FaultType.Fatal -> TrackableState.Failed::class
                 faultType is FaultType.Nonfatal || faultType is FaultType.NonfatalWhenResolved ->
                     TrackableState.Online::class
@@ -760,7 +778,12 @@ class SubscriberMonitor(
                 is FaultType.Fatal -> false
                 else -> true
             },
-            expectedPublisherPresence = expectedPublisherPresence,
+            expectedPublisherPresence = !publisherDisconnected,
+            expectedPublisherPresenceState = when (faultType) {
+                is FaultType.Nonfatal, is FaultType.NonfatalWhenResolved -> if (publisherDisconnected) PublisherPresenceState.ABSENT else PublisherPresenceState.PRESENT
+                is FaultType.Fatal -> PublisherPresenceState.UNKNOWN
+            },
+            failurePublisherPresenceStates = if (publisherDisconnected) setOf(PublisherPresenceState.PRESENT) else setOf(PublisherPresenceState.ABSENT),
             expectedLocation = locationUpdate,
             timeout = when (faultType) {
                 is FaultType.Fatal -> faultType.failedWithinMillis
@@ -774,9 +797,12 @@ class SubscriberMonitor(
 
         /**
          * Construct a [SubscriberMonitor] configured to expect appropriate transitions for
-         * the given fault type after it has been resolved and the publisher is stopped.
+         * the given fault type after it has been resolved and the subscriber is stopped.
          *
          * [label] is used for logging.
+         *
+         * Assumptions:
+         * - A publisher is present on the channel.
          */
         fun forResolvedFaultWithSubscriberStopped(
             subscriber: Subscriber,
@@ -795,6 +821,8 @@ class SubscriberMonitor(
             failureStates = setOf(TrackableState.Failed::class),
             expectedSubscriberPresence = false,
             expectedPublisherPresence = true,
+            expectedPublisherPresenceState = PublisherPresenceState.UNKNOWN,
+            failurePublisherPresenceStates = setOf(PublisherPresenceState.ABSENT),
             expectedLocation = locationUpdate,
             timeout = when (faultType) {
                 is FaultType.Fatal -> faultType.failedWithinMillis
@@ -809,6 +837,9 @@ class SubscriberMonitor(
         /**
          * Construct a [SubscriberMonitor] configured to expect a Trackable to come
          * online within a given timeout, and fail if the Failed state is seen at any point.
+
+         * Assumptions:
+         * - A publisher is present on the channel.
          */
         fun onlineWithoutFail(
             subscriber: Subscriber,
@@ -827,6 +858,8 @@ class SubscriberMonitor(
             failureStates = setOf(TrackableState.Failed::class),
             expectedSubscriberPresence = true,
             expectedPublisherPresence = true,
+            expectedPublisherPresenceState = PublisherPresenceState.PRESENT,
+            failurePublisherPresenceStates = setOf(PublisherPresenceState.ABSENT),
             expectedLocation = locationUpdate,
             timeout = timeout,
             expectedPublisherResolution = publisherResolution,
@@ -851,6 +884,7 @@ class SubscriberMonitor(
                 assertStateTransition()
                 assertSubscriberPresence()
                 assertPublisherPresence()
+                assertPublisherPresenceStateTransition()
                 assertLocationUpdated()
                 assertPublisherResolution()
                 assertSubscriberPreferredResolution()
@@ -985,6 +1019,41 @@ class SubscriberMonitor(
             )
         } else {
             testLogD("SubscriberMonitor: $label - (PASS) subscriberPresent = $publisherPresent")
+        }
+    }
+
+    /**
+     * Assert that we eventually receive the expected publisher presence state, and do not receive any of the failure publisher presence states.
+     *
+     * @throws AssertionError If the expected [PublisherPresenceStateChange] hasn't been emitted.
+     */
+    @OptIn(Experimental::class)
+    private suspend fun assertPublisherPresenceStateTransition() {
+        testLogD("$label Awaiting publisher presence state transition to $expectedPublisherPresenceState")
+        val result = subscriber.publisherPresenceStateChanges.mapNotNull { receive(it) }.first()
+        if (!result) {
+            throw AssertionError("Expectation '$label' publisher presence state transition did not result in success.")
+        }
+    }
+
+    /**
+     * Maps received [PublisherPresenceStateChange] to a success/fail/ignore outcome for this test.
+     */
+    private fun receive(stateChange: PublisherPresenceStateChange): Boolean? {
+        val newState = stateChange.state
+        return when {
+            failurePublisherPresenceStates.contains(newState) -> {
+                testLogD("SubscriberMonitor (FAIL): $label - $newState")
+                false
+            }
+            expectedPublisherPresenceState == newState -> {
+                testLogD("SubscriberMonitor (SUCCESS): $label - $newState")
+                true
+            }
+            else -> {
+                testLogD("SubscriberMonitor (IGNORED): $label - $newState")
+                null
+            }
         }
     }
 
