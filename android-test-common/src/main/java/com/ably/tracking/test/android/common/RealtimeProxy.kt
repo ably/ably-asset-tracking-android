@@ -40,6 +40,7 @@ class RealtimeProxy(
         }
         this.logLevel = Log.VERBOSE
         this.realtimeHost = host
+        this.restHost = host
         this.port = dto.listenPort
         this.tls = false
     }

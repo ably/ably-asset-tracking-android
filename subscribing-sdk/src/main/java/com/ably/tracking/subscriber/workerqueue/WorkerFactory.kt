@@ -13,6 +13,7 @@ import com.ably.tracking.subscriber.workerqueue.workers.ChangeResolutionSuccessW
 import com.ably.tracking.subscriber.workerqueue.workers.ChangeResolutionWorker
 import com.ably.tracking.subscriber.workerqueue.workers.DeprecatedChangeResolutionWorker
 import com.ably.tracking.subscriber.workerqueue.workers.DisconnectWorker
+import com.ably.tracking.subscriber.workerqueue.workers.FetchHistoryForChannelConnectionStateChangeWorker
 import com.ably.tracking.subscriber.workerqueue.workers.EnterPresenceWorker
 import com.ably.tracking.subscriber.workerqueue.workers.ProcessInitialPresenceMessagesWorker
 import com.ably.tracking.subscriber.workerqueue.workers.StartConnectionWorker
@@ -59,7 +60,13 @@ internal class WorkerFactory(
                 workerSpecification.connectionStateChange
             )
             is WorkerSpecification.UpdateChannelConnectionState -> UpdateChannelConnectionStateWorker(
-                workerSpecification.channelConnectionStateChange
+                workerSpecification.channelConnectionStateChange,
+                workerSpecification.presenceHistory
+            )
+            is WorkerSpecification.FetchHistoryForChannelConnectionStateChange -> FetchHistoryForChannelConnectionStateChangeWorker(
+                workerSpecification.trackableId,
+                workerSpecification.channelConnectionStateChange,
+                ably
             )
             is WorkerSpecification.UpdatePublisherPresence -> UpdatePublisherPresenceWorker(
                 workerSpecification.presenceMessage
@@ -101,6 +108,12 @@ internal sealed class WorkerSpecification {
     ) : WorkerSpecification()
 
     data class UpdateChannelConnectionState(
+        val channelConnectionStateChange: ConnectionStateChange,
+        val presenceHistory: List<PresenceMessage>?
+    ) : WorkerSpecification()
+
+    data class FetchHistoryForChannelConnectionStateChange(
+        val trackableId: String,
         val channelConnectionStateChange: ConnectionStateChange
     ) : WorkerSpecification()
 

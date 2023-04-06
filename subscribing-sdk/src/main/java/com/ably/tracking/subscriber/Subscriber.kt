@@ -87,6 +87,13 @@ interface Subscriber {
         @JvmSynthetic get
 
     /**
+     * The shared flow emitting state changes in publisher presence.
+     */
+    @Experimental
+    val publisherPresenceStateChanges: StateFlow<PublisherPresenceStateChange>
+        @JvmSynthetic get
+
+    /**
      * The shared flow emitting resolution values when they become available.
      */
     val resolutions: SharedFlow<Resolution>
