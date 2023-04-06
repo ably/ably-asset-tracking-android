@@ -151,6 +151,7 @@ private class DefaultCoreSubscriber(
         // enqueued after changing properties.isStopped to true
         // will be skipped inside WorkerQueue.
         eventFlows.emit(TrackableState.Offline())
+        eventFlows.emitPublisherPresence(false)
         eventFlows.emitPublisherPresenceUnknown()
     }
 }

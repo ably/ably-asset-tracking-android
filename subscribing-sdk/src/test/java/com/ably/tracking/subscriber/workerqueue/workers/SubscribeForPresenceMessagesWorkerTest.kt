@@ -96,7 +96,8 @@ internal class SubscribeForPresenceMessagesWorkerTest {
     @Test
     fun `should post disconnect work when subscribe to presence returns failure`() = runTest {
         // given
-        val initialProperties = SubscriberProperties(Resolution(Accuracy.BALANCED, 100, 100.0), mockk())
+        val initialProperties =
+            SubscriberProperties(Resolution(Accuracy.BALANCED, 100, 100.0), mockk())
         ably.mockGetCurrentPresenceSuccess(trackableId)
         ably.mockSubscribeToPresenceError(trackableId)
 
@@ -150,10 +151,9 @@ internal class SubscribeForPresenceMessagesWorkerTest {
         PresenceMessage(
             PresenceAction.PRESENT_OR_ENTER,
             PresenceData(ClientTypes.PUBLISHER),
-           123,
-        "any-member-key", "any-client-id"
-        ,
-        "any-connection-id",
-        "any-id"
-    )
+            123,
+            "any-member-key", "any-client-id",
+            "any-connection-id",
+            "any-id"
+        )
 }

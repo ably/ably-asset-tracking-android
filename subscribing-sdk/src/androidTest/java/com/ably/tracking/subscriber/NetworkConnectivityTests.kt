@@ -707,8 +707,6 @@ class SubscriberMonitor(
          *
          * [label] will be used for logging captured transitions.
          *
-         * Assumptions:
-         * - A publisher is present on the channel if and only if `publisherDisconnected` is false.
          */
         fun forActiveFaultWhenShuttingDownSubscriber(
             subscriber: Subscriber,
@@ -739,7 +737,7 @@ class SubscriberMonitor(
             },
             expectedPublisherPresence = false,
             expectedPublisherPresenceState = PublisherPresenceState.UNKNOWN,
-            failurePublisherPresenceStates = if (publisherDisconnected) setOf(PublisherPresenceState.PRESENT) else setOf(PublisherPresenceState.ABSENT),
+            failurePublisherPresenceStates = emptySet(),
             expectedLocation = locationUpdate,
             timeout = when (faultType) {
                 is FaultType.Fatal -> faultType.failedWithinMillis
@@ -1039,7 +1037,7 @@ class SubscriberMonitor(
         testLogD("SubscriberMonitor: $label - (PASS) subscriberPresent = $subscriberPresent")
     }
 
-        /**
+    /**
      * Assert that we eventually receive the expected publisher presence state, and do not receive any of the failure publisher presence states.
      *
      * @throws AssertionError If the expected [PublisherPresenceStateChange] hasn't been emitted.
@@ -1073,20 +1071,6 @@ class SubscriberMonitor(
             }
         }
     }
-
-    /**
-     * Perform a request to the Ably API to get a snapshot of the current presence for the channel,
-     * and check to see if the Subscriber's clientId is present in that snapshot.
-     */
-    private fun subscriberIsPresent() =
-        ably.channels
-            .get("tracking:$trackableId")
-            ?.presence
-            ?.get(true)
-            ?.find {
-                it.clientId == SUBSCRIBER_CLIENT_ID &&
-                    it.action == PresenceMessage.Action.present
-            } != null
 
     /**
      * Throw an assertion error if expectations about published location updates have not
