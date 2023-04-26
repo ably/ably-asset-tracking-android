@@ -7,6 +7,12 @@
 
 _[Ably](https://ably.com) is the platform that powers synchronized digital experiences in realtime. Whether attending an event in a virtual venue, receiving realtime financial information, or monitoring live car performance data – consumers simply expect realtime digital experiences as standard. Ably provides a suite of APIs to build, extend, and deliver powerful digital experiences in realtime for more than 250 million devices across 80 countries each month. Organizations like Bloomberg, HubSpot, Verizon, and Hopin depend on Ably’s platform to offload the growing complexity of business-critical realtime data synchronization at global scale. For more information, see the [Ably documentation](https://ably.com/docs)._
 
+## Beta
+
+**This SDK is currently in beta** and contains a subset of the anticipated final functionality. All APIs are subject to change.
+
+The latest release of this SDK is available for download on Maven Central, with release notes available on the [releases page](https://github.com/ably/ably-asset-tracking-android/releases).
+
 ## Overview
 
 Ably Asset Tracking SDKs provide an easy way to track multiple assets with realtime location updates powered by [Ably](https://ably.com/) realtime network and Mapbox [Navigation SDK](https://docs.mapbox.com/android/navigation/overview/) with location enhancement.
