@@ -11,10 +11,10 @@ import com.ably.tracking.Resolution
 import com.ably.tracking.connection.Authentication
 import com.ably.tracking.connection.ConnectionConfiguration
 import com.ably.tracking.test.android.common.BooleanExpectation
+import com.ably.tracking.test.android.common.Logging.testLogD
 import com.ably.tracking.test.android.common.NOTIFICATION_CHANNEL_ID
 import com.ably.tracking.test.android.common.UnitExpectation
 import com.ably.tracking.test.android.common.createNotificationChannel
-import com.ably.tracking.test.android.common.testLogD
 import com.google.gson.Gson
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
