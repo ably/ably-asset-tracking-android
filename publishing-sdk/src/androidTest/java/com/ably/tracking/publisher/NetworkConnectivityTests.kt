@@ -2,8 +2,8 @@ package com.ably.tracking.publisher
 
 import android.annotation.SuppressLint
 import android.app.Notification
-import android.os.Build
 import android.content.Context
+import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ably.tracking.Accuracy
@@ -25,18 +25,17 @@ import com.ably.tracking.common.message.synopsis
 import com.ably.tracking.common.message.toTracking
 import com.ably.tracking.connection.Authentication
 import com.ably.tracking.connection.ConnectionConfiguration
-import com.ably.tracking.logging.LogHandler
-import com.ably.tracking.logging.LogLevel
 import com.ably.tracking.test.android.common.BooleanExpectation
 import com.ably.tracking.test.android.common.Fault
 import com.ably.tracking.test.android.common.FaultProxyClient
 import com.ably.tracking.test.android.common.FaultSimulation
 import com.ably.tracking.test.android.common.FaultType
+import com.ably.tracking.test.android.common.Logging
+import com.ably.tracking.test.android.common.Logging.testLogD
 import com.ably.tracking.test.android.common.NOTIFICATION_CHANNEL_ID
 import com.ably.tracking.test.android.common.PUBLISHER_CLIENT_ID
 import com.ably.tracking.test.android.common.UnitExpectation
 import com.ably.tracking.test.android.common.createNotificationChannel
-import com.ably.tracking.test.android.common.testLogD
 import com.google.gson.Gson
 import io.ably.lib.realtime.AblyRealtime
 import io.ably.lib.realtime.ChannelState
@@ -468,25 +467,6 @@ class TestResources(
         }
         stopExpectation.await()
         return stopExpectation
-    }
-}
-
-/**
- * Redirect Ably and AAT logging to Log.d
- */
-object Logging {
-    val aatDebugLogger = object : LogHandler {
-        override fun logMessage(level: LogLevel, message: String, throwable: Throwable?) {
-            if (throwable != null) {
-                testLogD("$message $throwable")
-            } else {
-                testLogD(message)
-            }
-        }
-    }
-
-    val ablyJavaDebugLogger = Log.LogHandler { _, _, msg, tr ->
-        aatDebugLogger.logMessage(LogLevel.DEBUG, msg!!, tr)
     }
 }
 

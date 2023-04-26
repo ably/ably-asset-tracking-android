@@ -20,23 +20,21 @@ import com.ably.tracking.common.DefaultAblySdkChannelStateListener
 import com.ably.tracking.common.PresenceData
 import com.ably.tracking.connection.Authentication
 import com.ably.tracking.connection.ConnectionConfiguration
-import com.ably.tracking.logging.LogHandler
-import com.ably.tracking.logging.LogLevel
 import com.ably.tracking.test.android.common.BooleanExpectation
 import com.ably.tracking.test.android.common.createNotificationChannel
 import com.ably.tracking.test.android.common.Fault
 import com.ably.tracking.test.android.common.FaultProxyClient
 import com.ably.tracking.test.android.common.FaultSimulation
 import com.ably.tracking.test.android.common.FaultType
+import com.ably.tracking.test.android.common.Logging
+import com.ably.tracking.test.android.common.Logging.testLogD
 import com.ably.tracking.test.android.common.PUBLISHER_CLIENT_ID
 import com.ably.tracking.test.android.common.SUBSCRIBER_CLIENT_ID
-import com.ably.tracking.test.android.common.testLogD
 import com.ably.tracking.test.android.common.UnitExpectation
 import com.ably.tracking.test.android.common.awaitSubscriberPresent
 import com.ably.tracking.test.android.common.subscriberIsPresent
 import io.ably.lib.realtime.AblyRealtime
 import io.ably.lib.types.ClientOptions
-import io.ably.lib.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
@@ -1114,24 +1112,5 @@ class SubscriberMonitor(
      */
     fun close() {
         ably.close()
-    }
-}
-
-/**
- * Redirect Ably and AAT logging to Log.d
- */
-object Logging {
-    val aatDebugLogger = object : LogHandler {
-        override fun logMessage(level: LogLevel, message: String, throwable: Throwable?) {
-            if (throwable != null) {
-                testLogD("$message $throwable")
-            } else {
-                testLogD(message)
-            }
-        }
-    }
-
-    val ablyJavaDebugLogger = Log.LogHandler { _, _, msg, tr ->
-        aatDebugLogger.logMessage(LogLevel.DEBUG, msg!!, tr)
     }
 }

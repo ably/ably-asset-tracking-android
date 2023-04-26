@@ -1,5 +1,6 @@
 package com.ably.tracking.test.android.common
 
+import com.ably.tracking.test.android.common.Logging.testLogD
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
 

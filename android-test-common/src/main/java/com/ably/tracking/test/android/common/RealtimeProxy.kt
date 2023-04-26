@@ -1,5 +1,6 @@
 package com.ably.tracking.test.android.common
 
+import com.ably.tracking.test.android.common.Logging.testLogD
 import io.ably.lib.types.ClientOptions
 import io.ably.lib.util.Log
 

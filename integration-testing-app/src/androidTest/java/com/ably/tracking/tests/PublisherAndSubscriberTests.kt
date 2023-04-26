@@ -5,14 +5,19 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.ably.tracking.LocationUpdate
 import com.ably.tracking.TrackableState
 import com.ably.tracking.publisher.Trackable
+import com.ably.tracking.subscriber.BuildConfig
 import com.ably.tracking.test.android.common.BooleanExpectation
+import com.ably.tracking.test.android.common.Logging
+import com.ably.tracking.test.android.common.Logging.testLogD
 import com.ably.tracking.test.android.common.UnitExpectation
-import com.ably.tracking.test.android.common.testLogD
+import com.ably.tracking.test.android.common.awaitSubscriberPresent
 import com.google.common.truth.Truth.assertThat
-import java.util.UUID
+import io.ably.lib.realtime.AblyRealtime
+import io.ably.lib.types.ClientOptions
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.launchIn
@@ -23,6 +28,7 @@ import kotlinx.coroutines.withTimeout
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.util.UUID
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
@@ -131,6 +137,7 @@ class PublisherAndSubscriberTests {
         // when
         // create subscriber and publisher
         val subscriber = createAndStartSubscriber(trackableId)
+        awaitSubscriberPresent(trackableId)
 
         val publisher = createAndStartPublisher(context, rawLocations = true)
 
@@ -174,10 +181,11 @@ class PublisherAndSubscriberTests {
         // when
         // create subscriber and publisher
         val subscriber = createAndStartSubscriber(trackableId)
+        awaitSubscriberPresent(trackableId)
 
         val publisher = createAndStartPublisher(context, sendResolution = true)
 
-        // listen for location updates
+        // listen for resolution updates
         subscriber.resolutions
             .onEach {
                 // UnitExpectation throws an error if it's fulfilled more than once so we need to have this check
@@ -242,5 +250,19 @@ class PublisherAndSubscriberTests {
         subscriberFailedExpectation.assertFulfilled()
         assertThat(finalTrackableState)
             .isInstanceOf(TrackableState.Failed::class.java)
+    }
+
+    private suspend fun awaitSubscriberPresent(trackableId: String) {
+        try {
+            val clientOptions = ClientOptions().apply {
+                this.clientId = "PublisherAndSubscriberTests"
+                this.key = BuildConfig.ABLY_API_KEY
+                this.logHandler = Logging.ablyJavaDebugLogger
+            }
+
+            AblyRealtime(clientOptions).awaitSubscriberPresent(trackableId, 10_000)
+        } catch (exception: TimeoutCancellationException) {
+            testLogD("Awaiting for subscriber presence failed after 10 seconds")
+        }
     }
 }
