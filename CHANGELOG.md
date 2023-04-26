@@ -1,5 +1,41 @@
 # Change log
 
+## [1.6.5](https://github.com/ably/ably-asset-tracking-android/tree/v1.6.5)
+
+[Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.6.4...v1.6.5)
+
+**Implemented enhancements:**
+
+- Improved Publisher Presence: Amalgamate History and Emit Events [\#1038](https://github.com/ably/ably-asset-tracking-android/issues/1038)
+- Improved Publisher Presence: Network Connectivity Tests [\#1037](https://github.com/ably/ably-asset-tracking-android/issues/1037)
+- Improved Publisher Presence: Presence History [\#1036](https://github.com/ably/ably-asset-tracking-android/issues/1036)
+- Improved Publisher Presence: Boilerplate [\#1035](https://github.com/ably/ably-asset-tracking-android/issues/1035)
+
+**Fixed bugs:**
+
+- Extended disconnection after long period of connectivity [\#1039](https://github.com/ably/ably-asset-tracking-android/issues/1039)
+
+**Closed issues:**
+
+- Add Status to Readme [\#1048](https://github.com/ably/ably-asset-tracking-android/issues/1048)
+- Subscriber NetworkConnectivityTests: EnterFailedWithNonFatalNack [\#1017](https://github.com/ably/ably-asset-tracking-android/issues/1017)
+- Subscriber NetworkConnectivityTests: UpdateFailedWithNonFatalNack [\#1018](https://github.com/ably/ably-asset-tracking-android/issues/1018)
+- Subscriber NetworkConnectivityTests: TCPConnectionUnresponsive [\#1016](https://github.com/ably/ably-asset-tracking-android/issues/1016)
+
+**Merged pull requests:**
+- Add beta notice to readme [\#1049](https://github.com/ably/ably-asset-tracking-android/pull/1049) ([AndyTWF](https://github.com/AndyTWF))
+- additional faults enabled in subscribers NetworkConnectivityTests [\#1046](https://github.com/ably/ably-asset-tracking-android/pull/1046) ([davyskiba](https://github.com/davyskiba))
+- Extended publisher presence API [\#1045](https://github.com/ably/ably-asset-tracking-android/pull/1045) ([AndyTWF](https://github.com/AndyTWF))
+- Bump ably-java to 1.2.27 [\#1044](https://github.com/ably/ably-asset-tracking-android/pull/1044) ([AndyTWF](https://github.com/AndyTWF))
+- Publisher presence events [\#1042](https://github.com/ably/ably-asset-tracking-android/pull/1042) ([AndyTWF](https://github.com/AndyTWF))
+- Disallow online state for subscriber active fatal fault [\#1041](https://github.com/ably/ably-asset-tracking-android/pull/1041) ([lawrence-forooghian](https://github.com/lawrence-forooghian))
+- Error info constants [\#1040](https://github.com/ably/ably-asset-tracking-android/pull/1040) ([AndyTWF](https://github.com/AndyTWF))
+- Add network connectivity tests assertions on new publisher presence state API [\#1034](https://github.com/ably/ably-asset-tracking-android/pull/1034) ([lawrence-forooghian](https://github.com/lawrence-forooghian))
+- Fetch history [\#1033](https://github.com/ably/ably-asset-tracking-android/pull/1033) ([davyskiba](https://github.com/davyskiba))
+- Subscriber extended publisher presence [\#1032](https://github.com/ably/ably-asset-tracking-android/pull/1032) ([AndyTWF](https://github.com/AndyTWF))
+- Subscriber connection unresponsive [\#1031](https://github.com/ably/ably-asset-tracking-android/pull/1031) ([davyskiba](https://github.com/davyskiba))
+- Subscriber enter failed fault [\#1023](https://github.com/ably/ably-asset-tracking-android/pull/1023) ([davyskiba](https://github.com/davyskiba))
+
 ## [1.6.4](https://github.com/ably/ably-asset-tracking-android/tree/v1.6.4)
 
 [Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.6.3...v1.6.4)
