@@ -1,8 +1,8 @@
 # Change log
 
-## [1.6.5](https://github.com/ably/ably-asset-tracking-android/tree/v1.6.5)
+## [1.7.0](https://github.com/ably/ably-asset-tracking-android/tree/v1.7.0)
 
-[Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.6.4...v1.6.5)
+[Full Changelog](https://github.com/ably/ably-asset-tracking-android/compare/v1.6.4...v1.7.0)
 
 **Implemented enhancements:**
 
