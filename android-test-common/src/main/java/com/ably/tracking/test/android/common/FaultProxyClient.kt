@@ -1,5 +1,6 @@
 package com.ably.tracking.test.android.common
 
+import com.ably.tracking.test.android.common.Logging.testLogD
 import java.net.URL
 import kotlinx.serialization.Serializable
 import io.ktor.client.HttpClient

@@ -14,6 +14,7 @@ import com.ably.tracking.subscriber.workerqueue.workers.ChangeResolutionWorker
 import com.ably.tracking.subscriber.workerqueue.workers.DeprecatedChangeResolutionWorker
 import com.ably.tracking.subscriber.workerqueue.workers.DisconnectWorker
 import com.ably.tracking.subscriber.workerqueue.workers.FetchHistoryForChannelConnectionStateChangeWorker
+import com.ably.tracking.subscriber.workerqueue.workers.EnterPresenceWorker
 import com.ably.tracking.subscriber.workerqueue.workers.ProcessInitialPresenceMessagesWorker
 import com.ably.tracking.subscriber.workerqueue.workers.StartConnectionWorker
 import com.ably.tracking.subscriber.workerqueue.workers.StopConnectionWorker
@@ -44,14 +45,16 @@ internal class WorkerFactory(
                 trackableId,
                 workerSpecification.callbackFunction
             )
+            is WorkerSpecification.EnterPresence -> EnterPresenceWorker(
+                workerSpecification.trackableId,
+                ably
+            )
             is WorkerSpecification.SubscribeForPresenceMessages -> SubscribeForPresenceMessagesWorker(
                 ably,
-                trackableId,
-                workerSpecification.callbackFunction
+                trackableId
             )
             is WorkerSpecification.SubscribeToChannel -> SubscribeToChannelWorker(
-                subscriberInteractor,
-                workerSpecification.callbackFunction
+                subscriberInteractor
             )
             is WorkerSpecification.UpdateConnectionState -> UpdateConnectionStateWorker(
                 workerSpecification.connectionStateChange
@@ -94,8 +97,7 @@ internal class WorkerFactory(
                 workerSpecification.callbackFunction
             )
             is WorkerSpecification.ProcessInitialPresenceMessages -> ProcessInitialPresenceMessagesWorker(
-                workerSpecification.presenceMessages,
-                workerSpecification.callbackFunction,
+                workerSpecification.presenceMessages
             )
         }
 }
@@ -136,13 +138,11 @@ internal sealed class WorkerSpecification {
         val callbackFunction: ResultCallbackFunction<Unit>
     ) : WorkerSpecification()
 
-    data class SubscribeForPresenceMessages(
-        val callbackFunction: ResultCallbackFunction<Unit>
-    ) : WorkerSpecification()
+    data class EnterPresence(val trackableId: String) : WorkerSpecification()
 
-    data class SubscribeToChannel(
-        val callbackFunction: ResultCallbackFunction<Unit>
-    ) : WorkerSpecification()
+    object SubscribeForPresenceMessages : WorkerSpecification()
+
+    object SubscribeToChannel : WorkerSpecification()
 
     data class Disconnect(
         val trackableId: String,
@@ -153,8 +153,6 @@ internal sealed class WorkerSpecification {
         val callbackFunction: ResultCallbackFunction<Unit>
     ) : WorkerSpecification()
 
-    data class ProcessInitialPresenceMessages(
-        val presenceMessages: List<PresenceMessage>,
-        val callbackFunction: ResultCallbackFunction<Unit>,
-    ) : WorkerSpecification()
+    data class ProcessInitialPresenceMessages(val presenceMessages: List<PresenceMessage>) :
+        WorkerSpecification()
 }

@@ -45,6 +45,13 @@ import kotlin.coroutines.suspendCoroutine
  * Wrapper for the [AblyRealtime] that's used to interact with the Ably SDK.
  */
 interface Ably {
+
+    companion object {
+        /**
+         * Error code specific to enter presence on a suspended channel error
+         */
+        const val ENTER_PRESENCE_ON_SUSPENDED_CHANNEL_ERROR_CODE = 91_001
+    }
     /**
      * Adds a listener for the [AblyRealtime] state updates.
      *

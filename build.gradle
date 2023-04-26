@@ -327,6 +327,7 @@ subprojects {
             } else {
                 testImplementation 'org.mockito:mockito-core:3.6.28'
                 testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test-jvm:$kotlin_coroutines_version"
+                androidTestImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test-jvm:$kotlin_coroutines_version"
             }
 
             if (evaluatedSubProjectIsAnApp) {

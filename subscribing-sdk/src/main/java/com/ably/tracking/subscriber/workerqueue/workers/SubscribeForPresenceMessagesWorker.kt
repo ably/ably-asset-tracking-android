@@ -2,16 +2,14 @@ package com.ably.tracking.subscriber.workerqueue.workers
 
 import com.ably.tracking.common.Ably
 import com.ably.tracking.common.PresenceMessage
-import com.ably.tracking.common.ResultCallbackFunction
+import com.ably.tracking.common.workerqueue.DefaultWorker
 import com.ably.tracking.subscriber.SubscriberProperties
-import com.ably.tracking.common.workerqueue.CallbackWorker
 import com.ably.tracking.subscriber.workerqueue.WorkerSpecification
 
 internal class SubscribeForPresenceMessagesWorker(
     private val ably: Ably,
-    private val trackableId: String,
-    callbackFunction: ResultCallbackFunction<Unit>
-) : CallbackWorker<SubscriberProperties, WorkerSpecification>(callbackFunction) {
+    private val trackableId: String
+) : DefaultWorker<SubscriberProperties, WorkerSpecification>() {
     override fun doWork(
         properties: SubscriberProperties,
         doAsyncWork: (suspend () -> Unit) -> Unit,
@@ -22,8 +20,8 @@ internal class SubscribeForPresenceMessagesWorker(
             val initialPresenceMessages: List<PresenceMessage> =
                 try {
                     currentPresenceMessagesResult.getOrThrow()
-                } catch (error: Throwable) {
-                    postDisconnectWork(postWork, Result.failure(error))
+                } catch (_: Throwable) {
+                    postDisconnectWork(postWork)
                     return@doAsyncWork
                 }
 
@@ -33,19 +31,19 @@ internal class SubscribeForPresenceMessagesWorker(
                 listener = { postWork(WorkerSpecification.UpdatePublisherPresence(it)) }
             )
             if (subscribeForPresenceMessagesResult.isFailure) {
-                postDisconnectWork(postWork, subscribeForPresenceMessagesResult)
+                postDisconnectWork(postWork)
                 return@doAsyncWork
             }
 
-            postWork(WorkerSpecification.ProcessInitialPresenceMessages(initialPresenceMessages, callbackFunction))
+            postWork(WorkerSpecification.ProcessInitialPresenceMessages(initialPresenceMessages))
         }
         return properties
     }
 
-    private fun postDisconnectWork(postWork: (WorkerSpecification) -> Unit, result: Result<Unit>) {
+    private fun postDisconnectWork(postWork: (WorkerSpecification) -> Unit) {
         postWork(
             WorkerSpecification.Disconnect(trackableId) {
-                callbackFunction(result)
+                // no-op
             }
         )
     }
@@ -53,6 +51,6 @@ internal class SubscribeForPresenceMessagesWorker(
     override fun onUnexpectedAsyncError(exception: Exception, postWork: (WorkerSpecification) -> Unit) {
         // All error paths for the async work end in posting the disconnect worker so it feels right to do the same on
         // unexpected errors
-        postDisconnectWork(postWork, Result.failure(exception))
+        postDisconnectWork(postWork)
     }
 }

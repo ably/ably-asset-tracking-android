@@ -11,11 +11,6 @@ import com.ably.tracking.publisher.workerqueue.WorkerSpecification
 import kotlinx.coroutines.delay
 
 /**
- * Error code specific to enter presence on a suspended channel error
- */
-private const val ENTER_PRESENCE_ON_SUSPENDED_CHANNEL_ERROR_CODE = 91_001
-
-/**
  * How long should we wait before queueing enter retry presence work if enter presence fails.
  */
 private const val PRESENCE_ENTER_DELAY_IN_MILLISECONDS = 15_000L
@@ -80,7 +75,7 @@ internal class EnterPresenceWorker(
     private fun isFatalFailure(result: Result<Unit>): Boolean {
         val connectionException = result.exceptionOrNull() as? ConnectionException
         return connectionException != null && connectionException.isFatal() &&
-            connectionException.errorInformation.code != ENTER_PRESENCE_ON_SUSPENDED_CHANNEL_ERROR_CODE
+            connectionException.errorInformation.code != Ably.ENTER_PRESENCE_ON_SUSPENDED_CHANNEL_ERROR_CODE
     }
 
     private fun postFailTrackableWork(

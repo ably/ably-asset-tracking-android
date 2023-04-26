@@ -41,7 +41,7 @@ fun io.ably.lib.realtime.ConnectionState.toTracking(): ConnectionState = when (t
  * The `requestId` field is yet to be implemented by ably-java, however even once it is available then the chances are
  * that it'll still not be exposed through to users of the Ably Asset Tracking SDKs in order to keep things simple.
  */
-fun io.ably.lib.types.ErrorInfo.toTracking() =
+fun ErrorInfo.toTracking() =
     ErrorInformation(
         this.code,
         this.statusCode,
@@ -57,7 +57,7 @@ fun io.ably.lib.types.ErrorInfo.toTracking() =
  * The `requestId` field is yet to be implemented by ably-java, however even once it is available then the chances are
  * that it'll still not be exposed through to users of the Ably Asset Tracking SDKs in order to keep things simple.
  */
-fun io.ably.lib.types.ErrorInfo.toTrackingException() =
+fun ErrorInfo.toTrackingException() =
     ConnectionException(
         ErrorInformation(
             this.code,
@@ -210,8 +210,10 @@ fun AblySdkChannelStateListener.ChannelStateChange.toTracking() =
  */
 fun io.ably.lib.types.PresenceMessage.getPresenceData(gson: Gson): PresenceData? =
     when (data) {
-        is String -> gson.fromJsonOrNull(data as? String, PresenceDataMessage::class.java)?.toTracking()
-        is JsonObject -> gson.fromJsonOrNull(data.toString(), PresenceDataMessage::class.java)?.toTracking()
+        is String -> gson.fromJsonOrNull(data as? String, PresenceDataMessage::class.java)
+            ?.toTracking()
+        is JsonObject -> gson.fromJsonOrNull(data.toString(), PresenceDataMessage::class.java)
+            ?.toTracking()
         else -> null
     }
 
@@ -225,6 +227,16 @@ private fun TokenAuthException.toAblyException(): AblyException =
         is CouldNotFetchTokenException ->
             AblyException.fromErrorInfo(ErrorInfo(message, 401, 100_002))
     }
+
+/**
+ * Performs passed action if this result is a fatal Ably failure
+ */
+inline fun <T : Any> Result<T>.doOnFatalAblyFailure(action: (ErrorInformation) -> Unit) {
+    val connectionException = exceptionOrNull() as? ConnectionException
+    if (connectionException?.isFatal() == true) {
+        action(connectionException.errorInformation)
+    }
+}
 
 /**
  * Indicates whether the result is a failure that a fatal exception from as a reason and we should not attempt to retry it.

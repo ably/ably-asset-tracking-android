@@ -1,5 +1,13 @@
 # Upgrade / Migration Guide
 
+## Version 1.6.4 to 1.6.5
+
+### `Subscriber`’s `start()` method no longer throws `ConnectionException`
+
+This method now uses the state emitted by the `trackableStates` flow (namely the `Offline` and `Failed` states) to communicate any errors that occur when connecting to Ably.
+
+We have also introduced retry behaviours that mean that non-fatal errors upon adding a trackable are now handled by the Subscriber SDK and will not cause the trackable to enter the `Failed` state.
+
 ## Version 1.6.3 to 1.6.4
 
 ### `Subscriber`’s `resolutionPreference()` method is deprecated
